@@ -4,7 +4,7 @@ CXX=mpicxx -O3
 GSL_BASE=$(GSL_DIR)
 GSL_INCL=-I$(GSL_BASE)/include
 GSL_LDFLAGS=-L$(GSL_BASE)/lib
-GSL_LIBS=-lgsl -llua
+GSL_LIBS=-lgsl -lgslcblas -llua
 
 TARGET = gomc
 

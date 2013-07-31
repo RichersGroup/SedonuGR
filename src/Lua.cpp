@@ -41,7 +41,7 @@ lua_State* Lua::state() const
 
 void Lua::init( std::string script )
 {
-   _lua_state = lua_open();
+   _lua_state = luaL_newstate();
    luaL_openlibs( _lua_state );
 
    if( _has_add_path )
