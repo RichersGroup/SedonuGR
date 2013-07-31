@@ -49,7 +49,6 @@ void transport::set_opacity()
     //double f_imc = fleck_alpha*fleck_beta*tfac;
     //grid->z[i].eps_imc = 1.0/(1.0 + f_imc);
     //if (radiative_eq) grid->z[i].eps_imc = 1.;
-
     grid->z[i].eps_imc = 1;
 
     zone* z = &(grid->z[i]);

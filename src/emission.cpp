@@ -28,10 +28,10 @@ void transport::create_isotropic_particle(int i, double Ep)
   p.ind = i;
 
   // random sample position in zone
-  vector<double> rand;
-  rand.push_back(gsl_rng_uniform(rangen));
-  rand.push_back(gsl_rng_uniform(rangen));
-  rand.push_back(gsl_rng_uniform(rangen));
+  vector<double> rand(3,0);
+  rand[0] = gsl_rng_uniform(rangen);
+  rand[1] = gsl_rng_uniform(rangen);
+  rand[2] = gsl_rng_uniform(rangen);
   double r[3];
   grid->sample_in_zone(i,rand,r);
   p.x[0] = r[0];

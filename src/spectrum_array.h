@@ -16,7 +16,7 @@ private:
   // spectrum_array name
   char name[1000];
 
-   // bin arrays
+  // bin arrays
   locate_array time_grid;
   locate_array wave_grid;
   locate_array mu_grid;

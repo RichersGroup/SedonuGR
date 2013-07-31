@@ -186,7 +186,7 @@ int read_model_file(string model_file, grid_general **grid)
 
     // read radii of zones
     double r_in;
-    std::vector<double> r_out, dens, ni, T;
+    std::vector<double> r_out(nx,0), dens(nx,0), ni(nx,0), T(nx,0);
     double x;
     infile >> r_in;
     
@@ -196,13 +196,13 @@ int read_model_file(string model_file, grid_general **grid)
     for (int i=0;i<nx; i++)
     { 
       infile >> x;
-      r_out.push_back(x);
+      r_out[i] = x;
       infile >> x;
-      dens.push_back(x);
+      dens[i] = x;
       infile >> x;
-      T.push_back(x);
+      T[i] = x;
       infile >> x;
-      ni.push_back(x);
+      ni[i] = x;
     } 
 
     // initialize the grid

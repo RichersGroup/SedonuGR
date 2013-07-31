@@ -16,14 +16,16 @@ void grid_1D_sphere::init(double ri, std::vector<double> rr)
   grid_type = "1D_sphere";
 
   r_inner = ri;
+  r_out.resize(rr.size());
+  vol.resize(rr.size());
   for (int i=0;i<rr.size();i++) 
   {
-    r_out.push_back(rr[i]);
+    r_out[i] = rr[i];
 
     double r0;
     if (i==0) r0 = r_inner; else r0 = rr[i-1];
     double v = 4.0*pc::pi/3.0*(rr[i]*rr[i]*rr[i] - r0*r0*r0);
-    vol.push_back(v);
+    vol[i] = v;
   }
 
   // allocate zones
