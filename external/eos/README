@@ -1,0 +1,4 @@
+If the simulation data we're using as input uses a tabulated EOS, we need a tabulated EOS to convert internal
+energy to temperature. A few tabulated EOS's can be found at
+
+http://www.stellarcollapse.org/equationofstate

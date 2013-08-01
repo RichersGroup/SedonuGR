@@ -1,4 +1,4 @@
 *~
 *.o
 src/gomc
-tables/*.h5
+*.h5
