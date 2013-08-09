@@ -82,22 +82,6 @@ int locate_array::locate(double z)
 //---------------------------------------------------------
 // Linear Interpolation of a passed array, find the zone
 //---------------------------------------------------------
-// template <typename T>
-// double locate_array::value_at(double z, T y){
-//   int ind = locate(z);
-//   int i1, i2;
-//   if (ind < x.size()-1){
-//     i1 = ind;
-//     i2 = ind + 1;
-//   }
-//   else{
-//     i2 = ind;
-//     i1 = ind - 1;
-//   }
-//   return interpolate_between(z, i1, i2, y);
-// }
-
-
 double locate_array::interpolate_between(double z, int i1, int i2, std::vector<double> y)
 {
   double slope = (y[i2]-y[i1]) / (x[i2]-x[i1]);
