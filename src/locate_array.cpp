@@ -50,7 +50,7 @@ void locate_array::init(std::vector<double> a)
 }
 
 //---------------------------------------------------------
-// locate
+// locate (return closest index below the value)
 // If off the boundaries of the array, return the
 // boundary value
 //---------------------------------------------------------
@@ -82,31 +82,33 @@ int locate_array::locate(double z)
 //---------------------------------------------------------
 // Linear Interpolation of a passed array, find the zone
 //---------------------------------------------------------
-double locate_array::value_at(double z, std::vector<double> y)
+// template <typename T>
+// double locate_array::value_at(double z, T y){
+//   int ind = locate(z);
+//   int i1, i2;
+//   if (ind < x.size()-1){
+//     i1 = ind;
+//     i2 = ind + 1;
+//   }
+//   else{
+//     i2 = ind;
+//     i1 = ind - 1;
+//   }
+//   return interpolate_between(z, i1, i2, y);
+// }
+
+
+double locate_array::interpolate_between(double z, int i1, int i2, std::vector<double> y)
 {
-  int ind = locate(z);
-  return value_at(z, ind,y);
+  double slope = (y[i2]-y[i1]) / (x[i2]-x[i1]);
+  return y[i1] + slope*(z - x[i1]);
 }
 
-double locate_array::value_at(double z, int ind, std::vector<double> y)
-{
-  double v,slope;
-  if (ind < x.size()-1)
-  {
-    int i1    = ind;
-    int i2    = ind + 1;
-    slope = (y[i2]-y[i1])/(x[i2] - x[i1]);
-    v     = y[ind] + slope*(z - x[i1]);
-  }
-  else
-  {
-    int i2    = ind;
-    int i1    = ind - 1;
-    slope = (y[i2]-y[i1])/(x[i2] - x[i1]);
-    v     = y[ind] + slope*(z - x[i1]);
-  }
 
-  return v;
+double locate_array::interpolate_between(double z, int i1, int i2, cdf_array y)
+{
+  double slope = (y.get_value(i2)-y.get_value(i1)) / (x[i2] - x[i1]);
+  return y.get_value(i1) + slope*(z - x[i1]);
 }
 
 

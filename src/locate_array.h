@@ -2,6 +2,8 @@
 #define _LOCATE_ARRAY_H 
 
 #include <vector>
+#include "cdf_array.h"
+
 
 class locate_array {
 
@@ -21,8 +23,6 @@ public:
   void init(double,double,int);
   void init(std::vector<double>);
 
-  double value(int i) {return x[i]; } 
-
   double center(int i)   {
     if (i >= x.size()-1) {return x.back();}
     else return 0.5*(x[i] + x[i+1]);}
@@ -33,12 +33,27 @@ public:
 
 
   int    locate(double);
-  double value_at(double,int,std::vector<double>);
-  double value_at(double,std::vector<double>);
+  double interpolate_between(double,int,int,std::vector<double>);
+  double interpolate_between(double,int,int,cdf_array);
   double sample(int, double);
   void   print();
   
-};
+  // Template function must be implemented in header.
+  template <typename T>
+    double value_at(double z, T y){
+    int ind = locate(z);
+    int i1, i2;
+    if (ind < x.size()-1){
+      i1 = ind;
+      i2 = ind + 1;
+    }
+    else{
+      i2 = ind;
+      i1 = ind - 1;
+    }
+    return interpolate_between(z, i1, i2, y);
+  }
 
+};
 
 #endif

@@ -5,7 +5,7 @@
 //------------------------------------------------------
 // return the actual y value, not the integrated
 //------------------------------------------------------
-double cdf_array::value(int i)   
+double cdf_array::get_value(int i)   
 {
   if (i==0) return y[0];
   else return (y[i] - y[i-1]);  
@@ -68,7 +68,7 @@ int cdf_array::sample(double z)
 //------------------------------------------------------
 void cdf_array::print() {
   for (int i=0;i<y.size();i++) 
-    printf("%5d %10.4e %10.4e\n",i,value(i),y[i]);
+    printf("%5d %10.4e %10.4e\n",i,get_value(i),y[i]);
 }
   
 //------------------------------------------------------

@@ -1,4 +1,8 @@
 *~
 *.o
-src/gomc
 *.h5
+*.spec
+*ray_*
+*.exe
+make.inc
+*gomc

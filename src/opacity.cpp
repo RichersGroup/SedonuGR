@@ -54,7 +54,7 @@ void transport::set_opacity()
     zone* z = &(grid->z[i]);
     for (int j=0;j<nu_grid.size();j++)
     {
-      double nu  = nu_grid.value(j);
+      double nu  = nu_grid.x[j];
       double bb  = blackbody_nu(z->T_gas,nu);
       z->opac[j] = grey_opac*z->rho;
       z->emis.set_value(j,grey_opac*bb);
@@ -80,7 +80,7 @@ void transport::get_opacity(particle &p, double dshift, double &opac, double &ep
   if (p.type == photon)
   {
     // interpolate opacity at the local comving frame frequency
-    opac = nu_grid.value_at(nu,zone->opac);
+    opac = nu_grid.value_at<vector <double> >(nu,zone->opac);
     eps  = this->epsilon;
     
     // grey opacity flag will now override, if set
