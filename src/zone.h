@@ -29,6 +29,8 @@ public:
   real ni56;            // nickel fraction
 
   // radiation quantities
+  // TODO - move radiation quantities to species.
+  // will need to distinguish between different species' radiation field
   real e_rad;      // radiation energy density  (ergs/cm^3) in lab frame
   real e_abs;      // radiation energy deposition density rate (ergs/cm^3/s)
   real fx_rad;     // radiation x-force in lab frame
