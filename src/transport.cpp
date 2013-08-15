@@ -1,3 +1,4 @@
+#include "transport.h"
 #include <limits>
 #include <mpi.h>
 #include <gsl/gsl_rng.h>
@@ -8,58 +9,59 @@
 #include <string.h>
 #include <iostream>
 #include "physical_constants.h"
-#include "transport.h"
 #include "Lua.h"
-//#include "radioactive.hh"
-//#include <omp.h>
+#include "grid_1D_sphere.h"
+#include "grid_3D_cart.h"
+#include "photons.h"
+#include "cdf_array.h"
 
 namespace pc = physical_constants;
 
-
-
-//--------------------------------------------------------
-// constructor
-//--------------------------------------------------------
-transport::transport()
-{
-  // defaults
-  step_size = 0.1;
-  grey_opac = 0.0;
-  r_core = 0;
-}
-
-
-//--------------------------------------------------------
-// Initialize and allocate
-//--------------------------------------------------------
-void transport::init(string infile,grid_general *g)
-{
-  // save param file name
-  param_file = infile;
-  
-
-  // start at time 0
-  t_now = 0;
-
-  // point to the grid
-  this->grid = g;
-  
-  // get mpi rank, verbosity
+void transport::init(Lua* lua)
+{ 
+  // get mpi rank
   int my_rank, n_procs;
-  MPI_Comm_size( MPI_COMM_WORLD, &n_procs);
+  MPI_Comm_size( MPI_COMM_WORLD, &n_procs );
   MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-  if (my_rank == 0) verbose = 1; else verbose = 0;
+  verbose = (my_rank==0);
 
+  //=================//
+  // SET UP THE GRID //
+  //=================//
+  // read the grid type
+  string grid_type = lua->scalar<string>("grid_type");
+
+  // create a grid of the appropriate type
+  if     (grid_type == "grid_1D_sphere") grid = new grid_1D_sphere;
+  else if(grid_type == "grid_3D_cart"  ) grid = new grid_3D_cart;
+  else{
+    if(verbose) std::cout << "Error: the requested grid type is not implemented." << std::endl;
+    exit(3);}
+  
+  // initialize the grid (including reading the model file)
+  grid->init(lua);
+
+  // calculate integrated quantities to check
+  double mass = 0.0;
+  double KE   = 0.0;
+  for (int i=0;i<grid->z.size();i++)
+  {
+    mass += grid->z[i].rho * grid->zone_volume(i);
+  }
+  if (verbose) cout << "# mass = " << mass << endl;
+
+  //===============//
+  // GENERAL SETUP //
+  //===============//
   // figure out which zones are in this processors work load
-  int my_job = (int)(grid->n_zones/(1.0*n_procs));
+  int my_job = (int)(grid->z.size()/(1.0*n_procs));
   if (my_job < 1) my_job = 1;
   my_zone_start = my_rank*my_job;
   my_zone_end   = my_zone_start + my_job;
   // make sure last guy finishes it all
-  if (my_rank == n_procs-1) my_zone_end = grid->n_zones;
+  if (my_rank == n_procs-1) my_zone_end = grid->z.size();
   // get rid of unneeded processers
-  if (my_zone_start >= grid->n_zones) my_zone_start = my_zone_end;
-
+  if (my_zone_start >= grid->z.size()) my_zone_start = my_zone_end;
 
   // setup and seed random number generator
   const gsl_rng_type * TypeR;
@@ -68,35 +70,48 @@ void transport::init(string infile,grid_general *g)
   TypeR = gsl_rng_default;
   rangen = gsl_rng_alloc (TypeR);
 
-  // open up the lua parameter file
-  Lua lua;
-  lua.init(infile);
+
+  //==================//
+  // SET UP TRANSPORT //
+  //==================//
+  // start at time 0
+  t_now = 0;
 
   // read relevant parameters
-  this->radiative_eq = lua.scalar<int>("radiative_eq");
-  this->iterate      = lua.scalar<int>("iterate");
-  this->step_size = lua.scalar<double>("step_size");
-  this->epsilon   = lua.scalar<double>("epsilon");
+  radiative_eq  = lua->scalar<int>("radiative_eq");
+  iterate       = lua->scalar<int>("iterate");
+  step_size     = lua->scalar<double>("step_size");
 
-  
-  // intialize output spectrum
-  std::vector<double>stg = lua.vector<double>("spec_time_grid");
-  std::vector<double>sng = lua.vector<double>("spec_nu_grid");
-  int nmu  = lua.scalar<int>("n_mu");
-  int nphi = lua.scalar<int>("n_phi");
-  spectrum.init(stg,sng,nmu,nphi);
-  spectrum.set_name("optical_spectrum.dat");
+  // determine which species to simulate
+  int do_photons = lua->scalar<int>("do_photons");
+  species_general* tmp;
+  if(do_photons){
+    tmp = new photons;
+    tmp->init(lua, this);
+    species_list.push_back(tmp);
+  }
+  if(species_list.size() == 0){
+    if(verbose) cout << "Error: you must simulate at least one species of particle." << endl;
+    exit(7);
+  }
 
-  // initalize opacities
-  initialize_opacity(&lua);
-  set_opacity();
-  
-  // initialize particles
-  int n_parts = lua.scalar<int>("init_particles");
-  initialize_particles(n_parts);
+  // scatter initial particles around
+  int init_particles = lua->scalar<int>("init_particles");
+  initialize_particles(init_particles);
 
-  // close lua file
-  lua.close();
+  //=================//
+  // SET UP THE CORE //
+  //=================//
+  // the core temperature is used only in setting its emis vector
+  // so it's looked at only in species::myInit()
+  n_inject = lua->scalar<int>("n_inject");
+  r_core   = lua->scalar<double>("r_core");
+  L_core   = lua->scalar<double>("L_core");
+  core_species.resize(species_list.size());
+  for(int i=0; i<species_list.size(); i++){
+    core_species.set_value(i, species_list[i]->int_core_emis());}
+  core_species.normalize();
+  // TODO - set emissivity before this happens
 }
 
 
@@ -113,7 +128,7 @@ void transport::step(double dt)
   if (iterate) dt = 1;
   
   // calculate opacities
-  set_opacity();
+  for(int i=0; i<species_list.size(); i++) species_list[i]->set_eas();
 
   // emit new particles
   emit_particles(dt);
@@ -130,20 +145,8 @@ void transport::step(double dt)
   }
 
   // Propagate the particles
-  vector<particle>::iterator pIter = particles.begin();
-  int n_active = particles.size();
-  int n_escape = 0;
-  while (pIter != particles.end())
-  {
-    ParticleFate fate = propagate(*pIter,dt);
-    if (fate == escaped) n_escape++;
-    if ((fate == escaped)||(fate == absorbed)) particles.erase(pIter);
-    else pIter++;
-  }
-  double per_esc = (100.0*n_escape)/n_active;
-  if ((verbose)&&(iterate)) cout << "# Percent escaped = " << per_esc << endl;
-  spectrum.rescale(1.0/per_esc);
-  
+  for(int i=0; i<species_list.size(); i++) species_list[i]->propagate_particles(dt);
+
   // properly normalize the radiative quantities
   for (int i=0;i<grid->n_zones;i++) 
   {
@@ -163,256 +166,6 @@ void transport::step(double dt)
    
   // advance time step
   if (!iterate) t_now += dt;
-}
-
-
-//--------------------------------------------------------
-// Propagate a single monte carlo particle until
-// it  escapes, is absorbed, or the time step ends
-//--------------------------------------------------------
-ParticleFate transport::propagate(particle &p, double dt)
-{
-  enum ParticleEvent {scatter, boundary, tstep};
-  ParticleEvent event;
-
-  ParticleFate  fate = moving;
-
-  // time of end of timestep
-  double tstop = t_now + dt;
-
-  // local variables
-  double tau_r,d_sc,d_tm,this_d;
-
-  // pointer to current zone
-  zone *zone = &(grid->z[p.ind]);
-
-  // propagate until this flag is set
-  while (fate == moving)
-  {
-    // set pointer to current zone
-    zone = &(grid->z[p.ind]);
-    
-    // maximum step size inside zone
-    double d_bn = step_size*grid->zone_min_length(p.ind);
-
-    // doppler shift from comoving to lab
-    double dshift = dshift_comoving_to_lab(p);
-
-    // get local opacity and absorption fraction (epsilon)
-    double opac, eps;
-    this->get_opacity(p,dshift,opac,eps);
-    
-    // convert opacity from comoving to lab frame for the purposes of 
-    // determining the interaction distance in the lab frame
-    // This corresponds to equation 90.8 in Mihalas&Mihalas. You multiply 
-    // the comoving opacity by nu_0 over nu, which is why you
-    // multiply by dshift instead of dividing by dshift here
-    opac = opac*dshift;
-
-    // random optical depth to next interaction
-    tau_r = -1.0*log(1 - gsl_rng_uniform(rangen));
-    
-    // step size to next interaction event
-    d_sc  = tau_r/opac;
-    if (opac == 0) d_sc = INFINITY;
-    if (d_sc < 0) cout << "ERROR: negative interaction distance!\n";
-  
-    // find distance to end of time step
-    d_tm = (tstop - p.t)*pc::c;
-    // if iterative calculation, let all particles escape
-    if (iterate) d_tm = INFINITY;
-
-    // find out what event happens (shortest distance)
-    if ((d_sc < d_bn)&&(d_sc < d_tm))
-      {event = scatter;    this_d = d_sc;}
-    else if (d_bn < d_tm)
-      {event = boundary;   this_d = d_bn;}
-    else 
-      {event = tstep;      this_d = d_tm; }
-
-    // tally in contribution to zone's radiation energy (both *lab* frame)
-    double this_E = p.e*this_d; 
-    zone->e_rad += this_E; 
-
-    // shift opacity back to comoving frame for energy and momentum exchange. 
-    // Radiation energy is still lab frame
-    opac = opac / dshift;
-
-    // store absorbed energy in *comoving* frame 
-    // (will turn into rate by dividing by dt later)
-    // Extra dshift definitely needed here (two total)
-    zone->e_abs  += this_E*dshift*(opac)*eps*zone->eps_imc * dshift; 
-
-    // put back in radiation force tally here
-    // fx_rad =
-    
-    // move particle the distance
-    p.x[0] += this_d*p.D[0];
-    p.x[1] += this_d*p.D[1];
-    p.x[2] += this_d*p.D[2]; 
-    // advance the time
-    p.t = p.t + this_d/pc::c;
-
-    // ---------------------------------
-    // Do if scatter
-    // ---------------------------------
-    if (event == scatter)
-    {
-      // random number to check for scattering or absorption
-      double z = gsl_rng_uniform(rangen);
-      
-      // do photon interaction physics
-      if (p.type == photon)
-      {
-	// see if scattered 
-	if (z > eps) isotropic_scatter(p,0);
-	else
-	{
-	  // check for effective scattering
-	  double z2;
-	  if (radiative_eq) z2 = 2;
-	  else z2 = gsl_rng_uniform(rangen);
-	  // do an effective scatter
-	  if (z2 > zone->eps_imc) isotropic_scatter(p,1);
-	  // otherwise really absorb (kill) it
-	  else fate = absorbed; 
-	}
-      }
-    }
-    
-    // ---------------------------------
-    // do if time step end
-    // ---------------------------------
-    else if (event == tstep) { fate = stopped;}
-    
-    // Find position of the particle now
-    int ix[3];
-    p.ind = grid->get_zone(p.x);
-    if (p.ind == -1) fate = absorbed;
-    if (p.ind == -2) fate = escaped;
-
-    // check for inner boundary absorption
-    if (p.r() < r_core)  {fate = absorbed;}
-  }
-
-  // Add escaped photons to output spectrum
-  if (fate == escaped) 
-    if (p.type == photon)
-    {
-      // account for light crossing time, relative to grid center
-      //double X0 = p.x[0] - grid->x_cen;
-      //double X1 = p.x[1] - grid->x_cen;
-      //double X2 = p.x[2] - grid->x_cen;
-      
-      //double xdot = X0*p.D[0] + X1*p.D[1] + X2*p.D[2];
-      double t_obs = p.t; // - xdot/pc::c;
-      spectrum.count(t_obs,p.nu,p.e,p.D);
-    }
-
-  return fate;
-}
-
-
-//------------------------------------------------------------
-// get the doppler shift from lab to comoving
-//------------------------------------------------------------
-double transport::dshift_lab_to_comoving(particle p)
-{
-  double v[3];
-  grid->velocity_vector(p.ind,p.x,v);
-  
-  // outgoing velocity vector
-  double beta = 0.0;
-  for (int i=0;i<3;i++)  beta += v[i]*v[i]; 
-  beta = sqrt(beta)/pc::c;
-  double gamma  = 1.0/sqrt(1 - beta*beta); 
-
-  // doppler shifts outgoing
-  double vdp    = (p.D[0]*v[0] + p.D[1]*v[1] + p.D[2]*v[2]);
-  double dshift = gamma*(1 - vdp/pc::c);
-  return dshift;
-}
-
-
-//------------------------------------------------------------
-// get the doppler shift from comoving to lab 
-//------------------------------------------------------------
-double transport::dshift_comoving_to_lab(particle p)
-{
-  double v[3];
-  grid->velocity_vector(p.ind,p.x,v);
-  
-  // outgoing velocity vector
-  double beta = 0.0;
-  for (int i=0;i<3;i++) 
-  {
-    v[i] = -1*v[i];
-    beta += v[i]*v[i]; 
-  }
-  beta = sqrt(beta)/pc::c;
-  double gamma  = 1.0/sqrt(1 - beta*beta); 
-
-  // doppler shifts outgoing
-  double vdp    = (p.D[0]*v[0] + p.D[1]*v[1] + p.D[2]*v[2]);
-  double dshift = gamma*(1 - vdp/pc::c);
-  return dshift;
-}
-
-//------------------------------------------------------------
-// do a lorentz transformation; modifies the energy, frequency 
-// and direction vector of the particle
-// sign =  1 for comoving to lab
-// sign = -1 for lab to comoving
-//------------------------------------------------------------
-
-void transport::transform_comoving_to_lab(particle &p)
-{
-  lorentz_transform(p,1);
-}
-void transport::transform_lab_to_comoving(particle &p)
-{
-  lorentz_transform(p,-1);
-}
-
-void transport::lorentz_transform(particle &p, double sign)
-{
-  double v[3];
-  grid->velocity_vector(p.ind,p.x,v);
-  
-  // outgoing velocity vector
-  double beta = 0.0;
-  for (int i=0;i<3;i++) 
-  {
-    v[i] = sign*v[i];
-    beta += v[i]*v[i]; 
-  }
-  beta = sqrt(beta)/pc::c;
-  double gamma  = 1.0/sqrt(1 - beta*beta); 
-
-  // doppler shifts outgoing
-  double vdp    = (p.D[0]*v[0] + p.D[1]*v[1] + p.D[2]*v[2]);
-  double dshift = gamma*(1 - vdp/pc::c);
-
-  // doppler shift the energy and frequency
-  p.e   *= dshift;
-  p.nu  *= dshift;
-
-  // transform direction
-  double D_old[3];
-  D_old[0] = p.D[0];
-  D_old[1] = p.D[1];
-  D_old[2] = p.D[2];
-
-  // See Mihalas & Mihalas eq 89.8
-  p.D[0] = 1.0/dshift*(D_old[0]-gamma*v[0]/pc::c*(1-gamma*vdp/pc::c/(gamma+1)));
-  p.D[1] = 1.0/dshift*(D_old[1]-gamma*v[1]/pc::c*(1-gamma*vdp/pc::c/(gamma+1)));
-  p.D[2] = 1.0/dshift*(D_old[2]-gamma*v[2]/pc::c*(1-gamma*vdp/pc::c/(gamma+1)));
-
-  // for security, make sure it is properly normalized
-  double norm = p.D[0]*p.D[0] + p.D[1]*p.D[1] + p.D[2]*p.D[2];
-  p.D[0] = p.D[0]/norm;
-  p.D[1] = p.D[1]/norm;
-  p.D[2] = p.D[2]/norm;
 }
 
 
@@ -440,25 +193,22 @@ void transport::solve_eq_temperature()
 // The Brent solver below to determine the temperature such
 // that RadEq holds
 //**************************************************************/
-double transport::rad_eq_function(int c,double T)
+double transport::rad_eq_function(int zone_index,double T)
 {
   // total energy absorbed in zone
-  double E_absorbed = grid->z[c].e_abs;
+  double E_absorbed = grid->z[zone_index].e_abs;
   // total energy emitted (to be calculated)
   double E_emitted = 0.;
 
-  // integrate emisison over frequency (angle
-  // integration gives the 4*PI) to get total
-  // radiation energy emitted. Opacities are
-  // held constant for this (assumed not to change
-  // much from the last time step).
-  for (int i=0;i<nu_grid.size();i++)
+  // include the emission from all species
+  for(int i=0; i<species_list.size(); i++)
   {
-    double dnu  = nu_grid.delta(i);
-    double nu   = nu_grid.center(i);
-    double B_nu = blackbody_nu(T,nu);
-    double kappa_abs  = epsilon*grid->z[c].opac[i];
-    E_emitted += 4.0*pc::pi*kappa_abs*B_nu*dnu;
+    // integrate emisison over frequency (angle
+    // integration gives the 4*PI) to get total
+    // radiation energy emitted. Opacities are
+    // held constant for this (assumed not to change
+    // much from the last time step).
+    E_emitted += 4.0*pc::pi * species_list[i]->int_zone_emis(zone_index);
   }
 
   // radiative equillibrium condition: "emission equals absorbtion"
@@ -547,4 +297,18 @@ double transport::temp_brent_method(int cell)
   return 0.0;
 }
 
+int transport::total_particles()
+{
+  // sum up particles from all species
+}
 
+
+int transport::sample_core_species()
+{
+
+}
+
+int transport::sample_zone_species(int zone_index)
+{
+
+}

@@ -7,36 +7,69 @@
 #include <iostream>
 
 namespace pc = physical_constants;
+using namespace std;
 
-//************************************************************
+
+//------------------------------------------------------------
 // initialize the zone geometry
-//************************************************************
-void grid_1D_sphere::init(double ri, std::vector<double> rr)
+//------------------------------------------------------------
+void grid_1D_sphere::read_model_file(Lua* lua)
 {
-  grid_type = "1D_sphere";
+  // open up the model file, complaining if it fails to open
+  string model_file = lua->scalar<string>("model_file");
+  std::ifstream infile;
+  infile.open(model_file.c_str());
+  if(infile.fail())
+    {
+      cout << "Error: can't read the model file." << model_file << endl;
+      exit(4);
+    }
 
-  r_inner = ri;
-  r_out.resize(rr.size());
-  vol.resize(rr.size());
-  for (int i=0;i<rr.size();i++) 
-  {
-    r_out[i] = rr[i];
-
-    double r0;
-    if (i==0) r0 = r_inner; else r0 = rr[i-1];
-    double v = 4.0*pc::pi/3.0*(rr[i]*rr[i]*rr[i] - r0*r0*r0);
-    vol[i] = v;
+  // geometry of model
+  infile >> grid_type;
+  if(grid_type != "1D_sphere"){
+    cout << "Error: grid_type parameter disagrees with the model file." << endl;
   }
 
-  // allocate zones
-  z.resize(r_out.size());
-  n_zones = z.size();
+  // number of zones
+  int n_zones;
+  infile >> n_zones;
+  z.resize(n_zones);
+  r_out.resize(n_zones);
+  vol.resize(n_zones);
+
+  // other properties
+  double texp;
+  infile >> r_inner;
+  infile >> texp;
+
+  // read zone properties
+  double r0;
+  for(int i=0; i<n_zones; i++)
+  {
+    infile >> r_out[i];
+    infile >> z[i].rho;
+    infile >> z[i].T_gas;
+    infile >> z[i].ni56;
+
+    z[i].v[0] = r_out[i]/texp;
+    z[i].e_rad = pc::a*pow(z[i].T_gas,4);
+    if(i==0) r0 = r_inner;
+    else r0 = r_out[i-1];
+    vol[i] = 4.0*pc::pi/3.0*(r_out[i]*r_out[i]*r_out[i] - r0*r0*r0);
+  }
+  
+  infile.close();
+}
+
+void grid_1D_sphere::custom_model(Lua* lua)
+{
 
 }
 
-//************************************************************
+//------------------------------------------------------------
 // Overly simple search to find zone
-//************************************************************
+//------------------------------------------------------------
 int grid_1D_sphere::get_zone(double *x)
 {
   double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
@@ -53,9 +86,9 @@ int grid_1D_sphere::get_zone(double *x)
 }
 
 
-//************************************************************
+//------------------------------------------------------------
 // return volume of zone (precomputed)
-//************************************************************
+//------------------------------------------------------------
 double  grid_1D_sphere::zone_volume(int i)
 {
   return vol[i];

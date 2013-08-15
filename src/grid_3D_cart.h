@@ -3,6 +3,7 @@
 
 #include "grid_general.h"
 #include <vector>
+#include "Lua.h"
 
 //*******************************************
 // 1-Dimensional Spherical geometry
@@ -23,7 +24,8 @@ private:
 
 public:
 
-  void init(std::vector<int> n0, std::vector<double> ds, std::vector<double>s);
+  void read_model_file(Lua* lua);
+  void custom_model(Lua* lua);
 
   // required functions
   int       get_zone(double *);

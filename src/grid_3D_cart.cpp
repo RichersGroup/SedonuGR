@@ -5,15 +5,20 @@
 #include "physical_constants.h"
 #include <fstream>
 #include <iostream>
+#include "Lua.h"
 
 namespace pc = physical_constants;
 
 //************************************************************
 // initialize the zone geometry
 //************************************************************
-void grid_3D_cart::init
-(std::vector<int> n0, std::vector<double> ds, std::vector<double>s0)
+void grid_3D_cart::custom_model(Lua* lua)
+//(std::vector<int> n0, std::vector<double> ds, std::vector<double>s0)
 {
+  vector<int>n0 = lua->vector<int>("n0");
+  vector<double>ds = lua->vector<double>("ds");
+  vector<double>s0 = lua->vector<double>("s0");
+
   grid_type = "3D_cart";
 
   nx = n0[0];
@@ -53,6 +58,10 @@ void grid_3D_cart::init
       }
 }
 
+void grid_3D_cart::read_model_file(Lua* lua)
+{
+  
+}
 
 //************************************************************
 // Overly simple search to find zone

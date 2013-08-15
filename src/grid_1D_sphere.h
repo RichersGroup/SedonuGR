@@ -12,7 +12,6 @@ class grid_1D_sphere: public grid_general
 
 private:
 
-
   // specifics to this geometry
   double r_inner;
   // store location of edges
@@ -22,18 +21,17 @@ private:
 
 public:
 
-  void init(double, std::vector<double>);
-
+  void read_model_file(Lua* lua);
+  void custom_model(Lua* lua);
 
   // required functions
-  int  get_zone(double *);
-  double    zone_volume(int);
-  double    zone_min_length(int);
-  void      sample_in_zone(int, std::vector<double>, double[3]);
-  void      velocity_vector(int i, double[3], double[3]);
-  void      coordinates(int i,double r[3]) {
+  int    get_zone(double *);
+  double zone_volume(int);
+  double zone_min_length(int);
+  void   sample_in_zone(int, std::vector<double>, double[3]);
+  void   velocity_vector(int i, double[3], double[3]);
+  void   coordinates(int i,double r[3]) {
     r[0] = r_out[i]; r[1] = 0; r[2] = 0;}
-
 };
 
 

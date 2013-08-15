@@ -3,63 +3,35 @@
 #include "transport.h"
 #include "physical_constants.h"
 #include "Lua.h"
+#include "photons.h"
 
 namespace pc = physical_constants;
 
 //-----------------------------------------------------------------
-// allocate room for the opacities we will store
-//-----------------------------------------------------------------
-void transport::initialize_opacity(Lua *lua)
-{
-  // read opacity parameters
-  this->grey_opac = lua->scalar<double>("grey_opacity");
-  double nu_start = lua->scalar<double>("nu_start");
-  double nu_stop  = lua->scalar<double>("nu_stop");
-  int      n_nu   = lua->scalar<int>("n_nu");
-
-  // initialize the  frequency grid
-  nu_grid.init(nu_start,nu_stop,n_nu);
-  //  if (verbose) nu_grid.print();
-
-  // allocate space for the opac/emis vectors
-  for (int i=0;i<grid->n_zones;i++)
-  {
-    grid->z[i].opac.resize(nu_grid.size());
-    grid->z[i].emis.resize(nu_grid.size());
-  }
-
-  // allocate space for any core emission spectrum
-  this->n_inject  = lua->scalar<int>("n_inject");
-  this->r_core    = lua->scalar<double>("r_core");
-  this->core_emis.resize(nu_grid.size());
-}
-
-
-//-----------------------------------------------------------------
 // set opacity and emissivities
 //-----------------------------------------------------------------
-void transport::set_opacity()
+void photons::set_eas()
 {
-  for (int i=0;i<grid->n_zones;i++)
+  for (int i=0;i<sim->grid->z.size();i++)
   {
     // fleck factors
-    //double Tg    = grid->z[i].T_gas;
-    //double fleck_beta=4.0*pc::a*pow(Tg,4)/(grid->z[i].e_gas*grid->z[i].rho);
-    //double tfac  = pc::c*grey_opac*epsilon*grid->z[i].rho*t_step;
+    //double Tg    = sim->grid->z[i].T_gas;
+    //double fleck_beta=4.0*pc::a*pow(Tg,4)/(sim->grid->z[i].e_gas*sim->grid->z[i].rho);
+    //double tfac  = pc::c*grey_opac*epsilon*sim->grid->z[i].rho*t_step;
     //double f_imc = fleck_alpha*fleck_beta*tfac;
-    //grid->z[i].eps_imc = 1.0/(1.0 + f_imc);
-    //if (radiative_eq) grid->z[i].eps_imc = 1.;
-    grid->z[i].eps_imc = 1;
+    //sim->grid->z[i].eps_imc = 1.0/(1.0 + f_imc);
+    //if (sim->radiative_eq) sim->grid->z[i].eps_imc = 1.;
+    sim->grid->z[i].eps_imc = 1;
 
-    zone* z = &(grid->z[i]);
+    zone* z = &(sim->grid->z[i]);
     for (int j=0;j<nu_grid.size();j++)
     {
       double nu  = nu_grid.x[j];
       double bb  = blackbody_nu(z->T_gas,nu);
-      z->opac[j] = grey_opac*z->rho;
-      z->emis.set_value(j,grey_opac*bb);
+      abs_opac[i][j] = gray_abs_opac*z->rho;
+      emis[i].set_value(j,gray_abs_opac*bb);
     }
-    z->emis.normalize();
+    emis[i].normalize();
   }
 }
 
@@ -68,25 +40,26 @@ void transport::set_opacity()
 //-----------------------------------------------------------------
 // get opacity at the frequency
 //-----------------------------------------------------------------
-void transport::get_opacity(particle &p, double dshift, double &opac, double &eps)
+void species_general::get_eas(particle &p, double dshift, double &e, double &a, double &s)
 {
   // comoving frame frequency
   double nu = p.nu*dshift;
 
   // pointer to current zone
-  zone *zone = &(grid->z[p.ind]);
+  zone *zone = &(sim->grid->z[p.ind]);
 
-  // get opacity if it is an optical photon. 
-  if (p.type == photon)
-  {
-    // interpolate opacity at the local comving frame frequency
-    opac = nu_grid.value_at<vector <double> >(nu,zone->opac);
-    eps  = this->epsilon;
+  // TODO - check units
+  // emissivity
+  if(eps > 0) e = eps;
+  else e = nu_grid.value_at<cdf_array>(nu,emis[p.ind]);
+
+  // absorption opacity
+  if(gray_abs_opac > 0) a = gray_abs_opac;
+  else a = nu_grid.value_at< vector<double> >(nu,abs_opac[p.ind]);
     
-    // grey opacity flag will now override, if set
-    if (this->grey_opac > 0)
-      { opac = zone->rho*this->grey_opac; eps = this->epsilon; }
-  }
+  // scattering opacity
+  if(gray_scat_opac > 0) s = gray_scat_opac;
+  else s = nu_grid.value_at< vector<double> >(nu,scat_opac[p.ind]);
 }
 
 
@@ -94,7 +67,7 @@ void transport::get_opacity(particle &p, double dshift, double &opac, double &ep
 // Klein_Nishina correction to the Compton cross-section
 // assumes energy x is in MeV
 //-----------------------------------------------------------------
-double transport::klein_nishina(double x)
+double photons::klein_nishina(double x)
 {
   // divide by m_e c^2 = 0.511 MeV
   x = x/pc::m_e_MeV;
@@ -107,7 +80,7 @@ double transport::klein_nishina(double x)
 }
 
 // calculate planck function in frequency units
-double transport::blackbody_nu(double T, double nu)
+double photons::blackbody_nu(double T, double nu)
 {
   double zeta = pc::h*nu/pc::k/T;
   return 2.0*nu*nu*nu*pc::h/pc::c/pc::c/(exp(zeta)-1);

@@ -8,7 +8,7 @@ GSL_LIBS=-lgsl -lgslcblas -llua
 
 TARGET = gomc
 
-OBJECTS = main.o Lua.o grid_general.o grid_1D_sphere.o grid_3D_cart.o transport.o emission.o scatter.o opacity.o locate_array.o cdf_array.o spectrum_array.o
+OBJECTS = species_general.o photons.o main.o Lua.o grid_general.o grid_1D_sphere.o grid_3D_cart.o transport.o emission.o scatter.o opacity.o locate_array.o cdf_array.o spectrum_array.o
 
 $(TARGET): $(OBJECTS)
 	$(CXX) $(GSL_LDFLAGS) -o $(TARGET) $(OBJECTS) $(GSL_LIBS)

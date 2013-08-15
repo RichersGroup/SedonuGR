@@ -21,11 +21,20 @@
 #include <string>
 #include <iostream>
 #include "zone.h"
+#include "Lua.h"
 
 using namespace std;
 
 class grid_general
 {
+
+ protected:
+
+  // fill the grid with data from a model file
+  virtual void read_model_file(Lua* lua) = 0;
+
+  // fill the grid with data hard coded here
+  virtual void custom_model(Lua* lua) = 0;
 
  public:
 
@@ -39,6 +48,12 @@ class grid_general
   void reduce_radiation();
   void reduce_radiation_block(int, int);
   void reduce_T_gas();
+
+  // set everything up
+  void init(Lua* lua);
+
+  // write out zone information
+  void write_zones(int iw);
 
   //****** virtual functions (geometry specific)
 

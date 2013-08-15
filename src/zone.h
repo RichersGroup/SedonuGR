@@ -36,18 +36,11 @@ public:
   real fz_rad;     // radiation z-force in lab frame
   real eps_imc;    // fleck factor effective absorption
 
-
-  // stored opacity/emissivity as a function of wavelength
-  std::vector<real> opac;
-  //std::vector<real> emis;
-  cdf_array emis;
-
   // four force vector in lab frame
   real G1, G2, G3;
 
   // radiation pessure tensor components (symmetric)
   real P11, P12, P13, P22, P23, P33;
-
 };
 
 #endif

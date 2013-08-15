@@ -1,6 +1,7 @@
 #include <math.h>
 #include <gsl/gsl_rng.h>
 #include "transport.h"
+#include "species_general.h"
 #include "physical_constants.h"
 
 namespace pc = physical_constants;
@@ -20,12 +21,13 @@ void transport::emit_particles(double dt)
 // Useful for thermal radiation emitted all througout
 // the grid
 //------------------------------------------------------------
-void transport::create_isotropic_particle(int i, double Ep)
+void transport::create_isotropic_particle(int zone_index, double Ep)
 {
+  // basic particle properties
   particle p;
-
-  // particle index
-  p.ind = i;
+  p.ind = zone_index;
+  p.e  = Ep;
+  p.t  = t_now;
 
   // random sample position in zone
   vector<double> rand(3,0);
@@ -33,7 +35,7 @@ void transport::create_isotropic_particle(int i, double Ep)
   rand[1] = gsl_rng_uniform(rangen);
   rand[2] = gsl_rng_uniform(rangen);
   double r[3];
-  grid->sample_in_zone(i,rand,r);
+  grid->sample_in_zone(zone_index,rand,r);
   p.x[0] = r[0];
   p.x[1] = r[1];
   p.x[2] = r[2];
@@ -46,27 +48,15 @@ void transport::create_isotropic_particle(int i, double Ep)
   p.D[1] = smu*sin(phi);
   p.D[2] = mu;
 
-  // sample frequency from local emissivity
-  double z1 = gsl_rng_uniform(rangen);
-  int ilam = grid->z[i].emis.sample(z1);
-  double z2 = gsl_rng_uniform(rangen);
-  p.nu = nu_grid.sample(ilam,z2);
+  // sample the species and frequency
+  int s = sample_zone_species(zone_index);
+  p.nu = species_list[s]->sample_zone_nu(zone_index);
   
-  // set packet energy
-  p.e  = Ep;
-
   // lorentz transform from the comoving to lab frame
-  transform_comoving_to_lab(p);
-
-  // set time to current
-  p.t  = t_now;
-
-  // set type to photon
-  p.type = photon;
+  species_list[s]->transform_comoving_to_lab(p);
 
   // add to particle vector
-  particles.push_back(p);
-
+  species_list[s]->add_particle(p);
 }
 
 
@@ -98,31 +88,18 @@ void transport::initialize_particles(int init_particles)
 //------------------------------------------------------------
 void transport::emit_inner_source(double dt)
 {
-  // get the emisison propoerties from lua file
-  Lua lua;
-  lua.init(this->param_file);
-  double L_core      = lua.scalar<double>("L_core");
-  double T_core      = lua.scalar<double>("T_core");
-  lua.close();
-
-  double Ep  = L_core*dt/this->n_inject;
-  
-  if (particles.size() + this->n_inject > MAX_PARTICLES)
-    {cout << "# Not enough particle space\n"; return; }
-
-  // set up emission spectrum function (now a blackbody)
-  for (int j=0;j<nu_grid.size();j++)
-  { 
-    double nu  = nu_grid.center(j);
-    double dnu = nu_grid.delta(j);
-    double bb  = blackbody_nu(T_core,nu)*dnu;
-    core_emis.set_value(j,bb); 
+  if (total_particles() + n_inject > MAX_PARTICLES){
+    cout << "# Not enough particle space\n"; 
+    exit(10);
   }
-  core_emis.normalize();
+
+  double Ep  = L_core*dt/n_inject;
+  int s;
 
   // inject particles from the source
   for (int i=0;i<n_inject;i++)
   {
+    // set basic properties
     particle p;
     
     // pick initial position on photosphere
@@ -151,32 +128,25 @@ void transport::emit_inner_source(double dt)
     p.D[1] = cost_core*sinp_core*D_xl+cosp_core*D_yl+sint_core*sinp_core*D_zl;
     p.D[2] = -sint_core*D_xl+cost_core*D_zl;
 
-    // set energy of packet
+    // set basic properties
     p.e = Ep;
-
-    // sample frequency from blackbody 
-    double z1 = gsl_rng_uniform(rangen);
-    int ilam = core_emis.sample(z1);
-    double z2 = gsl_rng_uniform(rangen);
-    p.nu = nu_grid.sample(ilam,z2);
+    p.t  = t_now;
 
     // get index of current zone
     p.ind = grid->get_zone(p.x);
 
-    // lorentz transform from the comoving to lab frame
-    transform_comoving_to_lab(p);
+    // sample the species and frequency
+    int s = sample_core_species();
+    p.nu = species_list[s]->sample_core_nu();
 
-    // set time to current
-    p.t  = t_now;
-    
-    // set type to photon
-    p.type = photon;
-  
+    // lorentz transform from the comoving to lab frame
+    species_list[s]->transform_comoving_to_lab(p);
+
     // add to particle vector
-    particles.push_back(p);
+    species_list[s]->add_particle(p);
   }
 
-  if (verbose) printf("# Injected %d particles\n",this->n_inject);
+  if (verbose) printf("# Injected %d particles\n",n_inject);
 }
 
 

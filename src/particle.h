@@ -1,5 +1,7 @@
 #ifndef _PARTICLE_H
 #define _PARTICLE_H
+#include <math.h>
+#include <stdio.h>
 
 enum PTYPE {photon, gammaray, positron, radioactive, neutrino};
 

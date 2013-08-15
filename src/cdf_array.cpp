@@ -33,8 +33,8 @@ void cdf_array::normalize()
     for (int i=1;i<y.size();i++) y[i] = y[i-1] + 1;
 
   // normalize to end = 1.0
-  for (int i=0;i<y.size();i++)   y[i] /= y.back();
-
+  N = y.back();
+  for (int i=0;i<y.size();i++)   y[i] /= N;
 }
 
 
@@ -98,3 +98,12 @@ void cdf_array::MPI_combine()
   // delete new_ptr;
 }   
 
+
+//------------------------------------------------------------
+// return the normalization variable
+// should not be set by anything but normalize()
+//------------------------------------------------------------
+double cdf_array::get_N()
+{
+  return N;
+}

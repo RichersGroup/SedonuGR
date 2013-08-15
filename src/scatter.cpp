@@ -1,3 +1,4 @@
+#include "species_general.h"
 #include <math.h>
 #include <gsl/gsl_rng.h>
 #include "transport.h"
@@ -10,7 +11,7 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 // physics of isotropic scattering
 //------------------------------------------------------------
-void transport::isotropic_scatter(particle &p, int redistribute)
+void species_general::isotropic_scatter(particle &p, int redistribute)
 {
 
   // get doppler shift from lab to comoving frame
@@ -21,23 +22,16 @@ void transport::isotropic_scatter(particle &p, int redistribute)
   p.nu *= dshift_in;
 
   // Randomly generate new direction isotropically in comoving frame
-  double mu  = 1 - 2.0*gsl_rng_uniform(rangen);
-  double phi = 2.0*pc::pi*gsl_rng_uniform(rangen);
+  double mu  = 1 - 2.0*gsl_rng_uniform(sim->rangen);
+  double phi = 2.0*pc::pi*gsl_rng_uniform(sim->rangen);
   double smu = sqrt(1 - mu*mu);
   p.D[0] = smu*cos(phi);
   p.D[1] = smu*sin(phi);
   p.D[2] = mu;
-
-  // change wavelength, if needed
-  if (redistribute)
-  {
-    // sample frequency from local emissivity
-    double z1 = gsl_rng_uniform(rangen);
-    int ilam = grid->z[p.ind].emis.sample(z1);
-    double z2 = gsl_rng_uniform(rangen);
-    p.nu = nu_grid.sample(ilam,z2);
-  }
   
+  // change wavelength, if needed
+  if (redistribute) p.nu = sample_zone_nu(p.ind);
+
   // lorentz transform back to lab frame
   transform_comoving_to_lab(p);
 }

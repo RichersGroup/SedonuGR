@@ -17,6 +17,7 @@ class cdf_array
 private:
   
   std::vector<double> y;
+  double N;
   
 public:
 
@@ -29,6 +30,7 @@ public:
   double get_value(int i);                   // Get the actual (not CDF) value
  
   void normalize();         // normalize the cdf, so that final value = 1
+  double get_N();           // get the normalization factor
   int  sample(double z);    // sample from the CDF, when passed a random #
   void print();             
   void wipe();

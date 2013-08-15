@@ -16,7 +16,7 @@ t_stop      =  5*day             -- time to stop calculation, in days
 t_delta     =   1.0               -- time spacing in ouput light curve
 write_out   =  1.0*day
 
-n_photons   =  1e5           -- total number of photon packets to use
+-- spectrum parameters
 n_mu        =    1           -- number of cos(theta) bins in output spectrum 
 n_phi       =    1           -- number of phi bins in output spectrum
 init_particles = 0
@@ -45,4 +45,3 @@ n_nu            =  500
 -- output spectrum
 spec_time_grid = {1,1,1}
 spec_nu_grid =   {1e14,1e15,1e13}
-use_transport = 0
