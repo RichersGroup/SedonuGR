@@ -48,10 +48,6 @@ class species_general
   ParticleFate propagate(particle& p, double dt);
   void isotropic_scatter(particle& p, int redistribute);
   
-  // current time (taken from transport)
-  double t_now;
-  // TODO - update with transport
-
  public:
 
   // this species' spectrum
@@ -83,10 +79,13 @@ class species_general
 
   // set the emissivity, absorption opacity, and scattering opacity
   virtual void set_eas() = 0;
-  void get_eas(particle &p, double dshift, double &e, double &a, double &s);
+  void get_eas(particle &p, double dshift, double* e, double* a, double* s);
 
   // propagate the particles
   void propagate_particles(double dt);
+
+  // return size of particle vector
+  int size() { return particles.size();}
 };
 
 

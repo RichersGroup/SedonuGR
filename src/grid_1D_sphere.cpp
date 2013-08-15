@@ -11,7 +11,7 @@ using namespace std;
 
 
 //------------------------------------------------------------
-// initialize the zone geometry
+// initialize the zone geometry from model file
 //------------------------------------------------------------
 void grid_1D_sphere::read_model_file(Lua* lua)
 {
@@ -20,10 +20,10 @@ void grid_1D_sphere::read_model_file(Lua* lua)
   std::ifstream infile;
   infile.open(model_file.c_str());
   if(infile.fail())
-    {
-      cout << "Error: can't read the model file." << model_file << endl;
-      exit(4);
-    }
+  {
+    cout << "Error: can't read the model file." << model_file << endl;
+    exit(4);
+  }
 
   // geometry of model
   infile >> grid_type;
@@ -62,9 +62,13 @@ void grid_1D_sphere::read_model_file(Lua* lua)
   infile.close();
 }
 
+//------------------------------------------------------------
+// Write a custom model here if you like
+//------------------------------------------------------------
 void grid_1D_sphere::custom_model(Lua* lua)
 {
-
+  cout << "Error: there is no custom model programmed for grid_1D_sphere." << endl;
+  exit(11);
 }
 
 //------------------------------------------------------------
@@ -95,9 +99,9 @@ double  grid_1D_sphere::zone_volume(int i)
 }
 
 
-//************************************************************
+//------------------------------------------------------------
 // return length of zone
-//************************************************************
+//------------------------------------------------------------
 double  grid_1D_sphere::zone_min_length(int i)
 {
   if (i == 0) return (r_out[i] - r_inner);
@@ -106,9 +110,9 @@ double  grid_1D_sphere::zone_min_length(int i)
 
 
 
-//************************************************************
+//------------------------------------------------------------
 // sample a random position within the spherical shell
-//************************************************************
+//------------------------------------------------------------
 void grid_1D_sphere::sample_in_zone
 (int i, std::vector<double> ran, double r[3])
 {
@@ -135,9 +139,9 @@ void grid_1D_sphere::sample_in_zone
 
 
 
-//************************************************************
+//------------------------------------------------------------
 // get the velocity vector 
-//************************************************************
+//------------------------------------------------------------
 void grid_1D_sphere::velocity_vector(int i, double x[3], double v[3])
 {
   // radius in zone

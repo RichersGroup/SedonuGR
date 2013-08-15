@@ -22,10 +22,11 @@ void photons::myInit(Lua* lua)
   // read opacity parameters
   gray_abs_opac  = lua->scalar<double>("gray_abs_opacity");
   gray_scat_opac = lua->scalar<double>("gray_scat_opacity");
+  eps            = lua->scalar<double>("epsilon");
   double nu_start = lua->scalar<double>("nu_start");
   double nu_stop  = lua->scalar<double>("nu_stop");
   int      n_nu   = lua->scalar<int>("n_nu");
-  
+
   // initialize the  frequency grid
   nu_grid.init(nu_start,nu_stop,n_nu);
 

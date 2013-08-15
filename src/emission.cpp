@@ -11,7 +11,8 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 void transport::emit_particles(double dt)
 {
-  if (this->n_inject > 0) emit_inner_source(dt);
+  if(n_inject > 0) emit_inner_source(dt);
+  // TODO - implement emitting from zones
 }
 
 

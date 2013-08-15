@@ -17,17 +17,6 @@ void species_general::init(Lua* lua, transport* simulation)
 }
 
 
-double species_general::sample_core_nu()
-{
-  // sample to find the frequency bin to use
-  double z = gsl_rng_uniform(sim->rangen);
-  int ilam = core_emis.sample(z);
-
-  // sample uniformily in selected frequency bin 
-  z = gsl_rng_uniform(sim->rangen);
-  return nu_grid.sample(ilam,z);
-}
-
 //------------------------------------------------------------
 // get the doppler shift from lab to comoving
 //------------------------------------------------------------
@@ -132,10 +121,33 @@ void species_general::lorentz_transform(particle &p, double sign)
 
 
 //----------------------------------------------------------------
+// return a randomly sampled frequency
+// for a particle emitted from the core
+//----------------------------------------------------------------
+double species_general::sample_core_nu()
+{
+  // sample to find the frequency bin to use
+  double z = gsl_rng_uniform(sim->rangen);
+  int ilam = core_emis.sample(z);
+
+  // sample uniformily in selected frequency bin 
+  z = gsl_rng_uniform(sim->rangen);
+  return nu_grid.sample(ilam,z);
+}
+
+//----------------------------------------------------------------
+// return a randomly sampled frequency
+// for a particle emitted from a zone
 //----------------------------------------------------------------
 double species_general::sample_zone_nu(int zone_index)
 {
-  
+  // sample to find the frequency bin to use
+  double z = gsl_rng_uniform(sim->rangen);
+  int ilam = emis[zone_index].sample(z);
+
+  // sample uniformily in selected frequency bin 
+  z = gsl_rng_uniform(sim->rangen);
+  return nu_grid.sample(ilam,z);
 }
 
 
@@ -144,7 +156,7 @@ double species_general::sample_zone_nu(int zone_index)
 //----------------------------------------------------------------
 double species_general::int_core_emis()
 {
-  // TODO - implement photons::net_core_emis
+  return core_emis.get_N();
 }
 
 //----------------------------------------------------------------
@@ -152,7 +164,7 @@ double species_general::int_core_emis()
 //----------------------------------------------------------------
 double species_general::int_zone_emis(int zone_index)
 {
-  // TODO - implement photons::net_zone_emis
+  return emis[zone_index].get_N();
 }
 
 
@@ -185,7 +197,7 @@ ParticleFate species_general::propagate(particle &p, double dt)
   ParticleFate  fate = moving;
 
   // time of end of timestep
-  double tstop = t_now + dt;
+  double tstop = sim->t_now + dt;
 
   // local variables
   double tau_r,d_sc,d_tm,this_d;
@@ -207,7 +219,7 @@ ParticleFate species_general::propagate(particle &p, double dt)
 
     // get local opacity and absorption fraction (epsilon)
     double e,a,s;
-    get_eas(p,dshift,e,a,s);
+    get_eas(p,dshift,&e,&a,&s);
     
     // convert opacity from comoving to lab frame for the purposes of 
     // determining the interaction distance in the lab frame

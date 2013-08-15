@@ -1,6 +1,9 @@
+-- what are we simulating?
+do_photons = 1
 
 -- input/output files
 
+grid_type = "grid_1D_sphere"
 model_file  =  "lucy.mod"
 output_file =  "my_lightcurve.dat"          -- output light curve file
 
@@ -33,7 +36,8 @@ T_core = 10000
 n_inject = 1e3
 
 -- opacities
-grey_opacity    =  0.1           -- optical grey opacity in cm^2/g
+gray_abs_opacity    =  0.1           -- optical grey opacity in cm^2/g
+gray_scat_opacity = -1
 epsilon         =  1.0
 
 -- opacity grid

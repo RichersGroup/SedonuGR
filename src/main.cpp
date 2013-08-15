@@ -46,8 +46,8 @@ int main(int argc, char **argv)
 
   // set up the transport module (includes the grid)
   cout << "initializing" << endl;
-  transport transport;
-  transport.init(&lua);
+  transport sim;
+  sim.init(&lua);
 
   // read in time stepping parameters
   int    n_times     = lua.scalar<int>("n_times");
@@ -76,33 +76,32 @@ int main(int argc, char **argv)
     // get this time step (ignored if iterative calc)
     if (t_step < tstep_min) t_step = tstep_min;
     if (t_step > tstep_max) t_step = tstep_max;
-    if ((tstep_del > 0)&&(t > 0)) 
-      if (t_step > t*tstep_del) t_step = t*tstep_del;
+    if ( (tstep_del>0) && (t>0) && (t_step>t*tstep_del) ) t_step = t*tstep_del;
 
     // printout time step
     if (verbose)
-      printf("%8d %12.4e %12.4e %5d\n",it,t,t_step, transport.total_particles());
+      printf("%8d %12.4e %12.4e %5d\n",it,t,t_step, sim.total_particles());
 
     // writeout zone state when appropriate 
-    if ((verbose)&&((t >= write_out*iw)||(iterate)))
+    if ( verbose && ( (t>=write_out*iw) || (iterate) ) )
     {
       printf("# writing zone %d at time %e\n",iw, t);
-      transport.grid->write_zones(iw);
+      sim.grid->write_zones(iw);
       iw++;
     }
 
     // do transport step
-    transport.step(t_step);
+    sim.step(t_step);
 
     // print out spectrum in iterative calc
-    if (iterate) for(int i=0; i<transport.species_list.size(); i++)
+    if (iterate) for(int i=0; i<sim.species_list.size(); i++)
     {
       char sname[100];
       sprintf(sname,"optical_I%d.spec",it+1);
-      transport.species_list[i]->spectrum.set_name(sname);
-      transport.species_list[i]->spectrum.MPI_average();
-      transport.species_list[i]->spectrum.print();
-      transport.species_list[i]->spectrum.wipe();
+      sim.species_list[i]->spectrum.set_name(sname);
+      sim.species_list[i]->spectrum.MPI_average();
+      sim.species_list[i]->spectrum.print();
+      sim.species_list[i]->spectrum.wipe();
     }
 
     // advance time
@@ -114,9 +113,9 @@ int main(int argc, char **argv)
   // PRINT FINAL SPECTRUM AND EXIT //
   //===============================//
   // print final spectrum
-  if (!iterate) for(int i=0; i<transport.species_list.size(); i++){
-    transport.species_list[i]->spectrum.MPI_average();
-    transport.species_list[i]->spectrum.print(); 
+  if (!iterate) for(int i=0; i<sim.species_list.size(); i++){
+    sim.species_list[i]->spectrum.MPI_average();
+    sim.species_list[i]->spectrum.print(); 
   }
 
   // calculate the elapsed time 
@@ -127,8 +126,8 @@ int main(int argc, char **argv)
 	   time_wasted,time_wasted/60.0,time_wasted/60.0/60.0);
 
   // exit the program
-  delete transport.grid;
-  for(int i=0; i<transport.species_list.size(); i++) delete transport.species_list[i];
+  delete sim.grid;
+  for(int i=0; i<sim.species_list.size(); i++) delete sim.species_list[i];
   lua.close();
   MPI_Finalize();
   return 0;

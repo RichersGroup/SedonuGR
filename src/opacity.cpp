@@ -8,11 +8,11 @@
 namespace pc = physical_constants;
 
 //-----------------------------------------------------------------
-// set opacity and emissivities
+// set emissivity, abs. opacity, and scat. opacity in zones
 //-----------------------------------------------------------------
 void photons::set_eas()
 {
-  for (int i=0;i<sim->grid->z.size();i++)
+  if(gray_abs_opac <= 0) for (int i=0; i < sim->grid->z.size(); i++)
   {
     // fleck factors
     //double Tg    = sim->grid->z[i].T_gas;
@@ -40,7 +40,7 @@ void photons::set_eas()
 //-----------------------------------------------------------------
 // get opacity at the frequency
 //-----------------------------------------------------------------
-void species_general::get_eas(particle &p, double dshift, double &e, double &a, double &s)
+void species_general::get_eas(particle &p, double dshift, double* e, double* a, double* s)
 {
   // comoving frame frequency
   double nu = p.nu*dshift;
@@ -48,18 +48,18 @@ void species_general::get_eas(particle &p, double dshift, double &e, double &a, 
   // pointer to current zone
   zone *zone = &(sim->grid->z[p.ind]);
 
-  // TODO - check units
+  // TODO - better way to output variables consistently? (e is not the emissivity)
   // emissivity
-  if(eps > 0) e = eps;
-  else e = nu_grid.value_at<cdf_array>(nu,emis[p.ind]);
+  if(eps >= 0) *e = eps;
+  else *e = nu_grid.value_at<cdf_array>(nu,emis[p.ind]);
 
   // absorption opacity
-  if(gray_abs_opac > 0) a = gray_abs_opac;
-  else a = nu_grid.value_at< vector<double> >(nu,abs_opac[p.ind]);
-    
+  if(gray_abs_opac >= 0) *a = zone->rho * gray_abs_opac;
+  else *a = nu_grid.value_at< vector<double> >(nu,abs_opac[p.ind]);
+
   // scattering opacity
-  if(gray_scat_opac > 0) s = gray_scat_opac;
-  else s = nu_grid.value_at< vector<double> >(nu,scat_opac[p.ind]);
+  if(gray_scat_opac >= 0) *s = zone->rho * gray_scat_opac;
+  else *s = nu_grid.value_at< vector<double> >(nu,scat_opac[p.ind]);
 }
 
 

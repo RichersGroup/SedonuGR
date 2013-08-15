@@ -82,8 +82,8 @@ void grid_general::reduce_radiation_block(int bsize, int start)
   MPI_Allreduce(src,dst,bsize,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
   for (j=0;j<bsize;j++) z[start + j].e_abs = dst[j];
     
-  // need to put in other quantities...
-
+  // TODO - need to put in other quantities...
+  // TODO - perhaps put the radiation arrays in transport?
   delete src;
   delete dst;
 

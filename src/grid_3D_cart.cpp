@@ -60,7 +60,8 @@ void grid_3D_cart::custom_model(Lua* lua)
 
 void grid_3D_cart::read_model_file(Lua* lua)
 {
-  
+  cout << "Error: there is no model file reader for grid type grid_3D_cart." << endl;
+  exit(12);
 }
 
 //************************************************************

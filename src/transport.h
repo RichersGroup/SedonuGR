@@ -29,6 +29,7 @@ private:
   void create_isotropic_particle(int zone_index, double Ep);
   int sample_core_species();
   int sample_zone_species(int zone_index);
+  cdf_array core_species_cdf;
 
   // solve for temperature
   void   solve_eq_temperature();
@@ -53,7 +54,6 @@ public:
   int n_inject;
   double r_core;
   double L_core;
-  cdf_array core_species;
 
   // simulation parameters
   double step_size;

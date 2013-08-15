@@ -17,6 +17,11 @@
 
 namespace pc = physical_constants;
 
+//----------------------------------------------------------------------------
+// Initialize the transport module
+// Includes setting up the grid, particles,
+// and MPI work distribution
+//----------------------------------------------------------------------------
 void transport::init(Lua* lua)
 { 
   // get mpi rank
@@ -95,7 +100,10 @@ void transport::init(Lua* lua)
     exit(7);
   }
 
-  // scatter initial particles around
+  // initialize all the zone eas variables
+  for(int i=0; i<species_list.size(); i++) species_list[i]->set_eas();
+
+  // scatter initial particles in the simulation area
   int init_particles = lua->scalar<int>("init_particles");
   initialize_particles(init_particles);
 
@@ -107,11 +115,10 @@ void transport::init(Lua* lua)
   n_inject = lua->scalar<int>("n_inject");
   r_core   = lua->scalar<double>("r_core");
   L_core   = lua->scalar<double>("L_core");
-  core_species.resize(species_list.size());
+  core_species_cdf.resize(species_list.size());
   for(int i=0; i<species_list.size(); i++){
-    core_species.set_value(i, species_list[i]->int_core_emis());}
-  core_species.normalize();
-  // TODO - set emissivity before this happens
+    core_species_cdf.set_value(i, species_list[i]->int_core_emis());}
+  core_species_cdf.normalize();
 }
 
 
@@ -127,7 +134,7 @@ void transport::step(double dt)
   // nominal time for iterative calc is 1
   if (iterate) dt = 1;
   
-  // calculate opacities
+  // calculate the zone eas variables
   for(int i=0; i<species_list.size(); i++) species_list[i]->set_eas();
 
   // emit new particles
@@ -187,12 +194,12 @@ void transport::solve_eq_temperature()
 }
 
 
-//***************************************************************/
+//----------------------------------------------------------------------------
 // This is the function that expresses radiative equillibrium
 // in a cell (i.e. E_absorbed = E_emitted).  It is used in
 // The Brent solver below to determine the temperature such
 // that RadEq holds
-//**************************************************************/
+//----------------------------------------------------------------------------
 double transport::rad_eq_function(int zone_index,double T)
 {
   // total energy absorbed in zone
@@ -297,18 +304,51 @@ double transport::temp_brent_method(int cell)
   return 0.0;
 }
 
+//----------------------------------------------------------------------------
+// sum up the number of particles in all species
+//----------------------------------------------------------------------------
 int transport::total_particles()
 {
-  // sum up particles from all species
+  int total = 0;
+  for(int i=0; i<species_list.size(); i++) total += species_list[i]->size();
+  return total;
 }
 
 
+//----------------------------------------------------------------------------
+// randomly sample the nu-integrated emissivities of all
+// species to determine the species of a new particle
+// emitted from the core
+//----------------------------------------------------------------------------
 int transport::sample_core_species()
 {
-
+  // randomly sample the species (precomputed)
+  double z = gsl_rng_uniform(rangen);
+  return core_species_cdf.sample(z);
 }
 
+//----------------------------------------------------------------------------
+// randomly sample the nu-integrated emissivities of all
+// species to determine the species of a new particle
+// emitted from a zone
+//----------------------------------------------------------------------------
+// note: could store a zone_species_cdf structure in transport,
+// but this would use more memory. Here, trading CPU cycles for 
+// memory. If we are CPU limited, we could change this
 int transport::sample_zone_species(int zone_index)
 {
+  cdf_array species_cdf;
+  double integrated_emis;
 
+  // set values and normalize
+  for(int i=0; i<species_list.size(); i++)
+  {
+    integrated_emis = species_list[i]->int_zone_emis(zone_index);
+    species_cdf.set_value(i,integrated_emis);
+  }
+  species_cdf.normalize();
+
+  // randomly sample the species
+  double z = gsl_rng_uniform(rangen);
+  return species_cdf.sample(z);
 }
