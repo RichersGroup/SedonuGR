@@ -3,16 +3,12 @@
 #include <math.h>
 #include <stdio.h>
 
-enum PTYPE {photon, gammaray, positron, radioactive, neutrino};
-
 // particle class
 class particle
 {
 
 public:
   
-  PTYPE type;             // particle type 
-
   double    x[3];         // x,y,z position
   double    D[3];         // direction vector, Dx,Dy,Dz
   int        ind;         // index of the zone in grid where we are

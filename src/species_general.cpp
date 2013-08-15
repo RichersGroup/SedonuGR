@@ -286,7 +286,8 @@ ParticleFate species_general::propagate(particle &p, double dt)
       double z = gsl_rng_uniform(sim->rangen);
       
       // do photon interaction physics
-      if (p.type == photon)
+      //      if (p.type == photon)
+      // TODO - generalize this segment to multiple particles
       {
 	// see if scattered 
 	if (z > eps) isotropic_scatter(p,0);
