@@ -58,6 +58,7 @@ int main(int argc, char **argv)
   double tstep_start = lua.scalar<double>("tstep_start");
   double tstep_del   = lua.scalar<double>("tstep_del");
   double write_out   = lua.scalar<double>("write_out");
+  lua.close();
 
   // loop over time steps;
   double t = 0;
@@ -128,7 +129,6 @@ int main(int argc, char **argv)
   // exit the program
   delete sim.grid;
   for(int i=0; i<sim.species_list.size(); i++) delete sim.species_list[i];
-  lua.close();
   MPI_Finalize();
   return 0;
 }

@@ -18,6 +18,9 @@ class species_general
  protected:
 
   // this species' array of particles
+  // TODO - see if implementing via list rather than vector is more efficient
+  // with a vector, the entire structure is moved when a particle is removed,
+  // unless the particle is at the beginning or the end of the vector
   vector<particle> particles;
 
   // the frequency grid for emissivity/opacity
