@@ -216,6 +216,7 @@ double transport::rad_eq_function(int zone_index,double T)
     // held constant for this (assumed not to change
     // much from the last time step).
     E_emitted += 4.0*pc::pi * species_list[i]->int_zone_emis(zone_index);
+    // TODO - this has to adjust for temperature, or it will be an infinite loop
   }
 
   // radiative equillibrium condition: "emission equals absorbtion"
