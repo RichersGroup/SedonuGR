@@ -297,7 +297,8 @@ ParticleFate species_general::propagate(particle &p, double dt)
 	  double z2;
 	  if (sim->radiative_eq) z2 = 2;
 	  else z2 = gsl_rng_uniform(sim->rangen);
-	  // do an effective scatter
+	  // do an effective scatter (i.e. particle is absorbed
+	  // but, since we require energy in = energy out it is re-emitted)
 	  if (z2 > zone->eps_imc) isotropic_scatter(p,1);
 	  // otherwise really absorb (kill) it
 	  else fate = absorbed; 
