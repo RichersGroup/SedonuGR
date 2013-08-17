@@ -1,0 +1,3 @@
+[submodule "external/NuLib"]
+	path = external/NuLib
+	url = git://github.com/evanoconnor/NuLib.git
