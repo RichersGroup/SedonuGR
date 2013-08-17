@@ -59,7 +59,10 @@ void nulib_get_eas_arrays(real rho, real temp, real ye, int nulibID,
   int nvars    = __nulibtable_MOD_nulibtable_number_easvariables;
   int ngroups  = __nulibtable_MOD_nulibtable_number_groups;
   //  double eas_species_energy[nvars][ngroups][nspecies];
-  double eas_energy[nvars][ngroups];
+  // apparently it's valid to declare array sizes at runtime like this... if it breaks, use malloc
+  double* eas_energy = (double*) malloc(sizeof(double) * nvars*ngroups*2);
+  //double eas_energy[nvars][ngroups];
+  //for(int i=0; i<nvars; i++) for(int j=0; j<ngroups; j++) eas_energy[i][j] = i*j;
 
   //check sizes match and we are withing the table boundaries
   if(nvars != 3){
@@ -71,18 +74,19 @@ void nulib_get_eas_arrays(real rho, real temp, real ye, int nulibID,
     exit(EXIT_FAILURE);
   }
 
-  //fetch the relevant table from nulib. NuLib only accepts doubles.
+  // fetch the relevant table from nulib. NuLib only accepts doubles.
   double rhotmp = rho;
   double temptmp = temp;
   double yetmp = ye;
-  nulibtable_single_species_range_energy_(&rhotmp, &temptmp, &yetmp, &nulibID,
+  int lns = nulibID+1;
+  nulibtable_single_species_range_energy_(&rhotmp, &temptmp, &yetmp, &lns,
 					 (double*)eas_energy, &ngroups, &nvars);
 
   //fill the vectors with appropriate values
   for(int j=0; j<ngroups; j++){
-    nut_emiss.set_value(j, eas_energy[0][j]);
-    nut_absopac [j] =      eas_energy[1][j];
-    nut_scatopac[j] =      eas_energy[2][j];
+    nut_emiss.set_value(j, eas_energy[0*ngroups + j]);
+    nut_absopac [j] =      eas_energy[1*ngroups + j];
+    nut_scatopac[j] =      eas_energy[2*ngroups + j];
   }
 }
 
