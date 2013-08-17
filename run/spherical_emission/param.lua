@@ -1,5 +1,6 @@
 -- what are we simulating?
-do_photons = 1
+do_photons   = 0
+do_neutrinos = 1
 
 -- input/output files
 
@@ -32,7 +33,7 @@ iterate        = 2;   -- set to do an iterative (time independent) calc
 -- inner source
 r_core = 2e15
 L_core = 1e43
-T_core = 10000
+-- T_core = 10000
 n_inject = 1e3
 
 -- opacities
@@ -50,3 +51,9 @@ n_nu            =  500
 spec_time_grid = {1,1,1}
 spec_nu_grid =   {1e14,1e15,1e13}
 use_transport = 0
+
+-- NEUTRINOS
+nulib_table = "/home/sherwood/software/sedona/external/NuLib/NuLib_LS220.h5"
+rho_core = 1e10
+Ye_core = 0.35
+T_core = 1

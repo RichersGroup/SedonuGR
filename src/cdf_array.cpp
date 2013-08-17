@@ -107,3 +107,12 @@ double cdf_array::get_N()
 {
   return N;
 }
+
+
+//------------------------------------------------------------
+// just returning the size of the array
+//------------------------------------------------------------
+int cdf_array::size()
+{
+  return y.size();
+}

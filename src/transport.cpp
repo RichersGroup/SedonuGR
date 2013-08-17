@@ -13,7 +13,9 @@
 #include "grid_1D_sphere.h"
 #include "grid_3D_cart.h"
 #include "photons.h"
+#include "neutrinos.h"
 #include "cdf_array.h"
+#include "nulib_interface.h"
 
 namespace pc = physical_constants;
 
@@ -88,14 +90,40 @@ void transport::init(Lua* lua)
   step_size     = lua->scalar<double>("step_size");
 
   // determine which species to simulate
-  int do_photons = lua->scalar<int>("do_photons");
-  species_general* tmp;
-  if(do_photons){
-    tmp = new photons;
-    tmp->init(lua, this);
-    species_list.push_back(tmp);
+  int do_photons   = lua->scalar<int>("do_photons");
+  int do_neutrinos = lua->scalar<int>("do_neutrinos");
+
+  /**********************/
+  /**/ if(do_photons) /**/
+  /**********************/
+  {
+    photons* photons_tmp = new photons;
+    photons_tmp->init(lua, this);
+    species_list.push_back(photons_tmp);
   }
-  if(species_list.size() == 0){
+  /************************/
+  /**/ if(do_neutrinos) /**/
+  /************************/
+  {
+    // read the fortran module into memory
+    cout << "Initializing NuLib..." << endl;
+    string nulib_table = lua->scalar<string>("nulib_table");
+    nulib_init(nulib_table);
+    neutrinos* neutrinos_tmp;
+
+    // create a species for each in the nulib table
+    int num_nut_species = nulib_get_nspecies();
+    for(int i=0; i<num_nut_species; i++){
+      neutrinos_tmp = new neutrinos;
+      neutrinos_tmp->nulibID = i;
+      neutrinos_tmp->init(lua, this);
+      species_list.push_back(neutrinos_tmp);
+    }
+  }
+
+  // complain if we're not simulating anything
+  if(species_list.size() == 0)
+  {
     if(verbose) cout << "Error: you must simulate at least one species of particle." << endl;
     exit(7);
   }

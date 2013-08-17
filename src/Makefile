@@ -1,17 +1,19 @@
+#include ../make.inc
 
-CXX=mpicxx -g 
-
-GSL_BASE=$(GSL_DIR)
-GSL_INCL=-I$(GSL_BASE)/include
-GSL_LDFLAGS=-L$(GSL_BASE)/lib
-GSL_LIBS=-lgsl -lgslcblas -llua
+#GSL_BASE=$(GSL_DIR)
+#GSL_INCL=-I$(GSL_BASE)/include
+#GSL_LDFLAGS=-L$(GSL_BASE)/lib
+#GSL_LIBS=-lgsl -lgslcblas -llua
 
 TARGET = ../gomc
 
-OBJECTS = species_general.o photons.o main.o Lua.o grid_general.o grid_1D_sphere.o grid_3D_cart.o transport.o emission.o scatter.o opacity.o locate_array.o cdf_array.o spectrum_array.o
+OBJECTS = main.o Lua.o grid_general.o grid_1D_sphere.o grid_3D_cart.o emission.o scatter.o opacity.o locate_array.o cdf_array.o spectrum_array.o nulib_interface.o species_general.o photons.o transport.o neutrinos.o
+TEST_OBJECTS = Lua.o grid_general.o grid_1D_sphere.o grid_3D_cart.o transport.o emission.o scatter.o opacity.o locate_array.o cdf_array.o spectrum_array.o nulib_interface.o species_general.o photons.o neutrinos.o
 
-$(TARGET): $(OBJECTS)
-	$(CXX) $(GSL_LDFLAGS) -o $(TARGET) $(OBJECTS) $(GSL_LIBS)
+.PHONY: clean realclean
+
+$(TARGET): $(OBJECTS) test
+	$(CXX) $(GSL_LDFLAGS) -o $(TARGET) $(OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS)
 
 .cc.o: 
 	$(CXX) $(GSL_INCL) -c -o -g $@ $<
@@ -20,7 +22,11 @@ $(TARGET): $(OBJECTS)
 	cc -I. -c -o $@ $<
 
 clean:
-	rm -f $(OBJECTS) gomc
+	rm -f $(OBJECTS)
+	rm -f test.exe
 
 realclean: clean
 	rm -f $(TARGET)
+
+test: $(OBJECTS)
+	$(CXX) $(CXXFLAGS) $(GSL_LDFLAGS) -o test.exe test.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS)

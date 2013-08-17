@@ -1,2 +1,13 @@
 This directory is intended to have required external things, which you are expected to provide yourself.
 Each subdirectory has sources for the required material so it's easy to get a hold of.
+
+
+// NuLib
+If transporting neutrinos, we need to be able to calculate the neutrino opacities. We use Evan O'Connor's NuLib,
+which takes as input a tabulated equation of state and outputs neutrino opacities, emissivities, blackbody functions,
+and scattering kernels. It is publicly available at 
+
+nulib.org
+
+Required files are the table that NuLib generates (e.g. NuLib.h5) and the compiled fortran module file (nulibtable.mod).
+You will have to compile and run NuLib yourself to get the table.

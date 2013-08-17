@@ -24,6 +24,7 @@ public:
   real e_gas;           // gas energy density per gram
   real E_gas;           // gas total energy
   real T_gas;           // gas temperature
+  real Ye;              // electron fraction
 
   // store nickel mass
   real ni56;            // nickel fraction

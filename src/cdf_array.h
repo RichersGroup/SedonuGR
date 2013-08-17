@@ -35,6 +35,7 @@ public:
   void print();             
   void wipe();
   void MPI_combine(); 
+  int size();
 
 };
 
