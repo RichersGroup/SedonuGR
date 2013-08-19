@@ -44,8 +44,6 @@ int nulib_get_nspecies(){
 /* nulib_init */
 /**************/
 void nulib_init(string filename){
-  // TODO - I don't know where in memory the module sits. Hopefully in heap,
-  // but if there are problems, it may be being overwritten in the stack.
   nulibtable_reader_((char*)filename.c_str(), filename.length());
 }
 
