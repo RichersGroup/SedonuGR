@@ -1,6 +1,6 @@
 -- what are we simulating?
-do_photons   = 0
-do_neutrinos = 1
+do_photons   = 1
+do_neutrinos = 0
 
 -- input/output files
 

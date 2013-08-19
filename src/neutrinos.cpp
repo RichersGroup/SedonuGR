@@ -57,13 +57,10 @@ void neutrinos::myInit(Lua* lua)
 //-----------------------------------------------------------------
 // set emissivity, abs. opacity, and scat. opacity in zones
 //-----------------------------------------------------------------
-void neutrinos::set_eas()
+void neutrinos::set_eas(int zone_index)
 {
-  for (int i=0; i < sim->grid->z.size(); i++)
-  {
-    zone* z = &(sim->grid->z[i]);
+    zone* z = &(sim->grid->z[zone_index]);
     nulib_get_eas_arrays(z->rho, z->T_gas, z->Ye, nulibID,
-			 emis[i], abs_opac[i], scat_opac[i]);
-    emis[i].normalize();
-  }
+			 emis[zone_index], abs_opac[zone_index], scat_opac[zone_index]);
+    emis[zone_index].normalize();
 }

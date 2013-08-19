@@ -129,7 +129,9 @@ void transport::init(Lua* lua)
   }
 
   // initialize all the zone eas variables
-  for(int i=0; i<species_list.size(); i++) species_list[i]->set_eas();
+  for(int i=0; i<species_list.size(); i++) 
+    for(int j=0; j<species_list[i]->size(); j++)
+      species_list[i]->set_eas(j);
 
   // scatter initial particles in the simulation area
   int init_particles = lua->scalar<int>("init_particles");
@@ -163,7 +165,9 @@ void transport::step(double dt)
   if (iterate) dt = 1;
   
   // calculate the zone eas variables
-  for(int i=0; i<species_list.size(); i++) species_list[i]->set_eas();
+  for(int i=0; i<species_list.size(); i++) 
+    for(int j=0; j<species_list[i]->size(); j++)
+      species_list[i]->set_eas(j);
 
   // emit new particles
   emit_particles(dt);
@@ -235,16 +239,22 @@ double transport::rad_eq_function(int zone_index,double T)
   // total energy emitted (to be calculated)
   double E_emitted = 0.;
 
+  // set the zone temperature
+  grid->z[zone_index].T_gas = T;
+  
   // include the emission from all species
   for(int i=0; i<species_list.size(); i++)
   {
+    // reset the eas variables in this zone
+    // OPTIMIZE - only set the emissivity variable
+    species_list[i]->set_eas(zone_index);
+
     // integrate emisison over frequency (angle
     // integration gives the 4*PI) to get total
     // radiation energy emitted. Opacities are
     // held constant for this (assumed not to change
     // much from the last time step).
     E_emitted += 4.0*pc::pi * species_list[i]->int_zone_emis(zone_index);
-    // TODO - this has to adjust for temperature, or it will be an infinite loop
   }
 
   // radiative equillibrium condition: "emission equals absorbtion"

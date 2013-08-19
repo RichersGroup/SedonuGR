@@ -21,7 +21,7 @@ class neutrinos: public species_general
 
   // required functions
   void myInit(Lua* lua);
-  void set_eas();
+  void set_eas(int zone_index);
 };
 
 #endif

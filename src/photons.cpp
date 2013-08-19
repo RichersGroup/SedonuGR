@@ -57,28 +57,28 @@ void photons::myInit(Lua* lua)
 //-----------------------------------------------------------------
 // set emissivity, abs. opacity, and scat. opacity in zones
 //-----------------------------------------------------------------
-void photons::set_eas()
+void photons::set_eas(int zone_index)
 {
-  if(gray_abs_opac <= 0) for (int i=0; i < sim->grid->z.size(); i++)
+  if(gray_abs_opac <= 0)
   {
     // fleck factors
-    //double Tg    = sim->grid->z[i].T_gas;
-    //double fleck_beta=4.0*pc::a*pow(Tg,4)/(sim->grid->z[i].e_gas*sim->grid->z[i].rho);
-    //double tfac  = pc::c*grey_opac*epsilon*sim->grid->z[i].rho*t_step;
+    //double Tg    = sim->grid->z[zone_index].T_gas;
+    //double fleck_beta=4.0*pc::a*pow(Tg,4)/(sim->grid->z[zone_index].e_gas*sim->grid->z[zone_index].rho);
+    //double tfac  = pc::c*grey_opac*epsilon*sim->grid->z[zone_index].rho*t_step;
     //double f_imc = fleck_alpha*fleck_beta*tfac;
-    //sim->grid->z[i].eps_imc = 1.0/(1.0 + f_imc);
-    //if (sim->radiative_eq) sim->grid->z[i].eps_imc = 1.;
-    sim->grid->z[i].eps_imc = 1;
+    //sim->grid->z[zone_index].eps_imc = 1.0/(1.0 + f_imc);
+    //if (sim->radiative_eq) sim->grid->z[zone_index].eps_imc = 1.;
+    sim->grid->z[zone_index].eps_imc = 1;
 
-    zone* z = &(sim->grid->z[i]);
+    zone* z = &(sim->grid->z[zone_index]);
     for (int j=0;j<nu_grid.size();j++)
     {
       double nu  = nu_grid.x[j];
       double bb  = blackbody_nu(z->T_gas,nu);
-      abs_opac[i][j] = gray_abs_opac*z->rho;
-      emis[i].set_value(j,gray_abs_opac*bb);
+      abs_opac[zone_index][j] = gray_abs_opac*z->rho;
+      emis[zone_index].set_value(j,gray_abs_opac*bb);
     }
-    emis[i].normalize();
+    emis[zone_index].normalize();
   }
 }
 

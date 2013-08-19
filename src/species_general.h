@@ -81,7 +81,7 @@ class species_general
   double sample_zone_nu(int zone_index);
 
   // set the emissivity, absorption opacity, and scattering opacity
-  virtual void set_eas() = 0;
+  virtual void set_eas(int zone_index) = 0;
   void get_eas(particle &p, double dshift, double* e, double* a, double* s);
 
   // propagate the particles
