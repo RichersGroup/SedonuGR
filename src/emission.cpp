@@ -52,7 +52,10 @@ void transport::create_isotropic_particle(int zone_index, double Ep)
   // sample the species and frequency
   int s = sample_zone_species(zone_index);
   p.nu = species_list[s]->sample_zone_nu(zone_index);
-  
+
+  // subtract the leptons from the zone
+  grid->z[p.ind].l_abs -= species_list[s]->lepton_number * p.e/(p.nu*pc::h);
+
   // lorentz transform from the comoving to lab frame
   species_list[s]->transform_comoving_to_lab(p);
 
@@ -69,7 +72,7 @@ void transport::initialize_particles(int init_particles)
 {
   if (verbose) cout << "# initializing with " << init_particles << " particle per zone\n";
 
-  for (int i=0;i<grid->n_zones;i++)
+  for (int i=0;i<grid->z.size();i++)
   {
     // lab frame energy
     double E_zone = grid->z[i].e_rad*grid->zone_volume(i);

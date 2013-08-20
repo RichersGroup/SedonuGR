@@ -67,6 +67,7 @@ public:
   // in-simulation functions accessible to main
   void   step(double dt);
   int    total_particles();
+  void   update_composition();
 };
 
 #endif

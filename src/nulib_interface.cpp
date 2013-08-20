@@ -4,8 +4,10 @@
 #include <string.h>
 #include "zone.h"
 #include "nulib_interface.h"
+#include "physical_constants.h"
 
 using namespace std;
+namespace pc = physical_constants;
 
 // These are fortran functions and module variables in nulib.a
 extern "C"{
@@ -58,9 +60,7 @@ void nulib_get_eas_arrays(real rho, real temp, real ye, int nulibID,
   int ngroups  = __nulibtable_MOD_nulibtable_number_groups;
   //  double eas_species_energy[nvars][ngroups][nspecies];
   // apparently it's valid to declare array sizes at runtime like this... if it breaks, use malloc
-  double* eas_energy = (double*) malloc(sizeof(double) * nvars*ngroups*2);
-  //double eas_energy[nvars][ngroups];
-  //for(int i=0; i<nvars; i++) for(int j=0; j<ngroups; j++) eas_energy[i][j] = i*j;
+  double eas_energy[nvars][ngroups];
 
   //check sizes match and we are withing the table boundaries
   if(nvars != 3){
@@ -74,7 +74,9 @@ void nulib_get_eas_arrays(real rho, real temp, real ye, int nulibID,
 
   // fetch the relevant table from nulib. NuLib only accepts doubles.
   double rhotmp = rho;
-  double temptmp = temp;
+  double temptmp = temp * 1e-6*pc::k_ev; // convert temperature to MeV
+  cout << "temp(eV):" << temptmp << endl;
+  cout << "temp(K):" << temp << endl;
   double yetmp = ye;
   int lns = nulibID+1;
   nulibtable_single_species_range_energy_(&rhotmp, &temptmp, &yetmp, &lns,
@@ -82,15 +84,22 @@ void nulib_get_eas_arrays(real rho, real temp, real ye, int nulibID,
 
   //fill the vectors with appropriate values
   for(int j=0; j<ngroups; j++){
-    nut_emiss.set_value(j, eas_energy[0*ngroups + j]);
-    nut_absopac [j] =      eas_energy[1*ngroups + j];
-    nut_scatopac[j] =      eas_energy[2*ngroups + j];
+    nut_emiss.set_value(j, eas_energy[0][j]);
+    nut_absopac [j] =      eas_energy[1][j];
+    nut_scatopac[j] =      eas_energy[2][j];
   }
 }
 
 
+/*********************/
+/* nulib_get_nu_grid */
+/*********************/
 // Fill in the locate array with values of the array stored in the fortran module
 void nulib_get_nu_grid(locate_array& nu_grid){
+  // assign values from the NuLib module to nu_grid
   nu_grid.x.assign(__nulibtable_MOD_nulibtable_energies, 
 		   __nulibtable_MOD_nulibtable_energies + __nulibtable_MOD_nulibtable_number_groups);
+
+  // convert from MeV to frequency using the Planck constant
+  for(int i=0; i<nu_grid.size(); i++) nu_grid.x[i] /= pc::h;
 }

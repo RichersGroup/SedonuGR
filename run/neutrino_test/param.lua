@@ -1,11 +1,13 @@
 -- what are we simulating?
-do_photons = 1
+do_photons   = 0
+do_neutrinos = 1
 
 -- input/output files
 
 grid_type = "grid_1D_sphere"
-model_file  =  "lucy.mod"
+model_file  =  "neutrino_test.mod"
 output_file =  "my_lightcurve.dat"          -- output light curve file
+nulib_table = "../../external/NuLib/NuLib_LS220.h5"
 
 -- time stepping (all times in days)
 day = 3600.0*24
@@ -29,24 +31,21 @@ step_size          = 0.4
 radiative_eq   = 1;   -- set 
 iterate        = 2;   -- set to do an iterative (time independent) calc
 
+-- opacity parameters
+grey_opacity = -1  -- grey opacity - set to negative to turn off
+epsilon      = -1  -- absorption fraction - set to negative to turn off
+
 -- inner source
-r_core = 2e15
+r_core = 12e5
 L_core = 1e43
-T_core = 10000
+T_core = 3.5e11  -- 30 MeV
 n_inject = 1e3
-
--- opacities
-gray_abs_opacity    =  0.1           -- optical grey opacity in cm^2/g
-gray_scat_opacity = -1
-epsilon         =  1.0
-
--- opacity grid
-nu_start        =  2e13
-nu_stop         =  1e15
-n_nu            =  500
-
+rho_core = 3e14
+Ye_core = 0.35
 
 -- output spectrum
 spec_time_grid = {1,1,1}
 spec_nu_grid =   {1e14,1e15,1e13}
 use_transport = 0
+
+

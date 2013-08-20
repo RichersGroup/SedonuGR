@@ -39,6 +39,8 @@ public:
   real fz_rad;     // radiation z-force in lab frame
   real eps_imc;    // fleck factor effective absorption
 
+  real l_abs;      // lepton number deposition density rate (cm^-3 s^-1)
+
   // four force vector in lab frame
   real G1, G2, G3;
 

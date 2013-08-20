@@ -57,8 +57,10 @@ void grid_1D_sphere::read_model_file(Lua* lua)
     if(i==0) r0 = r_inner;
     else r0 = r_out[i-1];
     vol[i] = 4.0*pc::pi/3.0*(r_out[i]*r_out[i]*r_out[i] - r0*r0*r0);
+
+    z[i].Ye = 0.35; // TODO - make this part of the model generator
   }
-  
+
   infile.close();
 }
 

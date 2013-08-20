@@ -217,23 +217,23 @@ ParticleFate species_general::propagate(particle &p, double dt)
     // doppler shift from comoving to lab
     double dshift = dshift_comoving_to_lab(p);
 
-    // get local opacity and absorption fraction (epsilon)
-    double e,a,s;
-    get_eas(p,dshift,&e,&a,&s);
-    
+    // get local opacity and absorption fraction
+    double opac, abs_frac;
+    get_opacity(p,dshift,&opac,&abs_frac);
+
     // convert opacity from comoving to lab frame for the purposes of 
     // determining the interaction distance in the lab frame
     // This corresponds to equation 90.8 in Mihalas&Mihalas. You multiply 
     // the comoving opacity by nu_0 over nu, which is why you
     // multiply by dshift instead of dividing by dshift here
-    a = a*dshift;
+    double opac_lab = opac*dshift;
 
     // random optical depth to next interaction
     tau_r = -1.0*log(1 - gsl_rng_uniform(sim->rangen));
     
     // step size to next interaction event
-    d_sc  = tau_r/a;
-    if (a == 0) d_sc = INFINITY;
+    d_sc  = tau_r/opac_lab;
+    if (opac_lab == 0) d_sc = INFINITY;
     if (d_sc < 0) cout << "ERROR: negative interaction distance!\n" << endl;
 
     // find distance to end of time step
@@ -258,14 +258,19 @@ ParticleFate species_general::propagate(particle &p, double dt)
     double this_E = p.e*this_d; 
     zone->e_rad += this_E; 
 
-    // shift opacity back to comoving frame for energy and momentum exchange. 
-    // Radiation energy is still lab frame
-    a = a / dshift;
-
     // store absorbed energy in *comoving* frame 
     // (will turn into rate by dividing by dt later)
     // Extra dshift definitely needed here (two total)
-    zone->e_abs  += this_E*dshift*(a)*eps*zone->eps_imc * dshift; 
+    // to convert both p.e and this_d to the comoving frame
+    double this_E_comoving = this_E * dshift * dshift;
+    zone->e_abs += this_E_comoving * (opac*abs_frac*zone->eps_imc); 
+
+    // store absorbed lepton number (same in both frames, except for the
+    // factor of this_d which is divided out later
+    if(lepton_number != 0){
+      double this_l_comoving = lepton_number * p.e/(p.nu*pc::h) * this_d*dshift;
+      zone->l_abs += this_l_comoving * (opac*abs_frac*zone->eps_imc);
+    }
 
     // put back in radiation force tally here
     // fx_rad =
@@ -285,24 +290,21 @@ ParticleFate species_general::propagate(particle &p, double dt)
       // random number to check for scattering or absorption
       double z = gsl_rng_uniform(sim->rangen);
       
-      // do photon interaction physics
-      //      if (p.type == photon)
-      // TODO - generalize this segment to multiple particles
+      // decide whether to scatter
+      if (z > abs_frac) isotropic_scatter(p,0);
+      // or absorb
+      else
       {
-	// see if scattered 
-	if (z > eps) isotropic_scatter(p,0);
-	else
-	{
-	  // check for effective scattering
-	  double z2;
-	  if (sim->radiative_eq) z2 = 2;
-	  else z2 = gsl_rng_uniform(sim->rangen);
-	  // do an effective scatter (i.e. particle is absorbed
-	  // but, since we require energy in = energy out it is re-emitted)
-	  if (z2 > zone->eps_imc) isotropic_scatter(p,1);
-	  // otherwise really absorb (kill) it
-	  else fate = absorbed; 
-	}
+	// check for effective scattering
+	double z2;
+	if (sim->radiative_eq) z2 = 2;
+	else z2 = gsl_rng_uniform(sim->rangen);
+
+	// do an effective scatter (i.e. particle is absorbed
+	// but, since we require energy in = energy out it is re-emitted)
+	if (z2 > zone->eps_imc) isotropic_scatter(p,1);
+	// otherwise really absorb (kill) it
+	else fate = absorbed; 
       }
     }
     

@@ -39,7 +39,7 @@ void grid_3D_cart::custom_model(Lua* lua)
   else min_ds = dz;
 
   // allocate zones
-  n_zones = nx*ny*nz;
+  int n_zones = nx*ny*nz;
   z.resize(n_zones);
 
   // get a reverse map to x,y,z indices

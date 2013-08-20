@@ -42,7 +42,6 @@ class grid_general
 
   // vector of zones
   std::vector<zone> z;
-  int n_zones;
 
   // mpi reduce quantities
   void reduce_radiation();

@@ -12,6 +12,7 @@
 #include "Lua.h"
 #include "grid_1D_sphere.h"
 #include "grid_3D_cart.h"
+#include "species_general.h"
 #include "photons.h"
 #include "neutrinos.h"
 #include "cdf_array.h"
@@ -173,7 +174,7 @@ void transport::step(double dt)
   emit_particles(dt);
 
   // clear the tallies of the radiation quantities in each zone
-  for (int i=0;i<grid->n_zones;i++) 
+  for (int i=0;i<grid->z.size();i++) 
   {
     grid->z[i].e_rad  = 0;
     grid->z[i].e_rad  = 0;
@@ -181,13 +182,14 @@ void transport::step(double dt)
     grid->z[i].fx_rad = 0;
     grid->z[i].fy_rad = 0;
     grid->z[i].fz_rad = 0;
+    grid->z[i].l_abs  = 0;
   }
 
   // Propagate the particles
   for(int i=0; i<species_list.size(); i++) species_list[i]->propagate_particles(dt);
 
   // properly normalize the radiative quantities
-  for (int i=0;i<grid->n_zones;i++) 
+  for (int i=0;i<grid->z.size();i++) 
   {
     double vol = grid->zone_volume(i);
     grid->z[i].e_rad   /= vol*pc::c*dt;
@@ -195,6 +197,7 @@ void transport::step(double dt)
     grid->z[i].fx_rad  /= vol*pc::c*dt; 
     grid->z[i].fy_rad  /= vol*pc::c*dt;
     grid->z[i].fz_rad  /= vol*pc::c*dt;
+    grid->z[i].l_abs   /= vol*dt;
   }
 
   // MPI reduce the tallies and put in place
@@ -203,6 +206,9 @@ void transport::step(double dt)
   // solve for T_gas structure if radiative eq. applied
   if (radiative_eq) solve_eq_temperature();
    
+  // apply changes to composition
+  update_composition();
+
   // advance time step
   if (!iterate) t_now += dt;
 }
@@ -215,7 +221,7 @@ void transport::step(double dt)
 void transport::solve_eq_temperature()
 {
   // wipe temperature structure
-  for (int i=0;i<grid->n_zones;i++) grid->z[i].T_gas = 0;
+  for (int i=0;i<grid->z.size();i++) grid->z[i].T_gas = 0;
 
   // solve radiative equilibrium temperature
   for (int i=this->my_zone_start;i<this->my_zone_end;i++)
@@ -390,4 +396,26 @@ int transport::sample_zone_species(int zone_index)
   // randomly sample the species
   double z = gsl_rng_uniform(rangen);
   return species_cdf.sample(z);
+}
+
+
+//--------------------//
+// update_composition //
+//--------------------//
+void transport::update_composition()
+{
+  double lepton_density;
+  for(int i=0; i<grid->z.size(); i++)
+  {
+    // first find what the lepton density was throughout the timestep
+    // ACCURACY - note this assumes that m_n = m_p to avoid subtractive cancellation issues.
+    // reduces accuracy of Ye to about .15%
+    lepton_density = grid->z[i].rho/pc::m_p * grid->z[i].Ye ;
+
+    // then add l_abs (which was previously divided by the zone volume
+    lepton_density += grid->z[i].l_abs;
+
+    // convert back into electron fraction
+    grid->z[i].Ye = lepton_density*pc::m_p / grid->z[i].rho;
+  }
 }

@@ -17,7 +17,6 @@ class neutrinos: public species_general
 
   int num_nut_species;
   int nulibID;
-  int electron_number;
 
   // required functions
   void myInit(Lua* lua);

@@ -21,12 +21,11 @@ void neutrinos::myInit(Lua* lua)
   spectrum.set_name("neutrino_spectrum.dat");
 
   // read opacity parameters
-  gray_abs_opac  = lua->scalar<double>("gray_abs_opacity");
-  gray_scat_opac = lua->scalar<double>("gray_scat_opacity");
-  eps            = lua->scalar<double>("epsilon");
-  if(nulibID == 0) electron_number = 1;
-  else if (nulibID == 1) electron_number = -1;
-  else electron_number = 0;
+  grey_opac = lua->scalar<double>("grey_opacity");
+  eps       = lua->scalar<double>("epsilon");
+  if(nulibID == 0) lepton_number = 1;
+  else if (nulibID == 1) lepton_number = -1;
+  else lepton_number = 0;
 
   // read in the frequency table
   nulib_get_nu_grid(nu_grid);

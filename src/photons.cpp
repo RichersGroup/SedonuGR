@@ -11,6 +11,9 @@ using namespace std;
 //----------------------------------------------------------------
 void photons::myInit(Lua* lua)
 {
+  // poison unused zone properties
+  for(int i=0; i<sim->grid->z.size(); i++) sim->grid->z[i].Ye = -1.0e99;
+
   // intialize output spectrum
   std::vector<double>stg = lua->vector<double>("spec_time_grid");
   std::vector<double>sng = lua->vector<double>("spec_nu_grid");
@@ -20,19 +23,19 @@ void photons::myInit(Lua* lua)
   spectrum.set_name("optical_spectrum.dat");
 
   // read opacity parameters
-  gray_abs_opac  = lua->scalar<double>("gray_abs_opacity");
-  gray_scat_opac = lua->scalar<double>("gray_scat_opacity");
-  eps            = lua->scalar<double>("epsilon");
+  grey_opac       = lua->scalar<double>("grey_opacity");
+  eps             = lua->scalar<double>("epsilon");
   double nu_start = lua->scalar<double>("nu_start");
   double nu_stop  = lua->scalar<double>("nu_stop");
   int      n_nu   = lua->scalar<int>("n_nu");
+  lepton_number   = 0;
 
   // initialize the  frequency grid
   nu_grid.init(nu_start,nu_stop,n_nu);
 
   // allocate space for the grid eas spectrum containers
-  if(gray_abs_opac <=0)  abs_opac.resize(sim->grid->z.size());
-  if(gray_scat_opac<=0) scat_opac.resize(sim->grid->z.size());
+  if(grey_opac <= 0) abs_opac.resize(sim->grid->z.size());
+  if(eps           <= 0) scat_opac.resize(sim->grid->z.size());
   emis.resize(sim->grid->z.size());
 
   // now allocate space for each eas spectrum
@@ -59,7 +62,7 @@ void photons::myInit(Lua* lua)
 //-----------------------------------------------------------------
 void photons::set_eas(int zone_index)
 {
-  if(gray_abs_opac <= 0)
+  if(grey_opac <= 0)
   {
     // fleck factors
     //double Tg    = sim->grid->z[zone_index].T_gas;
@@ -75,8 +78,8 @@ void photons::set_eas(int zone_index)
     {
       double nu  = nu_grid.x[j];
       double bb  = blackbody_nu(z->T_gas,nu);
-      abs_opac[zone_index][j] = gray_abs_opac*z->rho;
-      emis[zone_index].set_value(j,gray_abs_opac*bb);
+      abs_opac[zone_index][j] = grey_opac*z->rho;
+      emis[zone_index].set_value(j,grey_opac*eps*bb);
     }
     emis[zone_index].normalize();
   }

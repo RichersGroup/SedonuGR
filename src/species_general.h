@@ -34,10 +34,9 @@ class species_general
   vector< vector<double> > abs_opac;
   vector< vector<double> > scat_opac;
 
-  // gray opacities to be used if desired
-  double eps;            // emissivity, for use with Kirchoff's law
-  double gray_abs_opac;
-  double gray_scat_opac;
+  // grey opacity and absorption fraction
+  double grey_opac;
+  double eps;
 
   // transformation functions
   void   lorentz_transform(particle &p, double);
@@ -50,11 +49,15 @@ class species_general
   // scattering functions
   ParticleFate propagate(particle& p, double dt);
   void isotropic_scatter(particle& p, int redistribute);
-  
+
  public:
 
   // this species' spectrum
   spectrum_array spectrum;
+
+  // lepton number (the particle property. really just 'electron number' used for
+  // calculating changes to Ye. 1, -1, or 0)
+  int lepton_number;
 
   // add a particle to the list
   void add_particle(particle &p){ particles.push_back(p);}
@@ -82,7 +85,7 @@ class species_general
 
   // set the emissivity, absorption opacity, and scattering opacity
   virtual void set_eas(int zone_index) = 0;
-  void get_eas(particle &p, double dshift, double* e, double* a, double* s);
+  void get_opacity(particle &p, double dshift, double* opac, double* abs_frac);
 
   // propagate the particles
   void propagate_particles(double dt);

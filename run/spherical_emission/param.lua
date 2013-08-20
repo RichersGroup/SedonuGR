@@ -1,6 +1,6 @@
 -- what are we simulating?
-do_photons   = 1
-do_neutrinos = 0
+do_photons = 1
+do_neutrinos=0
 
 -- input/output files
 
@@ -33,13 +33,12 @@ iterate        = 2;   -- set to do an iterative (time independent) calc
 -- inner source
 r_core = 2e15
 L_core = 1e43
--- T_core = 10000
+T_core = 10000
 n_inject = 1e3
 
 -- opacities
-gray_abs_opacity    =  0.1           -- optical grey opacity in cm^2/g
-gray_scat_opacity = -1
-epsilon         =  1.0
+grey_opacity    =  0.1           -- optical grey opacity in cm^2/g
+epsilon         =  1.0           -- absorption fraction
 
 -- opacity grid
 nu_start        =  2e13
@@ -51,9 +50,3 @@ n_nu            =  500
 spec_time_grid = {1,1,1}
 spec_nu_grid =   {1e14,1e15,1e13}
 use_transport = 0
-
--- NEUTRINOS
-nulib_table = "/home/sherwood/software/sedona/external/NuLib/NuLib_LS220.h5"
-rho_core = 1e10
-Ye_core = 0.35
-T_core = 1
