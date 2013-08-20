@@ -75,10 +75,8 @@ void nulib_get_eas_arrays(real rho, real temp, real ye, int nulibID,
   // fetch the relevant table from nulib. NuLib only accepts doubles.
   double rhotmp = rho;
   double temptmp = temp * 1e-6*pc::k_ev; // convert temperature to MeV
-  cout << "temp(eV):" << temptmp << endl;
-  cout << "temp(K):" << temp << endl;
   double yetmp = ye;
-  int lns = nulibID+1;
+  int lns = nulibID+1;                   // fortran array indices start with 1
   nulibtable_single_species_range_energy_(&rhotmp, &temptmp, &yetmp, &lns,
 					 (double*)eas_energy, &ngroups, &nvars);
 
