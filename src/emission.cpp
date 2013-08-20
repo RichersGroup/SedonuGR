@@ -138,6 +138,9 @@ void transport::emit_inner_source(double dt)
 
     // get index of current zone
     p.ind = grid->get_zone(p.x);
+    if(p.ind < 0){
+      cout << "WARNING: particle spawned with emit_inner_source is outside the grid" << endl;
+    }
 
     // sample the species and frequency
     int s = sample_core_species();

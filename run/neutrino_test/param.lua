@@ -36,7 +36,7 @@ grey_opacity = -1  -- grey opacity - set to negative to turn off
 epsilon      = -1  -- absorption fraction - set to negative to turn off
 
 -- inner source
-r_core = 12e5
+r_core = 12e3
 L_core = 1e43
 T_core = 3.5e11  -- 30 MeV
 n_inject = 1e3
