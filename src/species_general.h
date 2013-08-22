@@ -52,6 +52,9 @@ class species_general
 
  public:
 
+  // name
+  string name;
+
   // this species' spectrum
   spectrum_array spectrum;
 
@@ -76,6 +79,7 @@ class species_general
 
   // return the emissivity integrated over frequency at a zone
   double int_zone_emis(int zone_index);
+  double int_zone_lepton_emis(int zone_index);
 
   // return the frequency of a particle emitted from the core
   double sample_core_nu();
@@ -92,6 +96,10 @@ class species_general
 
   // return size of particle vector
   int size() { return particles.size();}
+
+  // min and max values for the Brent solver
+  double T_min,  T_max;
+  double Ye_min, Ye_max;
 };
 
 

@@ -168,6 +168,20 @@ double species_general::int_zone_emis(int zone_index)
 }
 
 
+//----------------------------------------------------------------
+// return the lepton emissivity integrated over nu for a zone
+//----------------------------------------------------------------
+double species_general::int_zone_lepton_emis(int zone_index)
+{
+  double l_emis = 0;
+  for(int i=0; i<emis[zone_index].size(); i++)
+  {
+    l_emis += lepton_number * emis[zone_index].get_value(i) / (pc::h*nu_grid.x[i]);
+  }
+  return l_emis;
+}
+
+
 void species_general::propagate_particles(double dt)
 {
   vector<particle>::iterator pIter = particles.begin();
@@ -181,8 +195,11 @@ void species_general::propagate_particles(double dt)
       else pIter++;
     }
   double per_esc = (100.0*n_escape)/n_active;
-  if (sim->verbose && sim->iterate) cout << "# Percent escaped = " << per_esc << endl;
-  spectrum.rescale(1.0/per_esc);
+  if (sim->verbose && sim->iterate){
+    if(n_active>0) cout << "# " << per_esc << "% of the " << name << " escaped" << endl;
+    else cout << "# " << "No active " << name << endl;
+  }
+  if(per_esc>0) spectrum.rescale(1.0/per_esc);
 }
 
 //--------------------------------------------------------
@@ -234,7 +251,10 @@ ParticleFate species_general::propagate(particle &p, double dt)
     // step size to next interaction event
     d_sc  = tau_r/opac_lab;
     if (opac_lab == 0) d_sc = INFINITY;
-    if (d_sc < 0) cout << "ERROR: negative interaction distance!\n" << endl;
+    if (d_sc < 0){
+      cout << "ERROR: negative interaction distance!\n" << endl;
+      //exit(15);
+    }
 
     // find distance to end of time step
     d_tm = (tstop - p.t)*pc::c;

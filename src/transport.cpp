@@ -91,8 +91,8 @@ void transport::init(Lua* lua)
   step_size     = lua->scalar<double>("step_size");
 
   // determine which species to simulate
-  int do_photons   = lua->scalar<int>("do_photons");
-  int do_neutrinos = lua->scalar<int>("do_neutrinos");
+  do_photons   = lua->scalar<int>("do_photons");
+  do_neutrinos = lua->scalar<int>("do_neutrinos");
 
   /**********************/
   /**/ if(do_photons) /**/
@@ -117,6 +117,7 @@ void transport::init(Lua* lua)
     for(int i=0; i<num_nut_species; i++){
       neutrinos_tmp = new neutrinos;
       neutrinos_tmp->nulibID = i;
+      neutrinos_tmp->num_nut_species = num_nut_species;
       neutrinos_tmp->init(lua, this);
       species_list.push_back(neutrinos_tmp);
     }
@@ -129,9 +130,32 @@ void transport::init(Lua* lua)
     exit(7);
   }
 
+  // set global min/max values
+  T_min  = species_list[0]->T_min;
+  T_max  = species_list[0]->T_max;
+  Ye_min = species_list[0]->Ye_min;
+  Ye_max = species_list[0]->Ye_max;
+  for(int i=0; i<species_list.size(); i++)
+  {
+    if(species_list[i]->T_min < T_min) T_min = species_list[i]->T_min;
+    if(species_list[i]->T_max > T_max) T_max = species_list[i]->T_max;
+    if(species_list[i]->Ye_min < Ye_min) Ye_min = species_list[i]->Ye_min;
+    if(species_list[i]->Ye_max > Ye_max) Ye_max = species_list[i]->Ye_max;
+  }
+  if(T_min >= T_max){
+    cout << "ERROR: invalid temperature range." << endl;
+    exit(14);
+  }
+  if(Ye_min >= Ye_max && do_neutrinos){
+    cout << "ERROR: invalid Ye range." << endl;
+    exit(14);
+  }
+  cout << "global T_min is " << T_min << endl;
+  cout << "global T_max is " << T_max << endl;
+
   // initialize all the zone eas variables
   for(int i=0; i<species_list.size(); i++) 
-    for(int j=0; j<species_list[i]->size(); j++)
+    for(int j=0; j<grid->z.size(); j++)
       species_list[i]->set_eas(j);
 
   // scatter initial particles in the simulation area
@@ -167,7 +191,7 @@ void transport::step(double dt)
   
   // calculate the zone eas variables
   for(int i=0; i<species_list.size(); i++) 
-    for(int j=0; j<species_list[i]->size(); j++)
+    for(int j=0; j<grid->z.size(); j++)
       species_list[i]->set_eas(j);
 
   // emit new particles
@@ -204,10 +228,10 @@ void transport::step(double dt)
   grid->reduce_radiation();
 
   // solve for T_gas structure if radiative eq. applied
-  if (radiative_eq) solve_eq_temperature();
+  if (radiative_eq) solve_eq_zone_values();
    
   // apply changes to composition
-  update_composition();
+  //update_composition();
 
   // advance time step
   if (!iterate) t_now += dt;
@@ -215,20 +239,40 @@ void transport::step(double dt)
 
 
 
-//-------------------------------------------------------------
-//  Solve for the temperature assuming radiative equilibrium
-//-------------------------------------------------------------
-void transport::solve_eq_temperature()
+//----------------------------------------------------------------------------
+// This is the function that expresses radiative equillibrium
+// in a cell (i.e. E_absorbed = E_emitted).  It is used in
+// The Brent solver below to determine the temperature such
+// that RadEq holds
+//----------------------------------------------------------------------------
+double temp_eq_function(int zone_index, double T, transport* sim)
 {
-  // wipe temperature structure
-  for (int i=0;i<grid->z.size();i++) grid->z[i].T_gas = 0;
+  // total energy absorbed in zone
+  double E_absorbed = sim->grid->z[zone_index].e_abs;
+  // total energy emitted (to be calculated)
+  double E_emitted = 0.;
 
-  // solve radiative equilibrium temperature
-  for (int i=this->my_zone_start;i<this->my_zone_end;i++)
-    grid->z[i].T_gas = temp_brent_method(i);
+  // set the zone temperature
+  sim->grid->z[zone_index].T_gas = T;
+  
+  // include the emission from all species
+  for(int i=0; i<sim->species_list.size(); i++)
+  {
+    // reset the eas variables in this zone
+    // OPTIMIZE - only set the emissivity variable
+    sim->species_list[i]->set_eas(zone_index);
 
-  // mpi reduce the results
-  grid->reduce_T_gas();
+    // integrate emisison over frequency (angle
+    // integration gives the 4*PI) to get total
+    // radiation energy emitted. Opacities are
+    // held constant for this (assumed not to change
+    // much from the last time step).
+    E_emitted += 4.0*pc::pi * sim->species_list[i]->int_zone_emis(zone_index);
+  }
+  
+  // radiative equillibrium condition: "emission equals absorbtion"
+  // return to Brent function to iterate this to zero
+  return (E_emitted - E_absorbed);
 }
 
 
@@ -238,35 +282,76 @@ void transport::solve_eq_temperature()
 // The Brent solver below to determine the temperature such
 // that RadEq holds
 //----------------------------------------------------------------------------
-double transport::rad_eq_function(int zone_index,double T)
+double Ye_eq_function(int zone_index, double Ye, transport* sim)
 {
   // total energy absorbed in zone
-  double E_absorbed = grid->z[zone_index].e_abs;
+  double l_absorbed = sim->grid->z[zone_index].l_abs;
   // total energy emitted (to be calculated)
-  double E_emitted = 0.;
+  double l_emitted = 0.;
 
   // set the zone temperature
-  grid->z[zone_index].T_gas = T;
+  sim->grid->z[zone_index].Ye = Ye;
   
   // include the emission from all species
-  for(int i=0; i<species_list.size(); i++)
+  for(int i=0; i<sim->species_list.size(); i++)
   {
     // reset the eas variables in this zone
     // OPTIMIZE - only set the emissivity variable
-    species_list[i]->set_eas(zone_index);
+    sim->species_list[i]->set_eas(zone_index);
 
     // integrate emisison over frequency (angle
     // integration gives the 4*PI) to get total
     // radiation energy emitted. Opacities are
     // held constant for this (assumed not to change
     // much from the last time step).
-    E_emitted += 4.0*pc::pi * species_list[i]->int_zone_emis(zone_index);
+    l_emitted += 4.0*pc::pi * sim->species_list[i]->int_zone_lepton_emis(zone_index);
   }
 
   // radiative equillibrium condition: "emission equals absorbtion"
   // return to Brent function to iterate this to zero
-  return (E_emitted - E_absorbed);
+  return (l_emitted - l_absorbed);
 }
+
+
+//-------------------------------------------------------------
+//  Solve for the temperature assuming radiative equilibrium
+//-------------------------------------------------------------
+#define BRENT_SOLVE_TOLERANCE 1.e-2
+#define BRENT_ITMAX 100
+void transport::solve_eq_zone_values()
+{
+  double T_last,Ye_last;
+  double T_error,Ye_error;
+  int iter;
+  // solve radiative equilibrium temperature and Ye
+  // TODO - loop through this until we reach the brent tolerance for both
+  for (int i=my_zone_start; i<my_zone_end; i++)
+  {
+    iter = 0;
+    T_error  = 10*BRENT_SOLVE_TOLERANCE;
+    Ye_error = 10*BRENT_SOLVE_TOLERANCE;
+
+    // loop through solving the temperature and Ye until both are within error.
+    while(iter<=BRENT_ITMAX && (T_error>BRENT_SOLVE_TOLERANCE || Ye_error>BRENT_SOLVE_TOLERANCE))
+    {
+      T_last  = grid->z[i].T_gas;
+      Ye_last = grid->z[i].Ye;
+      grid->z[i].T_gas = brent_method(i, temp_eq_function, T_min,  T_max);
+      grid->z[i].Ye    = brent_method(i, Ye_eq_function,   Ye_min, Ye_max);
+      T_error  = fabs( (grid->z[i].T_gas - T_last ) / (T_last ) );
+      Ye_error = fabs( (grid->z[i].Ye    - Ye_last) / (Ye_last) );
+      iter++;
+    }
+
+    // warn if it didn't converge
+    if(iter == BRENT_ITMAX) cout << "WARNING: outer Brent solver hit maximum iterations." << endl;
+  }
+  
+  // mpi reduce the results
+  grid->reduce_gas();
+}
+
+
 
 
 //-----------------------------------------------------------
@@ -274,27 +359,25 @@ double transport::rad_eq_function(int zone_index,double T)
 // non-linear equation for T in rad equillibrium
 //-----------------------------------------------------------
 // definitions used for temperature solver
-#define TEMP_SOLVE_TOLERANCE 1.e-2
 #define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
-double transport::temp_brent_method(int cell)
-{  
-  int ITMAX = 100;
-  double EPS = 3.0e-8;
+double transport::brent_method(int zone_index, double (*eq_function)(int,double,transport*), double min, double max)
+{
+  double small = 3.0e-8;
   int iter;
 
   // Initial guesses
-  double a=TEMP_RANGE_MIN;
-  double b=TEMP_RANGE_MAX;
+  double a=min;
+  double b=max;
   double c=b;
   double d,e,min1,min2;
-  double fa=rad_eq_function(cell,a);
-  double fb=rad_eq_function(cell,b);
+  double fa=(*eq_function)(zone_index,a,this);
+  double fb=(*eq_function)(zone_index,b,this);
   double fc,p,q,r,s,tol1,xm;
   
   //if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0))
   //  printf("Root must be bracketed in zbrent");
   fc=fb;
-  for (iter=1;iter<=ITMAX;iter++) {
+  for (iter=1;iter<=BRENT_ITMAX;iter++) {
     if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0)) {
       c=a;
       fc=fa;
@@ -308,7 +391,7 @@ double transport::temp_brent_method(int cell)
       fb=fc;
       fc=fa;
     }
-    tol1=2.0*EPS*fabs(b)+0.5*TEMP_SOLVE_TOLERANCE;
+    tol1=2.0*small*fabs(b)+0.5*BRENT_SOLVE_TOLERANCE;
     xm=0.5*(c-b);
     if (fabs(xm) <= tol1 || fb == 0.0) return b;
     if (fabs(e) >= tol1 && fabs(fa) > fabs(fb)) {
@@ -343,9 +426,9 @@ double transport::temp_brent_method(int cell)
       b += d;
     else
       b += SIGN(tol1,xm);
-    fb=rad_eq_function(cell,b);
+    fb=(*eq_function)(zone_index,b,this);
   }
-  printf("Maximum number of iterations exceeded in zbrent");
+  printf("Maximum number of iterations exceeded in zbrent\n");
   return 0.0;
 }
 

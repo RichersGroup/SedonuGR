@@ -26,6 +26,7 @@ void locate_array::init(double start, double stop, double del)
   x.resize(n);
 
   for (int i=0;i<x.size();i++) x[i] = start + i*del;
+  do_log_interpolate = 0;
 }
 
 //---------------------------------------------------------
@@ -38,6 +39,7 @@ void locate_array::init(double start, double stop, int n)
   x.resize(n);
 
   for (int i=0;i<x.size();i++) x[i] = start + i*del;
+  do_log_interpolate = 0;
 }
 
 //---------------------------------------------------------
@@ -47,6 +49,7 @@ void locate_array::init(std::vector<double> a)
 {
   x.resize(a.size());
   for (int i=0;i<x.size();i++) x[i] = a[i];
+  do_log_interpolate = 0;
 }
 
 //---------------------------------------------------------
@@ -54,7 +57,7 @@ void locate_array::init(std::vector<double> a)
 // If off the boundaries of the array, return the
 // boundary value
 //---------------------------------------------------------
-int locate_array::locate(double z)
+int locate_array::locate(double xval)
 {
   // the degenerate case always returns 0
   if (x.size() == 1) return 0;
@@ -65,14 +68,14 @@ int locate_array::locate(double z)
   int bu = x.size()-1;               // upper bound
 
   // check if we are off the ends of the array
-  if (z >= x[bu]) return (int)x.size();
-  if (z <= x[bl]) return 0;
+  if (xval >= x[bu]) return (int)x.size();
+  if (xval <= x[bl]) return 0;
     
   // search the array for this index
   while (bu-bl > 1)
   {
     bm = (bu+bl)/2;
-    if (x[bm] <= z) bl = bm;
+    if (x[bm] <= xval) bl = bm;
     else bu = bm;
   }
   return bl;
@@ -82,28 +85,32 @@ int locate_array::locate(double z)
 //---------------------------------------------------------
 // Linear Interpolation of a passed array, find the zone
 //---------------------------------------------------------
-double locate_array::interpolate_between(double z, int i1, int i2, std::vector<double> y)
+double locate_array::interpolate_between(double xval, int i1, int i2, vector<double>& y)
 {
   double slope = (y[i2]-y[i1]) / (x[i2]-x[i1]);
-  return y[i1] + slope*(z - x[i1]);
+  double yval = y[i1] + slope*(xval - x[i1]);
+  return yval;
 }
 
 
-double locate_array::interpolate_between(double z, int i1, int i2, cdf_array y)
+//---------------------------------------------------------
+// Log-Log Interpolation of a passed array, find the zone
+//---------------------------------------------------------
+double locate_array::log_interpolate_between(double xval, int i1, int i2, vector<double>& y)
 {
-  double slope = (y.get_value(i2)-y.get_value(i1)) / (x[i2] - x[i1]);
-  return y.get_value(i1) + slope*(z - x[i1]);
+  double slope = log(y[i2]/y[i1]) / log(x[i2]/x[i1]);
+  double logyval = log(y[i1]) + slope*log(xval/x[i1]);
+  return exp(logyval);
 }
-
 
 
 //---------------------------------------------------------
 // sample uniformally in zone
 //---------------------------------------------------------
-double locate_array::sample(int i, double z)
+double locate_array::sample(int i, double xval)
 {
   if (i == x.size()) return x[i];
-  return x[i] + (x[i+1] - x[i])*z;
+  return x[i] + (x[i+1] - x[i])*xval;
 }
 
 //---------------------------------------------------------
@@ -116,3 +123,25 @@ void locate_array::print()
     printf("%4d %12.4e\n",i,x[i]);
 }
   
+
+ 
+//---------------------------------------------------------
+// find the value of y at the locate_array's value of xval
+// assumes 1-1 correspondence between y and locate_array
+//---------------------------------------------------------
+double locate_array::value_at(double xval, vector<double>& y){
+  int ind = locate(xval);
+  int i1, i2;
+  if (ind < x.size()-1){
+    i1 = ind;
+    i2 = ind + 1;
+  }
+  else{
+    i2 = ind;
+    i1 = ind - 1;
+  }
+
+  if(do_log_interpolate) return log_interpolate_between(xval, i1, i2, y);
+  else                   return     interpolate_between(xval, i1, i2, y);
+}
+

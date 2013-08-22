@@ -17,7 +17,7 @@ void grid_1D_sphere::read_model_file(Lua* lua)
 {
   // open up the model file, complaining if it fails to open
   string model_file = lua->scalar<string>("model_file");
-  std::ifstream infile;
+  ifstream infile;
   infile.open(model_file.c_str());
   if(infile.fail())
   {
@@ -31,6 +31,10 @@ void grid_1D_sphere::read_model_file(Lua* lua)
     cout << "Error: grid_type parameter disagrees with the model file." << endl;
   }
 
+  // type of system
+  string system;
+  infile >> system;
+
   // number of zones
   int n_zones;
   infile >> n_zones;
@@ -43,10 +47,11 @@ void grid_1D_sphere::read_model_file(Lua* lua)
   infile >> r_inner;
   infile >> texp;
 
-  // read zone properties
+  // read zone properties for a supernova remnant
   double r0;
-  for(int i=0; i<n_zones; i++)
+  if(system == "SNR") for(int i=0; i<n_zones; i++)
   {
+    if(i==0) cout << "Reading SNR model file..." << endl;
     infile >> r_out[i];
     infile >> z[i].rho;
     infile >> z[i].T_gas;
@@ -58,7 +63,25 @@ void grid_1D_sphere::read_model_file(Lua* lua)
     else r0 = r_out[i-1];
     vol[i] = 4.0*pc::pi/3.0*(r_out[i]*r_out[i]*r_out[i] - r0*r0*r0);
 
-    z[i].Ye = 0.35; // TODO - make this part of the model generator
+    z[i].Ye = -1e99; // poison
+  }
+
+  // read zone properties for a gamma-ray burst
+  else if(system == "GRB") for(int i=0; i<n_zones; i++)
+  {
+    if(i==0) cout << "Reading GRB model file..." << endl;
+    infile >> r_out[i];
+    infile >> z[i].rho;
+    infile >> z[i].T_gas;
+    infile >> z[i].ni56;
+
+    z[i].v[0] = 0;
+    z[i].e_rad = pc::a*pow(z[i].T_gas,4);
+    if(i==0) r0 = r_inner;
+    else r0 = r_out[i-1];
+    vol[i] = 4.0*pc::pi/3.0*(r_out[i]*r_out[i]*r_out[i] - r0*r0*r0);
+
+    z[i].Ye = 0.35; // TODO - make this part of file generator
   }
 
   infile.close();

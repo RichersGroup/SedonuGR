@@ -1,10 +1,3 @@
-#include ../make.inc
-
-#GSL_BASE=$(GSL_DIR)
-#GSL_INCL=-I$(GSL_BASE)/include
-#GSL_LDFLAGS=-L$(GSL_BASE)/lib
-#GSL_LIBS=-lgsl -lgslcblas -llua
-
 TARGET = ../gomc
 
 OBJECTS = main.o Lua.o grid_general.o grid_1D_sphere.o grid_3D_cart.o emission.o scatter.o opacity.o locate_array.o cdf_array.o spectrum_array.o nulib_interface.o species_general.o photons.o transport.o neutrinos.o

@@ -10,6 +10,7 @@ class locate_array {
 public:
 
   std::vector<double> x;
+  int do_log_interpolate;
 
   // constructors
   locate_array()  {}
@@ -33,27 +34,11 @@ public:
 
 
   int    locate(double);
-  double interpolate_between(double,int,int,std::vector<double>);
-  double interpolate_between(double,int,int,cdf_array);
+  double interpolate_between(double,int,int,std::vector<double>&);
+  double log_interpolate_between(double,int,int,std::vector<double>&);
   double sample(int, double);
   void   print();
-  
-  // Template function must be implemented in header.
-  template <typename T>
-    double value_at(double z, T y){
-    int ind = locate(z);
-    int i1, i2;
-    if (ind < x.size()-1){
-      i1 = ind;
-      i2 = ind + 1;
-    }
-    else{
-      i2 = ind;
-      i1 = ind - 1;
-    }
-    return interpolate_between(z, i1, i2, y);
-  }
-
+  double value_at(double nu, std::vector<double>& array);
 };
 
 #endif

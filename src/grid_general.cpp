@@ -17,7 +17,6 @@ using namespace std;
 //------------------------------------------------------------
 void grid_general::init(Lua* lua)
 {
-  cout << "in grid_general::init" << endl;
   // read the model file or fill in custom model
   std::string model_file = lua->scalar<std::string>("model_file");
   if(model_file == "custom_model") custom_model(lua);
@@ -100,19 +99,23 @@ void grid_general::reduce_radiation_block(int bsize, int start)
 }
 
 
-void grid_general::reduce_T_gas()
+void grid_general::reduce_gas()
 {
-  // reduce gas temperature 
   double *src_ptr = new double[z.size()];
   double *dst_ptr = new double[z.size()];
 
+  // reduce gas temperature 
   for (int i=0;i<z.size();i++) {src_ptr[i] = z[i].T_gas; dst_ptr[i] = 0.0;}
   MPI_Allreduce(src_ptr,dst_ptr,z.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
   for (int i=0;i<z.size();i++) z[i].T_gas = dst_ptr[i];
 
+  // reduce Ye
+  for (int i=0;i<z.size();i++) {src_ptr[i] = z[i].Ye; dst_ptr[i] = 0.0;}
+  MPI_Allreduce(src_ptr,dst_ptr,z.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+  for (int i=0;i<z.size();i++) z[i].Ye = dst_ptr[i];
+
   delete src_ptr;
   delete dst_ptr;
-
 }
 
 

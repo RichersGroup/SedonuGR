@@ -10,8 +10,6 @@
 //#include "species_general.h"
 
 #define MAX_PARTICLES 1000000
-#define TEMP_RANGE_MAX 1.e12
-#define TEMP_RANGE_MIN 1.
 class species_general;
 
 class transport
@@ -32,9 +30,10 @@ private:
   cdf_array core_species_cdf;
 
   // solve for temperature
-  void   solve_eq_temperature();
-  double temp_brent_method(int zone_index);
-  double rad_eq_function(int zone_index, double T);
+  void   solve_eq_zone_values();
+  double brent_method(int zone_index, double (*eq_function)(int,double,transport*), double min, double max);
+  //double temp_eq_function(int zone_index, double T);
+  //double Ye_eq_function(int zone_index, double T);
 
 public:
 
@@ -46,6 +45,10 @@ public:
 
   // current time in simulation
   double t_now;
+
+  // remember what we're simulating
+  int do_photons;
+  int do_neutrinos;
 
   // pointer to grid
   grid_general *grid;
@@ -68,6 +71,10 @@ public:
   void   step(double dt);
   int    total_particles();
   void   update_composition();
+
+  // stored minimum and maximum values for use by the Brent solver
+  double T_min,  T_max;
+  double Ye_min, Ye_max;
 };
 
 #endif

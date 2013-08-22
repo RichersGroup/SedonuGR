@@ -2,6 +2,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "zone.h"
 #include "nulib_interface.h"
 #include "physical_constants.h"
@@ -34,6 +35,10 @@ extern int __nulibtable_MOD_nulibtable_number_species;
 extern int __nulibtable_MOD_nulibtable_number_easvariables;
 extern int __nulibtable_MOD_nulibtable_number_groups;
 extern double* __nulibtable_MOD_nulibtable_energies;
+extern double __nulibtable_MOD_nulibtable_logtemp_min;
+extern double __nulibtable_MOD_nulibtable_logtemp_max;
+extern double __nulibtable_MOD_nulibtable_ye_min;
+extern double __nulibtable_MOD_nulibtable_ye_max;
 
 /**********************/
 /* nulib_get_nspecies */
@@ -100,4 +105,14 @@ void nulib_get_nu_grid(locate_array& nu_grid){
 
   // convert from MeV to frequency using the Planck constant
   for(int i=0; i<nu_grid.size(); i++) nu_grid.x[i] /= pc::h;
+  nu_grid.do_log_interpolate = 1;
 }
+
+
+/*************************/
+/* nulib_get_{*min,*max} */
+/*************************/
+double nulib_get_Tmin() {return pow(10,__nulibtable_MOD_nulibtable_logtemp_min) / (1e-6*pc::k_ev);} //convert from MeV to K
+double nulib_get_Tmax() {return pow(10,__nulibtable_MOD_nulibtable_logtemp_max) / (1e-6*pc::k_ev);} //convert from MeV to K
+double nulib_get_Yemin() {return __nulibtable_MOD_nulibtable_ye_min;}
+double nulib_get_Yemax() {return __nulibtable_MOD_nulibtable_ye_max;}

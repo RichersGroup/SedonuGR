@@ -46,7 +46,7 @@ class grid_general
   // mpi reduce quantities
   void reduce_radiation();
   void reduce_radiation_block(int, int);
-  void reduce_T_gas();
+  void reduce_gas();
 
   // set everything up
   void init(Lua* lua);

@@ -4,12 +4,15 @@
 #include <string.h>
 #include "zone.h"
 #include "nulib_interface.h"
+#include "physical_constants.h"
+
+namespace pc = physical_constants;
 
 int main(){
   using namespace std;
   //set test inputs
   real rho = 1.0e10;
-  real temp = 1.0;
+  real temp = 10.0/(1e-6*pc::k_ev);
   real ye = 0.35;
   real myenergy = 1.0;
   
@@ -47,7 +50,7 @@ int main(){
   cout << "species group emissivity absopacity scatopacity" << endl;
 
   for(int j=0; j<ng; j++){
-    cout << j << " " << nut_emiss.get(j) << " " << nut_absopac[j] << " " << nut_scattopac[j] << endl;
+    cout << j << " " << nu_grid.x[j] << " " << " " << nut_emiss.get(j) << " " << nut_absopac[j] << " " << nut_scattopac[j] << endl;
   }
 
   return 0;

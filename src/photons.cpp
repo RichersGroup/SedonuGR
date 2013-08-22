@@ -11,6 +11,9 @@ using namespace std;
 //----------------------------------------------------------------
 void photons::myInit(Lua* lua)
 {
+  // set name
+  name = "Photons";
+
   // poison unused zone properties
   for(int i=0; i<sim->grid->z.size(); i++) sim->grid->z[i].Ye = -1.0e99;
 
@@ -54,6 +57,12 @@ void photons::myInit(Lua* lua)
     core_emis.set_value(j,bb); 
   }
   core_emis.normalize();
+
+  // set photon's min and max values
+  T_min  =  1.0;
+  T_max  =  1e12;
+  Ye_min = -INFINITY;
+  Ye_max =  INFINITY;
 }
 
 
