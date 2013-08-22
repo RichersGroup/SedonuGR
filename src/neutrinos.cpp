@@ -13,16 +13,16 @@ using namespace std;
 void neutrinos::myInit(Lua* lua)
 {
   // intialize output spectrum
-  std::vector<double>stg = lua->vector<double>("spec_time_grid");
-  std::vector<double>sng = lua->vector<double>("spec_nu_grid");
-  int nmu  = lua->scalar<int>("n_mu");
-  int nphi = lua->scalar<int>("n_phi");
+  std::vector<double>stg = lua->vector<double>("nut_spec_time_grid");
+  std::vector<double>sng = lua->vector<double>("nut_spec_log_nu_grid");
+  int nmu  = lua->scalar<int>("nut_n_mu");
+  int nphi = lua->scalar<int>("nut_n_phi");
   spectrum.init(stg,sng,nmu,nphi);
   spectrum.set_name("neutrino_spectrum.dat");
 
   // read opacity parameters
-  grey_opac = lua->scalar<double>("grey_opacity");
-  eps       = lua->scalar<double>("epsilon");
+  grey_opac = lua->scalar<double>("nut_grey_opacity");
+  eps       = lua->scalar<double>("nut_epsilon");
   if(nulibID == 0){
     lepton_number = 1;
     name = "Electron Neutrinos";}
@@ -90,6 +90,8 @@ void neutrinos::myInit(Lua* lua)
 void neutrinos::set_eas(int zone_index)
 {
     zone* z = &(sim->grid->z[zone_index]);
+
+    z->eps_imc = 1;
     nulib_get_eas_arrays(z->rho, z->T_gas, z->Ye, nulibID,
 			 emis[zone_index], abs_opac[zone_index], scat_opac[zone_index]);
     emis[zone_index].normalize();

@@ -98,7 +98,7 @@ int main(int argc, char **argv)
     if (iterate) for(int i=0; i<sim.species_list.size(); i++)
     {
       char sname[100];
-      sprintf(sname,"optical_I%d.spec",it+1);
+      sprintf(sname,"species%d_I%d.spec",i,it+1);
       sim.species_list[i]->spectrum.set_name(sname);
       sim.species_list[i]->spectrum.MPI_average();
       sim.species_list[i]->spectrum.print();

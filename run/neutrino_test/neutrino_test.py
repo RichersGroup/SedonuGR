@@ -7,7 +7,7 @@ v_in = 0
 
 dx = 12*km/nx
 temp = 30*MeV
-rho = 3e14
+rho = 3e10
 
 print '1D_sphere', 'GRB',nx,v_in,t0
 

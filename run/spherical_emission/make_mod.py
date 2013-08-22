@@ -8,7 +8,7 @@ temp = 1e4;
 
 rho = 1.4*1.99e33/(4.0*3.14/3.0*xmax**3.0)
 
-print '1D_sphere',nx,v_in,t0
+print '1D_sphere','SNR',nx,v_in,t0
 
 for i  in range(1,nx+1):
     print i*dx,rho,temp,
