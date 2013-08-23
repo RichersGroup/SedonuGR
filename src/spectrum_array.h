@@ -39,6 +39,7 @@ public:
   // Initialize
   void init(std::vector<double>,std::vector<double>,std::vector<double>,std::vector<double>);
   void init(std::vector<double>,std::vector<double>,int,int);
+  void log_init(std::vector<double>,std::vector<double>,int,int);
   void set_name(const char *n);
 
   // MPI functions

@@ -17,7 +17,7 @@ void neutrinos::myInit(Lua* lua)
   std::vector<double>sng = lua->vector<double>("nut_spec_log_nu_grid");
   int nmu  = lua->scalar<int>("nut_n_mu");
   int nphi = lua->scalar<int>("nut_n_phi");
-  spectrum.init(stg,sng,nmu,nphi);
+  spectrum.log_init(stg,sng,nmu,nphi);
   spectrum.set_name("neutrino_spectrum.dat");
 
   // read opacity parameters

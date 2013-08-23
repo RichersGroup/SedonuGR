@@ -42,7 +42,7 @@ Ye_core = 0.35
 
 -- output spectrum
 nut_spec_time_grid   = {1,1,1}
-nut_spec_log_nu_grid =   {3e26,4e28,1e27}
+nut_spec_log_nu_grid =   {26,29,0.1}
 nut_n_mu             =    1           -- number of cos(theta) bins in output spectrum 
 nut_n_phi            =    1           -- number of phi bins in output spectrum
 

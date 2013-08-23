@@ -66,6 +66,49 @@ void spectrum_array::init(std::vector<double> t, std::vector<double> w,
 //--------------------------------------------------------------
 // Initialization and Allocation
 //--------------------------------------------------------------
+void spectrum_array::log_init(std::vector<double> t, std::vector<double> w,
+		    int n_mu, int n_phi)
+{
+  // assign time grid
+  double t_start = t[0];
+  double t_stop  = t[1];
+  double t_del   = t[2];
+  this->time_grid.init(t_start,t_stop,t_del);
+  int n_times  = this->time_grid.size();
+
+  // assign wave grid
+  double w_start = pow(10,w[0]);
+  double w_stop  = pow(10,w[1]);
+  double w_del   = pow(10,w[2]);
+  std::vector<double>* tmp = new std::vector<double>;
+  for(double i=w_start; i<w_stop; i*=pow(10,w_del)) tmp->push_back(i);
+  this->wave_grid.init(*tmp);
+  int n_wave   = this->wave_grid.size();
+  delete(tmp);
+
+  // asign mu grid
+  this->mu_grid.init(-1,1,n_mu);
+
+  // asign phi grid
+  this->phi_grid.init(0,2*pc::pi,n_phi);
+
+  // index parameters
+  this->n_elements  = n_times*n_wave*n_mu*n_phi;
+  this->a3 = n_phi;
+  this->a2 = n_mu*a3;
+  this->a1 = n_wave*a2;
+
+  // allocate memory
+  this->click.resize(n_elements);
+  this->flux.resize(n_elements);
+
+  // clear 
+  wipe();
+}
+
+//--------------------------------------------------------------
+// Initialization and Allocation
+//--------------------------------------------------------------
 void spectrum_array::init(std::vector<double> tg, std::vector<double> wg, 
 		    std::vector<double> mg, std::vector<double> pg)
 {
