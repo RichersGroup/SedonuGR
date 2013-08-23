@@ -81,7 +81,7 @@ void spectrum_array::log_init(std::vector<double> t, std::vector<double> w,
   double w_stop  = pow(10,w[1]);
   double w_del   = pow(10,w[2]);
   std::vector<double>* tmp = new std::vector<double>;
-  for(double i=w_start; i<w_stop; i*=pow(10,w_del)) tmp->push_back(i);
+  for(double i=w_start; i<w_stop; i*=w_del) tmp->push_back(i);
   this->wave_grid.init(*tmp);
   int n_wave   = this->wave_grid.size();
   delete(tmp);
