@@ -150,8 +150,6 @@ void transport::init(Lua* lua)
     cout << "ERROR: invalid Ye range." << endl;
     exit(14);
   }
-  cout << "global T_min is " << T_min << endl;
-  cout << "global T_max is " << T_max << endl;
 
   // initialize all the zone eas variables
   for(int i=0; i<species_list.size(); i++) 

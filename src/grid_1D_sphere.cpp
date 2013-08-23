@@ -107,8 +107,12 @@ int grid_1D_sphere::get_zone(double *x)
   if (r < r_inner) return -1;
 
   // find in zone array
-  for (long int i=0;i<r_out.size();i++) 
-    if (r < r_out[i]) return i;
+  // plus 1 b/c locate returns *lower* index and we want *upper*
+  int i = r_out.locate(r)+1;
+
+  //int size = r_out.size(); //optimizing - fewer size calls
+  //for (long int i=0;i<size;i++) 
+  if (r < r_out[i]) return i;
 
   // off outer edge
   return -2;

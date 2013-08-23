@@ -39,6 +39,10 @@ public:
   double sample(int, double);
   void   print();
   double value_at(double nu, std::vector<double>& array);
+
+  // operators for easy access
+  double& operator[] (const int i) {return x[i];};
+  void resize(int i) {x.resize(i);};
 };
 
 #endif

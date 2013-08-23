@@ -2,6 +2,7 @@
 #define _GRID_1D_SPHERE_H 1
 
 #include "grid_general.h"
+#include "locate_array.h"
 #include <vector>
 
 //*******************************************
@@ -15,7 +16,7 @@ private:
   // specifics to this geometry
   double r_inner;
   // store location of edges
-  std::vector<double> r_out;
+  locate_array r_out;
   // store volumes explicitly
   std::vector<double> vol;
 

@@ -37,8 +37,11 @@ extern int __nulibtable_MOD_nulibtable_number_groups;
 extern double* __nulibtable_MOD_nulibtable_energies;
 extern double __nulibtable_MOD_nulibtable_logtemp_min;
 extern double __nulibtable_MOD_nulibtable_logtemp_max;
+extern double __nulibtable_MOD_nulibtable_logrho_min;
+extern double __nulibtable_MOD_nulibtable_logrho_max;
 extern double __nulibtable_MOD_nulibtable_ye_min;
 extern double __nulibtable_MOD_nulibtable_ye_max;
+
 
 /**********************/
 /* nulib_get_nspecies */
@@ -82,14 +85,24 @@ void nulib_get_eas_arrays(real rho, real temp, real ye, int nulibID,
   double temptmp = temp * 1e-6*pc::k_ev; // convert temperature to MeV
   double yetmp = ye;
   int lns = nulibID+1;                   // fortran array indices start with 1
-  nulibtable_single_species_range_energy_(&rhotmp, &temptmp, &yetmp, &lns,
-					 (double*)eas_energy, &ngroups, &nvars);
-
-  //fill the vectors with appropriate values
-  for(int j=0; j<ngroups; j++){
-    nut_emiss.set_value(j, eas_energy[0][j]);
-    nut_absopac [j] =      eas_energy[1][j];
-    nut_scatopac[j] =      eas_energy[2][j];
+  
+  // If the density is too low, just set everything to zero
+  if(log10(rhotmp) < __nulibtable_MOD_nulibtable_logrho_min) 
+    for(int j=0; j<ngroups; j++){      
+      nut_emiss.set_value(j, 0);
+      nut_absopac [j] =      0;
+      nut_scatopac[j] =      0;
+    }
+  
+  // Otherwise, fill with the appropriate values
+  else{
+    nulibtable_single_species_range_energy_(&rhotmp, &temptmp, &yetmp, &lns,
+					    (double*)eas_energy, &ngroups, &nvars);
+    for(int j=0; j<ngroups; j++){
+      nut_emiss.set_value(j, eas_energy[0][j]);
+      nut_absopac [j] =      eas_energy[1][j];
+      nut_scatopac[j] =      eas_energy[2][j];
+    }
   }
 }
 

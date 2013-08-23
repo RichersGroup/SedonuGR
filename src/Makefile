@@ -6,10 +6,10 @@ TEST_OBJECTS = Lua.o grid_general.o grid_1D_sphere.o grid_3D_cart.o transport.o 
 .PHONY: clean realclean
 
 $(TARGET): $(OBJECTS) test
-	$(CXX) $(GSL_LDFLAGS) -o $(TARGET) $(OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS)
+	$(CXX) $(CXXFLAGS) $(GSL_LDFLAGS) -o $(TARGET) $(OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS)
 
 .cc.o: 
-	$(CXX) $(GSL_INCL) -c -o -g $@ $<
+	$(CXX) $(CXXFLAGS) $(GSL_INCL) -c -o -g $@ $<
 
 .c.o: 
 	cc -I. -c -o $@ $<

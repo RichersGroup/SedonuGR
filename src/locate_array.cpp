@@ -98,9 +98,9 @@ double locate_array::interpolate_between(double xval, int i1, int i2, vector<dou
 //---------------------------------------------------------
 double locate_array::log_interpolate_between(double xval, int i1, int i2, vector<double>& y)
 {
-  double slope = log(y[i2]/y[i1]) / log(x[i2]/x[i1]);
+  double slope = log(y[i2]/y[i1]) * log(x[i2]/x[i1]);
   double logyval = log(y[i1]) + slope*log(xval/x[i1]);
-  return exp(logyval);
+  return pow(logyval);
 }
 
 
