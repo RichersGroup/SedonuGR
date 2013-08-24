@@ -146,7 +146,7 @@ void grid_general::write_zones(int iw)
     double T_rad = pow(z[i].e_rad/pc::a,0.25);
     outf << T_rad << " ";
     outf << z[i].T_gas << " ";
-    
+    outf << z[i].Ye << " ";
     outf << endl;
   }
 

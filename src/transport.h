@@ -70,7 +70,6 @@ public:
   // in-simulation functions accessible to main
   void   step(double dt);
   int    total_particles();
-  void   update_composition();
 
   // stored minimum and maximum values for use by the Brent solver
   double T_min,  T_max;

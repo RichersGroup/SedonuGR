@@ -26,7 +26,7 @@ init_particles = 0
 step_size          = 0.4
 
 radiative_eq   = 1;   -- set 
-iterate        = 2;   -- set to do an iterative (time independent) calc
+iterate        = 10;   -- set to do an iterative (time independent) calc
 
 -- opacity parameters
 nut_grey_opacity = -1  -- grey opacity - set to negative to turn off
@@ -38,7 +38,7 @@ L_core = 1e43
 T_core = 3.5e11  -- 30 MeV
 n_inject = 1e3
 rho_core = 3e14
-Ye_core = 0.35
+Ye_core = 0.2
 
 -- output spectrum
 nut_spec_time_grid   = {1,1,1}

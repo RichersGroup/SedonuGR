@@ -199,7 +199,6 @@ void transport::step(double dt)
   for (int i=0;i<grid->z.size();i++) 
   {
     grid->z[i].e_rad  = 0;
-    grid->z[i].e_rad  = 0;
     grid->z[i].e_abs  = 0;
     grid->z[i].fx_rad = 0;
     grid->z[i].fy_rad = 0;
@@ -225,12 +224,9 @@ void transport::step(double dt)
   // MPI reduce the tallies and put in place
   grid->reduce_radiation();
 
-  // solve for T_gas structure if radiative eq. applied
+  // solve for T_gas and Ye structure if radiative eq. applied
   if (radiative_eq) solve_eq_zone_values();
    
-  // apply changes to composition
-  //update_composition();
-
   // advance time step
   if (!iterate) t_now += dt;
 }
@@ -477,26 +473,4 @@ int transport::sample_zone_species(int zone_index)
   // randomly sample the species
   double z = gsl_rng_uniform(rangen);
   return species_cdf.sample(z);
-}
-
-
-//--------------------//
-// update_composition //
-//--------------------//
-void transport::update_composition()
-{
-  double lepton_density;
-  for(int i=0; i<grid->z.size(); i++)
-  {
-    // first find what the lepton density was throughout the timestep
-    // ACCURACY - note this assumes that m_n = m_p to avoid subtractive cancellation issues.
-    // reduces accuracy of Ye to about .15%
-    lepton_density = grid->z[i].rho/pc::m_p * grid->z[i].Ye ;
-
-    // then add l_abs (which was previously divided by the zone volume
-    lepton_density += grid->z[i].l_abs;
-
-    // convert back into electron fraction
-    grid->z[i].Ye = lepton_density*pc::m_p / grid->z[i].rho;
-  }
 }

@@ -26,8 +26,12 @@ void species_general::get_opacity(particle &p, double dshift, double* opac, doub
 
   // output - net opacity
   *opac = a+s;
-
+  
   // output - absorption fraction
-  if(eps < 0) *abs_frac = a/(a+s);
-  else        *abs_frac = eps;
+  if(eps < 0)
+  {
+    if( (a+s)>0 ) *abs_frac = a/(a+s);
+    else *abs_frac = 0;
+  }
+  else *abs_frac = eps;
 }

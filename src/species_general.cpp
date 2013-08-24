@@ -178,7 +178,7 @@ double species_general::int_zone_lepton_emis(int zone_index)
   {
     l_emis += lepton_number * emis[zone_index].get_value(i) / (pc::h*nu_grid.x[i]);
   }
-  return l_emis;
+  return l_emis * emis[zone_index].get_N();
 }
 
 
@@ -194,6 +194,7 @@ void species_general::propagate_particles(double dt)
       if ((fate == escaped)||(fate == absorbed)) particles.erase(pIter);
       else pIter++;
     }
+
   double per_esc = (100.0*n_escape)/n_active;
   if (sim->verbose && sim->iterate){
     if(n_active>0) cout << "# " << per_esc << "% of the " << name << " escaped" << endl;
@@ -237,7 +238,7 @@ ParticleFate species_general::propagate(particle &p, double dt)
     // get local opacity and absorption fraction
     double opac, abs_frac;
     get_opacity(p,dshift,&opac,&abs_frac);
-
+    
     // convert opacity from comoving to lab frame for the purposes of 
     // determining the interaction distance in the lab frame
     // This corresponds to equation 90.8 in Mihalas&Mihalas. You multiply 
@@ -253,7 +254,8 @@ ParticleFate species_general::propagate(particle &p, double dt)
     if (opac_lab == 0) d_sc = INFINITY;
     if (d_sc < 0){
       cout << "ERROR: negative interaction distance!\n" << endl;
-      //exit(15);
+      cout << __FILE__ << ":" << __LINE__ << endl;
+      exit(15);
     }
 
     // find distance to end of time step
