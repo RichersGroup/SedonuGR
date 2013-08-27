@@ -21,6 +21,7 @@ private:
   double vol;        // volume of each zone = dx*dy*dz
   double min_ds;
   int *ix,*iy,*iz;
+  int reflect_x, reflect_y, reflect_z;
 
 public:
 
