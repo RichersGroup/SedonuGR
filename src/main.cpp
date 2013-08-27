@@ -45,7 +45,7 @@ int main(int argc, char **argv)
   lua.init( script_file );
 
   // set up the transport module (includes the grid)
-  cout << "initializing" << endl;
+  if(verbose) cout << "initializing" << endl;
   transport sim;
   sim.init(&lua);
 

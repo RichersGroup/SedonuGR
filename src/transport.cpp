@@ -107,7 +107,7 @@ void transport::init(Lua* lua)
   /************************/
   {
     // read the fortran module into memory
-    cout << "Initializing NuLib..." << endl;
+    if(verbose) cout << "Initializing NuLib..." << endl;
     string nulib_table = lua->scalar<string>("nulib_table");
     nulib_init(nulib_table);
     neutrinos* neutrinos_tmp;
