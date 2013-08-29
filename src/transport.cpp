@@ -65,11 +65,11 @@ void transport::init(Lua* lua)
   int my_job = (int)(grid->z.size()/(1.0*n_procs));
   if (my_job < 1) my_job = 1;
   my_zone_start = my_rank*my_job;
-  my_zone_end   = my_zone_start + my_job;
+  my_zone_end   = my_zone_start + my_job-1;
   // make sure last guy finishes it all
-  if (my_rank == n_procs-1) my_zone_end = grid->z.size();
-  // get rid of unneeded processers
-  if (my_zone_start >= grid->z.size()) my_zone_start = my_zone_end;
+  if (my_rank == n_procs-1) my_zone_end = grid->z.size()-1;
+  // get rid of unneeded processors
+  if (my_zone_start >= grid->z.size()) my_zone_start = my_zone_end-1;
 
   // setup and seed random number generator
   const gsl_rng_type * TypeR;
@@ -317,9 +317,16 @@ void transport::solve_eq_zone_values()
   double T_last,Ye_last;
   double T_error,Ye_error;
   int iter;
-  // solve radiative equilibrium temperature and Ye
-  // TODO - loop through this until we reach the brent tolerance for both
-  for (int i=my_zone_start; i<my_zone_end; i++)
+
+  // set Ye and temp to zero so it's easy to reduce later
+  for(int i=0; i<grid->z.size(); i++)
+	  if(i<my_zone_start || i>my_zone_end){
+		  grid->z[i].T_gas = 0;
+		  grid->z[i].Ye    = 0;
+	  }
+
+  // solve radiative equilibrium temperature and Ye (but only for the zones I'm responsible for)
+  for (int i=my_zone_start; i<=my_zone_end; i++)
   {
     iter = 0;
     T_error  = 10*BRENT_SOLVE_TOLERANCE;
