@@ -69,7 +69,7 @@ void transport::init(Lua* lua)
   // make sure last guy finishes it all
   if (my_rank == n_procs-1) my_zone_end = grid->z.size()-1;
   // get rid of unneeded processors
-  if (my_zone_start >= grid->z.size()) my_zone_start = my_zone_end-1;
+  if (my_zone_start >= grid->z.size()) my_zone_start = my_zone_end+1;
 
   // setup and seed random number generator
   const gsl_rng_type * TypeR;
