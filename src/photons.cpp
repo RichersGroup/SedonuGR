@@ -53,7 +53,7 @@ void photons::myInit(Lua* lua)
   {
     double nu  = nu_grid.center(j);
     double dnu = nu_grid.delta(j);
-    double bb  = blackbody_nu(T_core,nu)*dnu;
+    double bb  = planck(T_core,nu)*dnu;
     core_emis.set_value(j,bb); 
   }
   core_emis.normalize();
@@ -86,7 +86,7 @@ void photons::set_eas(int zone_index)
     for (int j=0;j<nu_grid.size();j++)
     {
       double nu  = nu_grid.x[j];
-      double bb  = blackbody_nu(z->T_gas,nu);
+      double bb  = planck(z->T_gas,nu);
       abs_opac[zone_index][j] = grey_opac*z->rho;
       emis[zone_index].set_value(j,grey_opac*eps*bb);
     }
@@ -113,7 +113,7 @@ double photons::klein_nishina(double x)
 }
 
 // calculate planck function in frequency units
-double photons::blackbody_nu(double T, double nu)
+double photons::planck(double T, double nu)
 {
   double zeta = pc::h*nu/pc::k/T;
   return 2.0*nu*nu*nu*pc::h/pc::c/pc::c/(exp(zeta)-1);

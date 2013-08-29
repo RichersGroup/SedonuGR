@@ -21,6 +21,9 @@ class neutrinos: public species_general
   // required functions
   void myInit(Lua* lua);
   void set_eas(int zone_index);
+
+  // other functions
+  double fermi_dirac(double T, double chem_pot, double nu);
 };
 
 #endif

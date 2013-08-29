@@ -17,10 +17,10 @@ class cdf_array
 private:
   
   std::vector<double> y;
-  double N;
   
 public:
 
+  double N;
   void resize(int n)  {y.resize(n); }
 
   double get(int i)            {return y[i];}   // Get local CDF value
@@ -29,8 +29,7 @@ public:
   void   set_value(int i, double f);     // set the actual (not CDF) value
   double get_value(int i);                   // Get the actual (not CDF) value
  
-  void normalize();         // normalize the cdf, so that final value = 1
-  double get_N();           // get the normalization factor
+  void normalize();         // normalize the cdf, so that final value = 1. Sets N.
   int  sample(double z);    // sample from the CDF, when passed a random #
   void print();             
   void wipe();

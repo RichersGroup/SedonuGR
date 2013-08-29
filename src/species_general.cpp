@@ -156,7 +156,7 @@ double species_general::sample_zone_nu(int zone_index)
 //----------------------------------------------------------------
 double species_general::int_core_emis()
 {
-  return core_emis.get_N();
+  return core_emis.N;
 }
 
 //----------------------------------------------------------------
@@ -164,7 +164,7 @@ double species_general::int_core_emis()
 //----------------------------------------------------------------
 double species_general::int_zone_emis(int zone_index)
 {
-  return emis[zone_index].get_N();
+  return emis[zone_index].N;
 }
 
 
@@ -178,7 +178,7 @@ double species_general::int_zone_lepton_emis(int zone_index)
   {
     l_emis += lepton_number * emis[zone_index].get_value(i) / (pc::h*nu_grid.x[i]);
   }
-  return l_emis * emis[zone_index].get_N();
+  return l_emis * emis[zone_index].N;
 }
 
 

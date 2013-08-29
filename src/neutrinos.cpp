@@ -23,31 +23,36 @@ void neutrinos::myInit(Lua* lua)
   // read opacity parameters
   grey_opac = lua->scalar<double>("nut_grey_opacity");
   eps       = lua->scalar<double>("nut_epsilon");
-  if(nulibID == 0){
-    lepton_number = 1;
-    name = "Electron Neutrinos";}
-  else if(nulibID == 1){
-    lepton_number = -1;
-    name = "Electron Anti-Neutrinos";}
+
+  // set lepton number
+  if(num_nut_species==3){
+	  if(nulibID == 0)   lepton_number =  1;
+	  if(nulibID == 1)   lepton_number = -1;
+	  if(nulibID == 2)   lepton_number =  0;
+  }
+  else{
+	  if(nulibID%2 == 0) lepton_number =  1;
+	  if(nulibID%2 == 1) lepton_number = -1;
+  }
+
+  // set names
+  if     (nulibID == 0) name = "Electron Neutrinos";
+  else if(nulibID == 1) name = "Electron Anti-Neutrinos";
   else if(nulibID == 2){
-    lepton_number = 0;
-    if(num_nut_species == 3)      name = "Mu/Tau Anti/Neutrinos";
+    if     (num_nut_species == 3) name = "Mu/Tau Anti/Neutrinos";
     else if(num_nut_species == 4) name = "Mu/Tau Neutrinos";
     else if(num_nut_species == 6) name = "Mu Neutrinos";
-    else name = "ERROR";}
+    else                          name = "ERROR";}
   else if(nulibID == 3){
-    lepton_number = 0;
-    if(num_nut_species == 4)      name = "Mu/Tau Anti-Neutrinos";
+    if     (num_nut_species == 4) name = "Mu/Tau Anti-Neutrinos";
     else if(num_nut_species == 6) name = "Mu Antineutrino";
-    else name = "ERROR";}
+    else                          name = "ERROR";}
   else if(nulibID == 4){
-    lepton_number = 0;
-    if(num_nut_species == 6) name = "Tau Neutrinos";
-    else name = "ERROR";}
+    if(num_nut_species == 6)      name = "Tau Neutrinos";
+    else                          name = "ERROR";}
   else if(nulibID == 5){
-    lepton_number = 0;
-    if(num_nut_species == 6) name = "Tau Anti-Neutrinos";
-    else name = "ERROR";}
+    if(num_nut_species == 6)      name = "Tau Anti-Neutrinos";
+    else                          name = "ERROR";}
   else{
     cout << "ERROR: Sedona does not know how to deal with a neutrino ID of " << nulibID << "." << endl;
     exit(16);}
@@ -67,14 +72,28 @@ void neutrinos::myInit(Lua* lua)
   for (int i=0; i<scat_opac.size(); i++) scat_opac[i].resize(nu_grid.size());
 
   // set up core neutrino emission spectrum function
-  double rho_core = lua->scalar<double>("rho_core");
-  double T_core   = lua->scalar<double>("T_core");
-  double Ye_core  = lua->scalar<double>("Ye_core");
-  //just place holders so we can use the function to get core_emis
-  vector<double> tmp1(nu_grid.size(),0), tmp2(nu_grid.size(),0);
-  nulib_get_eas_arrays(rho_core, T_core, Ye_core, nulibID,
-		       core_emis, tmp1, tmp2);
+  // TODO - should we be using the bin tops rather than centers?
+  double T_core = lua->scalar<double>("T_core");
+  double L_core = lua->scalar<double>("L_core");
+  double chem_pot = 0;
+  for (int j=0;j<nu_grid.size();j++)
+  {
+    double nu  = nu_grid.center(j);
+    double dnu = nu_grid.delta(j);
+    double bb  = fermi_dirac(T_core,chem_pot,nu)*dnu;
+    core_emis.set_value(j,bb);
+  }
   core_emis.normalize();
+  core_emis.N = L_core / (double)num_nut_species;
+
+//  double rho_core = lua->scalar<double>("rho_core");
+//  double T_core   = lua->scalar<double>("T_core");
+//  double Ye_core  = lua->scalar<double>("Ye_core");
+//  //just place holders so we can use the function to get core_emis
+//  vector<double> tmp1(nu_grid.size(),0), tmp2(nu_grid.size(),0);
+//  nulib_get_eas_arrays(rho_core, T_core, Ye_core, nulibID,
+//		       core_emis, tmp1, tmp2);
+//  core_emis.normalize();
 
   // set neutrino's min and max values
   T_min  =  nulib_get_Tmin();
@@ -95,4 +114,14 @@ void neutrinos::set_eas(int zone_index)
     nulib_get_eas_arrays(z->rho, z->T_gas, z->Ye, nulibID,
 			 emis[zone_index], abs_opac[zone_index], scat_opac[zone_index]);
     emis[zone_index].normalize();
+}
+
+//-----------------------------------------------------------------
+// Calculate the fermi-dirac function in frequency units
+// (normalized to 1, not total luminosity)
+//-----------------------------------------------------------------
+double neutrinos::fermi_dirac(double T, double chem_pot, double nu)
+{
+	double zeta = (pc::h*nu - chem_pot)/pc::k/T;
+	return 1.0 / (exp(zeta) + 1);
 }

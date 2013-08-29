@@ -100,16 +100,6 @@ void cdf_array::MPI_combine()
 
 
 //------------------------------------------------------------
-// return the normalization variable
-// should not be set by anything but normalize()
-//------------------------------------------------------------
-double cdf_array::get_N()
-{
-  return N;
-}
-
-
-//------------------------------------------------------------
 // just returning the size of the array
 //------------------------------------------------------------
 int cdf_array::size()
