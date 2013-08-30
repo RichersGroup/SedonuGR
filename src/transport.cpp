@@ -466,6 +466,7 @@ int transport::sample_zone_species(int zone_index)
 {
   cdf_array species_cdf;
   double integrated_emis;
+  species_cdf.resize(species_list.size());
 
   // set values and normalize
   for(int i=0; i<species_list.size(); i++)
