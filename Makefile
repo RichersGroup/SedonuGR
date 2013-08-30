@@ -3,7 +3,7 @@ include make.inc
 
 all: 
 	cp make.inc external/NuLib
-	$(MAKE) -C external/NuLib
+	$(MAKE) -j1 -C external/NuLib
 	$(MAKE) -C src
 
 clean: 
