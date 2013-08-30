@@ -6,15 +6,15 @@ TEST_OBJECTS = Lua.o grid_general.o grid_1D_sphere.o grid_3D_cart.o transport.o 
 
 .PHONY: clean realclean
 
-# pull in dependency info for *existing* .o files so objects get rebuilt if header changes
--include $(OBJECTS:.o=.d)
-
 $(TARGET): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(GSL_LDFLAGS) -o $(TARGET) $(OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS)
 
 $(OBJECTS): %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(GSL_INCL) -c -o $@ $<
 	$(CXX) $(CXFLAGS) -MM $*.cpp > $*.d
+
+# pull in dependency info for *existing* .o files so objects get rebuilt if header changes
+-include $(OBJECTS:.o=.d)
 
 clean:
 	rm -f $(OBJECTS) test.exe *.d
