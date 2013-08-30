@@ -22,7 +22,7 @@ private:
 
 public:
 
-  virtual void ~grid_1D_sphere();
+  virtual ~grid_1D_sphere() {}
 
   void read_model_file(Lua* lua);
   void custom_model(Lua* lua);

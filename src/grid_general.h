@@ -38,7 +38,7 @@ class grid_general
 
  public:
 
-  virtual void ~grid_general();
+  virtual ~grid_general() {}
 
   string grid_type;
 

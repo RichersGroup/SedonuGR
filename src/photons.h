@@ -20,7 +20,7 @@ protected:
 
 public:
 
-  virtual void ~photons();
+  virtual ~photons() {}
 
   // required functions
   void myInit(Lua* lua);

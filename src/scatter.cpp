@@ -11,13 +11,14 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 // physics of isotropic scattering
 //------------------------------------------------------------
-void transport::isotropic_scatter(particle &p, int re_emit)
+void transport::isotropic_scatter(particle &p, int redistribute)
 {
 
   // get doppler shift from lab to comoving frame
   double dshift_in = dshift_lab_to_comoving(p);
   
   // transform energy, frequency into comoving frame
+  // don't transform the direction because we're resetting it anyway
   p.e  *= dshift_in;
   p.nu *= dshift_in;
 
@@ -30,14 +31,12 @@ void transport::isotropic_scatter(particle &p, int re_emit)
   p.D[2] = mu;
   
   // change wavelength and species, if needed
-//  int s;
-//  if (re_emit){
-//	  s = sim->sample_zone_species(p.ind);
-//	  p.nu = sim->species_list[s]->sample_zone_nu(p.ind);
-//  }
+  if (redistribute){
+	  p.s = sample_zone_species(p.ind);
+	  p.nu = species_list[p.s]->sample_zone_nu(p.ind);
+  }
 
   // lorentz transform back to lab frame
   transform_comoving_to_lab(p);
-
-  //
 }
+

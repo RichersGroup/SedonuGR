@@ -37,7 +37,7 @@ class species_general
 
  public:
 
-  virtual void ~species_general();
+  virtual ~species_general() {}
 
   // name
   string name;
