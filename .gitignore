@@ -6,3 +6,4 @@
 *.exe
 make.inc
 *gomc
+src/*.d
