@@ -25,6 +25,8 @@ private:
 
 public:
 
+  virtual void ~grid_3D_cart();
+
   void read_model_file(Lua* lua);
   void custom_model(Lua* lua);
 

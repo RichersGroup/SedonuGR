@@ -8,7 +8,7 @@ namespace pc = physical_constants;
 using namespace std;
 
 //----------------------------------------------------------------
-// called from species_general::init (photon-specific stuff)
+// called from species_general::init (neutrino-specific stuff)
 //----------------------------------------------------------------
 void neutrinos::myInit(Lua* lua)
 {

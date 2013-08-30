@@ -50,16 +50,17 @@ void transport::create_isotropic_particle(int zone_index, double Ep)
 
   // sample the species and frequency
   int s = sample_zone_species(zone_index);
+  p.s = s;
   p.nu = species_list[s]->sample_zone_nu(zone_index);
 
   // subtract the leptons from the zone
   grid->z[p.ind].l_abs -= species_list[s]->lepton_number * p.e/(p.nu*pc::h);
 
   // lorentz transform from the comoving to lab frame
-  species_list[s]->transform_comoving_to_lab(p);
+  transform_comoving_to_lab(p);
 
   // add to particle vector
-  species_list[s]->add_particle(p);
+  particles.push_back(p);
 }
 
 
@@ -143,13 +144,14 @@ void transport::emit_inner_source(double dt)
 
     // sample the species and frequency
     int s = sample_core_species();
+    p.s = s;
     p.nu = species_list[s]->sample_core_nu();
 
     // lorentz transform from the comoving to lab frame
-    species_list[s]->transform_comoving_to_lab(p);
+    transform_comoving_to_lab(p);
 
     // add to particle vector
-    species_list[s]->add_particle(p);
+    particles.push_back(p);
   }
 
   if (verbose) printf("# Injected %d particles\n",n_inject);

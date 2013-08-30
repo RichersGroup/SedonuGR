@@ -20,6 +20,8 @@ protected:
 
 public:
 
+  virtual void ~photons();
+
   // required functions
   void myInit(Lua* lua);
   void set_eas(int zone_index);

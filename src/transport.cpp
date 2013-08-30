@@ -207,7 +207,7 @@ void transport::step(double dt)
   }
 
   // Propagate the particles
-  for(int i=0; i<species_list.size(); i++) species_list[i]->propagate_particles(dt);
+  propagate_particles(dt);
 
   // properly normalize the radiative quantities
   for (int i=0;i<grid->z.size();i++) 
@@ -438,9 +438,7 @@ double transport::brent_method(int zone_index, double (*eq_function)(int,double,
 //----------------------------------------------------------------------------
 int transport::total_particles()
 {
-  int total = 0;
-  for(int i=0; i<species_list.size(); i++) total += species_list[i]->size();
-  return total;
+	return particles.size();
 }
 
 
@@ -481,3 +479,280 @@ int transport::sample_zone_species(int zone_index)
   double z = gsl_rng_uniform(rangen);
   return species_cdf.sample(z);
 }
+
+//------------------------------------------------------------
+// get the doppler shift from lab to comoving
+//------------------------------------------------------------
+double transport::dshift_lab_to_comoving(particle p)
+{
+  double v[3];
+  grid->velocity_vector(p.ind,p.x,v);
+
+  // outgoing velocity vector
+  double beta = 0.0;
+  for (int i=0;i<3;i++)  beta += v[i]*v[i];
+  beta = sqrt(beta)/pc::c;
+  double gamma  = 1.0/sqrt(1 - beta*beta);
+
+  // doppler shifts outgoing
+  double vdp    = (p.D[0]*v[0] + p.D[1]*v[1] + p.D[2]*v[2]);
+  double dshift = gamma*(1 - vdp/pc::c);
+  return dshift;
+}
+
+
+//------------------------------------------------------------
+// get the doppler shift from comoving to lab
+//------------------------------------------------------------
+double transport::dshift_comoving_to_lab(particle p)
+{
+  double v[3];
+  grid->velocity_vector(p.ind,p.x,v);
+
+  // outgoing velocity vector
+  double beta = 0.0;
+  for (int i=0;i<3;i++)
+  {
+    v[i] = -1*v[i];
+    beta += v[i]*v[i];
+  }
+  beta = sqrt(beta)/pc::c;
+  double gamma  = 1.0/sqrt(1 - beta*beta);
+
+  // doppler shifts outgoing
+  double vdp    = (p.D[0]*v[0] + p.D[1]*v[1] + p.D[2]*v[2]);
+  double dshift = gamma*(1 - vdp/pc::c);
+  return dshift;
+}
+
+//------------------------------------------------------------
+// do a lorentz transformation; modifies the energy, frequency
+// and direction vector of the particle
+// sign =  1 for comoving to lab
+// sign = -1 for lab to comoving
+//------------------------------------------------------------
+
+void transport::transform_comoving_to_lab(particle &p)
+{
+  lorentz_transform(p,1);
+}
+void transport::transform_lab_to_comoving(particle &p)
+{
+  lorentz_transform(p,-1);
+}
+
+void transport::lorentz_transform(particle &p, double sign)
+{
+  double v[3];
+  grid->velocity_vector(p.ind,p.x,v);
+
+  // outgoing velocity vector
+  double beta = 0.0;
+  for (int i=0;i<3;i++)
+  {
+    v[i] = sign*v[i];
+    beta += v[i]*v[i];
+  }
+  beta = sqrt(beta)/pc::c;
+  double gamma  = 1.0/sqrt(1 - beta*beta);
+
+  // doppler shifts outgoing
+  double vdp    = (p.D[0]*v[0] + p.D[1]*v[1] + p.D[2]*v[2]);
+  double dshift = gamma*(1 - vdp/pc::c);
+
+  // doppler shift the energy and frequency
+  p.e   *= dshift;
+  p.nu  *= dshift;
+
+  // transform direction
+  double D_old[3];
+  D_old[0] = p.D[0];
+  D_old[1] = p.D[1];
+  D_old[2] = p.D[2];
+
+  // See Mihalas & Mihalas eq 89.8
+  p.D[0] = 1.0/dshift*(D_old[0]-gamma*v[0]/pc::c*(1-gamma*vdp/pc::c/(gamma+1)));
+  p.D[1] = 1.0/dshift*(D_old[1]-gamma*v[1]/pc::c*(1-gamma*vdp/pc::c/(gamma+1)));
+  p.D[2] = 1.0/dshift*(D_old[2]-gamma*v[2]/pc::c*(1-gamma*vdp/pc::c/(gamma+1)));
+
+  // for security, make sure it is properly normalized
+  double norm = p.D[0]*p.D[0] + p.D[1]*p.D[1] + p.D[2]*p.D[2];
+  p.D[0] = p.D[0]/norm;
+  p.D[1] = p.D[1]/norm;
+  p.D[2] = p.D[2]/norm;
+}
+
+
+void transport::propagate_particles(double dt)
+{
+	// OPTIMIZE - implement forward list. stores 1 pointer instead of 2 in each element
+  list<particle>::iterator pIter = particles.begin();
+  vector<int> n_active(species_list.size(),0);
+  vector<int> n_escape(species_list.size(),0);
+  while (pIter != particles.end())
+    {
+	  n_active[pIter->s]++;
+      ParticleFate fate = propagate(*pIter,dt);
+      if (fate == escaped) n_escape[pIter->s]++;
+      if ((fate == escaped)||(fate == absorbed)) pIter = particles.erase(pIter);
+      else pIter++;
+    }
+
+  for(int i=0; i<species_list.size(); i++){
+	  double per_esc = (100.0*n_escape[i])/n_active[i];
+	  if (verbose && iterate){
+		  if(n_active[i]>0) cout << "# " << per_esc << "% of the " << species_list[i]->name << " escaped." << endl;
+		  else cout << "# " << "No active " << species_list[i]->name << endl;
+	  }
+	  if(per_esc>0) species_list[i]->spectrum.rescale(1.0/per_esc);
+  }
+}
+
+//--------------------------------------------------------
+// Propagate a single monte carlo particle until
+// it  escapes, is absorbed, or the time step ends
+//--------------------------------------------------------
+ParticleFate transport::propagate(particle &p, double dt)
+{
+  enum ParticleEvent {scatter, boundary, tstep};
+  ParticleEvent event;
+
+  ParticleFate  fate = moving;
+
+  // time of end of timestep
+  double tstop = t_now + dt;
+
+  // local variables
+  double tau_r,d_sc,d_tm,this_d;
+
+  // pointer to current zone
+  zone *zone = &(grid->z[p.ind]);
+
+  // propagate until this flag is set
+  while (fate == moving)
+  {
+    // set pointer to current zone
+    zone = &(grid->z[p.ind]);
+
+    // maximum step size inside zone
+    double d_bn = step_size * grid->zone_min_length(p.ind);
+
+    // doppler shift from comoving to lab
+    double dshift = dshift_comoving_to_lab(p);
+
+    // get local opacity and absorption fraction
+    double opac, abs_frac;
+    species_list[p.s]->get_opacity(p,dshift,&opac,&abs_frac);
+
+    // convert opacity from comoving to lab frame for the purposes of
+    // determining the interaction distance in the lab frame
+    // This corresponds to equation 90.8 in Mihalas&Mihalas. You multiply
+    // the comoving opacity by nu_0 over nu, which is why you
+    // multiply by dshift instead of dividing by dshift here
+    double opac_lab = opac*dshift;
+
+    // random optical depth to next interaction
+    tau_r = -1.0*log(1 - gsl_rng_uniform(rangen));
+
+    // step size to next interaction event
+    d_sc  = tau_r/opac_lab;
+    if (opac_lab == 0) d_sc = INFINITY;
+    if (d_sc < 0){
+      cout << "ERROR: negative interaction distance!\n" << endl;
+      cout << __FILE__ << ":" << __LINE__ << endl;
+      exit(15);
+    }
+
+    // find distance to end of time step
+    d_tm = (tstop - p.t)*pc::c;
+    if (iterate) d_tm = INFINITY; // i.e. let all particles escape
+
+    // find out what event happens (shortest distance)
+    if ( (d_sc < d_bn) && (d_sc < d_tm) ){
+      event  = scatter;
+      this_d = d_sc;
+    }
+    else if (d_bn < d_tm){
+      event  = boundary;
+      this_d = d_bn;
+    }
+    else{
+      event  = tstep;
+      this_d = d_tm;
+    }
+
+    // tally in contribution to zone's radiation energy (both *lab* frame)
+    double this_E = p.e*this_d;
+    zone->e_rad += this_E;
+
+    // store absorbed energy in *comoving* frame
+    // (will turn into rate by dividing by dt later)
+    // Extra dshift definitely needed here (two total)
+    // to convert both p.e and this_d to the comoving frame
+    double this_E_comoving = this_E * dshift * dshift;
+    zone->e_abs += this_E_comoving * (opac*abs_frac*zone->eps_imc);
+
+    // store absorbed lepton number (same in both frames, except for the
+    // factor of this_d which is divided out later
+    if(species_list[p.s]->lepton_number != 0){
+      double this_l_comoving = species_list[p.s]->lepton_number * p.e/(p.nu*pc::h) * this_d*dshift;
+      zone->l_abs += this_l_comoving * (opac*abs_frac*zone->eps_imc);
+    }
+
+    // put back in radiation force tally here
+    // fx_rad =
+
+    // move particle the distance
+    p.x[0] += this_d*p.D[0];
+    p.x[1] += this_d*p.D[1];
+    p.x[2] += this_d*p.D[2];
+    // advance the time
+    p.t = p.t + this_d/pc::c;
+
+    // ---------------------------------
+    // Do if scatter
+    // ---------------------------------
+    if (event == scatter)
+    {
+      // random number to check for scattering or absorption
+      double z = gsl_rng_uniform(rangen);
+
+      // decide whether to scatter
+      if (z > abs_frac) isotropic_scatter(p,0);
+      // or absorb
+      else
+      {
+	// check for effective scattering
+	double z2;
+	if (radiative_eq) z2 = 2;
+	else z2 = gsl_rng_uniform(rangen);
+
+	// do an effective scatter (i.e. particle is absorbed
+	// but, since we require energy in = energy out it is re-emitted)
+	if (z2 > zone->eps_imc) isotropic_scatter(p,1);
+	// otherwise really absorb (kill) it
+	else fate = absorbed;
+      }
+    }
+
+    // ---------------------------------
+    // do if time step end
+    // ---------------------------------
+    else if (event == tstep) fate = stopped;
+
+    // Find position of the particle now
+    p.ind = grid->get_zone(p.x);
+    if (p.ind == -1) fate = absorbed;
+    if (p.ind == -2) fate = escaped;
+
+    // check for inner boundary absorption
+    if (p.r() < r_core) fate = absorbed;
+  }
+
+  // Add escaped photons to output spectrum
+  if (fate == escaped) species_list[p.s]->spectrum.count(p.t, p.nu, p.e, p.D);
+
+  return fate;
+}
+
+

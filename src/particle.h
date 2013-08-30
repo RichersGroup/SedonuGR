@@ -15,6 +15,7 @@ public:
   double       t;         // current time
   double       e;         // total energy in ergs of packet
   double      nu;         // frequency
+  int          s;         // species number
 
   double r() 
   { return sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]); }

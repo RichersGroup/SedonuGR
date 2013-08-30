@@ -38,6 +38,8 @@ class grid_general
 
  public:
 
+  virtual void ~grid_general();
+
   string grid_type;
 
   // vector of zones

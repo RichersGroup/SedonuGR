@@ -15,6 +15,8 @@ namespace pc = physical_constants;
 spectrum_array::spectrum_array()
 {
   strcpy(name,DEFAULT_NAME);
+  a1=0; a2=0; a3=0;
+  n_elements=0;
 }
 
 void spectrum_array::set_name(const char *n)

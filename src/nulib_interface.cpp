@@ -38,7 +38,7 @@ extern double* __nulibtable_MOD_nulibtable_energies;
 extern double __nulibtable_MOD_nulibtable_logtemp_min;
 extern double __nulibtable_MOD_nulibtable_logtemp_max;
 extern double __nulibtable_MOD_nulibtable_logrho_min;
-extern double __nulibtable_MOD_nulibtable_logrho_max;
+//extern double __nulibtable_MOD_nulibtable_logrho_max;
 extern double __nulibtable_MOD_nulibtable_ye_min;
 extern double __nulibtable_MOD_nulibtable_ye_max;
 
@@ -117,7 +117,7 @@ void nulib_get_nu_grid(locate_array& nu_grid){
 		   __nulibtable_MOD_nulibtable_energies + __nulibtable_MOD_nulibtable_number_groups);
 
   // convert from MeV to frequency using the Planck constant
-  for(int i=0; i<nu_grid.size(); i++) nu_grid.x[i] /= pc::h;
+  for(int i=0; i<nu_grid.size(); i++) nu_grid.x[i] /= pc::h_MeV;
   nu_grid.do_log_interpolate = 1;
 }
 
