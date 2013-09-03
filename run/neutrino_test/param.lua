@@ -21,28 +21,28 @@ t_stop      =  5*day             -- time to stop calculation, in days
 t_delta     =   1.0               -- time spacing in ouput light curve
 write_out   =  1.0*day
 
-n_photons   =  1e6           -- total number of photon packets to use
 init_particles = 0
-step_size          = 0.4
+step_size      = 0.4
 
 radiative_eq   = 1;   -- set 
 iterate        = 20;   -- set to do an iterative (time independent) calc
+damping        = 0.5;
 
 -- opacity parameters
 nut_grey_opacity = -1  -- grey opacity - set to negative to turn off
 nut_epsilon      = -1  -- absorption fraction - set to negative to turn off
 
 -- inner source
-r_core = 1188e3
+r_core = 10300e2
 L_core = 1e43
 T_core = 3.5e11  -- 30 MeV
-n_inject = 1e5
+n_inject = 1e3
 rho_core = 3e14
 Ye_core = 0.2
 
 -- output spectrum
 nut_spec_time_grid   = {1,1,1}
-nut_spec_log_nu_grid =   {27,29,0.1}
+nut_spec_log_nu_grid =   {19,22,0.1}
 nut_n_mu             =    1           -- number of cos(theta) bins in output spectrum 
 nut_n_phi            =    1           -- number of phi bins in output spectrum
 

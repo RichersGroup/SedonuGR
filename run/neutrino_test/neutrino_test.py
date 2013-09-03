@@ -6,7 +6,7 @@ t0 = -1
 v_in = 0
 
 R = 12*km
-rho_max = 2e12
+rho_max = 2e14
 dx = R/nx
 
 temp = 10*MeV
