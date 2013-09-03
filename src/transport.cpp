@@ -90,6 +90,9 @@ void transport::init(Lua* lua)
   iterate       = lua->scalar<int>("iterate");
   step_size     = lua->scalar<double>("step_size");
   damping       = lua->scalar<double>("damping");
+  solve_T       = lua->scalar<int>("solve_T");
+  solve_Ye      = lua->scalar<int>("solve_Ye");
+
 
   // determine which species to simulate
   do_photons   = lua->scalar<int>("do_photons");
@@ -324,31 +327,43 @@ void transport::solve_eq_zone_values()
 
   // set Ye and temp to zero so it's easy to reduce later
   for(int i=0; i<grid->z.size(); i++)
-	  if(i<my_zone_start || i>my_zone_end){
-		  grid->z[i].T_gas = 0;
-		  grid->z[i].Ye    = 0;
-	  }
+    if(i<my_zone_start || i>my_zone_end){
+      grid->z[i].T_gas = 0;
+      grid->z[i].Ye    = 0;
+    }
 
   // solve radiative equilibrium temperature and Ye (but only for the zones I'm responsible for)
   for (int i=my_zone_start; i<=my_zone_end; i++)
   {
     iter = 0;
-    T_error  = 10*BRENT_SOLVE_TOLERANCE;
-    Ye_error = 10*BRENT_SOLVE_TOLERANCE;
 
-    // remember the values from the last step
-    T_last_step  = grid->z[i].T_gas;
-    Ye_last_step = grid->z[i].Ye;
+    // set up the solver
+    if(solve_T)
+    {
+      T_error  = 10*BRENT_SOLVE_TOLERANCE;
+      T_last_step  = grid->z[i].T_gas;
+    }
+    if(solve_Ye)
+    {
+      Ye_error = 10*BRENT_SOLVE_TOLERANCE;
+      Ye_last_step = grid->z[i].Ye;
+    }
 
     // loop through solving the temperature and Ye until both are within error.
     while(iter<=BRENT_ITMAX && (T_error>BRENT_SOLVE_TOLERANCE || Ye_error>BRENT_SOLVE_TOLERANCE))
     {
-      T_last_iter  = grid->z[i].T_gas;
-      Ye_last_iter = grid->z[i].Ye;
-      grid->z[i].T_gas = brent_method(i, temp_eq_function, T_min,  T_max);
-      grid->z[i].Ye    = brent_method(i, Ye_eq_function,   Ye_min, Ye_max);
-      T_error  = fabs( (grid->z[i].T_gas - T_last_iter ) / (T_last_iter ) );
-      Ye_error = fabs( (grid->z[i].Ye    - Ye_last_iter) / (Ye_last_iter) );
+      if(solve_T)
+      {
+	T_last_iter  = grid->z[i].T_gas;
+	grid->z[i].T_gas = brent_method(i, temp_eq_function, T_min,  T_max);
+	T_error  = fabs( (grid->z[i].T_gas - T_last_iter ) / (T_last_iter ) );
+      }
+      if(solve_Ye)
+      {
+	Ye_last_iter = grid->z[i].Ye;
+	grid->z[i].Ye    = brent_method(i, Ye_eq_function,   Ye_min, Ye_max);
+	Ye_error = fabs( (grid->z[i].Ye    - Ye_last_iter) / (Ye_last_iter) );
+      }
       iter++;
     }
 
@@ -356,10 +371,16 @@ void transport::solve_eq_zone_values()
     if(iter == BRENT_ITMAX) cout << "WARNING: outer Brent solver hit maximum iterations." << endl;
 
     // damp the oscillations between steps
-    dT_step  = grid->z[i].T_gas - T_last_step;
-    dYe_step = grid->z[i].Ye    - Ye_last_step;
-    if(damping>0 && fabs( dT_step) > damping* T_last_step) grid->z[i].T_gas =  T_last_step * (1.0 + damping* dT_step/fabs( dT_step));
-    if(damping>0 && fabs(dYe_step) > damping*Ye_last_step) grid->z[i].Ye    = Ye_last_step * (1.0 + damping*dYe_step/fabs(dYe_step));
+    if(solve_T)
+    {
+      dT_step  = grid->z[i].T_gas - T_last_step;
+      if(damping>0 && fabs( dT_step) > damping* T_last_step) grid->z[i].T_gas =  T_last_step * (1.0 + damping* dT_step/fabs( dT_step));
+    }
+    if(solve_Ye)
+    {
+      dYe_step = grid->z[i].Ye    - Ye_last_step;
+      if(damping>0 && fabs(dYe_step) > damping*Ye_last_step) grid->z[i].Ye    = Ye_last_step * (1.0 + damping*dYe_step/fabs(dYe_step));
+    }
   }
   
   // mpi reduce the results

@@ -5,9 +5,8 @@ do_neutrinos = 1
 -- input/output files
 
 grid_type = "grid_1D_sphere"
-model_file  =  "neutrino_test.mod"
-output_file =  "my_lightcurve.dat"          -- output light curve file
-nulib_table = "../../external/NuLib/NuLib_LS220.h5"
+model_file  =  "empty_sphere.mod"
+nulib_table = "../../external/tables/NuLib_LS220.h5"
 
 -- time stepping (all times in days)
 day = 3600.0*24
@@ -28,17 +27,18 @@ radiative_eq   = 1;   -- set
 iterate        = 20;   -- set to do an iterative (time independent) calc
 damping        = 0.5;
 
+solve_T  = 1
+solve_Ye = 1
+
 -- opacity parameters
 nut_grey_opacity = -1  -- grey opacity - set to negative to turn off
 nut_epsilon      = -1  -- absorption fraction - set to negative to turn off
 
 -- inner source
-r_core = 10300e2
+r_core = 1
 L_core = 1e43
 T_core = 3.5e11  -- 30 MeV
-n_inject = 1e3
-rho_core = 3e14
-Ye_core = 0.2
+n_inject = 6e3
 
 -- output spectrum
 nut_spec_time_grid   = {1,1,1}

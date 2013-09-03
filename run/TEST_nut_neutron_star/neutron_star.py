@@ -5,11 +5,11 @@ nx = 100
 t0 = -1
 v_in = 0
 
-R = 12*km
-rho_max = 2e14
+R = 10*km
+rho_max = 2e15
 dx = R/nx
 
-temp = 10*MeV
+temp = 1*MeV
 
 print '1D_sphere', 'GRB',nx,v_in,t0
 

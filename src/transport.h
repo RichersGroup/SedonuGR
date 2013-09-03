@@ -72,6 +72,10 @@ public:
   int do_photons;
   int do_neutrinos;
 
+  // remember what variables we're solving for
+  int solve_T;
+  int solve_Ye;
+
   // pointer to grid
   grid_general *grid;
 

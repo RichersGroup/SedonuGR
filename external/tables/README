@@ -2,3 +2,5 @@ If the simulation data we're using as input uses a tabulated EOS, we need a tabu
 energy to temperature. A few tabulated EOS's can be found at
 
 http://www.stellarcollapse.org/equationofstate
+
+Also, place the NuLib table here
