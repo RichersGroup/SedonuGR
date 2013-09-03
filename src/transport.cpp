@@ -89,6 +89,7 @@ void transport::init(Lua* lua)
   radiative_eq  = lua->scalar<int>("radiative_eq");
   iterate       = lua->scalar<int>("iterate");
   step_size     = lua->scalar<double>("step_size");
+  damping       = lua->scalar<double>("damping");
 
   // determine which species to simulate
   do_photons   = lua->scalar<int>("do_photons");
@@ -157,8 +158,9 @@ void transport::init(Lua* lua)
       species_list[i]->set_eas(j);
 
   // scatter initial particles in the simulation area
+  // don't initialize them if iterative calculation. They all come from the core.
   int init_particles = lua->scalar<int>("init_particles");
-  initialize_particles(init_particles);
+  if(!iterate) initialize_particles(init_particles);
 
   //=================//
   // SET UP THE CORE //
@@ -314,8 +316,10 @@ double Ye_eq_function(int zone_index, double Ye, transport* sim)
 #define BRENT_ITMAX 100
 void transport::solve_eq_zone_values()
 {
-  double T_last,Ye_last;
+  double T_last_iter, Ye_last_iter;
+  double T_last_step, Ye_last_step;
   double T_error,Ye_error;
+  double dT_step, dYe_step;
   int iter;
 
   // set Ye and temp to zero so it's easy to reduce later
@@ -332,20 +336,30 @@ void transport::solve_eq_zone_values()
     T_error  = 10*BRENT_SOLVE_TOLERANCE;
     Ye_error = 10*BRENT_SOLVE_TOLERANCE;
 
+    // remember the values from the last step
+    T_last_step  = grid->z[i].T_gas;
+    Ye_last_step = grid->z[i].Ye;
+
     // loop through solving the temperature and Ye until both are within error.
     while(iter<=BRENT_ITMAX && (T_error>BRENT_SOLVE_TOLERANCE || Ye_error>BRENT_SOLVE_TOLERANCE))
     {
-      T_last  = grid->z[i].T_gas;
-      Ye_last = grid->z[i].Ye;
+      T_last_iter  = grid->z[i].T_gas;
+      Ye_last_iter = grid->z[i].Ye;
       grid->z[i].T_gas = brent_method(i, temp_eq_function, T_min,  T_max);
       grid->z[i].Ye    = brent_method(i, Ye_eq_function,   Ye_min, Ye_max);
-      T_error  = fabs( (grid->z[i].T_gas - T_last ) / (T_last ) );
-      Ye_error = fabs( (grid->z[i].Ye    - Ye_last) / (Ye_last) );
+      T_error  = fabs( (grid->z[i].T_gas - T_last_iter ) / (T_last_iter ) );
+      Ye_error = fabs( (grid->z[i].Ye    - Ye_last_iter) / (Ye_last_iter) );
       iter++;
     }
 
     // warn if it didn't converge
     if(iter == BRENT_ITMAX) cout << "WARNING: outer Brent solver hit maximum iterations." << endl;
+
+    // damp the oscillations between steps
+    dT_step  = grid->z[i].T_gas - T_last_step;
+    dYe_step = grid->z[i].Ye    - Ye_last_step;
+    if(damping>0 && fabs( dT_step) > damping* T_last_step) grid->z[i].T_gas =  T_last_step * (1.0 + damping* dT_step/fabs( dT_step));
+    if(damping>0 && fabs(dYe_step) > damping*Ye_last_step) grid->z[i].Ye    = Ye_last_step * (1.0 + damping*dYe_step/fabs(dYe_step));
   }
   
   // mpi reduce the results
@@ -590,23 +604,26 @@ void transport::propagate_particles(double dt)
   list<particle>::iterator pIter = particles.begin();
   vector<int> n_active(species_list.size(),0);
   vector<int> n_escape(species_list.size(),0);
+  double e_esc = 0;
   while (pIter != particles.end())
     {
-	  n_active[pIter->s]++;
+      n_active[pIter->s]++;
       ParticleFate fate = propagate(*pIter,dt);
-      if (fate == escaped) n_escape[pIter->s]++;
+      if (fate == escaped){ n_escape[pIter->s]++; e_esc += pIter->e;}
       if ((fate == escaped)||(fate == absorbed)) pIter = particles.erase(pIter);
       else pIter++;
     }
-
+  
   for(int i=0; i<species_list.size(); i++){
-	  double per_esc = (100.0*n_escape[i])/n_active[i];
-	  if (verbose && iterate){
-		  if(n_active[i]>0) cout << "# " << per_esc << "% of the " << species_list[i]->name << " escaped." << endl;
-		  else cout << "# " << "No active " << species_list[i]->name << endl;
-	  }
-	  if(per_esc>0) species_list[i]->spectrum.rescale(1.0/per_esc);
+    double per_esc = (100.0*n_escape[i])/n_active[i];
+    if (verbose && iterate){
+      if(n_active[i]>0) cout << "# " << per_esc << "% of the " << species_list[i]->name << " escaped (" 
+			     << n_escape[i] << "/" << n_active[i] << ")." << endl;
+      else cout << "# " << "No active " << species_list[i]->name << endl;
+    }
+    if(per_esc>0) species_list[i]->spectrum.rescale(100.0/per_esc);
   }
+  if(verbose && iterate) cout << "# Energy escaped: " << e_esc << " ergs." << endl;
 }
 
 //--------------------------------------------------------

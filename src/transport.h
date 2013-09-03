@@ -85,6 +85,7 @@ public:
   int    radiative_eq;
   int    iterate;
   int    verbose;
+  double damping;
 
   // set things up
   void   init(Lua* lua);
