@@ -35,24 +35,25 @@ void neutrinos::myInit(Lua* lua)
 	  if(nulibID%2 == 1) lepton_number = -1;
   }
 
-  // set names
-  if     (nulibID == 0) name = "Electron Neutrinos";
-  else if(nulibID == 1) name = "Electron Anti-Neutrinos";
+  // set names and spectrum weight
+  double weight;
+  if     (nulibID == 0) {name = "Electron Neutrinos";              weight = 1.0;}
+  else if(nulibID == 1) {name = "Electron Anti-Neutrinos";         weight = 1.0;}
   else if(nulibID == 2){
-    if     (num_nut_species == 3) name = "Mu/Tau Anti/Neutrinos";
-    else if(num_nut_species == 4) name = "Mu/Tau Neutrinos";
-    else if(num_nut_species == 6) name = "Mu Neutrinos";
-    else                          name = "ERROR";}
+    if     (num_nut_species == 3) {name = "Mu/Tau Anti/Neutrinos"; weight = 4.0;}
+    else if(num_nut_species == 4) {name = "Mu/Tau Neutrinos";      weight = 2.0;}
+    else if(num_nut_species == 6) {name = "Mu Neutrinos";          weight = 1.0;}
+    else                          {name = "ERROR";                 weight = -1;}}
   else if(nulibID == 3){
-    if     (num_nut_species == 4) name = "Mu/Tau Anti-Neutrinos";
-    else if(num_nut_species == 6) name = "Mu Antineutrino";
-    else                          name = "ERROR";}
+    if     (num_nut_species == 4) {name = "Mu/Tau Anti-Neutrinos"; weight = 2.0;}
+    else if(num_nut_species == 6) {name = "Mu Antineutrino";       weight = 1.0;}
+    else                          {name = "ERROR";                 weight = -1;}}
   else if(nulibID == 4){
-    if(num_nut_species == 6)      name = "Tau Neutrinos";
-    else                          name = "ERROR";}
+    if(num_nut_species == 6)      {name = "Tau Neutrinos";         weight = 1.0;}
+    else                          {name = "ERROR";                 weight = -1;}}
   else if(nulibID == 5){
-    if(num_nut_species == 6)      name = "Tau Anti-Neutrinos";
-    else                          name = "ERROR";}
+    if(num_nut_species == 6)      {name = "Tau Anti-Neutrinos";    weight = 1.0;}
+    else                          {name = "ERROR";                 weight = -1;}}
   else{
     cout << "ERROR: Sedona does not know how to deal with a neutrino ID of " << nulibID << "." << endl;
     exit(16);}
@@ -84,7 +85,7 @@ void neutrinos::myInit(Lua* lua)
     core_emis.set_value(j,bb);
   }
   core_emis.normalize();
-  core_emis.N = L_core / (double)num_nut_species;
+  if(num_nut_species == 3) core_emis.N = weight * L_core / 6.0;
 
 //  double rho_core = lua->scalar<double>("rho_core");
 //  double T_core   = lua->scalar<double>("T_core");
