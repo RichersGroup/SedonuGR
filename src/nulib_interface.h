@@ -17,4 +17,7 @@ double nulib_get_Tmax();
 double nulib_get_Yemin();
 double nulib_get_Yemax();
 
+void nulib_get_rho_array(vector<double>& array);
+void nulib_get_T_array(vector<double>& array);
+void nulib_get_Ye_array(vector<double>& array);
 #endif

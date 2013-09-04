@@ -7,4 +7,5 @@
 make.inc
 *gomc
 src/*.d
-run/*/*.mod
+run/TESTS/*/*.dat
+run/TEST/*/*.mod

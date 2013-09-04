@@ -35,6 +35,9 @@ extern int __nulibtable_MOD_nulibtable_number_species;
 extern int __nulibtable_MOD_nulibtable_number_easvariables;
 extern int __nulibtable_MOD_nulibtable_number_groups;
 extern double* __nulibtable_MOD_nulibtable_energies;
+extern double* __nulibtable_MOD_nulibtable_logrho;
+extern double* __nulibtable_MOD_nulibtable_logtemp;
+extern double* __nulibtable_MOD_nulibtable_ye;
 extern double __nulibtable_MOD_nulibtable_logtemp_min;
 extern double __nulibtable_MOD_nulibtable_logtemp_max;
 extern double __nulibtable_MOD_nulibtable_logrho_min;
@@ -121,6 +124,24 @@ void nulib_get_nu_grid(locate_array& nu_grid){
   nu_grid.do_log_interpolate = 1;
 }
 
+
+/*****************************/
+/* get the rho, T, Ye arrays */
+/*****************************/
+void nulib_get_rho_array(vector<double>& array){
+  array.assign(__nulibtable_MOD_nulibtable_logrho,
+	       __nulibtable_MOD_nulibtable_logrho  + __nulibtable_MOD_nulibtable_number_groups);
+  for(int i=0; i<array.size(); i++) array[i] = pow(10.0, array[i]);
+}
+void nulib_get_T_array(vector<double>& array){
+  array.assign(__nulibtable_MOD_nulibtable_logtemp,
+	       __nulibtable_MOD_nulibtable_logtemp + __nulibtable_MOD_nulibtable_number_groups);
+  for(int i=0; i<array.size(); i++) array[i] = pow(10.0, array[i]) / (1e-6*pc::k_ev);
+}
+void nulib_get_Ye_array(vector<double>& array){
+  array.assign(__nulibtable_MOD_nulibtable_ye,
+	       __nulibtable_MOD_nulibtable_ye      + __nulibtable_MOD_nulibtable_number_groups);
+}
 
 /*************************/
 /* nulib_get_{*min,*max} */

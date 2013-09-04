@@ -1,12 +1,11 @@
 TARGET = ../gomc
 
-HEADERS = cdf_array.h Error.h grid_1D_sphere.h grid_3D_cart.h grid_general.h
 OBJECTS = main.o Lua.o grid_general.o grid_1D_sphere.o grid_3D_cart.o emission.o scatter.o opacity.o locate_array.o cdf_array.o spectrum_array.o nulib_interface.o species_general.o photons.o transport.o neutrinos.o
 TEST_OBJECTS = Lua.o grid_general.o grid_1D_sphere.o grid_3D_cart.o transport.o emission.o scatter.o opacity.o locate_array.o cdf_array.o spectrum_array.o nulib_interface.o species_general.o photons.o neutrinos.o
 
 .PHONY: clean realclean
 
-$(TARGET): $(OBJECTS)
+$(TARGET): $(OBJECTS) nulib_plots
 	$(CXX) $(CXXFLAGS) $(GSL_LDFLAGS) -o $(TARGET) $(OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS)
 
 $(OBJECTS): %.o: %.cpp
@@ -22,5 +21,5 @@ clean:
 realclean: clean
 	rm -f $(TARGET)
 
-test: $(OBJECTS)
-	$(CXX) $(CXXFLAGS) $(GSL_LDFLAGS) -o test.exe test.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS)
+nulib_plots: $(OBJECTS)
+	$(CXX) $(CXXFLAGS) $(GSL_LDFLAGS) -o ../nulib_test.exe nulib_test.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS)
