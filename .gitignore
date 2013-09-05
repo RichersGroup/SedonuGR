@@ -9,3 +9,5 @@ make.inc
 src/*.d
 run/TESTS/*/*.dat
 run/TEST/*/*.mod
+run/TESTS/nulib_plots/*.pdf
+run/TESTS/nulib_plots/plot_defaults.pyc
