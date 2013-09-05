@@ -5,7 +5,7 @@ TEST_OBJECTS = Lua.o grid_general.o grid_1D_sphere.o grid_3D_cart.o transport.o 
 
 .PHONY: clean realclean
 
-$(TARGET): $(OBJECTS) nulib_plots
+$(TARGET): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(GSL_LDFLAGS) -o $(TARGET) $(OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS)
 
 $(OBJECTS): %.o: %.cpp
@@ -21,5 +21,5 @@ clean:
 realclean: clean
 	rm -f $(TARGET)
 
-nulib_plots: $(OBJECTS)
-	$(CXX) $(CXXFLAGS) $(GSL_LDFLAGS) -o ../nulib_test.exe nulib_test.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS)
+tests: $(OBJECTS)
+	$(CXX) $(CXXFLAGS) $(GSL_LDFLAGS) -o ../run/TESTS/nulib_plots/nulib_test.exe nulib_test.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS)

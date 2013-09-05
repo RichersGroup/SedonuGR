@@ -14,7 +14,7 @@ namespace physical_constants
   const double sb   = 5.6704e-5;        // stefan boltzman constant (ergs cm^-2 s^-1 K^-4) 
   const double a    = 7.5657e-15;        // radiation constant (ergs cm-3 K-4)
   const double h_MeV = 4.135667516e-21;  // planck constant (MeV s)
-  const double k_Mev = 8.6173324e-11;     // boltzmann constant (Mev/K)
+  const double k_MeV = 8.6173324e-11;     // boltzmann constant (Mev/K)
   
   
   const double m_e_MeV =  0.510998910511;    // rest energy of electron in Mev
