@@ -20,6 +20,8 @@ private:
   
 public:
 
+  friend class locate_array; // so locate_array can interpolate y
+
   double N;
   void resize(int n)  {y.resize(n); }
 
