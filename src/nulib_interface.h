@@ -16,6 +16,8 @@ double nulib_get_Tmin();
 double nulib_get_Tmax();
 double nulib_get_Yemin();
 double nulib_get_Yemax();
+double nulib_get_rhomin();
+double nulib_get_rhomax();
 
 void nulib_get_rho_array(vector<double>& array);
 void nulib_get_T_array(vector<double>& array);

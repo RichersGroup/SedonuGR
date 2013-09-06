@@ -41,7 +41,7 @@ extern double* __nulibtable_MOD_nulibtable_ye;
 extern double __nulibtable_MOD_nulibtable_logtemp_min;
 extern double __nulibtable_MOD_nulibtable_logtemp_max;
 extern double __nulibtable_MOD_nulibtable_logrho_min;
-//extern double __nulibtable_MOD_nulibtable_logrho_max;
+extern double __nulibtable_MOD_nulibtable_logrho_max;
 extern double __nulibtable_MOD_nulibtable_ye_min;
 extern double __nulibtable_MOD_nulibtable_ye_max;
 
@@ -64,8 +64,12 @@ void nulib_init(string filename){
 /**********************/
 /* get_nut_eas_arrays */
 /**********************/
-void nulib_get_eas_arrays(real rho, real temp, real ye, int nulibID,
-			  cdf_array& nut_emiss, vector<real>& nut_absopac, vector<real>& nut_scatopac){
+void nulib_get_eas_arrays(real rho,                     // g/cm^3 
+			  real temp,                    // K
+			  real ye, int nulibID,
+			  cdf_array& nut_emiss,         // erg/cm^3/s
+			  vector<real>& nut_absopac,    // cm^-1   
+			  vector<real>& nut_scatopac){  // cm^-1
   
   int nvars    = __nulibtable_MOD_nulibtable_number_easvariables;
   int ngroups  = __nulibtable_MOD_nulibtable_number_groups;
@@ -84,13 +88,11 @@ void nulib_get_eas_arrays(real rho, real temp, real ye, int nulibID,
   }
 
   // fetch the relevant table from nulib. NuLib only accepts doubles.
-  double rhotmp = rho;
-  double temptmp = temp * 1e-6*pc::k_ev; // convert temperature to MeV
-  double yetmp = ye;
-  int lns = nulibID+1;                   // fortran array indices start with 1
+  double temp_MeV = temp * pc::k_MeV; // MeV
+  int lns = nulibID+1;                // fortran array indices start with 1
   
   // If the density is too low, just set everything to zero
-  if(log10(rhotmp) < __nulibtable_MOD_nulibtable_logrho_min) 
+  if(log10(rho) < __nulibtable_MOD_nulibtable_logrho_min) 
     for(int j=0; j<ngroups; j++){      
       nut_emiss.set_value(j, 0);
       nut_absopac [j] =      0;
@@ -99,14 +101,15 @@ void nulib_get_eas_arrays(real rho, real temp, real ye, int nulibID,
   
   // Otherwise, fill with the appropriate values
   else{
-    nulibtable_single_species_range_energy_(&rhotmp, &temptmp, &yetmp, &lns,
+    nulibtable_single_species_range_energy_(&rho, &temp_MeV, &ye, &lns,
 					    (double*)eas_energy, &ngroups, &nvars);
     for(int j=0; j<ngroups; j++){
-      nut_emiss.set_value(j, eas_energy[0][j]);
+      nut_emiss.set_value(j, eas_energy[0][j] * pc::MeV_to_ergs);
       nut_absopac [j] =      eas_energy[1][j];
       nut_scatopac[j] =      eas_energy[2][j];
     }
   }
+  nut_emiss.N = 1.0;
 }
 
 
@@ -114,7 +117,7 @@ void nulib_get_eas_arrays(real rho, real temp, real ye, int nulibID,
 /* nulib_get_nu_grid */
 /*********************/
 // Fill in the locate array with values of the array stored in the fortran module
-void nulib_get_nu_grid(locate_array& nu_grid){
+void nulib_get_nu_grid(locate_array& nu_grid){ // Hz
   // assign values from the NuLib module to nu_grid
   nu_grid.x.assign(__nulibtable_MOD_nulibtable_energies, 
 		   __nulibtable_MOD_nulibtable_energies + __nulibtable_MOD_nulibtable_number_groups);
@@ -128,15 +131,15 @@ void nulib_get_nu_grid(locate_array& nu_grid){
 /*****************************/
 /* get the rho, T, Ye arrays */
 /*****************************/
-void nulib_get_rho_array(vector<double>& array){
+void nulib_get_rho_array(vector<double>& array){ // g/cm^3
   array.assign(__nulibtable_MOD_nulibtable_logrho,
 	       __nulibtable_MOD_nulibtable_logrho  + __nulibtable_MOD_nulibtable_number_groups);
   for(int i=0; i<array.size(); i++) array[i] = pow(10.0, array[i]);
 }
-void nulib_get_T_array(vector<double>& array){
+void nulib_get_T_array(vector<double>& array){ // K
   array.assign(__nulibtable_MOD_nulibtable_logtemp,
 	       __nulibtable_MOD_nulibtable_logtemp + __nulibtable_MOD_nulibtable_number_groups);
-  for(int i=0; i<array.size(); i++) array[i] = pow(10.0, array[i]) / (1e-6*pc::k_ev);
+  for(int i=0; i<array.size(); i++) array[i] = pow(10.0, array[i]) / pc::k_MeV;
 }
 void nulib_get_Ye_array(vector<double>& array){
   array.assign(__nulibtable_MOD_nulibtable_ye,
@@ -146,7 +149,9 @@ void nulib_get_Ye_array(vector<double>& array){
 /*************************/
 /* nulib_get_{*min,*max} */
 /*************************/
-double nulib_get_Tmin() {return pow(10,__nulibtable_MOD_nulibtable_logtemp_min) / (1e-6*pc::k_ev);} //convert from MeV to K
-double nulib_get_Tmax() {return pow(10,__nulibtable_MOD_nulibtable_logtemp_max) / (1e-6*pc::k_ev);} //convert from MeV to K
+double nulib_get_Tmin()   {return pow(10,__nulibtable_MOD_nulibtable_logtemp_min) / (1e-6*pc::k_ev);} //convert from MeV to K
+double nulib_get_Tmax()   {return pow(10,__nulibtable_MOD_nulibtable_logtemp_max) / (1e-6*pc::k_ev);} //convert from MeV to K
+double nulib_get_rhomin() {return pow(10,__nulibtable_MOD_nulibtable_logrho_min);}
+double nulib_get_rhomax() {return pow(10,__nulibtable_MOD_nulibtable_logrho_max);}
 double nulib_get_Yemin() {return __nulibtable_MOD_nulibtable_ye_min;}
 double nulib_get_Yemax() {return __nulibtable_MOD_nulibtable_ye_max;}
