@@ -22,4 +22,4 @@ realclean: clean
 	rm -f $(TARGET)
 
 tests: $(OBJECTS)
-	$(CXX) $(CXXFLAGS) $(GSL_LDFLAGS) -o ../run/TESTS/nulib_plots/nulib_test.exe nulib_test.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS)
+	$(CXX) $(CXXFLAGS) $(GSL_LDFLAGS) -o ../tests/nulib_plots/nulib_test.exe nulib_test.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS)

@@ -8,7 +8,7 @@ species=0
 
 
 all:
-	./nulib_test.exe ../../../external/tables/NuLib_LS220.h5 $(rho) $(T) $(Ye) $(E) $(species)	
+	./nulib_test.exe ../../external/tables/NuLib_LS220.h5 $(rho) $(T) $(Ye) $(E) $(species)	
 	python eas_rho.py
 	python eas_T.py
 	python eas_ye.py
