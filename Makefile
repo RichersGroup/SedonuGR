@@ -15,3 +15,6 @@ realclean: clean
 
 tests: all
 	$(MAKE) tests -C src
+
+testsclean:
+	$(MAKE) testsclean -C src

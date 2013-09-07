@@ -1,0 +1,1 @@
+This test should output spectra of the three neutrino species in NuLib's simplest scheme (i.e. \nu_e, \bar{\nu}_e, and \nu_x) along with theoretical predictions. To run the test just execute "make". This assumes "make tests" has been run in the base directory.

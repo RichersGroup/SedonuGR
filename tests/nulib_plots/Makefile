@@ -1,4 +1,4 @@
-.PHONY: clean
+.PHONY: all clean
 
 rho=1e14  #g/cm^3                                                                                                                      
 T=1       #MeV                                                                                                                         
