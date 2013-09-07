@@ -172,18 +172,19 @@ void spectrum_array::count(double t, double w, double E, double *D)
   double mu  = D[2];
   double phi = atan2(D[1],D[0]);
 
-  // locate bin number in all dimensions
-  int t_bin = time_grid.locate(t);
-  int l_bin = wave_grid.locate(w);
-  int m_bin = mu_grid.locate(mu);
-  int p_bin = phi_grid.locate(phi);
+  // locate bin number in all dimensions.
+  // Set to zero if there is only one bin.
+  int t_bin = (time_grid.size()==1 ? 0 : time_grid.locate(t)  );
+  int l_bin = (wave_grid.size()==1 ? 0 : wave_grid.locate(w)  );
+  int m_bin = (  mu_grid.size()==1 ? 0 :   mu_grid.locate(mu) );
+  int p_bin = ( phi_grid.size()==1 ? 0 :  phi_grid.locate(phi));
 
   // keep all photons, even if off wavelength grid
   if (l_bin <  0               ) l_bin = 0;
   if (l_bin >= wave_grid.size()) l_bin = wave_grid.size()-1;
 
   // if off the grids, just return without counting
-  if ((t_bin < 0)||(m_bin < 0)||(p_bin < 0)) return;
+  if ((t_bin < 0)||(l_bin < 0)||(m_bin < 0)||(p_bin < 0)) return;
   if (t_bin >= time_grid.size()) return;
   if (m_bin >= mu_grid.size())   return;
   if (p_bin >= phi_grid.size())  return;
