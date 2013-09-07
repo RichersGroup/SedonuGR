@@ -54,22 +54,18 @@ void locate_array::init(std::vector<double> a)
 
 //---------------------------------------------------------
 // locate (return closest index below the value)
-// If off the boundaries of the array, return the
-// boundary value
+// if off boundary, return -1 or size of array
 //---------------------------------------------------------
 int locate_array::locate(double xval)
 {
-  // the degenerate case always returns 0
-  if (x.size() == 1) return 0;
-  
   // a form of locate from numerical recipes
   int bm;                             // mid point
   int bl = 0;                         // lower bound
-  int bu = x.size()-1;               // upper bound
+  int bu = x.size()-1;                // upper bound
 
   // check if we are off the ends of the array
-  if (xval >= x[bu]) return (int)x.size();
-  if (xval <= x[bl]) return 0;
+  if (xval >= x[bu]) return x.size();
+  if (xval <= x[bl]) return -1;
     
   // search the array for this index
   while (bu-bl > 1)
@@ -138,13 +134,17 @@ void locate_array::print()
 double locate_array::value_at(double xval, vector<double>& y){
   int ind = locate(xval);
   int i1, i2;
-  if (ind < x.size()-1){
+  if(ind < 0){                // If off left side of grid
+    i1 = 0;
+    i2 = 1;
+  }
+  else if(ind < x.size()-1){  // If within expected region of grid
     i1 = ind;
     i2 = ind + 1;
   }
-  else{
-    i2 = ind;
-    i1 = ind - 1;
+  else{                       // If off the right side of the grid
+    i1 = x.size() - 2;
+    i2 = x.size() - 1;
   }
 
   if(do_log_interpolate) return log_interpolate_between(xval, i1, i2, y);

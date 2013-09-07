@@ -109,19 +109,15 @@ int grid_1D_sphere::get_zone(double *x)
 {
   double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 
-  // check if inside inner edge
-  if (r < r_inner) return -1;
+  // check if off the boundaries
+  if(r < r_inner               ) return -1;
+  if(r > r_out[r_out.size()-1] ) return -2;
 
   // find in zone array
   // plus 1 b/c locate returns *lower* index and we want *upper*
   int i = r_out.locate(r)+1;
 
-  //int size = r_out.size(); //optimizing - fewer size calls
-  //for (long int i=0;i<size;i++) 
-  if (r < r_out[i]) return i;
-
-  // off outer edge
-  return -2;
+  return i;
 }
 
 
