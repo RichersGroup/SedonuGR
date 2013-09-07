@@ -1,6 +1,8 @@
 -- what are we simulating?
 do_photons = 1
 do_neutrinos=0
+solve_T = 1
+solve_Ye = 0
 
 -- input/output files
 
@@ -34,7 +36,7 @@ iterate        = 2;   -- set to do an iterative (time independent) calc
 r_core = 2e15
 L_core = 1e43
 T_core = 10000
-n_inject = 1e3
+n_inject = 1e4
 
 -- opacities
 grey_opacity    =  0.1           -- optical grey opacity in cm^2/g
@@ -50,3 +52,4 @@ n_nu            =  500
 spec_time_grid = {1,1,1}
 spec_nu_grid =   {1e14,1e15,1e13}
 use_transport = 0
+damping = 0.5

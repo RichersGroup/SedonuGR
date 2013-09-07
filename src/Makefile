@@ -23,3 +23,6 @@ realclean: clean
 
 tests: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(GSL_LDFLAGS) -o ../tests/nulib_plots/nulib_test.exe nulib_test.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS)
+	cp $(TARGET) ../tests/phot_spherical_emis
+	cp $(TARGET) ../tests/nut_spherical_emis
+	cp $(TARGET) ../tests/nut_neutron_star
