@@ -81,11 +81,11 @@ void neutrinos::myInit(Lua* lua)
   {
     double nu  = nu_grid.center(j);
     double dnu = nu_grid.delta(j);
-    double bb  = fermi_dirac(T_core,chem_pot,nu)*dnu;
+    double bb  = 2.0*nu*nu*nu*pc::h/(pc::c*pc::c)*fermi_dirac(T_core,chem_pot,nu)*dnu;
     core_emis.set_value(j,bb);
   }
   core_emis.normalize();
-  if(num_nut_species == 3) core_emis.N = weight * L_core / 6.0;
+  core_emis.N = weight * L_core / 6.0;
 
 //  double rho_core = lua->scalar<double>("rho_core");
 //  double T_core   = lua->scalar<double>("T_core");
