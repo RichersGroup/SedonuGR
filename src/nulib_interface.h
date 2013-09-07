@@ -4,6 +4,8 @@
 #include "cdf_array.h"
 #include "locate_array.h"
 
+// returns everything in standard CGS units (i.e. ergs, s, cm, K, Hz)
+
 using namespace std;
 
 void nulib_init(string filename);

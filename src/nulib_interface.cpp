@@ -73,11 +73,12 @@ void nulib_get_eas_arrays(real rho,                     // g/cm^3
   
   int nvars    = __nulibtable_MOD_nulibtable_number_easvariables;
   int ngroups  = __nulibtable_MOD_nulibtable_number_groups;
-  //  double eas_species_energy[nvars][ngroups][nspecies];
   // apparently it's valid to declare array sizes at runtime like this... if it breaks, use malloc
-  double eas_energy[nvars][ngroups];
+  double eas_energy[nvars][ngroups]; //[0][*] = energy-bin-integrated emissivity (erg/cm^3/s/ster). 
+                                     //[1][*] = absorption opacity (1/cm)
+                                     //[2][*] = scattering opacity (1/cm)
 
-  //check sizes match and we are withing the table boundaries
+  //check sizes match and we are within the table boundaries
   if(nvars != 3){
     cout << "ERROR: nulibtable has different number of eas variables than 3" << endl;
     exit(EXIT_FAILURE);
@@ -101,10 +102,11 @@ void nulib_get_eas_arrays(real rho,                     // g/cm^3
   
   // Otherwise, fill with the appropriate values
   else{
+    // TODO - change emissivity to assume bin-centered rather than bin-top
     nulibtable_single_species_range_energy_(&rho, &temp_MeV, &ye, &lns,
 					    (double*)eas_energy, &ngroups, &nvars);
     for(int j=0; j<ngroups; j++){
-      nut_emiss.set_value(j, eas_energy[0][j] * pc::MeV_to_ergs);
+      nut_emiss.set_value(j, eas_energy[0][j]);
       nut_absopac [j] =      eas_energy[1][j];
       nut_scatopac[j] =      eas_energy[2][j];
     }
@@ -139,7 +141,7 @@ void nulib_get_rho_array(vector<double>& array){ // g/cm^3
 void nulib_get_T_array(vector<double>& array){ // K
   array.assign(__nulibtable_MOD_nulibtable_logtemp,
 	       __nulibtable_MOD_nulibtable_logtemp + __nulibtable_MOD_nulibtable_number_groups);
-  for(int i=0; i<array.size(); i++) array[i] = pow(10.0, array[i]) / pc::k_MeV;
+  for(int i=0; i<array.size(); i++) array[i] = pow(10.0, array[i]) / pc::k_MeV; // convert from MeV to K
 }
 void nulib_get_Ye_array(vector<double>& array){
   array.assign(__nulibtable_MOD_nulibtable_ye,
@@ -149,9 +151,9 @@ void nulib_get_Ye_array(vector<double>& array){
 /*************************/
 /* nulib_get_{*min,*max} */
 /*************************/
-double nulib_get_Tmin()   {return pow(10,__nulibtable_MOD_nulibtable_logtemp_min) / (1e-6*pc::k_ev);} //convert from MeV to K
-double nulib_get_Tmax()   {return pow(10,__nulibtable_MOD_nulibtable_logtemp_max) / (1e-6*pc::k_ev);} //convert from MeV to K
+double nulib_get_Tmin()   {return pow(10,__nulibtable_MOD_nulibtable_logtemp_min) / pc::k_MeV;} //convert from MeV to K
+double nulib_get_Tmax()   {return pow(10,__nulibtable_MOD_nulibtable_logtemp_max) / pc::k_MeV;} //convert from MeV to K
 double nulib_get_rhomin() {return pow(10,__nulibtable_MOD_nulibtable_logrho_min);}
 double nulib_get_rhomax() {return pow(10,__nulibtable_MOD_nulibtable_logrho_max);}
-double nulib_get_Yemin() {return __nulibtable_MOD_nulibtable_ye_min;}
-double nulib_get_Yemax() {return __nulibtable_MOD_nulibtable_ye_max;}
+double nulib_get_Yemin()  {return __nulibtable_MOD_nulibtable_ye_min;}
+double nulib_get_Yemax()  {return __nulibtable_MOD_nulibtable_ye_max;}

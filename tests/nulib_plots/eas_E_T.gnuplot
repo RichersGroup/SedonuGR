@@ -6,13 +6,13 @@ set ytics out
 filename = "./eas_E_T.dat"
 set title "`head -n1 ./eas_E_T.dat`"
 set xlabel "Neutrino Energy (MeV)"
-set y2label "Colors: Temperature(MeV)"
+set y2label "Colors: log10[Temperature(MeV)]"
 set key off
 
 set term unknown
 unset log x
 unset log y
-plot filename using 2:3:1 w l palette lw 3
+plot filename using 2:3:(log10($1)) w l palette
 set xrange [GPVAL_DATA_X_MIN:GPVAL_DATA_X_MAX]
 set log x
 set log y
@@ -25,11 +25,11 @@ set output
 set term unknown
 unset log x
 unset log y
-plot filename using 2:4:1 w l palette lw 3
+plot filename using 2:4:(log10($1)) w l palette
 set xrange [GPVAL_DATA_X_MIN:GPVAL_DATA_X_MAX]
 set log x
 set log y
-set ylabel "Opacity (cm^-1)"
+set ylabel "Absorption Opacity (1/cm)"
 set term pdf
 set output "absopac_E_T.pdf"
 replot
@@ -38,11 +38,11 @@ set output
 set term unknown
 unset log x
 unset log y
-plot filename using 2:5:1 w l palette lw 3
+plot filename using 2:5:(log10($1)) w l palette
 set xrange [GPVAL_DATA_X_MIN:GPVAL_DATA_X_MAX]
 set log x
 set log y
-set ylabel "Opacity (cm^-1)"
+set ylabel "Scattering Opacity (1/cm)"
 set term pdf
 set output "scatopac_E_T.pdf"
 replot

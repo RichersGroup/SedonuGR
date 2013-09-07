@@ -41,6 +41,8 @@ ax[2].set_xscale('log')
 ax[0].grid(True)
 ax[1].grid(True)
 ax[2].grid(True)
+for label in ax[0].get_xticklabels():
+    label.set_fontsize(15)
 
 y0min = min(data[:,1])
 y0max = max(data[:,1])
