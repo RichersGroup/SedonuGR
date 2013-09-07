@@ -630,7 +630,11 @@ void transport::propagate_particles(double dt)
     {
       n_active[pIter->s]++;
       ParticleFate fate = propagate(*pIter,dt);
-      if (fate == escaped){ n_escape[pIter->s]++; e_esc += pIter->e;}
+      if (fate == escaped){
+	n_escape[pIter->s]++;
+	e_esc += pIter->e;
+	species_list[pIter->s]->spectrum.count(pIter->t, pIter->nu, pIter->e, pIter->D);
+      }
       if ((fate == escaped)||(fate == absorbed)) pIter = particles.erase(pIter);
       else pIter++;
     }
@@ -787,9 +791,6 @@ ParticleFate transport::propagate(particle &p, double dt)
     // check for inner boundary absorption
     if (p.r() < r_core) fate = absorbed;
   }
-
-  // Add escaped photons to output spectrum
-  if (fate == escaped) species_list[p.s]->spectrum.count(p.t, p.nu, p.e, p.D);
 
   return fate;
 }
