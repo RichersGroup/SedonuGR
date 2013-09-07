@@ -10,6 +10,9 @@ L = 1e43                   #erg/s
 P = 4*pi*r*r*sigma*T*T*T*T #erg/s
 N = L/P
 
+set xlabel "Frequency (Hz)"
+set ylabel "Energy Flux (erg/s/Hz)"
+
 set xrange [0:3e15]
 set term pdf
 set output "compare_spectrum.pdf"

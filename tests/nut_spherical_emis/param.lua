@@ -6,7 +6,7 @@ do_neutrinos = 1
 
 grid_type = "grid_1D_sphere"
 model_file  =  "empty_sphere.mod"
-nulib_table = "../../../external/tables/NuLib_LS220.h5"
+nulib_table = "../../external/tables/NuLib_LS220.h5"
 
 -- time stepping (all times in days)
 day = 3600.0*24
@@ -24,7 +24,7 @@ init_particles = 0
 step_size      = 0.4
 
 radiative_eq   = 1;   -- set 
-iterate        = 20;   -- set to do an iterative (time independent) calc
+iterate        = 2;   -- set to do an iterative (time independent) calc
 damping        = 0.5;
 
 solve_T  = 1
@@ -38,12 +38,10 @@ nut_epsilon      = -1  -- absorption fraction - set to negative to turn off
 r_core = 1
 L_core = 1e43
 T_core = 3.5e11  -- 30 MeV
-n_inject = 6e3
+n_inject = 6e4
 
 -- output spectrum
 nut_spec_time_grid   = {1,1,1}
-nut_spec_log_nu_grid =   {19,22,0.1}
+nut_spec_log_nu_grid =   {20,23,0.05}
 nut_n_mu             =    1           -- number of cos(theta) bins in output spectrum 
 nut_n_phi            =    1           -- number of phi bins in output spectrum
-
-
