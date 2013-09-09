@@ -1,0 +1,12 @@
+First, you need to initialize the NuLib submodule and checkout the appropriate commit.
+
+git submodule init
+git submodule update
+
+To install from scratch (including hdf5) execute
+
+make hdf5
+make nulib
+make
+
+If you already have a copy of hdf5 (compiled with the same fortran compiler that will be used to compile NuLib) or NuLib then you can skip the corresponding step above. Then you need to create a make.inc file, which the Makefile includes. There is a template that you can modify, though it should work on its own by default if you let the makefile build hdf5 for you.

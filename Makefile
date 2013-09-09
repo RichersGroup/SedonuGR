@@ -1,20 +1,39 @@
 include make.inc
-.PHONY: clean
+.PHONY: all clean realclean tests testsclean hdf5
 
-all: 
-	cp make.inc external/NuLib
-	$(MAKE) -j1 -C external/NuLib
+gomc: 
 	$(MAKE) -C src
 
 clean: 
-	$(MAKE) -C external/NuLib clean
 	$(MAKE) -C src clean
 
 realclean: clean
 	$(MAKE) -C src realclean
+
+
+#########
+# TESTS #
+#########
 
 tests: all
 	$(MAKE) tests -C src
 
 testsclean:
 	$(MAKE) testsclean -C src
+
+
+########
+# HDF5 #
+########
+hdf5:
+	$(MAKE) -C external HDF5
+
+
+#########
+# NuLib #
+#########
+nulib:
+	$(MAKE) -C external NuLib
+
+nulibclean:
+	$(MAKE) -C external nulibclean

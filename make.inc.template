@@ -1,0 +1,27 @@
+export
+#compiler configuration
+F90=mpif90 -f90=gfortran
+CXX=mpicxx -cxx=g++
+CC=mpicc -cc=gcc
+F90FLAGS= -g
+CXXFLAGS= -g -std=c++11
+
+#general options
+TARGET=$(CURDIR)/gomc
+BASEDIR=$(CURDIR)
+
+#GSL
+GSL_BASE=$(GSL_DIR)
+GSL_INCL=-I$(GSL_BASE)/include
+GSL_LDFLAGS=-L$(GSL_BASE)/lib
+GSL_LIBS=-lgsl -lgslcblas -llua -lm -lstdc++
+
+#You must have a HDF5 version installed with the _same_ compiler
+#used to compile NuLib
+HDF5DIR=$(CURDIR)/external/hdf5
+HDF5INCS=-I$(HDF5DIR)/include
+HDF5LIBS=-L$(HDF5DIR)/lib -lhdf5 -lhdf5_fortran -lhdf5 -lz -ldl
+
+#nulib
+NULIB_DIR=$(CURDIR)/external/NuLib
+NULIB_LIBS=$(NULIB_DIR)/src/nulib.a -lgfortran
