@@ -25,10 +25,10 @@ init_particles = 0
 step_size      = 0.4
 
 radiative_eq   = 1;   -- set 
-iterate        = 10;   -- set to do an iterative (time independent) calc
+iterate        = 2;   -- set to do an iterative (time independent) calc
 damping        = 0.5;
 
-solve_T  = 0
+solve_T  = 1
 solve_Ye = 1
 
 -- opacity parameters
@@ -36,10 +36,10 @@ nut_grey_opacity = -1  -- grey opacity - set to negative to turn off
 nut_epsilon      = -1  -- absorption fraction - set to negative to turn off
 
 -- inner source
-r_core = 9e5
+r_core = 10300e2
 L_core = 1e43
 T_core = 3.5e11  -- 30 MeV
-n_inject = 6e3
+n_inject = 0
 rho_core = 3e14
 Ye_core = 0.2
 

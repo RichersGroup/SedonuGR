@@ -8,6 +8,7 @@ make.inc
 *gomc
 src/*.d
 run/TESTS/*/*.dat
-run/TEST/*/*.mod
+run/TESTS/*/*.mod
 run/TESTS/nulib_plots/*.pdf
 run/TESTS/nulib_plots/plot_defaults.pyc
+external/hdf5

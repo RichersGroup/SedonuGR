@@ -26,10 +26,12 @@ tests: $(OBJECTS)
 	cp $(TARGET) ../tests/phot_spherical_emis
 	cp $(TARGET) ../tests/nut_spherical_emis
 	cp $(TARGET) ../tests/nut_neutron_star
+	cp $(TARGET) ../tests/equilibrium_ye
 
 testsclean:
 	$(MAKE) -C ../tests/phot_spherical_emis clean
 	$(MAKE) -C ../tests/nut_spherical_emis clean
 	$(MAKE) -C ../tests/nut_neutron_star clean
+	$(MAKE) -C ../tests/equilibrium_ye clean
 	rm -f ../tests/*/gomc
 	rm -f ../tests/nulib_plots/nulib_test.exe
