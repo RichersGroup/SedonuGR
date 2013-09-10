@@ -1,7 +1,7 @@
 include make.inc
 .PHONY: all clean realclean tests testsclean hdf5
 
-gomc: 
+all: 
 	$(MAKE) -C src
 
 clean: 

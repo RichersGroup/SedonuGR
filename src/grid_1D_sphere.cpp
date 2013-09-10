@@ -79,15 +79,13 @@ void grid_1D_sphere::read_model_file(Lua* lua)
     infile >> r_out[i];
     infile >> z[i].rho;
     infile >> z[i].T_gas;
-    infile >> z[i].ni56;
+    infile >> z[i].Ye;
 
     z[i].v[0] = 0;
     z[i].e_rad = pc::a*pow(z[i].T_gas,4);
     if(i==0) r0 = r_inner;
     else r0 = r_out[i-1];
     vol[i] = 4.0*pc::pi/3.0*(r_out[i]*r_out[i]*r_out[i] - r0*r0*r0);
-
-    z[i].Ye = 0.35; // TODO - make this part of file generator
   }
 
   infile.close();
