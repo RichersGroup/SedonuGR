@@ -11,5 +11,5 @@ temp = 0
 
 
 print '1D_sphere', 'GRB',nx,v_in,t0
-print R, rho, temp, 1.0
+print R, rho, temp, 0.5
 

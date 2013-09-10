@@ -5,13 +5,16 @@ nx = 100
 t0 = -1
 v_in = 0
 
-R = 10*km
+R_max = 10*km
+R_min = 9*km
+dx = (R_max-R_min)/nx
 rho_max = 2e15
-dx = R/nx
+ye_max = 0.2
 
 temp = 1*MeV
 
 print '1D_sphere', 'GRB',nx,v_in,t0
 
 for i  in range(1,nx+1):
-    print i*dx, rho_max*(1-(float(i)/float(nx))**2), temp, 1.0
+    R = R_min + i*dx
+    print R, rho_max*(1-(R/R_max)**2), temp, ye_max*(1-(R/R_max)**2)+.05
