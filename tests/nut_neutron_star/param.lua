@@ -28,7 +28,7 @@ radiative_eq   = 1;   -- set
 iterate        = 10;   -- set to do an iterative (time independent) calc
 damping        = 0.5;
 
-solve_T  = 0
+solve_T  = 1
 solve_Ye = 1
 
 -- opacity parameters
@@ -37,7 +37,7 @@ nut_epsilon      = -1  -- absorption fraction - set to negative to turn off
 
 -- inner source
 r_core = 9e5
-L_core = 1e43
+L_core = 1e46
 T_core = 3.5e11  -- 30 MeV
 n_inject = 6e3
 rho_core = 3e14
