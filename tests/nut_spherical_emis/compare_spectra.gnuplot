@@ -17,21 +17,21 @@ set ylabel "Energy Flux (erg/s/Hz)"
 set term pdf
 set output "compare_spectrum_0.pdf"
 set title "Electron Neutrinos"
-plot 2*pi*4*pi*r*r*2*x*x*x*h/c/c*1/(exp(h*x/(k_b*T))+1)/6, './species0_I2.spec' using 1:2
+plot N*4*pi*pi*r*r*2*x*x*x*h/c/c*1/(exp(h*x/(k_b*T))+1)/6, './species0_I2.spec' using 1:2
 set output
 
 set term pdf
 set output "compare_spectrum_1.pdf"
 set title "Electron Anti-Neutrinos"
-plot 2*pi*4*pi*r*r*2*x*x*x*h/c/c*1/(exp(h*x/(k_b*T))+1)/6, './species1_I2.spec' using 1:2
+plot N*4*pi*pi*r*r*2*x*x*x*h/c/c*1/(exp(h*x/(k_b*T))+1)/6, './species1_I2.spec' using 1:2
 set output
 
 set term pdf
 set output "compare_spectrum_2.pdf"
 set title "Mu/Tau Anti/Neutrinos"
-plot 2*pi*4*pi*r*r*2*x*x*x*h/c/c*1/(exp(h*x/(k_b*T))+1)*2/3, './species2_I2.spec' using 1:2
+plot N*4*pi*pi*r*r*2*x*x*x*h/c/c*1/(exp(h*x/(k_b*T))+1)*2/3, './species2_I2.spec' using 1:2
 set output
 
 # planck function has units of erg/s/cm^2/Hz/ster
-# 2*pi assuming isotropic emission from surface
-# 4*pi*r*r is the surface area
+# 4*pi is the total solid angle neutrinos are collected from
+# pi*r*r is the cross-sectional surface area
