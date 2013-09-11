@@ -1,6 +1,6 @@
 .PHONY: all nulibclean NuLib
 
-all: hdf5 NuLib
+all: hdf5 NuLib nulibclean
 
 ########
 # HDF5 #
@@ -8,7 +8,7 @@ all: hdf5 NuLib
 hdf5:
 	wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.11.tar.gz
 	tar -xvf hdf5-1.8.11.tar.gz
-	cd hdf5-1.8.11; FC=$(F90) CC=$(CC) ./configure --enable-fortran
+	cd hdf5-1.8.11; CFLAGS=-O0 FC=$(F90_BASE) CC=$(CC_BASE) ./configure --enable-fortran
 	cd hdf5-1.8.11; make
 	cd hdf5-1.8.11; make test
 	cd hdf5-1.8.11; make install
