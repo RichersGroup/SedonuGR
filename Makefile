@@ -26,7 +26,7 @@ testsclean:
 # HDF5 #
 ########
 hdf5:
-	$(MAKE) -C external HDF5
+	$(MAKE) -C external hdf5
 
 
 #########
