@@ -22,4 +22,4 @@ all:
 	done
 
 clean:
-	rm -rf species_0 species_1 species_2
+	rm -rf species_0 species_1 species_2 plot_defaults.pyc
