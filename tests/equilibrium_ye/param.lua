@@ -25,10 +25,10 @@ init_particles = 0
 step_size      = 0.4
 
 radiative_eq   = 1;   -- set 
-iterate        = 2;   -- set to do an iterative (time independent) calc
+iterate        = 5;   -- set to do an iterative (time independent) calc
 damping        = 0.5;
 
-solve_T  = 1
+solve_T  = 0
 solve_Ye = 1
 
 -- opacity parameters

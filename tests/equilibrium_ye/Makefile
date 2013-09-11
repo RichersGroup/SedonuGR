@@ -4,7 +4,7 @@ all:
 	python neutron_star.py > neutron_star.mod
 	./gomc
 	tail -n +2 neutron_star.mod > tmp.dat
-	paste ray_00001 tmp.dat > profile.dat
+	paste ray_00004 tmp.dat > profile.dat
 	rm -f tmp.dat
 	gnuplot equilibrium_ye.gnuplot
 
