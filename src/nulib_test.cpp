@@ -89,39 +89,39 @@ int main(int argc, char* argv[]){
   eas_rho.open("eas_rho.dat");
   cout << "generating eas_rho.dat" << endl;
   eas_rho << "# T(MeV):" << T*pc::k_MeV << " ye:" << ye << " E(MeV):" << myenergy << endl; 
-  eas_rho << setw(25) << "# rho(g/cm^3)" << setw(25) << "emis(int)(erg/cm^3/s/ster)" << setw(25) << "absopac(cm^-1)"<< setw(25) <<"scatopac(cm^-1)" << endl;
+  eas_rho << setw(25) << "# rho(g/cm^3)" << setw(25) << "emis(int)(erg/cm^3/s/ster)" << setw(25) << "absopac(cm^2/g)"<< setw(25) <<"scatopac(cm^2/g)" << endl;
   for(int j=0; j<nrho; j++){
     nulib_get_eas_arrays(rho_grid[j], T, ye, nulibID, emis, absopac, scatopac);
     e = emis.get(nu_grid.size()-1);
     a = nu_grid.value_at(myfreq, absopac);
     s = nu_grid.value_at(myfreq, scatopac);
-    eas_rho << setw(25) << rho_grid[j] << setw(25) << e << setw(25) << a << setw(25) << s << endl;
+    eas_rho << setw(25) << rho_grid[j] << setw(25) << e << setw(25) << a/rho_grid[j] << setw(25) << s/rho_grid[j] << endl;
   }
 
   ofstream eas_T;
   eas_T.open("eas_T.dat");
   cout << "generating eas_T.dat" << endl;
   eas_T << "# rho(g/cm^3):" << rho << " ye:" << ye << " E(MeV):" << myenergy << endl; 
-  eas_T << setw(25) << "# T(MeV)" << setw(25) << "emis(int)(erg/cm^3/s/ster)" << setw(25) << "absopac(cm^-1)" <<setw(25) << "scatopac(cm^-1)" << endl;
+  eas_T << setw(25) << "# T(MeV)" << setw(25) << "emis(int)(erg/cm^3/s/ster)" << setw(25) << "absopac(cm^2/g)" <<setw(25) << "scatopac(cm^2/g)" << endl;
   for(int j=0; j<nT; j++){
     nulib_get_eas_arrays(rho, T_grid[j], ye, nulibID, emis, absopac, scatopac);
     e = emis.get(nu_grid.size()-1);
     a = nu_grid.value_at(myfreq, absopac);
     s = nu_grid.value_at(myfreq, scatopac);
-    eas_T <<setw(25) << T_grid[j]*pc::k_MeV <<setw(25) << e <<setw(25) << a <<setw(25) << s << endl;
+    eas_T <<setw(25) << T_grid[j]*pc::k_MeV <<setw(25) << e <<setw(25) << a/rho <<setw(25) << s/rho << endl;
   }
 
   ofstream eas_ye;
   eas_ye.open("eas_ye.dat");
   cout << "generating eas_ye.dat" << endl;
   eas_ye << "# rho(g/cm^3):" << rho << " T(MeV):" << T*pc::k_MeV << " E(MeV):" << myenergy << endl; 
-  eas_ye << setw(25) << "# ye" << setw(25) << "emis(int)(erg/cm^3/s/ster)" << setw(25) << "absopac(cm^-1)" << setw(25) << "scatopac(cm^-1)" << endl;
+  eas_ye << setw(25) << "# ye" << setw(25) << "emis(int)(erg/cm^3/s/ster)" << setw(25) << "absopac(cm^2/g)" << setw(25) << "scatopac(cm^2/g)" << endl;
   for(int j=0; j<nye; j++){
     nulib_get_eas_arrays(rho, T, ye_grid[j], nulibID, emis, absopac, scatopac);
     e = emis.get(nu_grid.size()-1);
     a = nu_grid.value_at(myfreq, absopac);
     s = nu_grid.value_at(myfreq, scatopac);
-    eas_ye <<setw(25) << ye_grid[j] <<setw(25) << e <<setw(25) << a <<setw(25) << s << endl;
+    eas_ye <<setw(25) << ye_grid[j] <<setw(25) << e <<setw(25) << a/rho <<setw(25) << s/rho << endl;
   }
 
   eas_rho.close();
@@ -138,7 +138,7 @@ int main(int argc, char* argv[]){
   ofstream eas_E_rho ("eas_E_rho.dat" );
 
   eas_E_rho << "# T(MeV)="<<T*pc::k_MeV << " ye="<<ye << " rho_min(g/cm^3)="<<nulib_get_rhomin() << " rho_max(g/cm^3)="<<nulib_get_rhomax() << " Nrho=" << rho_grid.size() << endl;
-  eas_E_rho << setw(25) << "# rho(g/cm^3)" << setw(25) << "E(MeV)" << setw(25) << "emis(erg/cm^3/s/ster/Hz)" << setw(25) << "absopac(cm^-1)" << setw(25) << "scatopac(cm^-1)" << endl;
+  eas_E_rho << setw(25) << "# rho(g/cm^3)" << setw(25) << "E(MeV)" << setw(25) << "emis(erg/cm^3/s/ster/Hz)" << setw(25) << "absopac(cm^2/g)" << setw(25) << "scatopac(cm^2/g)" << endl;
 
   for(int i=0; i<rho_grid.size(); i++){
     nulib_get_eas_arrays(rho_grid[i], T, ye, nulibID, emis, absopac, scatopac);
@@ -147,7 +147,7 @@ int main(int argc, char* argv[]){
       e = pure_emis[j];
       a = nu_grid.value_at(nu_grid[j], absopac);
       s = nu_grid.value_at(nu_grid[j], scatopac);
-      eas_E_rho << setw(25) << rho_grid[i] <<setw(25) << nu_grid[j]*pc::h_MeV <<setw(25) << e  <<setw(25) << a  <<setw(25) << s << endl;
+      eas_E_rho << setw(25) << rho_grid[i] <<setw(25) << nu_grid[j]*pc::h_MeV <<setw(25) << e  <<setw(25) << a/rho_grid[j] <<setw(25) << s/rho_grid[j] << endl;
     }
     eas_E_rho << endl;
   }
@@ -160,7 +160,7 @@ int main(int argc, char* argv[]){
   ofstream eas_E_T ("eas_E_T.dat" );
 
   eas_E_T << "# rho(g/cm^3)="<<rho << " ye="<<ye << " T_min(MeV)="<<nulib_get_Tmin()*pc::k_MeV << " T_max(MeV)="<<nulib_get_Tmax()*pc::k_MeV << " NT=" << T_grid.size() << endl;
-  eas_E_T << setw(25) << "# T(MeV)" << setw(25) << "E(MeV)" << setw(25) << "emis(erg/cm^3/s/ster/Hz)" << setw(25) << "absopac(cm^-1)" << setw(25) << "scatopac(cm^-1)" << endl;
+  eas_E_T << setw(25) << "# T(MeV)" << setw(25) << "E(MeV)" << setw(25) << "emis(erg/cm^3/s/ster/Hz)" << setw(25) << "absopac(cm^2/g)" << setw(25) << "scatopac(cm^2/g)" << endl;
 
   for(int i=0; i<T_grid.size(); i++){
     nulib_get_eas_arrays(rho, T_grid[i], ye, nulibID, emis, absopac, scatopac);
@@ -169,7 +169,7 @@ int main(int argc, char* argv[]){
       e = pure_emis[j];
       a = nu_grid.value_at(nu_grid[j], absopac);
       s = nu_grid.value_at(nu_grid[j], scatopac);
-      eas_E_T << setw(25) << T_grid[i]*pc::k_MeV << setw(25) << nu_grid[j]*pc::h_MeV << setw(25) << e << setw(25) << a << setw(25) << s << endl;
+      eas_E_T << setw(25) << T_grid[i]*pc::k_MeV << setw(25) << nu_grid[j]*pc::h_MeV << setw(25) << e << setw(25) << a/rho << setw(25) << s/rho << endl;
     }
     eas_E_T << endl;
   }
@@ -181,8 +181,8 @@ int main(int argc, char* argv[]){
   cout << "generating eas_E_ye.dat" << endl;
   ofstream eas_E_ye ("eas_E_ye.dat" );
 
-  eas_E_ye << "# T(MeV)="<<T*pc::k_MeV << " rho(g/cm^3)="<<rho << " ye_min="<<nulib_get_Yemin << " ye_max="<<nulib_get_Yemax() << " Nye=" << ye_grid.size() << endl;
-  eas_E_ye << setw(25) << "# ye" << setw(25) << "E(MeV)" << setw(25) << "emis(erg/cm^3/s/ster/Hz)" << setw(25) << "absopac(cm^-1)" << setw(25) << "scatopac(cm^-1)" << endl;
+  eas_E_ye << "# T(MeV)="<<T*pc::k_MeV << " rho(g/cm^3)="<<rho << " ye_min="<<nulib_get_Yemin() << " ye_max="<<nulib_get_Yemax() << " Nye=" << ye_grid.size() << endl;
+  eas_E_ye << setw(25) << "# ye" << setw(25) << "E(MeV)" << setw(25) << "emis(erg/cm^3/s/ster/Hz)" << setw(25) << "absopac(cm^2/g)" << setw(25) << "scatopac(cm^2/g)" << endl;
 
   for(int i=0; i<ye_grid.size(); i++){
     nulib_get_eas_arrays(rho, T, ye_grid[i], nulibID, emis, absopac, scatopac);
@@ -191,7 +191,7 @@ int main(int argc, char* argv[]){
       e = pure_emis[j];
       a = nu_grid.value_at(nu_grid[j], absopac);
       s = nu_grid.value_at(nu_grid[j], scatopac);
-      eas_E_ye << setw(25) << ye_grid[i] <<setw(25) << nu_grid[j]*pc::h_MeV <<setw(25) << e  <<setw(25) << a  <<setw(25) << s << endl;
+      eas_E_ye << setw(25) << ye_grid[i] <<setw(25) << nu_grid[j]*pc::h_MeV <<setw(25) << e  <<setw(25) << a/rho  <<setw(25) << s/rho << endl;
     }
     eas_E_ye << endl;
   }

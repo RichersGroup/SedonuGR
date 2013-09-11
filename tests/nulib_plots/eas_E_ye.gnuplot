@@ -16,7 +16,7 @@ plot filename using 2:3:1 w l palette
 set xrange [GPVAL_DATA_X_MIN:GPVAL_DATA_X_MAX]
 set log x
 set log y
-set ylabel "Emissivity (erg/s/cm^3/Hz/ster)"
+set ylabel "Integrated Emis (erg/s/cm^3/ster)"
 set term pdf
 set output "emis_E_ye.pdf"
 replot
@@ -29,7 +29,7 @@ plot filename using 2:4:1 w l palette
 set xrange [GPVAL_DATA_X_MIN:GPVAL_DATA_X_MAX]
 set log x
 set log y
-set ylabel "Absorption Opacity (1/cm)"
+set ylabel "Absorption Opacity (cm^2/g)"
 set term pdf
 set output "absopac_E_ye.pdf"
 replot
@@ -38,11 +38,11 @@ set output
 set term unknown
 unset log x
 unset log y
-plot filename using 2:5:1 w l palette
+plot filename using 2:($5/$1):1 w l palette
 set xrange [GPVAL_DATA_X_MIN:GPVAL_DATA_X_MAX]
 set log x
 set log y
-set ylabel "Scattering Opacity (1/cm)"
+set ylabel "Scattering Opacity (cm^2/g)"
 set term pdf
 set output "scatopac_E_ye.pdf"
 replot

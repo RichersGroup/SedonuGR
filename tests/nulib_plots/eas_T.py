@@ -80,7 +80,7 @@ text(xlabelx,xlabely,xlabelstring,fontsize=labelsize,
 
 y0labelx = -0.15
 y0labely = 0.5
-y0labelstring = r'$\epsilon$ (erg/cm$^3$/s/Hz/ster)'
+y0labelstring = r'$\epsilon$ (erg/cm$^3$/s/ster)'
 text(y0labelx,y0labely,y0labelstring,fontsize=0.8*labelsize,
          verticalalignment="center",rotation='vertical',transform=ax[0].transAxes)
 
