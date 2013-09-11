@@ -1,22 +1,22 @@
 export
 #compiler configuration
-F90_BASE = gfortran
-CXX_BASE = g++
-CC_BASE  = gcc
+F90_BASE = gfortran           #INTEL: ifort
+CXX_BASE = g++                #INTEL: icpc
+CC_BASE  = gcc		      #INTEL: icc
 
-F90=mpif90 -f90=$(F90_BASE)
-CXX=mpicxx -cxx=$(CXX_BASE)
-CC=mpicc   -cc=$(CC_BASE)
+F90=mpif90 -f90=$(F90_BASE)   #INTEL: mpif90  #i.e. use intel's version of the wrapper
+CXX=mpicxx -cxx=$(CXX_BASE)   #INTEL: mpicxx  #i.e. use intel's version of the wrapper
+CC=mpicc   -cc=$(CC_BASE)     #INTEL: mpicc   #i.e. use intel's version of the wrapper
 
 F90FLAGS= -g
-CXXFLAGS= -g
+CXXFLAGS= -g                  #INTEL: -lifcore
 
 #general options
 TARGET=$(CURDIR)/gomc
 BASEDIR=$(CURDIR)
 
 #GSL
-GSL_BASE=/usr/local
+#GSL_BASE=/usr/local
 GSL_INCL=-I$(GSL_BASE)/include
 GSL_LDFLAGS=-L$(GSL_BASE)/lib
 GSL_LIBS=-llua5.2 -lm -lstdc++ -lgsl -lgslcblas

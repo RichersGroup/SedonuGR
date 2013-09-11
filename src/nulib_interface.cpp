@@ -30,31 +30,88 @@ extern "C"{
 					       
   void nulibtable_reader_(char*,int);
 }
-// TODO - I think these names are compiler-dependent (this is gfortran). Check with ifort.
-extern int __nulibtable_MOD_nulibtable_number_species;
-extern int __nulibtable_MOD_nulibtable_number_easvariables;
-extern int __nulibtable_MOD_nulibtable_number_groups;
-extern int __nulibtable_MOD_nulibtable_nrho;
-extern int __nulibtable_MOD_nulibtable_ntemp;
-extern int __nulibtable_MOD_nulibtable_nye;
+#ifdef __INTEL_COMPILER
+extern int     nulibtable_mp_nulibtable_number_species_;
+extern int     nulibtable_mp_nulibtable_number_easvariables_;
+extern int     nulibtable_mp_nulibtable_number_groups_;
+extern int     nulibtable_mp_nulibtable_nrho_;
+extern int     nulibtable_mp_nulibtable_ntemp_;
+extern int     nulibtable_mp_nulibtable_nye_;
+extern double* nulibtable_mp_nulibtable_energies_;
+extern double* nulibtable_mp_nulibtable_ewidths_;
+extern double* nulibtable_mp_nulibtable_logrho_;
+extern double* nulibtable_mp_nulibtable_logtemp_;
+extern double* nulibtable_mp_nulibtable_ye_;
+extern double  nulibtable_mp_nulibtable_logtemp_min_;
+extern double  nulibtable_mp_nulibtable_logtemp_max_;
+extern double  nulibtable_mp_nulibtable_logrho_min_;
+extern double  nulibtable_mp_nulibtable_logrho_max_;
+extern double  nulibtable_mp_nulibtable_ye_min_;
+extern double  nulibtable_mp_nulibtable_ye_max_;
+int     nulibtable_number_species       = nulibtable_mp_nulibtable_number_species_;
+int     nulibtable_number_easvariables  = nulibtable_mp_nulibtable_number_easvariables_;
+int     nulibtable_number_groups        = nulibtable_mp_nulibtable_number_groups_;
+int     nulibtable_nrho                 = nulibtable_mp_nulibtable_nrho_;
+int     nulibtable_ntemp                = nulibtable_mp_nulibtable_ntemp_;
+int     nulibtable_nye                  = nulibtable_mp_nulibtable_nye_;
+double* nulibtable_energies             = nulibtable_mp_nulibtable_energies_;
+double* nulibtable_ewidths              = nulibtable_mp_nulibtable_ewidths_;
+double* nulibtable_logrho               = nulibtable_mp_nulibtable_logrho_;
+double* nulibtable_logtemp              = nulibtable_mp_nulibtable_logtemp_;
+double* nulibtable_ye                   = nulibtable_mp_nulibtable_ye_;
+double  nulibtable_logtemp_min          = nulibtable_mp_nulibtable_logtemp_min_;
+double  nulibtable_logtemp_max          = nulibtable_mp_nulibtable_logtemp_max_;
+double  nulibtable_logrho_min           = nulibtable_mp_nulibtable_logrho_min_;
+double  nulibtable_logrho_max           = nulibtable_mp_nulibtable_logrho_max_;
+double  nulibtable_ye_min               = nulibtable_mp_nulibtable_ye_min_;
+double  nulibtable_ye_max               = nulibtable_mp_nulibtable_ye_max_;
+
+#elif defined __GNUC__
+extern int     __nulibtable_MOD_nulibtable_number_species;
+extern int     __nulibtable_MOD_nulibtable_number_easvariables;
+extern int     __nulibtable_MOD_nulibtable_number_groups;
+extern int     __nulibtable_MOD_nulibtable_nrho;
+extern int     __nulibtable_MOD_nulibtable_ntemp;
+extern int     __nulibtable_MOD_nulibtable_nye;
 extern double* __nulibtable_MOD_nulibtable_energies;
 extern double* __nulibtable_MOD_nulibtable_ewidths;
 extern double* __nulibtable_MOD_nulibtable_logrho;
 extern double* __nulibtable_MOD_nulibtable_logtemp;
 extern double* __nulibtable_MOD_nulibtable_ye;
-extern double __nulibtable_MOD_nulibtable_logtemp_min;
-extern double __nulibtable_MOD_nulibtable_logtemp_max;
-extern double __nulibtable_MOD_nulibtable_logrho_min;
-extern double __nulibtable_MOD_nulibtable_logrho_max;
-extern double __nulibtable_MOD_nulibtable_ye_min;
-extern double __nulibtable_MOD_nulibtable_ye_max;
+extern double  __nulibtable_MOD_nulibtable_logtemp_min;
+extern double  __nulibtable_MOD_nulibtable_logtemp_max;
+extern double  __nulibtable_MOD_nulibtable_logrho_min;
+extern double  __nulibtable_MOD_nulibtable_logrho_max;
+extern double  __nulibtable_MOD_nulibtable_ye_min;
+extern double  __nulibtable_MOD_nulibtable_ye_max;        
+int     nulibtable_number_species       = __nulibtable_MOD_nulibtable_number_species;
+int     nulibtable_number_easvariables  = __nulibtable_MOD_nulibtable_number_easvariables;
+int     nulibtable_number_groups        = __nulibtable_MOD_nulibtable_number_groups;
+int     nulibtable_nrho                 = __nulibtable_MOD_nulibtable_nrho;
+int     nulibtable_ntemp                = __nulibtable_MOD_nulibtable_ntemp;
+int     nulibtable_nye                  = __nulibtable_MOD_nulibtable_nye;
+double* nulibtable_energies             = __nulibtable_MOD_nulibtable_energies;
+double* nulibtable_ewidths              = __nulibtable_MOD_nulibtable_ewidths;
+double* nulibtable_logrho               = __nulibtable_MOD_nulibtable_logrho;
+double* nulibtable_logtemp              = __nulibtable_MOD_nulibtable_logtemp;
+double* nulibtable_ye                   = __nulibtable_MOD_nulibtable_ye;
+double  nulibtable_logtemp_min          = __nulibtable_MOD_nulibtable_logtemp_min;
+double  nulibtable_logtemp_max          = __nulibtable_MOD_nulibtable_logtemp_max;
+double  nulibtable_logrho_min           = __nulibtable_MOD_nulibtable_logrho_min;
+double  nulibtable_logrho_max           = __nulibtable_MOD_nulibtable_logrho_max;
+double  nulibtable_ye_min               = __nulibtable_MOD_nulibtable_ye_min;
+double  nulibtable_ye_max               = __nulibtable_MOD_nulibtable_ye_max;
+
+#else
+#error "The fortran interface is only configured for Intel and GNU compilers."
+#endif
 
 
 /**********************/
 /* nulib_get_nspecies */
 /**********************/
 int nulib_get_nspecies(){
-  return __nulibtable_MOD_nulibtable_number_species;
+  return nulibtable_number_species;
 }
 
 /**************/
@@ -75,8 +132,8 @@ void nulib_get_eas_arrays(real rho,                     // g/cm^3
 			  vector<real>& nut_absopac,    // cm^-1   
 			  vector<real>& nut_scatopac){  // cm^-1
   
-  int nvars    = __nulibtable_MOD_nulibtable_number_easvariables;
-  int ngroups  = __nulibtable_MOD_nulibtable_number_groups;
+  int nvars    = nulibtable_number_easvariables;
+  int ngroups  = nulibtable_number_groups;
   // apparently it's valid to declare array sizes at runtime like this... if it breaks, use malloc
   double eas_energy[nvars][ngroups]; //[0][*] = energy-bin-integrated emissivity (erg/cm^3/s/ster). 
                                      //[1][*] = absorption opacity (1/cm)
@@ -97,7 +154,7 @@ void nulib_get_eas_arrays(real rho,                     // g/cm^3
   int lns = nulibID+1;                // fortran array indices start with 1
   
   // If the density is too low, just set everything to zero
-  if(log10(rho) < __nulibtable_MOD_nulibtable_logrho_min) 
+  if(log10(rho) < nulibtable_logrho_min) 
     for(int j=0; j<ngroups; j++){      
       nut_emiss.set_value(j, 0);
       nut_absopac [j] =      0;
@@ -133,11 +190,11 @@ void nulib_get_pure_emis(real rho,                     // g/cm^3
 			 vector<double>& nut_emiss){   // erg/cm^3/s/ster/Hz
   
   vector<double> widths;
-  widths.assign(__nulibtable_MOD_nulibtable_ewidths, 
-		__nulibtable_MOD_nulibtable_ewidths + __nulibtable_MOD_nulibtable_number_groups);
+  widths.assign(nulibtable_ewidths, 
+		nulibtable_ewidths + nulibtable_number_groups);
  
-  int nvars    = __nulibtable_MOD_nulibtable_number_easvariables;
-  int ngroups  = __nulibtable_MOD_nulibtable_number_groups;
+  int nvars    = nulibtable_number_easvariables;
+  int ngroups  = nulibtable_number_groups;
   // apparently it's valid to declare array sizes at runtime like this... if it breaks, use malloc
   double eas_energy[nvars][ngroups]; //[0][*] = energy-bin-integrated emissivity (erg/cm^3/s/ster). 
                                      //[1][*] = absorption opacity (1/cm)
@@ -158,7 +215,7 @@ void nulib_get_pure_emis(real rho,                     // g/cm^3
   int lns = nulibID+1;                // fortran array indices start with 1
   
   // If the density is too low, just set everything to zero
-  if(log10(rho) < __nulibtable_MOD_nulibtable_logrho_min) 
+  if(log10(rho) < nulibtable_logrho_min) 
     for(int j=0; j<ngroups; j++) nut_emiss[j] = 0;
   
   // Otherwise, fill with the appropriate values
@@ -176,8 +233,8 @@ void nulib_get_pure_emis(real rho,                     // g/cm^3
 // Fill in the locate array with values of the array stored in the fortran module
 void nulib_get_nu_grid(locate_array& nu_grid){ // Hz
   // assign values from the NuLib module to nu_grid
-  nu_grid.x.assign(__nulibtable_MOD_nulibtable_energies, 
-		   __nulibtable_MOD_nulibtable_energies + __nulibtable_MOD_nulibtable_number_groups);
+  nu_grid.x.assign(nulibtable_energies, 
+		   nulibtable_energies + nulibtable_number_groups);
 
   // convert from MeV to frequency using the Planck constant
   for(int i=0; i<nu_grid.size(); i++) nu_grid.x[i] /= pc::h_MeV;
@@ -189,26 +246,26 @@ void nulib_get_nu_grid(locate_array& nu_grid){ // Hz
 /* get the rho, T, Ye arrays */
 /*****************************/
 void nulib_get_rho_array(vector<double>& array){ // g/cm^3
-  array.assign(__nulibtable_MOD_nulibtable_logrho,
-	       __nulibtable_MOD_nulibtable_logrho  + __nulibtable_MOD_nulibtable_nrho);
+  array.assign(nulibtable_logrho,
+	       nulibtable_logrho  + nulibtable_nrho);
   for(int i=0; i<array.size(); i++) array[i] = pow(10.0, array[i]);
 }
 void nulib_get_T_array(vector<double>& array){ // K
-  array.assign(__nulibtable_MOD_nulibtable_logtemp,
-	       __nulibtable_MOD_nulibtable_logtemp + __nulibtable_MOD_nulibtable_ntemp);
+  array.assign(nulibtable_logtemp,
+	       nulibtable_logtemp + nulibtable_ntemp);
   for(int i=0; i<array.size(); i++) array[i] = pow(10.0, array[i]) / pc::k_MeV; // convert from MeV to K
 }
 void nulib_get_Ye_array(vector<double>& array){
-  array.assign(__nulibtable_MOD_nulibtable_ye,
-	       __nulibtable_MOD_nulibtable_ye      + __nulibtable_MOD_nulibtable_nye);
+  array.assign(nulibtable_ye,
+	       nulibtable_ye      + nulibtable_nye);
 }
 
 /*************************/
 /* nulib_get_{*min,*max} */
 /*************************/
-double nulib_get_Tmin()   {return pow(10,__nulibtable_MOD_nulibtable_logtemp_min) / pc::k_MeV;} //convert from MeV to K
-double nulib_get_Tmax()   {return pow(10,__nulibtable_MOD_nulibtable_logtemp_max) / pc::k_MeV;} //convert from MeV to K
-double nulib_get_rhomin() {return pow(10,__nulibtable_MOD_nulibtable_logrho_min);}
-double nulib_get_rhomax() {return pow(10,__nulibtable_MOD_nulibtable_logrho_max);}
-double nulib_get_Yemin()  {return __nulibtable_MOD_nulibtable_ye_min;}
-double nulib_get_Yemax()  {return __nulibtable_MOD_nulibtable_ye_max;}
+double nulib_get_Tmin()   {return pow(10,nulibtable_logtemp_min) / pc::k_MeV;} //convert from MeV to K
+double nulib_get_Tmax()   {return pow(10,nulibtable_logtemp_max) / pc::k_MeV;} //convert from MeV to K
+double nulib_get_rhomin() {return pow(10,nulibtable_logrho_min);}
+double nulib_get_rhomax() {return pow(10,nulibtable_logrho_max);}
+double nulib_get_Yemin()  {return nulibtable_ye_min;}
+double nulib_get_Yemax()  {return nulibtable_ye_max;}
