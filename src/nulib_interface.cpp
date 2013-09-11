@@ -30,6 +30,28 @@ extern "C"{
 					       
   void nulibtable_reader_(char*,int);
 }
+// The global variables that will be used, independent of fortran compiler version
+int     nulibtable_number_species;
+int     nulibtable_number_easvariables;
+int     nulibtable_number_groups;
+int     nulibtable_nrho;
+int     nulibtable_ntemp;
+int     nulibtable_nye;
+double* nulibtable_energies;
+double* nulibtable_ewidths;
+double* nulibtable_logrho;
+double* nulibtable_logtemp;
+double* nulibtable_ye;
+double  nulibtable_logtemp_min;
+double  nulibtable_logtemp_max;
+double  nulibtable_logrho_min;
+double  nulibtable_logrho_max;
+double  nulibtable_ye_min;
+double  nulibtable_ye_max;
+
+// The format of the fortran variables the fortran compiler provides
+// assumes C and Fortran compilers are the same
+// To be copied into the universal globals if intel compiler
 #ifdef __INTEL_COMPILER
 extern int     nulibtable_mp_nulibtable_number_species_;
 extern int     nulibtable_mp_nulibtable_number_easvariables_;
@@ -48,24 +70,6 @@ extern double  nulibtable_mp_nulibtable_logrho_min_;
 extern double  nulibtable_mp_nulibtable_logrho_max_;
 extern double  nulibtable_mp_nulibtable_ye_min_;
 extern double  nulibtable_mp_nulibtable_ye_max_;
-int     nulibtable_number_species       = nulibtable_mp_nulibtable_number_species_;
-int     nulibtable_number_easvariables  = nulibtable_mp_nulibtable_number_easvariables_;
-int     nulibtable_number_groups        = nulibtable_mp_nulibtable_number_groups_;
-int     nulibtable_nrho                 = nulibtable_mp_nulibtable_nrho_;
-int     nulibtable_ntemp                = nulibtable_mp_nulibtable_ntemp_;
-int     nulibtable_nye                  = nulibtable_mp_nulibtable_nye_;
-double* nulibtable_energies             = nulibtable_mp_nulibtable_energies_;
-double* nulibtable_ewidths              = nulibtable_mp_nulibtable_ewidths_;
-double* nulibtable_logrho               = nulibtable_mp_nulibtable_logrho_;
-double* nulibtable_logtemp              = nulibtable_mp_nulibtable_logtemp_;
-double* nulibtable_ye                   = nulibtable_mp_nulibtable_ye_;
-double  nulibtable_logtemp_min          = nulibtable_mp_nulibtable_logtemp_min_;
-double  nulibtable_logtemp_max          = nulibtable_mp_nulibtable_logtemp_max_;
-double  nulibtable_logrho_min           = nulibtable_mp_nulibtable_logrho_min_;
-double  nulibtable_logrho_max           = nulibtable_mp_nulibtable_logrho_max_;
-double  nulibtable_ye_min               = nulibtable_mp_nulibtable_ye_min_;
-double  nulibtable_ye_max               = nulibtable_mp_nulibtable_ye_max_;
-
 #elif defined __GNUC__
 extern int     __nulibtable_MOD_nulibtable_number_species;
 extern int     __nulibtable_MOD_nulibtable_number_easvariables;
@@ -83,29 +87,54 @@ extern double  __nulibtable_MOD_nulibtable_logtemp_max;
 extern double  __nulibtable_MOD_nulibtable_logrho_min;
 extern double  __nulibtable_MOD_nulibtable_logrho_max;
 extern double  __nulibtable_MOD_nulibtable_ye_min;
-extern double  __nulibtable_MOD_nulibtable_ye_max;        
-int     nulibtable_number_species       = __nulibtable_MOD_nulibtable_number_species;
-int     nulibtable_number_easvariables  = __nulibtable_MOD_nulibtable_number_easvariables;
-int     nulibtable_number_groups        = __nulibtable_MOD_nulibtable_number_groups;
-int     nulibtable_nrho                 = __nulibtable_MOD_nulibtable_nrho;
-int     nulibtable_ntemp                = __nulibtable_MOD_nulibtable_ntemp;
-int     nulibtable_nye                  = __nulibtable_MOD_nulibtable_nye;
-double* nulibtable_energies             = __nulibtable_MOD_nulibtable_energies;
-double* nulibtable_ewidths              = __nulibtable_MOD_nulibtable_ewidths;
-double* nulibtable_logrho               = __nulibtable_MOD_nulibtable_logrho;
-double* nulibtable_logtemp              = __nulibtable_MOD_nulibtable_logtemp;
-double* nulibtable_ye                   = __nulibtable_MOD_nulibtable_ye;
-double  nulibtable_logtemp_min          = __nulibtable_MOD_nulibtable_logtemp_min;
-double  nulibtable_logtemp_max          = __nulibtable_MOD_nulibtable_logtemp_max;
-double  nulibtable_logrho_min           = __nulibtable_MOD_nulibtable_logrho_min;
-double  nulibtable_logrho_max           = __nulibtable_MOD_nulibtable_logrho_max;
-double  nulibtable_ye_min               = __nulibtable_MOD_nulibtable_ye_min;
-double  nulibtable_ye_max               = __nulibtable_MOD_nulibtable_ye_max;
-
+extern double  __nulibtable_MOD_nulibtable_ye_max;
 #else
 #error "The fortran interface is only configured for Intel and GNU compilers."
 #endif
 
+
+/**************************************/
+/* set the universal global variables */
+/**************************************/
+void set_globals(){
+#ifdef __INTEL_COMPILER
+nulibtable_number_species       = nulibtable_mp_nulibtable_number_species_;
+nulibtable_number_easvariables  = nulibtable_mp_nulibtable_number_easvariables_;
+nulibtable_number_groups        = nulibtable_mp_nulibtable_number_groups_;
+nulibtable_nrho                 = nulibtable_mp_nulibtable_nrho_;
+nulibtable_ntemp                = nulibtable_mp_nulibtable_ntemp_;
+nulibtable_nye                  = nulibtable_mp_nulibtable_nye_;
+nulibtable_energies             = nulibtable_mp_nulibtable_energies_;
+nulibtable_ewidths              = nulibtable_mp_nulibtable_ewidths_;
+nulibtable_logrho               = nulibtable_mp_nulibtable_logrho_;
+nulibtable_logtemp              = nulibtable_mp_nulibtable_logtemp_;
+nulibtable_ye                   = nulibtable_mp_nulibtable_ye_;
+nulibtable_logtemp_min          = nulibtable_mp_nulibtable_logtemp_min_;
+nulibtable_logtemp_max          = nulibtable_mp_nulibtable_logtemp_max_;
+nulibtable_logrho_min           = nulibtable_mp_nulibtable_logrho_min_;
+nulibtable_logrho_max           = nulibtable_mp_nulibtable_logrho_max_;
+nulibtable_ye_min               = nulibtable_mp_nulibtable_ye_min_;
+nulibtable_ye_max               = nulibtable_mp_nulibtable_ye_max_;
+#elif defined __GNUC__
+nulibtable_number_species      = __nulibtable_MOD_nulibtable_number_species;	     
+nulibtable_number_easvariables = __nulibtable_MOD_nulibtable_number_easvariables; 
+nulibtable_number_groups       = __nulibtable_MOD_nulibtable_number_groups;	     
+nulibtable_nrho                = __nulibtable_MOD_nulibtable_nrho;		     
+nulibtable_ntemp               = __nulibtable_MOD_nulibtable_ntemp;		     
+nulibtable_nye                 = __nulibtable_MOD_nulibtable_nye;		     
+nulibtable_energies            = __nulibtable_MOD_nulibtable_energies;	     
+nulibtable_ewidths             = __nulibtable_MOD_nulibtable_ewidths;	     
+nulibtable_logrho              = __nulibtable_MOD_nulibtable_logrho;		     
+nulibtable_logtemp             = __nulibtable_MOD_nulibtable_logtemp;	     
+nulibtable_ye                  = __nulibtable_MOD_nulibtable_ye;		     
+nulibtable_logtemp_min         = __nulibtable_MOD_nulibtable_logtemp_min;	     
+nulibtable_logtemp_max         = __nulibtable_MOD_nulibtable_logtemp_max;	     
+nulibtable_logrho_min          = __nulibtable_MOD_nulibtable_logrho_min;	     
+nulibtable_logrho_max          = __nulibtable_MOD_nulibtable_logrho_max;	     
+nulibtable_ye_min              = __nulibtable_MOD_nulibtable_ye_min;		     
+nulibtable_ye_max              = __nulibtable_MOD_nulibtable_ye_max;              
+#endif
+}
 
 /**********************/
 /* nulib_get_nspecies */
@@ -119,6 +148,7 @@ int nulib_get_nspecies(){
 /**************/
 void nulib_init(string filename){
   nulibtable_reader_((char*)filename.c_str(), filename.length());
+  set_globals();
 }
 
 
