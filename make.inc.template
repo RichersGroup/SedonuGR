@@ -1,32 +1,31 @@
 export
-#compiler configuration
-F90_BASE = gfortran           #INTEL: ifort
-CXX_BASE = g++                #INTEL: icpc
-CC_BASE  = gcc		      #INTEL: icc
-
-F90=mpif90 -f90=$(F90_BASE)   #INTEL: mpif90  #i.e. use intel's version of the wrapper
-CXX=mpicxx -cxx=$(CXX_BASE)   #INTEL: mpicxx  #i.e. use intel's version of the wrapper
-CC=mpicc   -cc=$(CC_BASE)     #INTEL: mpicc   #i.e. use intel's version of the wrapper
-
-F90FLAGS= -g
-CXXFLAGS= -g                  #INTEL: -lifcore
-
 #general options
 TARGET=$(CURDIR)/gomc
 BASEDIR=$(CURDIR)
 
+#compiler configuration
+F90=mpif90  #INTEL: <path_to_intel_wrappers>/mpif90
+CXX=mpicxx  #INTEL: <path_to_intel_wrappers>/mpicxx
+CC=mpicc    #INTEL: <path_to_intel_wrappers>/mpicc
+
+F90FLAGS= -O3
+CXXFLAGS= -O3                 #INTEL: -lifcore
+
 #GSL
 #GSL_BASE=/usr/local
 GSL_INCL=-I$(GSL_BASE)/include
-GSL_LDFLAGS=-L$(GSL_BASE)/lib
-GSL_LIBS=-llua5.2 -lm -lstdc++ -lgsl -lgslcblas
+GSL_LIBS=-L$(GSL_BASE)/lib -lgsl -lgslcblas
 
-#You must have a HDF5 version installed with the _same_ compiler
-#used to compile NuLib
+#LUA
+LUA_BASE=$(LUA_DIR)
+LUA_INCL=$(LUA_BASE)/include
+LUA_LIBS=-L$(LUA_BASE)/lib -llua
+
+#HDF5
 HDF5DIR=$(CURDIR)/external/hdf5
 HDF5INCS=-I$(HDF5DIR)/include
-HDF5LIBS=-L$(HDF5DIR)/lib -lhdf5 -lhdf5_fortran -lhdf5 -lz -ldl
+HDF5LIBS=-L$(HDF5DIR)/lib -lhdf5 -lhdf5_fortran
 
-#nulib
+#NuLib
 NULIB_DIR=$(CURDIR)/external/NuLib
 NULIB_LIBS=$(NULIB_DIR)/src/nulib.a -lgfortran

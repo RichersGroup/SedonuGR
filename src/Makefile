@@ -6,11 +6,11 @@ TEST_OBJECTS = Lua.o grid_general.o grid_1D_sphere.o grid_3D_cart.o transport.o 
 .PHONY: clean realclean
 
 $(TARGET): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) $(GSL_LDFLAGS) -o $(TARGET) $(OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS) $(GSL_LIBS) $(LUA_LDFLAGS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS)
 
 $(OBJECTS): %.o: %.cpp
-	$(CXX) $(CXXFLAGS) $(GSL_INCL) -c -o $@ $<
-	$(CXX) $(CXFLAGS) -MM $*.cpp > $*.d
+	$(CXX) $(CXXFLAGS) -c -o $@ $<  $(GSL_INCL) $(LUA_INCL)
+	$(CXX) $(CXXFLAGS) -MM $*.cpp > $*.d
 
 # pull in dependency info for *existing* .o files so objects get rebuilt if header changes
 -include $(OBJECTS:.o=.d)
@@ -22,7 +22,7 @@ realclean: clean
 	rm -f $(TARGET)
 
 tests: $(OBJECTS)
-	$(CXX) $(CXXFLAGS) $(GSL_LDFLAGS) -o ../tests/nulib_plots/nulib_test.exe nulib_test.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS)
+	$(CXX) $(CXXFLAGS) -o ../tests/nulib_plots/nulib_test.exe nulib_test.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS)
 	cp $(TARGET) ../tests/phot_spherical_emis
 	cp $(TARGET) ../tests/nut_spherical_emis
 	cp $(TARGET) ../tests/nut_neutron_star
@@ -33,5 +33,6 @@ testsclean:
 	$(MAKE) -C ../tests/nut_spherical_emis clean
 	$(MAKE) -C ../tests/nut_neutron_star clean
 	$(MAKE) -C ../tests/equilibrium_ye clean
+	$(MAKE) -C ../tests/nulib_plots clean
 	rm -f ../tests/*/gomc
 	rm -f ../tests/nulib_plots/nulib_test.exe

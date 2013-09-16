@@ -22,13 +22,6 @@ testsclean:
 	$(MAKE) testsclean -C src
 
 
-########
-# HDF5 #
-########
-hdf5:
-	$(MAKE) -C external hdf5
-
-
 #########
 # NuLib #
 #########

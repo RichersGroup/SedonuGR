@@ -1,12 +1,198 @@
-First, you need to initialize the NuLib submodule and checkout the appropriate commit.
+REREQUISITES
+==============================
+FIRST - copy the make.inc.template file to make.inc (make.inc is used by the make system).
 
-git submodule init
-git submodule update
+    cp make.inc.template make.inc
 
-To install from scratch (including hdf5) execute
+Open make.inc in your favorite text editor and make sure the compiler and compiler flags are set to the values you want to use. 
 
-make hdf5
-make nulib
-make
 
-If you already have a copy of hdf5 (compiled with the same fortran compiler that will be used to compile NuLib) or NuLib then you can skip the corresponding step above. Then you need to create a make.inc file, which the Makefile includes. There is a template that you can modify, though it should work on its own by default if you let the makefile build hdf5 for you.
+#######
+# GSL #
+#######
+GSL is used to generate random numbers in sedona. If you do not already have GSL installed, you may be able to install it using the following in Ubuntu. This is the recommended way to install GSL. In ubuntu you can check whether these are installed using "dpkg -l | grep 'gsl'" (without the quotes).
+
+    apt-get install gsl-bin libgsl0ldbl
+
+If you can't install software with a package manager on your machine (e.g. a cluster), then you will have to build it from scratch in your chosen directory. This almost never has to be done, so we won't include directions here. If directions would be helpful, let us know and we can add them. So far, the latest tested version is 1.15.
+
+
+#######
+# LUA #
+#######
+Lua is a scripting language that is used to read the parameter files. If you do not already have Lua installed, you may be able to install it using the following in Ubuntu. However, you will have to change a flag in make.inc, as for some reason the Ubuntu package manager renames the libraries. Also, the library will be in the default search path, so remove the information that says where everything is. If it works, this is the recommended way to install lua. In ubuntu you can see if lua is installed using "dpkg -l | grep 'lua'" (without the quotes).
+
+    apt-get install lua5.2
+    (in make.inc) #LUA_BASE=external/lua-5.2.2/install
+    (in make.inc) #LUA_INCL=$(LUA_BASE)/include
+    (in make.inc) LUA_LIBS=-llua5.2                    #at least this is the name Ubuntu gives the library
+
+If you can't install software with a package manager on your machine (e.g. a cluster), then you will have to build it from scratch in your chosen directory. We will install it into the "external" directory here. First, download and extract the source code (this version is the latest version tested with sedona).
+
+    wget http://www.lua.org/ftp/lua-5.2.2.tar.gz
+    tar -xvf lua-5.2.2.tar.gz -C external
+    rm lua-5.2.2.tar.gz
+
+Change into the lua directory to build it. See Lua's readme for more detailed options. These work for me, however.
+
+    cd external/lua-5.2.2
+    make linux            # or "make macosx" or "make posix". See the lua readme for more information 
+    make test             # success if you see the version string
+    make local            # to choose installation directory, do "make install INSTALL_TOP=/path/to/directory"
+
+If you installed it locally ("make local") it will put everything in a subdirectory called "install". Everything actually needed for compiling, linking, and running the code is in the hdf5 subdirectory. The default LUA_BASE variable in make.inc should reflect the location of the install subdirectory.
+
+
+########
+# HDF5 #
+########
+HDF5 is used by NuLib to create and read the opacity tables. IT MUST BE COMPILED BY THE SAME FORTRAN COMPILER COMPILING NULIB. If you can get away with a copy already installed by "apt-get install libhdf5-serial-dev" (check on ubuntu using "dpkg -l | grep 'hdf5'" without the quotes) or some other means that's fine, but chances are that it was compiled with a different compiler and you will have to recompile it yourself. Below are instructions for installing the latest version tested into the "external" directory.
+
+Download the tarball and extract the table:
+
+    wget -P external http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.11.tar.gz
+    tar -xvf hdf5-1.8.11.tar.gz
+    rm hdf5-1.8.11.tar.gz
+
+Go into the directory
+
+    cd hdf5-1.8.11
+
+Configure the make process. Some versions of gcc have a bug that causes hdf5 to fail tests if any optimization is enabled, so there are two examples below. The only tested compilers are intel and GNU.
+
+    FC=gfortran CC=gcc CFLAGS=-O0 ./configure --enable-fortran   #for GNU compilers
+    FC=ifort CC=icc ./configure --enable-fortran                 #for Intel compilers
+
+Build and test the binaries.
+
+    make
+    make test
+
+Finally, change the environment variables in make.inc in sedona's base directory.
+
+    (in make.inc) HDF5_BASE=external/hdf5-1.8.11/hdf5
+
+Make sure that the mpi compiler wrapper scripts (mpif90, etc) use the same compiler that you used to compile hdf5. You can check the compiler associated with the mpi wrapper script be executing "mpif90 -v". If you have multiple compilers installed, you may have to set and absolute path to the compiler scripts in make.inc.
+
+Everything actually needed for compiling, linking, and running the code is in the hdf5 subdirectory. The HDF5
+
+
+#########
+# NuLib #
+#########
+NuLib calculates the neutrino opacities based on a tabulated equation of state (EOS). It must be built to yeild the executable to generate the table and the libraries used by sedona to read the table. It must be run to generate the opacity table before running Sedona. This is all described below.
+
+--Building------------
+
+NuLib is publicly available at <nulib.org>, but is also contained within Sedona as a git submodule. This makes it easy to pair a commit of sedona with a commit of nulib, so results are entirely reproducible. That is, each sedona commit knows which commit of NuLib to check out to make the both codes exactly as they were at the time of sedona's commit. To download NuLib, execute the following in the base directory. It will automatically download into the "external" directory.
+
+    git submodule init
+    git submodule update
+
+Check that your parallel compiler wrapper script uses the same compiler that was used to build HDF5. If it is not the same you will need to install the appropriate compiler's mpi wrapper script (mpif90), rebuild HDF5 with the appropriate compiler, or work your own magic to make things come together. (The compiler will yell at you if this is not the case).
+
+    mpif90 -v
+
+Build NuLib
+
+    make nulib
+
+If you want to clean the nulib directory, execute
+
+    make nulibclean
+
+
+--Generating the Opacity Table--------------
+
+Now NuLib is compiled and ready to be used by Sedona. However, if you wish to use neutrinos, you will have to generate an opacity table. This requires a tabulated equation of state (EOS). There are multiple EOS available at <stellarcollapse.org/equationofstate>. Here we will configure things with the LS220 EOS, though it should be generalizable to any EOS table that NuLib understands.
+
+Download and extract the LS220 EOS table
+
+    wget http://stellarcollapse.org/EOS/LS220_234r_136t_50y_analmu_20091212_SVNr26.h5.bz2
+    bunzip2 /LS220_234r_136t_50y_analmu_20091212_SVNr26.h5.bz2
+    mv LS220_234r_136t_50y_analmu_20091212_SVNr26.h5 external/tables/LS220.h5
+
+NuLib has an example program that generates a rather unresolved opacity table. This program serves as an example that is intended to be modified by the end user. You can feel free to modify it, but if you check the file out again it will be overwritten, so back it up or rename it if you want to prevent accidents. Here we will just change the file shipped with nulib so we don't have to mess with the makefiles, but if you want to create multiple custom table-generating programs you will have to do that. Anyway, we have to modify the fortran code to say how big we want our table to be and where the EOS table is. Open the source file in your favorite text editor.
+
+    emacs external/NuLib/src/make_table_example.F90
+
+A more detailed description of what everything means is in the NuLib README file (external/NuLib/README). First, notice the two variables "mytable_neutrino_scheme" and "mytable_number_species". Do NOT change mytable_number_species. If you want to change how neutrinos are represented in the table change "mytable_neutrino_scheme". Also notice that there is a variable "mytable_number_groups" that is set to 24. If you want finer resolution in neutrino energy, increase this number. However, for this example we will leave all three of these variables as they are. We must tell the program where to find the EOS table.
+
+    (in make_table_example.F90:L28) character*200 :: eos_filename = "<path_to_sedona>/external/tables/LS220.h5"
+
+Finally, we have to change how big our table is going to be. As described in the NuLib README file, Evan recommends at least 10 points per decade in rho, 20 points per decade in temperature, and a point for every 0.01 or 0.02 in Ye. The LS220 table has the following lower and upper limits: T:{1e-2,1e2.4}MeV rho:{1e3,1e16}g/cm^3 Ye:{0.035,0.55}, and if calculating beta-equilibrium Lattimer and Swesty recommend staying at temperatures above 0.5MeV. Find the chunk of code commented "!set up table" and notice that the table boundaries (min_ye, etc) are within these recommendations, but the number of points (final_table_size_ye) is far too small. (final_Itable_* deals with the inelastic scattering table, which is not yet implemented so we won't worry about it). For this example we will leave the ranges as they are and adjust the number of points to get a decently-resolved table, but you are free to set whatever you want. Ye has a range of 0.515, so we need 26-52 points.
+
+    (in make_table_example.F90:L90) final_table_size_ye = 40
+
+rho goes over 9.8 decades, so we need about 100 points in rho
+
+    (in make_table_example.F90:L91) final_table_size_rho = 100
+
+Temp goes over 3 decades, so we need about 60 points
+
+    (in make_table_example.F90:L92) final_table_size_temp = 60
+
+You can change where the energy bins lie, but we will leave them as they are. If you want to make a custom table that deviates from this program, feel free. However, if you change the structure or what variables represent, you will also have to modify nulibtable_reader.F90 to read everything in correctly. Assuming you don't make any further changes, this should be ready to create a table. Save the file, exit the editor, rebuild the nulib directory, and execute the file.
+
+    make nulibclean
+    make nulib
+    external/NuLib/make_table_example
+
+This table took about 25 minutes to generate on my 2.4 GHz processor. Finally, move the final product into the external/tables directory (the filename will depend on the options you give it).
+
+    mv NuLib_LS220_rho100_temp60_ye40_ng24_ns3_Itemp10_Ieta10_version1.0_20130915.h5 external/tables/NuLib_LS220.h5
+
+NuLib is now ready to use!
+
+
+
+
+
+
+COMPILING
+=====================================
+If all of the prerequisites are ready, simply execute
+
+    make
+
+This will use the settings in make.inc. To clean the src directory execute
+
+    make clean
+
+
+
+
+
+
+
+TESTING
+=====================================
+There are a couple of tests in the 'tests' directory. To get them ready, after building sedona (see COMPILING), simply execute
+
+    make tests
+
+To clean the test directories (including executables, data, and plots) execute
+
+    make testsclean
+
+A breif list of the tests is included below. More information can be found in the tests's individual directory in its README file.
+
+ - phot_spherical_emis - emits photons isotropically from a central source and checks that the output spectrum is as expected.
+ - nut_spherical_emis - emits neutrinos isotropically from a central source and checks that the output spectrum is as expected.
+ - nulib_plots - generates lots of plots for easily examining the values of the nulib tables.
+ - equilibrium_ye - sets up a spherical system where no neutrinos are emitted and only Ye is solved for. Tests that the Ye solver works properly with the nulib table.
+ - nut_neutron_star - optically thick problem to test that the neutrinos propagate as expected and lead to a reasonable result
+
+
+
+
+
+
+
+RUNNING
+===========================
+When sedona is built, it produces and executable called "gomc" in the base directory. Move this executable to the run directry (where all the data will be put). See test problems for example parameter files. Go to that directory and execute
+
+    ./gomc parameter_file  
+
+The argument is optional. By default it will look for a parameter file called "param.lua" in the same directory. However, it is good practice to copy the parameter file into the run directory to have a record of the settings. The output will be spectrum files and "ray" files. The spectrum files contain data about the radiation that escapes the system. The ray files contain the system properties (e.g. temperature, Ye) along a ray from the center.
