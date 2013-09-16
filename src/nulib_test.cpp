@@ -131,8 +131,6 @@ int main(int argc, char* argv[]){
   //=====================//
   // MULTIPLE LINE PLOTS //
   //=====================//
-  double next = 0;
-
   // variation with rho
   cout << "generating eas_E_rho.dat" << endl;
   ofstream eas_E_rho ("eas_E_rho.dat" );
