@@ -1,3 +1,5 @@
+#Only enable the commented compatability flags if compiling/running fails. Some systems (e.g. Hopper) won't compile with some of them enabled.
+
 export
 #general options
 TARGET=$(CURDIR)/gomc
