@@ -6,7 +6,7 @@ do_neutrinos = 1
 
 grid_type = "grid_1D_sphere"
 model_file  =  "empty_sphere.mod"
-nulib_table = "../../external/tables/NuLib_LS220.h5"
+nulib_table = "../../external/tables/NuLib.h5"
 
 -- time stepping (all times in days)
 day = 3600.0*24

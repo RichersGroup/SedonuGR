@@ -10,7 +10,7 @@ E=1       #MeV
 all:
 	mkdir -p species_0 species_1 species_2
 	for species in 0 1 2 ; do \
-	./nulib_test.exe ../../external/tables/NuLib_LS220.h5 $(rho) $(T) $(Ye) $(E) $$species ; \
+	./nulib_test.exe ../../external/tables/NuLib.h5 $(rho) $(T) $(Ye) $(E) $$species ; \
 	python eas_rho.py ; \
 	python eas_T.py ; \
 	python eas_ye.py ; \
