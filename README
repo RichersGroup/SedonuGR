@@ -13,6 +13,7 @@ Open make.inc in your favorite text editor and make sure the compiler and compil
     mpicc -v   #same for mpif90 and mpicxx
     grep 'Compiler' <hdf5_directory>/lib/libhdf5.settings
 
+Note that the only compilers we've tested are GNU, Intel, and (only on Hopper) PGI
 
 #######
 # GSL #

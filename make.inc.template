@@ -4,16 +4,16 @@ TARGET=$(CURDIR)/gomc
 BASEDIR=$(CURDIR)
 
 #compiler configuration
-F90=mpif90  #INTEL: <path_to_intel_wrappers>/mpif90
-CXX=mpicxx  #INTEL: <path_to_intel_wrappers>/mpicxx
-CC=mpicc    #INTEL: <path_to_intel_wrappers>/mpicc
+F90=mpif90
+CXX=mpicxx
+CC=mpicc
 
 F90FLAGS= -O3
-CXXFLAGS= -O3                 #INTEL: -lifcore
+CXXFLAGS= -O3 #INTEL: -lifcore
 CCFLAGS= -O3
 
 #GSL
-#GSL_BASE=/usr/local
+GSL_BASE=$(GSL_DIR)
 GSL_INCL=-I$(GSL_BASE)/include
 GSL_LIBS=-L$(GSL_BASE)/lib -lgsl -lgslcblas
 
@@ -29,4 +29,7 @@ HDF5LIBS=-L$(HDF5DIR)/lib -lhdf5 -lhdf5_fortran -Wl,-rpath,$(HDF5DIR)/lib
 
 #NuLib
 NULIB_DIR=$(CURDIR)/external/NuLib
-NULIB_LIBS=$(NULIB_DIR)/src/nulib.a -lgfortran
+NULIB_LIBS=$(NULIB_DIR)/src/nulib.a #GNU: -lgfortran
+
+#OTHER
+OTHER_LIBS= #PGI: -ldl

@@ -88,8 +88,9 @@ extern double  __nulibtable_MOD_nulibtable_logrho_min;
 extern double  __nulibtable_MOD_nulibtable_logrho_max;
 extern double  __nulibtable_MOD_nulibtable_ye_min;
 extern double  __nulibtable_MOD_nulibtable_ye_max;
+#elif defined __PGI
 #else
-#error "The fortran interface is only configured for Intel and GNU compilers."
+#warning "The fortran interface is only configured for Intel and GNU compilers. Attempting default variable names. If this does not work you must modify src/nulib_interface.cpp to get your C++ and Fortran compilers to play nicely together."
 #endif
 
 
