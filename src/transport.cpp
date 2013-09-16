@@ -187,8 +187,6 @@ void transport::init(Lua* lua)
 //------------------------------------------------------------
 void transport::step(double dt)
 {
-  int i;
-
   // nominal time for iterative calc is 1
   if (iterate) dt = 1;
   

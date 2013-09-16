@@ -98,7 +98,6 @@ void transport::emit_inner_source(double dt)
   }
 
   double Ep  = L_core*dt/n_inject;
-  int s;
 
   // inject particles from the source
   for (int i=0;i<n_inject;i++)
