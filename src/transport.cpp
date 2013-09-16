@@ -370,16 +370,28 @@ void transport::solve_eq_zone_values()
     // warn if it didn't converge
     if(iter == BRENT_ITMAX) cout << "WARNING: outer Brent solver hit maximum iterations." << endl;
 
-    // damp the oscillations between steps
+    // damp the oscillations between steps, ensure that it's within the allowed boundaries
     if(solve_T)
     {
       dT_step  = grid->z[i].T_gas - T_last_step;
-      if(damping>0 && fabs( dT_step) > damping* T_last_step) grid->z[i].T_gas =  T_last_step * (1.0 + damping* dT_step/fabs( dT_step));
+      grid->z[i].T_gas =  T_last_step + (1.0 - damping)*dT_step;
+      if(grid->z[i].T_gas > T_max){
+	cout << "Changing T_gas in zone " << i << " from " << grid->z[i].T_gas << " to T_max=" << T_max << endl;
+	grid->z[i].T_gas = T_max;}
+      if(grid->z[i].T_gas < T_min){
+	cout << "Changing T_gas in zone " << i << " from " << grid->z[i].T_gas << " to T_min=" << T_min << endl;
+	grid->z[i].T_gas = T_min;}
     }
     if(solve_Ye)
     {
-      dYe_step = grid->z[i].Ye    - Ye_last_step;
-      if(damping>0 && fabs(dYe_step) > damping*Ye_last_step) grid->z[i].Ye    = Ye_last_step * (1.0 + damping*dYe_step/fabs(dYe_step));
+      dYe_step = grid->z[i].Ye - Ye_last_step;
+      grid->z[i].Ye = Ye_last_step + (1.0 - damping)*dYe_step;
+      if(grid->z[i].Ye > Ye_max){
+	cout << "Changing Ye in zone " << i << " from " << grid->z[i].Ye << " to Ye_max=" << Ye_max << endl;
+	grid->z[i].Ye = Ye_max;}
+      if(grid->z[i].Ye < Ye_min){
+	cout << "Changing Ye in zone " << i << " from " << grid->z[i].Ye << " to Ye_min=" << Ye_min << endl;
+	grid->z[i].Ye = Ye_min;}
     }
   }
   
