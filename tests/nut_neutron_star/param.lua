@@ -36,12 +36,10 @@ nut_grey_opacity = -1  -- grey opacity - set to negative to turn off
 nut_epsilon      = -1  -- absorption fraction - set to negative to turn off
 
 -- inner source
-r_core = 9e5
+r_core = 11.5e5
 L_core = 1e46
 T_core = 3.5e11  -- 30 MeV
 n_inject = 6e3
-rho_core = 3e14
-Ye_core = 0.2
 
 -- output spectrum
 nut_spec_time_grid   = {1,1,1}
