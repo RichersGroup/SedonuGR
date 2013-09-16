@@ -1,10 +1,17 @@
 REREQUISITES
 ==============================
-FIRST - copy the make.inc.template file to make.inc (make.inc is used by the make system).
+To clone the repository, execute
+
+    git clone <username>@portal-auth.nersc.gov:/project/projectdirs/sedona/sedona_git
+
+copy the make.inc.template file to make.inc (make.inc is used by the make system).
 
     cp make.inc.template make.inc
 
-Open make.inc in your favorite text editor and make sure the compiler and compiler flags are set to the values you want to use. 
+Open make.inc in your favorite text editor and make sure the compiler and compiler flags are set to the values you want to use. Your mpi compiler scripts should use the same compiler used to build NuLib and HDF5. To check the compiler a script uses and that hdf5 was compiled with, execute
+
+    mpicc -v   #same for mpif90 and mpicxx
+    grep 'Compiler' <hdf5_directory>/lib/libhdf5.settings
 
 
 #######
@@ -14,7 +21,7 @@ GSL is used to generate random numbers in sedona. If you do not already have GSL
 
     apt-get install gsl-bin libgsl0ldbl
 
-If you can't install software with a package manager on your machine (e.g. a cluster), then you will have to build it from scratch in your chosen directory. This almost never has to be done, so we won't include directions here. If directions would be helpful, let us know and we can add them. So far, the latest tested version is 1.15.
+If you can't install software with a package manager on your machine (e.g. a cluster), then you will have to build it from scratch in your chosen directory. This almost never has to be done, so we won't include directions here. If directions would be helpful, let us know and we can add them. So far, the latest tested version of gsl is 1.15.
 
 
 #######
@@ -23,9 +30,9 @@ If you can't install software with a package manager on your machine (e.g. a clu
 Lua is a scripting language that is used to read the parameter files. If you do not already have Lua installed, you may be able to install it using the following in Ubuntu. However, you will have to change a flag in make.inc, as for some reason the Ubuntu package manager renames the libraries. Also, the library will be in the default search path, so remove the information that says where everything is. If it works, this is the recommended way to install lua. In ubuntu you can see if lua is installed using "dpkg -l | grep 'lua'" (without the quotes).
 
     apt-get install lua5.2
-    (in make.inc) #LUA_BASE=external/lua-5.2.2/install
-    (in make.inc) #LUA_INCL=$(LUA_BASE)/include
-    (in make.inc) LUA_LIBS=-llua5.2                    #at least this is the name Ubuntu gives the library
+    (in make.inc) #LUA_BASE=external/lua-5.2.2/install #commented out b/c it's in the default search path
+    (in make.inc) #LUA_INCL=$(LUA_BASE)/include        #commented out b/c it's in the default search path
+    (in make.inc) LUA_LIBS=-llua5.2                    #at least this is the name Ubuntu gives the library ("liblua5.2.so")
 
 If you can't install software with a package manager on your machine (e.g. a cluster), then you will have to build it from scratch in your chosen directory. We will install it into the "external" directory here. First, download and extract the source code (this version is the latest version tested with sedona).
 
@@ -46,35 +53,31 @@ If you installed it locally ("make local") it will put everything in a subdirect
 ########
 # HDF5 #
 ########
-HDF5 is used by NuLib to create and read the opacity tables. IT MUST BE COMPILED BY THE SAME FORTRAN COMPILER COMPILING NULIB. If you can get away with a copy already installed by "apt-get install libhdf5-serial-dev" (check on ubuntu using "dpkg -l | grep 'hdf5'" without the quotes) or some other means that's fine, but chances are that it was compiled with a different compiler and you will have to recompile it yourself. Below are instructions for installing the latest version tested into the "external" directory.
+HDF5 is used by NuLib to create and read the opacity tables. IT MUST BE COMPILED BY THE SAME FORTRAN COMPILER COMPILING NULIB. If you can get away with a copy already installed by "apt-get install libhdf5-serial-dev" (check on ubuntu using "dpkg -l | grep 'hdf5'" without the quotes) or some other means that's fine, but chances are that it was compiled with a different compiler and you will have to recompile it yourself. You will also have to change the values of the hdf5 path in make.inc to reflect the system's location for the hdf5 files. Below are instructions for installing the latest version tested into the "external" directory.
 
-Download the tarball and extract the table:
+If you need to compile your own copy of hdf5, download the tarball and extract the table:
 
-    wget -P external http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.11.tar.gz
-    tar -xvf hdf5-1.8.11.tar.gz
+    wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.11.tar.gz
+    tar -xvf hdf5-1.8.11.tar.gz -C external
     rm hdf5-1.8.11.tar.gz
 
 Go into the directory
 
-    cd hdf5-1.8.11
+    cd external/hdf5-1.8.11
 
 Configure the make process. Some versions of gcc have a bug that causes hdf5 to fail tests if any optimization is enabled, so there are two examples below. The only tested compilers are intel and GNU.
 
-    FC=gfortran CC=gcc CFLAGS=-O0 ./configure --enable-fortran   #for GNU compilers
+    FC=gfortran CC=gcc CFLAGS=-O0 ./configure --enable-fortran   #for GNU compilers (can remove the CFLAGS=-O0 for
     FC=ifort CC=icc ./configure --enable-fortran                 #for Intel compilers
 
-Build and test the binaries.
+Build and test the binaries. This takes quite a while.
 
     make
     make test
+    make install
 
-Finally, change the environment variables in make.inc in sedona's base directory.
+Everything actually needed for compiling, linking, and running the code is in the external/hdf5-1.8.11/hdf5 subdirectory. The default hdf5 path in make.inc.template points to this location. Make sure that the mpi compiler wrapper scripts (mpif90, etc) use the same compiler that you used to compile hdf5 (see the beginning of the prerequisites section).
 
-    (in make.inc) HDF5_BASE=external/hdf5-1.8.11/hdf5
-
-Make sure that the mpi compiler wrapper scripts (mpif90, etc) use the same compiler that you used to compile hdf5. You can check the compiler associated with the mpi wrapper script be executing "mpif90 -v". If you have multiple compilers installed, you may have to set and absolute path to the compiler scripts in make.inc.
-
-Everything actually needed for compiling, linking, and running the code is in the hdf5 subdirectory. The HDF5
 
 
 #########
@@ -89,11 +92,7 @@ NuLib is publicly available at <nulib.org>, but is also contained within Sedona 
     git submodule init
     git submodule update
 
-Check that your parallel compiler wrapper script uses the same compiler that was used to build HDF5. If it is not the same you will need to install the appropriate compiler's mpi wrapper script (mpif90), rebuild HDF5 with the appropriate compiler, or work your own magic to make things come together. (The compiler will yell at you if this is not the case).
-
-    mpif90 -v
-
-Build NuLib
+Check that your parallel compiler wrapper script uses the same compiler that was used to build HDF5 (see the top of the prerequisites section). Then build NuLib
 
     make nulib
 
@@ -109,8 +108,8 @@ Now NuLib is compiled and ready to be used by Sedona. However, if you wish to us
 Download and extract the LS220 EOS table
 
     wget http://stellarcollapse.org/EOS/LS220_234r_136t_50y_analmu_20091212_SVNr26.h5.bz2
-    bunzip2 /LS220_234r_136t_50y_analmu_20091212_SVNr26.h5.bz2
-    mv LS220_234r_136t_50y_analmu_20091212_SVNr26.h5 external/tables/LS220.h5
+    bunzip2 LS220_234r_136t_50y_analmu_20091212_SVNr26.h5.bz2 -d external/tables
+    rm LS220_234r_136t_50y_analmu_20091212_SVNr26.h5.bz2
 
 NuLib has an example program that generates a rather unresolved opacity table. This program serves as an example that is intended to be modified by the end user. You can feel free to modify it, but if you check the file out again it will be overwritten, so back it up or rename it if you want to prevent accidents. Here we will just change the file shipped with nulib so we don't have to mess with the makefiles, but if you want to create multiple custom table-generating programs you will have to do that. Anyway, we have to modify the fortran code to say how big we want our table to be and where the EOS table is. Open the source file in your favorite text editor.
 
@@ -175,7 +174,7 @@ To clean the test directories (including executables, data, and plots) execute
 
     make testsclean
 
-A breif list of the tests is included below. More information can be found in the tests's individual directory in its README file.
+A breif list of the tests is included below. More information can be found in the tests's individual directory in its README file. To run each test, simply go into the test directory and execute "make".
 
  - phot_spherical_emis - emits photons isotropically from a central source and checks that the output spectrum is as expected.
  - nut_spherical_emis - emits neutrinos isotropically from a central source and checks that the output spectrum is as expected.
