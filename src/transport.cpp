@@ -44,7 +44,7 @@ void transport::init(Lua* lua)
   if     (grid_type == "grid_1D_sphere") grid = new grid_1D_sphere;
   else if(grid_type == "grid_3D_cart"  ) grid = new grid_3D_cart;
   else{
-    if(verbose) std::cout << "Error: the requested grid type is not implemented." << std::endl;
+    if(verbose) std::cout << "ERROR: the requested grid type is not implemented." << std::endl;
     exit(3);}
   
   // initialize the grid (including reading the model file)
@@ -107,7 +107,7 @@ void transport::init(Lua* lua)
   /************************/
   {
     // read the fortran module into memory
-    if(verbose) cout << "Initializing NuLib..." << endl;
+    if(verbose) cout << "# Initializing NuLib..." << endl;
     string nulib_table = lua->scalar<string>("nulib_table");
     nulib_init(nulib_table);
     neutrinos* neutrinos_tmp;
@@ -126,7 +126,7 @@ void transport::init(Lua* lua)
   // complain if we're not simulating anything
   if(species_list.size() == 0)
   {
-    if(verbose) cout << "Error: you must simulate at least one species of particle." << endl;
+    if(verbose) cout << "ERROR: you must simulate at least one species of particle." << endl;
     exit(7);
   }
 
@@ -365,7 +365,7 @@ void transport::solve_eq_zone_values()
     }
 
     // warn if it didn't converge
-    if(iter == BRENT_ITMAX) cout << "WARNING: outer Brent solver hit maximum iterations." << endl;
+    if(iter == BRENT_ITMAX) cout << "# WARNING: outer Brent solver hit maximum iterations." << endl;
 
     // damp the oscillations between steps, ensure that it's within the allowed boundaries
     if(solve_T)
@@ -373,10 +373,10 @@ void transport::solve_eq_zone_values()
       dT_step  = grid->z[i].T_gas - T_last_step;
       grid->z[i].T_gas =  T_last_step + (1.0 - damping)*dT_step;
       if(grid->z[i].T_gas > T_max){
-	cout << "Changing T_gas in zone " << i << " from " << grid->z[i].T_gas << " to T_max=" << T_max << endl;
+	cout << "# WARNING: Changing T_gas in zone " << i << " from " << grid->z[i].T_gas << " to T_max=" << T_max << endl;
 	grid->z[i].T_gas = T_max;}
       if(grid->z[i].T_gas < T_min){
-	cout << "Changing T_gas in zone " << i << " from " << grid->z[i].T_gas << " to T_min=" << T_min << endl;
+	cout << "# WARNING: Changing T_gas in zone " << i << " from " << grid->z[i].T_gas << " to T_min=" << T_min << endl;
 	grid->z[i].T_gas = T_min;}
     }
     if(solve_Ye)
@@ -384,10 +384,10 @@ void transport::solve_eq_zone_values()
       dYe_step = grid->z[i].Ye - Ye_last_step;
       grid->z[i].Ye = Ye_last_step + (1.0 - damping)*dYe_step;
       if(grid->z[i].Ye > Ye_max){
-	cout << "Changing Ye in zone " << i << " from " << grid->z[i].Ye << " to Ye_max=" << Ye_max << endl;
+	cout << " WARNING: Changing Ye in zone " << i << " from " << grid->z[i].Ye << " to Ye_max=" << Ye_max << endl;
 	grid->z[i].Ye = Ye_max;}
       if(grid->z[i].Ye < Ye_min){
-	cout << "Changing Ye in zone " << i << " from " << grid->z[i].Ye << " to Ye_min=" << Ye_min << endl;
+	cout << " WARNING: Changing Ye in zone " << i << " from " << grid->z[i].Ye << " to Ye_min=" << Ye_min << endl;
 	grid->z[i].Ye = Ye_min;}
     }
   }
@@ -636,11 +636,9 @@ void transport::propagate_particles(double dt)
   vector<long> n_escape(species_list.size(),0);
   double e_esc = 0;
 
-  cout << "Beginning particle loop" << endl;
   #pragma omp parallel default(none) shared(n_active,n_escape,dt,e_esc)
   #pragma omp single
   {
-    printf("inside parallel\n");
     list<particle>::iterator tmpIter;
     list<particle>::iterator pIter = particles.begin();
 
@@ -669,7 +667,6 @@ void transport::propagate_particles(double dt)
       //================================================
 
     } //while
-    printf("finished while loop\n");
   } //#pragma omp parallel
   
   for(int i=0; i<species_list.size(); i++){

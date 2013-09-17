@@ -23,7 +23,7 @@ void thread_RNG::init(){
     const int nthreads = 1;
     const int my_ompID = 0;
     #endif
-    if(my_mpiID==0 && my_ompID==0) printf("Using %d threads on each MPI rank.\n", nthreads);
+    if(my_mpiID==0 && my_ompID==0) printf("# Using %d threads on each MPI rank.\n", nthreads);
     
     // assign a unique RNG to each thread
     #pragma omp single
