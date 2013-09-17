@@ -1,3 +1,4 @@
+#include <omp.h>
 #include <math.h>
 #include <gsl/gsl_rng.h>
 #include "transport.h"
@@ -72,6 +73,7 @@ void transport::initialize_particles(int init_particles)
 {
   if (verbose) cout << "# initializing with " << init_particles << " particle per zone\n";
 
+  #pragma omp parallel for
   for (int i=0;i<grid->z.size();i++)
   {
     // lab frame energy

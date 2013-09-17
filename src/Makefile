@@ -9,8 +9,8 @@ $(TARGET): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS) $(GSL_LIBS) $(LUA_LDFLAGS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS)
 
 $(OBJECTS): %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<  $(GSL_INCL) $(LUA_INCL)
-	$(CXX) $(CXXFLAGS) -MM $*.cpp > $*.d  $(GSL_INCL) $(LUA_INCL)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<  $(GSL_INCL) $(LUA_INCL) $(OTHER_INCL)
+#	$(CXX) $(CXXFLAGS) -MM $*.cpp > $*.d  $(GSL_INCL) $(LUA_INCL)
 
 # pull in dependency info for *existing* .o files so objects get rebuilt if header changes
 -include $(OBJECTS:.o=.d)

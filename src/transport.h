@@ -40,7 +40,6 @@ private:
   double dshift_lab_to_comoving(particle p);
 
   // propagate the particles
-  //ParticleFate propagate(particle &p, double tstop);
   void   transform_comoving_to_lab(particle &p);
   void   transform_lab_to_comoving(particle &p);
 
@@ -54,8 +53,6 @@ private:
   // solve for temperature
   void   solve_eq_zone_values();
   double brent_method(int zone_index, double (*eq_function)(int,double,transport*), double min, double max);
-  //double temp_eq_function(int zone_index, double T);
-  //double Ye_eq_function(int zone_index, double T);
 
 public:
 

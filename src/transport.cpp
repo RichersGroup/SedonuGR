@@ -1,3 +1,4 @@
+#include <omp.h>
 #include "transport.h"
 #include <limits>
 #include <mpi.h>
@@ -156,6 +157,7 @@ void transport::init(Lua* lua)
   }
 
   // initialize all the zone eas variables
+#pragma omp parallel for collapse(2)
   for(int i=0; i<species_list.size(); i++) 
     for(int j=0; j<grid->z.size(); j++)
       species_list[i]->set_eas(j);
@@ -191,6 +193,7 @@ void transport::step(double dt)
   if (iterate) dt = 1;
   
   // calculate the zone eas variables
+#pragma omp parallel for collapse(2)
   for(int i=0; i<species_list.size(); i++) 
     for(int j=0; j<grid->z.size(); j++)
       species_list[i]->set_eas(j);
@@ -317,22 +320,23 @@ double Ye_eq_function(int zone_index, double Ye, transport* sim)
 #define BRENT_ITMAX 100
 void transport::solve_eq_zone_values()
 {
-  double T_last_iter, Ye_last_iter;
-  double T_last_step, Ye_last_step;
-  double T_error,Ye_error;
-  double dT_step, dYe_step;
-  int iter;
-
-  // set Ye and temp to zero so it's easy to reduce later
-  for(int i=0; i<grid->z.size(); i++)
+  // solve radiative equilibrium temperature and Ye (but only for the zones I'm responsible for)
+  #pragma omp parallel for schedule(guided)
+  for (int i=0; i<grid->z.size(); i++)
+  {
+    // set Ye and temp to zero so it's easy to reduce later
     if(i<my_zone_start || i>my_zone_end){
       grid->z[i].T_gas = 0;
       grid->z[i].Ye    = 0;
+      continue;  // don't actually solve for these zones
     }
 
-  // solve radiative equilibrium temperature and Ye (but only for the zones I'm responsible for)
-  for (int i=my_zone_start; i<=my_zone_end; i++)
-  {
+    double T_last_iter, Ye_last_iter;
+    double T_last_step, Ye_last_step;
+    double T_error,Ye_error;
+    double dT_step, dYe_step;
+    int iter=0;
+
     iter = 0;
 
     // set up the solver
@@ -631,23 +635,46 @@ void transport::lorentz_transform(particle &p, double sign)
 
 void transport::propagate_particles(double dt)
 {
-	// OPTIMIZE - implement forward list. stores 1 pointer instead of 2 in each element
-  list<particle>::iterator pIter = particles.begin();
-  vector<int> n_active(species_list.size(),0);
-  vector<int> n_escape(species_list.size(),0);
+  // OPTIMIZE - implement forward list. stores 1 pointer instead of 2 in each element
+  // TODO - the parallel algorithm causes lots of contention over the RNG. Need a separate RNG for each thread
+  vector<long> n_active(species_list.size(),0);
+  vector<long> n_escape(species_list.size(),0);
   double e_esc = 0;
-  while (pIter != particles.end())
-    {
-      n_active[pIter->s]++;
-      ParticleFate fate = propagate(*pIter,dt);
-      if (fate == escaped){
-	n_escape[pIter->s]++;
-	e_esc += pIter->e;
-	species_list[pIter->s]->spectrum.count(pIter->t, pIter->nu, pIter->e, pIter->D);
+
+  cout << "Beginning particle loop" << endl;
+  #pragma omp parallel default(none) shared(n_active,n_escape,dt,e_esc)
+  #pragma omp single
+  {
+    printf("inside parallel\n");
+    list<particle>::iterator tmpIter;
+    list<particle>::iterator pIter = particles.begin();
+
+    while(pIter != particles.end()){
+      tmpIter = pIter;  // done like this to prevent race condition when incrementing pIter
+      pIter++;
+      n_active[tmpIter->s]++;
+
+      //================================================
+      #pragma omp task firstprivate(tmpIter) untied
+      {
+	ParticleFate fate = propagate(*tmpIter,dt);
+	if (fate == escaped){ 
+          #pragma omp atomic
+	  n_escape[tmpIter->s]++;
+          #pragma omp atomic
+	  e_esc += tmpIter->e;
+	  species_list[tmpIter->s]->spectrum.count(tmpIter->t, tmpIter->nu, tmpIter->e, tmpIter->D);
+	}
+	if ((fate == escaped)||(fate == absorbed)){
+          #pragma omp critical
+	  particles.erase(tmpIter);
+	}
       }
-      if ((fate == escaped)||(fate == absorbed)) pIter = particles.erase(pIter);
-      else pIter++;
-    }
+      //================================================
+
+    } //while
+    printf("finished while loop\n");
+  } //#pragma omp parallel
   
   for(int i=0; i<species_list.size(); i++){
     double per_esc = (100.0*n_escape[i])/n_active[i];
@@ -736,6 +763,7 @@ ParticleFate transport::propagate(particle &p, double dt)
 
     // tally in contribution to zone's radiation energy (both *lab* frame)
     double this_E = p.e*this_d;
+    #pragma omp atomic
     zone->e_rad += this_E;
 
     // store absorbed energy in *comoving* frame
@@ -743,12 +771,14 @@ ParticleFate transport::propagate(particle &p, double dt)
     // Extra dshift definitely needed here (two total)
     // to convert both p.e and this_d to the comoving frame
     double this_E_comoving = this_E * dshift * dshift;
+    #pragma omp atomic
     zone->e_abs += this_E_comoving * (opac*abs_frac*zone->eps_imc);
 
     // store absorbed lepton number (same in both frames, except for the
     // factor of this_d which is divided out later
     if(species_list[p.s]->lepton_number != 0){
       double this_l_comoving = species_list[p.s]->lepton_number * p.e/(p.nu*pc::h) * this_d*dshift;
+      #pragma omp atomic
       zone->l_abs += this_l_comoving * (opac*abs_frac*zone->eps_imc);
     }
 
