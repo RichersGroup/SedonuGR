@@ -73,12 +73,7 @@ void transport::init(Lua* lua)
   if (my_zone_start >= grid->z.size()) my_zone_start = my_zone_end+1;
 
   // setup and seed random number generator
-  const gsl_rng_type * TypeR;
-  gsl_rng_env_setup();
-  gsl_rng_default_seed = (unsigned int)time(NULL) + my_rank;
-  TypeR = gsl_rng_default;
-  rangen = gsl_rng_alloc (TypeR);
-
+  rangen.init();
 
   //==================//
   // SET UP TRANSPORT //
@@ -499,7 +494,7 @@ int transport::total_particles()
 int transport::sample_core_species()
 {
   // randomly sample the species (precomputed)
-  double z = gsl_rng_uniform(rangen);
+  double z = rangen.uniform();
   return core_species_cdf.sample(z);
 }
 
@@ -526,7 +521,7 @@ int transport::sample_zone_species(int zone_index)
   species_cdf.normalize();
 
   // randomly sample the species
-  double z = gsl_rng_uniform(rangen);
+  double z = rangen.uniform();
   return species_cdf.sample(z);
 }
 
@@ -649,13 +644,14 @@ void transport::propagate_particles(double dt)
     list<particle>::iterator tmpIter;
     list<particle>::iterator pIter = particles.begin();
 
+    // create a task to move each particle
     while(pIter != particles.end()){
       tmpIter = pIter;  // done like this to prevent race condition when incrementing pIter
       pIter++;
       n_active[tmpIter->s]++;
 
       //================================================
-      #pragma omp task firstprivate(tmpIter) untied
+      #pragma omp task default(none) firstprivate(tmpIter) shared(dt,n_escape,e_esc)
       {
 	ParticleFate fate = propagate(*tmpIter,dt);
 	if (fate == escaped){ 
@@ -732,7 +728,7 @@ ParticleFate transport::propagate(particle &p, double dt)
     double opac_lab = opac*dshift;
 
     // random optical depth to next interaction
-    tau_r = -1.0*log(1 - gsl_rng_uniform(rangen));
+    tau_r = -1.0*log(1 - rangen.uniform());
 
     // step size to next interaction event
     d_sc  = tau_r/opac_lab;
@@ -798,7 +794,7 @@ ParticleFate transport::propagate(particle &p, double dt)
     if (event == scatter)
     {
       // random number to check for scattering or absorption
-      double z = gsl_rng_uniform(rangen);
+      double z = rangen.uniform();
 
       // decide whether to scatter
       if (z > abs_frac) isotropic_scatter(p,0);
@@ -808,7 +804,7 @@ ParticleFate transport::propagate(particle &p, double dt)
 	// check for effective scattering
 	double z2;
 	if (radiative_eq) z2 = 2;
-	else z2 = gsl_rng_uniform(rangen);
+	else z2 = rangen.uniform();
 
 	// do an effective scatter (i.e. particle is absorbed
 	// but, since we require energy in = energy out it is re-emitted)

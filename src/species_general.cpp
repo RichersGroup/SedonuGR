@@ -27,11 +27,11 @@ void species_general::init(Lua* lua, transport* simulation)
 double species_general::sample_core_nu()
 {
   // sample to find the frequency bin to use
-  double z = gsl_rng_uniform(sim->rangen);
+  double z = sim->rangen.uniform();
   int ilam = core_emis.sample(z);
 
   // sample uniformily in selected frequency bin 
-  z = gsl_rng_uniform(sim->rangen);
+  z = sim->rangen.uniform();
   return nu_grid.sample(ilam,z);
 }
 
@@ -42,11 +42,11 @@ double species_general::sample_core_nu()
 double species_general::sample_zone_nu(int zone_index)
 {
   // sample to find the frequency bin to use
-  double z = gsl_rng_uniform(sim->rangen);
+  double z = sim->rangen.uniform();
   int ilam = emis[zone_index].sample(z);
 
   // sample uniformily in selected frequency bin 
-  z = gsl_rng_uniform(sim->rangen);
+  z = sim->rangen.uniform();
   return nu_grid.sample(ilam,z);
 }
 

@@ -6,9 +6,9 @@
 #include "grid_general.h"
 #include "locate_array.h"
 #include "cdf_array.h"
-#include <gsl/gsl_rng.h>
+#include "thread_RNG.h"
 #include <list>
-//#include "species_general.h"
+
 
 #define MAX_PARTICLES 1000000
 enum ParticleFate  {moving, stopped, escaped, absorbed};
@@ -60,7 +60,7 @@ public:
   vector<species_general*> species_list;
 
   // random number generator
-  gsl_rng *rangen;
+  thread_RNG rangen;
 
   // current time in simulation
   double t_now;

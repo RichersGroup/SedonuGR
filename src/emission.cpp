@@ -1,6 +1,6 @@
 #include <omp.h>
 #include <math.h>
-#include <gsl/gsl_rng.h>
+#include "thread_RNG.h"
 #include "transport.h"
 #include "species_general.h"
 #include "physical_constants.h"
@@ -32,9 +32,9 @@ void transport::create_isotropic_particle(int zone_index, double Ep)
 
   // random sample position in zone
   vector<double> rand(3,0);
-  rand[0] = gsl_rng_uniform(rangen);
-  rand[1] = gsl_rng_uniform(rangen);
-  rand[2] = gsl_rng_uniform(rangen);
+  rand[0] = rangen.uniform();
+  rand[1] = rangen.uniform();
+  rand[2] = rangen.uniform();
   double r[3];
   grid->sample_in_zone(zone_index,rand,r);
   p.x[0] = r[0];
@@ -42,8 +42,8 @@ void transport::create_isotropic_particle(int zone_index, double Ep)
   p.x[2] = r[2];
 
   // emit isotropically in comoving frame
-  double mu  = 1 - 2.0*gsl_rng_uniform(rangen);
-  double phi = 2.0*pc::pi*gsl_rng_uniform(rangen);
+  double mu  = 1 - 2.0*rangen.uniform();
+  double phi = 2.0*pc::pi*rangen.uniform();
   double smu = sqrt(1 - mu*mu);
   p.D[0] = smu*cos(phi);
   p.D[1] = smu*sin(phi);
@@ -54,13 +54,11 @@ void transport::create_isotropic_particle(int zone_index, double Ep)
   p.s = s;
   p.nu = species_list[s]->sample_zone_nu(zone_index);
 
-  // subtract the leptons from the zone
-  grid->z[p.ind].l_abs -= species_list[s]->lepton_number * p.e/(p.nu*pc::h);
-
   // lorentz transform from the comoving to lab frame
   transform_comoving_to_lab(p);
 
   // add to particle vector
+  #pragma omp critical
   particles.push_back(p);
 }
 
@@ -73,7 +71,6 @@ void transport::initialize_particles(int init_particles)
 {
   if (verbose) cout << "# initializing with " << init_particles << " particle per zone\n";
 
-  #pragma omp parallel for
   for (int i=0;i<grid->z.size();i++)
   {
     // lab frame energy
@@ -82,6 +79,7 @@ void transport::initialize_particles(int init_particles)
     double Ep = E_zone/(init_particles);
 
     // create init_particles particles
+    #pragma omp parallel for
     for (int q=0;q<init_particles;q++) create_isotropic_particle(i,Ep);
   }
 }
@@ -99,19 +97,20 @@ void transport::emit_inner_source(double dt)
     exit(10);
   }
 
-  double Ep  = L_core*dt/n_inject;
+  const double Ep  = L_core*dt/n_inject;
 
   // inject particles from the source
+  #pragma omp parallel for default(none) shared(Ep)
   for (int i=0;i<n_inject;i++)
   {
     // set basic properties
     particle p;
     
     // pick initial position on photosphere
-    double phi_core   = 2*pc::pi*gsl_rng_uniform(rangen);
+    double phi_core   = 2*pc::pi*rangen.uniform();
     double cosp_core  = cos(phi_core);
     double sinp_core  = sin(phi_core);
-    double cost_core  = 1 - 2.0*gsl_rng_uniform(rangen);
+    double cost_core  = 1 - 2.0*rangen.uniform();
     double sint_core  = sqrt(1-cost_core*cost_core);
     // real spatial coordinates    
     double a_phot = r_core + r_core*1e-10;
@@ -120,9 +119,9 @@ void transport::emit_inner_source(double dt)
     p.x[2] = a_phot*cost_core;
 
     // pick photon propagation direction wtr to local normal                   
-    double phi_loc = 2*pc::pi*gsl_rng_uniform(rangen);
+    double phi_loc = 2*pc::pi*rangen.uniform();
     // choose sqrt(R) to get outward, cos(theta) emission         
-    double cost_loc  = sqrt(gsl_rng_uniform(rangen));
+    double cost_loc  = sqrt(rangen.uniform());
     double sint_loc  = sqrt(1 - cost_loc*cost_loc);
     // local direction vector                     
     double D_xl = sint_loc*cos(phi_loc);
@@ -140,7 +139,7 @@ void transport::emit_inner_source(double dt)
     // get index of current zone
     p.ind = grid->get_zone(p.x);
     if(p.ind < 0){
-      cout << "WARNING: particle spawned with emit_inner_source is outside the grid" << endl;
+      printf("WARNING: particle spawned with emit_inner_source is outside the grid.\n");
     }
 
     // sample the species and frequency
@@ -152,6 +151,7 @@ void transport::emit_inner_source(double dt)
     transform_comoving_to_lab(p);
 
     // add to particle vector
+    #pragma omp critical
     particles.push_back(p);
   }
 

@@ -11,7 +11,7 @@ CXX=mpicxx
 CC=mpicc
 
 F90FLAGS= -O3
-CXXFLAGS= -O3 #INTEL: -lifcore
+CXXFLAGS= -O3 #INTEL: -lifcore  #OPTIONAL: -fopenmp
 CCFLAGS= -O3
 
 #GSL
