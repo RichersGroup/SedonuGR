@@ -71,6 +71,7 @@ void transport::initialize_particles(int init_particles)
 {
   if (verbose) cout << "# initializing with " << init_particles << " particle per zone\n";
 
+  #pragma omp parallel for
   for (int i=0;i<grid->z.size();i++)
   {
     // lab frame energy
@@ -79,7 +80,6 @@ void transport::initialize_particles(int init_particles)
     double Ep = E_zone/(init_particles);
 
     // create init_particles particles
-    #pragma omp parallel for
     for (int q=0;q<init_particles;q++) create_isotropic_particle(i,Ep);
   }
 }

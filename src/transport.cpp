@@ -631,16 +631,16 @@ void transport::lorentz_transform(particle* p, double sign)
 
 void transport::propagate_particles(double dt)
 {
-  // OPTIMIZE - implement forward list. stores 1 pointer instead of 2 in each element
-  vector<long> n_active(species_list.size(),0);
-  vector<long> n_escape(species_list.size(),0);
-  int total_active=0, total_escape=0;
+  vector<int> n_active(species_list.size(),0);
+  vector<int> n_escape(species_list.size(),0);
+  double e_esc=0;
   double N;
 
-  #pragma omp parallel shared(n_active,n_escape,N,total_active,total_escape) firstprivate(dt) 
+  #pragma omp parallel shared(n_active,n_escape,e_esc,N) firstprivate(dt) 
   {
+
     //--- MOVE THE PARTICLES AROUND ---
-    #pragma omp for schedule(guided)
+    #pragma omp for schedule(guided) reduction(+:e_esc)
     for(int i=0; i<particles.size(); i++){
       particle* p = &particles[i];
       #pragma omp atomic
@@ -650,11 +650,12 @@ void transport::propagate_particles(double dt)
 	#pragma omp atomic
 	n_escape[p->s]++;
 	species_list[p->s]->spectrum.count(p->t, p->nu, p->e, p->D);
+	e_esc += p->e;
       }
     } //implied barrier
 
     //--- REMOVE THE DEAD PARTICLES ---
-    #pragma omp single
+    #pragma omp single nowait
     {
       vector<particle>::iterator pIter = particles.begin();
       while(pIter != particles.end()){
@@ -667,14 +668,8 @@ void transport::propagate_particles(double dt)
     }
 
     //--- DETERMINE THE NORMALIZATION FACTOR ---
-    #pragma omp for reduction(+:total_active,total_escape)
-    for(int i=0; i<species_list.size(); i++){
-      total_active += n_active[i];
-      total_escape += n_escape[i];
-    } //implied barrier
     #pragma omp single
-    N = (double)total_active/(double)total_escape;
-    //implied barrier
+    N = L_core / e_esc;
 
     //--- NORMALIZE THE GRID QUANTITIES ---
     #pragma omp for
@@ -684,18 +679,18 @@ void transport::propagate_particles(double dt)
       grid->z[i].l_abs *= N;
     }
 
-  } //#pragma omp parallel
-
-  // output the escape statistics
-  for(int i=0; i<species_list.size(); i++){
-    double per_esc = (100.0*n_escape[i])/n_active[i];
-    if (verbose && iterate){
-      if(n_active[i]>0) cout << "# " << per_esc << "% of the " << species_list[i]->name << " escaped (" 
-			     << n_escape[i] << "/" << n_active[i] << ")." << endl;
-      else cout << "# " << "No active " << species_list[i]->name << endl;
+    //--- OUPUT ESCAPE STATISTICS AND NORMALIZE SPECTRUM ---
+    #pragma omp for
+    for(int i=0; i<species_list.size(); i++){
+      if(n_escape[i]>0) species_list[i]->spectrum.rescale(N);
+      double per_esc = (100.0*n_escape[i])/n_active[i];
+      if (verbose && iterate){
+	if(n_active[i]>0) printf("# %i/%i %s escaped. (%f%%)\n", n_escape[i], n_active[i], species_list[i]->name.c_str(), per_esc);
+	else printf("# No active %s.\n", species_list[i]->name.c_str());
+      }
     }
-    if(per_esc>0) species_list[i]->spectrum.rescale(100.0/per_esc);
-  }
+
+  } //#pragma omp parallel
 }
 
 //--------------------------------------------------------
