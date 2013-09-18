@@ -55,7 +55,7 @@ void transport::create_isotropic_particle(int zone_index, double Ep)
   p.nu = species_list[s]->sample_zone_nu(zone_index);
 
   // lorentz transform from the comoving to lab frame
-  transform_comoving_to_lab(p);
+  transform_comoving_to_lab(&p);
 
   // add to particle vector
   #pragma omp critical
@@ -148,7 +148,7 @@ void transport::emit_inner_source(double dt)
     p.nu = species_list[s]->sample_core_nu();
 
     // lorentz transform from the comoving to lab frame
-    transform_comoving_to_lab(p);
+    transform_comoving_to_lab(&p);
 
     // add to particle vector
     #pragma omp critical

@@ -11,7 +11,6 @@
 
 
 #define MAX_PARTICLES 1000000
-enum ParticleFate  {moving, stopped, escaped, absorbed};
 class species_general;
 
 class transport
@@ -20,7 +19,7 @@ class transport
 private:
 
   // this species' list of particles
-  std::list<particle> particles;
+  std::vector<particle> particles;
 
   // the porition of zones this process is responsible for
   int my_zone_start, my_zone_end;
@@ -35,20 +34,20 @@ private:
   cdf_array core_species_cdf;
 
   // transformation functions
-  void   lorentz_transform(particle &p, double);
-  double dshift_comoving_to_lab(particle p);
-  double dshift_lab_to_comoving(particle p);
+  void   lorentz_transform(particle* p, double);
+  double dshift_comoving_to_lab(particle* p);
+  double dshift_lab_to_comoving(particle* p);
 
   // propagate the particles
-  void   transform_comoving_to_lab(particle &p);
-  void   transform_lab_to_comoving(particle &p);
+  void   transform_comoving_to_lab(particle* p);
+  void   transform_lab_to_comoving(particle* p);
 
   // propagate the particles
   void propagate_particles(double dt);
 
   // scattering functions
-  ParticleFate propagate(particle& p, double dt);
-  void isotropic_scatter(particle& p, int redistribute);
+  void propagate(particle* p, double dt);
+  void isotropic_scatter(particle* p, int redistribute);
 
   // solve for temperature
   void   solve_eq_zone_values();

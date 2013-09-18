@@ -67,7 +67,7 @@ class species_general
 
   // set the emissivity, absorption opacity, and scattering opacity
   virtual void set_eas(int zone_index) = 0;
-  void get_opacity(particle &p, double dshift, double* opac, double* abs_frac);
+  void get_opacity(particle* p, double dshift, double* opac, double* abs_frac);
 
   // min and max values for the Brent solver
   double T_min,  T_max;

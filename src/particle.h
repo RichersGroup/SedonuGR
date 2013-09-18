@@ -3,6 +3,8 @@
 #include <math.h>
 #include <stdio.h>
 
+enum ParticleFate  {moving, stopped, escaped, absorbed};
+
 // particle class
 class particle
 {
@@ -16,11 +18,12 @@ public:
   double       e;         // total energy in ergs of packet
   double      nu;         // frequency
   int          s;         // species number
+  ParticleFate fate;
 
   double r() 
   { return sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]); }
 
-   double x_dot_d() 
+  double x_dot_d() 
   {return x[0]*D[0] + x[1]*D[1] + x[2]*D[2]; }
 
   double mu() 
