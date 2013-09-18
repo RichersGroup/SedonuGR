@@ -99,41 +99,41 @@ extern double  __nulibtable_MOD_nulibtable_ye_max;
 /**************************************/
 void set_globals(){
 #ifdef __INTEL_COMPILER
-nulibtable_number_species       = nulibtable_mp_nulibtable_number_species_;
-nulibtable_number_easvariables  = nulibtable_mp_nulibtable_number_easvariables_;
-nulibtable_number_groups        = nulibtable_mp_nulibtable_number_groups_;
-nulibtable_nrho                 = nulibtable_mp_nulibtable_nrho_;
-nulibtable_ntemp                = nulibtable_mp_nulibtable_ntemp_;
-nulibtable_nye                  = nulibtable_mp_nulibtable_nye_;
-nulibtable_energies             = nulibtable_mp_nulibtable_energies_;
-nulibtable_ewidths              = nulibtable_mp_nulibtable_ewidths_;
-nulibtable_logrho               = nulibtable_mp_nulibtable_logrho_;
-nulibtable_logtemp              = nulibtable_mp_nulibtable_logtemp_;
-nulibtable_ye                   = nulibtable_mp_nulibtable_ye_;
-nulibtable_logtemp_min          = nulibtable_mp_nulibtable_logtemp_min_;
-nulibtable_logtemp_max          = nulibtable_mp_nulibtable_logtemp_max_;
-nulibtable_logrho_min           = nulibtable_mp_nulibtable_logrho_min_;
-nulibtable_logrho_max           = nulibtable_mp_nulibtable_logrho_max_;
-nulibtable_ye_min               = nulibtable_mp_nulibtable_ye_min_;
-nulibtable_ye_max               = nulibtable_mp_nulibtable_ye_max_;
+  nulibtable_number_species       = nulibtable_mp_nulibtable_number_species_;
+  nulibtable_number_easvariables  = nulibtable_mp_nulibtable_number_easvariables_;
+  nulibtable_number_groups        = nulibtable_mp_nulibtable_number_groups_;
+  nulibtable_nrho                 = nulibtable_mp_nulibtable_nrho_;
+  nulibtable_ntemp                = nulibtable_mp_nulibtable_ntemp_;
+  nulibtable_nye                  = nulibtable_mp_nulibtable_nye_;
+  nulibtable_energies             = nulibtable_mp_nulibtable_energies_;
+  nulibtable_ewidths              = nulibtable_mp_nulibtable_ewidths_;
+  nulibtable_logrho               = nulibtable_mp_nulibtable_logrho_;
+  nulibtable_logtemp              = nulibtable_mp_nulibtable_logtemp_;
+  nulibtable_ye                   = nulibtable_mp_nulibtable_ye_;
+  nulibtable_logtemp_min          = nulibtable_mp_nulibtable_logtemp_min_;
+  nulibtable_logtemp_max          = nulibtable_mp_nulibtable_logtemp_max_;
+  nulibtable_logrho_min           = nulibtable_mp_nulibtable_logrho_min_;
+  nulibtable_logrho_max           = nulibtable_mp_nulibtable_logrho_max_;
+  nulibtable_ye_min               = nulibtable_mp_nulibtable_ye_min_;
+  nulibtable_ye_max               = nulibtable_mp_nulibtable_ye_max_;
 #elif defined __GNUC__
-nulibtable_number_species      = __nulibtable_MOD_nulibtable_number_species;	     
-nulibtable_number_easvariables = __nulibtable_MOD_nulibtable_number_easvariables; 
-nulibtable_number_groups       = __nulibtable_MOD_nulibtable_number_groups;	     
-nulibtable_nrho                = __nulibtable_MOD_nulibtable_nrho;		     
-nulibtable_ntemp               = __nulibtable_MOD_nulibtable_ntemp;		     
-nulibtable_nye                 = __nulibtable_MOD_nulibtable_nye;		     
-nulibtable_energies            = __nulibtable_MOD_nulibtable_energies;	     
-nulibtable_ewidths             = __nulibtable_MOD_nulibtable_ewidths;	     
-nulibtable_logrho              = __nulibtable_MOD_nulibtable_logrho;		     
-nulibtable_logtemp             = __nulibtable_MOD_nulibtable_logtemp;	     
-nulibtable_ye                  = __nulibtable_MOD_nulibtable_ye;		     
-nulibtable_logtemp_min         = __nulibtable_MOD_nulibtable_logtemp_min;	     
-nulibtable_logtemp_max         = __nulibtable_MOD_nulibtable_logtemp_max;	     
-nulibtable_logrho_min          = __nulibtable_MOD_nulibtable_logrho_min;	     
-nulibtable_logrho_max          = __nulibtable_MOD_nulibtable_logrho_max;	     
-nulibtable_ye_min              = __nulibtable_MOD_nulibtable_ye_min;		     
-nulibtable_ye_max              = __nulibtable_MOD_nulibtable_ye_max;              
+  nulibtable_number_species      = __nulibtable_MOD_nulibtable_number_species;
+  nulibtable_number_easvariables = __nulibtable_MOD_nulibtable_number_easvariables;
+  nulibtable_number_groups       = __nulibtable_MOD_nulibtable_number_groups;
+  nulibtable_nrho                = __nulibtable_MOD_nulibtable_nrho;
+  nulibtable_ntemp               = __nulibtable_MOD_nulibtable_ntemp;
+  nulibtable_nye                 = __nulibtable_MOD_nulibtable_nye;
+  nulibtable_energies            = __nulibtable_MOD_nulibtable_energies;
+  nulibtable_ewidths             = __nulibtable_MOD_nulibtable_ewidths;
+  nulibtable_logrho              = __nulibtable_MOD_nulibtable_logrho;
+  nulibtable_logtemp             = __nulibtable_MOD_nulibtable_logtemp;
+  nulibtable_ye                  = __nulibtable_MOD_nulibtable_ye;
+  nulibtable_logtemp_min         = __nulibtable_MOD_nulibtable_logtemp_min;
+  nulibtable_logtemp_max         = __nulibtable_MOD_nulibtable_logtemp_max;
+  nulibtable_logrho_min          = __nulibtable_MOD_nulibtable_logrho_min;
+  nulibtable_logrho_max          = __nulibtable_MOD_nulibtable_logrho_max;
+  nulibtable_ye_min              = __nulibtable_MOD_nulibtable_ye_min;
+  nulibtable_ye_max              = __nulibtable_MOD_nulibtable_ye_max;
 #endif
 }
 

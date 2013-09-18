@@ -10,10 +10,7 @@
 #include "Lua.h"
 #include "transport.h"
 #include "species_general.h"
-#include "physical_constants.h"
 
-
-namespace pc = physical_constants;
 using namespace std;
 
 //--------------------------------------------------------
@@ -45,7 +42,7 @@ int main(int argc, char **argv)
   lua.init( script_file );
 
   // set up the transport module (includes the grid)
-  if(verbose) cout << "initializing" << endl;
+  if(verbose) cout << "# Initializing the transport module..." << endl;
   transport sim;
   sim.init(&lua);
 
@@ -86,7 +83,7 @@ int main(int argc, char **argv)
     // writeout zone state when appropriate 
     if ( verbose && ( (t>=write_out*iw) || (iterate) ) )
     {
-      printf("# writing zone %d at time %e\n",iw, t);
+      printf("# writing zone file %d at time %e\n",iw, t);
       sim.grid->write_zones(iw);
       iw++;
     }

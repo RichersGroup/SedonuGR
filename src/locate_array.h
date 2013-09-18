@@ -2,8 +2,6 @@
 #define _LOCATE_ARRAY_H 
 
 #include <vector>
-#include "cdf_array.h"
-
 
 class locate_array {
 

@@ -1,11 +1,10 @@
-#include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include "grid_3D_cart.h"
-#include "physical_constants.h"
 #include <fstream>
 #include <iostream>
 #include "Lua.h"
+#include "grid_3D_cart.h"
+#include "physical_constants.h"
 
 namespace pc = physical_constants;
 

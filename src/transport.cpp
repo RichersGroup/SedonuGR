@@ -152,7 +152,7 @@ void transport::init(Lua* lua)
   }
 
   // initialize all the zone eas variables
-#pragma omp parallel for collapse(2)
+  #pragma omp parallel for collapse(2)
   for(int i=0; i<species_list.size(); i++) 
     for(int j=0; j<grid->z.size(); j++)
       species_list[i]->set_eas(j);
@@ -188,7 +188,7 @@ void transport::step(double dt)
   if (iterate) dt = 1;
   
   // calculate the zone eas variables
-#pragma omp parallel for collapse(2)
+  #pragma omp parallel for collapse(2)
   for(int i=0; i<species_list.size(); i++) 
     for(int j=0; j<grid->z.size(); j++)
       species_list[i]->set_eas(j);
@@ -631,44 +631,64 @@ void transport::lorentz_transform(particle &p, double sign)
 void transport::propagate_particles(double dt)
 {
   // OPTIMIZE - implement forward list. stores 1 pointer instead of 2 in each element
-  // TODO - the parallel algorithm causes lots of contention over the RNG. Need a separate RNG for each thread
   vector<long> n_active(species_list.size(),0);
   vector<long> n_escape(species_list.size(),0);
   double e_esc = 0;
+  double N;
 
-  #pragma omp parallel default(none) shared(n_active,n_escape,dt,e_esc)
-  #pragma omp single
+  #pragma omp parallel default(none) shared(n_active,n_escape,e_esc,N) firstprivate(dt)
   {
-    list<particle>::iterator tmpIter;
-    list<particle>::iterator pIter = particles.begin();
+    #pragma omp single //=====================================================================================
+    {
+      list<particle>::iterator tmpIter;
+      list<particle>::iterator pIter = particles.begin();
 
-    // create a task to move each particle
-    while(pIter != particles.end()){
-      tmpIter = pIter;  // done like this to prevent race condition when incrementing pIter
-      pIter++;
-      n_active[tmpIter->s]++;
+      // create a task to move each particle
+      while(pIter != particles.end()){
+	tmpIter = pIter;  // prevent race condition when incrementing pIter
+	pIter++;
+	n_active[tmpIter->s]++;
+        #pragma omp task default(none) firstprivate(tmpIter,dt) shared(n_escape,e_esc)
+	{
+	  ParticleFate fate = propagate(*tmpIter,dt);
+	  if (fate == escaped){
+            #pragma omp atomic
+	    n_escape[tmpIter->s]++;
+            #pragma omp atomic
+	    e_esc += tmpIter->e;
+	    species_list[tmpIter->s]->spectrum.count(tmpIter->t, tmpIter->nu, tmpIter->e, tmpIter->D);
+	  }
+	  if ((fate == escaped)||(fate == absorbed)){
+            #pragma omp critical
+	    particles.erase(tmpIter);
+	  }
+	} //#pragma omp task
+      } //while
 
-      //================================================
-      #pragma omp task default(none) firstprivate(tmpIter) shared(dt,n_escape,e_esc)
-      {
-	ParticleFate fate = propagate(*tmpIter,dt);
-	if (fate == escaped){ 
-          #pragma omp atomic
-	  n_escape[tmpIter->s]++;
-          #pragma omp atomic
-	  e_esc += tmpIter->e;
-	  species_list[tmpIter->s]->spectrum.count(tmpIter->t, tmpIter->nu, tmpIter->e, tmpIter->D);
-	}
-	if ((fate == escaped)||(fate == absorbed)){
-          #pragma omp critical
-	  particles.erase(tmpIter);
-	}
+      //compute normalization of radiated quantities
+      #pragma omp taskwait
+      double total_active=0, total_escape=0;
+      for(int i=0; i<species_list.size(); i++){
+	total_active += n_active[i];
+	total_escape += n_escape[i];
       }
-      //================================================
+      N = total_active/total_escape;
 
-    } //while
+    } //#pragma omp single //================================================================================
+
+    // normalize the absorbed quantities
+    #pragma omp for
+    for(int i=0; i<grid->z.size(); i++){
+      grid->z[i].e_rad *= N;
+      grid->z[i].e_abs *= N;
+      grid->z[i].l_abs *= N;
+    }
+
   } //#pragma omp parallel
   
+
+
+  // output the escape statistics
   for(int i=0; i<species_list.size(); i++){
     double per_esc = (100.0*n_escape[i])/n_active[i];
     if (verbose && iterate){

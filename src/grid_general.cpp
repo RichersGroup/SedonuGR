@@ -2,10 +2,10 @@
 #include <math.h>
 #include <iostream>
 #include <iomanip>
+#include <fstream>
+#include <stdlib.h>
 #include "grid_general.h"
 #include "physical_constants.h"
-#include <fstream>
-#include <gsl/gsl_rng.h>
 #include "Lua.h"
 
 namespace pc = physical_constants;

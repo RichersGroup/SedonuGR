@@ -1,6 +1,7 @@
+#include <vector>
 #include "photons.h"
 #include "transport.h"
-#include <vector>
+#include "Lua.h"
 #include "physical_constants.h"
 
 namespace pc = physical_constants;

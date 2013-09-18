@@ -4,7 +4,6 @@
 #include <fstream>
 #include <stdlib.h>
 #include <string.h>
-#include <sstream>
 #include "zone.h"
 #include "nulib_interface.h"
 #include "physical_constants.h"
@@ -20,9 +19,9 @@ int main(int argc, char* argv[]){
   }
 
   //set test inputs
-  double rho      = atof(argv[2]);           // g/cm^3
-  double T        = atof(argv[3])/pc::k_MeV; // K
-  double ye       = atof(argv[4]);
+  real rho        = atof(argv[2]);           // g/cm^3
+  real T          = atof(argv[3])/pc::k_MeV; // K
+  real ye         = atof(argv[4]);
   double myenergy = atof(argv[5]);           // MeV
   double myfreq   = myenergy     /pc::h_MeV; // Hz
   int    nulibID  = atoi(argv[6]);
@@ -44,19 +43,19 @@ int main(int argc, char* argv[]){
   for(int i=0; i<nu_grid.size(); i++) grid_file << nu_grid.x[i]*pc::h_MeV << endl;
   grid_file << endl;
 
-  vector<double> ye_grid;
+  vector<real> ye_grid;
   nulib_get_Ye_array(ye_grid);
   grid_file << "Ye grid" << endl;
   for(int i=0; i<ye_grid.size(); i++) grid_file << ye_grid[i] << endl;
   grid_file << endl;
   
-  vector<double> T_grid; // K
+  vector<real> T_grid; // K
   nulib_get_T_array(T_grid);
   grid_file << "T grid (MeV)" << endl;
   for(int i=0; i<T_grid.size(); i++) grid_file << T_grid[i]*pc::k_MeV << endl;
   grid_file << endl;
 
-  vector<double> rho_grid; // g/cm^3
+  vector<real> rho_grid; // g/cm^3
   nulib_get_rho_array(rho_grid);
   grid_file << "rho grid (g/cm^3)" << endl;
   for(int i=0; i<rho_grid.size(); i++) grid_file << rho_grid[i] << endl;

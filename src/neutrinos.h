@@ -2,11 +2,7 @@
 #define _NEUTRINOS_H
 
 #include "species_general.h"
-#include "locate_array.h"
-#include "cdf_array.h"
-#include <vector>
 #include "Lua.h"
-#include <gsl/gsl_rng.h>
 
 class neutrinos: public species_general
 {

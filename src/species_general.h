@@ -1,14 +1,13 @@
 #ifndef _SPECIES_H
 #define _SPECIES_H
 
+#include <list>
 #include "particle.h"
 #include "spectrum_array.h"
 #include "Lua.h"
 #include "grid_general.h"
 #include "locate_array.h"
 #include "cdf_array.h"
-#include <gsl/gsl_rng.h>
-#include <list>
 
 class transport;
 

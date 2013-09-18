@@ -4,7 +4,8 @@
 #include <string>
 #include "particle.h"
 #include "locate_array.h"
-using std::string;
+
+using namespace std;
 
 // default values
 #define DEFAULT_NAME "spectrum_array"

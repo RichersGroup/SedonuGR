@@ -1,11 +1,10 @@
 #include <mpi.h>
-#include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include "grid_1D_sphere.h"
-#include "physical_constants.h"
 #include <fstream>
 #include <iostream>
+#include "grid_1D_sphere.h"
+#include "physical_constants.h"
 
 namespace pc = physical_constants;
 using namespace std;
@@ -57,7 +56,7 @@ void grid_1D_sphere::read_model_file(Lua* lua)
   double r0;
   if(system == "SNR") for(int i=0; i<n_zones; i++)
   {
-    if(i==0 && verbose) cout << "Reading SNR model file..." << endl;
+    if(i==0 && verbose) cout << "# Reading SNR model file..." << endl;
     infile >> r_out[i];
     infile >> z[i].rho;
     infile >> z[i].T_gas;
@@ -75,7 +74,7 @@ void grid_1D_sphere::read_model_file(Lua* lua)
   // read zone properties for a gamma-ray burst
   else if(system == "GRB") for(int i=0; i<n_zones; i++)
   {
-    if(i==0 && verbose) cout << "Reading GRB model file..." << endl;
+    if(i==0 && verbose) cout << "# Reading GRB model file..." << endl;
     infile >> r_out[i];
     infile >> z[i].rho;
     infile >> z[i].T_gas;

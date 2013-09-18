@@ -1,11 +1,6 @@
-#include <gsl/gsl_rng.h>
-#include <math.h>
+#include "species_general.h"
 #include "transport.h"
-#include "physical_constants.h"
-#include "Lua.h"
-#include "photons.h"
-
-namespace pc = physical_constants;
+#include "locate_array.h"
 
 //-----------------------------------------------------------------
 // get opacity at the frequency
