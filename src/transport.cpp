@@ -44,12 +44,16 @@ void transport::init(Lua* lua)
   // figure out what zone emission models we're using
   int n_emit_heat  = lua->scalar<int>("n_emit_heat");
   int n_emit_visc  = lua->scalar<int>("n_emit_visc");
+  bool do_heat     = n_emit_heat  > 0;
+  bool do_visc     = n_emit_visc  > 0;
+  do_therm         = ( radiative_eq ? do_visc     : do_heat     );
+  n_emit_therm     = ( radiative_eq ? n_emit_visc : n_emit_heat );
+
   n_emit_decay     = lua->scalar<int>("n_emit_decay");
-  bool do_heat  = n_emit_heat  > 0;
-  bool do_visc  = n_emit_visc  > 0;
-  do_therm     = ( radiative_eq ? do_visc     : do_heat     );
-  n_emit_therm = ( radiative_eq ? n_emit_visc : n_emit_heat );
-  do_decay     = n_emit_decay > 0;
+  do_decay         = n_emit_decay > 0;
+
+  n_emit_core      = lua->scalar<int>("n_emit_core");
+  do_core          = n_emit_core>0;
 
   // complain if the parameters don't make sense together
   if(n_emit_visc>0) visc_specific_heat_rate = lua->scalar<int>("visc_specific_heat_rate");
@@ -98,9 +102,9 @@ void transport::init(Lua* lua)
   if (verbose){
     cout << "# mass = " << mass << " g" <<endl;
     cout << "# KE = " << KE << " erg" << endl;
-    if(do_heat)  cout << "# L_heat = "  << (radiative_eq ? 0 : therm_lum)  << "erg/s" << endl;
-    if(do_visc)  cout << "# L_visc = "  << (radiative_eq ? therm_lum : 0)  << "erg/s" << endl;
-    if(do_decay) cout << "# L_decay = " << decay_lum                       << "erg/s" << endl;
+    if(do_heat)  cout << "# L_heat = "  << (radiative_eq ? 0 : therm_lum)  << " erg/s" << endl;
+    if(do_visc)  cout << "# L_visc = "  << (radiative_eq ? therm_lum : 0)  << " erg/s" << endl;
+    if(do_decay) cout << "# L_decay = " << decay_lum                       << " erg/s" << endl;
   }
 
   //===============//
@@ -199,14 +203,21 @@ void transport::init(Lua* lua)
   //=================//
   // the core temperature is used only in setting its emis vector
   // so it's looked at only in species::myInit()
-  n_emit_core = lua->scalar<int>("n_emit_core");
-  do_core     = n_emit_core>0;
-  r_core      = lua->scalar<double>("r_core");
-  L_core      = lua->scalar<double>("L_core");
-  core_species_cdf.resize(species_list.size());
-  for(int i=0; i<species_list.size(); i++){
-    core_species_cdf.set_value(i, species_list[i]->int_core_emis());}
-  core_species_cdf.normalize();
+  if(do_core){
+    r_core      = lua->scalar<double>("r_core");
+    L_core      = lua->scalar<double>("L_core");
+    core_species_cdf.resize(species_list.size());
+    for(int i=0; i<species_list.size(); i++){
+      core_species_cdf.set_value(i, species_list[i]->int_core_emis());}
+    core_species_cdf.normalize();
+  }
+  else{
+    r_core = 0;
+    L_core = 0;
+  }
+
+  // set the net luminosity
+  L_net = L_core + therm_lum + decay_lum;
 }
 
 

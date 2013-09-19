@@ -50,7 +50,7 @@ void transport::propagate_particles(double dt)
     //--- DETERMINE THE NORMALIZATION FACTOR ---
     #pragma omp single
     {
-      if(e_esc>0) N = L_core / e_esc;
+      if(e_esc>0) N = L_net / e_esc;
       else N=1;
     }
 

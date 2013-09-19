@@ -49,15 +49,17 @@ void photons::myInit(Lua* lua)
   for (int i=0; i<emis.size();      i++)      emis[i].resize(nu_grid.size());
 
   // set up core emission spectrum function (now a blackbody) 
-  double T_core = lua->scalar<double>("T_core");
-  for (int j=0;j<nu_grid.size();j++)
-  {
-    double nu  = nu_grid.center(j);
-    double dnu = nu_grid.delta(j);
-    double bb  = planck(T_core,nu)*dnu;
-    core_emis.set_value(j,bb); 
+  if(sim->do_core){
+    double T_core = lua->scalar<double>("T_core");
+    for (int j=0;j<nu_grid.size();j++)
+      {
+	double nu  = nu_grid.center(j);
+	double dnu = nu_grid.delta(j);
+	double bb  = planck(T_core,nu)*dnu;
+	core_emis.set_value(j,bb); 
+      }
+    core_emis.normalize();
   }
-  core_emis.normalize();
 
   // set photon's min and max values
   T_min  =  1.0;
@@ -72,7 +74,8 @@ void photons::myInit(Lua* lua)
 //-----------------------------------------------------------------
 void photons::set_eas(int zone_index)
 {
-  if(grey_opac <= 0)
+  zone* z = &(sim->grid->z[zone_index]);
+  if(grey_opac >= 0)
   {
     // fleck factors
     //double Tg    = sim->grid->z[zone_index].T_gas;
@@ -81,9 +84,8 @@ void photons::set_eas(int zone_index)
     //double f_imc = fleck_alpha*fleck_beta*tfac;
     //sim->grid->z[zone_index].eps_imc = 1.0/(1.0 + f_imc);
     //if (sim->radiative_eq) sim->grid->z[zone_index].eps_imc = 1.;
-    sim->grid->z[zone_index].eps_imc = 1;
+    z->eps_imc = 1;
 
-    zone* z = &(sim->grid->z[zone_index]);
     for (int j=0;j<nu_grid.size();j++)
     {
       double nu  = nu_grid.x[j];

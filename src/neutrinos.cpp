@@ -75,18 +75,20 @@ void neutrinos::myInit(Lua* lua)
 
   // set up core neutrino emission spectrum function
   // TODO - should we be using the bin tops rather than centers?
-  double T_core = lua->scalar<double>("T_core");
-  double L_core = lua->scalar<double>("L_core");
-  double chem_pot = 0;
-  for (int j=0;j<nu_grid.size();j++)
-  {
-    double nu  = nu_grid.center(j);
-    double dnu = nu_grid.delta(j);
-    double bb  = 2.0*nu*nu*nu*pc::h/(pc::c*pc::c)*fermi_dirac(T_core,chem_pot,nu)*dnu;
-    core_emis.set_value(j,bb);
+  if(sim->do_core){
+    double T_core = lua->scalar<double>("T_core");
+    double L_core = lua->scalar<double>("L_core");
+    double chem_pot = 0;
+    for (int j=0;j<nu_grid.size();j++)
+      {
+	double nu  = nu_grid.center(j);
+	double dnu = nu_grid.delta(j);
+	double bb  = 2.0*nu*nu*nu*pc::h/(pc::c*pc::c)*fermi_dirac(T_core,chem_pot,nu)*dnu;
+	core_emis.set_value(j,bb);
+      }
+    core_emis.normalize();
+    core_emis.N = weight * L_core / 6.0;
   }
-  core_emis.normalize();
-  core_emis.N = weight * L_core / 6.0;
 
 //  double rho_core = lua->scalar<double>("rho_core");
 //  double T_core   = lua->scalar<double>("T_core");

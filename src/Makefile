@@ -24,13 +24,17 @@ realclean: clean
 tests: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o ../tests/nulib_plots/nulib_test.exe nulib_test.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS)
 	cp $(TARGET) ../tests/phot_spherical_emis
+	cp $(TARGET) ../tests/phot_emitting_ball
 	cp $(TARGET) ../tests/nut_spherical_emis
+	cp $(TARGET) ../tests/nut_emitting_ball
 	cp $(TARGET) ../tests/nut_neutron_star
 	cp $(TARGET) ../tests/equilibrium_ye
 
 testsclean:
 	$(MAKE) -C ../tests/phot_spherical_emis clean
+	$(MAKE) -C ../tests/phot_emitting_ball clean
 	$(MAKE) -C ../tests/nut_spherical_emis clean
+	$(MAKE) -C ../tests/nut_emitting_ball clean
 	$(MAKE) -C ../tests/nut_neutron_star clean
 	$(MAKE) -C ../tests/equilibrium_ye clean
 	$(MAKE) -C ../tests/nulib_plots clean

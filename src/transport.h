@@ -38,18 +38,6 @@ private:
   double zone_heat_lum(int zone_index);
   double zone_decay_lum(int zone_index);
 
-  // items for core emission
-  bool do_core;
-  double r_core;
-  double L_core;
-  int n_emit_core;
-  cdf_array core_species_cdf;
-
-  // items for zone emission
-  bool do_therm, do_decay;
-  int n_emit_therm, n_emit_decay;
-  double visc_specific_heat_rate;
-
   // transformation functions
   void   lorentz_transform        (particle* p, double);
   double dshift_comoving_to_lab   (particle* p);
@@ -91,6 +79,21 @@ public:
 
   // pointer to grid
   grid_general *grid;
+
+  // items for core emission
+  bool do_core;
+  double r_core;
+  double L_core;
+  int n_emit_core;
+  cdf_array core_species_cdf;
+
+  // items for zone emission
+  bool do_therm, do_decay;
+  int n_emit_therm, n_emit_decay;
+  double visc_specific_heat_rate;
+
+  // net luminosity
+  double L_net;
 
   // random number generator
   thread_RNG rangen;

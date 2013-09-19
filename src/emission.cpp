@@ -27,6 +27,9 @@ void transport::initialize_particles(int init_particles){
 //------------------------------------------------------------
 void transport::emit_particles(double dt)
 {
+  int old_size = particles.size();
+  L_net = 0; // re-summed in emission routines
+
   // complain if we're out of room for particles
   int n_emit = n_emit_core + n_emit_therm + n_emit_decay;
   if (total_particles() + n_emit > MAX_PARTICLES){
@@ -39,7 +42,8 @@ void transport::emit_particles(double dt)
   if(do_therm || do_decay) emit_zones(dt);
 
   // print how many particles were added to the system
-  if (verbose) printf("# Emitted %d particles\n",n_emit);
+  int new_size = particles.size();
+  if (verbose) printf("# Emitted %d particles\n",new_size-old_size);
 }
 
 
@@ -51,6 +55,7 @@ void transport::emit_particles(double dt)
 void transport::emit_inner_source(double dt)
 {
   const double Ep  = L_core*dt/n_emit_core;
+  L_net += L_core;
 
   #pragma omp parallel for
   for (int i=0; i<n_emit_core; i++){
@@ -79,6 +84,9 @@ void transport::emit_zones(double dt)
       if(do_therm) therm_lum += ( radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
       if(do_decay) decay_lum += zone_decay_lum(i);
     }
+    #pragma omp single nowait
+    L_net += therm_lum + decay_lum;
+
     
     // store in the variables in transport.
     double t;
@@ -91,14 +99,14 @@ void transport::emit_zones(double dt)
 
     // create particles in each grid cell
     #pragma omp for schedule(guided)
-    for (int i=0;i<grid->z.size();i++)
+    for (int i=0; i<gridsize; i++)
     {
 
       // EMIT THERMAL PARTICLES =========================================================
       if(do_therm && therm_lum>0){
 	// this zone's luminosity and number of emitted particles
 	double this_L  = ( radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
-	int this_n_emit = n_emit_therm * (this_L/therm_lum + 0.5);
+	int this_n_emit = n_emit_therm * this_L/therm_lum;
 
 	// add to tally of e_abs
 	// really, this is "the gas absorbs energy from heating, then emits radiation"
@@ -117,7 +125,7 @@ void transport::emit_zones(double dt)
       if(do_decay && decay_lum>0){
 	// this zone's luminosity and number of emitted particles
 	double this_L = zone_decay_lum(i);
-	int this_n_emit = n_emit_decay * (this_L/decay_lum + 0.5);
+	int this_n_emit = n_emit_decay * this_L/decay_lum;
 	
 	// create the particles
 	for (int k=0; k<this_n_emit; k++){
