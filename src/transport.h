@@ -39,18 +39,16 @@ private:
   double zone_decay_lum(int zone_index);
 
   // items for core emission
-  cdf_array core_species_cdf;
+  bool do_core;
   double r_core;
   double L_core;
   int n_emit_core;
+  cdf_array core_species_cdf;
 
   // items for zone emission
-  int n_emit_heat;
-  int n_emit_decay;
-  int n_emit_visc;
+  bool do_therm, do_decay;
+  int n_emit_therm, n_emit_decay;
   double visc_specific_heat_rate;
-  double L_heat;
-  double L_decay;
 
   // transformation functions
   void   lorentz_transform        (particle* p, double);
@@ -68,19 +66,9 @@ private:
   void   solve_eq_zone_values();
   double brent_method(int zone_index, double (*eq_function)(int,double,transport*), double min, double max);
 
-public:
-
-  // arrays of species
-  vector<species_general*> species_list;
-
-  // random number generator
-  thread_RNG rangen;
-
-  // current time in simulation
-  double t_now;
-
-  // pointer to grid
-  grid_general *grid;
+  // stored minimum and maximum values for use by the Brent solver
+  double T_min,  T_max;
+  double Ye_min, Ye_max;
 
   // simulation parameters
   double step_size;
@@ -93,16 +81,26 @@ public:
   int    iterate;
   int    verbose;
 
+  // current time in simulation
+  double t_now;
+
+public:
+
+  // arrays of species
+  vector<species_general*> species_list;
+
+  // pointer to grid
+  grid_general *grid;
+
+  // random number generator
+  thread_RNG rangen;
+
   // set things up
   void   init(Lua* lua);
 
   // in-simulation functions to be used by main
   void   step(double dt);
   int    total_particles();
-
-  // stored minimum and maximum values for use by the Brent solver
-  double T_min,  T_max;
-  double Ye_min, Ye_max;
 };
 
 #endif

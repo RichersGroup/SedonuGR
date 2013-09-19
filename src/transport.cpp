@@ -31,6 +31,41 @@ void transport::init(Lua* lua)
   MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
   verbose = (my_rank==0);
 
+  // read simulation parameters
+  radiative_eq = lua->scalar<int>("radiative_eq");
+  iterate      = lua->scalar<int>("iterate");
+  step_size    = lua->scalar<double>("step_size");
+  damping      = lua->scalar<double>("damping");
+  solve_T      = lua->scalar<int>("solve_T");
+  solve_Ye     = lua->scalar<int>("solve_Ye");
+  do_photons   = lua->scalar<int>("do_photons");
+  do_neutrinos = lua->scalar<int>("do_neutrinos");
+
+  // figure out what zone emission models we're using
+  int n_emit_heat  = lua->scalar<int>("n_emit_heat");
+  int n_emit_visc  = lua->scalar<int>("n_emit_visc");
+  bool do_heat  = n_emit_heat  > 0;
+  bool do_visc  = n_emit_visc  > 0;
+  do_therm     = ( radiative_eq ? do_visc     : do_heat     );
+  n_emit_therm = ( radiative_eq ? n_emit_visc : n_emit_heat );
+  do_decay     = n_emit_decay > 0;
+  n_emit_decay = lua->scalar<int>("n_emit_decay");
+
+  // complain if the parameters don't make sense together
+  if(n_emit_visc>0) visc_specific_heat_rate = lua->scalar<int>("visc_specific_heat_rate");
+  if(do_heat && do_visc){
+    cout << "ERROR: n_emit_heat and n_emit_visc cannot both be greater than 0." << endl;
+    exit(1);
+  }
+  if(do_heat && radiative_eq){
+    cout << "ERROR: n_emit_heat requires that radiative_eq==0" << endl;
+    exit(1);
+  }
+  if(do_visc && !radiative_eq){
+    cout << "ERROR: n_emit_visc requires that radiative_eq==1" << endl;
+    exit(1);
+  }
+
   //=================//
   // SET UP THE GRID //
   //=================//
@@ -48,29 +83,25 @@ void transport::init(Lua* lua)
   grid->init(lua);
 
   // calculate integrated quantities to check
-  // L_heat means radiation from viscous heating if radiative_eq is on
-  // L_heat means "actual" thermal radiation if radiative_eq is off
   double mass = 0.0;
   double KE   = 0.0;
-  double heat_lum=0, decay_lum=0;
-  #pragma omp parallel for reduction(+:mass,KE,heat_lum,decay_lum)
+  double therm_lum=0, decay_lum=0;
+  #pragma omp parallel for reduction(+:mass,KE,therm_lum,decay_lum)
   for (int i=0;i<grid->z.size();i++){
     double my_mass = grid->z[i].rho * grid->zone_volume(i);
     double* v = grid->z[i].v;
     mass      += my_mass;
     KE        += 0.5 * my_mass * (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-    heat_lum  += ( radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
+    therm_lum += ( radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
     decay_lum += zone_decay_lum(i);
   }
   if (verbose){
     cout << "# mass = " << mass << " g" <<endl;
     cout << "# KE = " << KE << " erg" << endl;
-    cout << "# L_heat = "  << (radiative_eq ? 0 : heat_lum)  << "erg/s" << endl;
-    cout << "# L_visc = "  << (radiative_eq ? heat_lum : 0)  << "erg/s" << endl;
-    cout << "# L_decay = " << decay_lum                      << "erg/s" << endl;
+    cout << "# L_heat = "  << (radiative_eq ? 0 : therm_lum)  << "erg/s" << endl;
+    cout << "# L_visc = "  << (radiative_eq ? therm_lum : 0)  << "erg/s" << endl;
+    cout << "# L_decay = " << decay_lum                       << "erg/s" << endl;
   }
-  L_heat  = heat_lum;
-  L_decay = decay_lum;
 
   //===============//
   // GENERAL SETUP //
@@ -93,19 +124,6 @@ void transport::init(Lua* lua)
   //==================//
   // start at time 0
   t_now = 0;
-
-  // read relevant parameters
-  radiative_eq  = lua->scalar<int>("radiative_eq");
-  iterate       = lua->scalar<int>("iterate");
-  step_size     = lua->scalar<double>("step_size");
-  damping       = lua->scalar<double>("damping");
-  solve_T       = lua->scalar<int>("solve_T");
-  solve_Ye      = lua->scalar<int>("solve_Ye");
-
-
-  // determine which species to simulate
-  do_photons   = lua->scalar<int>("do_photons");
-  do_neutrinos = lua->scalar<int>("do_neutrinos");
 
   /**********************/
   /**/ if(do_photons) /**/
@@ -175,11 +193,6 @@ void transport::init(Lua* lua)
   int init_particles = lua->scalar<int>("init_particles");
   if(!iterate) initialize_particles(init_particles);
 
-  // read in the numbers of particles to emit from zones
-  n_emit_heat  = lua->scalar<int>("n_emit_heat");
-  n_emit_visc  = lua->scalar<int>("n_emit_visc");
-  n_emit_decay = lua->scalar<int>("n_emit_decay");
-  if(n_emit_visc>0) visc_specific_heat_rate = lua->scalar<int>("visc_specific_heat_rate");
 
   //=================//
   // SET UP THE CORE //
@@ -187,6 +200,7 @@ void transport::init(Lua* lua)
   // the core temperature is used only in setting its emis vector
   // so it's looked at only in species::myInit()
   n_emit_core = lua->scalar<int>("n_emit_core");
+  do_core     = n_emit_core>0;
   r_core      = lua->scalar<double>("r_core");
   L_core      = lua->scalar<double>("L_core");
   core_species_cdf.resize(species_list.size());

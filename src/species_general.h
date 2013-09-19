@@ -34,6 +34,9 @@ class species_general
   // pointer to the simulation info (one level up)
   transport* sim;
 
+  // species-specific initialization stuff
+  virtual void myInit(Lua* lua) = 0;
+
  public:
 
   virtual ~species_general() {}
@@ -41,16 +44,14 @@ class species_general
   // name
   string name;
 
+  // lepton number (the particle property, {-1,0,1})
+  int lepton_number;
+
   // this species' spectrum
   spectrum_array spectrum;
 
-  // lepton number (the particle property. really just 'electron number' used for
-  // calculating changes to Ye. 1, -1, or 0)
-  int lepton_number;
-
   // set everything up
   void init(Lua* lua, transport* sim);
-  virtual void myInit(Lua* lua) = 0;
 
   // return the emissivity integrated over frequency at the core
   double int_core_emis();

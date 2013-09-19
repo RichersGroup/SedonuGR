@@ -28,15 +28,15 @@ void transport::initialize_particles(int init_particles){
 void transport::emit_particles(double dt)
 {
   // complain if we're out of room for particles
-  int n_emit = n_emit_core + n_emit_heat + n_emit_decay;
+  int n_emit = n_emit_core + n_emit_therm + n_emit_decay;
   if (total_particles() + n_emit > MAX_PARTICLES){
     cout << "# Not enough particle space\n"; 
     exit(10);
   }
 
   // emit from the core and/or the zones
-  if(n_emit_core > 0) emit_inner_source(dt);
-  if(n_emit_heat>0 || n_emit_decay>0) emit_zones(dt);
+  if(do_core) emit_inner_source(dt);
+  if(do_therm || do_decay) emit_zones(dt);
 
   // print how many particles were added to the system
   if (verbose) printf("# Emitted %d particles\n",n_emit);
@@ -65,64 +65,69 @@ void transport::emit_inner_source(double dt)
 //--------------------------------------------------------------------------
 void transport::emit_zones(double dt)
 {
-  // only emit from viscosity OR real emission (both doesn't make sense)
-  // this way the input parameters are different, but the code forces physical correctness
-  // (i.e. the "real emission" parameters are ignored if radiative_eq is on)
-  if(radiative_eq) n_emit_heat = n_emit_visc;
-
-  // set the net luminosities of the thermal and decay particles
-  if(n_emit_heat>0 || n_emit_decay>0){
-    double heat_lum = 0;
-    double decay_lum = 0;
-    #pragma omp parallel for reduction(+:heat_lum,decay_lum)
-    for(int i=0; i<grid->z.size(); i++){
-      heat_lum  += (radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
-      decay_lum += zone_decay_lum(i);
-    }
-    L_heat = heat_lum;
-    L_decay = decay_lum;
-  }
-
-  double t;
-  double Ep_heat  = L_heat*dt / n_emit_heat;
-  double Ep_decay = L_decay*dt / n_emit_decay;
+  int gridsize = grid->z.size(); 
+  double therm_lum = 0;
+  double decay_lum = 0;
   
-  #pragma omp parallel for schedule(guided)
-  for (int i=0;i<grid->z.size();i++)
+  // at this point therm means either viscous heating or regular emission, according to the logic above
+  #pragma omp parallel
   {
-    // EMIT THERMAL PARTICLES =========================================================
-    if(L_heat>0 && n_emit_heat>0){
-      // this zone's luminosity and number of emitted particles
-      double this_L_heat = (radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
-      int this_n_emit = n_emit_heat * (this_L_heat/L_heat + 0.5);
 
-      // add to tally of e_abs
-      // really, this is "the gas absorbs energy from heating, then emits radiation"
-      // hence, this is only done if we assume radiative equilibrium
-      if(radiative_eq) grid->z[i].e_abs += dt * this_L_heat;
-      
-      // create the particles
-      for (int k=0; k<this_n_emit; k++){
-	double t = t_now + dt*rangen.uniform();
-	create_thermal_particle(i,Ep_heat,t);
-      }
+    // determine the net luminosity of each emission type over the whole grid
+    #pragma omp for reduction(+:therm_lum,decay_lum)
+    for(int i=0; i<gridsize; i++){
+      if(do_therm) therm_lum += ( radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
+      if(do_decay) decay_lum += zone_decay_lum(i);
+    }
+    
+    // store in the variables in transport.
+    double t;
+    double Ep_decay, Ep_therm;
+    #pragma omp single
+    {
+      if(do_therm) Ep_therm = therm_lum*dt / (double)n_emit_therm;
+      if(do_decay) Ep_decay = decay_lum*dt / (double)n_emit_decay;
     }
 
+    // create particles in each grid cell
+    #pragma omp for schedule(guided)
+    for (int i=0;i<grid->z.size();i++)
+    {
 
-    // EMIT DECAY PARTICLES ===========================================================
-    if(L_decay>0 && n_emit_decay>0){
-      // this zone's luminosity and number of emitted particles
-      double this_L_decay = zone_decay_lum(i);
-      int this_n_emit = n_emit_decay * (this_L_decay/L_decay + 0.5);
+      // EMIT THERMAL PARTICLES =========================================================
+      if(do_therm && therm_lum>0){
+	// this zone's luminosity and number of emitted particles
+	double this_L  = ( radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
+	int this_n_emit = n_emit_therm * (this_L/therm_lum + 0.5);
 
-      // create the particles
-      for (int k=0; k<this_n_emit; k++){
-	double t = t_now + dt*rangen.uniform();
-	create_decay_particle(i,Ep_decay,t);
+	// add to tally of e_abs
+	// really, this is "the gas absorbs energy from heating, then emits radiation"
+	// hence, this is only done if we assume radiative equilibrium
+	if(radiative_eq) grid->z[i].e_abs += dt * this_L;
+
+	// create the particles
+	for (int k=0; k<this_n_emit; k++){
+	  double t = t_now + dt*rangen.uniform();
+	  create_thermal_particle(i,Ep_therm,t);
+	}
       }
-    }
 
-  } // loop over zones  
+
+      // EMIT DECAY PARTICLES ===========================================================
+      if(do_decay && decay_lum>0){
+	// this zone's luminosity and number of emitted particles
+	double this_L = zone_decay_lum(i);
+	int this_n_emit = n_emit_decay * (this_L/decay_lum + 0.5);
+	
+	// create the particles
+	for (int k=0; k<this_n_emit; k++){
+	  double t = t_now + dt*rangen.uniform();
+	  create_decay_particle(i,Ep_decay,t);
+	}
+      }
+
+    }//loop over zones  
+  }//#pragma omp parallel
 }
 
 
