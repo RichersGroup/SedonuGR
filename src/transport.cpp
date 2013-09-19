@@ -44,12 +44,12 @@ void transport::init(Lua* lua)
   // figure out what zone emission models we're using
   int n_emit_heat  = lua->scalar<int>("n_emit_heat");
   int n_emit_visc  = lua->scalar<int>("n_emit_visc");
+  n_emit_decay     = lua->scalar<int>("n_emit_decay");
   bool do_heat  = n_emit_heat  > 0;
   bool do_visc  = n_emit_visc  > 0;
   do_therm     = ( radiative_eq ? do_visc     : do_heat     );
   n_emit_therm = ( radiative_eq ? n_emit_visc : n_emit_heat );
   do_decay     = n_emit_decay > 0;
-  n_emit_decay = lua->scalar<int>("n_emit_decay");
 
   // complain if the parameters don't make sense together
   if(n_emit_visc>0) visc_specific_heat_rate = lua->scalar<int>("visc_specific_heat_rate");
@@ -92,15 +92,15 @@ void transport::init(Lua* lua)
     double* v = grid->z[i].v;
     mass      += my_mass;
     KE        += 0.5 * my_mass * (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-    therm_lum += ( radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
-    decay_lum += zone_decay_lum(i);
+    if(do_therm) therm_lum += ( radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
+    if(do_decay) decay_lum += zone_decay_lum(i);
   }
   if (verbose){
     cout << "# mass = " << mass << " g" <<endl;
     cout << "# KE = " << KE << " erg" << endl;
-    cout << "# L_heat = "  << (radiative_eq ? 0 : therm_lum)  << "erg/s" << endl;
-    cout << "# L_visc = "  << (radiative_eq ? therm_lum : 0)  << "erg/s" << endl;
-    cout << "# L_decay = " << decay_lum                       << "erg/s" << endl;
+    if(do_heat)  cout << "# L_heat = "  << (radiative_eq ? 0 : therm_lum)  << "erg/s" << endl;
+    if(do_visc)  cout << "# L_visc = "  << (radiative_eq ? therm_lum : 0)  << "erg/s" << endl;
+    if(do_decay) cout << "# L_decay = " << decay_lum                       << "erg/s" << endl;
   }
 
   //===============//

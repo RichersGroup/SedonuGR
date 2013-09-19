@@ -13,7 +13,7 @@ void transport::propagate_particles(double dt)
 {
   vector<int> n_active(species_list.size(),0);
   vector<int> n_escape(species_list.size(),0);
-  double e_esc=0;
+  double e_esc = 0;
   double N;
 
   #pragma omp parallel shared(n_active,n_escape,e_esc,N) firstprivate(dt) 
@@ -49,7 +49,10 @@ void transport::propagate_particles(double dt)
 
     //--- DETERMINE THE NORMALIZATION FACTOR ---
     #pragma omp single
-    N = L_core / e_esc;
+    {
+      if(e_esc>0) N = L_core / e_esc;
+      else N=1;
+    }
 
     //--- NORMALIZE THE GRID QUANTITIES ---
     #pragma omp for
