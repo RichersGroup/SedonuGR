@@ -90,9 +90,7 @@ void grid_general::reduce_radiation_block(int bsize, int start)
   MPI_Allreduce(src,dst,bsize,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
   for (j=0;j<bsize;j++) z[start + j].l_abs = dst[j];
 
-  // OPTIMIZE - do MPI calls on many pieces of data at once. Much less overhead this way.
   // TODO - need to put in other quantities...
-  // TODO - perhaps put the radiation arrays in transport?
   delete src;
   delete dst;
 

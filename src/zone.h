@@ -4,7 +4,6 @@
 #include "cdf_array.h"
 
 // define real to choose either double or float precision
-//typedef float real;
 typedef double real;
 
 
@@ -26,8 +25,9 @@ public:
   real T_gas;           // gas temperature
   real Ye;              // electron fraction
 
-  // store nickel mass
+  // store other parameters
   real ni56;            // nickel fraction
+  real H;               // specific heating rate (erg/s/g)
 
   // radiation quantities
   // TODO - move radiation quantities to species.

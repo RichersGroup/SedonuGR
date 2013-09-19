@@ -27,29 +27,29 @@ private:
   // creation of particles functions
   void emit_particles(double dt);
   void emit_inner_source(double dt);
-  void initialize_particles(int n_parts);
-  void create_isotropic_particle(int zone_index, double Ep);
+  void emit_zones(double dt);
+  void initialize_particles(int init_particles);
+  void create_surface_particle(double Ep, double t);
+  void create_thermal_particle(int zone_index, double Ep, double t);
+  void create_decay_particle(int zone_index, double Ep, double t);
   int sample_core_species();
   int sample_zone_species(int zone_index);
-  cdf_array core_species_cdf;
+  double zone_heating_rate(int zone_index);
+  double zone_decay_rate(int zone_index);
 
   // transformation functions
-  void   lorentz_transform(particle* p, double);
-  double dshift_comoving_to_lab(particle* p);
-  double dshift_lab_to_comoving(particle* p);
-
-  // propagate the particles
+  void   lorentz_transform        (particle* p, double);
+  double dshift_comoving_to_lab   (particle* p);
+  double dshift_lab_to_comoving   (particle* p);
   void   transform_comoving_to_lab(particle* p);
   void   transform_lab_to_comoving(particle* p);
 
   // propagate the particles
   void propagate_particles(double dt);
-
-  // scattering functions
   void propagate(particle* p, double dt);
   void isotropic_scatter(particle* p, int redistribute);
 
-  // solve for temperature
+  // solve for temperature and Ye
   void   solve_eq_zone_values();
   double brent_method(int zone_index, double (*eq_function)(int,double,transport*), double min, double max);
 
@@ -64,33 +64,36 @@ public:
   // current time in simulation
   double t_now;
 
-  // remember what we're simulating
-  int do_photons;
-  int do_neutrinos;
-
-  // remember what variables we're solving for
-  int solve_T;
-  int solve_Ye;
-
   // pointer to grid
   grid_general *grid;
 
   // items for core emission
-  int n_inject;
+  cdf_array core_species_cdf;
   double r_core;
   double L_core;
+  int n_emit_core;
+
+  // items for zone emission
+  int n_emit_heat;
+  int n_emit_decay;
+  double L_heat;
+  double L_decay;
 
   // simulation parameters
   double step_size;
+  double damping;
+  int    do_photons;
+  int    do_neutrinos;
+  int    solve_T;
+  int    solve_Ye;
   int    radiative_eq;
   int    iterate;
   int    verbose;
-  double damping;
 
   // set things up
   void   init(Lua* lua);
 
-  // in-simulation functions accessible to main
+  // in-simulation functions to be used by main
   void   step(double dt);
   int    total_particles();
 

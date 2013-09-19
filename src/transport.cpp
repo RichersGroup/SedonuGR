@@ -54,11 +54,24 @@ void transport::init(Lua* lua)
   // calculate integrated quantities to check
   double mass = 0.0;
   double KE   = 0.0;
-  for (int i=0;i<grid->z.size();i++)
-  {
-    mass += grid->z[i].rho * grid->zone_volume(i);
+  double heat_lum=0, decay_lum=0;
+  #pragma omp parallel for reduction(+:mass,KE,heat_lum,decay_lum)
+  for (int i=0;i<grid->z.size();i++){
+    double my_mass = grid->z[i].rho * grid->zone_volume(i);
+    double* v = grid->z[i].v;
+    mass      += my_mass;
+    KE        += 0.5 * my_mass * (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+    heat_lum  += zone_heating_rate(i);
+    decay_lum += zone_decay_rate(i);
   }
-  if (verbose) cout << "# mass = " << mass << endl;
+  L_heat  = heat_lum;
+  L_decay = decay_lum;
+  if (verbose){
+    cout << "# mass = " << mass << " g" <<endl;
+    cout << "# KE = " << KE << " erg" << endl;
+    cout << "# L_heat = " << L_heat << "erg/s" << endl;
+    cout << "# L_decay = " << L_decay << "erg/s" << endl;
+  }
 
   //===============//
   // GENERAL SETUP //
@@ -163,14 +176,18 @@ void transport::init(Lua* lua)
   int init_particles = lua->scalar<int>("init_particles");
   if(!iterate) initialize_particles(init_particles);
 
+  // read in the numbers of particles to emit from zones
+  n_emit_heat  = lua->scalar<int>("n_emit_heat");
+  n_emit_decay = lua->scalar<int>("n_emit_decay");
+
   //=================//
   // SET UP THE CORE //
   //=================//
   // the core temperature is used only in setting its emis vector
   // so it's looked at only in species::myInit()
-  n_inject = lua->scalar<int>("n_inject");
-  r_core   = lua->scalar<double>("r_core");
-  L_core   = lua->scalar<double>("L_core");
+  n_emit_core = lua->scalar<int>("n_emit_core");
+  r_core      = lua->scalar<double>("r_core");
+  L_core      = lua->scalar<double>("L_core");
   core_species_cdf.resize(species_list.size());
   for(int i=0; i<species_list.size(); i++){
     core_species_cdf.set_value(i, species_list[i]->int_core_emis());}
@@ -198,6 +215,7 @@ void transport::step(double dt)
   emit_particles(dt);
 
   // clear the tallies of the radiation quantities in each zone
+  #pragma omp parallel for
   for (int i=0;i<grid->z.size();i++) 
   {
     grid->z[i].e_rad  = 0;
@@ -212,6 +230,7 @@ void transport::step(double dt)
   propagate_particles(dt);
 
   // properly normalize the radiative quantities
+  #pragma omp parallel for
   for (int i=0;i<grid->z.size();i++) 
   {
     double vol = grid->zone_volume(i);
