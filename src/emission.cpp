@@ -34,21 +34,6 @@ void transport::emit_particles(double dt)
     exit(10);
   }
 
-  // set the net luminosities of the thermal and decay particles
-  // if not iterative, the problem is time-varying, so the luminosity must be recalculated.
-  // if not radiative_eq, the temperature determines the emissivity, so the luminosity must be recalculated.
-  if(!iterate && !radiative_eq){
-    double heat_lum = 0;
-    double decay_lum = 0;
-    #pragma omp parallel for reduction(+:heat_lum,decay_lum)
-    for(int i=0; i<grid->z.size(); i++){
-      L_heat += zone_heating_rate(i);
-      L_decay += zone_decay_rate(i);
-    }
-    L_heat = heat_lum;
-    L_decay = decay_lum;
-  }
-
   // emit from the core and/or the zones
   if(n_emit_core > 0) emit_inner_source(dt);
   if(n_emit_heat>0 || n_emit_decay>0) emit_zones(dt);
@@ -75,11 +60,29 @@ void transport::emit_inner_source(double dt)
 }
 
 
-//------------------------------------------------------------
+//--------------------------------------------------------------------------
 // emit particles from the zones due to non-radiation heating
-//------------------------------------------------------------
+//--------------------------------------------------------------------------
 void transport::emit_zones(double dt)
 {
+  // only emit from viscosity OR real emission (both doesn't make sense)
+  // this way the input parameters are different, but the code forces physical correctness
+  // (i.e. the "real emission" parameters are ignored if radiative_eq is on)
+  if(radiative_eq) n_emit_heat = n_emit_visc;
+
+  // set the net luminosities of the thermal and decay particles
+  if(n_emit_heat>0 || n_emit_decay>0){
+    double heat_lum = 0;
+    double decay_lum = 0;
+    #pragma omp parallel for reduction(+:heat_lum,decay_lum)
+    for(int i=0; i<grid->z.size(); i++){
+      heat_lum  += (radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
+      decay_lum += zone_decay_lum(i);
+    }
+    L_heat = heat_lum;
+    L_decay = decay_lum;
+  }
+
   double t;
   double Ep_heat  = L_heat*dt / n_emit_heat;
   double Ep_decay = L_decay*dt / n_emit_decay;
@@ -90,7 +93,7 @@ void transport::emit_zones(double dt)
     // EMIT THERMAL PARTICLES =========================================================
     if(L_heat>0 && n_emit_heat>0){
       // this zone's luminosity and number of emitted particles
-      double this_L_heat = zone_heating_rate(i);
+      double this_L_heat = (radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
       int this_n_emit = n_emit_heat * (this_L_heat/L_heat + 0.5);
 
       // add to tally of e_abs
@@ -109,7 +112,7 @@ void transport::emit_zones(double dt)
     // EMIT DECAY PARTICLES ===========================================================
     if(L_decay>0 && n_emit_decay>0){
       // this zone's luminosity and number of emitted particles
-      double this_L_decay = zone_decay_rate(i);
+      double this_L_decay = zone_decay_lum(i);
       int this_n_emit = n_emit_decay * (this_L_decay/L_decay + 0.5);
 
       // create the particles
@@ -123,22 +126,25 @@ void transport::emit_zones(double dt)
 }
 
 
-// return the total heating rate in the cell in erg/s
-double transport::zone_heating_rate(int zone_index)
-{
-  if(radiative_eq) return 0;//specific_heating_rate * grid->z[zone_index].rho * grid->zone_volume(zone_index);
-  else{
-    double H;
-    for(int i=0; i<species_list.size(); i++)
-      H += species_list[i]->int_zone_emis(zone_index) * 4*pc::pi * grid->zone_volume(zone_index);
-    return H;
-  }
+//----------------------------------------------------------------------------------------
+// Helper functions for emit_zones
+//----------------------------------------------------------------------------------------
+
+// rate at which viscosity energizes the fluid (erg/s)
+double transport::zone_visc_heat_rate(int zone_index){
+  return visc_specific_heat_rate * grid->z[zone_index].rho * grid->zone_volume(zone_index);
 }
 
+// return the cell's luminosity from thermal emission (erg/s)
+double transport::zone_heat_lum(int zone_index){
+  double H;
+  for(int i=0; i<species_list.size(); i++)
+    H += species_list[i]->int_zone_emis(zone_index) * 4*pc::pi * grid->zone_volume(zone_index);
+  return H;
+}
 
-// return the total decay luminosity from the cell in erg/s
-double transport::zone_decay_rate(int zone_index)
-{
+// return the total decay luminosity from the cell (erg/s)
+double transport::zone_decay_lum(int zone_index){
   if(verbose) cout << "WARNING: emission in zones from decay is not yet implemented!" << endl;
   return 0;
 }

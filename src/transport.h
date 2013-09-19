@@ -34,8 +34,23 @@ private:
   void create_decay_particle(int zone_index, double Ep, double t);
   int sample_core_species();
   int sample_zone_species(int zone_index);
-  double zone_heating_rate(int zone_index);
-  double zone_decay_rate(int zone_index);
+  double zone_visc_heat_rate(int zone_index);
+  double zone_heat_lum(int zone_index);
+  double zone_decay_lum(int zone_index);
+
+  // items for core emission
+  cdf_array core_species_cdf;
+  double r_core;
+  double L_core;
+  int n_emit_core;
+
+  // items for zone emission
+  int n_emit_heat;
+  int n_emit_decay;
+  int n_emit_visc;
+  double visc_specific_heat_rate;
+  double L_heat;
+  double L_decay;
 
   // transformation functions
   void   lorentz_transform        (particle* p, double);
@@ -66,18 +81,6 @@ public:
 
   // pointer to grid
   grid_general *grid;
-
-  // items for core emission
-  cdf_array core_species_cdf;
-  double r_core;
-  double L_core;
-  int n_emit_core;
-
-  // items for zone emission
-  int n_emit_heat;
-  int n_emit_decay;
-  double L_heat;
-  double L_decay;
 
   // simulation parameters
   double step_size;

@@ -1,9 +1,5 @@
-#include <algorithm>
 #include <omp.h>
-#include <limits>
 #include <mpi.h>
-#include <gsl/gsl_rng.h>
-#include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -52,6 +48,8 @@ void transport::init(Lua* lua)
   grid->init(lua);
 
   // calculate integrated quantities to check
+  // L_heat means radiation from viscous heating if radiative_eq is on
+  // L_heat means "actual" thermal radiation if radiative_eq is off
   double mass = 0.0;
   double KE   = 0.0;
   double heat_lum=0, decay_lum=0;
@@ -61,17 +59,18 @@ void transport::init(Lua* lua)
     double* v = grid->z[i].v;
     mass      += my_mass;
     KE        += 0.5 * my_mass * (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-    heat_lum  += zone_heating_rate(i);
-    decay_lum += zone_decay_rate(i);
+    heat_lum  += ( radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
+    decay_lum += zone_decay_lum(i);
   }
-  L_heat  = heat_lum;
-  L_decay = decay_lum;
   if (verbose){
     cout << "# mass = " << mass << " g" <<endl;
     cout << "# KE = " << KE << " erg" << endl;
-    cout << "# L_heat = " << L_heat << "erg/s" << endl;
-    cout << "# L_decay = " << L_decay << "erg/s" << endl;
+    cout << "# L_heat = "  << (radiative_eq ? 0 : heat_lum)  << "erg/s" << endl;
+    cout << "# L_visc = "  << (radiative_eq ? heat_lum : 0)  << "erg/s" << endl;
+    cout << "# L_decay = " << decay_lum                      << "erg/s" << endl;
   }
+  L_heat  = heat_lum;
+  L_decay = decay_lum;
 
   //===============//
   // GENERAL SETUP //
@@ -86,7 +85,7 @@ void transport::init(Lua* lua)
   // get rid of unneeded processors
   if (my_zone_start >= grid->z.size()) my_zone_start = my_zone_end+1;
 
-  // setup and seed random number generator
+  // setup and seed random number generator(s)
   rangen.init();
 
   //==================//
@@ -178,7 +177,9 @@ void transport::init(Lua* lua)
 
   // read in the numbers of particles to emit from zones
   n_emit_heat  = lua->scalar<int>("n_emit_heat");
+  n_emit_visc  = lua->scalar<int>("n_emit_visc");
   n_emit_decay = lua->scalar<int>("n_emit_decay");
+  if(n_emit_visc>0) visc_specific_heat_rate = lua->scalar<int>("visc_specific_heat_rate");
 
   //=================//
   // SET UP THE CORE //
@@ -254,255 +255,12 @@ void transport::step(double dt)
 
 
 
-//----------------------------------------------------------------------------
-// This is the function that expresses radiative equillibrium
-// in a cell (i.e. E_absorbed = E_emitted).  It is used in
-// The Brent solver below to determine the temperature such
-// that RadEq holds
-//----------------------------------------------------------------------------
-double temp_eq_function(int zone_index, double T, transport* sim)
-{
-  // total energy absorbed in zone
-  double E_absorbed = sim->grid->z[zone_index].e_abs;
-  // total energy emitted (to be calculated)
-  double E_emitted = 0.;
-
-  // set the zone temperature
-  sim->grid->z[zone_index].T_gas = T;
-  
-  // include the emission from all species
-  for(int i=0; i<sim->species_list.size(); i++)
-  {
-    // reset the eas variables in this zone
-    // OPTIMIZE - only set the emissivity variable
-    sim->species_list[i]->set_eas(zone_index);
-
-    // integrate emisison over frequency (angle
-    // integration gives the 4*PI) to get total
-    // radiation energy emitted. Opacities are
-    // held constant for this (assumed not to change
-    // much from the last time step).
-    E_emitted += 4.0*pc::pi * sim->species_list[i]->int_zone_emis(zone_index);
-  }
-  
-  // radiative equillibrium condition: "emission equals absorbtion"
-  // return to Brent function to iterate this to zero
-  return (E_emitted - E_absorbed);
-}
-
-
-//----------------------------------------------------------------------------
-// This is the function that expresses radiative equillibrium
-// in a cell (i.e. E_absorbed = E_emitted).  It is used in
-// The Brent solver below to determine the temperature such
-// that RadEq holds
-//----------------------------------------------------------------------------
-double Ye_eq_function(int zone_index, double Ye, transport* sim)
-{
-  // total energy absorbed in zone
-  double l_absorbed = sim->grid->z[zone_index].l_abs;
-  // total energy emitted (to be calculated)
-  double l_emitted = 0.;
-
-  // set the zone temperature
-  sim->grid->z[zone_index].Ye = Ye;
-  
-  // include the emission from all species
-  for(int i=0; i<sim->species_list.size(); i++)
-  {
-    // reset the eas variables in this zone
-    // OPTIMIZE - only set the emissivity variable
-    sim->species_list[i]->set_eas(zone_index);
-
-    // integrate emisison over frequency (angle
-    // integration gives the 4*PI) to get total
-    // radiation energy emitted. Opacities are
-    // held constant for this (assumed not to change
-    // much from the last time step).
-    l_emitted += 4.0*pc::pi * sim->species_list[i]->int_zone_lepton_emis(zone_index);
-  }
-
-  // radiative equillibrium condition: "emission equals absorbtion"
-  // return to Brent function to iterate this to zero
-  return (l_emitted - l_absorbed);
-}
-
-
-//-------------------------------------------------------------
-//  Solve for the temperature assuming radiative equilibrium
-//-------------------------------------------------------------
-#define BRENT_SOLVE_TOLERANCE 1.e-2
-#define BRENT_ITMAX 100
-void transport::solve_eq_zone_values()
-{
-  // solve radiative equilibrium temperature and Ye (but only for the zones I'm responsible for)
-  #pragma omp parallel for schedule(guided)
-  for (int i=0; i<grid->z.size(); i++)
-  {
-    // set Ye and temp to zero so it's easy to reduce later
-    if(i<my_zone_start || i>my_zone_end){
-      grid->z[i].T_gas = 0;
-      grid->z[i].Ye    = 0;
-      continue;  // don't actually solve for these zones
-    }
-
-    double T_last_iter, Ye_last_iter;
-    double T_last_step, Ye_last_step;
-    double T_error,Ye_error;
-    double dT_step, dYe_step;
-    int iter=0;
-
-    iter = 0;
-
-    // set up the solver
-    if(solve_T)
-    {
-      T_error  = 10*BRENT_SOLVE_TOLERANCE;
-      T_last_step  = grid->z[i].T_gas;
-    }
-    if(solve_Ye)
-    {
-      Ye_error = 10*BRENT_SOLVE_TOLERANCE;
-      Ye_last_step = grid->z[i].Ye;
-    }
-
-    // loop through solving the temperature and Ye until both are within error.
-    while(iter<=BRENT_ITMAX && (T_error>BRENT_SOLVE_TOLERANCE || Ye_error>BRENT_SOLVE_TOLERANCE))
-    {
-      if(solve_T)
-      {
-	T_last_iter  = grid->z[i].T_gas;
-	grid->z[i].T_gas = brent_method(i, temp_eq_function, T_min,  T_max);
-	T_error  = fabs( (grid->z[i].T_gas - T_last_iter ) / (T_last_iter ) );
-      }
-      if(solve_Ye)
-      {
-	Ye_last_iter = grid->z[i].Ye;
-	grid->z[i].Ye    = brent_method(i, Ye_eq_function,   Ye_min, Ye_max);
-	Ye_error = fabs( (grid->z[i].Ye    - Ye_last_iter) / (Ye_last_iter) );
-      }
-      iter++;
-    }
-
-    // warn if it didn't converge
-    if(iter == BRENT_ITMAX) cout << "# WARNING: outer Brent solver hit maximum iterations." << endl;
-
-    // damp the oscillations between steps, ensure that it's within the allowed boundaries
-    if(solve_T)
-    {
-      dT_step  = grid->z[i].T_gas - T_last_step;
-      grid->z[i].T_gas =  T_last_step + (1.0 - damping)*dT_step;
-      if(grid->z[i].T_gas > T_max){
-	cout << "# WARNING: Changing T_gas in zone " << i << " from " << grid->z[i].T_gas << " to T_max=" << T_max << endl;
-	grid->z[i].T_gas = T_max;}
-      if(grid->z[i].T_gas < T_min){
-	cout << "# WARNING: Changing T_gas in zone " << i << " from " << grid->z[i].T_gas << " to T_min=" << T_min << endl;
-	grid->z[i].T_gas = T_min;}
-    }
-    if(solve_Ye)
-    {
-      dYe_step = grid->z[i].Ye - Ye_last_step;
-      grid->z[i].Ye = Ye_last_step + (1.0 - damping)*dYe_step;
-      if(grid->z[i].Ye > Ye_max){
-	cout << " WARNING: Changing Ye in zone " << i << " from " << grid->z[i].Ye << " to Ye_max=" << Ye_max << endl;
-	grid->z[i].Ye = Ye_max;}
-      if(grid->z[i].Ye < Ye_min){
-	cout << " WARNING: Changing Ye in zone " << i << " from " << grid->z[i].Ye << " to Ye_min=" << Ye_min << endl;
-	grid->z[i].Ye = Ye_min;}
-    }
-  }
-  
-  // mpi reduce the results
-  grid->reduce_gas();
-}
-
-
-
-
-//-----------------------------------------------------------
-// Brents method (from Numerical Recipes) to solve 
-// non-linear equation for T in rad equillibrium
-//-----------------------------------------------------------
-// definitions used for temperature solver
-#define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
-double transport::brent_method(int zone_index, double (*eq_function)(int,double,transport*), double min, double max)
-{
-  double small = 3.0e-8;
-  int iter;
-
-  // Initial guesses
-  double a=min;
-  double b=max;
-  double c=b;
-  double d,e,min1,min2;
-  double fa=(*eq_function)(zone_index,a,this);
-  double fb=(*eq_function)(zone_index,b,this);
-  double fc,p,q,r,s,tol1,xm;
-  
-  //if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0))
-  //  printf("Root must be bracketed in zbrent");
-  fc=fb;
-  for (iter=1;iter<=BRENT_ITMAX;iter++) {
-    if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0)) {
-      c=a;
-      fc=fa;
-      e=d=b-a;
-    }
-    if (fabs(fc) < fabs(fb)) {
-      a=b;
-      b=c;
-      c=a;
-      fa=fb;
-      fb=fc;
-      fc=fa;
-    }
-    tol1=2.0*small*fabs(b)+0.5*BRENT_SOLVE_TOLERANCE;
-    xm=0.5*(c-b);
-    if (fabs(xm) <= tol1 || fb == 0.0) return b;
-    if (fabs(e) >= tol1 && fabs(fa) > fabs(fb)) {
-      s=fb/fa;
-      if (a == c) {
-         p=2.0*xm*s;
-         q=1.0-s;
-      } else {
-	q=fa/fc;
-	r=fb/fc;
-	p=s*(2.0*xm*q*(q-r)-(b-a)*(r-1.0));
-	q=(q-1.0)*(r-1.0)*(s-1.0);
-      }
-      if (p > 0.0) q = -q;
-      p=fabs(p);
-      min1=3.0*xm*q-fabs(tol1*q);
-      min2=fabs(e*q);
-      if (2.0*p < (min1 < min2 ? min1 : min2)) {
-	e=d;
-	d=p/q;
-      } else {
-	d=xm;
-	e=d;
-      }
-    } else {
-      d=xm;
-      e=d;
-    }
-    a=b;
-    fa=fb;
-    if (fabs(d) > tol1)
-      b += d;
-    else
-      b += SIGN(tol1,xm);
-    fb=(*eq_function)(zone_index,b,this);
-  }
-  printf("Maximum number of iterations exceeded in zbrent\n");
-  return 0.0;
-}
 
 //----------------------------------------------------------------------------
 // sum up the number of particles in all species
 //----------------------------------------------------------------------------
-int transport::total_particles()
-{
-	return particles.size();
+int transport::total_particles(){
+  return particles.size();
 }
 
 
@@ -517,6 +275,8 @@ int transport::sample_core_species()
   double z = rangen.uniform();
   return core_species_cdf.sample(z);
 }
+
+
 
 //----------------------------------------------------------------------------
 // randomly sample the nu-integrated emissivities of all
@@ -646,221 +406,3 @@ void transport::lorentz_transform(particle* p, double sign)
   p->D[1] = p->D[1]/norm;
   p->D[2] = p->D[2]/norm;
 }
-
-
-void transport::propagate_particles(double dt)
-{
-  vector<int> n_active(species_list.size(),0);
-  vector<int> n_escape(species_list.size(),0);
-  double e_esc=0;
-  double N;
-
-  #pragma omp parallel shared(n_active,n_escape,e_esc,N) firstprivate(dt) 
-  {
-
-    //--- MOVE THE PARTICLES AROUND ---
-    #pragma omp for schedule(guided) reduction(+:e_esc)
-    for(int i=0; i<particles.size(); i++){
-      particle* p = &particles[i];
-      #pragma omp atomic
-      n_active[p->s]++;
-      propagate(p,dt);
-      if(p->fate == escaped){
-	#pragma omp atomic
-	n_escape[p->s]++;
-	species_list[p->s]->spectrum.count(p->t, p->nu, p->e, p->D);
-	e_esc += p->e;
-      }
-    } //implied barrier
-
-    //--- REMOVE THE DEAD PARTICLES ---
-    #pragma omp single nowait
-    {
-      vector<particle>::iterator pIter = particles.begin();
-      while(pIter != particles.end()){
-	if(pIter->fate==absorbed || pIter->fate==escaped){
-	  *pIter = particles[particles.size()-1];
-	  particles.pop_back();
-	}
-	else pIter++;
-      }
-    }
-
-    //--- DETERMINE THE NORMALIZATION FACTOR ---
-    #pragma omp single
-    N = L_core / e_esc;
-
-    //--- NORMALIZE THE GRID QUANTITIES ---
-    #pragma omp for
-    for(int i=0; i<grid->z.size(); i++){
-      grid->z[i].e_rad *= N;
-      grid->z[i].e_abs *= N;
-      grid->z[i].l_abs *= N;
-    }
-
-    //--- OUPUT ESCAPE STATISTICS AND NORMALIZE SPECTRUM ---
-    #pragma omp for
-    for(int i=0; i<species_list.size(); i++){
-      if(n_escape[i]>0) species_list[i]->spectrum.rescale(N);
-      double per_esc = (100.0*n_escape[i])/n_active[i];
-      if (verbose && iterate){
-	if(n_active[i]>0) printf("# %i/%i %s escaped. (%f%%)\n", n_escape[i], n_active[i], species_list[i]->name.c_str(), per_esc);
-	else printf("# No active %s.\n", species_list[i]->name.c_str());
-      }
-    }
-
-  } //#pragma omp parallel
-}
-
-//--------------------------------------------------------
-// Propagate a single monte carlo particle until
-// it  escapes, is absorbed, or the time step ends
-//--------------------------------------------------------
-void transport::propagate(particle* p, double dt)
-{
-  enum ParticleEvent {scatter, boundary, tstep};
-  ParticleEvent event;
-
-  if((p->ind < 0) || (p->ind > grid->z.size())){
-    cout << "ERROR: particle coming in to propagate has invalid index" << endl;
-    exit(3);
-  }
-
-  p->fate = moving;
-//ParticleFate  fate = moving;
-
-  // time of end of timestep
-  double tstop = t_now + dt;
-
-  // local variables
-  double tau_r,d_sc,d_tm,this_d;
-
-  // pointer to current zone
-  zone *zone = &(grid->z[p->ind]);
-
-  // propagate until this flag is set
-  while (p->fate == moving)
-  {
-    // set pointer to current zone
-    zone = &(grid->z[p->ind]);
-
-    // maximum step size inside zone
-    double d_bn = step_size * grid->zone_min_length(p->ind);
-
-    // doppler shift from comoving to lab
-    double dshift = dshift_comoving_to_lab(p);
-
-    // get local opacity and absorption fraction
-    double opac, abs_frac;
-    species_list[p->s]->get_opacity(p,dshift,&opac,&abs_frac);
-
-    // convert opacity from comoving to lab frame for the purposes of
-    // determining the interaction distance in the lab frame
-    // This corresponds to equation 90.8 in Mihalas&Mihalas. You multiply
-    // the comoving opacity by nu_0 over nu, which is why you
-    // multiply by dshift instead of dividing by dshift here
-    double opac_lab = opac*dshift;
-
-    // random optical depth to next interaction
-    tau_r = -1.0*log(1 - rangen.uniform());
-
-    // step size to next interaction event
-    d_sc  = tau_r/opac_lab;
-    if (opac_lab == 0) d_sc = INFINITY;
-    if (d_sc < 0){
-      cout << "ERROR: negative interaction distance!\n" << endl;
-      cout << __FILE__ << ":" << __LINE__ << endl;
-      exit(15);
-    }
-
-    // find distance to end of time step
-    d_tm = (tstop - p->t)*pc::c;
-    if (iterate) d_tm = INFINITY; // i.e. let all particles escape
-
-    // find out what event happens (shortest distance)
-    if ( (d_sc < d_bn) && (d_sc < d_tm) ){
-      event  = scatter;
-      this_d = d_sc;
-    }
-    else if (d_bn < d_tm){
-      event  = boundary;
-      this_d = d_bn;
-    }
-    else{
-      event  = tstep;
-      this_d = d_tm;
-    }
-
-    // tally in contribution to zone's radiation energy (both *lab* frame)
-    double this_E = p->e*this_d;
-    #pragma omp atomic
-    zone->e_rad += this_E;
-
-    // store absorbed energy in *comoving* frame
-    // (will turn into rate by dividing by dt later)
-    // Extra dshift definitely needed here (two total)
-    // to convert both p->e and this_d to the comoving frame
-    double this_E_comoving = this_E * dshift * dshift;
-    #pragma omp atomic
-    zone->e_abs += this_E_comoving * (opac*abs_frac*zone->eps_imc);
-
-    // store absorbed lepton number (same in both frames, except for the
-    // factor of this_d which is divided out later
-    if(species_list[p->s]->lepton_number != 0){
-      double this_l_comoving = species_list[p->s]->lepton_number * p->e/(p->nu*pc::h) * this_d*dshift;
-      #pragma omp atomic
-      zone->l_abs += this_l_comoving * (opac*abs_frac*zone->eps_imc);
-    }
-
-    // put back in radiation force tally here
-    // fx_rad =
-
-    // move particle the distance
-    p->x[0] += this_d*p->D[0];
-    p->x[1] += this_d*p->D[1];
-    p->x[2] += this_d*p->D[2];
-    // advance the time
-    p->t = p->t + this_d/pc::c;
-
-    // ---------------------------------
-    // Do if scatter
-    // ---------------------------------
-    if (event == scatter)
-    {
-      // random number to check for scattering or absorption
-      double z = rangen.uniform();
-
-      // decide whether to scatter
-      if (z > abs_frac) isotropic_scatter(p,0);
-      // or absorb
-      else
-      {
-	// check for effective scattering
-	double z2;
-	if (radiative_eq) z2 = 2;
-	else z2 = rangen.uniform();
-
-	// do an effective scatter (i.e. particle is absorbed
-	// but, since we require energy in = energy out it is re-emitted)
-	if (z2 > zone->eps_imc) isotropic_scatter(p,1);
-	// otherwise really absorb (kill) it
-	else p->fate = absorbed;
-      }
-    }
-
-    // ---------------------------------
-    // do if time step end
-    // ---------------------------------
-    else if (event == tstep) p->fate = stopped;
-
-    // Find position of the particle now
-    p->ind = grid->get_zone(p->x);
-    if (p->ind == -1) p->fate = absorbed;
-    if (p->ind == -2) p->fate = escaped;
-
-    // check for inner boundary absorption
-    if (p->r() < r_core) p->fate = absorbed;
-  }
-}
-
-
