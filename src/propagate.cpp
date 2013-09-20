@@ -55,7 +55,7 @@ void transport::propagate_particles(double dt)
     }
 
     //--- NORMALIZE THE GRID QUANTITIES ---
-    #pragma omp for
+    #pragma omp for nowait
     for(int i=0; i<grid->z.size(); i++){
       grid->z[i].e_rad *= N;
       grid->z[i].e_abs *= N;
@@ -72,7 +72,6 @@ void transport::propagate_particles(double dt)
 	else printf("# No active %s.\n", species_list[i]->name.c_str());
       }
     }
-
   } //#pragma omp parallel
 }
 
