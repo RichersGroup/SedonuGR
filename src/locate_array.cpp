@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <stdlib.h>
 #include <math.h>
@@ -54,27 +55,14 @@ void locate_array::init(std::vector<double> a)
 
 //---------------------------------------------------------
 // locate (return closest index below the value)
-// if off boundary, return -1 or size of array
+// if off left side of boundary, returns -1
+// if off right side of boundary, returns size-1
 //---------------------------------------------------------
 int locate_array::locate(double xval)
 {
-  // a form of locate from numerical recipes
-  int bm;                             // mid point
-  int bl = 0;                         // lower bound
-  int bu = x.size()-1;                // upper bound
-
-  // check if we are off the ends of the array
-  if (xval >= x[bu]) return x.size();
-  if (xval <= x[bl]) return -1;
-    
-  // search the array for this index
-  while (bu-bl > 1)
-  {
-    bm = (bu+bl)/2;
-    if (x[bm] <= xval) bl = bm;
-    else bu = bm;
-  }
-  return bl;
+  // upper_bound returns first element greater than xval
+  // we want the index before that.
+  return upper_bound(x.begin(), x.end(), xval) - x.begin() - 1;
 } 
 
 

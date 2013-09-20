@@ -39,6 +39,7 @@ int     nulibtable_ntemp;
 int     nulibtable_nye;
 double* nulibtable_energies;
 double* nulibtable_ewidths;
+double* nulibtable_ebottom;
 double* nulibtable_logrho;
 double* nulibtable_logtemp;
 double* nulibtable_ye;
@@ -61,6 +62,7 @@ extern int     nulibtable_mp_nulibtable_ntemp_;
 extern int     nulibtable_mp_nulibtable_nye_;
 extern double* nulibtable_mp_nulibtable_energies_;
 extern double* nulibtable_mp_nulibtable_ewidths_;
+extern double* nulibtable_mp_nulibtable_ebottom_;
 extern double* nulibtable_mp_nulibtable_logrho_;
 extern double* nulibtable_mp_nulibtable_logtemp_;
 extern double* nulibtable_mp_nulibtable_ye_;
@@ -79,6 +81,7 @@ extern int     __nulibtable_MOD_nulibtable_ntemp;
 extern int     __nulibtable_MOD_nulibtable_nye;
 extern double* __nulibtable_MOD_nulibtable_energies;
 extern double* __nulibtable_MOD_nulibtable_ewidths;
+extern double* __nulibtable_MOD_nulibtable_ebottom;
 extern double* __nulibtable_MOD_nulibtable_logrho;
 extern double* __nulibtable_MOD_nulibtable_logtemp;
 extern double* __nulibtable_MOD_nulibtable_ye;
@@ -107,6 +110,7 @@ void set_globals(){
   nulibtable_nye                  = nulibtable_mp_nulibtable_nye_;
   nulibtable_energies             = nulibtable_mp_nulibtable_energies_;
   nulibtable_ewidths              = nulibtable_mp_nulibtable_ewidths_;
+  nulibtable_ebottom              = nulibtable_mp_nulibtable_ebottom_;
   nulibtable_logrho               = nulibtable_mp_nulibtable_logrho_;
   nulibtable_logtemp              = nulibtable_mp_nulibtable_logtemp_;
   nulibtable_ye                   = nulibtable_mp_nulibtable_ye_;
@@ -125,6 +129,7 @@ void set_globals(){
   nulibtable_nye                 = __nulibtable_MOD_nulibtable_nye;
   nulibtable_energies            = __nulibtable_MOD_nulibtable_energies;
   nulibtable_ewidths             = __nulibtable_MOD_nulibtable_ewidths;
+  nulibtable_ebottom             = __nulibtable_MOD_nulibtable_ebottom;
   nulibtable_logrho              = __nulibtable_MOD_nulibtable_logrho;
   nulibtable_logtemp             = __nulibtable_MOD_nulibtable_logtemp;
   nulibtable_ye                  = __nulibtable_MOD_nulibtable_ye;
@@ -270,6 +275,7 @@ void nulib_get_nu_grid(locate_array& nu_grid){ // Hz
   // convert from MeV to frequency using the Planck constant
   for(int i=0; i<nu_grid.size(); i++) nu_grid.x[i] /= pc::h_MeV;
   nu_grid.do_log_interpolate = 1;
+  nu_grid.x_min = nulibtable_ebottom[0];
 }
 
 

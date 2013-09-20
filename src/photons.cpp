@@ -16,13 +16,14 @@ void photons::myInit(Lua* lua)
   name = "Photons";
 
   // poison unused zone properties
+  #pragma omp parallel for
   for(int i=0; i<sim->grid->z.size(); i++) sim->grid->z[i].Ye = -1.0e99;
 
   // intialize output spectrum
   std::vector<double>stg = lua->vector<double>("spec_time_grid");
   std::vector<double>sng = lua->vector<double>("spec_nu_grid");
-  int nmu  = lua->scalar<int>("n_mu");
-  int nphi = lua->scalar<int>("n_phi");
+  int nmu  = lua->scalar<int>("spec_n_mu");
+  int nphi = lua->scalar<int>("spec_n_phi");
   spectrum.init(stg,sng,nmu,nphi);
   spectrum.set_name("optical_spectrum.dat");
 
@@ -38,27 +39,35 @@ void photons::myInit(Lua* lua)
   nu_grid.init(nu_start,nu_stop,n_nu);
 
   // allocate space for the grid eas spectrum containers
-  if(grey_opac <= 0) abs_opac.resize(sim->grid->z.size());
-  if(eps           <= 0) scat_opac.resize(sim->grid->z.size());
+  abs_opac.resize(sim->grid->z.size());
+  scat_opac.resize(sim->grid->z.size());
   emis.resize(sim->grid->z.size());
 
   // now allocate space for each eas spectrum
   if(sim->do_core) core_emis.resize(nu_grid.size());
-  for (int i=0; i<abs_opac.size();  i++)  abs_opac[i].resize(nu_grid.size());
-  for (int i=0; i<scat_opac.size(); i++) scat_opac[i].resize(nu_grid.size());
-  for (int i=0; i<emis.size();      i++)      emis[i].resize(nu_grid.size());
+  #pragma omp parallel for
+  for (int i=0; i<abs_opac.size();  i++){
+    abs_opac[i].resize(nu_grid.size());
+    scat_opac[i].resize(nu_grid.size());
+    emis[i].resize(nu_grid.size());
+  }
 
-  // set up core emission spectrum function (now a blackbody) (erg/s/cm^2/ster)
+  // set up core emission spectrum function (now a blackbody) (erg/s)
+  // normalized to core luminosity. constants don't matter.
   if(sim->do_core){
     double T_core = lua->scalar<double>("T_core");
+    double L_core = lua->scalar<double>("L_core");
+    #pragma omp parallel for
     for (int j=0;j<nu_grid.size();j++)
-      {
-	double nu  = nu_grid.center(j);
-	double dnu = nu_grid.delta(j);
-	double bb  = planck(T_core,nu)*dnu;
-	core_emis.set_value(j,bb); 
-      }
+    {
+      double nu  = nu_grid.center(j);
+      double dnu = nu_grid.delta(j);
+      double bb  = planck(T_core,nu)*dnu;
+      #pragma omp ordered
+      core_emis.set_value(j,bb); 
+    }
     core_emis.normalize();
+    core_emis.N = L_core;
   }
 
   // set photon's min and max values
@@ -86,12 +95,14 @@ void photons::set_eas(int zone_index)
     //if (sim->radiative_eq) sim->grid->z[zone_index].eps_imc = 1.;
     z->eps_imc = 1;
 
+    #pragma omp parallel for
     for (int j=0;j<nu_grid.size();j++)
     {
-      double nu  = nu_grid.x[j];
-      double bb  = planck(z->T_gas,nu);
-      abs_opac[zone_index][j] = grey_opac*z->rho;
-      emis[zone_index].set_value(j,grey_opac*eps*bb);
+      double nu  = nu_grid.x[j]; // (Hz)
+      double bb  = planck(z->T_gas,nu); // (erg/s/cm^2/Hz/ster)
+      abs_opac[zone_index][j] = grey_opac*z->rho; // (1/cm)
+      #pragma omp ordered
+      emis[zone_index].set_value(j,grey_opac*eps*bb*z->rho); // (erg/s/cm^3/Hz/ster)
     }
     emis[zone_index].normalize();
   }
@@ -115,7 +126,7 @@ double photons::klein_nishina(double x)
   return KN;
 }
 
-// calculate planck function (erg/x/cm^2/Hz/ster)
+// calculate planck function (erg/s/cm^2/Hz/ster)
 double photons::planck(double T, double nu)
 {
   double zeta = pc::h*nu/pc::k/T;

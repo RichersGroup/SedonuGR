@@ -11,7 +11,7 @@ protected:
 
   // photon-specific functions
   double klein_nishina(double);
-  double planck(double T, double nu);
+  double planck(double T, double nu); // (erg/s/cm^2/Hz/ster)
   void compton_scatter();
 
 public:

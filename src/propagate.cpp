@@ -61,18 +61,17 @@ void transport::propagate_particles(double dt)
       grid->z[i].e_abs *= N;
       grid->z[i].l_abs *= N;
     }
-
-    //--- OUPUT ESCAPE STATISTICS AND NORMALIZE SPECTRUM ---
-    #pragma omp for
-    for(int i=0; i<species_list.size(); i++){
-      if(n_escape[i]>0) species_list[i]->spectrum.rescale(N);
-      double per_esc = (100.0*n_escape[i])/n_active[i];
-      if (verbose && iterate){
-	if(n_active[i]>0) printf("# %i/%i %s escaped. (%f%%)\n", n_escape[i], n_active[i], species_list[i]->name.c_str(), per_esc);
-	else printf("# No active %s.\n", species_list[i]->name.c_str());
-      }
-    }
   } //#pragma omp parallel
+  
+  //--- OUPUT ESCAPE STATISTICS AND NORMALIZE SPECTRUM ---
+  for(int i=0; i<species_list.size(); i++){
+    if(n_escape[i]>0) species_list[i]->spectrum.rescale(N);
+    double per_esc = (100.0*n_escape[i])/n_active[i];
+    if (verbose && iterate){
+      if(n_active[i]>0) printf("# %i/%i %s escaped. (%3.2f%%)\n", n_escape[i], n_active[i], species_list[i]->name.c_str(), per_esc);
+      else printf("# No active %s.\n", species_list[i]->name.c_str());
+    }
+  }
 }
 
 //--------------------------------------------------------

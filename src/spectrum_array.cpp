@@ -30,111 +30,69 @@ void spectrum_array::set_name(const char *n)
 // Initialization and Allocation
 //--------------------------------------------------------------
 void spectrum_array::init(std::vector<double> t, std::vector<double> w,
-		    int n_mu, int n_phi)
+			  int n_mu, int n_phi)
 {
   // assign time grid
   double t_start = t[0];
   double t_stop  = t[1];
   double t_del   = t[2];
-  this->time_grid.init(t_start,t_stop,t_del);
-  int n_times  = this->time_grid.size();
+  time_grid.init(t_start,t_stop,t_del);
+  int n_times  = time_grid.size();
 
   // assign wave grid
   double w_start = w[0];
   double w_stop  = w[1];
   double w_del   = w[2];
-  this->wave_grid.init(w_start,w_stop,w_del);
-  int n_wave   = this->wave_grid.size();
+  wave_grid.init(w_start,w_stop,w_del);
+  int n_wave   = wave_grid.size();
 
   // asign mu grid
-  this->mu_grid.init(-1,1,n_mu);
+  mu_grid.init(-1,1,n_mu);
 
   // asign phi grid
-  this->phi_grid.init(0,2*pc::pi,n_phi);
+  phi_grid.init(0,2*pc::pi,n_phi);
 
   // index parameters
-  this->n_elements  = n_times*n_wave*n_mu*n_phi;
-  this->a3 = n_phi;
-  this->a2 = n_mu*a3;
-  this->a1 = n_wave*a2;
+  n_elements  = n_times*n_wave*n_mu*n_phi;
+  a3 = n_phi;
+  a2 = n_mu*a3;
+  a1 = n_wave*a2;
 
   // allocate memory
-  this->click.resize(n_elements);
-  this->flux.resize(n_elements);
+  click.resize(n_elements);
+  flux.resize(n_elements);
 
   // clear 
   wipe();
 }
 
-//--------------------------------------------------------------
-// Initialization and Allocation
-//--------------------------------------------------------------
-void spectrum_array::log_init(std::vector<double> t, std::vector<double> w,
-		    int n_mu, int n_phi)
-{
-  // assign time grid
-  double t_start = t[0];
-  double t_stop  = t[1];
-  double t_del   = t[2];
-  this->time_grid.init(t_start,t_stop,t_del);
-  int n_times  = this->time_grid.size();
-
-  // assign wave grid
-  double w_start = pow(10,w[0]);
-  double w_stop  = pow(10,w[1]);
-  double w_del   = pow(10,w[2]);
-  std::vector<double>* tmp = new std::vector<double>;
-  for(double i=w_start; i<w_stop; i*=w_del) tmp->push_back(i);
-  this->wave_grid.init(*tmp);
-  int n_wave   = this->wave_grid.size();
-  delete(tmp);
-
-  // asign mu grid
-  this->mu_grid.init(-1,1,n_mu);
-
-  // asign phi grid
-  this->phi_grid.init(0,2*pc::pi,n_phi);
-
-  // index parameters
-  this->n_elements  = n_times*n_wave*n_mu*n_phi;
-  this->a3 = n_phi;
-  this->a2 = n_mu*a3;
-  this->a1 = n_wave*a2;
-
-  // allocate memory
-  this->click.resize(n_elements);
-  this->flux.resize(n_elements);
-
-  // clear 
-  wipe();
-}
 
 //--------------------------------------------------------------
 // Initialization and Allocation
 //--------------------------------------------------------------
 void spectrum_array::init(std::vector<double> tg, std::vector<double> wg, 
-		    std::vector<double> mg, std::vector<double> pg)
+			  std::vector<double> mg, std::vector<double> pg)
 {
   // initialize locate arrays
-  this->time_grid.init(tg);
-  this->wave_grid.init(wg);
-  this->mu_grid.init(mg);
-  this->phi_grid.init(pg);
+  time_grid.init(tg);
+  wave_grid.init(wg);
+  mu_grid.init(mg);
+  phi_grid.init(pg);
 
-  int n_times  = this->time_grid.size();
-  int n_wave   = this->wave_grid.size();
-  int n_mu     = this->mu_grid.size();
-  int n_phi    = this->phi_grid.size();
-  int n_elems  = n_times*n_wave*n_mu*n_phi;
+  int n_times  = time_grid.size();
+  int n_wave   = wave_grid.size();
+  int n_mu     = mu_grid.size();
+  int n_phi    = phi_grid.size();
 
   // index parameters
-  this->a3 = n_phi;
-  this->a2 = n_mu*a3;
-  this->a1 = n_wave*a2;
+  n_elements  = n_times*n_wave*n_mu*n_phi;
+  a3 = n_phi;
+  a2 = n_mu*a3;
+  a1 = n_wave*a2;
 
   // allocate memory
-  this->click.resize(n_elems);
-  this->flux.resize(n_elems);
+  click.resize(n_elements);
+  flux.resize(n_elements);
 
   // clear 
   wipe();
@@ -146,6 +104,7 @@ void spectrum_array::init(std::vector<double> tg, std::vector<double> wg,
 //--------------------------------------------------------------
 void spectrum_array::wipe()
 {
+  #pragma omp parallel for
   for (int i=0;i<click.size();i++) 
   {
     flux[i]   = 0;
@@ -181,18 +140,18 @@ void spectrum_array::count(double t, double w, double E, double *D)
   int p_bin = ( phi_grid.size()==1 ? 0 :  phi_grid.locate(phi));
 
   // keep all photons, even if off wavelength grid
-  if (l_bin <  0               ) l_bin = 0;
-  if (l_bin >= wave_grid.size()) l_bin = wave_grid.size()-1;
+  // locate does this automatically for the upper bound.
+  if (l_bin <  0) l_bin = 0;
 
   // if off the grids, just return without counting
-  if ((t_bin < 0)||(l_bin < 0)||(m_bin < 0)||(p_bin < 0)) return;
-  if (t_bin >= time_grid.size()) return;
-  if (m_bin >= mu_grid.size())   return;
-  if (p_bin >= phi_grid.size())  return;
-  
+  // remember the bin index enumerates the left wall of the bin
+  if ((t_bin < 0)||(m_bin < 0)||(p_bin < 0)) return;
+  if ((time_grid.size() > 1) && (t_bin >= time_grid.size()-1)) return;
+  if ((  mu_grid.size() > 1) && (m_bin >=   mu_grid.size()-1)) return;
+  if (( phi_grid.size() > 1) && (p_bin >=  phi_grid.size()-1)) return;
 
   // add to counters
-  int ind      = index(t_bin,l_bin,m_bin,p_bin);
+  int ind = index(t_bin,l_bin,m_bin,p_bin);
 
   #pragma omp atomic
   flux[ind]  += E;
@@ -209,10 +168,10 @@ void spectrum_array::print()
 {
   FILE *out = fopen(name,"w");
 
-  int n_times  = this->time_grid.size();
-  int n_wave   = this->wave_grid.size();
-  int n_mu     = this->mu_grid.size();
-  int n_phi    = this->phi_grid.size();
+  int n_times  = time_grid.size();
+  int n_wave   = wave_grid.size();
+  int n_mu     = mu_grid.size();
+  int n_phi    = phi_grid.size();
 
   fprintf(out,"# %d %d %d %d\n",n_times,n_wave,n_mu,n_phi);
 
@@ -236,6 +195,7 @@ void spectrum_array::print()
 
 void  spectrum_array::rescale(double r)
 {
+  #pragma omp parallel for
   for (int i=0;i<flux.size();i++) flux[i] *= r;
 }
 
@@ -243,49 +203,26 @@ void  spectrum_array::rescale(double r)
 //--------------------------------------------------------------
 // MPI average the spectrum contents
 //--------------------------------------------------------------
-
-
 void spectrum_array::MPI_average()
 {
-  // allocate the memory for new pointer
-  int chunk = n_elements;
+  {
+    vector<double> receive(n_elements,0);
+    MPI_Allreduce(&flux.front(),&receive.front(),n_elements,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+    flux.swap(receive);
+  }
 
-  double *new_ptr = new double[chunk];
-  double *arr = new double[chunk];
-  // zero out array
-  for (int j=0;j<chunk;j++) new_ptr[j] = 0;
-  // fill in the new one
-  for (int j=0;j<chunk;j++) arr[j] = flux[j];
-  // reduce the stuff
-  MPI_Allreduce(arr,new_ptr,chunk,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-  // put back into place
-  for (int j=0;j<chunk;j++) flux[j] = new_ptr[j];
-
-  // free up the memory
-  delete new_ptr;
-  delete arr;
-
-  int *int_ptr = new int[chunk];
-  int *int_arr = new int[chunk];
-  // zero out array
-  for (int j=0;j<chunk;j++) int_ptr[j] = 0;
-  // fill in the new one
-  for (int j=0;j<chunk;j++) int_arr[j] = click[j];
-  // reduce the stuff
-  MPI_Allreduce(int_arr,int_ptr,chunk,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
-  // put back into place
-  for (int j=0;j<chunk;j++) click[j] = int_ptr[j];
-
-  // free up the memory
-  delete int_ptr;
-  delete int_arr;
+  {
+    vector<int> receive(n_elements,0);
+    MPI_Allreduce(&click.front(),&receive.front(),n_elements,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
+    click.swap(receive);
+  }
 
   int mpi_procs;
   MPI_Comm_size( MPI_COMM_WORLD, &mpi_procs );
+  #pragma omp parallel for
   for (int i=0;i<n_elements;i++) 
   {
     flux[i]  /= mpi_procs;
     click[i] /= mpi_procs; 
-
   }
 }

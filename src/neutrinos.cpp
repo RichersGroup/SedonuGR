@@ -1,7 +1,7 @@
 #include <vector>
-#include "Lua.h"
 #include "neutrinos.h"
 #include "transport.h"
+#include "Lua.h"
 #include "physical_constants.h"
 #include "nulib_interface.h"
 
@@ -14,11 +14,11 @@ using namespace std;
 void neutrinos::myInit(Lua* lua)
 {
   // intialize output spectrum
-  std::vector<double>stg = lua->vector<double>("nut_spec_time_grid");
-  std::vector<double>sng = lua->vector<double>("nut_spec_log_nu_grid");
-  int nmu  = lua->scalar<int>("nut_n_mu");
-  int nphi = lua->scalar<int>("nut_n_phi");
-  spectrum.log_init(stg,sng,nmu,nphi);
+  std::vector<double>stg = lua->vector<double>("spec_time_grid");
+  std::vector<double>sng = lua->vector<double>("spec_nu_grid");
+  int nmu  = lua->scalar<int>("spec_n_mu");
+  int nphi = lua->scalar<int>("spec_n_phi");
+  spectrum.init(stg,sng,nmu,nphi);
   spectrum.set_name("neutrino_spectrum.dat");
 
   // read opacity parameters
@@ -73,18 +73,20 @@ void neutrinos::myInit(Lua* lua)
   for (int i=0; i<abs_opac.size();  i++)  abs_opac[i].resize(nu_grid.size());
   for (int i=0; i<scat_opac.size(); i++) scat_opac[i].resize(nu_grid.size());
 
-  // set up core neutrino emission spectrum function (erg/s/cm^2/ster)
+  // set up core neutrino emission spectrum function (erg/s)
+  // normalize to core luminosity. constants don't matter.
   if(sim->do_core){
     double T_core = lua->scalar<double>("T_core");
     double L_core = lua->scalar<double>("L_core");
     double chem_pot = 0;
+    #pragma omp parallel for
     for (int j=0;j<nu_grid.size();j++)
-      {
-	double nu  = nu_grid.center(j);
-	double dnu = nu_grid.delta(j);
-	double bb  = 2.0*nu*nu*nu*pc::h/(pc::c*pc::c)*fermi_dirac(T_core,chem_pot,nu)*dnu;
-	core_emis.set_value(j,bb);
-      }
+    {
+      double nu  = nu_grid.center(j);
+      double dnu = nu_grid.delta(j);
+      double bb  = nu*nu*nu*fermi_dirac(T_core,chem_pot,nu)*dnu;
+      core_emis.set_value(j,bb);
+    }
     core_emis.normalize();
     core_emis.N = weight * L_core / 6.0;
   }

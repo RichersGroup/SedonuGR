@@ -18,6 +18,9 @@ private:
   char name[1000];
 
   // bin arrays
+  // values represent bin walls
+  // underflow is combined into leftmost bin (right of the leftmost wall)
+  // overflow is stored separately right of rightmost wall
   locate_array time_grid;
   locate_array wave_grid;
   locate_array mu_grid;

@@ -52,7 +52,7 @@ double species_general::sample_zone_nu(int zone_index)
 
 
 //----------------------------------------------------------------
-// return the emissivity integrated over nu for the core
+// return the emissivity integrated over nu for the core (erg/s/ster/cm^2)
 //----------------------------------------------------------------
 double species_general::int_core_emis()
 {
@@ -60,7 +60,7 @@ double species_general::int_core_emis()
 }
 
 //----------------------------------------------------------------
-// return the emissivity integrated over nu for a zone
+// return the emissivity integrated over nu for a zone (erg/s/ster/cm^3)
 //----------------------------------------------------------------
 double species_general::int_zone_emis(int zone_index)
 {
@@ -69,7 +69,7 @@ double species_general::int_zone_emis(int zone_index)
 
 
 //----------------------------------------------------------------
-// return the lepton emissivity integrated over nu for a zone
+// return the lepton emissivity integrated over nu for a zone (#/s/ster/cm^3)
 //----------------------------------------------------------------
 double species_general::int_zone_lepton_emis(int zone_index)
 {

@@ -16,10 +16,10 @@ class species_general
 
  protected:
 
-  // the frequency grid for emissivity/opacity
+  // the frequency grid for emissivity/opacity (Hz)
   locate_array nu_grid;
 
-  // the core emissivity
+  // the core emissivity (erg/s - units of N)
   cdf_array core_emis;
 
   // the zone eas variables
@@ -28,8 +28,8 @@ class species_general
   vector< vector<double> > scat_opac;
 
   // grey opacity and absorption fraction
-  double grey_opac;
-  double eps;
+  double grey_opac; //(cm^2/g)
+  double eps;       //unitless
 
   // pointer to the simulation info (one level up)
   transport* sim;
@@ -54,16 +54,16 @@ class species_general
   void init(Lua* lua, transport* sim);
 
   // return the emissivity integrated over frequency at the core
-  double int_core_emis();
+  double int_core_emis(); //(erg/s)
 
   // return the emissivity integrated over frequency at a zone
-  double int_zone_emis(int zone_index);
-  double int_zone_lepton_emis(int zone_index);
+  double int_zone_emis(int zone_index);        //(erg/s/cm^3/ster)
+  double int_zone_lepton_emis(int zone_index); //unitless
 
-  // return the frequency of a particle emitted from the core
+  // return the frequency of a particle emitted from the core (Hz)
   double sample_core_nu();
 
-  // return the frequency of a particle emitted from a zone
+  // return the frequency of a particle emitted from a zone (Hz)
   double sample_zone_nu(int zone_index);
 
   // set the emissivity, absorption opacity, and scattering opacity
@@ -71,7 +71,7 @@ class species_general
   void get_opacity(particle* p, double dshift, double* opac, double* abs_frac);
 
   // min and max values for the Brent solver
-  double T_min,  T_max;
+  double T_min,  T_max; //(K)
   double Ye_min, Ye_max;
 };
 

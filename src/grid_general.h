@@ -41,6 +41,7 @@ class grid_general
   virtual ~grid_general() {}
 
   string grid_type;
+  int block_size;
 
   // vector of zones
   std::vector<zone> z;
@@ -48,7 +49,8 @@ class grid_general
   // mpi reduce quantities
   void reduce_radiation();
   void reduce_radiation_block(int, int);
-  void reduce_gas();
+  void reduce_T();
+  void reduce_Ye();
 
   // set everything up
   void init(Lua* lua);

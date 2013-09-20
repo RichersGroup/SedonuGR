@@ -22,6 +22,9 @@ void grid_general::init(Lua* lua)
   if(model_file == "custom_model") custom_model(lua);
   else read_model_file(lua);
 
+  // set the reduction block size
+  block_size  = lua->scalar<int>("block_size");
+
   // complain if the grid is obviously not right
   if(z.size()==0){
     cout << "Error: there are no grid zones." << endl;
@@ -37,16 +40,15 @@ void grid_general::init(Lua* lua)
 void grid_general::reduce_radiation()
 {
   // largest block to reduce
-  int bsize    = 10000;
-  int n_blocks = floor(z.size()/bsize);
+  int n_blocks = floor(z.size()/block_size);
 
   // reduce in blocks
   for (int i=0;i<n_blocks;i++) 
-    reduce_radiation_block(bsize,i*bsize);
+    reduce_radiation_block(block_size,i*block_size);
   
   // get remainder
-  int remainder = z.size() - n_blocks*bsize;
-  if (remainder > 0) reduce_radiation_block(remainder,n_blocks*bsize);
+  int remainder = z.size() - n_blocks*block_size;
+  if (remainder > 0) reduce_radiation_block(remainder,n_blocks*block_size);
 }
 
 
@@ -54,66 +56,67 @@ void grid_general::reduce_radiation()
 // Combine the radiation tallies in blocks
 // from all processors  using MPI allreduce
 //------------------------------------------------------------
-void grid_general::reduce_radiation_block(int bsize, int start)
+void grid_general::reduce_radiation_block(int block_size, int start)
 {
-  int j,size;
-  MPI_Comm_size( MPI_COMM_WORLD, &size );
+  int nprocs;
+  MPI_Comm_size( MPI_COMM_WORLD, &nprocs );
 
-  double *src = new double[bsize];
-  double *dst = new double[bsize];
-  
-  // reduce (average) e_rad
-  for (j=0;j<bsize;j++) 
-  {
-    src[j] = z[start + j].e_rad/size;
-    dst[j] = 0;
-  }
-  MPI_Allreduce(src,dst,bsize,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-  for (j=0;j<bsize;j++) z[start + j].e_rad = dst[j];
+  vector<real> send(block_size,0);
+  vector<real> receive(block_size,0);
+  MPI_Datatype type = ( sizeof(real)==4 ? MPI_FLOAT : MPI_DOUBLE);
 
+  // average e_rad
+  #pragma omp parallel for
+  for(int i=0; i<block_size; i++) send[i] = z[start+i].e_rad/nprocs;
+  MPI_Allreduce(&send.front(), &receive.front(), block_size, type, MPI_SUM, MPI_COMM_WORLD);
+  #pragma omp parallel for
+  for(int i=0; i<block_size; i++) z[start+i].e_rad = receive[i];
 
-  // reduce (average) e_abs
-  for (j=0;j<bsize;j++) 
-  {
-    src[j] = z[start + j].e_abs/size;
-    dst[j] = 0;
-  }
-  MPI_Allreduce(src,dst,bsize,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-  for (j=0;j<bsize;j++) z[start + j].e_abs = dst[j];
+  // average e_abs
+  #pragma omp parallel for
+  for(int i=0; i<block_size; i++) send[i] = z[start+i].e_abs/nprocs;
+  MPI_Allreduce(&send.front(), &receive.front(), block_size, type, MPI_SUM, MPI_COMM_WORLD);
+  #pragma omp parallel for
+  for(int i=0; i<block_size; i++) z[start+i].e_rad = receive[i];
 
-  // reduce (average) l_abs
-  for (j=0;j<bsize;j++) 
-  {
-    src[j] = z[start + j].l_abs/size;
-    dst[j] = 0;
-  }
-  MPI_Allreduce(src,dst,bsize,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-  for (j=0;j<bsize;j++) z[start + j].l_abs = dst[j];
+  // average l_abs
+  #pragma omp parallel for
+  for(int i=0; i<block_size; i++) send[i] = z[start+i].l_abs/nprocs;
+  MPI_Allreduce(&send.front(), &receive.front(), block_size, type, MPI_SUM, MPI_COMM_WORLD);
+  #pragma omp parallel for
+  for(int i=0; i<block_size; i++) z[start+i].e_rad = receive[i];
 
   // TODO - need to put in other quantities...
-  delete src;
-  delete dst;
-
+  // TODO - can optimize by having only one for loop before and one loop after, but uses more memory
 }
 
 
-void grid_general::reduce_gas()
+void grid_general::reduce_Ye()
 {
-  double *src_ptr = new double[z.size()];
-  double *dst_ptr = new double[z.size()];
-
-  // reduce gas temperature 
-  for (int i=0;i<z.size();i++) {src_ptr[i] = z[i].T_gas; dst_ptr[i] = 0.0;}
-  MPI_Allreduce(src_ptr,dst_ptr,z.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-  for (int i=0;i<z.size();i++) z[i].T_gas = dst_ptr[i];
+  vector<real> send(z.size(),0);
+  vector<real> receive(z.size(),0);
+  MPI_Datatype type = ( sizeof(real)==4 ? MPI_FLOAT : MPI_DOUBLE);
 
   // reduce Ye
-  for (int i=0;i<z.size();i++) {src_ptr[i] = z[i].Ye; dst_ptr[i] = 0.0;}
-  MPI_Allreduce(src_ptr,dst_ptr,z.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-  for (int i=0;i<z.size();i++) z[i].Ye = dst_ptr[i];
+  #pragma omp parallel for
+  for (int i=0;i<z.size();i++) send[i] = z[i].Ye;
+  MPI_Allreduce(&send.front(), &receive.front(), z.size(), type, MPI_SUM, MPI_COMM_WORLD);
+  #pragma omp parallel for
+  for (int i=0;i<z.size();i++) z[i].Ye = receive[i];
+}
 
-  delete src_ptr;
-  delete dst_ptr;
+void grid_general::reduce_T()
+{
+  vector<real> send(z.size(),0);
+  vector<real> receive(z.size(),0);
+  MPI_Datatype type = ( sizeof(real)==4 ? MPI_FLOAT : MPI_DOUBLE);
+
+  // reduce gas temperature
+  #pragma omp parallel for
+  for (int i=0;i<z.size();i++) send[i] = z[i].T_gas;
+  MPI_Allreduce(&send.front(), &receive.front(), z.size(), type, MPI_SUM, MPI_COMM_WORLD);
+  #pragma omp parallel for
+  for (int i=0;i<z.size();i++) z[i].T_gas = receive[i];
 }
 
 

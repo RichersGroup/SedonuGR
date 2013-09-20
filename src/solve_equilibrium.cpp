@@ -10,78 +10,8 @@
 
 namespace pc = physical_constants;
 
-//----------------------------------------------------------------------------
-// This is the function that expresses radiative equillibrium
-// in a cell (i.e. E_absorbed = E_emitted).  It is used in
-// The Brent solver below to determine the temperature such
-// that RadEq holds
-//----------------------------------------------------------------------------
-double temp_eq_function(int zone_index, double T, transport* sim)
-{
-  // total energy absorbed in zone
-  double E_absorbed = sim->grid->z[zone_index].e_abs;
-  // total energy emitted (to be calculated)
-  double E_emitted = 0.;
-
-  // set the zone temperature
-  sim->grid->z[zone_index].T_gas = T;
-  
-  // include the emission from all species
-  for(int i=0; i<sim->species_list.size(); i++)
-  {
-    // reset the eas variables in this zone
-    // OPTIMIZE - only set the emissivity variable
-    sim->species_list[i]->set_eas(zone_index);
-
-    // integrate emisison over frequency (angle
-    // integration gives the 4*PI) to get total
-    // radiation energy emitted. Opacities are
-    // held constant for this (assumed not to change
-    // much from the last time step).
-    E_emitted += 4.0*pc::pi * sim->species_list[i]->int_zone_emis(zone_index);
-  }
-  
-  // radiative equillibrium condition: "emission equals absorbtion"
-  // return to Brent function to iterate this to zero
-  return (E_emitted - E_absorbed);
-}
-
-
-//----------------------------------------------------------------------------
-// This is the function that expresses radiative equillibrium
-// in a cell (i.e. E_absorbed = E_emitted).  It is used in
-// The Brent solver below to determine the temperature such
-// that RadEq holds
-//----------------------------------------------------------------------------
-double Ye_eq_function(int zone_index, double Ye, transport* sim)
-{
-  // total energy absorbed in zone
-  double l_absorbed = sim->grid->z[zone_index].l_abs;
-  // total energy emitted (to be calculated)
-  double l_emitted = 0.;
-
-  // set the zone temperature
-  sim->grid->z[zone_index].Ye = Ye;
-  
-  // include the emission from all species
-  for(int i=0; i<sim->species_list.size(); i++)
-  {
-    // reset the eas variables in this zone
-    // OPTIMIZE - only set the emissivity variable
-    sim->species_list[i]->set_eas(zone_index);
-
-    // integrate emisison over frequency (angle
-    // integration gives the 4*PI) to get total
-    // radiation energy emitted. Opacities are
-    // held constant for this (assumed not to change
-    // much from the last time step).
-    l_emitted += 4.0*pc::pi * sim->species_list[i]->int_zone_lepton_emis(zone_index);
-  }
-
-  // radiative equillibrium condition: "emission equals absorbtion"
-  // return to Brent function to iterate this to zero
-  return (l_emitted - l_absorbed);
-}
+double temp_eq_function(int zone_index, double T,  transport* sim);
+double   Ye_eq_function(int zone_index, double Ye, transport* sim);
 
 
 //-------------------------------------------------------------
@@ -168,9 +98,86 @@ void transport::solve_eq_zone_values()
     }
   }
   
-  // mpi reduce the results
-  grid->reduce_gas();
+  // MPI reduce the results
+  if(solve_T)  grid->reduce_T();
+  if(solve_Ye) grid->reduce_Ye();
 }
+
+
+//----------------------------------------------------------------------------
+// This is the function that expresses radiative equillibrium
+// in a cell (i.e. E_absorbed = E_emitted).  It is used in
+// The Brent solver below to determine the temperature such
+// that RadEq holds
+//----------------------------------------------------------------------------
+double temp_eq_function(int zone_index, double T, transport* sim)
+{
+  // total energy absorbed in zone
+  double E_absorbed = sim->grid->z[zone_index].e_abs;
+  // total energy emitted (to be calculated)
+  double E_emitted = 0.;
+
+  // set the zone temperature
+  sim->grid->z[zone_index].T_gas = T;
+  
+  // include the emission from all species
+  for(int i=0; i<sim->species_list.size(); i++)
+  {
+    // reset the eas variables in this zone
+    // OPTIMIZE - only set the emissivity variable
+    sim->species_list[i]->set_eas(zone_index);
+
+    // integrate emisison over frequency (angle
+    // integration gives the 4*PI) to get total
+    // radiation energy emitted. Opacities are
+    // held constant for this (assumed not to change
+    // much from the last time step).
+    E_emitted += 4.0*pc::pi * sim->species_list[i]->int_zone_emis(zone_index);
+  }
+  
+  // radiative equillibrium condition: "emission equals absorbtion"
+  // return to Brent function to iterate this to zero
+  return (E_emitted - E_absorbed);
+}
+
+
+//----------------------------------------------------------------------------
+// This is the function that expresses radiative equillibrium
+// in a cell (i.e. E_absorbed = E_emitted).  It is used in
+// The Brent solver below to determine the temperature such
+// that RadEq holds
+//----------------------------------------------------------------------------
+double Ye_eq_function(int zone_index, double Ye, transport* sim)
+{
+  // total energy absorbed in zone
+  double l_absorbed = sim->grid->z[zone_index].l_abs;
+  // total energy emitted (to be calculated)
+  double l_emitted = 0.;
+
+  // set the zone temperature
+  sim->grid->z[zone_index].Ye = Ye;
+  
+  // include the emission from all species
+  for(int i=0; i<sim->species_list.size(); i++)
+  {
+    // reset the eas variables in this zone
+    // OPTIMIZE - only set the emissivity variable
+    sim->species_list[i]->set_eas(zone_index);
+
+    // integrate emisison over frequency (angle
+    // integration gives the 4*PI) to get total
+    // radiation energy emitted. Opacities are
+    // held constant for this (assumed not to change
+    // much from the last time step).
+    l_emitted += 4.0*pc::pi * sim->species_list[i]->int_zone_lepton_emis(zone_index);
+  }
+
+  // radiative equillibrium condition: "emission equals absorbtion"
+  // return to Brent function to iterate this to zero
+  return (l_emitted - l_absorbed);
+}
+
+
 
 
 
