@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <mpi.h>
 #include <math.h>
 #include <stdlib.h>
@@ -107,14 +108,11 @@ int grid_1D_sphere::get_zone(double *x)
   double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 
   // check if off the boundaries
-  if(r < r_inner               ) return -1;
-  if(r > r_out[r_out.size()-1] ) return -2;
+  if(r <= r_inner               ) return -1;
+  if(r >  r_out[r_out.size()-1] ) return -2;
 
-  // find in zone array
-  // plus 1 b/c locate returns *lower* index and we want *upper*
-  int i = r_out.locate(r)+1;
-
-  return i;
+  // find in zone array using stl algorithm upper_bound and subtracting iterators
+  return upper_bound(r_out.begin(), r_out.end(), r) - r_out.begin();
 }
 
 
@@ -145,14 +143,15 @@ void grid_1D_sphere::sample_in_zone
 (int i, std::vector<double> ran, double r[3])
 {
   // inner radius of shell
-  double r_0;
-  if (i == 0) r_0 = r_inner; 
-  else r_0 = r_out[i-1];
+  double r1;
+  if (i == 0) r1 = r_inner; 
+  else r1 = r_out[i-1];
 
-  // thickness of shell
-  double dr = r_out[i] - r_0;
-  // sample radial position in shell
-  r_0 = r_0 + dr*ran[0];
+  // outer radius of shell
+  double r2 = r_out[i];
+
+  // sample radial position in shell using a probability integral transform
+  double radius = pow( ran[0]*(r2*r2*r2 - r1*r1*r1) + r1*r1*r1, 1./3.);
 
   // random spatial angles
   double mu  = 1 - 2.0*ran[1];
@@ -160,9 +159,9 @@ void grid_1D_sphere::sample_in_zone
   double sin_theta = sqrt(1 - mu*mu);
 
   // set the real 3-d coordinates
-  r[0] = r_0*sin_theta*cos(phi);
-  r[1] = r_0*sin_theta*sin(phi);
-  r[2] = r_0*mu;
+  r[0] = radius*sin_theta*cos(phi);
+  r[1] = radius*sin_theta*sin(phi);
+  r[2] = radius*mu;
 }
 
 

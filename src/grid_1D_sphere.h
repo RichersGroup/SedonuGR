@@ -15,8 +15,10 @@ private:
 
   // specifics to this geometry
   double r_inner;
-  // store location of edges
-  locate_array r_out;
+
+  // store location of the outer edge of the zone.
+  vector<double> r_out;
+
   // store volumes explicitly
   std::vector<double> vol;
 
