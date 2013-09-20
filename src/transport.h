@@ -9,8 +9,6 @@
 #include "thread_RNG.h"
 #include <list>
 
-
-#define MAX_PARTICLES 1000000
 class species_general;
 
 class transport
@@ -21,7 +19,7 @@ private:
   // this species' list of particles
   std::vector<particle> particles;
 
-  // the porition of zones this process is responsible for
+  // the porition of zones this MPI process is responsible for
   int my_zone_start, my_zone_end;
 
   // creation of particles functions
@@ -54,9 +52,10 @@ private:
   void   solve_eq_zone_values();
   double brent_method(int zone_index, double (*eq_function)(int,double,transport*), double min, double max);
 
-  // stored minimum and maximum values for use by the Brent solver
+  // stored minimum and maximum values to assure safety
   double T_min,  T_max;
   double Ye_min, Ye_max;
+  int max_particles;
 
   // simulation parameters
   double step_size;

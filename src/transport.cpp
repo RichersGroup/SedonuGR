@@ -32,14 +32,14 @@ void transport::init(Lua* lua)
   verbose = (my_rank==0);
 
   // read simulation parameters
-  radiative_eq = lua->scalar<int>("radiative_eq");
-  iterate      = lua->scalar<int>("iterate");
-  step_size    = lua->scalar<double>("step_size");
-  damping      = lua->scalar<double>("damping");
-  solve_T      = lua->scalar<int>("solve_T");
-  solve_Ye     = lua->scalar<int>("solve_Ye");
-  do_photons   = lua->scalar<int>("do_photons");
-  do_neutrinos = lua->scalar<int>("do_neutrinos");
+  radiative_eq  = lua->scalar<int>("radiative_eq");
+  iterate       = lua->scalar<int>("iterate");
+  step_size     = lua->scalar<double>("step_size");
+  damping       = lua->scalar<double>("damping");
+  solve_T       = lua->scalar<int>("solve_T");
+  solve_Ye      = lua->scalar<int>("solve_Ye");
+  do_photons    = lua->scalar<int>("do_photons");
+  do_neutrinos  = lua->scalar<int>("do_neutrinos");
 
   // figure out what zone emission models we're using
   int n_emit_heat  = lua->scalar<int>("n_emit_heat");
@@ -69,6 +69,10 @@ void transport::init(Lua* lua)
     cout << "ERROR: n_emit_visc requires that radiative_eq==1" << endl;
     exit(1);
   }
+
+  // Reserve all the memory we might need right now. Speeds up particle additions.
+  max_particles = lua->scalar<int>("max_particles");
+  particles.reserve(max_particles);
 
   //=================//
   // SET UP THE GRID //
