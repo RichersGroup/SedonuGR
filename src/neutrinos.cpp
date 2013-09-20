@@ -68,13 +68,12 @@ void neutrinos::myInit(Lua* lua)
   emis.resize(sim->grid->z.size());
 
   // now allocate space for each eas spectrum
-  core_emis.resize(nu_grid.size());
+  if(sim->do_core) core_emis.resize(nu_grid.size());
   for (int i=0; i<emis.size();      i++)      emis[i].resize(nu_grid.size());
   for (int i=0; i<abs_opac.size();  i++)  abs_opac[i].resize(nu_grid.size());
   for (int i=0; i<scat_opac.size(); i++) scat_opac[i].resize(nu_grid.size());
 
-  // set up core neutrino emission spectrum function
-  // TODO - should we be using the bin tops rather than centers?
+  // set up core neutrino emission spectrum function (erg/s/cm^2/ster)
   if(sim->do_core){
     double T_core = lua->scalar<double>("T_core");
     double L_core = lua->scalar<double>("L_core");
@@ -89,15 +88,6 @@ void neutrinos::myInit(Lua* lua)
     core_emis.normalize();
     core_emis.N = weight * L_core / 6.0;
   }
-
-//  double rho_core = lua->scalar<double>("rho_core");
-//  double T_core   = lua->scalar<double>("T_core");
-//  double Ye_core  = lua->scalar<double>("Ye_core");
-//  //just place holders so we can use the function to get core_emis
-//  vector<double> tmp1(nu_grid.size(),0), tmp2(nu_grid.size(),0);
-//  nulib_get_eas_arrays(rho_core, T_core, Ye_core, nulibID,
-//		       core_emis, tmp1, tmp2);
-//  core_emis.normalize();
 
   // set neutrino's min and max values
   T_min  =  nulib_get_Tmin();
@@ -121,7 +111,7 @@ void neutrinos::set_eas(int zone_index)
 }
 
 //-----------------------------------------------------------------
-// Calculate the fermi-dirac function in frequency units
+// Calculate the fermi-dirac function (erg/s/cm^2/Hz/ster)
 // (normalized to 1, not total luminosity)
 //-----------------------------------------------------------------
 double neutrinos::fermi_dirac(double T, double chem_pot, double nu)

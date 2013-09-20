@@ -43,12 +43,12 @@ void photons::myInit(Lua* lua)
   emis.resize(sim->grid->z.size());
 
   // now allocate space for each eas spectrum
-  core_emis.resize(nu_grid.size());
+  if(sim->do_core) core_emis.resize(nu_grid.size());
   for (int i=0; i<abs_opac.size();  i++)  abs_opac[i].resize(nu_grid.size());
   for (int i=0; i<scat_opac.size(); i++) scat_opac[i].resize(nu_grid.size());
   for (int i=0; i<emis.size();      i++)      emis[i].resize(nu_grid.size());
 
-  // set up core emission spectrum function (now a blackbody) 
+  // set up core emission spectrum function (now a blackbody) (erg/s/cm^2/ster)
   if(sim->do_core){
     double T_core = lua->scalar<double>("T_core");
     for (int j=0;j<nu_grid.size();j++)
@@ -115,7 +115,7 @@ double photons::klein_nishina(double x)
   return KN;
 }
 
-// calculate planck function in frequency units
+// calculate planck function (erg/x/cm^2/Hz/ster)
 double photons::planck(double T, double nu)
 {
   double zeta = pc::h*nu/pc::k/T;

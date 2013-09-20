@@ -182,7 +182,8 @@ A breif list of the tests is included below. More information can be found in th
  - nulib_plots - generates lots of plots for easily examining the values of the nulib tables.
  - equilibrium_ye - sets up a spherical system where no neutrinos are emitted and only Ye is solved for. Tests that the Ye solver works properly with the nulib table.
  - nut_neutron_star - optically thick problem to test that the neutrinos propagate as expected and lead to a reasonable result
-
+ - nut_emitting_ball - optically thin ball emitting neutrinos from parameterized viscous heating (no central source)
+ - phot_emitting_ball - optically thing ball emitting photons from parameterized viscous heating (no central source)
 
 
 
