@@ -32,8 +32,8 @@ void transport::emit_particles(double dt)
 
   // complain if we're out of room for particles
   int n_emit = n_emit_core + n_emit_therm + n_emit_decay;
-  if (total_particles() + n_emit > MAX_PARTICLES){
-    cout << "# Not enough particle space\n"; 
+  if (total_particles() + n_emit > max_particles){
+    cout << "# ERROR: Not enough particle space\n";
     exit(10);
   }
 
@@ -73,6 +73,7 @@ void transport::emit_zones(double dt)
   int gridsize = grid->z.size(); 
   double therm_lum = 0;
   double decay_lum = 0;
+  double Ep_decay, Ep_therm;
   
   // at this point therm means either viscous heating or regular emission, according to the logic above
   #pragma omp parallel
@@ -90,7 +91,6 @@ void transport::emit_zones(double dt)
     
     // store in the variables in transport.
     double t;
-    double Ep_decay, Ep_therm;
     #pragma omp single
     {
       if(do_therm) Ep_therm = therm_lum*dt / (double)n_emit_therm;
@@ -104,9 +104,11 @@ void transport::emit_zones(double dt)
 
       // EMIT THERMAL PARTICLES =========================================================
       if(do_therm && therm_lum>0){
-	// this zone's luminosity and number of emitted particles
+	// this zone's luminosity and number of emitted particles.
+	// randomly decide whether last particle gets added based on the remainder.
 	double this_L  = ( radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
-	int this_n_emit = n_emit_therm * this_L/therm_lum;
+	double tmp  = (double)n_emit_therm * this_L/therm_lum;
+	int this_n_emit = (int)tmp + (int)( rangen.uniform() < fmod(tmp,1.0) );
 
 	// add to tally of e_abs
 	// really, this is "the gas absorbs energy from heating, then emits radiation"
@@ -125,7 +127,8 @@ void transport::emit_zones(double dt)
       if(do_decay && decay_lum>0){
 	// this zone's luminosity and number of emitted particles
 	double this_L = zone_decay_lum(i);
-	int this_n_emit = n_emit_decay * this_L/decay_lum;
+	double tmp  = (double)n_emit_decay * this_L/decay_lum;
+	int this_n_emit = (int)tmp + (int)( rangen.uniform() < fmod(tmp,1.0) );
 	
 	// create the particles
 	for (int k=0; k<this_n_emit; k++){
