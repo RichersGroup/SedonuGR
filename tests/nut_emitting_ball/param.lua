@@ -38,6 +38,7 @@ n_emit_heat    = 0                 -- # particles to emit from zones each timest
 n_emit_visc    = 1e4               -- # particles to emit from zones each timestep (from viscosity, ignored if !radiative_eq)
 n_emit_decay   = 0                 -- # particles to emit from zones each timestep (from non-thermal processes)
 visc_specific_heat_rate = 1.0
+max_particles = 1e6
 
 -- particle propagation parameters
 step_size = 0.4                    -- move at most step_size*min_grid_length at a time
