@@ -1,3 +1,4 @@
+#pragma warning disable 161
 #include <omp.h>
 #include <stdio.h>
 #include <math.h>
@@ -15,7 +16,6 @@ void transport::propagate_particles(double dt)
   vector<int> n_escape(species_list.size(),0);
   double e_esc = 0;
   double N;
-
   #pragma omp parallel shared(n_active,n_escape,e_esc,N) firstprivate(dt) 
   {
 
@@ -48,6 +48,9 @@ void transport::propagate_particles(double dt)
     }
 
     //--- DETERMINE THE NORMALIZATION FACTOR ---
+    // accounts for particles scattering back to core / being absorbed
+    // and the fact that emitted particles are given a specific energy in their
+    // rest frame, which makes the lab frame emitted energy different from L_net.
     #pragma omp single
     {
       if(e_esc>0) N = L_net / e_esc;
@@ -72,6 +75,7 @@ void transport::propagate_particles(double dt)
       else printf("# No active %s.\n", species_list[i]->name.c_str());
     }
   }
+  cout << "# Emitted " << e_esc << " erg." << endl;
 }
 
 //--------------------------------------------------------

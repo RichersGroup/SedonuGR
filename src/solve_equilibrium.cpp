@@ -1,3 +1,4 @@
+#pragma warning disable 161
 #include <omp.h>
 #include <stdio.h>
 #include <math.h>

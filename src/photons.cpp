@@ -1,3 +1,4 @@
+#pragma warning disable 161
 #include <vector>
 #include "photons.h"
 #include "transport.h"
@@ -95,13 +96,12 @@ void photons::set_eas(int zone_index)
     //if (sim->radiative_eq) sim->grid->z[zone_index].eps_imc = 1.;
     z->eps_imc = 1;
 
-    #pragma omp parallel for
+    // leave serial. Parrallelized threads call this function.
     for (int j=0;j<nu_grid.size();j++)
     {
-      double nu  = nu_grid.x[j]; // (Hz)
-      double bb  = planck(z->T_gas,nu); // (erg/s/cm^2/Hz/ster)
-      abs_opac[zone_index][j] = grey_opac*z->rho; // (1/cm)
-      #pragma omp ordered
+      double nu  = nu_grid.center(j);        // (Hz)
+      double dnu = nu_grid.delta(j);         // (Hz)
+      double bb  = planck(z->T_gas,nu)*dnu;  // (erg/s/cm^2/ster)
       emis[zone_index].set_value(j,grey_opac*eps*bb*z->rho); // (erg/s/cm^3/Hz/ster)
     }
     emis[zone_index].normalize();

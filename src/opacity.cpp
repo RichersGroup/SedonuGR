@@ -13,7 +13,7 @@ void species_general::get_opacity(particle* p, double dshift, double* opac, doub
   // absorption opacity
   double a = 0;
   if(grey_opac<0) a = nu_grid.value_at(nu,abs_opac[p->ind]);
-  else a = sim->grid->z[p->ind].rho * grey_opac;
+  else            a = sim->grid->z[p->ind].rho * grey_opac;
 
   // scattering opacity
   double s = 0;

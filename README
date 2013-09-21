@@ -185,7 +185,7 @@ A breif list of the tests is included below. More information can be found in th
  - nut_emitting_ball - optically thin ball emitting neutrinos from parameterized viscous heating (no central source)
  - phot_emitting_ball - optically thing ball emitting photons from parameterized viscous heating (no central source)
 
-
+IF IT IS NOT IN THE TESTS FOLDER, IT IS PROBABLY NOT TESTED!
 
 
 

@@ -1,3 +1,4 @@
+#pragma warning disable 161
 #include <vector>
 #include "neutrinos.h"
 #include "transport.h"

@@ -26,11 +26,11 @@ void species_general::init(Lua* lua, transport* simulation)
 //----------------------------------------------------------------
 double species_general::sample_core_nu()
 {
-  // sample to find the frequency bin to use
+  // randomly pick a frequency bin
   double z = sim->rangen.uniform();
   int ilam = core_emis.sample(z);
 
-  // sample uniformily in selected frequency bin 
+  // randomly pick a location in the frequency bin
   z = sim->rangen.uniform();
   return nu_grid.sample(ilam,z);
 }
@@ -41,18 +41,18 @@ double species_general::sample_core_nu()
 //----------------------------------------------------------------
 double species_general::sample_zone_nu(int zone_index)
 {
-  // sample to find the frequency bin to use
+  // randomly pick a frequency bin
   double z = sim->rangen.uniform();
   int ilam = emis[zone_index].sample(z);
 
-  // sample uniformily in selected frequency bin 
+  // randomly pick a location in the frequency bin
   z = sim->rangen.uniform();
   return nu_grid.sample(ilam,z);
 }
 
 
 //----------------------------------------------------------------
-// return the emissivity integrated over nu for the core (erg/s/ster/cm^2)
+// return the emissivity integrated over nu for the core (erg/s)
 //----------------------------------------------------------------
 double species_general::int_core_emis()
 {
@@ -80,5 +80,3 @@ double species_general::int_zone_lepton_emis(int zone_index)
   }
   return l_emis * emis[zone_index].N;
 }
-
-

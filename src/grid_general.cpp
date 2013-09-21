@@ -1,3 +1,4 @@
+#pragma warning disable 161
 #include <mpi.h>
 #include <math.h>
 #include <iostream>

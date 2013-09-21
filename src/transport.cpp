@@ -1,3 +1,4 @@
+#pragma warning disable 161
 #include <omp.h>
 #include <mpi.h>
 #include <stdlib.h>
@@ -149,12 +150,11 @@ void transport::init(Lua* lua)
     if(verbose) cout << "# Initializing NuLib..." << endl;
     string nulib_table = lua->scalar<string>("nulib_table");
     nulib_init(nulib_table);
-    neutrinos* neutrinos_tmp;
 
     // create a species for each in the nulib table
     int num_nut_species = nulib_get_nspecies();
     for(int i=0; i<num_nut_species; i++){
-      neutrinos_tmp = new neutrinos;
+      neutrinos* neutrinos_tmp = new neutrinos;
       neutrinos_tmp->nulibID = i;
       neutrinos_tmp->num_nut_species = num_nut_species;
       neutrinos_tmp->init(lua, this);
@@ -211,8 +211,8 @@ void transport::init(Lua* lua)
     r_core      = lua->scalar<double>("r_core");
     L_core      = lua->scalar<double>("L_core");
     core_species_cdf.resize(species_list.size());
-    for(int i=0; i<species_list.size(); i++){
-      core_species_cdf.set_value(i, species_list[i]->int_core_emis());}
+    for(int i=0; i<species_list.size(); i++)
+      core_species_cdf.set_value(i, species_list[i]->int_core_emis());
     core_species_cdf.normalize();
   }
   else{
@@ -300,7 +300,7 @@ int transport::total_particles(){
 //----------------------------------------------------------------------------
 int transport::sample_core_species()
 {
-  // randomly sample the species (precomputed)
+  // randomly sample the species (precomputed CDF)
   double z = rangen.uniform();
   return core_species_cdf.sample(z);
 }

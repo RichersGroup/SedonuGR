@@ -1,3 +1,4 @@
+#pragma warning disable 161
 #include <omp.h>
 #include <math.h>
 #include "thread_RNG.h"
