@@ -39,7 +39,8 @@ int main(int argc, char* argv[]){
 
   locate_array nu_grid; // Hz
   nulib_get_nu_grid(nu_grid);
-  grid_file << "Energy Grid (MeV)" << endl;
+  grid_file << "Energy Grid (bin tops) (MeV)" << endl;
+  grid_file << "min:" << nu_grid.min << endl;
   for(int i=0; i<nu_grid.size(); i++) grid_file << nu_grid.x[i]*pc::h_MeV << endl;
   grid_file << endl;
 

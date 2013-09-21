@@ -1,5 +1,5 @@
 #include <algorithm>
-#include <mpi.h>
+#include <stdio.h>
 #include "cdf_array.h"
 
 

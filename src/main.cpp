@@ -37,8 +37,7 @@ int main(int argc, char **argv)
 
   // open up the lua parameter file
   Lua lua;
-  std::string    script_file = "param.lua";
-  if( argc > 1 ) script_file = std::string( argv[ 1 ] );
+  string script_file = ( argc>1 ? string(argv[1]) : "param.lua");
   lua.init( script_file );
 
   // set up the transport module (includes the grid)
@@ -47,29 +46,23 @@ int main(int argc, char **argv)
   sim.init(&lua);
 
   // read in time stepping parameters
-  int    n_times     = lua.scalar<int>("n_times");
   int    iterate     = lua.scalar<int>("iterate");
-  double t_stop      = lua.scalar<double>("t_stop");
-  double tstep_max   = lua.scalar<double>("tstep_max");
-  double tstep_min   = lua.scalar<double>("tstep_min");
-  double tstep_start = lua.scalar<double>("tstep_start");
-  double tstep_del   = lua.scalar<double>("tstep_del");
-  double write_out   = lua.scalar<double>("write_out");
+  int    n_times     = ( iterate ? iterate : lua.scalar<int>("max_n_steps"));
+  double t_stop      = ( iterate ? 0       : lua.scalar<double>("t_stop"));
+  double tstep_max   = ( iterate ? 0       : lua.scalar<double>("tstep_max"));
+  double tstep_min   = ( iterate ? 0       : lua.scalar<double>("tstep_min"));
+  double tstep_start = ( iterate ? 0       : lua.scalar<double>("tstep_start"));
+  double tstep_del   = ( iterate ? 0       : lua.scalar<double>("tstep_del"));
+  double write_out   = ( iterate ? 0       : lua.scalar<double>("write_out"));
   lua.close();
-
-  // loop over time steps;
-  double t = 0;
-  double t_step = tstep_start;
-  int   iw = 0; // number of times output has been written
-
-  // check for a time static, iterative calculation
-  if (iterate) n_times = iterate;
-
 
   //===========//
   // TIME LOOP //
   //===========//
-  for (int it=0;it<n_times;it++)
+  double t = 0;
+  double t_step = tstep_start;
+  int iw = 0; // number of times output has been written
+  for(int it=0;it<n_times;it++)
   {
     // get this time step (ignored if iterative calc)
     if (t_step < tstep_min) t_step = tstep_min;
@@ -77,8 +70,7 @@ int main(int argc, char **argv)
     if ( (tstep_del>0) && (t>0) && (t_step>t*tstep_del) ) t_step = t*tstep_del;
 
     // printout time step
-    if (verbose)
-      printf("%8d %12.4e %12.4e %5d\n",it,t,t_step, sim.total_particles());
+    if (verbose) printf("%8d %12.4e %12.4e %5d\n",it,t,t_step, sim.total_particles());
 
     // writeout zone state when appropriate 
     if ( verbose && ( (t>=write_out*iw) || (iterate) ) )
@@ -119,13 +111,10 @@ int main(int argc, char **argv)
   // calculate the elapsed time 
   double proc_time_end = MPI_Wtime();
   double time_wasted = proc_time_end - proc_time_start;
-  if (verbose)
-    printf("#\n# CALCULATION took %.3e seconds or %.3f mins or %.3f hours\n",
-	   time_wasted,time_wasted/60.0,time_wasted/60.0/60.0);
+  if (verbose) printf("#\n# CALCULATION took %.3e seconds or %.3f mins or %.3f hours\n",
+		      time_wasted,time_wasted/60.0,time_wasted/60.0/60.0);
 
   // exit the program
-  delete sim.grid;
-  for(int i=0; i<sim.species_list.size(); i++) delete sim.species_list[i];
   MPI_Finalize();
   return 0;
 }

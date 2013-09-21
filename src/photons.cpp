@@ -58,7 +58,7 @@ void photons::myInit(Lua* lua)
   if(sim->do_core){
     double T_core = lua->scalar<double>("T_core");
     double L_core = lua->scalar<double>("L_core");
-    #pragma omp parallel for
+    #pragma omp parallel for ordered
     for (int j=0;j<nu_grid.size();j++)
     {
       double nu  = nu_grid.center(j);

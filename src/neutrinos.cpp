@@ -80,12 +80,13 @@ void neutrinos::myInit(Lua* lua)
     double T_core = lua->scalar<double>("T_core");
     double L_core = lua->scalar<double>("L_core");
     double chem_pot = 0;
-    #pragma omp parallel for
+    #pragma omp parallel for ordered
     for (int j=0;j<nu_grid.size();j++)
     {
       double nu  = nu_grid.center(j);
       double dnu = nu_grid.delta(j);
       double bb  = nu*nu*nu*fermi_dirac(T_core,chem_pot,nu)*dnu;
+      #pragma omp ordered
       core_emis.set_value(j,bb);
     }
     core_emis.normalize();

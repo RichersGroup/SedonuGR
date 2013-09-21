@@ -75,7 +75,6 @@ void transport::propagate_particles(double dt)
       else printf("# No active %s.\n", species_list[i]->name.c_str());
     }
   }
-  cout << "# Emitted " << e_esc << " erg." << endl;
 }
 
 //--------------------------------------------------------
