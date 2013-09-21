@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <mpi.h>
 #include "cdf_array.h"
 
@@ -11,10 +12,9 @@ double cdf_array::get_value(int i)
   else return (y[i] - y[i-1]);  
 }
 
-
-
 //------------------------------------------------------
 // set the actual y value, not the integrated
+// must be called in order
 //------------------------------------------------------
 void cdf_array::set_value(int i, double f)   
 {
@@ -22,15 +22,13 @@ void cdf_array::set_value(int i, double f)
   else y[i] = y[i-1] + f;
 }
 
-
 //------------------------------------------------------
 // Normalize such that the last entry is 1.0
 //------------------------------------------------------
 void cdf_array::normalize() 
 {
   // check for zero array, set to all constant
-  if (y.back() == 0) 
-    for (int i=1;i<y.size();i++) y[i] = y[i-1] + 1;
+  if (y.back() == 0) y.assign(y.size(),1.0);
 
   // normalize to end = 1.0
   N = y.back();
@@ -41,25 +39,12 @@ void cdf_array::normalize()
 //---------------------------------------------------------
 // Sample the probability distribution using binary search.
 // Pass a random number betwen 0 and 1.  
-// Returns the bin number
+// Returns the index of the first value larger than yval
+// if larger than largest element, returns size
 //---------------------------------------------------------
-int cdf_array::sample(double z)
+int cdf_array::sample(double yval)
 {
-  // mid, lower, and upper points
-  int bm;                         // mid point
-  int bl = 0;                     // lower bound
-  int bu = y.size() - 1;        // upper bound
-  // see if we are off the top or bottom
-  if (z > y[bu]) return bu;
-  if (z < y[bl]) return bl;
-  // search
-  while (bu-bl > 1)
-  {
-    bm = (bu+bl)/2;
-    if (y[bm] <= z) bl = bm;
-    else bu = bm;
-  }
-  return bu;
+  return upper_bound(y.begin(), y.end(), yval) - y.begin();
 }
 
 
@@ -76,29 +61,9 @@ void cdf_array::print() {
 //------------------------------------------------------
 void cdf_array::wipe()
 {
-  for (int i=0;i<y.size();i++)  y[i] = 0;
+  y.assign(y.size(), 1.0);
 }
   
-//------------------------------------------------------
-// MPI Reduce this class
-//------------------------------------------------------
-void cdf_array::MPI_combine() 
-{
-  // double *new_ptr;
-  // int i;          
-    
-  // // allocate the memory for new pointer
-  // new_ptr = new Type[n_elements];
-  // // zero out array
-  // for (i=0;i<n_elements;i++) new_ptr[i] = 0;
-  // MPI_Allreduce(array,new_ptr,n_elements,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-  // // put back into place
-  // for (i=0;i<n_elements;i++) array[i] = new_ptr[i];
-  // // free up the memory
-  // delete new_ptr;
-}   
-
-
 //------------------------------------------------------------
 // just returning the size of the array
 //------------------------------------------------------------

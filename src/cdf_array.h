@@ -9,6 +9,7 @@
 // This simple class just holds a vector which should be
 // monitonically increasing and reaches unity
 // We can sample from it using a binary search.
+// the CDF value at locate_array's "min" is assumed to be 0
 //**********************************************************
 
 class cdf_array
@@ -33,7 +34,6 @@ public:
   int  sample(double z);    // sample from the CDF, when passed a random #
   void print();             
   void wipe();
-  void MPI_combine(); 
   int size();
 
 };
