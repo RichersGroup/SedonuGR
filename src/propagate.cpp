@@ -92,7 +92,6 @@ void transport::propagate(particle* p, double dt)
   }
 
   p->fate = moving;
-//ParticleFate  fate = moving;
 
   // time of end of timestep
   double tstop = t_now + dt;
