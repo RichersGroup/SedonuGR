@@ -1,9 +1,9 @@
 .PHONY: all clean
 
 rho=1e10  #g/cm^3
-T=1      #MeV
-Ye=0.35
-E=1       #MeV
+T=5      #MeV
+Ye=0.3
+E=5       #MeV
 #species=1
 
 
@@ -22,4 +22,4 @@ all:
 	done
 
 clean:
-	rm -rf species_0 species_1 species_2 plot_defaults.pyc
+	rm -rf species_0 species_1 species_2 plot_defaults.pyc *.dat
