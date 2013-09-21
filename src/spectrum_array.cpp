@@ -1,3 +1,5 @@
+#pragma warning disable 161
+#include <limits>
 #include <omp.h>
 #include <mpi.h>
 #include <stdio.h>
@@ -50,7 +52,7 @@ void spectrum_array::init(std::vector<double> t, std::vector<double> w,
   mu_grid.init(-1,1,n_mu);
 
   // asign phi grid
-  phi_grid.init(0,2*pc::pi,n_phi);
+  phi_grid.init(-pc::pi,pc::pi,n_phi);
 
   // index parameters
   n_elements  = n_times*n_wave*n_mu*n_phi;
@@ -70,14 +72,14 @@ void spectrum_array::init(std::vector<double> t, std::vector<double> w,
 //--------------------------------------------------------------
 // Initialization and Allocation
 //--------------------------------------------------------------
-void spectrum_array::init(std::vector<double> tg, std::vector<double> wg, 
-			  std::vector<double> mg, std::vector<double> pg)
+void spectrum_array::init(locate_array tg, locate_array wg,
+			  locate_array mg, locate_array pg)
 {
-  // initialize locate arrays
-  time_grid.init(tg);
-  wave_grid.init(wg);
-  mu_grid.init(mg);
-  phi_grid.init(pg);
+  // initialize locate arrays by swapping with the inputs
+  time_grid.swap(tg);
+  wave_grid.swap(wg);
+  mu_grid.swap(mg);
+  phi_grid.swap(pg);
 
   int n_times  = time_grid.size();
   int n_wave   = wave_grid.size();
@@ -132,23 +134,22 @@ void spectrum_array::count(double t, double w, double E, double *D)
   double mu  = D[2];
   double phi = atan2(D[1],D[0]);
 
+  // if off the LEFT of time/mu/phi grids, just return without counting
+  if ((t<time_grid.min) || (mu<mu_grid.min) || (phi<phi_grid.min)) {cout << 1; return;}
+
   // locate bin number in all dimensions.
-  // Set to zero if there is only one bin.
-  int t_bin = (time_grid.size()==1 ? 0 : time_grid.locate(t)  );
-  int l_bin = (wave_grid.size()==1 ? 0 : wave_grid.locate(w)  );
-  int m_bin = (  mu_grid.size()==1 ? 0 :   mu_grid.locate(mu) );
-  int p_bin = ( phi_grid.size()==1 ? 0 :  phi_grid.locate(phi));
+  int t_bin = time_grid.locate(t);
+  int l_bin = wave_grid.locate(w);
+  int m_bin =   mu_grid.locate(mu);
+  int p_bin =  phi_grid.locate(phi);
 
-  // keep all photons, even if off wavelength grid
-  // locate does this automatically for the upper bound.
-  if (l_bin <  0) l_bin = 0;
+  // if off the RIGHT of time/mu/phi grids, just return without counting
+  if((t_bin == time_grid.size()) ||
+     (m_bin ==   mu_grid.size()) ||
+     (p_bin ==  phi_grid.size())) {cout <<2; return;}
 
-  // if off the grids, just return without counting
-  // remember the bin index enumerates the left wall of the bin
-  if ((t_bin < 0)||(m_bin < 0)||(p_bin < 0)) return;
-  if ((time_grid.size() > 1) && (t_bin >= time_grid.size()-1)) return;
-  if ((  mu_grid.size() > 1) && (m_bin >=   mu_grid.size()-1)) return;
-  if (( phi_grid.size() > 1) && (p_bin >=  phi_grid.size()-1)) return;
+  // if off RIGHT of wavelength grid, store in last bin (LEFT is accounted for by locate)
+  if (l_bin == wave_grid.size()) l_bin--;
 
   // add to counters
   int ind = index(t_bin,l_bin,m_bin,p_bin);
@@ -166,30 +167,42 @@ void spectrum_array::count(double t, double w, double E, double *D)
 //--------------------------------------------------------------
 void spectrum_array::print()
 {
-  FILE *out = fopen(name,"w");
+  int nprocs, myID;
+  MPI_Comm_size( MPI_COMM_WORLD, &nprocs );
+  MPI_Comm_rank( MPI_COMM_WORLD, &myID   );
 
-  int n_times  = time_grid.size();
-  int n_wave   = wave_grid.size();
-  int n_mu     = mu_grid.size();
-  int n_phi    = phi_grid.size();
+  if(myID==0){
+    FILE *out = fopen(name,"w");
 
-  fprintf(out,"# %d %d %d %d\n",n_times,n_wave,n_mu,n_phi);
+    int n_times  = time_grid.size();
+    int n_wave   = wave_grid.size();
+    int n_mu     = mu_grid.size();
+    int n_phi    = phi_grid.size();
 
-  for (int k=0;k<n_mu;k++)
-    for (int m=0;m<n_phi;m++)
-      for (int i=0;i<n_times;i++)
-	for (int j=0;j<n_wave;j++) 
-        {
-	  int id = index(i,j,k,m);
-	  if (n_times > 1)  fprintf(out,"%12.4e ",time_grid.center(i));;
-	  if (n_wave > 1)   fprintf(out,"%12.4e ",wave_grid.center(j));
-	  if (n_mu > 1)     fprintf(out,"%12.4f ",mu_grid.center(k));
-	  if (n_phi> 1)     fprintf(out,"%12.4f ",phi_grid.center(m));
+    fprintf(out,"# %d %d %d %d\n",n_times,n_wave,n_mu,n_phi);
 
-	  double norm = n_mu*n_phi*wave_grid.delta(j)*time_grid.delta(i);
-	  fprintf(out,"%12.5e %10d\n", flux[id]/norm,click[id]);
-	}
-  fclose(out);
+    for (int k=0;k<n_mu;k++)
+      for (int m=0;m<n_phi;m++)
+	for (int i=0;i<n_times;i++)
+	  for (int j=0;j<n_wave;j++)
+	    {
+	      int id = index(i,j,k,m);
+	      if (n_times > 1)  fprintf(out,"%12.4e ",time_grid.center(i));;
+	      if (n_wave > 1)   fprintf(out,"%12.4e ",wave_grid.center(j));
+	      if (n_mu > 1)     fprintf(out,"%12.4f ",mu_grid.center(k));
+	      if (n_phi> 1)     fprintf(out,"%12.4f ",phi_grid.center(m));
+
+	      // the delta is infinity if the bin is a catch-all.
+	      // Use normalization of 1 to match the hard-coded choice of dt=1 for iterative calculations
+	      double wdel = wave_grid.delta(j);
+	      double tdel = time_grid.delta(i);
+	      double norm = n_mu*n_phi
+		* ( wdel < numeric_limits<double>::infinity() ? wdel : 1 )
+		* ( tdel < numeric_limits<double>::infinity() ? tdel : 1 );
+	      fprintf(out,"%12.5e %10d\n", flux[id]/norm,click[id]);
+	    }
+    fclose(out);
+  }
 }
 
 
@@ -203,26 +216,33 @@ void  spectrum_array::rescale(double r)
 //--------------------------------------------------------------
 // MPI average the spectrum contents
 //--------------------------------------------------------------
+// only process 0 gets the reduced spectrum to print
 void spectrum_array::MPI_average()
 {
+  int receiving_ID = 0;
+  int mpi_procs, myID;
+
   {
-    vector<double> receive(n_elements,0);
-    MPI_Allreduce(&flux.front(),&receive.front(),n_elements,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+    vector<double> receive(n_elements,-1);
+    MPI_Reduce(&flux.front(), &receive.front(), n_elements, MPI_DOUBLE, MPI_SUM, receiving_ID, MPI_COMM_WORLD);
     flux.swap(receive);
   }
 
   {
-    vector<int> receive(n_elements,0);
-    MPI_Allreduce(&click.front(),&receive.front(),n_elements,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
+    vector<int> receive(n_elements,-1);
+    MPI_Reduce(&click.front(), &receive.front(), n_elements, MPI_INT, MPI_SUM, receiving_ID, MPI_COMM_WORLD);
     click.swap(receive);
   }
 
-  int mpi_procs;
+  // only have the receiving ID do the division
   MPI_Comm_size( MPI_COMM_WORLD, &mpi_procs );
-  #pragma omp parallel for
-  for (int i=0;i<n_elements;i++) 
-  {
-    flux[i]  /= mpi_procs;
-    click[i] /= mpi_procs; 
+  MPI_Comm_rank( MPI_COMM_WORLD, &myID      );
+  if(myID == receiving_ID){
+    #pragma omp parallel for
+    for (int i=0;i<n_elements;i++)
+    {
+      flux[i]  /= mpi_procs;
+      click[i] /= mpi_procs;
+    }
   }
 }

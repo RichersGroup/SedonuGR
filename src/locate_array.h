@@ -7,28 +7,37 @@ class locate_array {
 
 public:
 
+  // where applicable, these values are the right bin wall (i.e. not the left)
   std::vector<double> x;
+  double min;
+
+  // other parameters
   int do_log_interpolate;
 
   // constructors
   locate_array()  {}
   locate_array(int n) {init(n);}
 
-  // Return
-  int    size()        {return (int)x.size();}
+  // Return size of array (also, # of bins)
+  int size() {return (int)x.size();}
 
   void init(int);
   void init(double,double,double);
   void init(double,double,int);
-  void init(std::vector<double>);
+  void init(std::vector<double>, double minval);
+  void swap(locate_array new_array);
 
-  double center(int i)   {
-    if (i >= x.size()-1) {return x.back();}
-    else return 0.5*(x[i] + x[i+1]);}
+  // center of the bin left of nu_i
+  double center(int i){
+    if (i == 0) return 0.5*(min    + x[0]);
+    else        return 0.5*(x[i-1] + x[i]);
+  }
 
-  double delta(int i)   {
-    if (i >= x.size()-1) {return x[i] - x[i-1]; }
-    else return (x[i+1] - x[i]); }
+  // width of the bin left of nu_i
+  double delta(int i){
+    if (i == 0) return x[0] - min;
+    else        return x[i] - x[i-1];
+  }
 
 
   int    locate(double);

@@ -1,3 +1,6 @@
+#pragma warning disable 161
+#include <limits>
+#include <vector>
 #include <algorithm>
 #include <iostream>
 #include <stdlib.h>
@@ -13,61 +16,84 @@ using namespace std;
 //---------------------------------------------------------
 void locate_array::init(int n) 
 {
-  x.resize(n);
-  for (int i=0;i<x.size();i++)  x[i] = 0;
+  x.assign(n,0);
 }
 
 //---------------------------------------------------------
 // Initialize with start, stop and delta
+// if start==stop make it a catch-all
 //---------------------------------------------------------
 void locate_array::init(double start, double stop, double del)
 {
-  int n = (stop - start)/del;
-  if (n < 1) n = 1;
-  x.resize(n);
+  if(start==stop){
+    x.resize(1);
+    min = -numeric_limits<double>::infinity();
+    x[0] = numeric_limits<double>::infinity();
+  }
 
-  for (int i=0;i<x.size();i++) x[i] = start + i*del;
-  do_log_interpolate = 0;
+  else{
+    int n = ceil( (stop-start)/del );
+    n = max(n,1);
+    x.resize(n);
+    do_log_interpolate = 0;
+
+    min = start;
+    #pragma omp parallel for
+    for (int i=0; i<n-1; i++) x[i] = start + (i+1)*del;
+    x[n-1] = stop;
+  }
 }
 
 //---------------------------------------------------------
 // Initialize with start, stop and n_pts
+// if start==stop make it a catch-all
+// if n==0 make it a catch-all
 //---------------------------------------------------------
 void locate_array::init(double start, double stop, int n)
 {
-  if (n < 1) n = 1;
-  double del = (stop - start)/(1.0*n-1);  
-  x.resize(n);
+  if(start==stop || n==0){
+    x.resize(1);
+    min = -numeric_limits<double>::infinity();
+    x[0] = numeric_limits<double>::infinity();
+  }
 
-  for (int i=0;i<x.size();i++) x[i] = start + i*del;
-  do_log_interpolate = 0;
+  else{
+    double del = (stop - start)/(double)n;
+    x.resize(n);
+    do_log_interpolate = 0;
+
+    min = start;
+    #pragma omp parallel for
+    for (int i=0; i<n-1; i++) x[i] = start + (i+1)*del;
+    x[n-1] = stop;
+  }
 }
 
 //---------------------------------------------------------
 // Initialize with passed vector
 //---------------------------------------------------------
-void locate_array::init(std::vector<double> a)
+void locate_array::init(std::vector<double> a, double minval)
 {
-  x.resize(a.size());
-  for (int i=0;i<x.size();i++) x[i] = a[i];
+  min = minval;
   do_log_interpolate = 0;
+  x.assign(a.begin(), a.end());
 }
 
 //---------------------------------------------------------
 // locate (return closest index below the value)
-// if off left side of boundary, returns -1
-// if off right side of boundary, returns size-1
+// if off left side of boundary, returns 0
+// if off right side of boundary, returns size
 //---------------------------------------------------------
 int locate_array::locate(double xval)
 {
   // upper_bound returns first element greater than xval
-  // we want the index before that.
-  return upper_bound(x.begin(), x.end(), xval) - x.begin() - 1;
+  // values mark bin tops, so this is what we want
+  return upper_bound(x.begin(), x.end(), xval) - x.begin();
 } 
 
 
 //---------------------------------------------------------
-// Linear Interpolation of a passed array, find the zone
+// Linear Interpolation of a passed array
 //---------------------------------------------------------
 double locate_array::interpolate_between(double xval, int i1, int i2, vector<double>& y)
 {
@@ -78,18 +104,19 @@ double locate_array::interpolate_between(double xval, int i1, int i2, vector<dou
 
 
 //---------------------------------------------------------
-// Log-Log Interpolation of a passed array, find the zone
+// Log-Log Interpolation of a passed array
 //---------------------------------------------------------
 double locate_array::log_interpolate_between(double xval, int i1, int i2, vector<double>& y)
 {
-  // safeguard against all opacities being 0
-  // (e.g. if density is below nulib minimum)
-  if(y[i1]==0 && y[i2]==0) 
-    return 0;
+  // safeguard against equal opacities
+  if(y[i1]==y[i2]) return y[i1];
 
+  // safeguard against nonsensical values
+  if(y[i1]<=y[i2] || y[i2]<=0) return interpolate_between(xval, i1, i2, y);
+
+  // do logarithmic interpolation
   double slope = log(y[i2]/y[i1]) / log(x[i2]/x[i1]);
   double logyval = log(y[i1]) + slope*log(xval/x[i1]);
-
   return exp(logyval);
 }
 
@@ -97,10 +124,10 @@ double locate_array::log_interpolate_between(double xval, int i1, int i2, vector
 //---------------------------------------------------------
 // sample uniformally in zone
 //---------------------------------------------------------
-double locate_array::sample(int i, double xval)
+double locate_array::sample(int i, double rand)
 {
-  if (i == x.size()) return x[i];
-  return x[i] + (x[i+1] - x[i])*xval;
+  if (i == 0) return min    + (x[0] - min   )*rand;
+  else return        x[i-1] + (x[i] - x[i-1])*rand;
 }
 
 //---------------------------------------------------------
@@ -109,6 +136,7 @@ double locate_array::sample(int i, double xval)
 void locate_array::print()
 {
   printf("# Print Locate Array; n_elements = %lu\n",x.size());
+  printf("min %12.4e\n",min);
   for (int i=0;i<x.size();i++)
     printf("%4d %12.4e\n",i,x[i]);
 }
@@ -122,15 +150,15 @@ void locate_array::print()
 double locate_array::value_at(double xval, vector<double>& y){
   int ind = locate(xval);
   int i1, i2;
-  if(ind < 0){                // If off left side of grid
+  if(ind == 0){                // If off left side of grid
     i1 = 0;
     i2 = 1;
   }
-  else if(ind < x.size()-1){  // If within expected region of grid
+  else if(ind < x.size()){    // If within expected region of grid
     i1 = ind;
     i2 = ind + 1;
   }
-  else{                       // If off the right side of the grid
+  else{ //if(ind == x.size()) // If off the right side of the grid
     i1 = x.size() - 2;
     i2 = x.size() - 1;
   }
@@ -139,3 +167,18 @@ double locate_array::value_at(double xval, vector<double>& y){
   else                   return     interpolate_between(xval, i1, i2, y);
 }
 
+
+void locate_array::swap(locate_array new_array){
+  // swap the vectors
+  x.swap(new_array.x);
+
+  // swap the minimum values
+  double min_tmp = min;
+  min = new_array.min;
+  new_array.min = min_tmp;
+
+  // swap the do_log_interpolate parameters
+  int tmp = do_log_interpolate;
+  do_log_interpolate = new_array.do_log_interpolate;
+  new_array.do_log_interpolate = tmp;
+}

@@ -50,7 +50,7 @@ void grid_1D_sphere::read_model_file(Lua* lua)
 
   // other properties
   double texp;
-  infile >> r_inner;
+  infile >> r_out.min;
   infile >> texp;
 
   // read zone properties for a supernova remnant
@@ -65,7 +65,7 @@ void grid_1D_sphere::read_model_file(Lua* lua)
 
     z[i].v[0] = r_out[i]/texp;
     z[i].e_rad = pc::a*pow(z[i].T_gas,4);
-    if(i==0) r0 = r_inner;
+    if(i==0) r0 = r_out.min;
     else r0 = r_out[i-1];
     vol[i] = 4.0*pc::pi/3.0*(r_out[i]*r_out[i]*r_out[i] - r0*r0*r0);
 
@@ -83,7 +83,7 @@ void grid_1D_sphere::read_model_file(Lua* lua)
 
     z[i].v[0] = 0;
     z[i].e_rad = pc::a*pow(z[i].T_gas,4);
-    if(i==0) r0 = r_inner;
+    if(i==0) r0 = r_out.min;
     else r0 = r_out[i-1];
     vol[i] = 4.0*pc::pi/3.0*(r_out[i]*r_out[i]*r_out[i] - r0*r0*r0);
   }
@@ -108,11 +108,11 @@ int grid_1D_sphere::get_zone(double *x)
   double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 
   // check if off the boundaries
-  if(r <= r_inner               ) return -1;
+  if(r <= r_out.min             ) return -1;
   if(r >  r_out[r_out.size()-1] ) return -2;
 
   // find in zone array using stl algorithm upper_bound and subtracting iterators
-  return upper_bound(r_out.begin(), r_out.end(), r) - r_out.begin();
+  return r_out.locate(r);
 }
 
 
@@ -130,7 +130,7 @@ double  grid_1D_sphere::zone_volume(int i)
 //------------------------------------------------------------
 double  grid_1D_sphere::zone_min_length(int i)
 {
-  if (i == 0) return (r_out[i] - r_inner);
+  if (i == 0) return (r_out[i] - r_out.min);
   else return (r_out[i] - r_out[i-1]);
 }
 
@@ -144,7 +144,7 @@ void grid_1D_sphere::sample_in_zone
 {
   // inner radius of shell
   double r1;
-  if (i == 0) r1 = r_inner; 
+  if (i == 0) r1 = r_out.min;
   else r1 = r_out[i-1];
 
   // outer radius of shell
@@ -172,15 +172,16 @@ void grid_1D_sphere::sample_in_zone
 void grid_1D_sphere::velocity_vector(int i, double x[3], double v[3])
 {
   // radius in zone
-  double rr = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+  double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 
   // assuming radial velocity (may want to interpolate here)
-  v[0] = x[0]/rr*z[i].v[0];
-  v[1] = x[1]/rr*z[i].v[0];
-  v[2] = x[2]/rr*z[i].v[0];
+  // (the other two components are ignored and mean nothing)
+  v[0] = x[0]/r*z[i].v[0];
+  v[1] = x[1]/r*z[i].v[0];
+  v[2] = x[2]/r*z[i].v[0];
 
   // check for pathological case
-  if (rr == 0)
+  if (r == 0)
   {
     v[0] = 0;
     v[1] = 0;

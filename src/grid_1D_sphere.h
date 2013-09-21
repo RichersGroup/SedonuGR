@@ -13,11 +13,8 @@ class grid_1D_sphere: public grid_general
 
 private:
 
-  // specifics to this geometry
-  double r_inner;
-
   // store location of the outer edge of the zone.
-  vector<double> r_out;
+  locate_array r_out;
 
   // store volumes explicitly
   std::vector<double> vol;

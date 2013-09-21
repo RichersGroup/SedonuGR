@@ -18,9 +18,9 @@ private:
   char name[1000];
 
   // bin arrays
-  // values represent bin walls
-  // underflow is combined into leftmost bin (right of the leftmost wall)
-  // overflow is stored separately right of rightmost wall
+  // values represent bin upper walls (the single locate_array.min value is the leftmost wall)
+  // underflow is combined into leftmost bin (right of the locate_array.min)
+  // overflow is combined into the rightmost bin (left of locate_array[size-1])
   locate_array time_grid;
   locate_array wave_grid;
   locate_array mu_grid;
@@ -41,7 +41,7 @@ public:
   spectrum_array();
   
   // Initialize
-  void init(std::vector<double>,std::vector<double>,std::vector<double>,std::vector<double>);
+  void init(locate_array tg, locate_array wg, locate_array mg, locate_array pg);
   void init(std::vector<double>,std::vector<double>,int,int);
   void log_init(std::vector<double>,std::vector<double>,int,int);
   void set_name(const char *n);
