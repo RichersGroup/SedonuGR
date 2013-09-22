@@ -106,19 +106,58 @@ If you want to clean the nulib directory, execute
 
 Now NuLib is compiled and ready to be used by Sedona. However, if you wish to use neutrinos, you will have to generate an opacity table. This requires a tabulated equation of state (EOS). There are multiple EOS available at <stellarcollapse.org/equationofstate>. Here we will configure things with the LS220 EOS, though it should be generalizable to any EOS table that NuLib understands.
 
-Download and extract the LS220 EOS table
+(1) -- Download and extract the LS220 EOS table
 
     wget http://stellarcollapse.org/EOS/LS220_234r_136t_50y_analmu_20091212_SVNr26.h5.bz2
     bunzip2 -c LS220_234r_136t_50y_analmu_20091212_SVNr26.h5.bz2 > external/tables/LS220.h5
     rm LS220_234r_136t_50y_analmu_20091212_SVNr26.h5.bz2
 
-NuLib has an example program that generates a rather unresolved opacity table. This program serves as an example that is intended to be modified by the end user. You can feel free to modify it, but if you check the file out again it will be overwritten, so back it up or rename it if you want to prevent accidents. Here we will just change the file shipped with nulib so we don't have to mess with the makefiles, but if you want to create multiple custom table-generating programs you will have to do that. Anyway, we have to modify the fortran code to say how big we want our table to be and where the EOS table is. Open the source file in your favorite text editor.
+(2) -- First, we want to set a few of the processes to be included. Using your favorite text editor, open the file shown below.
+
+    emacs external/NuLib/src/requested_interactions.inc
+
+Inelastic electron scattering is not yet programmed in, so turn on (very approximate) elastic electron scattering, and turn off the inelastic scattering. Also, we need to turn off the emission processes from pair annihilation and from NN bremsstrahlung, since the inverse rates involve two neutrinos as input, and NuLib does not deal with the inverse processes correctly. Change the following parameters.
+
+    (in requested_interactions.inc)
+    logical :: add_nue_scattering_electrons = .true.
+    logical :: add_anue_scattering_electrons = .true.
+    logical :: add_numu_scattering_electrons = .true.
+    logical :: add_anumu_scattering_electrons = .true.
+    logical :: add_nutau_scattering_electrons = .true.
+    logical :: add_anutau_scattering_electrons = .true.
+
+    logical :: add_nue_Iscattering_electrons = .false.
+    logical :: add_anue_Iscattering_electrons = .false.
+    logical :: add_numu_Iscattering_electrons = .false.
+    logical :: add_anumu_Iscattering_electrons = .false.
+    logical :: add_nutau_Iscattering_electrons = .false.
+    logical :: add_anutau_Iscattering_electrons = .false.
+
+    logical :: add_nue_emission_epannihil = .false.
+    logical :: add_anue_emission_epannihil = .false.
+    logical :: add_numu_emission_epannihil = .false.
+    logical :: add_anumu_emission_epannihil = .false.
+    logical :: add_nutau_emission_epannihil = .false.
+    logical :: add_anutau_emission_epannihil = .false.
+
+    logical :: add_nue_emission_NNBrems = .false.
+    logical :: add_anue_emission_NNBrems = .false.
+    logical :: add_numu_emission_NNBrems = .false.
+    logical :: add_anumu_emission_NNBrems = .false.
+    logical :: add_nutau_emission_NNBrems = .false.
+    logical :: add_anutau_emission_NNBrems = .false.
+
+(3) -- NuLib has an example program that generates a rather unresolved opacity table. This program serves as an example that is intended to be modified by the end user. You can feel free to modify it, but if you check the file out again it will be overwritten, so back it up or rename it if you want to prevent accidents. Here we will just change the file shipped with nulib so we don't have to mess with the makefiles, but if you want to create multiple custom table-generating programs you will have to do that. Anyway, we have to modify the fortran code to say how big we want our table to be and where the EOS table is. Open the source file in your favorite text editor.
 
     emacs external/NuLib/src/make_table_example.F90
 
 A more detailed description of what everything means is in the NuLib README file (external/NuLib/README). First, notice the two variables "mytable_neutrino_scheme" and "mytable_number_species". Do NOT change mytable_number_species. If you want to change how neutrinos are represented in the table change "mytable_neutrino_scheme". Also notice that there is a variable "mytable_number_groups" that is set to 24. If you want finer resolution in neutrino energy, increase this number. However, for this example we will leave all three of these variables as they are. We must tell the program where to find the EOS table.
 
     (in make_table_example.F90:L28) character*200 :: eos_filename = "<path_to_sedona>/external/tables/LS220.h5"
+
+Each EOS table uses a 'reference mass' that is used to convert densities to number densities (e.g. the SL EOS's require a number density input in terms of fm^-3). The default is set for any of the LS tables. I don't know what reference mass would be required for the Shen EOS. You would have to email Evan O'Connor and ask. If you use a non-LS table you will have to change the line below to something else, but if you use a LS table, just leave it alone.
+
+    (in make_table_example.F90:L84) m_ref = m_n   !m_n is defined in constants.inc
 
 Finally, we have to change how big our table is going to be. As described in the NuLib README file, Evan recommends at least 10 points per decade in rho, 20 points per decade in temperature, and a point for every 0.01 or 0.02 in Ye. The LS220 table has the following lower and upper limits: T:{1e-2,1e2.4}MeV rho:{1e3,1e16}g/cm^3 Ye:{0.035,0.55}, and if calculating beta-equilibrium Lattimer and Swesty recommend staying at temperatures above 0.5MeV. Find the chunk of code commented "!set up table" and notice that the table boundaries (min_ye, etc) are within these recommendations, but the number of points (final_table_size_ye) is far too small. (final_Itable_* deals with the inelastic scattering table, which is not yet implemented so we won't worry about it). For this example we will leave the ranges as they are and adjust the number of points to get a decently-resolved table, but you are free to set whatever you want. Ye has a range of 0.515, so we need 26-52 points.
 
@@ -132,7 +171,9 @@ Temp goes over 3 decades, so we need about 60 points
 
     (in make_table_example.F90:L92) final_table_size_temp = 60
 
-You can change where the energy bins lie, but we will leave them as they are. If you want to make a custom table that deviates from this program, feel free. However, if you change the structure or what variables represent, you will also have to modify nulibtable_reader.F90 to read everything in correctly. Assuming you don't make any further changes, this should be ready to create a table. Save the file, exit the editor, rebuild the nulib directory, and execute the file.
+You can change where the energy bins lie, but we will leave them as they are. If you want to make a custom table that deviates from this program, feel free. However, if you change the structure or what variables represent, you will also have to modify nulibtable_reader.F90 to read everything in correctly. Assuming you don't make any further changes, this should be ready to create a table.
+
+(4) -- Save the file, exit the editor, rebuild the nulib directory, and execute the file.
 
     make nulibclean
     make nulib
