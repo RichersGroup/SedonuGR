@@ -16,7 +16,7 @@ plot filename using 2:3:1 w l palette
 set xrange [GPVAL_DATA_X_MIN:GPVAL_DATA_X_MAX]
 set log x
 set log y
-set ylabel "Integrated Emis (erg/s/cm^3/ster)"
+set ylabel "Emis (erg/s/cm^3/ster/Hz)"
 set term pdf
 set output "emis_E_ye.pdf"
 replot

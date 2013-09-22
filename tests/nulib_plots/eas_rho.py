@@ -88,13 +88,13 @@ text(y0labelx,y0labely,y0labelstring,fontsize=0.8*labelsize,
 
 y1labelx = -0.15
 y1labely = 1.5
-y1labelstring = r'$\kappa_a$ (cm$^{-1}$)'
+y1labelstring = r'$\kappa_a$ (cm$^2$/g)'
 text(y1labelx,y1labely,y1labelstring,fontsize=0.8*labelsize,
          verticalalignment="center",rotation='vertical',transform=ax[0].transAxes)
 
 y2labelx = -0.15
 y2labely = 2.5
-y2labelstring = r'$\kappa_s$ (cm$^{-1}$)'
+y2labelstring = r'$\kappa_s$ (cm$^2$/g)'
 text(y2labelx,y2labely,y2labelstring,fontsize=0.8*labelsize,
          verticalalignment="center",rotation='vertical',transform=ax[0].transAxes)
 

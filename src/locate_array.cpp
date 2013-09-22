@@ -112,7 +112,7 @@ double locate_array::log_interpolate_between(double xval, int i1, int i2, vector
   if(y[i1]==y[i2]) return y[i1];
 
   // safeguard against nonsensical values
-  if(y[i1]<=y[i2] || y[i2]<=0) return interpolate_between(xval, i1, i2, y);
+  if(y[i1]<=0 || y[i2]<=0) return interpolate_between(xval, i1, i2, y);
 
   // do logarithmic interpolation
   double slope = log(y[i2]/y[i1]) / log(x[i2]/x[i1]);
@@ -155,8 +155,8 @@ double locate_array::value_at(double xval, vector<double>& y){
     i2 = 1;
   }
   else if(ind < x.size()){    // If within expected region of grid
-    i1 = ind;
-    i2 = ind + 1;
+    i1 = ind - 1;
+    i2 = ind;
   }
   else{ //if(ind == x.size()) // If off the right side of the grid
     i1 = x.size() - 2;
