@@ -1,5 +1,7 @@
 #ifndef _TRANSPORT_H
 #define _TRANSPORT_H
+#include <mpi.h>
+#include <vector>
 #include "particle.h"
 #include "spectrum_array.h"
 #include "Lua.h"
@@ -7,7 +9,6 @@
 #include "locate_array.h"
 #include "cdf_array.h"
 #include "thread_RNG.h"
-#include <list>
 
 class species_general;
 
@@ -19,8 +20,13 @@ private:
   // this species' list of particles
   std::vector<particle> particles;
 
-  // the porition of zones this MPI process is responsible for
-  int my_zone_start, my_zone_end;
+  // MPI stuff
+  int MPI_myID;
+  int MPI_nprocs;
+  MPI_Datatype MPI_real;
+  void reduce_radiation();
+  void synchronize_gas();
+  vector<int> my_zone_end;
 
   // creation of particles functions
   void emit_particles(double dt);

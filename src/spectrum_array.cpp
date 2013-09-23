@@ -222,12 +222,14 @@ void spectrum_array::MPI_average()
   int receiving_ID = 0;
   int mpi_procs, myID;
 
+  // average the flux (receive goes out of scope after section)
   {
     vector<double> receive(n_elements,-1);
     MPI_Reduce(&flux.front(), &receive.front(), n_elements, MPI_DOUBLE, MPI_SUM, receiving_ID, MPI_COMM_WORLD);
     flux.swap(receive);
   }
 
+  // average clicks (receive goes out of scope after section)
   {
     vector<int> receive(n_elements,-1);
     MPI_Reduce(&click.front(), &receive.front(), n_elements, MPI_INT, MPI_SUM, receiving_ID, MPI_COMM_WORLD);

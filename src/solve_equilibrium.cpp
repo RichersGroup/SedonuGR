@@ -22,17 +22,14 @@ double   Ye_eq_function(int zone_index, double Ye, transport* sim);
 #define BRENT_ITMAX 100
 void transport::solve_eq_zone_values()
 {
-  // solve radiative equilibrium temperature and Ye (but only for the zones I'm responsible for)
-  #pragma omp parallel for schedule(guided)
-  for (int i=0; i<grid->z.size(); i++)
-  {
-    // set Ye and temp to zero so it's easy to reduce later
-    if(i<my_zone_start || i>my_zone_end){
-      grid->z[i].T_gas = 0;
-      grid->z[i].Ye    = 0;
-      continue;  // don't actually solve for these zones
-    }
+  // remember what zones I'm responsible for
+  int start = ( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
+  int end = my_zone_end[MPI_myID];
 
+  // solve radiative equilibrium temperature and Ye (but only in the zones I'm responsible for)
+  #pragma omp parallel for schedule(guided)
+  for (int i=start; i<end; i++)
+  {
     double T_last_iter, Ye_last_iter;
     double T_last_step, Ye_last_step;
     double T_error,Ye_error;
@@ -98,10 +95,6 @@ void transport::solve_eq_zone_values()
 	grid->z[i].Ye = Ye_min;}
     }
   }
-  
-  // MPI reduce the results
-  if(solve_T)  grid->reduce_T();
-  if(solve_Ye) grid->reduce_Ye();
 }
 
 

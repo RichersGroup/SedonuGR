@@ -4,7 +4,6 @@
 // define real to choose either double or float precision
 typedef double real;
 
-
 //-------------------------------------------------
 // Class to store properties of one zone
 //-------------------------------------------------
@@ -28,20 +27,16 @@ public:
   real H;               // specific heating rate (erg/s/g)
 
   // radiation quantities
-  real e_rad;      // radiation energy density  (ergs/cm^3) in lab frame
-  real e_abs;      // radiation energy deposition density rate (ergs/cm^3/s)
-  real fx_rad;     // radiation x-force in lab frame
-  real fy_rad;     // radiation y-force in lab frame
-  real fz_rad;     // radiation z-force in lab frame
-  real eps_imc;    // fleck factor effective absorption
-
-  real l_abs;      // lepton number deposition density rate (cm^-3 s^-1)
-
-  // four force vector in lab frame
-  real G1, G2, G3;
-
-  // radiation pessure tensor components (symmetric)
-  real P11, P12, P13, P22, P23, P33;
+  real e_rad;                         // radiation energy density  (ergs/cm^3) in lab frame
+  real e_abs;                         // radiation energy deposition density rate (ergs/cm^3/s)
+  real l_abs;                         // lepton number deposition density rate (cm^-3 s^-1)
+  real f_rad[3];                      // radiation force in lab frame
+  real eps_imc;                       // fleck factor effective absorption
+  real G[3];                          // four force vector in lab frame
+  real P11, P12, P13, P22, P23, P33;  // radiation pessure tensor components (symmetric)
 };
 
 #endif
+
+// NOTES
+// - tried implementing as struct of vector rather than vector of structs (which would eliminate the need for the mpi datatype definitions). Significantly slower, presumably b/c access patterns are not sequential. Also, this probably increased false sharing, making OpenMP less efficient (guess)

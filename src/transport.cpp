@@ -27,10 +27,10 @@ namespace pc = physical_constants;
 void transport::init(Lua* lua)
 { 
   // get mpi rank
-  int my_rank, n_procs;
-  MPI_Comm_size( MPI_COMM_WORLD, &n_procs );
-  MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-  verbose = (my_rank==0);
+  MPI_Comm_size( MPI_COMM_WORLD, &MPI_nprocs );
+  MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID  );
+  MPI_real = ( sizeof(real)==4 ? MPI_FLOAT : MPI_DOUBLE );
+  verbose = (MPI_myID==0);
 
   // read simulation parameters
   radiative_eq  = lua->scalar<int>("radiative_eq");
@@ -116,14 +116,23 @@ void transport::init(Lua* lua)
   // GENERAL SETUP //
   //===============//
   // figure out which zones are in this processors work load
-  int my_job = (int)(grid->z.size()/(1.0*n_procs));
-  if (my_job < 1) my_job = 1;
-  my_zone_start = my_rank*my_job;
-  my_zone_end   = my_zone_start + my_job-1;
-  // make sure last guy finishes it all
-  if (my_rank == n_procs-1) my_zone_end = grid->z.size()-1;
-  // get rid of unneeded processors
-  if (my_zone_start >= grid->z.size()) my_zone_start = my_zone_end+1;
+  // a processor will do work in range [start,end)
+  my_zone_end.resize(MPI_nprocs);
+  for(int proc=0; proc<MPI_nprocs; proc++){
+    // how much work does this processor do?
+    int my_job = (int)(grid->z.size()/(1.0*MPI_nprocs));
+    if(my_job < 1) my_job = 1;
+
+    // where does this processor start and stop its work? (only the end needs to be stored)
+    int my_zone_start = proc*my_job;
+    my_zone_end[proc] = my_zone_start + my_job;
+
+    // make sure last guy finishes it all
+    if(proc == MPI_nprocs-1) my_zone_end[proc] = grid->z.size();
+
+    // make sure nobody goes overboard
+    if(my_zone_end[proc] >= grid->z.size()) my_zone_end[proc] = grid->z.size();
+  }
 
   // setup and seed random number generator(s)
   rangen.init();
@@ -248,12 +257,12 @@ void transport::step(double dt)
   #pragma omp parallel for
   for (int i=0;i<grid->z.size();i++) 
   {
-    grid->z[i].e_rad  = 0;
-    grid->z[i].e_abs  = 0;
-    grid->z[i].fx_rad = 0;
-    grid->z[i].fy_rad = 0;
-    grid->z[i].fz_rad = 0;
-    grid->z[i].l_abs  = 0;
+    grid->z[i].e_rad    = 0;
+    grid->z[i].e_abs    = 0;
+    grid->z[i].f_rad[0] = 0;
+    grid->z[i].f_rad[1] = 0;
+    grid->z[i].f_rad[2] = 0;
+    grid->z[i].l_abs    = 0;
   }
 
   // Propagate the particles
@@ -264,20 +273,23 @@ void transport::step(double dt)
   for (int i=0;i<grid->z.size();i++) 
   {
     double vol = grid->zone_volume(i);
-    grid->z[i].e_rad   /= vol*pc::c*dt;
-    grid->z[i].e_abs   /= vol*dt; 
-    grid->z[i].fx_rad  /= vol*pc::c*dt; 
-    grid->z[i].fy_rad  /= vol*pc::c*dt;
-    grid->z[i].fz_rad  /= vol*pc::c*dt;
-    grid->z[i].l_abs   /= vol*dt;
+    grid->z[i].e_rad    /= vol*pc::c*dt;
+    grid->z[i].e_abs    /= vol*dt;
+    grid->z[i].f_rad[0] /= vol*pc::c*dt;
+    grid->z[i].f_rad[1] /= vol*pc::c*dt;
+    grid->z[i].f_rad[2] /= vol*pc::c*dt;
+    grid->z[i].l_abs    /= vol*dt;
   }
 
-  // MPI reduce the tallies and put in place
-  grid->reduce_radiation();
+  // MPI reduce the radiation quantities so each processor has the information needed to solve its grid values
+  reduce_radiation();
 
   // solve for T_gas and Ye structure if radiative eq. applied
   if (radiative_eq) solve_eq_zone_values();
-   
+
+  // MPI broadcast the results so all processors have matching fluid properties
+  synchronize_gas();
+
   // advance time step
   if (!iterate) t_now += dt;
 }
@@ -434,4 +446,73 @@ void transport::lorentz_transform(particle* p, double sign)
   p->D[0] = p->D[0]/norm;
   p->D[1] = p->D[1]/norm;
   p->D[2] = p->D[2]/norm;
+}
+
+
+
+//------------------------------------------------------------
+// Combine the radiation tallies in all zones
+// from all processors using MPI allreduce
+//------------------------------------------------------------
+void transport::reduce_radiation()
+{
+  //-- EACH PROCESSOR GETS THE REDUCTION INFORMATION IT NEEDS
+  for(int proc=0; proc<MPI_nprocs; proc++){
+
+    // set the begin and end indices so a process covers range [begin,end)
+    int my_begin = ( proc==0 ? 0 : my_zone_end[proc-1] );
+    int my_end = my_zone_end[proc];
+
+    // set the computation size and create the send/receive vectors
+    int size = my_end - my_begin;
+    vector<real> send, receive;
+    send.resize(size);
+    receive.resize(size);
+
+    // reduce e_abs
+    if(solve_T){
+      for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_abs;
+      MPI_Reduce(&send.front(), &receive.front(), size, MPI_real, MPI_SUM, proc, MPI_COMM_WORLD);
+      for(int i=my_begin; i<my_end; i++) grid->z[i].e_abs = receive[i-my_begin] / size;
+    }
+
+    // reduce l_abs
+    if(solve_Ye){
+      for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].l_abs;
+      MPI_Reduce(&send.front(), &receive.front(), size, MPI_real, MPI_SUM, proc, MPI_COMM_WORLD);
+      for(int i=my_begin; i<my_end; i++) grid->z[i].l_abs = receive[i-my_begin] / size;
+    }
+
+    // TODO - need to put in other quantities...
+  }
+}
+
+void transport::synchronize_gas()
+{
+  //-- EACH PROCESSOR SENDS THE GRID INFORMATION IT SOLVED
+  for(int proc=0; proc<MPI_nprocs; proc++){
+
+    // set the begin and end indices so a process covers range [begin,end)
+    int my_begin = ( proc==0 ? 0 : my_zone_end[proc-1] );
+    int my_end = my_zone_end[proc];
+
+    // set the computation size and create the send/receive vectors
+    int size = my_end - my_begin;
+    vector<real> buffer;
+    buffer.resize(size);
+
+    // broadcast T_gas
+    if(solve_T){
+      if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->z[i].T_gas;
+      MPI_Bcast(&buffer.front(), size, MPI_real, proc, MPI_COMM_WORLD);
+      if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->z[i].T_gas = buffer[i-my_begin];
+    }
+
+    // broadcast Ye
+    if(solve_T){
+      if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->z[i].Ye;
+      MPI_Bcast(&buffer.front(), size, MPI_real, proc, MPI_COMM_WORLD);
+      if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->z[i].Ye = buffer[i-my_begin];
+    }
+  }
 }

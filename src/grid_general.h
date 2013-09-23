@@ -47,10 +47,10 @@ class grid_general
   std::vector<zone> z;
 
   // mpi reduce quantities
-  void reduce_radiation();
-  void reduce_radiation_block(int, int);
-  void reduce_T();
-  void reduce_Ye();
+  /* void reduce_radiation(); */
+  /* void reduce_radiation_block(int, int); */
+  /* void reduce_T(); */
+  /* void reduce_Ye(); */
 
   // set everything up
   void init(Lua* lua);
