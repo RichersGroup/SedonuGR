@@ -456,16 +456,18 @@ void transport::lorentz_transform(particle* p, double sign)
 //------------------------------------------------------------
 void transport::reduce_radiation()
 {
+  vector<real> send, receive;
+  int my_begin, my_end, size;
+
   //-- EACH PROCESSOR GETS THE REDUCTION INFORMATION IT NEEDS
   for(int proc=0; proc<MPI_nprocs; proc++){
 
     // set the begin and end indices so a process covers range [begin,end)
-    int my_begin = ( proc==0 ? 0 : my_zone_end[proc-1] );
-    int my_end = my_zone_end[proc];
+    my_begin = ( proc==0 ? 0 : my_zone_end[proc-1] );
+    my_end = my_zone_end[proc];
 
     // set the computation size and create the send/receive vectors
-    int size = my_end - my_begin;
-    vector<real> send, receive;
+    size = my_end - my_begin;
     send.resize(size);
     receive.resize(size);
 
@@ -489,16 +491,18 @@ void transport::reduce_radiation()
 
 void transport::synchronize_gas()
 {
+  vector<real> buffer;
+  int my_begin, my_end, size;
+
   //-- EACH PROCESSOR SENDS THE GRID INFORMATION IT SOLVED
   for(int proc=0; proc<MPI_nprocs; proc++){
 
     // set the begin and end indices so a process covers range [begin,end)
-    int my_begin = ( proc==0 ? 0 : my_zone_end[proc-1] );
-    int my_end = my_zone_end[proc];
+    my_begin = ( proc==0 ? 0 : my_zone_end[proc-1] );
+    my_end = my_zone_end[proc];
 
     // set the computation size and create the send/receive vectors
-    int size = my_end - my_begin;
-    vector<real> buffer;
+    size = my_end - my_begin;
     buffer.resize(size);
 
     // broadcast T_gas
