@@ -45,6 +45,11 @@ int main(int argc, char **argv)
   transport sim;
   sim.init(&lua);
 
+  // write initial grid data
+  int iw = 0; // number of times output has been written
+  sim.grid->write_zones(iw);
+  iw++;
+
   // read in time stepping parameters
   int    iterate     = lua.scalar<int>("iterate");
   int    n_times     = ( iterate ? iterate : lua.scalar<int>("max_n_steps"));
@@ -61,7 +66,7 @@ int main(int argc, char **argv)
   //===========//
   double t = 0;
   double t_step = tstep_start;
-  int iw = 0; // number of times output has been written
+  if (verbose) printf("%12s %12s %12s %12s\n","iteration","t","dt","n_particles");
   for(int it=0;it<n_times;it++)
   {
     // get this time step (ignored if iterative calc)
@@ -69,45 +74,49 @@ int main(int argc, char **argv)
     if (t_step > tstep_max) t_step = tstep_max;
     if ( (tstep_del>0) && (t>0) && (t_step>t*tstep_del) ) t_step = t*tstep_del;
 
+    // do transport step
+    sim.step(t_step);
+
     // printout time step
-    if (verbose) printf("%8d %12.4e %12.4e %5d\n",it,t,t_step, sim.total_particles());
+    if(verbose) printf("%12d %12.4e %12.4e %12d\n",it,t,t_step, sim.total_particles());
 
     // writeout zone state when appropriate 
-    if ( verbose && ( (t>=write_out*iw) || (iterate) ) )
-    {
+    if( verbose && ( (t>=write_out*iw) || (iterate) ) ){
       printf("# writing zone file %d at time %e\n",iw, t);
       sim.grid->write_zones(iw);
       iw++;
     }
 
-    // do transport step
-    sim.step(t_step);
-
     // print out spectrum in iterative calc
-    if (iterate) for(int i=0; i<sim.species_list.size(); i++)
-    {
-      char sname[100];
-      sprintf(sname,"species%d_I%d.spec",i,it+1);
-      sim.species_list[i]->spectrum.set_name(sname);
-      sim.species_list[i]->spectrum.MPI_average();
-      sim.species_list[i]->spectrum.print();
-      sim.species_list[i]->spectrum.wipe();
+    if(iterate){
+      for(int i=0; i<sim.species_list.size(); i++){
+	if(n_procs>1) sim.species_list[i]->spectrum.MPI_average();
+	if(verbose){
+	  char sname[100];
+	  sprintf(sname,"species%d_I%d.spec",i,it+1);
+	  sim.species_list[i]->spectrum.set_name(sname);
+	  sim.species_list[i]->spectrum.print();
+	}
+	sim.species_list[i]->spectrum.wipe();
+      }
     }
 
     // advance time
-    if (!iterate) t = t + t_step;
-    if (t > t_stop) break;
+    if(!iterate) t = t + t_step;
+    if(t > t_stop) break;
   }
 
-  //===============================//
-  // PRINT FINAL SPECTRUM AND EXIT //
-  //===============================//
+  //===========================//
+  // PRINT FINAL DATA AND EXIT //
+  //===========================//
   // print final spectrum
-  if (!iterate) for(int i=0; i<sim.species_list.size(); i++){
-    sim.species_list[i]->spectrum.MPI_average();
-    sim.species_list[i]->spectrum.print(); 
+  if(!iterate){
+    for(int i=0; i<sim.species_list.size(); i++){
+      if(sim.MPI_nprocs>1) sim.species_list[i]->spectrum.MPI_average();
+      if(verbose) sim.species_list[i]->spectrum.print(); 
+    }
   }
-
+  
   // calculate the elapsed time 
   double proc_time_end = MPI_Wtime();
   double time_wasted = proc_time_end - proc_time_start;

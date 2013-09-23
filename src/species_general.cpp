@@ -24,6 +24,7 @@ void species_general::init(Lua* lua, transport* simulation)
 // return a randomly sampled frequency
 // for a particle emitted from the core
 //----------------------------------------------------------------
+// TODO - could be modified to interpolate via inverse transform sampling, but more complicated
 double species_general::sample_core_nu()
 {
   // randomly pick a frequency bin
@@ -39,6 +40,7 @@ double species_general::sample_core_nu()
 // return a randomly sampled frequency
 // for a particle emitted from a zone
 //----------------------------------------------------------------
+// TODO - could be modified to interpolate via inverse transform sampling, but more complicated
 double species_general::sample_zone_nu(int zone_index)
 {
   // randomly pick a frequency bin

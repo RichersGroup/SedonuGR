@@ -21,8 +21,8 @@ private:
   std::vector<particle> particles;
 
   // MPI stuff
-  int MPI_myID;
   int MPI_nprocs;
+  int MPI_myID;
   MPI_Datatype MPI_real;
   void reduce_radiation();
   void synchronize_gas();

@@ -53,8 +53,11 @@ void transport::propagate_particles(double dt)
     // rest frame, which makes the lab frame emitted energy different from L_net.
     #pragma omp single
     {
-      if(e_esc>0) N = L_net / e_esc;
-      else N=1;
+      N = 1;
+      if(iterate){
+	if(e_esc>0) N = L_net / e_esc;
+	else if(verbose) cout << "# WARNING: no energy escaped. Setting normalization to 1." << endl;
+      }
     }
 
     //--- NORMALIZE THE GRID QUANTITIES ---
@@ -97,10 +100,13 @@ void transport::propagate(particle* p, double dt)
   double tstop = t_now + dt;
 
   // local variables
-  double tau_r,d_sc,d_tm,this_d;
-
-  // pointer to current zone
-  zone *zone = &(grid->z[p->ind]);
+  zone* zone;                                      // pointer to current zone
+  double tau_r;                                    // random optical depth
+  double d_bn,d_sc,d_tm,this_d;                    // interaction distances
+  double dshift;                                   // doppler shift
+  double opac, abs_frac, opac_lab;                 // opacity variables
+  double this_E, this_E_comoving, this_l_comoving; // for calculating radiation energy and energy/lepton number absorbed
+  double z,z2;                                     // random numbers
 
   // propagate until this flag is set
   while (p->fate == moving)
@@ -109,13 +115,12 @@ void transport::propagate(particle* p, double dt)
     zone = &(grid->z[p->ind]);
 
     // maximum step size inside zone
-    double d_bn = step_size * grid->zone_min_length(p->ind);
+    d_bn = step_size * grid->zone_min_length(p->ind);
 
     // doppler shift from comoving to lab
-    double dshift = dshift_comoving_to_lab(p);
+    dshift = dshift_comoving_to_lab(p);
 
     // get local opacity and absorption fraction
-    double opac, abs_frac;
     species_list[p->s]->get_opacity(p,dshift,&opac,&abs_frac);
 
     // convert opacity from comoving to lab frame for the purposes of
@@ -123,7 +128,7 @@ void transport::propagate(particle* p, double dt)
     // This corresponds to equation 90.8 in Mihalas&Mihalas. You multiply
     // the comoving opacity by nu_0 over nu, which is why you
     // multiply by dshift instead of dividing by dshift here
-    double opac_lab = opac*dshift;
+    opac_lab = opac*dshift;
 
     // random optical depth to next interaction
     tau_r = -1.0*log(1 - rangen.uniform());
@@ -156,7 +161,7 @@ void transport::propagate(particle* p, double dt)
     }
 
     // tally in contribution to zone's radiation energy (both *lab* frame)
-    double this_E = p->e*this_d;
+    this_E = p->e*this_d;
     #pragma omp atomic
     zone->e_rad += this_E;
 
@@ -164,25 +169,26 @@ void transport::propagate(particle* p, double dt)
     // (will turn into rate by dividing by dt later)
     // Extra dshift definitely needed here (two total)
     // to convert both p->e and this_d to the comoving frame
-    double this_E_comoving = this_E * dshift * dshift;
+    this_E_comoving = this_E * dshift * dshift;
     #pragma omp atomic
     zone->e_abs += this_E_comoving * (opac*abs_frac*zone->eps_imc);
 
     // store absorbed lepton number (same in both frames, except for the
     // factor of this_d which is divided out later
     if(species_list[p->s]->lepton_number != 0){
-      double this_l_comoving = species_list[p->s]->lepton_number * p->e/(p->nu*pc::h) * this_d*dshift;
+      this_l_comoving = species_list[p->s]->lepton_number * p->e/(p->nu*pc::h) * this_d*dshift;
       #pragma omp atomic
       zone->l_abs += this_l_comoving * (opac*abs_frac*zone->eps_imc);
     }
 
-    // put back in radiation force tally here
+    // TODO - put back in radiation force tally here
     // fx_rad =
 
     // move particle the distance
     p->x[0] += this_d*p->D[0];
     p->x[1] += this_d*p->D[1];
     p->x[2] += this_d*p->D[2];
+
     // advance the time
     p->t = p->t + this_d/pc::c;
 
@@ -192,22 +198,20 @@ void transport::propagate(particle* p, double dt)
     if (event == scatter)
     {
       // random number to check for scattering or absorption
-      double z = rangen.uniform();
+      z = rangen.uniform();
 
-      // decide whether to scatter
+      // decide whether to scatter or absorb
       if (z > abs_frac) isotropic_scatter(p,0);
-      // or absorb
       else
       {
-	// check for effective scattering
-	double z2;
+	// RNG for deciding whether to do effective scattering
 	if (radiative_eq) z2 = 2;
 	else z2 = rangen.uniform();
 
-	// do an effective scatter (i.e. particle is absorbed
+	// choose whether to do an effective scatter (i.e. particle is absorbed
 	// but, since we require energy in = energy out it is re-emitted)
+	// otherwise, really absorb (kill) it
 	if (z2 > zone->eps_imc) isotropic_scatter(p,1);
-	// otherwise really absorb (kill) it
 	else p->fate = absorbed;
       }
     }

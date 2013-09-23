@@ -23,9 +23,6 @@ void grid_general::init(Lua* lua)
   if(model_file == "custom_model") custom_model(lua);
   else read_model_file(lua);
 
-  // set the reduction block size
-  block_size  = lua->scalar<int>("block_size");
-
   // complain if the grid is obviously not right
   if(z.size()==0){
     cout << "Error: there are no grid zones." << endl;

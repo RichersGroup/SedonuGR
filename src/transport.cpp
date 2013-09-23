@@ -282,13 +282,13 @@ void transport::step(double dt)
   }
 
   // MPI reduce the radiation quantities so each processor has the information needed to solve its grid values
-  reduce_radiation();
+  if(MPI_nprocs>1) reduce_radiation();
 
   // solve for T_gas and Ye structure if radiative eq. applied
-  if (radiative_eq) solve_eq_zone_values();
+  if(radiative_eq) solve_eq_zone_values();
 
   // MPI broadcast the results so all processors have matching fluid properties
-  synchronize_gas();
+  if(MPI_nprocs>1) synchronize_gas();
 
   // advance time step
   if (!iterate) t_now += dt;

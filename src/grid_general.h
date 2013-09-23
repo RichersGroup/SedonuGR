@@ -41,7 +41,6 @@ class grid_general
   virtual ~grid_general() {}
 
   string grid_type;
-  int block_size;
 
   // vector of zones
   std::vector<zone> z;

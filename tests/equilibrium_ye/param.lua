@@ -3,7 +3,7 @@
 do_photons     = 0                 -- simulate photons?
 do_neutrinos   = 1                 -- simulate neutrinos?
 radiative_eq   = 1                 -- set to enforce radiative equilibrium. 
-iterate        = 5                 -- set to do an iterative (time independent) calc
+iterate        = 1                 -- set to do an iterative (time independent) calc
 solve_T        = 0                 -- (if radiative_eq) solves each zone's temperature based on its absorbed energy
 solve_Ye       = 1                 -- (if radiative_eq) solves each zone's Ye based on its absorbed lepton number
 
@@ -47,4 +47,3 @@ nut_epsilon         =  -1          -- absorption fraction
 -- equilibrium solver parameters
 
 damping = 0.5                      -- changes in values between iterations are decreased by this factor
-block_size = 10000                 -- number of zones to communicate at a time
