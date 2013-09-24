@@ -23,7 +23,7 @@ spec_n_phi            = 1          -- number of phi bins in output spectrum
 -- particle creation parameters
 
 init_particles = 0                 -- # particles spawned from the pre-existing 'radiation energy' in each zone
-n_emit_core    = 6e4               -- # particles to emit from core each timestep
+n_emit_core    = 1e5               -- # particles to emit from core each timestep
 n_emit_heat    = 0                 -- # particles to emit from zones each timestep ("actual" emission, ignored if radiative_eq)
 n_emit_visc    = 0                 -- # particles to emit from zones each timestep (from viscosity, ignored if !radiative_eq)
 n_emit_decay   = 0                 -- # particles to emit from zones each timestep (from non-thermal processes)
@@ -35,8 +35,8 @@ step_size = 0.4                    -- move at most step_size*min_grid_length at 
 
 -- inner source
 
-r_core = 11.5e5                    -- core radius (cm)
-L_core = 1e46                      -- core luminosity (erg/s)
+r_core = 9e5                       -- core radius (cm)
+L_core = 1e51                      -- core luminosity (erg/s)
 T_core = 3.5e11 -- 30MeV           -- core temperature (K)
 
 -- opacity parameters
@@ -46,5 +46,6 @@ nut_epsilon         =  -1          -- absorption fraction
 
 -- equilibrium solver parameters
 
-damping = 0.5                      -- changes in values between iterations are decreased by this factor
-block_size = 10000                 -- number of zones to communicate at a time
+damping         = 0.5              -- changes in values between iterations are decreased by this factor
+brent_tolerance = 0.01             -- how close must the measured emission be to the predicted?
+brent_itmax     = 100              -- how many iterations of brent cycle (both inner and outer loop) are allowed

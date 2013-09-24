@@ -1,6 +1,6 @@
 set term pdf
 set grid
-set xrange [:11.999e5]
+set xrange [:9.999e5]
 
 set xlabel "Radius (km)"
 set ylabel "Y_e"

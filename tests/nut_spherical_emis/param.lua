@@ -47,4 +47,3 @@ nut_epsilon         =  -1          -- absorption fraction
 -- equilibrium solver parameters
 
 damping = 0.5                      -- changes in values between iterations are decreased by this factor
-block_size = 10000                 -- number of zones to communicate at a time
