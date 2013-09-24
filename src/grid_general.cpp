@@ -51,6 +51,7 @@ void grid_general::write_zones(int iw)
   //  outf << setw(12);
   outf << setprecision(4);
   outf << scientific;
+  outf << "# r[0] T_rad T_gas Ye" << endl;
 
   for (int i=0;i<z.size();i++)
   {

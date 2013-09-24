@@ -55,6 +55,11 @@ private:
   void isotropic_scatter(particle* p, int redistribute);
 
   // solve for temperature and Ye
+  int    solve_T;
+  int    solve_Ye;
+  double damping;
+  int    brent_itmax;
+  double brent_solve_tolerance;
   void   solve_eq_zone_values();
   double brent_method(int zone_index, double (*eq_function)(int,double,transport*), double min, double max);
 
@@ -65,11 +70,8 @@ private:
 
   // simulation parameters
   double step_size;
-  double damping;
   int    do_photons;
   int    do_neutrinos;
-  int    solve_T;
-  int    solve_Ye;
   int    radiative_eq;
   int    iterate;
   int    verbose;

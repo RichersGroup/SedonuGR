@@ -41,6 +41,10 @@ void transport::init(Lua* lua)
   solve_Ye      = lua->scalar<int>("solve_Ye");
   do_photons    = lua->scalar<int>("do_photons");
   do_neutrinos  = lua->scalar<int>("do_neutrinos");
+  if(solve_T || solve_Ye){
+    brent_itmax     = lua->scalar<int>("brent_itmax");
+    brent_solve_tolerance = lua->scalar<double>("brent_tolerance");
+  }
 
   // figure out what zone emission models we're using
   int n_emit_heat  = lua->scalar<int>("n_emit_heat");
@@ -513,7 +517,7 @@ void transport::synchronize_gas()
     }
 
     // broadcast Ye
-    if(solve_T){
+    if(solve_Ye){
       if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->z[i].Ye;
       MPI_Bcast(&buffer.front(), size, MPI_real, proc, MPI_COMM_WORLD);
       if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->z[i].Ye = buffer[i-my_begin];

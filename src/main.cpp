@@ -112,7 +112,7 @@ int main(int argc, char **argv)
   // print final spectrum
   if(!iterate){
     for(int i=0; i<sim.species_list.size(); i++){
-      if(sim.MPI_nprocs>1) sim.species_list[i]->spectrum.MPI_average();
+      if(n_procs>1) sim.species_list[i]->spectrum.MPI_average();
       if(verbose) sim.species_list[i]->spectrum.print(); 
     }
   }

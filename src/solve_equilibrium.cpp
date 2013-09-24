@@ -18,8 +18,8 @@ double   Ye_eq_function(int zone_index, double Ye, transport* sim);
 //-------------------------------------------------------------
 //  Solve for the temperature assuming radiative equilibrium
 //-------------------------------------------------------------
-#define BRENT_SOLVE_TOLERANCE 1.e-2
-#define BRENT_ITMAX 100
+// #define brent_solve_tolerance 1.e-2
+// #define brent_itmax 100
 void transport::solve_eq_zone_values()
 {
   // remember what zones I'm responsible for
@@ -41,17 +41,17 @@ void transport::solve_eq_zone_values()
     // set up the solver
     if(solve_T)
     {
-      T_error  = 10*BRENT_SOLVE_TOLERANCE;
+      T_error  = 10*brent_solve_tolerance;
       T_last_step  = grid->z[i].T_gas;
     }
     if(solve_Ye)
     {
-      Ye_error = 10*BRENT_SOLVE_TOLERANCE;
+      Ye_error = 10*brent_solve_tolerance;
       Ye_last_step = grid->z[i].Ye;
     }
 
     // loop through solving the temperature and Ye until both are within error.
-    while(iter<=BRENT_ITMAX && (T_error>BRENT_SOLVE_TOLERANCE || Ye_error>BRENT_SOLVE_TOLERANCE))
+    while(iter<=brent_itmax && (T_error>brent_solve_tolerance || Ye_error>brent_solve_tolerance))
     {
       if(solve_T)
       {
@@ -69,7 +69,7 @@ void transport::solve_eq_zone_values()
     }
 
     // warn if it didn't converge
-    if(iter == BRENT_ITMAX) cout << "# WARNING: outer Brent solver hit maximum iterations." << endl;
+    if(iter == brent_itmax) cout << "# WARNING: outer Brent solver hit maximum iterations." << endl;
 
     // damp the oscillations between steps, ensure that it's within the allowed boundaries
     if(solve_T)
@@ -199,7 +199,7 @@ double transport::brent_method(int zone_index, double (*eq_function)(int,double,
   //if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0))
   //  printf("Root must be bracketed in zbrent");
   fc=fb;
-  for (iter=1;iter<=BRENT_ITMAX;iter++) {
+  for (iter=1;iter<=brent_itmax;iter++) {
     if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0)) {
       c=a;
       fc=fa;
@@ -213,7 +213,7 @@ double transport::brent_method(int zone_index, double (*eq_function)(int,double,
       fb=fc;
       fc=fa;
     }
-    tol1=2.0*small*fabs(b)+0.5*BRENT_SOLVE_TOLERANCE;
+    tol1=2.0*small*fabs(b)+0.5*brent_solve_tolerance;
     xm=0.5*(c-b);
     if (fabs(xm) <= tol1 || fb == 0.0) return b;
     if (fabs(e) >= tol1 && fabs(fa) > fabs(fb)) {
