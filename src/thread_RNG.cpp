@@ -1,5 +1,6 @@
 #pragma warning disable 161
 #include "thread_RNG.h"
+#include <ctime>
 #include <mpi.h>
 #include <omp.h>
 
