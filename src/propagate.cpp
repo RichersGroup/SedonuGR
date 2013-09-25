@@ -1,4 +1,5 @@
 #pragma warning disable 161
+#include <limits>
 #include <omp.h>
 #include <stdio.h>
 #include <math.h>
@@ -135,7 +136,7 @@ void transport::propagate(particle* p, double dt)
 
     // step size to next interaction event
     d_sc  = tau_r/opac_lab;
-    if (opac_lab == 0) d_sc = INFINITY;
+    if (opac_lab == 0) d_sc = numeric_limits<double>::infinity();
     if (d_sc < 0){
       cout << "ERROR: negative interaction distance!\n" << endl;
       cout << __FILE__ << ":" << __LINE__ << endl;
@@ -144,7 +145,7 @@ void transport::propagate(particle* p, double dt)
 
     // find distance to end of time step
     d_tm = (tstop - p->t)*pc::c;
-    if (iterate) d_tm = INFINITY; // i.e. let all particles escape
+    if (iterate) d_tm = numeric_limits<double>::infinity(); // i.e. let all particles escape
 
     // find out what event happens (shortest distance)
     if ( (d_sc < d_bn) && (d_sc < d_tm) ){
