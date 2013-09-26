@@ -189,3 +189,11 @@ void grid_1D_sphere::velocity_vector(int i, double x[3], double v[3])
   }
 }
 
+
+//------------------------------------------------------------
+// Write the grid information out to a file
+//------------------------------------------------------------
+void grid_1D_sphere::write_ray(int iw)
+{
+  // this is a 1D grid, so the function is exactly the same
+}

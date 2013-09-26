@@ -44,28 +44,31 @@ void grid_general::write_zones(int iw)
   else if (iw < 1000) sprintf(base,"_00%d",iw);
   else if (iw < 10000) sprintf(base,"_0%d",iw);
   else sprintf(base,"_%d",iw);
-  sprintf(zonefile,"ray%s",base);
+  sprintf(zonefile,"fluid%s",base);
 
   ofstream outf;
   outf.open(zonefile);
   //  outf << setw(12);
   outf << setprecision(4);
   outf << scientific;
-  outf << "# r[0] T_rad T_gas Ye" << endl;
+  outf << "# r[0] r[1] r[2] rho T_rad T_gas Ye" << endl;
 
   for (int i=0;i<z.size();i++)
   {
     double r[3];
     coordinates(i,r); 
     outf << r[0] << " ";
+    outf << r[1] << " ";
+    outf << r[2] << " ";
 
+    outf << z[i].rho << " ";
     double T_rad = pow(z[i].e_rad/pc::a,0.25);
     outf << T_rad << " ";
     outf << z[i].T_gas << " ";
     outf << z[i].Ye << " ";
     outf << endl;
   }
-
+  outf.close();
 }
 
 

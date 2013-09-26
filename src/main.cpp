@@ -48,6 +48,7 @@ int main(int argc, char **argv)
   // write initial grid data
   int iw = 0; // number of times output has been written
   sim.grid->write_zones(iw);
+  sim.grid->write_ray(iw);
   iw++;
 
   // read in time stepping parameters
@@ -67,7 +68,7 @@ int main(int argc, char **argv)
   double t = 0;
   double t_step = tstep_start;
   if (verbose) printf("%12s %12s %12s %12s\n","iteration","t","dt","n_particles");
-  for(int it=0;it<n_times;it++)
+  for(int it=1;it<=n_times;it++)
   {
     // get this time step (ignored if iterative calc)
     if (t_step < tstep_min) t_step = tstep_min;
@@ -84,6 +85,7 @@ int main(int argc, char **argv)
     if( verbose && ( (t>=write_out*iw) || (iterate) ) ){
       printf("# writing zone file %d at time %e\n",iw, t);
       sim.grid->write_zones(iw);
+      sim.grid->write_ray(iw);
       iw++;
     }
 

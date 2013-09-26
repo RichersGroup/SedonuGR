@@ -23,6 +23,8 @@ namespace physical_constants
   const double ev_to_ergs =  1.60217646e-12;  
   const double cm_to_angs =  1.0e8;
   const double angs_to_cm =  1.0e-8;
+  const double fm_to_cm   =  1.0e-13;
+  const double cm_to_fm   =  1.0e13;
 
   const double thomson_cs = 0.66523e-24;       // Thomson cross-section cm-2 
   const double sigma_tot = 0.0265400193567;    // integrated line coefficent (cm^2 Hz)

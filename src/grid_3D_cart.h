@@ -38,6 +38,7 @@ public:
   void      velocity_vector(int i, double[3], double[3]);
   void      print();
   void      coordinates(int i,double r[3]);
+  void      write_ray(int iw);
 
 };
 

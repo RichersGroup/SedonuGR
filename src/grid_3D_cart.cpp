@@ -1,7 +1,9 @@
-#include <math.h>
-#include <stdlib.h>
+#include <cmath>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
+#include "mpi.h"
 #include "Lua.h"
 #include "grid_3D_cart.h"
 #include "physical_constants.h"
@@ -61,6 +63,10 @@ void grid_3D_cart::custom_model(Lua* lua)
 //------------------------------------------------------------
 void grid_3D_cart::read_model_file(Lua* lua)
 {
+  // get mpi rank
+  int my_rank;
+  MPI_Comm_rank( MPI_COMM_WORLD, &my_rank  );
+
   // open up the model file, complaining if it fails to open
   string model_file = lua->scalar<string>("model_file");
   ifstream infile;
@@ -107,7 +113,7 @@ void grid_3D_cart::read_model_file(Lua* lua)
   dy = (ymax-y0)/(double)ny; if(reflect_y) dy*=2;
   dz = (zmax-z0)/(double)nz; if(reflect_z) dz*=2;
   if      ((dx < dy)&&(dx < dz)) min_ds = dx;
-  else if ((dy < dx)&&(dy < dz)) min_ds = dx;
+  else if ((dy < dx)&&(dy < dz)) min_ds = dy;
   else min_ds = dz;
   vol = dx*dy*dz;
 
@@ -143,6 +149,7 @@ void grid_3D_cart::read_model_file(Lua* lua)
     	  infile >> z[ind].v[1];
     	  infile >> z[ind].v[2];
     	  // convert to proper units
+	  z[ind].rho  *= pc::m_p / pow(pc::fm_to_cm,3);
     	  z[ind].T_gas /= (1e-6*pc::k_ev);
     	  z[ind].v[0] *= pc::c;
     	  z[ind].v[1] *= pc::c;
@@ -192,17 +199,19 @@ void grid_3D_cart::read_model_file(Lua* lua)
       }
 
   // adjust x0,y0,z0 to indicate new, reflected lower boundary
-  cout << "zmin,zmax before adjusting:" << z0 << " " << zmax << endl;
+  if(my_rank==0) cout << "(zmin,zmax) before adjusting: (" << z0 << "," << zmax << ")" << endl;
   if(reflect_x) x0 = x0 - (xmax-x0);
   if(reflect_y) y0 = y0 - (ymax-y0);
   if(reflect_z) z0 = z0 - (zmax-z0);
 
-  // do some output
-  cout << "nx=" << nx << endl << "ny=" << ny << endl << "nz=" << nz << endl;
-  cout << "number of zones:" << z.size() << endl;
-  cout << "minima:{" << x0 << ", " << y0 << ", " << z0 << "}" << endl;
-  cout << "maxima:{" << x0+(nx*dx) << ", " << y0+(ny*dy) << ", " << z0+(nz*dz) << "}" << endl;
-  cout << "deltas:{" << dx << ", " << dy << ", " << dz << "}" << endl;
+  // debugging some output
+  if(my_rank==0){
+    cout << "nx=" << nx << endl << "ny=" << ny << endl << "nz=" << nz << endl;
+    cout << "number of zones:" << z.size() << endl;
+    cout << "minima:{" << x0 << ", " << y0 << ", " << z0 << "}" << endl;
+    cout << "maxima:{" << x0+(nx*dx) << ", " << y0+(ny*dy) << ", " << z0+(nz*dz) << "}" << endl;
+    cout << "deltas:{" << dx << ", " << dy << ", " << dz << "}" << endl;
+  }
 }
 
 //------------------------------------------------------------
@@ -234,7 +243,7 @@ double grid_3D_cart::zone_volume(int i)
 
 
 //------------------------------------------------------------
-// sample a random position within the spherical shell
+// sample a random position within the cubical cell
 //------------------------------------------------------------
 void grid_3D_cart::sample_in_zone
 (int i, std::vector<double> ran,double r[3])
@@ -274,4 +283,95 @@ void grid_3D_cart::coordinates(int i,double r[3])
   r[0] = x0 + (ix[i]+0.5)*dx;
   r[1] = y0 + (iy[i]+0.5)*dy;
   r[2] = z0 + (iz[i]+0.5)*dz;
+}
+
+
+//------------------------------------------------------------
+// Write the grid information out to a file
+//------------------------------------------------------------
+void grid_3D_cart::write_ray(int iw)
+{
+  char zonefile[1000];
+  char base[1000];
+  int ind;
+  double T_rad;
+  double r[3];
+  ofstream outf;
+  int i,j,k;
+
+  if (iw < 10) sprintf(base,"_0000%d",iw);
+  else if (iw < 100) sprintf(base,"_000%d",iw);
+  else if (iw < 1000) sprintf(base,"_00%d",iw);
+  else if (iw < 10000) sprintf(base,"_0%d",iw);
+  else sprintf(base,"_%d",iw);
+
+ 
+  // X-direction
+  sprintf(zonefile,"ray%s_x",base);
+  outf.open(zonefile);
+  outf << setprecision(4);
+  outf << scientific;
+  outf << "# r[0] r[1] r[2] rho T_rad T_gas Ye" << endl;
+  j = ny/2;
+  k = nz/2;
+  for (i=0;i<nx;i++)
+  {
+    ind = i*ny*nz + j*nz + k;
+    coordinates(ind,r); 
+    outf << r[0] << " ";
+
+    T_rad = pow(z[ind].e_rad/pc::a,0.25);
+    outf << z[ind].rho   << " ";
+    outf << T_rad        << " ";
+    outf << z[ind].T_gas << " ";
+    outf << z[ind].Ye    << " ";
+    outf << endl;
+  }
+  outf.close();
+
+  // Y-direction
+  sprintf(zonefile,"ray%s_y",base);
+  outf.open(zonefile);
+  outf << setprecision(4);
+  outf << scientific;
+  outf << "# r[0] r[1] r[2] rho T_rad T_gas Ye" << endl;
+  i = nx/2;
+  k = nz/2;
+  for (j=0; j<ny; j++)
+  {
+    ind = i*ny*nz + j*nz + k;
+    coordinates(ind,r); 
+    outf << r[1] << " ";
+
+    T_rad = pow(z[ind].e_rad/pc::a,0.25);
+    outf << z[ind].rho   << " ";
+    outf << T_rad        << " ";
+    outf << z[ind].T_gas << " ";
+    outf << z[ind].Ye    << " ";
+    outf << endl;
+  }
+  outf.close();
+
+  // Z-direction
+  sprintf(zonefile,"ray%s_z",base);
+  outf.open(zonefile);
+  outf << setprecision(4);
+  outf << scientific;
+  outf << "# r[0] r[1] r[2] rho T_rad T_gas Ye" << endl;
+  i = nx/2;
+  j = ny/2;
+  for (k=0; k<nz; k++)
+  {
+    ind = i*ny*nz + j*nz + k;
+    coordinates(ind,r); 
+    outf << r[2] << " ";
+
+    T_rad = pow(z[ind].e_rad/pc::a,0.25);
+    outf << z[ind].rho   << " ";
+    outf << T_rad        << " ";
+    outf << z[ind].T_gas << " ";
+    outf << z[ind].Ye    << " ";
+    outf << endl;
+  }
+  outf.close();
 }
