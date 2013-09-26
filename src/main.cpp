@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 	if(n_procs>1) sim.species_list[i]->spectrum.MPI_average();
 	if(verbose){
 	  char sname[100];
-	  sprintf(sname,"species%d_I%d.spec",i,it+1);
+	  sprintf(sname,"species%d_I%d.spec",i,it);
 	  sim.species_list[i]->spectrum.set_name(sname);
 	  sim.species_list[i]->spectrum.print();
 	}
