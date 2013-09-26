@@ -98,6 +98,8 @@ void neutrinos::myInit(Lua* lua)
   T_max  =  nulib_get_Tmax();
   Ye_min =  nulib_get_Yemin();
   Ye_max =  nulib_get_Yemax();
+  rho_min = nulib_get_rhomin();
+  rho_max = nulib_get_rhomax();
 }
 
 

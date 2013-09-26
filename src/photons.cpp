@@ -73,10 +73,12 @@ void photons::myInit(Lua* lua)
   }
 
   // set photon's min and max values
-  T_min  =  1.0;
-  T_max  =  1e12;
-  Ye_min = -numeric_limits<double>::infinity();
-  Ye_max =  numeric_limits<double>::infinity();
+  T_min   =  1.0;
+  T_max   =  1e12;
+  Ye_min  = -numeric_limits<double>::infinity();
+  Ye_max  =  numeric_limits<double>::infinity();
+  rho_min = -numeric_limits<double>::infinity();
+  rho_max =  numeric_limits<double>::infinity();
 }
 
 

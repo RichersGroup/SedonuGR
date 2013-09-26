@@ -18,8 +18,6 @@ double   Ye_eq_function(int zone_index, double Ye, transport* sim);
 //-------------------------------------------------------------
 //  Solve for the temperature assuming radiative equilibrium
 //-------------------------------------------------------------
-// #define brent_solve_tolerance 1.e-2
-// #define brent_itmax 100
 void transport::solve_eq_zone_values()
 {
   // remember what zones I'm responsible for
@@ -27,8 +25,9 @@ void transport::solve_eq_zone_values()
   int end = my_zone_end[MPI_myID];
 
   // solve radiative equilibrium temperature and Ye (but only in the zones I'm responsible for)
+  // don't solve if out of density bounds
   #pragma omp parallel for schedule(guided)
-  for (int i=start; i<end; i++)
+  for (int i=start; i<end; i++) if( (grid->z[i].rho >= rho_min) && (grid->z[i].rho <= rho_max) )
   {
     double T_last_iter, Ye_last_iter;
     double T_last_step, Ye_last_step;
@@ -69,30 +68,33 @@ void transport::solve_eq_zone_values()
     }
 
     // warn if it didn't converge
-    if(iter == brent_itmax) cout << "# WARNING: outer Brent solver hit maximum iterations." << endl;
+    if(iter == brent_itmax) cout << "# WARNING: outer Brent solver hit maximum iterations. (zone:" << i << " processor:" << MPI_myID << " thread:" << omp_get_thread_num() << ")" << endl;
 
     // damp the oscillations between steps, ensure that it's within the allowed boundaries
-    if(solve_T)
+    if(damping>0)
     {
-      dT_step  = grid->z[i].T_gas - T_last_step;
-      grid->z[i].T_gas =  T_last_step + (1.0 - damping)*dT_step;
-      if(grid->z[i].T_gas > T_max){
-	cout << "# WARNING: Changing T_gas in zone " << i << " from " << grid->z[i].T_gas << " to T_max=" << T_max << endl;
-	grid->z[i].T_gas = T_max;}
-      if(grid->z[i].T_gas < T_min){
-	cout << "# WARNING: Changing T_gas in zone " << i << " from " << grid->z[i].T_gas << " to T_min=" << T_min << endl;
-	grid->z[i].T_gas = T_min;}
-    }
-    if(solve_Ye)
-    {
-      dYe_step = grid->z[i].Ye - Ye_last_step;
-      grid->z[i].Ye = Ye_last_step + (1.0 - damping)*dYe_step;
-      if(grid->z[i].Ye > Ye_max){
-	cout << " WARNING: Changing Ye in zone " << i << " from " << grid->z[i].Ye << " to Ye_max=" << Ye_max << endl;
-	grid->z[i].Ye = Ye_max;}
-      if(grid->z[i].Ye < Ye_min){
-	cout << " WARNING: Changing Ye in zone " << i << " from " << grid->z[i].Ye << " to Ye_min=" << Ye_min << endl;
-	grid->z[i].Ye = Ye_min;}
+      if(solve_T)
+      {
+	dT_step  = grid->z[i].T_gas - T_last_step;
+	grid->z[i].T_gas =  T_last_step + (1.0 - damping)*dT_step;
+	if(grid->z[i].T_gas > T_max){
+	  cout << "# WARNING: Changing T_gas in zone " << i << " from " << grid->z[i].T_gas << " to T_max=" << T_max << endl;
+	  grid->z[i].T_gas = T_max;}
+	if(grid->z[i].T_gas < T_min){
+	  cout << "# WARNING: Changing T_gas in zone " << i << " from " << grid->z[i].T_gas << " to T_min=" << T_min << endl;
+	  grid->z[i].T_gas = T_min;}
+      }
+      if(solve_Ye)
+      {
+	dYe_step = grid->z[i].Ye - Ye_last_step;
+	grid->z[i].Ye = Ye_last_step + (1.0 - damping)*dYe_step;
+	if(grid->z[i].Ye > Ye_max){
+	  cout << " WARNING: Changing Ye in zone " << i << " from " << grid->z[i].Ye << " to Ye_max=" << Ye_max << endl;
+	  grid->z[i].Ye = Ye_max;}
+	if(grid->z[i].Ye < Ye_min){
+	  cout << " WARNING: Changing Ye in zone " << i << " from " << grid->z[i].Ye << " to Ye_min=" << Ye_min << endl;
+	  grid->z[i].Ye = Ye_min;}
+      }
     }
   }
 }

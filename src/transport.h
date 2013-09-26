@@ -65,6 +65,7 @@ private:
   // stored minimum and maximum values to assure safety
   double T_min,  T_max;
   double Ye_min, Ye_max;
+  double rho_min, rho_max;
   int max_particles;
 
   // simulation parameters

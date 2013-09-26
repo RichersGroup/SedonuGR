@@ -6,6 +6,7 @@
 #include <math.h>
 #include <string.h>
 #include <iostream>
+#include <limits>
 #include "transport.h"
 #include "physical_constants.h"
 #include "Lua.h"
@@ -61,7 +62,7 @@ void transport::init(Lua* lua)
   do_core          = n_emit_core>0;
 
   // complain if the parameters don't make sense together
-  if(n_emit_visc>0) visc_specific_heat_rate = lua->scalar<int>("visc_specific_heat_rate");
+  if(n_emit_visc>0) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");
   if(do_heat && do_visc){
     cout << "ERROR: n_emit_heat and n_emit_visc cannot both be greater than 0." << endl;
     exit(1);
@@ -182,17 +183,21 @@ void transport::init(Lua* lua)
     exit(7);
   }
 
-  // set global min/max values
-  T_min  = species_list[0]->T_min;
-  T_max  = species_list[0]->T_max;
-  Ye_min = species_list[0]->Ye_min;
-  Ye_max = species_list[0]->Ye_max;
+  // set global min/max values (make range infinite to catch errors)
+  T_min   =  numeric_limits<double>::infinity();
+  T_max   = -numeric_limits<double>::infinity();
+  Ye_min  =  numeric_limits<double>::infinity();
+  Ye_max  = -numeric_limits<double>::infinity();
+  rho_min =  numeric_limits<double>::infinity();
+  rho_max = -numeric_limits<double>::infinity();
   for(int i=0; i<species_list.size(); i++)
   {
-    if(species_list[i]->T_min < T_min) T_min = species_list[i]->T_min;
-    if(species_list[i]->T_max > T_max) T_max = species_list[i]->T_max;
-    if(species_list[i]->Ye_min < Ye_min) Ye_min = species_list[i]->Ye_min;
-    if(species_list[i]->Ye_max > Ye_max) Ye_max = species_list[i]->Ye_max;
+    if(species_list[i]->T_min   < T_min  ) T_min   = species_list[i]->T_min;
+    if(species_list[i]->T_max   > T_max  ) T_max   = species_list[i]->T_max;
+    if(species_list[i]->Ye_min  < Ye_min ) Ye_min  = species_list[i]->Ye_min;
+    if(species_list[i]->Ye_max  > Ye_max ) Ye_max  = species_list[i]->Ye_max;
+    if(species_list[i]->rho_min < rho_min) rho_min = species_list[i]->rho_min;
+    if(species_list[i]->rho_max > rho_max) rho_max = species_list[i]->rho_max;
   }
   if(T_min >= T_max){
     cout << "ERROR: invalid temperature range." << endl;
@@ -376,14 +381,14 @@ void transport::reduce_radiation()
     if(solve_T){
       for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_abs;
       MPI_Reduce(&send.front(), &receive.front(), size, MPI_real, MPI_SUM, proc, MPI_COMM_WORLD);
-      for(int i=my_begin; i<my_end; i++) grid->z[i].e_abs = receive[i-my_begin] / size;
+      for(int i=my_begin; i<my_end; i++) grid->z[i].e_abs = receive[i-my_begin] / (real)MPI_nprocs;
     }
 
     // reduce l_abs
     if(solve_Ye){
       for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].l_abs;
       MPI_Reduce(&send.front(), &receive.front(), size, MPI_real, MPI_SUM, proc, MPI_COMM_WORLD);
-      for(int i=my_begin; i<my_end; i++) grid->z[i].l_abs = receive[i-my_begin] / size;
+      for(int i=my_begin; i<my_end; i++) grid->z[i].l_abs = receive[i-my_begin] / (real)MPI_nprocs;
     }
 
     // TODO - need to put in other quantities...
