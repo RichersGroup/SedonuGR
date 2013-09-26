@@ -86,18 +86,15 @@ void transport::emit_zones(double dt)
       if(do_therm) therm_lum += ( radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
       if(do_decay) decay_lum += zone_decay_lum(i);
     }
-    #pragma omp single nowait
-    L_net += therm_lum + decay_lum;
 
-    
-    // store in the variables in transport.
-    double t;
+    // store the variables in transport and set the particle energy
     #pragma omp single
     {
+      L_net += therm_lum + decay_lum;
       if(do_therm) Ep_therm = therm_lum*dt / (double)n_emit_therm;
       if(do_decay) Ep_decay = decay_lum*dt / (double)n_emit_decay;
     }
-
+    
     // create particles in each grid cell
     #pragma omp for schedule(guided)
     for (int i=0; i<gridsize; i++)
@@ -111,14 +108,15 @@ void transport::emit_zones(double dt)
 	double tmp  = (double)n_emit_therm * this_L/therm_lum;
 	int this_n_emit = (int)tmp + (int)( rangen.uniform() < fmod(tmp,1.0) );
 
-	// add to tally of e_abs
+	// add heat absorbed to tally of e_abs
 	// really, this is "the gas absorbs energy from heating, then emits radiation"
 	// hence, this is only done if we assume radiative equilibrium
 	if(radiative_eq) grid->z[i].e_abs += dt * this_L;
 
 	// create the particles
+	double t;
 	for (int k=0; k<this_n_emit; k++){
-	  double t = t_now + dt*rangen.uniform();
+	  t = t_now + dt*rangen.uniform();
 	  create_thermal_particle(i,Ep_therm,t);
 	}
       }
@@ -130,10 +128,11 @@ void transport::emit_zones(double dt)
 	double this_L = zone_decay_lum(i);
 	double tmp  = (double)n_emit_decay * this_L/decay_lum;
 	int this_n_emit = (int)tmp + (int)( rangen.uniform() < fmod(tmp,1.0) );
-	
+
 	// create the particles
+	double t;
 	for (int k=0; k<this_n_emit; k++){
-	  double t = t_now + dt*rangen.uniform();
+	  t = t_now + dt*rangen.uniform();
 	  create_decay_particle(i,Ep_decay,t);
 	}
       }
