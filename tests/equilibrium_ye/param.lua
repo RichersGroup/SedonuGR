@@ -46,6 +46,6 @@ nut_epsilon         =  -1          -- absorption fraction
 
 -- equilibrium solver parameters
 
-damping = 0.5                      -- changes in values between iterations are decreased by this factor
+damping = 0.0                      -- changes in values between iterations are decreased by this factor
 brent_itmax = 100
 brent_tolerance = 0.01

@@ -43,7 +43,6 @@ private:
   double zone_decay_lum(int zone_index);
 
   // transformation functions
-  void   lorentz_transform        (particle* p, double);
   double dshift_comoving_to_lab   (particle* p);
   double dshift_lab_to_comoving   (particle* p);
   void   transform_comoving_to_lab(particle* p);

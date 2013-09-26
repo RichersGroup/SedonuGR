@@ -8,12 +8,12 @@ set title "Equilibrium Ye with no neutrino emission (T=5MeV)"
 set xlabel "Radius (km)"
 set ylabel "Y_e"
 set output "r_ye.pdf"
-plot 'profile.dat' using ($1/1e5):4
+plot 'fluid_00001' using ($1/1e5):7
 set output
 
 set xlabel "Density (g/cm^3)"
 set ylabel "Y_e"
 set output "rho_ye.pdf"
 set xrange [:] reverse
-plot "profile.dat" using 6:4
+plot "fluid_00001" using 4:7
 set output
