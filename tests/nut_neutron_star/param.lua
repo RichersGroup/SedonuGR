@@ -23,7 +23,7 @@ spec_n_phi            = 1          -- number of phi bins in output spectrum
 -- particle creation parameters
 
 init_particles = 0                 -- # particles spawned from the pre-existing 'radiation energy' in each zone
-n_emit_core    = 1e5               -- # particles to emit from core each timestep
+n_emit_core    = 1e4               -- # particles to emit from core each timestep
 n_emit_heat    = 0                 -- # particles to emit from zones each timestep ("actual" emission, ignored if radiative_eq)
 n_emit_visc    = 0                 -- # particles to emit from zones each timestep (from viscosity, ignored if !radiative_eq)
 n_emit_decay   = 0                 -- # particles to emit from zones each timestep (from non-thermal processes)

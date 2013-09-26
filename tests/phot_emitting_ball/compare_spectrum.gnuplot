@@ -14,7 +14,6 @@ set xlabel "Frequency (Hz)"
 set ylabel "Energy Flux (erg/s/Hz)"
 
 set xrange [0:2e15]
-set yrange [0:1]
 set term pdf
 set output "compare_spectrum.pdf"
 plot N*4*pi*pi*r*r*2*x*x*x*h/c/c*1/(exp(h*x/(k_b*T))-1), './species0_I1.spec' using 1:2

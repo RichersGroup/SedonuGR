@@ -6,4 +6,4 @@ all:
 	gnuplot compare_spectra.gnuplot
 
 clean:
-	rm -f *.spec ray_* *.pdf empty_sphere.mod
+	rm -f *.spec ray_* fluid_* *.pdf empty_sphere.mod

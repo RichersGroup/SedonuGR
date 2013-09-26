@@ -6,7 +6,7 @@ all: gomc
 	gnuplot compare_spectrum.gnuplot
 
 clean:
-	rm -f *.spec ray_* lucy.mod compare_spectrum.pdf
+	rm -f *.spec ray_* fluid_* lucy.mod compare_spectrum.pdf
 
 realclean: clean
 	rm -f gomc

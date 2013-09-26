@@ -6,4 +6,4 @@ all:
 	gnuplot equilibrium_ye.gnuplot
 
 clean:
-	rm -f *.spec ray_* *.pdf neutron_star.mod profile.dat
+	rm -f *.spec ray_* fluid_* *.pdf neutron_star.mod profile.dat

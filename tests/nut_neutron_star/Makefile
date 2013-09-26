@@ -6,4 +6,4 @@ all:
 	gnuplot nut_neutron_star.gnuplot
 
 clean:
-	rm -f *.spec ray_* *.pdf neutron_star.mod
+	rm -f *.spec ray_* fluid_* *.pdf neutron_star.mod

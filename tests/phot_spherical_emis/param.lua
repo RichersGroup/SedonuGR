@@ -11,7 +11,6 @@ iterate        = 2;   -- set to do an iterative (time independent) calc
 
 grid_type = "grid_1D_sphere"
 model_file  =  "lucy.mod"
-output_file =  "my_lightcurve.dat"          -- output light curve file
 
 -- spectrum parameters
 spec_n_mu           =    1         -- number of cos(theta) bins in output spectrum 
@@ -47,4 +46,5 @@ n_nu            =  100           -- photon opacity grid number of points along f
 
 -- equilibrium solver parameters
 damping = 0.5                    -- changes in values between iterations are decreased by this factor
-block_size = 1000
+brent_itmax = 100
+brent_tolerance = 0.01
