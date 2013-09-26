@@ -135,7 +135,7 @@ void spectrum_array::count(double t, double w, double E, double *D)
   double phi = atan2(D[1],D[0]);
 
   // if off the LEFT of time/mu/phi grids, just return without counting
-  if ((t<time_grid.min) || (mu<mu_grid.min) || (phi<phi_grid.min)) {cout << 1; return;}
+  if ((t<time_grid.min) || (mu<mu_grid.min) || (phi<phi_grid.min)) return;
 
   // locate bin number in all dimensions.
   int t_bin = time_grid.locate(t);
@@ -146,7 +146,7 @@ void spectrum_array::count(double t, double w, double E, double *D)
   // if off the RIGHT of time/mu/phi grids, just return without counting
   if((t_bin == time_grid.size()) ||
      (m_bin ==   mu_grid.size()) ||
-     (p_bin ==  phi_grid.size())) {cout <<2; return;}
+     (p_bin ==  phi_grid.size())) return;
 
   // if off RIGHT of wavelength grid, store in last bin (LEFT is accounted for by locate)
   if (l_bin == wave_grid.size()) l_bin--;

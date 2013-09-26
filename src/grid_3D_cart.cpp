@@ -199,18 +199,18 @@ void grid_3D_cart::read_model_file(Lua* lua)
       }
 
   // adjust x0,y0,z0 to indicate new, reflected lower boundary
-  if(my_rank==0) cout << "(zmin,zmax) before adjusting: (" << z0 << "," << zmax << ")" << endl;
+  if(my_rank==0) cout << "# (zmin,zmax) before adjusting: (" << z0 << "," << zmax << ")" << endl;
   if(reflect_x) x0 = x0 - (xmax-x0);
   if(reflect_y) y0 = y0 - (ymax-y0);
   if(reflect_z) z0 = z0 - (zmax-z0);
 
   // debugging some output
   if(my_rank==0){
-    cout << "nx=" << nx << endl << "ny=" << ny << endl << "nz=" << nz << endl;
-    cout << "number of zones:" << z.size() << endl;
-    cout << "minima:{" << x0 << ", " << y0 << ", " << z0 << "}" << endl;
-    cout << "maxima:{" << x0+(nx*dx) << ", " << y0+(ny*dy) << ", " << z0+(nz*dz) << "}" << endl;
-    cout << "deltas:{" << dx << ", " << dy << ", " << dz << "}" << endl;
+    cout << "# nx=" << nx << endl << "# ny=" << ny << endl << "# nz=" << nz << endl;
+    cout << "# number of zones:" << z.size() << endl;
+    cout << "# minima:{" << x0 << ", " << y0 << ", " << z0 << "}" << endl;
+    cout << "# maxima:{" << x0+(nx*dx) << ", " << y0+(ny*dy) << ", " << z0+(nz*dz) << "}" << endl;
+    cout << "# deltas:{" << dx << ", " << dy << ", " << dz << "}" << endl;
   }
 }
 
