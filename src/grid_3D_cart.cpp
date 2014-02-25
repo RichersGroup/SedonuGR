@@ -149,12 +149,12 @@ void grid_3D_cart::read_model_file(Lua* lua)
     	  infile >> z[ind].v[1];
     	  infile >> z[ind].v[2];
     	  // convert to proper units
-	  z[ind].rho  *= pc::m_p / pow(pc::fm_to_cm,3);
-    	  z[ind].T_gas /= (1e-6*pc::k_ev);
-    	  z[ind].v[0] *= pc::c;
-    	  z[ind].v[1] *= pc::c;
-    	  z[ind].v[2] *= pc::c;
-    	}
+	  z[ind].rho  *= pow(pc::c,6)/ pow(pc::G,3) / pow(pc::M_sun,2);
+    	  z[ind].T_gas /= pc::k_MeV ;
+    	  z[ind].v[0]  *= pc::c;
+    	  z[ind].v[1]  *= pc::c;
+    	  z[ind].v[2]  *= pc::c;
+	}
     	else{ //poison values
     	  double poison = -1e100;
       	  z[ind].rho   = poison;

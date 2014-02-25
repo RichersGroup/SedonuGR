@@ -46,6 +46,7 @@ int main(int argc, char **argv)
   sim.init(&lua);
 
   // write initial grid data
+  if(verbose) cout << "# writing zone file 0" << endl;
   int iw = 0; // number of times output has been written
   sim.grid->write_zones(iw);
   sim.grid->write_ray(iw);
