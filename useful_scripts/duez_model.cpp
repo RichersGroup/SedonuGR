@@ -40,6 +40,7 @@ int main(int argc, char* argv[]){
   out_mod.open("model.mod");
   
   // write the metadata
+  out_mod << "3D_cart" << endl;
   out_mod << "GRB" << endl;
   out_mod << nx << " " << ny << " " << nz << endl;
   out_mod << reflect_x << " " << reflect_y << " " << reflect_z << endl;
