@@ -211,7 +211,7 @@ void grid_3D_cart::read_model_file(Lua* lua)
 //------------------------------------------------------------
 // Overly simple search to find zone
 //------------------------------------------------------------
-int grid_3D_cart::get_zone(double *x)
+int grid_3D_cart::get_zone(const double *x) const
 {
   int i = floor((x[0]-x0)/dx);
   int j = floor((x[1]-y0)/dy);
@@ -230,7 +230,7 @@ int grid_3D_cart::get_zone(double *x)
 //------------------------------------------------------------
 // return volume of zone (precomputed)
 //------------------------------------------------------------
-double grid_3D_cart::zone_volume(int i)
+double grid_3D_cart::zone_volume(const int i) const
 {
   return vol;
 }
@@ -240,7 +240,7 @@ double grid_3D_cart::zone_volume(int i)
 // sample a random position within the cubical cell
 //------------------------------------------------------------
 void grid_3D_cart::sample_in_zone
-(int i, std::vector<double> ran,double r[3])
+(const int i, const std::vector<double> ran,double r[3]) const
 {
   r[0] = x0 + (ix[i] + ran[0])*dx;
   r[1] = y0 + (iy[i] + ran[1])*dy;
@@ -251,7 +251,7 @@ void grid_3D_cart::sample_in_zone
 //------------------------------------------------------------
 // return length of zone
 //------------------------------------------------------------
-double  grid_3D_cart::zone_min_length(int i)
+double  grid_3D_cart::zone_min_length(const int i) const
 {
   return min_ds;
 }
@@ -261,7 +261,7 @@ double  grid_3D_cart::zone_min_length(int i)
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void grid_3D_cart::velocity_vector(int i, double x[3], double v[3])
+void grid_3D_cart::velocity_vector(const int i, const double x[3], double v[3]) const
 {
   // may want to interpolate here
   v[0] = z[i].v[0];
@@ -272,7 +272,7 @@ void grid_3D_cart::velocity_vector(int i, double x[3], double v[3])
 //------------------------------------------------------------
 // cell-centered coordinates of zone i
 //------------------------------------------------------------
-void grid_3D_cart::coordinates(int i,double r[3])
+void grid_3D_cart::coordinates(const int i,double r[3]) const
 {
   r[0] = x0 + (ix[i]+0.5)*dx;
   r[1] = y0 + (iy[i]+0.5)*dy;
@@ -283,7 +283,7 @@ void grid_3D_cart::coordinates(int i,double r[3])
 //------------------------------------------------------------
 // Write the grid information out to a file
 //------------------------------------------------------------
-void grid_3D_cart::write_ray(int iw)
+void grid_3D_cart::write_ray(const int iw) const
 {
   char zonefile[1000];
   char base[1000];

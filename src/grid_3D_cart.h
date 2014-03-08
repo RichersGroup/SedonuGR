@@ -31,14 +31,14 @@ public:
   void custom_model(Lua* lua);
 
   // required functions
-  int       get_zone(double *);
-  double    zone_volume(int);
-  double    zone_min_length(int);
-  void      sample_in_zone(int, std::vector<double>, double[3]);
-  void      velocity_vector(int i, double[3], double[3]);
-  void      print();
-  void      coordinates(int i,double r[3]);
-  void      write_ray(int iw);
+  int       get_zone(const double *) const;
+  double    zone_volume(const int) const;
+  double    zone_min_length(const int) const;
+  void      sample_in_zone(const int, const std::vector<double>, double[3]) const;
+  void      velocity_vector(const int i, const double[3], double[3]) const;
+  void      print() const;
+  void      coordinates(const int i,double r[3]) const;
+  void      write_ray(const int iw) const;
 
 };
 
