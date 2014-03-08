@@ -31,8 +31,8 @@ void spectrum_array::set_name(const char *n)
 //--------------------------------------------------------------
 // Initialization and Allocation
 //--------------------------------------------------------------
-void spectrum_array::init(std::vector<double> t, std::vector<double> w,
-			  int n_mu, int n_phi)
+void spectrum_array::init(const std::vector<double> t, const std::vector<double> w,
+			  const int n_mu, const int n_phi)
 {
   // assign time grid
   double t_start = t[0];
@@ -72,8 +72,8 @@ void spectrum_array::init(std::vector<double> t, std::vector<double> w,
 //--------------------------------------------------------------
 // Initialization and Allocation
 //--------------------------------------------------------------
-void spectrum_array::init(locate_array tg, locate_array wg,
-			  locate_array mg, locate_array pg)
+void spectrum_array::init(const locate_array tg, const locate_array wg,
+			  const locate_array mg, const locate_array pg)
 {
   // initialize locate arrays by swapping with the inputs
   time_grid.swap(tg);
@@ -120,7 +120,7 @@ void spectrum_array::wipe()
 // handles the indexing: should be called in this order
 //    time, wavelength, mu, phi
 //--------------------------------------------------------------
-int spectrum_array::index(int t, int l, int m, int p)
+int spectrum_array::index(const int t, const int l, const int m, const int p) const
 {
   return t*a1 + l*a2 + m*a3 + p;
 }
@@ -129,7 +129,7 @@ int spectrum_array::index(int t, int l, int m, int p)
 //--------------------------------------------------------------
 // count a particle
 ////--------------------------------------------------------------
-void spectrum_array::count(double t, double w, double E, double *D)
+void spectrum_array::count(const double t, const double w, const double E, const double *D)
 {
   double mu  = D[2];
   double phi = atan2(D[1],D[0]);
@@ -165,7 +165,7 @@ void spectrum_array::count(double t, double w, double E, double *D)
 //--------------------------------------------------------------
 // print out
 //--------------------------------------------------------------
-void spectrum_array::print()
+void spectrum_array::print() const
 {
   int nprocs, myID;
   MPI_Comm_size( MPI_COMM_WORLD, &nprocs );

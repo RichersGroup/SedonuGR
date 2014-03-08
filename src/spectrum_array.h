@@ -33,7 +33,7 @@ private:
   // Indexing
   int n_elements;
   int a1, a2, a3;
-  int index(int,int,int,int);
+  int index(const int,const int,const int,const int) const;
     
 public:
 
@@ -41,23 +41,22 @@ public:
   spectrum_array();
   
   // Initialize
-  void init(locate_array tg, locate_array wg, locate_array mg, locate_array pg);
-  void init(std::vector<double>,std::vector<double>,int,int);
-  void log_init(std::vector<double>,std::vector<double>,int,int);
+  void init(const locate_array tg, const locate_array wg, const locate_array mg, const locate_array pg);
+  void init(const std::vector<double>,const std::vector<double>,const int,const int);
   void set_name(const char *n);
 
   // MPI functions
   void MPI_average();
   
   // Count a packets
-  void count(double t, double w, double E, double *D);
+  void count(const double t, const double w, const double E, const double *D);
 
   //  void normalize();
-  void rescale(double);
+  void rescale(const double);
   void wipe();
 
   // Print out
-  void print();
+  void print() const;
 };
 
 #endif
