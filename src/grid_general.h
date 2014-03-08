@@ -55,28 +55,28 @@ class grid_general
   void init(Lua* lua);
 
   // write out zone information
-  void write_zones(int iw);
-  virtual void write_ray(int iw) = 0;
+  void write_zones(const int iw) const;
+  virtual void write_ray(const int iw) const = 0;
 
   //****** virtual functions (geometry specific)
 
   // get zone index from x,y,z position
-  virtual int get_zone(double *)   = 0;
+  virtual int get_zone(const double *) const   = 0;
 
   // return volume of zone i
-  virtual double zone_volume(int i)         = 0;
+  virtual double zone_volume(const int i) const         = 0;
 
   // return the smallest length dimension of zone  i
-  virtual double zone_min_length(int i)     = 0;
+  virtual double zone_min_length(const int i) const     = 0;
   
   // randomly sample a position within the zone i
-  virtual void sample_in_zone(int,std::vector<double>,double[3]) = 0;
+  virtual void sample_in_zone(const int,const std::vector<double>,double[3]) const = 0;
   
   // give the velocity vector at this point in zone i
-  virtual void velocity_vector(int i, double[3], double[3]) = 0;
+  virtual void velocity_vector(const int i, const double[3],double[3]) const = 0;
   
   // get the coordinates at the center of the zone i
-  virtual void coordinates(int i,double r[3]) = 0;
+  virtual void coordinates(const int i,double r[3]) const = 0;
 
 };
 

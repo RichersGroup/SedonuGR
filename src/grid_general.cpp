@@ -34,7 +34,7 @@ void grid_general::init(Lua* lua)
 //------------------------------------------------------------
 // Write the grid information out to a file
 //------------------------------------------------------------
-void grid_general::write_zones(int iw)
+void grid_general::write_zones(const int iw) const
 {
   char zonefile[1000];
   char base[1000];
