@@ -103,7 +103,7 @@ void grid_1D_sphere::custom_model(Lua* lua)
 //------------------------------------------------------------
 // Overly simple search to find zone
 //------------------------------------------------------------
-int grid_1D_sphere::get_zone(double *x)
+int grid_1D_sphere::get_zone(const double *x) const
 {
   double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 
@@ -119,7 +119,7 @@ int grid_1D_sphere::get_zone(double *x)
 //------------------------------------------------------------
 // return volume of zone (precomputed)
 //------------------------------------------------------------
-double  grid_1D_sphere::zone_volume(int i)
+double  grid_1D_sphere::zone_volume(const int i) const
 {
   return vol[i];
 }
@@ -128,7 +128,7 @@ double  grid_1D_sphere::zone_volume(int i)
 //------------------------------------------------------------
 // return length of zone
 //------------------------------------------------------------
-double  grid_1D_sphere::zone_min_length(int i)
+double  grid_1D_sphere::zone_min_length(const int i) const
 {
   if (i == 0) return (r_out[i] - r_out.min);
   else return (r_out[i] - r_out[i-1]);
@@ -140,7 +140,7 @@ double  grid_1D_sphere::zone_min_length(int i)
 // sample a random position within the spherical shell
 //------------------------------------------------------------
 void grid_1D_sphere::sample_in_zone
-(int i, std::vector<double> ran, double r[3])
+(const int i, const std::vector<double> ran, double r[3]) const
 {
   // inner radius of shell
   double r1;
@@ -169,7 +169,7 @@ void grid_1D_sphere::sample_in_zone
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void grid_1D_sphere::velocity_vector(int i, double x[3], double v[3])
+void grid_1D_sphere::velocity_vector(const int i, const double x[3], double v[3]) const
 {
   // radius in zone
   double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
@@ -193,7 +193,7 @@ void grid_1D_sphere::velocity_vector(int i, double x[3], double v[3])
 //------------------------------------------------------------
 // Write the grid information out to a file
 //------------------------------------------------------------
-void grid_1D_sphere::write_ray(int iw)
+void grid_1D_sphere::write_ray(const int iw) const
 {
   // this is a 1D grid, so the function is exactly the same
 }
