@@ -6,7 +6,7 @@
 //------------------------------------------------------
 // return the actual y value, not the integrated
 //------------------------------------------------------
-double cdf_array::get_value(int i)   
+double cdf_array::get_value(const int i) const
 {
   if (i==0) return y[0];
   else return (y[i] - y[i-1]);  
@@ -16,7 +16,7 @@ double cdf_array::get_value(int i)
 // set the actual y value, not the integrated
 // must be called in order
 //------------------------------------------------------
-void cdf_array::set_value(int i, double f)   
+void cdf_array::set_value(const int i, const double f)   
 {
   if (i==0) y[0] = f;
   else y[i] = y[i-1] + f;
@@ -42,7 +42,7 @@ void cdf_array::normalize()
 // Returns the index of the first value larger than yval
 // if larger than largest element, returns size
 //---------------------------------------------------------
-int cdf_array::sample(double yval)
+int cdf_array::sample(const double yval) const
 {
   return upper_bound(y.begin(), y.end(), yval) - y.begin();
 }
@@ -51,7 +51,7 @@ int cdf_array::sample(double yval)
 //------------------------------------------------------
 // Simple printout
 //------------------------------------------------------
-void cdf_array::print() {
+void cdf_array::print() const{
   for (int i=0;i<y.size();i++) 
     printf("%5d %10.4e %10.4e\n",i,get_value(i),y[i]);
 }
@@ -67,7 +67,7 @@ void cdf_array::wipe()
 //------------------------------------------------------------
 // just returning the size of the array
 //------------------------------------------------------------
-int cdf_array::size()
+int cdf_array::size() const
 {
   return y.size();
 }
