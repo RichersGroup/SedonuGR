@@ -14,7 +14,7 @@ using namespace std;
 //---------------------------------------------------------
 // Just allocation the memory for this
 //---------------------------------------------------------
-void locate_array::init(int n) 
+void locate_array::init(const int n) 
 {
   x.assign(n,0);
 }
@@ -23,7 +23,7 @@ void locate_array::init(int n)
 // Initialize with start, stop and delta
 // if start==stop make it a catch-all
 //---------------------------------------------------------
-void locate_array::init(double start, double stop, double del)
+void locate_array::init(const double start, const double stop, const double del)
 {
   if(start==stop){
     x.resize(1);
@@ -49,7 +49,7 @@ void locate_array::init(double start, double stop, double del)
 // if start==stop make it a catch-all
 // if n==0 make it a catch-all
 //---------------------------------------------------------
-void locate_array::init(double start, double stop, int n)
+void locate_array::init(const double start, const double stop, const int n)
 {
   if(start==stop || n==0){
     x.resize(1);
@@ -72,7 +72,7 @@ void locate_array::init(double start, double stop, int n)
 //---------------------------------------------------------
 // Initialize with passed vector
 //---------------------------------------------------------
-void locate_array::init(std::vector<double> a, double minval)
+void locate_array::init(const std::vector<double> a, const double minval)
 {
   min = minval;
   do_log_interpolate = 0;
@@ -84,7 +84,7 @@ void locate_array::init(std::vector<double> a, double minval)
 // if off left side of boundary, returns 0
 // if off right side of boundary, returns size
 //---------------------------------------------------------
-int locate_array::locate(double xval)
+int locate_array::locate(const double xval) const
 {
   // upper_bound returns first element greater than xval
   // values mark bin tops, so this is what we want
@@ -95,7 +95,7 @@ int locate_array::locate(double xval)
 //---------------------------------------------------------
 // Linear Interpolation of a passed array
 //---------------------------------------------------------
-double locate_array::interpolate_between(double xval, int i1, int i2, vector<double>& y)
+double locate_array::interpolate_between(const double xval, const int i1, const int i2, const vector<double>& y) const 
 {
   double slope = (y[i2]-y[i1]) / (x[i2]-x[i1]);
   double yval = y[i1] + slope*(xval - x[i1]);
@@ -106,7 +106,7 @@ double locate_array::interpolate_between(double xval, int i1, int i2, vector<dou
 //---------------------------------------------------------
 // Log-Log Interpolation of a passed array
 //---------------------------------------------------------
-double locate_array::log_interpolate_between(double xval, int i1, int i2, vector<double>& y)
+double locate_array::log_interpolate_between(const double xval, const int i1, const int i2, const vector<double>& y) const
 {
   // safeguard against equal opacities
   if(y[i1]==y[i2]) return y[i1];
@@ -124,7 +124,7 @@ double locate_array::log_interpolate_between(double xval, int i1, int i2, vector
 //---------------------------------------------------------
 // sample uniformally in zone
 //---------------------------------------------------------
-double locate_array::sample(int i, double rand)
+double locate_array::sample(const int i, const double rand) const
 {
   if (i == 0) return min    + (x[0] - min   )*rand;
   else return        x[i-1] + (x[i] - x[i-1])*rand;
@@ -133,7 +133,7 @@ double locate_array::sample(int i, double rand)
 //---------------------------------------------------------
 // simple printout
 //---------------------------------------------------------
-void locate_array::print()
+void locate_array::print() const
 {
   printf("# Print Locate Array; n_elements = %lu\n",x.size());
   printf("min %12.4e\n",min);
@@ -147,7 +147,7 @@ void locate_array::print()
 // find the value of y at the locate_array's value of xval
 // assumes 1-1 correspondence between y and locate_array
 //---------------------------------------------------------
-double locate_array::value_at(double xval, vector<double>& y){
+double locate_array::value_at(const double xval, const vector<double>& y) const{
   int ind = locate(xval);
   int i1, i2;
   if(ind == 0){                // If off left side of grid

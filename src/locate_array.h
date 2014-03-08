@@ -21,31 +21,31 @@ public:
   // Return size of array (also, # of bins)
   int size() {return (int)x.size();}
 
-  void init(int);
-  void init(double,double,double);
-  void init(double,double,int);
-  void init(std::vector<double>, double minval);
+  void init(const int);
+  void init(const double,const double,const double);
+  void init(const double,const double,const int);
+  void init(const std::vector<double>, const double minval);
   void swap(locate_array new_array);
 
   // center of the bin left of nu_i
-  double center(int i){
+  double center(const int i) const{
     if (i == 0) return 0.5*(min    + x[0]);
     else        return 0.5*(x[i-1] + x[i]);
   }
 
   // width of the bin left of nu_i
-  double delta(int i){
+  double delta(const int i) const{
     if (i == 0) return x[0] - min;
     else        return x[i] - x[i-1];
   }
 
 
-  int    locate(double);
-  double interpolate_between(double,int,int,std::vector<double>&);
-  double log_interpolate_between(double,int,int,std::vector<double>&);
-  double sample(int, double);
-  void   print();
-  double value_at(double nu, std::vector<double>& array);
+  int    locate(const double) const;
+  double interpolate_between(const double,const int,const int,const std::vector<double>&) const;
+  double log_interpolate_between(const double,const int,const int,const std::vector<double>&) const;
+  double sample(const int, const double) const;
+  void   print() const;
+  double value_at(const double nu, const std::vector<double>& array) const;
 
   // operators for easy access
   double& operator[] (const int i) {return x[i];};
