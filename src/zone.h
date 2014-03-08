@@ -19,7 +19,7 @@ public:
   real p_gas;           // gas pressure
   real e_gas;           // gas energy density per gram
   real E_gas;           // gas total energy
-  real T_gas;           // gas temperature
+  real T_gas;           // gas temperature (K)
   real Ye;              // electron fraction
 
   // store other parameters
