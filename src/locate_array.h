@@ -19,7 +19,7 @@ public:
   locate_array(int n) {init(n);}
 
   // Return size of array (also, # of bins)
-  int size() {return (int)x.size();}
+  int size() const {return (int)x.size();}
 
   void init(const int);
   void init(const double,const double,const double);
