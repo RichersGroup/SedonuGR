@@ -68,7 +68,14 @@ void transport::solve_eq_zone_values()
     }
 
     // warn if it didn't converge
-    if(iter == brent_itmax) cout << "# WARNING: outer Brent solver hit maximum iterations. (zone:" << i << " processor:" << MPI_myID << " thread:" << omp_get_thread_num() << ")" << endl;
+    if(iter == brent_itmax){
+      cout << "# WARNING: outer Brent solver hit maximum iterations. (zone:" << i;
+      cout << " processor:" << MPI_myID;
+      #ifdef _OPENMP_
+      cout << " thread:" << omp_get_thread_num();
+      #endif
+      cout << ")" << endl;
+    }
 
     // damp the oscillations between steps, ensure that it's within the allowed boundaries
     if(damping>0)
