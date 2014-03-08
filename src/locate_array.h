@@ -48,7 +48,8 @@ public:
   double value_at(const double nu, const std::vector<double>& array) const;
 
   // operators for easy access
-  double& operator[] (const int i) {return x[i];};
+  double  operator[] (const int i) const {return x[i];};
+  double& operator[] (const int i)       {return x[i];};
   void resize(int i) {x.resize(i);};
 };
 
