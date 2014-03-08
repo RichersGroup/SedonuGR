@@ -112,7 +112,6 @@ void transport::init(Lua* lua)
   if (verbose){
     cout << "# mass = " << mass << " g" <<endl;
     cout << "# KE = " << KE << " erg" << endl;
-    if(do_heat)  cout << "# L_heat = "  << (radiative_eq ? 0 : therm_lum)  << " erg/s" << endl;
     if(do_visc)  cout << "# L_visc = "  << (radiative_eq ? therm_lum : 0)  << " erg/s" << endl;
     if(do_decay) cout << "# L_decay = " << decay_lum                       << " erg/s" << endl;
   }
@@ -248,10 +247,10 @@ void transport::init(Lua* lua)
 //------------------------------------------------------------
 // take a transport time step 
 //------------------------------------------------------------
-void transport::step(double dt)
+void transport::step(const double dt)
 {
   // nominal time for iterative calc is 1
-  if (iterate) dt = 1;
+  //if (iterate) dt = 1;
   
   // calculate the zone eas variables
   #pragma omp parallel for collapse(2)
@@ -309,7 +308,7 @@ void transport::step(double dt)
 //----------------------------------------------------------------------------
 // sum up the number of particles in all species
 //----------------------------------------------------------------------------
-int transport::total_particles(){
+int transport::total_particles() const{
   return particles.size();
 }
 
@@ -319,7 +318,7 @@ int transport::total_particles(){
 // species to determine the species of a new particle
 // emitted from the core
 //----------------------------------------------------------------------------
-int transport::sample_core_species()
+int transport::sample_core_species() const
 {
   // randomly sample the species (precomputed CDF)
   double z = rangen.uniform();
@@ -336,7 +335,7 @@ int transport::sample_core_species()
 // note: could store a zone_species_cdf structure in transport,
 // but this would use more memory. Here, trading CPU cycles for 
 // memory. If we are CPU limited, we could change this
-int transport::sample_zone_species(int zone_index)
+int transport::sample_zone_species(const int zone_index) const
 {
   cdf_array species_cdf;
   double integrated_emis;

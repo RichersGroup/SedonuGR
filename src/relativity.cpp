@@ -54,7 +54,7 @@ void lorentz_transform(particle* p, const double (&v_rel)[3]){
 // get the doppler shift when moving from frame_to_frame
 // does not change any particle properties
 //------------------------------------------------------------
-double transport::dshift_comoving_to_lab(particle* p)
+double transport::dshift_comoving_to_lab(particle* p) const
 {
   double v[3];
   grid->velocity_vector(p->ind,p->x,v); // v_comoving - v_lab
@@ -70,7 +70,7 @@ double transport::dshift_comoving_to_lab(particle* p)
   return doppler_shift(gamma, vdd);
 }
 
-double transport::dshift_lab_to_comoving(particle* p)
+double transport::dshift_lab_to_comoving(particle* p) const
 {
   double v[3];
   grid->velocity_vector(p->ind,p->x,v); // v_comoving - v_lab
@@ -88,7 +88,7 @@ double transport::dshift_lab_to_comoving(particle* p)
 // do a lorentz transformation; modifies the energy, frequency
 // and direction vector of the particle
 //------------------------------------------------------------
-void transport::transform_comoving_to_lab(particle* p)
+void transport::transform_comoving_to_lab(particle* p) const
 {
   double v[3];
   grid->velocity_vector(p->ind,p->x,v); // v_comoving - v_lab
@@ -102,7 +102,7 @@ void transport::transform_comoving_to_lab(particle* p)
   lorentz_transform(p,v);
 }
 
-void transport::transform_lab_to_comoving(particle* p)
+void transport::transform_lab_to_comoving(particle* p) const
 {
   double v[3];
   grid->velocity_vector(p->ind,p->x,v); // v_comoving - v_lab

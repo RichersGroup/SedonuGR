@@ -36,22 +36,22 @@ private:
   void create_surface_particle(double Ep, double t);
   void create_thermal_particle(int zone_index, double Ep, double t);
   void create_decay_particle(int zone_index, double Ep, double t);
-  int sample_core_species();
-  int sample_zone_species(int zone_index);
-  double zone_visc_heat_rate(int zone_index);
-  double zone_heat_lum(int zone_index);
-  double zone_decay_lum(int zone_index);
+  int sample_core_species() const;
+  int sample_zone_species(int zone_index) const;
+  double zone_visc_heat_rate(int zone_index) const;
+  double zone_heat_lum(int zone_index) const;
+  double zone_decay_lum(int zone_index) const;
 
   // transformation functions
-  double dshift_comoving_to_lab   (particle* p);
-  double dshift_lab_to_comoving   (particle* p);
-  void   transform_comoving_to_lab(particle* p);
-  void   transform_lab_to_comoving(particle* p);
+  double dshift_comoving_to_lab   (particle* p) const;
+  double dshift_lab_to_comoving   (particle* p) const;
+  void   transform_comoving_to_lab(particle* p) const;
+  void   transform_lab_to_comoving(particle* p) const;
 
   // propagate the particles
-  void propagate_particles(double dt);
-  void propagate(particle* p, double dt);
-  void isotropic_scatter(particle* p, int redistribute);
+  void propagate_particles(const double dt);
+  void propagate(particle* p, const double dt) const;
+  void isotropic_scatter(particle* p, const int redistribute) const;
 
   // solve for temperature and Ye
   int    solve_T;
@@ -60,7 +60,7 @@ private:
   int    brent_itmax;
   double brent_solve_tolerance;
   void   solve_eq_zone_values();
-  double brent_method(int zone_index, double (*eq_function)(int,double,transport*), double min, double max);
+  double brent_method(const int zone_index, double (*eq_function)(int,double,transport*), const double min, const double max);
 
   // stored minimum and maximum values to assure safety
   double T_min,  T_max;
@@ -103,14 +103,14 @@ public:
   double L_net;
 
   // random number generator
-  thread_RNG rangen;
+  mutable thread_RNG rangen;
 
   // set things up
   void   init(Lua* lua);
 
   // in-simulation functions to be used by main
-  void   step(double dt);
-  int    total_particles();
+  void   step(const double dt);
+  int    total_particles() const;
 };
 
 #endif

@@ -11,7 +11,7 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 // physics of isotropic scattering
 //------------------------------------------------------------
-void transport::isotropic_scatter(particle* p, int redistribute)
+void transport::isotropic_scatter(particle* p, const int redistribute) const
 {
 
   // get doppler shift from lab to comoving frame

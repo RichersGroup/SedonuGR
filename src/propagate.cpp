@@ -11,7 +11,7 @@
 namespace pc = physical_constants;
 
 
-void transport::propagate_particles(double dt)
+void transport::propagate_particles(const double dt)
 {
   vector<int> n_active(species_list.size(),0);
   vector<int> n_escape(species_list.size(),0);
@@ -85,7 +85,7 @@ void transport::propagate_particles(double dt)
 // Propagate a single monte carlo particle until
 // it  escapes, is absorbed, or the time step ends
 //--------------------------------------------------------
-void transport::propagate(particle* p, double dt)
+void transport::propagate(particle* p, const double dt) const
 {
   enum ParticleEvent {scatter, boundary, tstep};
   ParticleEvent event;

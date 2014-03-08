@@ -11,7 +11,7 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 // Initialize a constant number of particles in each zone
 //------------------------------------------------------------
-void transport::initialize_particles(int init_particles){
+void transport::initialize_particles(const int init_particles){
   if (verbose) cout << "# initializing with " << init_particles << " particle per zone\n";
 
   #pragma omp parallel for
@@ -26,7 +26,7 @@ void transport::initialize_particles(int init_particles){
 //------------------------------------------------------------
 // emit new particles
 //------------------------------------------------------------
-void transport::emit_particles(double dt)
+void transport::emit_particles(const double dt)
 {
   int old_size = particles.size();
   L_net = 0; // re-summed in emission routines
@@ -53,7 +53,7 @@ void transport::emit_particles(double dt)
 // Currently written to emit photons with 
 // blackblody spectrum based on T_core and L_core
 //------------------------------------------------------------
-void transport::emit_inner_source(double dt)
+void transport::emit_inner_source(const double dt)
 {
   const double Ep  = L_core*dt/n_emit_core;
   L_net += L_core;
@@ -69,13 +69,14 @@ void transport::emit_inner_source(double dt)
 //--------------------------------------------------------------------------
 // emit particles from the zones due to non-radiation heating
 //--------------------------------------------------------------------------
-void transport::emit_zones(double dt)
+void transport::emit_zones(const double dt)
 {
   int gridsize = grid->z.size(); 
   double therm_lum = 0;
   double decay_lum = 0;
   double Ep_decay, Ep_therm;
-  
+  int asdfindex = 230400;
+
   // at this point therm means either viscous heating or regular emission, according to the logic above
   #pragma omp parallel
   {
@@ -83,6 +84,11 @@ void transport::emit_zones(double dt)
     // determine the net luminosity of each emission type over the whole grid
     #pragma omp for reduction(+:therm_lum,decay_lum)
     for(int i=0; i<gridsize; i++){
+      if(i==asdfindex){
+	cout << (radiative_eq ? zone_visc_heat_rate(asdfindex) : zone_heat_lum(asdfindex)) << endl;// TODO delete test
+	cout << (radiative_eq ? zone_visc_heat_rate(asdfindex) : 0 /*zone_heat_lum(asdfindex)*/) << endl;// TODO delete test
+	cout << (radiative_eq ? zone_visc_heat_rate(asdfindex) : zone_heat_lum(asdfindex)) << endl;// TODO delete test
+      }
       if(do_therm) therm_lum += ( radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
       if(do_decay) decay_lum += zone_decay_lum(i);
     }
@@ -90,13 +96,16 @@ void transport::emit_zones(double dt)
     // store the variables in transport and set the particle energy
     #pragma omp single
     {
+      if(do_therm && !radiative_eq) cout << "L_therm = " << therm_lum << endl;
       L_net += therm_lum + decay_lum;
       if(do_therm) Ep_therm = therm_lum*dt / (double)n_emit_therm;
       if(do_decay) Ep_decay = decay_lum*dt / (double)n_emit_decay;
+      cout << (radiative_eq ? zone_visc_heat_rate(asdfindex) : zone_heat_lum(asdfindex)) << endl;// TODO delete test
     }
     
     // create particles in each grid cell
     #pragma omp for schedule(guided)
+    double asdf=0;
     for (int i=0; i<gridsize; i++)
     {
 
@@ -104,8 +113,12 @@ void transport::emit_zones(double dt)
       if(do_therm && therm_lum>0){
 	// this zone's luminosity and number of emitted particles.
 	// randomly decide whether last particle gets added based on the remainder.
+	if(i==asdfindex){
+	  cout << (radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i)) << endl;// TODO delete test
+	}
 	double this_L  = ( radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
 	double tmp  = (double)n_emit_therm * this_L/therm_lum;
+	asdf += fmod(tmp,1.0);
 	int this_n_emit = (int)tmp + (int)( rangen.uniform() < fmod(tmp,1.0) );
 
 	// add heat absorbed to tally of e_abs
@@ -120,7 +133,6 @@ void transport::emit_zones(double dt)
 	  create_thermal_particle(i,Ep_therm,t);
 	}
       }
-
 
       // EMIT DECAY PARTICLES ===========================================================
       if(do_decay && decay_lum>0){
@@ -138,6 +150,7 @@ void transport::emit_zones(double dt)
       }
 
     }//loop over zones  
+    cout << "asdf = " << asdf << endl;
   }//#pragma omp parallel
 }
 
@@ -147,12 +160,12 @@ void transport::emit_zones(double dt)
 //----------------------------------------------------------------------------------------
 
 // rate at which viscosity energizes the fluid (erg/s)
-double transport::zone_visc_heat_rate(int zone_index){
+double transport::zone_visc_heat_rate(const int zone_index) const{
   return visc_specific_heat_rate * grid->z[zone_index].rho * grid->zone_volume(zone_index);
 }
 
 // return the cell's luminosity from thermal emission (erg/s)
-double transport::zone_heat_lum(int zone_index){
+double transport::zone_heat_lum(const int zone_index) const{
   double H;
   for(int i=0; i<species_list.size(); i++)
     H += species_list[i]->int_zone_emis(zone_index) * 4*pc::pi * grid->zone_volume(zone_index);
@@ -160,7 +173,7 @@ double transport::zone_heat_lum(int zone_index){
 }
 
 // return the total decay luminosity from the cell (erg/s)
-double transport::zone_decay_lum(int zone_index){
+double transport::zone_decay_lum(const int zone_index) const{
   if(verbose) cout << "WARNING: emission in zones from decay is not yet implemented!" << endl;
   return 0;
 }
@@ -172,7 +185,7 @@ double transport::zone_decay_lum(int zone_index){
 // Useful for thermal radiation emitted all througout
 // the grid
 //------------------------------------------------------------
-void transport::create_thermal_particle(int zone_index, double Ep, double t)
+void transport::create_thermal_particle(const int zone_index, const double Ep, const double t)
 {
   // basic particle properties
   particle p;
@@ -217,7 +230,7 @@ void transport::create_thermal_particle(int zone_index, double Ep, double t)
 // General function to create a particle on the surface
 // emitted isotropically outward in the comoving frame. 
 //------------------------------------------------------------
-void transport::create_surface_particle(double Ep, double t)
+void transport::create_surface_particle(const double Ep, const double t)
 {
   // set basic properties
   particle p;
@@ -273,7 +286,7 @@ void transport::create_surface_particle(double Ep, double t)
 //------------------------------------------------------------
 // General function to create a particle from radioactive decay
 //------------------------------------------------------------
-void transport::create_decay_particle(int zone_index, double Ep, double t)
+void transport::create_decay_particle(const int zone_index, const double Ep, const double t)
 {
   if(verbose) cout << "WARNING: transport::create_decay_particle is not yet implemented!" << endl;
 }
