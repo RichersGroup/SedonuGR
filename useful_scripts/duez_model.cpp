@@ -8,7 +8,7 @@
 const int nx = 80;
 const int ny = 80;
 const int nz = 36;
-const double xmin = -100.;
+const double xmin = -100.; // in solar masses
 const double ymin = -100.;
 const double zmin = 0;
 const double xmax = 100.;
@@ -23,6 +23,7 @@ const double M_sun = 1.989e33;        // solar mass (g)
 const double G     = 6.67259e-8;      // gravitational constant (cm^3/g/s^2)
 const double c     = 2.99792458e10;   // speed of light (cm/s)
 const double k_MeV = 8.6173324e-11;   // boltzmann constant (Mev/K)
+const double M_to_cm = 1.477e5;       // convert from solar masses (natural units) to cm
 
 using namespace std;
 
@@ -44,9 +45,9 @@ int main(int argc, char* argv[]){
   out_mod << "GRB" << endl;
   out_mod << nx << " " << ny << " " << nz << endl;
   out_mod << reflect_x << " " << reflect_y << " " << reflect_z << endl;
-  out_mod << xmin << " " << xmax << endl;
-  out_mod << ymin << " " << ymax << endl;
-  out_mod << zmin << " " << zmax << endl;
+  out_mod << xmin*M_to_cm << " " << xmax*M_to_cm << endl;
+  out_mod << ymin*M_to_cm << " " << ymax*M_to_cm << endl;
+  out_mod << zmin*M_to_cm << " " << zmax*M_to_cm << endl;
 
   // first line is time - can ignore
   double trash;
@@ -60,7 +61,7 @@ int main(int argc, char* argv[]){
 
     // convert units to CGS
     vals[0] *= pow(c,6)/ pow(G,3) / pow(M_sun,2);
-    vals[1] /= k_MeV;
+    vals[1] *= 1./k_MeV;
     vals[3] *= c;
     vals[4] *= c;
     vals[5] *= c;
