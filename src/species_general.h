@@ -54,21 +54,21 @@ class species_general
   void init(Lua* lua, transport* sim);
 
   // return the emissivity integrated over frequency at the core
-  double int_core_emis(); //(erg/s)
+  double int_core_emis() const; //(erg/s)
 
   // return the emissivity integrated over frequency at a zone
-  double int_zone_emis(int zone_index);        //(erg/s/cm^3/ster)
-  double int_zone_lepton_emis(int zone_index); //unitless
+  double int_zone_emis(const int zone_index) const;        //(erg/s/cm^3/ster)
+  double int_zone_lepton_emis(const int zone_index) const; //unitless
 
   // return the frequency of a particle emitted from the core (Hz)
-  double sample_core_nu();
+  double sample_core_nu() const;
 
   // return the frequency of a particle emitted from a zone (Hz)
-  double sample_zone_nu(int zone_index);
+  double sample_zone_nu(const int zone_index) const;
 
   // set the emissivity, absorption opacity, and scattering opacity
-  virtual void set_eas(int zone_index) = 0;
-  void get_opacity(particle* p, double dshift, double* opac, double* abs_frac);
+  virtual void set_eas(const int zone_index) = 0;
+  void get_opacity(const particle* p, const double dshift, double* opac, double* abs_frac) const;
 
   // min and max values for the Brent solver
   double T_min,  T_max; //(K)

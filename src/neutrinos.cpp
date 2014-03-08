@@ -120,7 +120,7 @@ void neutrinos::set_eas(int zone_index)
 // Calculate the fermi-dirac function (erg/s/cm^2/Hz/ster)
 // (normalized to 1, not total luminosity)
 //-----------------------------------------------------------------
-double neutrinos::fermi_dirac(double T, double chem_pot, double nu)
+double neutrinos::fermi_dirac(const double T, const double chem_pot, const double nu) const
 {
 	double zeta = (pc::h*nu - chem_pot)/pc::k/T;
 	return 1.0 / (exp(zeta) + 1);

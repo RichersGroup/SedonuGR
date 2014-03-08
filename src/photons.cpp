@@ -117,10 +117,10 @@ void photons::set_eas(int zone_index)
 // Klein_Nishina correction to the Compton cross-section
 // assumes energy x is in MeV
 //-----------------------------------------------------------------
-double photons::klein_nishina(double x)
+double photons::klein_nishina(const double x_input) const
 {
   // divide by m_e c^2 = 0.511 MeV
-  x = x/pc::m_e_MeV;
+  double x = x_input/pc::m_e_MeV;
   double logfac = log(1 + 2*x);
   double term1 = (1+x)/x/x/x*(2*x*(1+x)/(1+2*x) - logfac);
   double term2 = 1.0/2.0/x*logfac;
@@ -130,7 +130,7 @@ double photons::klein_nishina(double x)
 }
 
 // calculate planck function (erg/s/cm^2/Hz/ster)
-double photons::planck(double T, double nu)
+double photons::planck(const double T, const double nu) const
 {
   double zeta = pc::h*nu/pc::k/T;
   return 2.0*nu*nu*nu*pc::h/pc::c/pc::c/(exp(zeta)-1);

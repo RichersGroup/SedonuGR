@@ -5,7 +5,7 @@
 //-----------------------------------------------------------------
 // get opacity at the frequency
 //-----------------------------------------------------------------
-void species_general::get_opacity(particle* p, double dshift, double* opac, double* abs_frac)
+void species_general::get_opacity(const particle* p, const double dshift, double* opac, double* abs_frac) const
 {
   // comoving frame frequency
   double nu = p->nu*dshift;

@@ -10,8 +10,8 @@ class photons: public species_general
 protected:
 
   // photon-specific functions
-  double klein_nishina(double);
-  double planck(double T, double nu); // (erg/s/cm^2/Hz/ster)
+  double klein_nishina(const double) const;
+  double planck(const double T, const double nu) const; // (erg/s/cm^2/Hz/ster)
   void compton_scatter();
 
 public:

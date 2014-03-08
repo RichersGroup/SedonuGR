@@ -21,7 +21,7 @@ class neutrinos: public species_general
   void set_eas(int zone_index);
 
   // other functions
-  double fermi_dirac(double T, double chem_pot, double nu); //(unitless)
+  double fermi_dirac(const double T, const double chem_pot, const double nu) const; //(unitless)
 };
 
 #endif
