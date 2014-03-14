@@ -32,14 +32,14 @@ private:
   void emit_particles(double dt);
   void emit_inner_source(double dt);
   void emit_zones(double dt);
-  void initialize_particles(int init_particles);
+  //void initialize_particles(int init_particles);
   void create_surface_particle(double Ep, double t);
   void create_thermal_particle(int zone_index, double Ep, double t);
   void create_decay_particle(int zone_index, double Ep, double t);
   int sample_core_species() const;
   int sample_zone_species(int zone_index) const;
   double zone_visc_heat_rate(int zone_index) const;
-  double zone_heat_lum(int zone_index) const;
+  double zone_therm_lum(int zone_index) const;
   double zone_decay_lum(int zone_index) const;
 
   // transformation functions
@@ -88,14 +88,13 @@ public:
   grid_general *grid;
 
   // items for core emission
-  bool do_core;
   double r_core;
   double L_core;
   int n_emit_core;
   cdf_array core_species_cdf;
 
   // items for zone emission
-  bool do_therm, do_decay;
+  int do_visc;
   int n_emit_therm, n_emit_decay;
   double visc_specific_heat_rate;
 

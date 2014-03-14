@@ -36,11 +36,10 @@ void transport::init(Lua* lua)
 
   // read simulation parameters
   radiative_eq  = lua->scalar<int>("radiative_eq");
-  iterate       = lua->scalar<int>("iterate");
-  step_size     = lua->scalar<double>("step_size");
-  damping       = lua->scalar<double>("damping");
   solve_T       = lua->scalar<int>("solve_T");
   solve_Ye      = lua->scalar<int>("solve_Ye");
+  step_size     = lua->scalar<double>("step_size");
+  damping       = lua->scalar<double>("damping");
   do_photons    = lua->scalar<int>("do_photons");
   do_neutrinos  = lua->scalar<int>("do_neutrinos");
   if(solve_T || solve_Ye){
@@ -48,34 +47,12 @@ void transport::init(Lua* lua)
     brent_solve_tolerance = lua->scalar<double>("brent_tolerance");
   }
 
-  // figure out what zone emission models we're using
-  int n_emit_heat  = lua->scalar<int>("n_emit_heat");
-  int n_emit_visc  = lua->scalar<int>("n_emit_visc");
-  bool do_heat     = n_emit_heat  > 0;
-  bool do_visc     = n_emit_visc  > 0;
-  do_therm         = ( radiative_eq ? do_visc     : do_heat     );
-  n_emit_therm     = ( radiative_eq ? n_emit_visc : n_emit_heat );
-
-  n_emit_decay     = lua->scalar<int>("n_emit_decay");
-  do_decay         = n_emit_decay > 0;
-
-  n_emit_core      = lua->scalar<int>("n_emit_core");
-  do_core          = n_emit_core>0;
-
-  // complain if the parameters don't make sense together
-  if(n_emit_visc>0) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");
-  if(do_heat && do_visc){
-    cout << "ERROR: n_emit_heat and n_emit_visc cannot both be greater than 0." << endl;
-    exit(1);
-  }
-  if(do_heat && radiative_eq){
-    cout << "ERROR: n_emit_heat requires that radiative_eq==0" << endl;
-    exit(1);
-  }
-  if(do_visc && !radiative_eq){
-    cout << "ERROR: n_emit_visc requires that radiative_eq==1" << endl;
-    exit(1);
-  }
+  // figure out what emission models we're using
+  n_emit_core  = lua->scalar<int>("n_emit_core");
+  n_emit_decay = lua->scalar<int>("n_emit_decay");
+  n_emit_therm = lua->scalar<int>("n_emit_therm");
+  do_visc      = lua->scalar<int>("do_visc");
+  if(do_visc) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");
 
   // Reserve all the memory we might need right now. Speeds up particle additions.
   max_particles = lua->scalar<int>("max_particles");
@@ -100,21 +77,16 @@ void transport::init(Lua* lua)
   // calculate integrated quantities to check
   double mass = 0.0;
   double KE   = 0.0;
-  double therm_lum=0, decay_lum=0;
-  #pragma omp parallel for reduction(+:mass,KE,therm_lum,decay_lum)
+  #pragma omp parallel for reduction(+:mass,KE)
   for (int i=0;i<grid->z.size();i++){
     double my_mass = grid->z[i].rho * grid->zone_volume(i);
     double* v = grid->z[i].v;
     mass      += my_mass;
     KE        += 0.5 * my_mass * (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-    if(do_therm) therm_lum += ( radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
-    if(do_decay) decay_lum += zone_decay_lum(i);
   }
   if (verbose){
     cout << "# mass = " << mass << " g" <<endl;
     cout << "# KE = " << KE << " erg" << endl;
-    if(do_visc)  cout << "# L_visc = "  << (radiative_eq ? therm_lum : 0)  << " erg/s" << endl;
-    if(do_decay) cout << "# L_decay = " << decay_lum                       << " erg/s" << endl;
   }
 
   //===============//
@@ -216,8 +188,8 @@ void transport::init(Lua* lua)
 
   // scatter initial particles in the simulation area
   // don't initialize them if iterative calculation. They all come from the core.
-  int init_particles = lua->scalar<int>("init_particles");
-  if(!iterate) initialize_particles(init_particles);
+  // int init_particles = lua->scalar<int>("init_particles");
+  // if(!iterate) initialize_particles(init_particles);
 
 
   //=================//
@@ -225,7 +197,7 @@ void transport::init(Lua* lua)
   //=================//
   // the core temperature is used only in setting its emis vector
   // so it's looked at only in species::myInit()
-  if(do_core){
+  if(n_emit_core > 0){
     r_core      = lua->scalar<double>("r_core");
     L_core      = lua->scalar<double>("L_core");
     core_species_cdf.resize(species_list.size());
@@ -237,9 +209,6 @@ void transport::init(Lua* lua)
     r_core = 0;
     L_core = 0;
   }
-
-  // set the net luminosity
-  L_net = L_core + therm_lum + decay_lum;
 }
 
 
@@ -251,8 +220,6 @@ void transport::init(Lua* lua)
 void transport::step(const double dt)
 {
   assert(dt>0);
-  // nominal time for iterative calc is 1
-  //if (iterate) dt = 1;
   
   // calculate the zone eas variables
   #pragma omp parallel for collapse(2)
@@ -260,17 +227,27 @@ void transport::step(const double dt)
     for(int j=0; j<grid->z.size(); j++)
       species_list[i]->set_eas(j);
 
-  // clear the tallies of the radiation quantities in each zone
-  #pragma omp parallel for
-  for (int i=0;i<grid->z.size();i++) 
+  // prepare zone quantities for another round of transport
+  double net_visc_heating = 0;
+  #pragma omp parallel for reduction(+:net_visc_heating)
+  for (int i=0;i<grid->z.size();i++)
   {
+    // clear the tallies of the radiation quantities in each zone
     grid->z[i].e_rad    = 0;
-    grid->z[i].e_abs    = 0;
     grid->z[i].f_rad[0] = 0;
     grid->z[i].f_rad[1] = 0;
     grid->z[i].f_rad[2] = 0;
     grid->z[i].l_abs    = 0;
+    grid->z[i].e_abs    = 0;
+
+    // set the net luminosity (to be recalculated by emission routines)
+    L_net = 0;
+
+    // add heat absorbed from viscosity to tally of e_abs
+    grid->z[i].e_abs += dt * zone_visc_heat_rate(i);
+    net_visc_heating += zone_visc_heat_rate(i);
   }
+  cout << "Viscous heating: " << net_visc_heating << " erg/s" << endl;
 
   // emit new particles
   emit_particles(dt);
@@ -301,7 +278,7 @@ void transport::step(const double dt)
   if(MPI_nprocs>1) synchronize_gas();
 
   // advance time step
-  if (!iterate) t_now += dt;
+  // if (!iterate) t_now += dt;
 }
 
 
@@ -427,3 +404,10 @@ void transport::synchronize_gas()
     }
   }
 }
+
+
+// rate at which viscosity energizes the fluid (erg/s)
+double transport::zone_visc_heat_rate(const int zone_index) const{
+  return visc_specific_heat_rate * grid->z[zone_index].rho * grid->zone_volume(zone_index);
+}
+

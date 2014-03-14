@@ -11,16 +11,16 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 // Initialize a constant number of particles in each zone
 //------------------------------------------------------------
-void transport::initialize_particles(const int init_particles){
-  if (verbose) cout << "# initializing with " << init_particles << " particle per zone\n";
+// void transport::initialize_particles(const int init_particles){
+//   if (verbose) cout << "# initializing with " << init_particles << " particle per zone\n";
 
-  #pragma omp parallel for
-  for (int i=0;i<grid->z.size();i++){
-    double E_zone = grid->z[i].e_rad*grid->zone_volume(i);  // lab frame energy
-    double Ep = E_zone/init_particles;                      // particle energy
-    for (int q=0;q<init_particles;q++) create_thermal_particle(i,Ep,t_now);
-  }
-}
+//   #pragma omp parallel for
+//   for (int i=0;i<grid->z.size();i++){
+//     double E_zone = grid->z[i].e_rad*grid->zone_volume(i);  // lab frame energy
+//     double Ep = E_zone/init_particles;                      // particle energy
+//     for (int q=0;q<init_particles;q++) create_thermal_particle(i,Ep,t_now);
+//   }
+// }
 
 
 //------------------------------------------------------------
@@ -29,7 +29,6 @@ void transport::initialize_particles(const int init_particles){
 void transport::emit_particles(const double dt)
 {
   int old_size = particles.size();
-  L_net = 0; // re-summed in emission routines
 
   // complain if we're out of room for particles
   int n_emit = n_emit_core + n_emit_therm + n_emit_decay;
@@ -39,8 +38,8 @@ void transport::emit_particles(const double dt)
   }
 
   // emit from the core and/or the zones
-  if(do_core) emit_inner_source(dt);
-  if(do_therm || do_decay) emit_zones(dt);
+  if(n_emit_core>0) emit_inner_source(dt);
+  if(n_emit_therm>0 || n_emit_decay>0) emit_zones(dt);
 
   // print how many particles were added to the system
   int new_size = particles.size();
@@ -72,28 +71,34 @@ void transport::emit_inner_source(const double dt)
 void transport::emit_zones(const double dt)
 {
   int gridsize = grid->z.size(); 
-  double therm_lum = 0;
-  double decay_lum = 0;
-  double Ep_decay=0., Ep_therm=0.;
+  double net_therm_lum = 0;
+  double net_decay_lum = 0;
+  double Ep_decay=0.;
+  double Ep_therm=0.;
 
   // at this point therm means either viscous heating or regular emission, according to the logic above
   #pragma omp parallel
   {
-
     // determine the net luminosity of each emission type over the whole grid
-    #pragma omp for reduction(+:therm_lum,decay_lum)
+    #pragma omp for reduction(+:net_therm_lum,net_decay_lum)
     for(int i=0; i<gridsize; i++){
-      if(do_therm) therm_lum += ( radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
-      if(do_decay) decay_lum += zone_decay_lum(i);
+      if(n_emit_therm>0) net_therm_lum += zone_therm_lum(i);
+      if(n_emit_decay>0) net_decay_lum += zone_decay_lum(i);
     }
 
     // store the variables in transport and set the particle energy
     #pragma omp single
     {
-      if(do_therm && !radiative_eq) cout << "L_therm = " << therm_lum << endl;
-      L_net += therm_lum + decay_lum;
-      if(do_therm) Ep_therm = therm_lum*dt / (double)n_emit_therm;
-      if(do_decay) Ep_decay = decay_lum*dt / (double)n_emit_decay;
+      if(n_emit_therm>0){
+	cout << "L_therm = " << net_therm_lum << " erg/s" << endl;
+	Ep_therm = net_therm_lum*dt / (double)n_emit_therm;
+	L_net += net_therm_lum;
+      }
+      if(n_emit_decay>0){
+	cout << "L_decay = " << net_decay_lum << " erg/s" << endl;
+	Ep_decay = net_decay_lum*dt / (double)n_emit_decay;
+	L_net += net_decay_lum;
+      }
     }
     
     // create particles in each grid cell
@@ -102,17 +107,11 @@ void transport::emit_zones(const double dt)
     {
 
       // EMIT THERMAL PARTICLES =========================================================
-      if(do_therm && therm_lum>0){
+      if(n_emit_therm>0 && net_therm_lum>0){
 	// this zone's luminosity and number of emitted particles.
 	// randomly decide whether last particle gets added based on the remainder.
-	double this_L  = ( radiative_eq ? zone_visc_heat_rate(i) : zone_heat_lum(i) );
-	double tmp  = (double)n_emit_therm * this_L/therm_lum;
-	int this_n_emit = (int)tmp + (int)( rangen.uniform() < fmod(tmp,1.0) );
-
-	// add heat absorbed to tally of e_abs
-	// really, this is "the gas absorbs energy from heating, then emits radiation"
-	// hence, this is only done if we assume radiative equilibrium
-	if(radiative_eq) grid->z[i].e_abs += dt * this_L;
+	double almost_n_emit  = (double)n_emit_therm * zone_therm_lum(i)/net_therm_lum;
+	int this_n_emit = (int)almost_n_emit + (int)( rangen.uniform() < fmod(almost_n_emit,1.0) );
 
 	// create the particles
 	double t;
@@ -123,11 +122,11 @@ void transport::emit_zones(const double dt)
       }
 
       // EMIT DECAY PARTICLES ===========================================================
-      if(do_decay && decay_lum>0){
+      if(n_emit_decay>0 && net_decay_lum>0){
 	// this zone's luminosity and number of emitted particles
-	double this_L = zone_decay_lum(i);
-	double tmp  = (double)n_emit_decay * this_L/decay_lum;
-	int this_n_emit = (int)tmp + (int)( rangen.uniform() < fmod(tmp,1.0) );
+	// randomly decide whether last particle gets added based on the remainder.
+	double almost_n_emit  = (double)n_emit_decay * zone_decay_lum(i)/net_decay_lum;
+	int this_n_emit = (int)almost_n_emit + (int)( rangen.uniform() < fmod(almost_n_emit,1.0) );
 
 	// create the particles
 	double t;
@@ -146,13 +145,8 @@ void transport::emit_zones(const double dt)
 // Helper functions for emit_zones
 //----------------------------------------------------------------------------------------
 
-// rate at which viscosity energizes the fluid (erg/s)
-double transport::zone_visc_heat_rate(const int zone_index) const{
-  return visc_specific_heat_rate * grid->z[zone_index].rho * grid->zone_volume(zone_index);
-}
-
 // return the cell's luminosity from thermal emission (erg/s)
-double transport::zone_heat_lum(const int zone_index) const{
+double transport::zone_therm_lum(const int zone_index) const{
   double H=0;
   for(int i=0; i<species_list.size(); i++)
     H += species_list[i]->int_zone_emis(zone_index) * 4*pc::pi * grid->zone_volume(zone_index);

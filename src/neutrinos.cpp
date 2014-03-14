@@ -69,14 +69,14 @@ void neutrinos::myInit(Lua* lua)
   emis.resize(sim->grid->z.size());
 
   // now allocate space for each eas spectrum
-  if(sim->do_core) core_emis.resize(nu_grid.size());
+  if(sim->n_emit_core > 0) core_emis.resize(nu_grid.size());
   for (int i=0; i<emis.size();      i++)      emis[i].resize(nu_grid.size());
   for (int i=0; i<abs_opac.size();  i++)  abs_opac[i].resize(nu_grid.size());
   for (int i=0; i<scat_opac.size(); i++) scat_opac[i].resize(nu_grid.size());
 
   // set up core neutrino emission spectrum function (erg/s)
   // normalize to core luminosity. constants don't matter.
-  if(sim->do_core){
+  if(sim->n_emit_core > 0){
     double T_core = lua->scalar<double>("T_core");
     double L_core = lua->scalar<double>("L_core");
     double chem_pot = 0;

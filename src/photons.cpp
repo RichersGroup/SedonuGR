@@ -46,7 +46,7 @@ void photons::myInit(Lua* lua)
   emis.resize(sim->grid->z.size());
 
   // now allocate space for each eas spectrum
-  if(sim->do_core) core_emis.resize(nu_grid.size());
+  if(sim->n_emit_core > 0) core_emis.resize(nu_grid.size());
   #pragma omp parallel for
   for (int i=0; i<abs_opac.size();  i++){
     abs_opac[i].resize(nu_grid.size());
@@ -56,7 +56,7 @@ void photons::myInit(Lua* lua)
 
   // set up core emission spectrum function (now a blackbody) (erg/s)
   // normalized to core luminosity. constants don't matter.
-  if(sim->do_core){
+  if(sim->n_emit_core > 0){
     double T_core = lua->scalar<double>("T_core");
     double L_core = lua->scalar<double>("L_core");
     #pragma omp parallel for ordered
