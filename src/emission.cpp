@@ -74,7 +74,7 @@ void transport::emit_zones(const double dt)
   int gridsize = grid->z.size(); 
   double therm_lum = 0;
   double decay_lum = 0;
-  double Ep_decay, Ep_therm;
+  double Ep_decay=0., Ep_therm=0.;
 
   // at this point therm means either viscous heating or regular emission, according to the logic above
   #pragma omp parallel

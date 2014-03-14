@@ -56,10 +56,10 @@ int main(int argc, char **argv)
   int    iterate     = lua.scalar<int>("iterate");
   int    n_times     = ( iterate ? iterate : lua.scalar<int>("max_n_steps"));
   double t_stop      = ( iterate ? 0       : lua.scalar<double>("t_stop"));
-  double tstep_max   = ( iterate ? 0       : lua.scalar<double>("tstep_max"));
-  double tstep_min   = ( iterate ? 0       : lua.scalar<double>("tstep_min"));
-  double tstep_start = ( iterate ? 0       : lua.scalar<double>("tstep_start"));
-  double tstep_del   = ( iterate ? 0       : lua.scalar<double>("tstep_del"));
+  double tstep_start =                       lua.scalar<double>("tstep_start"); //initial timestep
+  double tstep_max   = ( iterate ? 0       : lua.scalar<double>("tstep_max")); //maximum timestep
+  double tstep_min   = ( iterate ? 0       : lua.scalar<double>("tstep_min")); //minimum timestep
+  double tstep_del   = ( iterate ? 0       : lua.scalar<double>("tstep_del")); //how much to increase the timestep as we go
   double write_out   = ( iterate ? 0       : lua.scalar<double>("write_out"));
   lua.close();
 
@@ -72,8 +72,8 @@ int main(int argc, char **argv)
   for(int it=1;it<=n_times;it++)
   {
     // get this time step (ignored if iterative calc)
-    if (t_step < tstep_min) t_step = tstep_min;
-    if (t_step > tstep_max) t_step = tstep_max;
+    if (tstep_min>0 && t_step<tstep_min) t_step = tstep_min;
+    if (tstep_max>0 && t_step>tstep_max) t_step = tstep_max;
     if ( (tstep_del>0) && (t>0) && (t_step>t*tstep_del) ) t_step = t*tstep_del;
 
     // do transport step

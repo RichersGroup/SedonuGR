@@ -7,6 +7,7 @@
 #include <string.h>
 #include <iostream>
 #include <limits>
+#include <cassert>
 #include "transport.h"
 #include "physical_constants.h"
 #include "Lua.h"
@@ -249,6 +250,7 @@ void transport::init(Lua* lua)
 //------------------------------------------------------------
 void transport::step(const double dt)
 {
+  assert(dt>0);
   // nominal time for iterative calc is 1
   //if (iterate) dt = 1;
   
@@ -257,9 +259,6 @@ void transport::step(const double dt)
   for(int i=0; i<species_list.size(); i++) 
     for(int j=0; j<grid->z.size(); j++)
       species_list[i]->set_eas(j);
-
-  // emit new particles
-  emit_particles(dt);
 
   // clear the tallies of the radiation quantities in each zone
   #pragma omp parallel for
@@ -272,6 +271,9 @@ void transport::step(const double dt)
     grid->z[i].f_rad[2] = 0;
     grid->z[i].l_abs    = 0;
   }
+
+  // emit new particles
+  emit_particles(dt);
 
   // Propagate the particles
   propagate_particles(dt);

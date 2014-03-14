@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
+#include <cassert>
 #include "transport.h"
 #include "physical_constants.h"
 #include "species_general.h"
@@ -13,6 +14,7 @@ namespace pc = physical_constants;
 
 void transport::propagate_particles(const double dt)
 {
+  assert(dt>0);
   vector<int> n_active(species_list.size(),0);
   vector<int> n_escape(species_list.size(),0);
   double e_esc = 0;
