@@ -1,17 +1,20 @@
 -- what are we simulating?
 
-do_photons     = 0                 -- simulate photons?
-do_neutrinos   = 1                 -- simulate neutrinos?
-radiative_eq   = 1                 -- set to enforce radiative equilibrium. 
-iterate        = 10                -- set to do an iterative (time independent) calc
-solve_T        = 1                 -- (if radiative_eq) solves each zone's temperature based on its absorbed energy
-solve_Ye       = 1                 -- (if radiative_eq) solves each zone's Ye based on its absorbed lepton number
+do_photons   = 0                 -- simulate photons?
+do_neutrinos = 1                 -- simulate neutrinos?
+iterate      = 1                 -- iterative calculation (solve for steady-state configuration)? 
+solve_T      = 1                 -- (if iterative) solves each zone's temperature based on its absorbed energy
+solve_Ye     = 1                 -- (if iterative) solves each zone's Ye based on its absorbed lepton number
+do_visc      = 0
 
 -- input/output files
 
 grid_type = "grid_1D_sphere"       -- grid geometry. Must match grid geometry in model file if used  
 model_file  =  "neutron_star.mod"  -- model file. "custom" --> use hard coded model
 nulib_table = "../../external/tables/NuLib.h5" -- NuLib opacity/emissivity table
+write_zones_every   = 1
+write_rays_every    = 1
+write_spectra_every = 1
 
 -- spectrum parameters
 
@@ -22,15 +25,15 @@ spec_n_phi            = 1          -- number of phi bins in output spectrum
 
 -- particle creation parameters
 
-init_particles = 0                 -- # particles spawned from the pre-existing 'radiation energy' in each zone
-n_emit_core    = 1e4               -- # particles to emit from core each timestep
-n_emit_heat    = 0                 -- # particles to emit from zones each timestep ("actual" emission, ignored if radiative_eq)
-n_emit_visc    = 0                 -- # particles to emit from zones each timestep (from viscosity, ignored if !radiative_eq)
+n_emit_core    = 0                 -- # particles to emit from core each timestep
+n_emit_therm   = 1e4               -- # particles to emit from zones each timestep
 n_emit_decay   = 0                 -- # particles to emit from zones each timestep (from non-thermal processes)
 max_particles  = 1e6
 
 -- particle propagation parameters
 
+max_n_steps = 10
+dt = 1
 step_size = 0.4                    -- move at most step_size*min_grid_length at a time
 
 -- inner source
