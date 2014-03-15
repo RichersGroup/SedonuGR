@@ -270,6 +270,9 @@ PARAMETERS
    spec_n_mu = [int>0] -- number of cos(theta) bins in the output spectrum
    spec_n_phi = [int>0] -- number of phi bins in the output spectrum
 
+   phot_(above) -- parameters relevant to photons
+   nut_(above) -- parameters rlelvant to neutrinos
+
 -- particle creation parameters --
 
    n_emit_core = [int] -- number of particles to emit from the inner core each timestep. n_emit_core<=0 --> no particles emitted
@@ -291,8 +294,14 @@ PARAMETERS
 
 -- opacity parameters --
 
-   nut_grey_opacity = [float] -- neutrino grey opacity (cm^2/g) (if nut_grey_opacity<=0 the grey opacity is disabled - use opacity table instead)
-   nut_epsilon = [float] -- grey absorption fraction
+   nut_grey_opacity = [float>0] -- neutrino grey opacity (cm^2/g) (if nut_grey_opacity<=0 the grey opacity is disabled - use opacity table instead)
+   nut_epsilon = [float>0] -- grey absorption fraction
+
+   phot_grey_opacity = [float>0] -- optical grey opacity (cm^2/g)
+   phot_epsilon = [float>0] -- grey absorption fraction
+   phot_nu_start = [float>0] -- beginning of first bin in the photon opacity grid
+   phot_nu_stop = [float>0] -- end of the last bin in the photon opacity grid
+   phot_n_nu = [int>0] -- number of frequency bins in the photon opacity grid
 
 -- equilibrium solver parameters --
 
