@@ -19,10 +19,10 @@ write_spectra_every = 10
 
 -- spectrum parameters
 
-spec_time_grid  = {1,1,1}          -- spectrum time grid parameters {start,stop,delta} (start==stop --> single bin catch-all)
-spec_nu_grid    = {0,2e22,1e20}    -- spectrum frequency grid parameters {start,stop,delta} (start==stop --> single bin catch-all)
-spec_n_mu       = 1                -- number of cos(theta) bins in output spectrum 
-spec_n_phi      = 1                -- number of phi bins in output spectrum
+nut_spec_time_grid  = {1,1,1}          -- spectrum time grid parameters {start,stop,delta} (start==stop --> single bin catch-all)
+nut_spec_nu_grid    = {0,2e22,1e20}    -- spectrum frequency grid parameters {start,stop,delta} (start==stop --> single bin catch-all)
+nut_spec_n_mu       = 1                -- number of cos(theta) bins in output spectrum 
+nut_spec_n_phi      = 1                -- number of phi bins in output spectrum
 
 -- particle creation parameters
 

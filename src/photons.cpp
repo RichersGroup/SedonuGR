@@ -22,19 +22,19 @@ void photons::myInit(Lua* lua)
   for(int i=0; i<sim->grid->z.size(); i++) sim->grid->z[i].Ye = -1.0e99;
 
   // intialize output spectrum
-  std::vector<double>stg = lua->vector<double>("spec_time_grid");
-  std::vector<double>sng = lua->vector<double>("spec_nu_grid");
-  int nmu  = lua->scalar<int>("spec_n_mu");
-  int nphi = lua->scalar<int>("spec_n_phi");
+  std::vector<double>stg = lua->vector<double>("phot_spec_time_grid");
+  std::vector<double>sng = lua->vector<double>("phot_spec_nu_grid");
+  int nmu  = lua->scalar<int>("phot_spec_n_mu");
+  int nphi = lua->scalar<int>("phot_spec_n_phi");
   spectrum.init(stg,sng,nmu,nphi);
   spectrum.set_name("optical_spectrum.dat");
 
   // read opacity parameters
-  grey_opac       = lua->scalar<double>("grey_opacity");
-  eps             = lua->scalar<double>("epsilon");
-  double nu_start = lua->scalar<double>("nu_start");
-  double nu_stop  = lua->scalar<double>("nu_stop");
-  int      n_nu   = lua->scalar<int>("n_nu");
+  grey_opac       = lua->scalar<double>("phot_grey_opacity");
+  eps             = lua->scalar<double>("phot_epsilon");
+  double nu_start = lua->scalar<double>("phot_nu_start");
+  double nu_stop  = lua->scalar<double>("phot_nu_stop");
+  int      n_nu   = lua->scalar<int>("phot_n_nu");
   lepton_number   = 0;
 
   // initialize the  frequency grid

@@ -15,10 +15,10 @@ using namespace std;
 void neutrinos::myInit(Lua* lua)
 {
   // intialize output spectrum
-  std::vector<double>stg = lua->vector<double>("spec_time_grid");
-  std::vector<double>sng = lua->vector<double>("spec_nu_grid");
-  int nmu  = lua->scalar<int>("spec_n_mu");
-  int nphi = lua->scalar<int>("spec_n_phi");
+  std::vector<double>stg = lua->vector<double>("nut_spec_time_grid");
+  std::vector<double>sng = lua->vector<double>("nut_spec_nu_grid");
+  int nmu  = lua->scalar<int>("nut_spec_n_mu");
+  int nphi = lua->scalar<int>("nut_spec_n_phi");
   spectrum.init(stg,sng,nmu,nphi);
   spectrum.set_name("neutrino_spectrum.dat");
 
