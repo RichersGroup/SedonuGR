@@ -1,3 +1,3 @@
-This test should produce a photon blackbody spectrum with the temperature and luminosity indicated by the parameter file. A plot to compare the two is automatically generated.  The predicted line should be a bit below the measurements because the range of the spectrum is not as wide as the distribution, but the full luminosity gets put into it.
+This test should produce a photon blackbody spectrum with the temperature and luminosity indicated by the parameter file. A plot to compare the two is automatically generated.
 
 To generate the data and the plot just execute "make". Assumes that "make tests" has already been run in the base directory.
