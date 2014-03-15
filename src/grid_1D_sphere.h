@@ -32,7 +32,7 @@ public:
   double zone_min_length(const int) const;
   void   sample_in_zone(const int, const std::vector<double>, double[3]) const;
   void   velocity_vector(const int i, const double[3], double[3]) const;
-  void   write_ray(const int iw) const;
+  void   write_rays(const int iw) const;
   void   coordinates(const int i,double r[3]) const{
     r[0] = r_out[i]; r[1] = 0; r[2] = 0;}
 };

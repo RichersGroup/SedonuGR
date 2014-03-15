@@ -72,7 +72,6 @@ private:
   double step_size;
   int    do_photons;
   int    do_neutrinos;
-  int    radiative_eq;
   int    iterate;
   int    verbose;
 
@@ -108,8 +107,11 @@ public:
   void   init(Lua* lua);
 
   // in-simulation functions to be used by main
-  void   step(const double dt);
-  int    total_particles() const;
+  void step(const double dt);
+  int  total_particles() const;
+  void write_zones(const int it);
+  void write_rays(const int it);
+  void write_spectra(const int it);
 };
 
 #endif

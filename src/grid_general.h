@@ -56,7 +56,7 @@ class grid_general
 
   // write out zone information
   void write_zones(const int iw) const;
-  virtual void write_ray(const int iw) const = 0;
+  virtual void write_rays(const int iw) const = 0;
 
   //****** virtual functions (geometry specific)
 

@@ -46,80 +46,55 @@ int main(int argc, char **argv)
   sim.init(&lua);
 
   // write initial grid data
+  int write_zones_every   = lua.scalar<double>("write_zones_every");
+  int write_rays_every    = lua.scalar<double>("write_rays_every");
+  int write_spectra_every = lua.scalar<double>("write_spectra_every");
   if(verbose) cout << "# writing zone file 0" << endl;
-  int iw = 0; // number of times output has been written
-  sim.grid->write_zones(iw);
-  sim.grid->write_ray(iw);
-  iw++;
+  sim.grid->write_zones(0);
+  if(verbose) cout << "# writing ray file 0" << endl;
+  sim.grid->write_rays(0);
 
   // read in time stepping parameters
   int    iterate     = lua.scalar<int>("iterate");
-  int    n_times     = ( iterate ? iterate : lua.scalar<int>("max_n_steps"));
-  double t_stop      = ( iterate ? 0       : lua.scalar<double>("t_stop"));
-  double tstep_start =                       lua.scalar<double>("tstep_start"); //initial timestep
-  double tstep_max   = ( iterate ? 0       : lua.scalar<double>("tstep_max")); //maximum timestep
-  double tstep_min   = ( iterate ? 0       : lua.scalar<double>("tstep_min")); //minimum timestep
-  double tstep_del   = ( iterate ? 0       : lua.scalar<double>("tstep_del")); //how much to increase the timestep as we go
-  double write_out   = ( iterate ? 0       : lua.scalar<double>("write_out"));
+  int    max_n_steps = lua.scalar<int>("max_n_steps");
+  double dt          = (iterate ? 1 : lua.scalar<double>("dt"));
   lua.close();
 
   //===========//
   // TIME LOOP //
   //===========//
   double t = 0;
-  double t_step = tstep_start;
   if (verbose) printf("%12s %12s %12s %12s\n","iteration","t","dt","n_particles");
-  for(int it=1;it<=n_times;it++)
+  for(int it=1; it<=max_n_steps; it++,t+=dt)
   {
-    // get this time step (ignored if iterative calc)
-    if (tstep_min>0 && t_step<tstep_min) t_step = tstep_min;
-    if (tstep_max>0 && t_step>tstep_max) t_step = tstep_max;
-    if ( (tstep_del>0) && (t>0) && (t_step>t*tstep_del) ) t_step = t*tstep_del;
-
     // do transport step
-    sim.step(t_step);
+    sim.step(dt);
 
     // printout time step
-    if(verbose) printf("%12d %12.4e %12.4e %12d\n",it,t,t_step, sim.total_particles());
+    if(verbose) printf("%12d %12.4e %12.4e %12d\n",it,t,dt, sim.total_particles());
 
     // writeout zone state when appropriate 
-    if( verbose && ( (t>=write_out*iw) || (iterate) ) ){
-      printf("# writing zone file %d at time %e\n",iw, t);
-      sim.grid->write_zones(iw);
-      sim.grid->write_ray(iw);
-      iw++;
+    if((it%write_zones_every)==0 && write_zones_every>0){
+      if(verbose) cout << "# writing zone file " << it << endl;
+      sim.grid->write_zones(it);
+    }
+
+    // write ray data when appropriate
+    if(it%write_rays_every==0 && write_rays_every>0){
+      if(verbose) cout << "# writing ray file " << it << endl;
+      sim.grid->write_rays(it);
     }
 
     // print out spectrum in iterative calc
-    if(iterate){
-      for(int i=0; i<sim.species_list.size(); i++){
-	if(n_procs>1) sim.species_list[i]->spectrum.MPI_average();
-	if(verbose){
-	  char sname[100];
-	  sprintf(sname,"species%d_I%d.spec",i,it);
-	  sim.species_list[i]->spectrum.set_name(sname);
-	  sim.species_list[i]->spectrum.print();
-	}
-	sim.species_list[i]->spectrum.wipe();
-      }
+    if(it%write_spectra_every==0 && write_spectra_every>0){
+      if(verbose) cout << "# writing spectrum file " << it << endl;
+      sim.write_spectra(it);
     }
-
-    // advance time
-    if(!iterate) t = t + t_step;
-    if(t > t_stop) break;
   }
 
   //===========================//
   // PRINT FINAL DATA AND EXIT //
   //===========================//
-  // print final spectrum
-  if(!iterate){
-    for(int i=0; i<sim.species_list.size(); i++){
-      if(n_procs>1) sim.species_list[i]->spectrum.MPI_average();
-      if(verbose) sim.species_list[i]->spectrum.print(); 
-    }
-  }
-  
   // calculate the elapsed time 
   double proc_time_end = MPI_Wtime();
   double time_wasted = proc_time_end - proc_time_start;

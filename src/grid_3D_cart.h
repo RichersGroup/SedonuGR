@@ -38,8 +38,7 @@ public:
   void      velocity_vector(const int i, const double[3], double[3]) const;
   void      print() const;
   void      coordinates(const int i,double r[3]) const;
-  void      write_ray(const int iw) const;
-
+  void      write_rays(const int iw) const;
 };
 
 

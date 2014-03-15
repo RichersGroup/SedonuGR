@@ -35,7 +35,6 @@ void transport::init(Lua* lua)
   verbose = (MPI_myID==0);
 
   // read simulation parameters
-  radiative_eq  = lua->scalar<int>("radiative_eq");
   solve_T       = lua->scalar<int>("solve_T");
   solve_Ye      = lua->scalar<int>("solve_Ye");
   step_size     = lua->scalar<double>("step_size");
@@ -247,7 +246,7 @@ void transport::step(const double dt)
     grid->z[i].e_abs += dt * zone_visc_heat_rate(i);
     net_visc_heating += zone_visc_heat_rate(i);
   }
-  cout << "Viscous heating: " << net_visc_heating << " erg/s" << endl;
+  if(verbose) cout << "Viscous heating: " << net_visc_heating << " erg/s" << endl;
 
   // emit new particles
   emit_particles(dt);
@@ -272,7 +271,7 @@ void transport::step(const double dt)
   if(MPI_nprocs>1) reduce_radiation();
 
   // solve for T_gas and Ye structure if radiative eq. applied
-  if(radiative_eq) solve_eq_zone_values();
+  if(iterate) solve_eq_zone_values();
 
   // MPI broadcast the results so all processors have matching fluid properties
   if(MPI_nprocs>1) synchronize_gas();
@@ -411,3 +410,16 @@ double transport::zone_visc_heat_rate(const int zone_index) const{
   return visc_specific_heat_rate * grid->z[zone_index].rho * grid->zone_volume(zone_index);
 }
 
+
+// Write the spectra to disk (using data since the last write)
+void transport::write_spectra(const int it)
+{
+  for(int i=0; i<species_list.size(); i++){
+    if(MPI_nprocs>1) species_list[i]->spectrum.MPI_average();
+    char sname[100];
+    sprintf(sname,"species%d_I%d.spec",i,iw);
+    species_list[i]->spectrum.set_name(sname);
+    species_list[i]->spectrum.print();
+    species_list[i]->spectrum.wipe();
+  }
+}

@@ -89,7 +89,7 @@ void transport::propagate_particles(const double dt)
 //--------------------------------------------------------
 void transport::propagate(particle* p, const double dt) const
 {
-  enum ParticleEvent {scatter, boundary, tstep};
+  enum ParticleEvent {interact, boundary, tstep};
   ParticleEvent event;
 
   if((p->ind < 0) || (p->ind > grid->z.size())){
@@ -151,7 +151,7 @@ void transport::propagate(particle* p, const double dt) const
 
     // find out what event happens (shortest distance)
     if ( (d_sc < d_bn) && (d_sc < d_tm) ){
-      event  = scatter;
+      event  = interact;
       this_d = d_sc;
     }
     else if (d_bn < d_tm){
@@ -196,26 +196,24 @@ void transport::propagate(particle* p, const double dt) const
     p->t = p->t + this_d/pc::c;
 
     // ---------------------------------
-    // Do if scatter
+    // Do if interact
     // ---------------------------------
-    if (event == scatter)
+    if (event == interact)
     {
       // random number to check for scattering or absorption
       z = rangen.uniform();
 
       // decide whether to scatter or absorb
-      if (z > abs_frac) isotropic_scatter(p,0);
+      if (z > abs_frac) isotropic_scatter(p,0); // actual scatter - do not redistribute energy
       else
       {
-	// RNG for deciding whether to do effective scattering
-	if (radiative_eq) z2 = 2;
-	else z2 = rangen.uniform();
-
-	// choose whether to do an effective scatter (i.e. particle is absorbed
-	// but, since we require energy in = energy out it is re-emitted)
-	// otherwise, really absorb (kill) it
-	if (z2 > zone->eps_imc) isotropic_scatter(p,1);
-	else p->fate = absorbed;
+	// if this is an iterative calculation, radiative equilbrium is always assumed.
+	if(iterate) isotropic_scatter(p,1);               // particle lives, energy redistributed
+	else{
+	  z2 = rangen.uniform();
+	  if (z2 > zone->eps_imc) isotropic_scatter(p,1); // particle lives, energy redistributed
+	  else p->fate = absorbed;                        // particle dies
+	}
       }
     }
 

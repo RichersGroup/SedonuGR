@@ -283,7 +283,7 @@ void grid_3D_cart::coordinates(const int i,double r[3]) const
 //------------------------------------------------------------
 // Write the grid information out to a file
 //------------------------------------------------------------
-void grid_3D_cart::write_ray(const int iw) const
+void grid_3D_cart::write_rays(const int iw) const
 {
   char zonefile[1000];
   char base[1000];
