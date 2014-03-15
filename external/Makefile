@@ -1,4 +1,4 @@
-.PHONY: all nulibclean NuLib
+.PHONY: all nulibclean NuLib EOSsuper EOSsuperclean
 
 all:
 
@@ -12,3 +12,12 @@ NuLib:
 nulibclean:
 	$(MAKE) -C NuLib clean
 	rm -f NuLib/make.inc
+
+############
+# EOSsuper #
+############
+EOSsuper:
+	$(MAKE) -C EOSsuper
+
+EOSsuperclean:
+	$(MAKE) -C EOSsuper clean

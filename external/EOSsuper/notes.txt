@@ -1,0 +1,5 @@
+* this EOS will be called on 1D slices and we won't use openMP. The top-level
+code needs to deal with openMP.
+
+* still need to implement case in which temperature is allowed to go negative
+

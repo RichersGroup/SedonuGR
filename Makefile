@@ -1,5 +1,5 @@
 include make.inc
-.PHONY: all clean realclean tests testsclean hdf5
+.PHONY: all clean realclean tests testsclean hdf5 eos
 
 all: 
 	$(MAKE) -C src
@@ -7,7 +7,7 @@ all:
 clean: 
 	$(MAKE) -C src clean
 
-realclean: clean
+realclean: clean testsclean nulibclean eosclean
 	$(MAKE) -C src realclean
 
 
@@ -15,7 +15,7 @@ realclean: clean
 # TESTS #
 #########
 
-tests: all
+tests: all eos
 	$(MAKE) tests -C src
 
 testsclean:
@@ -30,3 +30,12 @@ nulib:
 
 nulibclean:
 	$(MAKE) -C external nulibclean
+
+############
+# EOSSuper #
+############
+eos:
+	$(MAKE) -C external EOSsuper
+
+eosclean:
+	$(MAKE) -C external EOSsuperclean
