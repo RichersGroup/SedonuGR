@@ -243,10 +243,12 @@ void transport::step(const double dt)
     L_net = 0;
 
     // add heat absorbed from viscosity to tally of e_abs
-    grid->z[i].e_abs += dt * zone_visc_heat_rate(i);
-    net_visc_heating += zone_visc_heat_rate(i);
+    if(do_visc){
+      grid->z[i].e_abs += dt * zone_visc_heat_rate(i);
+      net_visc_heating += zone_visc_heat_rate(i);
+    }
   }
-  if(verbose) cout << "Viscous heating: " << net_visc_heating << " erg/s" << endl;
+  if(verbose && do_visc) cout << "# Viscous heating: " << net_visc_heating << " erg/s" << endl;
 
   // emit new particles
   emit_particles(dt);

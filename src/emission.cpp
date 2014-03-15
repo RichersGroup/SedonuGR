@@ -90,12 +90,12 @@ void transport::emit_zones(const double dt)
     #pragma omp single
     {
       if(n_emit_therm>0){
-	cout << "L_therm = " << net_therm_lum << " erg/s" << endl;
+	if(verbose) cout << "# L_therm = " << net_therm_lum << " erg/s" << endl;
 	Ep_therm = net_therm_lum*dt / (double)n_emit_therm;
 	L_net += net_therm_lum;
       }
       if(n_emit_decay>0){
-	cout << "L_decay = " << net_decay_lum << " erg/s" << endl;
+	if(verbose) cout << "# L_decay = " << net_decay_lum << " erg/s" << endl;
 	Ep_decay = net_decay_lum*dt / (double)n_emit_decay;
 	L_net += net_decay_lum;
       }
