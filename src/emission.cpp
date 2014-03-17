@@ -38,8 +38,10 @@ void transport::emit_particles(const double dt)
   }
 
   // emit from the core and/or the zones
-  if(n_emit_core>0) emit_inner_source(dt);
-  if(n_emit_therm>0 || n_emit_decay>0) emit_zones(dt);
+  if(n_emit_core >0) emit_inner_source(dt);
+  if(n_emit_therm>0) emit_zones(dt, n_emit_therm, &transport::zone_therm_lum,      &transport::create_thermal_particle);
+  if(n_emit_visc >0) emit_zones(dt, n_emit_visc,  &transport::zone_visc_heat_rate, &transport::create_thermal_particle);
+  if(n_emit_decay>0) emit_zones(dt, n_emit_decay, &transport::zone_decay_lum,      &transport::create_decay_particle);
 
   // print how many particles were added to the system
   int new_size = particles.size();
@@ -66,79 +68,49 @@ void transport::emit_inner_source(const double dt)
 
 
 //--------------------------------------------------------------------------
-// emit particles from the zones due to non-radiation heating
+// emit particles due to viscous heating
 //--------------------------------------------------------------------------
-void transport::emit_zones(const double dt)
-{
+void transport::emit_zones(const double dt, 
+			   const int n_emit, 
+			   double (transport::*zone_lum)(const int) const, 
+			   void (transport::*create_particle)(const int,const double,const double)){
+
   int gridsize = grid->z.size(); 
-  double net_therm_lum = 0;
-  double net_decay_lum = 0;
-  double Ep_decay=0.;
-  double Ep_therm=0.;
+  double net_lum = 0;
+  double Ep=0.;
 
   // at this point therm means either viscous heating or regular emission, according to the logic above
   #pragma omp parallel
   {
     // determine the net luminosity of each emission type over the whole grid
-    #pragma omp for reduction(+:net_therm_lum,net_decay_lum)
-    for(int i=0; i<gridsize; i++){
-      if(n_emit_therm>0) net_therm_lum += zone_therm_lum(i);
-      if(n_emit_decay>0) net_decay_lum += zone_decay_lum(i);
-    }
+    #pragma omp for reduction(+:net_lum)
+    for(int i=0; i<gridsize; i++) net_lum += (this->*zone_lum)(i);
 
-    // store the variables in transport and set the particle energy
     #pragma omp single
     {
-      if(n_emit_therm>0){
-	if(verbose) cout << "# L_therm = " << net_therm_lum << " erg/s" << endl;
-	Ep_therm = net_therm_lum*dt / (double)n_emit_therm;
-	L_net += net_therm_lum;
-      }
-      if(n_emit_decay>0){
-	if(verbose) cout << "# L_decay = " << net_decay_lum << " erg/s" << endl;
-	Ep_decay = net_decay_lum*dt / (double)n_emit_decay;
-	L_net += net_decay_lum;
-      }
+      if(verbose) cout << "# L = " << net_lum << endl;
+      Ep = net_lum*dt / (double)n_emit;
+      L_net += net_lum;
     }
     
-    // create particles in each grid cell
     #pragma omp for schedule(guided)
     for (int i=0; i<gridsize; i++)
     {
-
-      // EMIT THERMAL PARTICLES =========================================================
-      if(n_emit_therm>0 && net_therm_lum>0){
-	// this zone's luminosity and number of emitted particles.
-	// randomly decide whether last particle gets added based on the remainder.
-	double almost_n_emit  = (double)n_emit_therm * zone_therm_lum(i)/net_therm_lum;
-	int this_n_emit = (int)almost_n_emit + (int)( rangen.uniform() < fmod(almost_n_emit,1.0) );
-
-	// create the particles
-	double t;
-	for (int k=0; k<this_n_emit; k++){
-	  t = t_now + dt*rangen.uniform();
-	  create_thermal_particle(i,Ep_therm,t);
-	}
+      // this zone's luminosity and number of emitted particles.
+      // randomly decide whether last particle gets added based on the remainder.
+      double almost_n_emit  = (double)n_emit * (this->*zone_lum)(i)/net_lum;
+      int this_n_emit = (int)almost_n_emit + (int)( rangen.uniform() < fmod(almost_n_emit,1.0) );
+      
+      // create the particles
+      double t;
+      for (int k=0; k<this_n_emit; k++){
+	t = t_now + dt*rangen.uniform();
+	(this->*create_particle)(i,Ep,t);
       }
-
-      // EMIT DECAY PARTICLES ===========================================================
-      if(n_emit_decay>0 && net_decay_lum>0){
-	// this zone's luminosity and number of emitted particles
-	// randomly decide whether last particle gets added based on the remainder.
-	double almost_n_emit  = (double)n_emit_decay * zone_decay_lum(i)/net_decay_lum;
-	int this_n_emit = (int)almost_n_emit + (int)( rangen.uniform() < fmod(almost_n_emit,1.0) );
-
-	// create the particles
-	double t;
-	for (int k=0; k<this_n_emit; k++){
-	  t = t_now + dt*rangen.uniform();
-	  create_decay_particle(i,Ep_decay,t);
-	}
-      }
-
-    }//loop over zones  
-  }//#pragma omp parallel
+    }// loop over zones
+  }// #pragma omp parallel
 }
+
 
 
 //----------------------------------------------------------------------------------------

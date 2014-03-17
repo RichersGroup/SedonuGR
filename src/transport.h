@@ -28,19 +28,30 @@ private:
   void synchronize_gas();
   vector<int> my_zone_end;
 
-  // creation of particles functions
+  // main function to emit particles
   void emit_particles(double dt);
-  void emit_inner_source(double dt);
-  void emit_zones(double dt);
+
+  // emit from where?
   //void initialize_particles(int init_particles);
-  void create_surface_particle(double Ep, double t);
-  void create_thermal_particle(int zone_index, double Ep, double t);
-  void create_decay_particle(int zone_index, double Ep, double t);
+  void emit_inner_source(double dt);
+  void emit_zones(const double dt, 
+		  const int n_emit, 
+		  double (transport::*zone_lum)(const int) const, 
+		  void (transport::*emit_particle)(const int,const double,const double));
+
+  // what kind of particle to create?
+  void create_surface_particle(const double Ep, const double t);
+  void create_thermal_particle(const int zone_index, const double Ep, const double t);
+  void create_decay_particle(const int zone_index, const double Ep, const double t);
+
+  // per-zone luminosity functions
+  double zone_visc_heat_rate(const int zone_index) const;
+  double zone_therm_lum(const int zone_index) const;
+  double zone_decay_lum(const int zone_index) const;
+  
+  // species sampling functions
   int sample_core_species() const;
   int sample_zone_species(int zone_index) const;
-  double zone_visc_heat_rate(int zone_index) const;
-  double zone_therm_lum(int zone_index) const;
-  double zone_decay_lum(int zone_index) const;
 
   // transformation functions
   double dshift_comoving_to_lab   (particle* p) const;
@@ -72,7 +83,7 @@ private:
   double step_size;
   int    do_photons;
   int    do_neutrinos;
-  int    iterate;
+  int    steady_state;
   int    verbose;
 
   // current time in simulation
@@ -94,7 +105,7 @@ public:
 
   // items for zone emission
   int do_visc;
-  int n_emit_therm, n_emit_decay;
+  int n_emit_therm, n_emit_decay, n_emit_visc;
   double visc_specific_heat_rate;
 
   // net luminosity

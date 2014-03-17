@@ -57,7 +57,7 @@ void transport::propagate_particles(const double dt)
     #pragma omp single
     {
       N = 1;
-      if(iterate){
+      if(steady_state){
 	if(e_esc>0) N = L_net / e_esc;
 	else if(verbose) cout << "# WARNING: no energy escaped. Setting normalization to 1." << endl;
       }
@@ -76,7 +76,7 @@ void transport::propagate_particles(const double dt)
   for(int i=0; i<species_list.size(); i++){
     if(n_escape[i]>0) species_list[i]->spectrum.rescale(N);
     double per_esc = (100.0*n_escape[i])/n_active[i];
-    if (verbose && iterate){
+    if (verbose && steady_state){
       if(n_active[i]>0) printf("# %i/%i %s escaped. (%3.2f%%)\n", n_escape[i], n_active[i], species_list[i]->name.c_str(), per_esc);
       else printf("# No active %s.\n", species_list[i]->name.c_str());
     }
@@ -147,7 +147,7 @@ void transport::propagate(particle* p, const double dt) const
 
     // find distance to end of time step
     d_tm = (tstop - p->t)*pc::c;
-    if (iterate) d_tm = numeric_limits<double>::infinity(); // i.e. let all particles escape
+    if (steady_state) d_tm = numeric_limits<double>::infinity(); // i.e. let all particles escape
 
     // find out what event happens (shortest distance)
     if ( (d_sc < d_bn) && (d_sc < d_tm) ){
@@ -208,7 +208,7 @@ void transport::propagate(particle* p, const double dt) const
       else
       {
 	// if this is an iterative calculation, radiative equilbrium is always assumed.
-	if(iterate) isotropic_scatter(p,1);               // particle lives, energy redistributed
+	if(steady_state) isotropic_scatter(p,1);               // particle lives, energy redistributed
 	else{
 	  z2 = rangen.uniform();
 	  if (z2 > zone->eps_imc) isotropic_scatter(p,1); // particle lives, energy redistributed

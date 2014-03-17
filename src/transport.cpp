@@ -34,24 +34,29 @@ void transport::init(Lua* lua)
   MPI_real = ( sizeof(real)==4 ? MPI_FLOAT : MPI_DOUBLE );
   verbose = (MPI_myID==0);
 
-  // read simulation parameters
-  solve_T       = lua->scalar<int>("solve_T");
-  solve_Ye      = lua->scalar<int>("solve_Ye");
-  step_size     = lua->scalar<double>("step_size");
-  damping       = lua->scalar<double>("damping");
-  do_photons    = lua->scalar<int>("do_photons");
-  do_neutrinos  = lua->scalar<int>("do_neutrinos");
-  if(solve_T || solve_Ye){
-    brent_itmax     = lua->scalar<int>("brent_itmax");
-    brent_solve_tolerance = lua->scalar<double>("brent_tolerance");
-  }
-
   // figure out what emission models we're using
   n_emit_core  = lua->scalar<int>("n_emit_core");
   n_emit_decay = lua->scalar<int>("n_emit_decay");
   n_emit_therm = lua->scalar<int>("n_emit_therm");
-  do_visc      = lua->scalar<int>("do_visc");
-  if(do_visc) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");
+  n_emit_visc = lua->scalar<int>("n_emit_visc");
+  if(n_emit_visc>0) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");  
+
+  // read simulation parameters
+  do_photons    = lua->scalar<int>("do_photons");
+  do_neutrinos  = lua->scalar<int>("do_neutrinos");
+  steady_state  = lua->scalar<int>("steady_state");
+  if(steady_state){
+    assert(n_emit_therm<=0); // enabling radiative equilibrium AND emitting particles from zones is double counting
+    solve_T       = lua->scalar<int>("solve_T");
+    solve_Ye      = lua->scalar<int>("solve_Ye");
+    if(solve_T || solve_Ye){
+      damping               = lua->scalar<double>("damping");
+      brent_itmax           = lua->scalar<int>("brent_itmax");
+      brent_solve_tolerance = lua->scalar<double>("brent_tolerance");
+    }
+  }
+  step_size     = lua->scalar<double>("step_size");
+
 
   // Reserve all the memory we might need right now. Speeds up particle additions.
   max_particles = lua->scalar<int>("max_particles");
@@ -188,7 +193,7 @@ void transport::init(Lua* lua)
   // scatter initial particles in the simulation area
   // don't initialize them if iterative calculation. They all come from the core.
   // int init_particles = lua->scalar<int>("init_particles");
-  // if(!iterate) initialize_particles(init_particles);
+  // if(!steady_state) initialize_particles(init_particles);
 
 
   //=================//
@@ -273,13 +278,13 @@ void transport::step(const double dt)
   if(MPI_nprocs>1) reduce_radiation();
 
   // solve for T_gas and Ye structure if radiative eq. applied
-  if(iterate) solve_eq_zone_values();
+  if(steady_state) solve_eq_zone_values();
 
   // MPI broadcast the results so all processors have matching fluid properties
   if(MPI_nprocs>1) synchronize_gas();
 
   // advance time step
-  // if (!iterate) t_now += dt;
+  // if (!steady_state) t_now += dt;
 }
 
 
