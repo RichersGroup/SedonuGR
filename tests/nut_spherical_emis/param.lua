@@ -2,6 +2,7 @@
 
 do_photons   = 0                 -- simulate photons?
 do_neutrinos = 1                 -- simulate neutrinos?
+radiative_eq = 1
 steady_state = 1                 -- iterative calculation (solve for steady-state configuration)? 
 solve_T      = 0                 -- (if iterative) solves each zone's temperature based on its absorbed energy
 solve_Ye     = 1                 -- (if iterative) solves each zone's Ye based on its absorbed lepton number
