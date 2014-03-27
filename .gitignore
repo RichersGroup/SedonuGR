@@ -1,4 +1,5 @@
 *~
+*a.out
 *.o
 *.h5
 *.spec
@@ -13,3 +14,8 @@ tests/*/*.mod
 tests/*/*.pdf
 tests/*/plot_defaults.pyc
 external/hdf5
+external/EOSsuper/driver
+external/EOSsuper/nuc_eos.a
+run
+.project
+.cproject
