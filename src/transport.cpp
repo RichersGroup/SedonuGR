@@ -46,7 +46,6 @@ void transport::init(Lua* lua)
   do_neutrinos  = lua->scalar<int>("do_neutrinos");
   steady_state  = lua->scalar<int>("steady_state");
   if(steady_state){
-    assert(n_emit_therm<=0); // enabling radiative equilibrium AND emitting particles from zones is double counting
     solve_T       = lua->scalar<int>("solve_T");
     solve_Ye      = lua->scalar<int>("solve_Ye");
     if(solve_T || solve_Ye){
@@ -54,6 +53,8 @@ void transport::init(Lua* lua)
       brent_itmax           = lua->scalar<int>("brent_itmax");
       brent_solve_tolerance = lua->scalar<double>("brent_tolerance");
     }
+    radiative_eq = lua->scalar<int>("radiative_eq");
+    if(radiative_eq) assert(n_emit_therm<=0); // enabling radiative equilibrium AND emitting particles from zones is double counting
   }
   step_size     = lua->scalar<double>("step_size");
 
