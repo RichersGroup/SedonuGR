@@ -246,39 +246,40 @@ PARAMETERS
 -- [] indicates options
 -- What are we simulating? --
 
-   do_photons = [0,1] -- simulate photons?
+   do_photons   = [0,1] -- simulate photons?
    do_neutrinos = [0,1] -- simulate neutrinos?
-   do_visc = [0,1] -- add energy source to matter absorption representing viscous heating
-   iterate = [0,1] -- do iterative calculation? An iterative calculation solves for the equilibrium gas and radiation field. All particles are allowed to propagate until escape during each iteration, and the fluid values that would cause the zones to emit everything they absorb is solved for. That is, conservation of energy and lepton number are not considered since we aren't evolving in time, just finding an equilibrium.
-   solve_T = [0,1] -- solve for T such that each zone emits the energy it absorbs?
-   solve_Ye = [0,1] -- solve for Ye such that the zone emits the lepton number it absorbs?
-   visc_specific_heat_rate = [double>0] -- viscous heating per unit mass (erg/g/s)
+   do_visc      = [0,1] -- add energy source to matter absorption representing viscous heating
+   radiative_eq = [0,1] -- immediately re-emit particles that are absorbed? 0 allows particles to die on absorption.
+   steady_state = [0,1] -- do iterative calculation? An iterative calculation solves for the equilibrium gas and radiation field. All particles are allowed to propagate until escape or absorption during each iteration, and the fluid values that would cause the zones to emit everything they absorb is solved for. That is, conservation of energy and lepton number are not considered since we aren't evolving in time, just finding an equilibrium. This activates the solve_* parameters.
+   solve_T      = [0,1] -- solve for T such that each zone emits the energy it absorbs?
+   solve_Ye     = [0,1] -- solve for Ye such that the zone emits the lepton number it absorbs?
 
 -- input/output files --
 
-   grid_type = ["grid_1D_sphere","grid_3D_cart"] -- which type of grid is the input data for?
-   model_file = "filename" -- filename of the model containing the background fluid data
-   nulib_table = "filename" -- (if do_neutrinos) neutrino opacity table
-   write_zones_every = [n] -- write the fluid data every n iterations
-   write_rays_every = [n] -- write fluid data along prescribed ray paths ever n iterations
-   write_spectra_every = [n] -- write spectra (integrated since last spectra output) every n iterations
+   grid_type           = ["grid_1D_sphere","grid_3D_cart"] -- which type of grid is the input data for?
+   model_file          = "filename" -- filename of the model containing the background fluid data
+   nulib_table         = "filename" -- (if do_neutrinos) neutrino opacity table
+   write_zones_every   = [n]        -- write the fluid data every n iterations
+   write_rays_every    = [n]        -- write fluid data along prescribed ray paths ever n iterations
+   write_spectra_every = [n]        -- write spectra (integrated since last spectra output) every n iterations
 
 -- spectrum parameters --
 
    spec_time_grid = {a,b,c} -- time grid {start,stop,delta} (start==stop --> single time bin to cath all)
-   spec_nu_grid = {a,b,c}  -- frequency grid {start,stop,delta} (start==stop --> single frequency bin catch all)
-   spec_n_mu = [int>0] -- number of cos(theta) bins in the output spectrum
-   spec_n_phi = [int>0] -- number of phi bins in the output spectrum
+   spec_nu_grid   = {a,b,c} -- frequency grid {start,stop,delta} (start==stop --> single frequency bin catch all)
+   spec_n_mu      = [int>0] -- number of cos(theta) bins in the output spectrum
+   spec_n_phi     = [int>0] -- number of phi bins in the output spectrum
 
    phot_(above) -- parameters relevant to photons
-   nut_(above) -- parameters rlelvant to neutrinos
+   nut_(above)  -- parameters rlelvant to neutrinos
 
 -- particle creation parameters --
 
-   n_emit_core = [int] -- number of particles to emit from the inner core each timestep. n_emit_core<=0 --> no particles emitted
-   n_emit_therm = [int] -- number of particles emitted thermally within zones each timestep. n_emit_therm<=0 --> no thermal particles emitted.
-   n_emit_decay = [int] -- number of particles emitted from decay processes within zones each timestep. n_emit_decay<=0 --> no decay particles emitted
-   max_particles = [int] -- maximum number of particles allowed at any time ever (to prevent memory issues)
+   n_emit_core             = [int]      -- number of particles to emit from the inner core each timestep. n_emit_core<=0 --> no particles emitted
+   n_emit_therm            = [int]      -- number of particles emitted thermally within zones each timestep. n_emit_therm<=0 --> no thermal particles emitted.
+   n_emit_decay            = [int]      -- number of particles emitted from decay processes within zones each timestep. n_emit_decay<=0 --> no decay particles emitted
+   max_particles           = [int]      -- maximum number of particles allowed at any time ever (to prevent memory issues)
+   visc_specific_heat_rate = [double>0] -- viscous heating per unit mass (erg/g/s)
 
 -- inner source parameters --
 
@@ -288,23 +289,23 @@ PARAMETERS
 
 -- particle propagation parameters --
 
-   max_n_steps = [int] -- stop after this many iterations
-   dt = [float] -- dt for time iteration. (if iterate --> dt is used to judge assumptions about timescales)
-   step_size = [0<float<1] -- maximum fraction of a zone length a particle is allowed to travel before updating opacity information
+   max_n_steps = [int>=0]    -- stop after this many iterations
+   dt          = [float>0]   -- dt for time iteration. (if iterate --> dt is used to judge assumptions about timescales)
+   step_size   = [0<float<1] -- maximum fraction of a zone length a particle is allowed to travel before updating opacity information
 
 -- opacity parameters --
 
-   nut_grey_opacity = [float>0] -- neutrino grey opacity (cm^2/g) (if nut_grey_opacity<=0 the grey opacity is disabled - use opacity table instead)
-   nut_epsilon = [float>0] -- grey absorption fraction
+   nut_grey_opacity  = [float>0] -- neutrino grey opacity (cm^2/g) (if nut_grey_opacity<=0 the grey opacity is disabled - use opacity table instead)
+   nut_epsilon       = [float>0] -- grey absorption fraction
 
    phot_grey_opacity = [float>0] -- optical grey opacity (cm^2/g)
-   phot_epsilon = [float>0] -- grey absorption fraction
-   phot_nu_start = [float>0] -- beginning of first bin in the photon opacity grid
-   phot_nu_stop = [float>0] -- end of the last bin in the photon opacity grid
-   phot_n_nu = [int>0] -- number of frequency bins in the photon opacity grid
+   phot_epsilon      = [float>0] -- grey absorption fraction
+   phot_nu_start     = [float>0] -- beginning of first bin in the photon opacity grid
+   phot_nu_stop      = [float>0] -- end of the last bin in the photon opacity grid
+   phot_n_nu         = [int>0]   -- number of frequency bins in the photon opacity grid
 
 -- equilibrium solver parameters --
 
-   damping = [float>0] -- changes in values between iterations are decreased by this factor
-   brent_itmax = [int>0] -- maximum number of iterations the brent solver can use
-   brent_tolerance = 0.01 -- brent solver tolerance
+   damping         = [float>0] -- changes in values between iterations are decreased by this factor
+   brent_itmax     = [int>0]   -- maximum number of iterations the brent solver can use
+   brent_tolerance = [float>0] -- brent solver tolerance

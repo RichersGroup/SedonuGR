@@ -10,8 +10,8 @@ F90=mpif90
 CXX=mpicxx
 CC=mpicc
 
-F90FLAGS= -O3
-CXXFLAGS= -O3 #INTEL: -lifcore  #OPTIONAL: -fopenmp
+F90FLAGS= -O3 #OPTIONAL: (gnu)-fopenmp (intel)-openmp
+CXXFLAGS= -O3 #INTEL: -lifcore  #OPTIONAL: (gnu)-fopenmp (intel)-openmp
 CCFLAGS= -O3
 
 #GSL
