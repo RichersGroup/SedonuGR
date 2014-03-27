@@ -208,7 +208,7 @@ void transport::propagate(particle* p, const double dt) const
       else
       {
 	// if this is an iterative calculation, radiative equilbrium is always assumed.
-	if(steady_state) isotropic_scatter(p,1);               // particle lives, energy redistributed
+	if(radiative_eq) isotropic_scatter(p,1);          // particle lives, energy redistributed
 	else{
 	  z2 = rangen.uniform();
 	  if (z2 > zone->eps_imc) isotropic_scatter(p,1); // particle lives, energy redistributed

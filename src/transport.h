@@ -84,6 +84,7 @@ private:
   int    do_photons;
   int    do_neutrinos;
   int    steady_state;
+  int    radiative_eq;
   int    verbose;
 
   // current time in simulation
