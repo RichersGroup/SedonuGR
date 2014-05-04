@@ -3,6 +3,7 @@ r_max   = 10    #km
 
 set term pdf
 set grid
+set yrange [0:0.6]
 
 set title "Equilibrium Ye with no neutrino emission (T=5MeV)"
 set xlabel "Radius (km)"

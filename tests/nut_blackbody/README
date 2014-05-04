@@ -1,0 +1,22 @@
+This test should output four plots of expected and calculated neutrino energy density vs. electron fraction, one plot for each of four temperatures.
+
+THEORY:
+The neutrinos should follow a blackbody Planck distribution, where E is the neutrino energy and mu is the equilibrium neutrino chemical potential given by (mu_nu = mu_p + mu_e - mu_n) for the electron neutrino, and negative this for the electron anti-neutrino, and zero for the heavy lepton neutrinos.
+B_nu(T) = (E^3 / (hc)^2) / ( Exp((E+mu)/(kT)) + 1 )    [erg/cm^2/ster/Hz/s]
+Multiply by 4*Pi/c to get the energy density of each neutrino species 
+(energy density)_nu = (4*Pi*E^3 / (h^2*c^3)) / ( Exp((E+mu)/(kT)) + 1 )    [erg/cm^3/Hz]
+Integrate over neutrino energy to get the net energy density of a given species.
+(energy density) = (4*Pi / (hc)^3) Integrate[ E^3*dE / (Exp(E/kT + mu/kT) + 1)]
+                 = (4*Pi / (hc)^3) Integrate[ x^3*dx / (Exp(x + mu/kT) + 1)] (1/kT)^4       [x=E/kT]
+		 = 4*Pi (hc)^-3 (kT)^4 (-6 PolyLog[4,-Exp(-mu/kT)])       [erg/cm^3]
+If the neutrinos happen to have zero chemical potential, this corresponds to
+               --> 4*Pi (hc)^-3 (kT)^4 (7*Pi^4/120)                      [erg/cm^3]
+
+TESTS:
+For rho=10^12 g/ccm
+For each of T={0.1,1,10,100} MeV
+For each of Ye={0.035,0.1,0.2,0.3,0.4,0.5,0.55}
+Create a single sphere with {rho,T,Ye}. The weak interaction timescale should be <~ 10^-3s everywhere, so set dt=1s (the radiation field should have plenty of time to relax to the fluid temperature).
+Read out the neutrino energy density of each species (e,anti-e,x).
+Get mu_nu from the EOS, determine the expected energy density based on the above.
+Compare.
