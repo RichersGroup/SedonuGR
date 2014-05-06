@@ -13,7 +13,8 @@ tests/*/*.dat
 tests/*/*.mod
 tests/*/*.pdf
 tests/*/plot_defaults.pyc
-external/hdf5
+tests/nulib_plots/species_*
+external/hdf5*
 external/EOSsuper/driver
 external/EOSsuper/nuc_eos.a
 run

@@ -12,8 +12,9 @@ const double me = 0.510998910; // in MeV
 const double mp = 938.272046;  // in MeV
 const double mn = 939.565378;  // in MeV
 
-double beta_eq_ye(double rho, double T){
-  double solve_for_munu = 0;
+double beta_eq_ye(const double rho, const double T){
+  //std::cout << T << std::endl;
+  double solve_for_munu = me+mp-mn;
   double ye_min = 0.05;
   double ye_max = 0.55;
   double xye = 0.5;
@@ -56,8 +57,10 @@ int main(int argc, char* argv[]) {
     ss >> rho;
     xrho = rho*RHOGF;
     ss >> xtemp;
+    //std::cout << xtemp << " ";
     xtemp *= k_MeV;
-    
+    //std::cout << xtemp << std::endl;
+
     std::cout << x << "\t" << rho << "\t" << beta_eq_ye(xrho,xtemp) << std::endl;
   }
 
