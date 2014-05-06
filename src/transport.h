@@ -11,6 +11,7 @@
 #include "thread_RNG.h"
 
 class species_general;
+enum ParticleEvent {interact, zoneEdge, timeStep, boundary};
 
 class transport
 {
@@ -62,16 +63,21 @@ private:
   // propagate the particles
   void propagate_particles(const double dt);
   void propagate(particle* p, const double dt) const;
+  void which_event(const particle* p,const double dt, const double dshift, const double opac, double* d_smallest, ParticleEvent *event) const;
   void isotropic_scatter(particle* p, const int redistribute) const;
 
-  // solve for temperature and Ye
+  // solve for temperature and Ye (if steady_state)
   int    solve_T;
   int    solve_Ye;
   double damping;
   int    brent_itmax;
   double brent_solve_tolerance;
   void   solve_eq_zone_values();
+  void   normalize_radiative_quantities(const double dt);
   double brent_method(const int zone_index, double (*eq_function)(int,double,transport*), const double min, const double max);
+
+  // update temperature and Ye (if !steady_state)
+  void update_zone_quantities();
 
   // stored minimum and maximum values to assure safety
   double T_min,  T_max;
@@ -106,11 +112,12 @@ public:
 
   // items for zone emission
   int do_visc;
-  int n_emit_therm, n_emit_decay, n_emit_visc;
+  int n_emit_therm, n_emit_decay;
   double visc_specific_heat_rate;
 
   // net luminosity
   double L_net;
+  int reflect_outer;
 
   // random number generator
   mutable thread_RNG rangen;

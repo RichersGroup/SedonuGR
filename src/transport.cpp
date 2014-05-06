@@ -38,8 +38,9 @@ void transport::init(Lua* lua)
   n_emit_core  = lua->scalar<int>("n_emit_core");
   n_emit_decay = lua->scalar<int>("n_emit_decay");
   n_emit_therm = lua->scalar<int>("n_emit_therm");
-  n_emit_visc = lua->scalar<int>("n_emit_visc");
-  if(n_emit_visc>0) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");  
+  do_visc      = lua->scalar<int>("do_visc");
+  if(do_visc) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");  
+  reflect_outer = lua->scalar<int>("reflect_outer");
 
   // read simulation parameters
   do_photons    = lua->scalar<int>("do_photons");
@@ -54,7 +55,6 @@ void transport::init(Lua* lua)
       brent_solve_tolerance = lua->scalar<double>("brent_tolerance");
     }
     radiative_eq = lua->scalar<int>("radiative_eq");
-    if(radiative_eq) assert(n_emit_therm<=0); // enabling radiative equilibrium AND emitting particles from zones is double counting
   }
   step_size     = lua->scalar<double>("step_size");
 
@@ -73,7 +73,7 @@ void transport::init(Lua* lua)
   if     (grid_type == "grid_1D_sphere") grid = new grid_1D_sphere;
   else if(grid_type == "grid_3D_cart"  ) grid = new grid_3D_cart;
   else{
-    if(verbose) std::cout << "ERROR: the requested grid type is not implemented." << std::endl;
+    if(verbose) std::cout << "# ERROR: the requested grid type is not implemented." << std::endl;
     exit(3);}
   
   // initialize the grid (including reading the model file)
@@ -224,71 +224,83 @@ void transport::init(Lua* lua)
 //------------------------------------------------------------
 void transport::step(const double dt)
 {
-  assert(dt>0);
-  
-  // calculate the zone eas variables
-  #pragma omp parallel for collapse(2)
-  for(int i=0; i<species_list.size(); i++) 
-    for(int j=0; j<grid->z.size(); j++)
-      species_list[i]->set_eas(j);
+  // assume 1.0 s. of particles were emitted if dt<0
+  double emission_time = (dt<=0 ? 1.0 : dt);
 
-  // prepare zone quantities for another round of transport
-  double net_visc_heating = 0;
-  #pragma omp parallel for reduction(+:net_visc_heating)
-  for (int i=0;i<grid->z.size();i++)
+  #pragma omp parallel
   {
-    // clear the tallies of the radiation quantities in each zone
-    grid->z[i].e_rad    = 0;
-    grid->z[i].f_rad[0] = 0;
-    grid->z[i].f_rad[1] = 0;
-    grid->z[i].f_rad[2] = 0;
-    grid->z[i].l_abs    = 0;
-    grid->z[i].e_abs    = 0;
+    // calculate the zone eas variables
+    #pragma omp for collapse(2)
+    for(int i=0; i<species_list.size(); i++) 
+      for(int j=0; j<grid->z.size(); j++)
+	species_list[i]->set_eas(j);
 
-    // set the net luminosity (to be recalculated by emission routines)
+    // prepare zone quantities for another round of transport
+    #pragma omp single
     L_net = 0;
-
-    // add heat absorbed from viscosity to tally of e_abs
-    if(do_visc){
-      grid->z[i].e_abs += dt * zone_visc_heat_rate(i);
-      net_visc_heating += zone_visc_heat_rate(i);
-    }
-  }
-  if(verbose && do_visc) cout << "# Viscous heating: " << net_visc_heating << " erg/s" << endl;
-
-  // emit new particles
-  emit_particles(dt);
-
-  // Propagate the particles
+    #pragma omp for
+    for (int i=0;i<grid->z.size();i++)
+      {
+	grid->z[i].e_rad    = 0;
+	grid->z[i].f_rad[0] = 0;
+	grid->z[i].f_rad[1] = 0;
+	grid->z[i].f_rad[2] = 0;
+	grid->z[i].l_abs    = 0;
+	grid->z[i].e_abs    = 0;
+      }
+  } // #pragma omp parallel
+  
+  // emit, propagate, and normalize. dt<0 still corresponds to allowing escape to infinity
+  emit_particles(emission_time);
   propagate_particles(dt);
+  normalize_radiative_quantities(emission_time);
 
-  // properly normalize the radiative quantities
-  #pragma omp parallel for
-  for (int i=0;i<grid->z.size();i++) 
-  {
-    double vol = grid->zone_volume(i);
-    grid->z[i].e_rad    /= vol*pc::c*dt;
-    grid->z[i].e_abs    /= vol*dt;
-    grid->z[i].f_rad[0] /= vol*pc::c*dt;
-    grid->z[i].f_rad[1] /= vol*pc::c*dt;
-    grid->z[i].f_rad[2] /= vol*pc::c*dt;
-    grid->z[i].l_abs    /= vol*dt;
-  }
-
-  // MPI reduce the radiation quantities so each processor has the information needed to solve its grid values
-  if(MPI_nprocs>1) reduce_radiation();
-
-  // solve for T_gas and Ye structure if radiative eq. applied
-  if(steady_state) solve_eq_zone_values();
-
-  // MPI broadcast the results so all processors have matching fluid properties
-  if(MPI_nprocs>1) synchronize_gas();
+  // solve for T_gas and Ye structure
+  if(MPI_nprocs>1) reduce_radiation();      // so each processor has necessary info to solve its zones 
+  if(steady_state) solve_eq_zone_values();  // solve T,Ye s.t. E_abs=E_emit and N_abs=N_emit
+  else update_zone_quantities();            // update T,Ye based on heat capacity and number of leptons
+  if(MPI_nprocs>1) synchronize_gas();       // each processor broadcasts its solved zones to the other processors
 
   // advance time step
-  // if (!steady_state) t_now += dt;
+  if (dt>0) t_now += dt;
 }
 
 
+
+
+//----------------------------------------------------------------------------
+// normalize the radiative quantities
+//----------------------------------------------------------------------------
+void transport::normalize_radiative_quantities(const double dt){
+  double net_visc_heating = 0;
+  
+  #pragma omp parallel for reduction(+:net_visc_heating)
+  for (int i=0;i<grid->z.size();i++) 
+  {
+    double vol = grid->zone_volume(i);
+
+    // include re-emission in L_net
+    L_net += (radiative_eq ? grid->z[i].e_abs/dt : 0);
+
+    // add heat absorbed from viscosity to tally of e_abs
+    if(do_visc){
+      grid->z[i].e_abs += zone_visc_heat_rate(i) * dt; // erg
+      net_visc_heating += zone_visc_heat_rate(i);      // erg/s
+    }
+
+    grid->z[i].e_rad    /= vol*pc::c*dt; // erg*dist --> erg/ccm
+    grid->z[i].e_abs    /= vol*dt;       // erg      --> erg/ccm/s
+    grid->z[i].l_abs    /= vol*dt;       // num      --> num/vol/s
+    // grid->z[i].f_rad[0] /= vol*pc::c*dt;
+    // grid->z[i].f_rad[1] /= vol*pc::c*dt;
+    // grid->z[i].f_rad[2] /= vol*pc::c*dt;
+  }
+
+  if(verbose){
+    if(do_visc) cout << "# Viscous heating: " << net_visc_heating << " erg/s" << endl;
+    cout << "# Net luminosity from (zones+decay+core+re-emission): " << L_net << " erg/s" << endl;
+  }  
+}
 
 
 //----------------------------------------------------------------------------
@@ -430,4 +442,31 @@ void transport::write_spectra(const int it)
     species_list[i]->spectrum.print();
     species_list[i]->spectrum.wipe();
   }
+}
+
+
+// update zone quantities based on heat capacity and lepton capacity
+void transport::update_zone_quantities(){
+  // remember what zones I'm responsible for
+  int start = ( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
+  int end = my_zone_end[MPI_myID];
+
+  // solve radiative equilibrium temperature and Ye (but only in the zones I'm responsible for)
+  // don't solve if out of density bounds
+  #pragma omp parallel for schedule(guided)
+  for (int i=start; i<end; i++) if( (grid->z[i].rho >= rho_min) && (grid->z[i].rho <= rho_max) )
+  {
+    // adjust the temperature based on the heat capacity (erg/K)
+    // assert(grid->z[i].heat_cap > 0);
+    // grid->z[i].T_gas += grid->z[i].e_abs / grid->z[i].heat_cap;
+    // assert(grid->z[i].T_gas >= T_min);
+    // assert(grid->z[i].T_gas <= T_max);
+
+    // adjust the Ye based on the lepton capacity (number of leptons)
+    double Nbary = grid->z[i].rho * grid->zone_volume(i) * (grid->z[i].Ye/pc::m_p + (1.-grid->z[i].Ye)/pc::m_n);
+    assert(Nbary > 0);
+    grid->z[i].Ye += grid->z[i].l_abs / Nbary;
+    assert(grid->z[i].Ye >= Ye_min);
+    assert(grid->z[i].Ye <= Ye_max);
+  }  
 }
