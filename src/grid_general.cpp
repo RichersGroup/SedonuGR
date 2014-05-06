@@ -51,7 +51,7 @@ void grid_general::write_zones(const int iw) const
   //  outf << setw(12);
   outf << setprecision(4);
   outf << scientific;
-  outf << "# r[0] r[1] r[2] rho T_rad T_gas Ye" << endl;
+  outf << "# r[0] r[1] r[2] e_rad rho T_gas Ye" << endl;
 
   for (int i=0;i<z.size();i++)
   {
@@ -61,9 +61,8 @@ void grid_general::write_zones(const int iw) const
     outf << r[1] << " ";
     outf << r[2] << " ";
 
+    outf << z[i].e_rad << " ";
     outf << z[i].rho << " ";
-    double T_rad = pow(z[i].e_rad/pc::a,0.25);
-    outf << T_rad << " ";
     outf << z[i].T_gas << " ";
     outf << z[i].Ye << " ";
     outf << endl;
