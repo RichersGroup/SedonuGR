@@ -42,10 +42,6 @@ void transport::emit_particles(const double dt)
   if(n_emit_therm>0) emit_zones(dt, n_emit_therm, &transport::zone_therm_lum,      &transport::create_thermal_particle);
   if(n_emit_visc >0) emit_zones(dt, n_emit_visc,  &transport::zone_visc_heat_rate, &transport::create_thermal_particle);
   if(n_emit_decay>0) emit_zones(dt, n_emit_decay, &transport::zone_decay_lum,      &transport::create_decay_particle);
-
-  // print how many particles were added to the system
-  int new_size = particles.size();
-  if (verbose) printf("# Emitted %d particles\n",new_size-old_size);
 }
 
 
@@ -176,6 +172,14 @@ void transport::create_thermal_particle(const int zone_index, const double Ep, c
   // add to particle vector
   #pragma omp critical
   particles.push_back(p);
+
+  // subtract the particle's energy and leptons from the zone
+  if(!steady_state){
+    #pragma omp atomic
+    grid->z[zone_index].e_abs -= p.e;
+    #pragma omp atomic
+    grid->z[zone_index].l_abs -= p.e/(pc::h*p.nu) * (double)species_list[s]->lepton_number;
+  }
 }
 
 
