@@ -6,6 +6,8 @@ steady_state = 1                 -- iterative calculation (solve for steady-stat
 radiative_eq = 1
 solve_T      = 0                 -- (if iterative) solves each zone's temperature based on its absorbed energy
 solve_Ye     = 1                 -- (if iterative) solves each zone's Ye based on its absorbed lepton number
+do_visc=0
+reflect_outer= 1
 
 -- input/output files
 
