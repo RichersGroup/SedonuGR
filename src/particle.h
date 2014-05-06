@@ -20,16 +20,19 @@ public:
   int          s;         // species number
   ParticleFate fate;
 
-  double r() 
+  double r() const
   { return sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]); }
 
-  double x_dot_d() 
+  double x_dot_d() const 
   {return x[0]*D[0] + x[1]*D[1] + x[2]*D[2]; }
 
-  double mu() 
-  {return x_dot_d()/r(); }
+  double mu() const{
+    double radius = r();
+    if(radius == 0) return 0;
+    else return x_dot_d()/r();
+  }
 
-  void print()
+  void print() const
   {
     printf("%10.e | %10.3e %10.3e %10.3e %6d | %10.3e %10.3e %10.3e | %10.3e %10.3e\n",
 	   t,x[0],x[1],x[2],ind,D[0],D[1],D[2],e,nu);
