@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <fstream>
 #include <iostream>
+#include <cassert>
 #include "grid_1D_sphere.h"
 #include "physical_constants.h"
 
@@ -108,8 +109,8 @@ int grid_1D_sphere::get_zone(const double *x) const
   double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 
   // check if off the boundaries
-  if(r <= r_out.min             ) return -1;
-  if(r >  r_out[r_out.size()-1] ) return -2;
+  if(r < r_out.min             ) return -1;
+  if(r > r_out[r_out.size()-1] ) return -2;
 
   // find in zone array using stl algorithm upper_bound and subtracting iterators
   return r_out.locate(r);
@@ -197,4 +198,46 @@ void grid_1D_sphere::write_rays(const int iw) const
 {
   // this is a 1D grid, so the function is exactly the same
   // as write_zones
+}
+
+
+//------------------------------------------------------------
+// Reflect off the outer boundary
+//------------------------------------------------------------
+void grid_1D_sphere::reflect_outer(particle *p) const{
+  double dr = r_out[r_out.size()-1]-r_out[r_out.size()-2];
+  assert( fabs(p->r() - r_out[r_out.size()-1]) < tiny*dr);
+  double velDotRhat = p->mu();
+  double R = p->r();
+
+  // invert the radial component of the velocity
+  p->D[0] -= 2.*velDotRhat * p->x[0]/R;
+  p->D[1] -= 2.*velDotRhat * p->x[1]/R;
+  p->D[2] -= 2.*velDotRhat * p->x[2]/R;
+
+  // put the particle just inside the boundary
+  double newR = r_out[r_out.size()-1] - tiny*dr;
+  p->x[0] = p->x[0]/R*newR;
+  p->x[1] = p->x[1]/R*newR;
+  p->x[2] = p->x[2]/R*newR;
+  
+  // must be inside the boundary, or will get flagged as escaped
+  assert(p->r() < r_out[r_out.size()-1]);
+}
+
+//------------------------------------------------------------
+// Find distance to outer boundary (less a tiny bit)
+//------------------------------------------------------------
+double grid_1D_sphere::dist_to_boundary(const particle *p) const{
+  // Theta = angle between radius vector and direction (parallel if outgoing)
+  // Phi   = Pi - Theta (angle on the triangle) (paralell if incoming)
+  double R  = r_out[r_out.size()-1];
+  double r  = p->r();
+  assert(r<R);
+  double mu = p->mu();
+  //double cosPhi = sqrt(1.0 - mu*mu);
+  double d_boundary = -r*mu + sqrt(r*r*(mu*mu-1.0) + R*R);
+  assert(d_boundary >= 0);
+  assert(d_boundary <= 2.*R);
+  return d_boundary * (1.0-tiny);
 }

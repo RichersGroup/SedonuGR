@@ -35,6 +35,8 @@ public:
   void   write_rays(const int iw) const;
   void   coordinates(const int i,double r[3]) const{
     r[0] = r_out[i]; r[1] = 0; r[2] = 0;}
+  void reflect_outer(particle *) const;
+  double dist_to_boundary(const particle *) const;
 };
 
 

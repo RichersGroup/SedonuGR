@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <cassert>
 #include "mpi.h"
 #include "Lua.h"
 #include "grid_3D_cart.h"
@@ -368,4 +369,58 @@ void grid_3D_cart::write_rays(const int iw) const
     outf << endl;
   }
   outf.close();
+}
+
+
+//------------------------------------------------------------
+// Reflect off the outer boundary
+//------------------------------------------------------------
+void grid_3D_cart::reflect_outer(particle *p) const{
+  // assumes particle is placed OUTSIDE of the zones
+
+  // invert the radial component of the velocity, put the particle just inside the boundary
+  if(p->x[0] < x0){
+    assert(p->D[0]<0);
+    p->D[0] = -p->D[0];
+    p->x[0] = x0 + tiny*dx;
+  }
+  if(p->x[1] < y0){
+    assert(p->D[1]<0);
+    p->D[1] = -p->D[1];
+    p->x[2] = y0 + tiny*dy;
+  }
+  if(p->x[2] < z0){
+    assert(p->D[0]<0);
+    p->D[0] = -p->D[0];
+    p->x[1] = z0 + tiny*dz;
+  }
+  if(p->x[0] > x0+nx*dx){
+    assert(p->D[0]>0);
+    p->D[0] = -p->D[0];
+    p->x[0] = (x0+nx*dx) - tiny*dx;
+  }
+  if(p->x[1] > y0+ny*dy){
+    assert(p->D[1]>0);
+    p->D[1] = -p->D[1];
+    p->x[1] = (y0+ny*dy) - tiny*dy;
+  }
+  if(p->x[2] > z0+nz*dz){
+    assert(p->D[2]>0);
+    p->D[2] = -p->D[2];
+    p->x[2] = (z0+nz*dz) - tiny*dz;
+  }
+
+  // double check that the particle is in the boundary
+  assert(p->x[0]>x0 && p->x[0]<x0+nx*dx);
+  assert(p->x[1]>y0 && p->x[1]<y0+ny*dy);
+  assert(p->x[2]>z0 && p->x[2]<z0+nz*dz);
+}
+
+
+//------------------------------------------------------------
+// Find distance to outer boundary
+//------------------------------------------------------------
+double grid_3D_cart::dist_to_boundary(const particle *p) const{
+  // not yet implemented
+  return 0;
 }

@@ -39,6 +39,8 @@ public:
   void      print() const;
   void      coordinates(const int i,double r[3]) const;
   void      write_rays(const int iw) const;
+  void reflect_outer(particle *) const;
+  double dist_to_boundary(const particle *) const;
 };
 
 

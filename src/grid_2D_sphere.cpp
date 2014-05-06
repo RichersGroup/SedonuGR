@@ -219,3 +219,35 @@ void grid_2D_sphere::coordinates(int i,double r[3]) {
   int i_r     = i % r_out.size();
   r[0] = r_out[i_r]; r[1] = r_out[i_theta]; r[2] = 0;
 }
+
+
+//------------------------------------------------------------
+// Reflect off the outer boundary
+//------------------------------------------------------------
+void grid_2D_sphere::reflect_outer(particle *p) const{
+  double velDotRhat = p->mu();
+  double R = p->r();
+
+  // invert the radial component of the velocity
+  p->D[0] -= 2.*velDotRhat * p->x[0]/R;
+  p->D[1] -= 2.*velDotRhat * p->x[1]/R;
+  p->D[2] -= 2.*velDotRhat * p->x[2]/R;
+
+  // put the particle just inside the boundary
+  double newR = r_out[r_out.size()-1] - tiny*dr;
+  p->x[0] = p->x[0]/R*newR;
+  p->x[1] = p->x[1]/R*newR;
+  p->x[2] = p->x[2]/R*newR;
+  
+  // must be inside the boundary, or will get flagged as escaped
+  assert(p->r() < r_out[r_out.size()-1]);
+}
+
+
+//------------------------------------------------------------
+// Find distance to outer boundary
+//------------------------------------------------------------
+double grid_2D_sphere::dist_to_boundary(const particle *p) const{
+  // not yet implemented
+  return 0;
+}

@@ -11,14 +11,12 @@
 
 namespace pc = physical_constants;
 
-
 void transport::propagate_particles(const double dt)
 {
   assert(dt>0);
   vector<int> n_active(species_list.size(),0);
   vector<int> n_escape(species_list.size(),0);
   double e_esc = 0;
-  double N;
   #pragma omp parallel shared(n_active,n_escape,e_esc,N) firstprivate(dt) 
   {
 
@@ -50,38 +48,84 @@ void transport::propagate_particles(const double dt)
       }
     }
 
-    //--- DETERMINE THE NORMALIZATION FACTOR ---
-    // accounts for particles scattering back to core / being absorbed
-    // and the fact that emitted particles are given a specific energy in their
-    // rest frame, which makes the lab frame emitted energy different from L_net.
+    // report energy escaped
     #pragma omp single
-    {
-      N = 1;
-      if(steady_state){
-	if(e_esc>0) N = L_net / e_esc;
-	else if(verbose) cout << "# WARNING: no energy escaped. Setting normalization to 1." << endl;
-      }
-    }
+    if(steady_state && verbose) cout << "# e_esc = " << e_esc << "erg" << endl;
 
-    //--- NORMALIZE THE GRID QUANTITIES ---
-    #pragma omp for nowait
-    for(int i=0; i<grid->z.size(); i++){
-      grid->z[i].e_rad *= N;
-      grid->z[i].e_abs *= N;
-      grid->z[i].l_abs *= N;
-    }
   } //#pragma omp parallel
   
-  //--- OUPUT ESCAPE STATISTICS AND NORMALIZE SPECTRUM ---
-  for(int i=0; i<species_list.size(); i++){
-    if(n_escape[i]>0) species_list[i]->spectrum.rescale(N);
-    double per_esc = (100.0*n_escape[i])/n_active[i];
-    if (verbose && steady_state){
+  //--- OUPUT ESCAPE STATISTICS ---
+  if (verbose && steady_state){
+    for(int i=0; i<species_list.size(); i++){
+      double per_esc = (100.0*n_escape[i])/n_active[i];
       if(n_active[i]>0) printf("# %i/%i %s escaped. (%3.2f%%)\n", n_escape[i], n_active[i], species_list[i]->name.c_str(), per_esc);
       else printf("# No active %s.\n", species_list[i]->name.c_str());
     }
   }
 }
+
+
+//--------------------------------------------------------
+// Decide what happens to the particle
+//--------------------------------------------------------
+void transport::which_event(const particle *p, const double dt, const double dshift, const double opac,
+			   double *d_smallest, ParticleEvent *event) const{
+  double d_zone,d_interact,d_time,d_boundary; // interaction distances
+  double tau_r;                               // random optical depth
+  double opac_lab;                            // opacity in the lab frame
+
+  // set pointer to current zone
+  zone* zone;
+  zone = &(grid->z[p->ind]);
+  
+  // FIND D_ZONE= ====================================================================
+  // maximum step size inside zone
+  d_zone = step_size * grid->zone_min_length(p->ind);
+  
+  // FIND D_INTERACT =================================================================
+  // convert opacity from comoving to lab frame for the purposes of
+  // determining the interaction distance in the lab frame
+  // This corresponds to equation 90.8 in Mihalas&Mihalas. You multiply
+  // the comoving opacity by nu_0 over nu, which is why you
+  // multiply by dshift instead of dividing by dshift here
+  opac_lab = opac*dshift;
+  // random optical depth to next interaction
+  tau_r = -1.0*log(1 - rangen.uniform());
+  // step size to next interaction event
+  d_interact  = tau_r/opac_lab;
+  if (opac_lab == 0) d_interact = numeric_limits<double>::infinity();
+  assert(d_interact>0);
+  
+  // FIND D_TIME ====================================================================
+  // find distance to end of time step
+  if(dt<=0) d_time = numeric_limits<double>::infinity(); // i.e. let all particles escape
+  else{
+    double tstop = t_now + dt;
+    d_time = (tstop - p->t)*pc::c;
+  }
+  
+  // FIND D_BOUNDARY ================================================================
+  d_boundary = grid->dist_to_boundary(p);
+
+  // find out what event happens (shortest distance)
+  if ( (d_interact < d_zone) && (d_interact < d_time) && (d_interact < d_boundary)){
+    *event  = interact;
+    *d_smallest = d_interact;
+  }
+  else if ((d_zone < d_time) && (d_zone < d_boundary)){
+    *event  = zoneEdge;
+    *d_smallest = d_zone;
+  }
+  else if (d_boundary < d_time && reflect_outer){
+    *event = boundary;
+    *d_smallest = d_boundary;
+  }
+  else{
+    *event  = timeStep;
+    *d_smallest = d_time;
+  }  
+}
+
 
 //--------------------------------------------------------
 // Propagate a single monte carlo particle until
@@ -89,7 +133,6 @@ void transport::propagate_particles(const double dt)
 //--------------------------------------------------------
 void transport::propagate(particle* p, const double dt) const
 {
-  enum ParticleEvent {interact, boundary, tstep};
   ParticleEvent event;
 
   if((p->ind < 0) || (p->ind > grid->z.size())){
@@ -99,15 +142,10 @@ void transport::propagate(particle* p, const double dt) const
 
   p->fate = moving;
 
-  // time of end of timestep
-  double tstop = t_now + dt;
-
   // local variables
-  zone* zone;                                      // pointer to current zone
-  double tau_r;                                    // random optical depth
-  double d_bn,d_sc,d_tm,this_d;                    // interaction distances
+  double this_d;                            // distance to particle's next event
   double dshift;                                   // doppler shift
-  double opac, abs_frac, opac_lab;                 // opacity variables
+  double opac, abs_frac;                 // opacity variables
   double this_E, this_E_comoving, this_l_comoving; // for calculating radiation energy and energy/lepton number absorbed
   double z,z2;                                     // random numbers
 
@@ -115,53 +153,16 @@ void transport::propagate(particle* p, const double dt) const
   while (p->fate == moving)
   {
     // set pointer to current zone
+    zone* zone;
     zone = &(grid->z[p->ind]);
-
-    // maximum step size inside zone
-    d_bn = step_size * grid->zone_min_length(p->ind);
 
     // doppler shift from comoving to lab
     dshift = dshift_comoving_to_lab(p);
-
     // get local opacity and absorption fraction
     species_list[p->s]->get_opacity(p,dshift,&opac,&abs_frac);
 
-    // convert opacity from comoving to lab frame for the purposes of
-    // determining the interaction distance in the lab frame
-    // This corresponds to equation 90.8 in Mihalas&Mihalas. You multiply
-    // the comoving opacity by nu_0 over nu, which is why you
-    // multiply by dshift instead of dividing by dshift here
-    opac_lab = opac*dshift;
-
-    // random optical depth to next interaction
-    tau_r = -1.0*log(1 - rangen.uniform());
-
-    // step size to next interaction event
-    d_sc  = tau_r/opac_lab;
-    if (opac_lab == 0) d_sc = numeric_limits<double>::infinity();
-    if (d_sc < 0){
-      cout << "ERROR: negative interaction distance!\n" << endl;
-      cout << __FILE__ << ":" << __LINE__ << endl;
-      exit(15);
-    }
-
-    // find distance to end of time step
-    d_tm = (tstop - p->t)*pc::c;
-    if (steady_state) d_tm = numeric_limits<double>::infinity(); // i.e. let all particles escape
-
-    // find out what event happens (shortest distance)
-    if ( (d_sc < d_bn) && (d_sc < d_tm) ){
-      event  = interact;
-      this_d = d_sc;
-    }
-    else if (d_bn < d_tm){
-      event  = boundary;
-      this_d = d_bn;
-    }
-    else{
-      event  = tstep;
-      this_d = d_tm;
-    }
+    // decide which event happens
+    which_event(p,dt,dshift,opac,&this_d,&event);
 
     // tally in contribution to zone's radiation energy (both *lab* frame)
     this_E = p->e*this_d;
@@ -188,6 +189,7 @@ void transport::propagate(particle* p, const double dt) const
     // fx_rad =
 
     // move particle the distance
+    if(event == boundary) this_d *= (1.0 + 2.0*grid->tiny); // bump just outside of boundary
     p->x[0] += this_d*p->D[0];
     p->x[1] += this_d*p->D[1];
     p->x[2] += this_d*p->D[2];
@@ -220,12 +222,23 @@ void transport::propagate(particle* p, const double dt) const
     // ---------------------------------
     // do if time step end
     // ---------------------------------
-    else if (event == tstep) p->fate = stopped;
+    else if (event == timeStep) p->fate = stopped;
+
+    // ---------------------------------
+    // do if reflecting off the outer boundary
+    // ---------------------------------
+    else if (event == boundary){
+      grid->reflect_outer(p);
+      assert(p->fate == moving);
+    }
+
+
 
     // Find position of the particle now
     p->ind = grid->get_zone(p->x);
-    if (p->ind == -1) p->fate = absorbed;
+    if (p->ind == -1) p->fate = absorbed; //only relevant for spherical grids with a minimum radius
     if (p->ind == -2) p->fate = escaped;
+    if (reflect_outer) assert(p->fate != escaped);
 
     // check for inner boundary absorption
     if (p->r() < r_core) p->fate = absorbed;

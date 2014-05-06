@@ -36,6 +36,8 @@ public:
   void   velocity_vector(int i, double[3], double[3]);
   void   write_ray(int iw);
   void   coordinates(int i,double r[3]);
+  void reflect_outer(particle *) const;
+  double dist_to_boundary(const particle *) const;
 };
 
 

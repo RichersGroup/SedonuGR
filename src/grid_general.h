@@ -22,6 +22,7 @@
 #include <iostream>
 #include "zone.h"
 #include "Lua.h"
+#include "particle.h"
 
 using namespace std;
 
@@ -51,6 +52,8 @@ class grid_general
   /* void reduce_T(); */
   /* void reduce_Ye(); */
 
+  static const double tiny = 1e-7;
+
   // set everything up
   void init(Lua* lua);
 
@@ -78,6 +81,9 @@ class grid_general
   // get the coordinates at the center of the zone i
   virtual void coordinates(const int i,double r[3]) const = 0;
 
+  // boundary conditions
+  virtual void reflect_outer(particle *) const = 0;
+  virtual double dist_to_boundary(const particle *) const = 0;
 };
 
 
