@@ -17,7 +17,7 @@ void transport::propagate_particles(const double dt)
   vector<int> n_active(species_list.size(),0);
   vector<int> n_escape(species_list.size(),0);
   double e_esc = 0;
-  #pragma omp parallel shared(n_active,n_escape,e_esc,N) firstprivate(dt) 
+  #pragma omp parallel shared(n_active,n_escape,e_esc) firstprivate(dt) 
   {
 
     //--- MOVE THE PARTICLES AROUND ---

@@ -40,7 +40,6 @@ void transport::emit_particles(const double dt)
   // emit from the core and/or the zones
   if(n_emit_core >0) emit_inner_source(dt);
   if(n_emit_therm>0) emit_zones(dt, n_emit_therm, &transport::zone_therm_lum,      &transport::create_thermal_particle);
-  if(n_emit_visc >0) emit_zones(dt, n_emit_visc,  &transport::zone_visc_heat_rate, &transport::create_thermal_particle);
   if(n_emit_decay>0) emit_zones(dt, n_emit_decay, &transport::zone_decay_lum,      &transport::create_decay_particle);
 }
 
