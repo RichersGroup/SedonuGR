@@ -28,14 +28,14 @@ nut_spec_n_phi      = 1                -- number of phi bins in output spectrum
 -- particle creation parameters
 
 n_emit_core    = 0                 -- # particles to emit from core each timestep
-n_emit_therm   = 1000                 -- # particles to emit from zones each timestep
+n_emit_therm   = 10000                 -- # particles to emit from zones each timestep
 n_emit_decay   = 0                 -- # particles to emit from zones each timestep (from non-thermal processes)
 max_particles  = 1e6
 
 -- particle propagation parameters
 
 max_n_steps = 1000
-dt = 0.00001
+dt = 0.0000001
 step_size = 1.0                    -- move at most step_size*min_grid_length at a time
 
 -- inner source

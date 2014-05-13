@@ -4,7 +4,7 @@ km = 1.0e5      # cm
 nx = 1
 t0 = -1
 
-R_max = 10000*km
+R_max = 1e30*km
 R_min = 0*km
 dx = (R_max-R_min)/nx
 
