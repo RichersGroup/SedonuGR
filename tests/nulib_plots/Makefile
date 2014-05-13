@@ -1,22 +1,23 @@
 .PHONY: all clean
 
-rho=1e10  #g/cm^3
-T=5      #MeV
-Ye=0.3
-E=5       #MeV
-#species=1
+rho=1e12  #g/cm^3
+T=10      #MeV
+Ye=0.035
+E=5      #MeV
+mu=-30.0755 #MeV
 
 
 all:
 	mkdir -p species_0 species_1 species_2
 	for species in 0 1 2 ; do \
-	./nulib_test.exe ../../external/tables/NuLib.h5 $(rho) $(T) $(Ye) $(E) $$species ; \
+	./nulib_test.exe ../../external/tables/NuLib_LS220_rho150_temp90_ye60_ng24_ns3_version1.0_20140327.h5 $(rho) $(T) $(Ye) $(mu) $(E) $$species ; \
 	python eas_rho.py ; \
 	python eas_T.py ; \
 	python eas_ye.py ; \
 	gnuplot eas_E_rho.gnuplot ; \
 	gnuplot eas_E_T.gnuplot ; \
 	gnuplot eas_E_ye.gnuplot ; \
+	gnuplot emis_vs_opac.gnuplot; \
 	mv *.dat species_$$species ; \
 	mv *.pdf species_$$species ; \
 	done
