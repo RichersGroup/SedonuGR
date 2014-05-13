@@ -79,13 +79,14 @@ void neutrinos::myInit(Lua* lua)
   if(sim->n_emit_core > 0){
     double T_core = lua->scalar<double>("T_core");
     double L_core = lua->scalar<double>("L_core");
-    double chem_pot = 0;
+    double nue_chem_pot = lua->scalar<double>("nue_chem_pot");
     #pragma omp parallel for ordered
     for (int j=0;j<nu_grid.size();j++)
     {
+      double chempot = nue_chem_pot * (double)lepton_number; // mu_anue = -mu_nue
       double nu  = nu_grid.center(j);
       double dnu = nu_grid.delta(j);
-      double bb  = nu*nu*nu*fermi_dirac(T_core,chem_pot,nu)*dnu;
+      double bb  = nu*nu*nu*fermi_dirac(T_core,nue_chem_pot,nu)*dnu;
       #pragma omp ordered
       core_emis.set_value(j,bb);
     }
@@ -123,5 +124,5 @@ void neutrinos::set_eas(int zone_index)
 double neutrinos::fermi_dirac(const double T, const double chem_pot, const double nu) const
 {
 	double zeta = (pc::h*nu - chem_pot)/pc::k/T;
-	return 1.0 / (exp(zeta) + 1);
+	return 1.0 / (exp(zeta) + 1.0);
 }

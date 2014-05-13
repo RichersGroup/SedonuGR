@@ -4,6 +4,7 @@
 #include <fstream>
 #include <stdlib.h>
 #include <string.h>
+#include <cmath>
 #include "zone.h"
 #include "nulib_interface.h"
 #include "physical_constants.h"
@@ -11,10 +12,17 @@
 namespace pc = physical_constants;
 using namespace std;
 
+// Fermi-Dirac blackbody function (erg/s/ster/Hz/cm^3)
+double fermi_blackbody(const double T, const double chem_pot, const double nu){
+  double zeta = (pc::h*nu - chem_pot)/pc::k/T;
+  return pc::h*nu*nu*nu/(pc::c*pc::c) / (exp(zeta) + 1.0);
+}
+
+
 int main(int argc, char* argv[]){
   using namespace std;
-  if(argc!=7){
-    cout << "Usage: nulib_test.exe path_to_nulib_table.h5 rho(g/cm^3) T(MeV) Ye E(MeV) nulibID" << endl;
+  if(argc!=8){
+    cout << "Usage: nulib_test.exe path_to_nulib_table.h5 rho(g/cm^3) T(MeV) Ye chempot(MeV) E(MeV) nulibID" << endl;
     exit(1);
   }
 
@@ -22,9 +30,10 @@ int main(int argc, char* argv[]){
   real rho        = atof(argv[2]);           // g/cm^3
   real T          = atof(argv[3])/pc::k_MeV; // K
   real ye         = atof(argv[4]);
-  double myenergy = atof(argv[5]);           // MeV
+  real chempot    = atof(argv[5]);           // MeV
+  double myenergy = atof(argv[6]);           // MeV
   double myfreq   = myenergy     /pc::h_MeV; // Hz
-  int    nulibID  = atoi(argv[6]);
+  int    nulibID  = atoi(argv[7]);
   
   //read in the nulib table
   cout << "initializing nulib" << endl;
@@ -80,10 +89,37 @@ int main(int argc, char* argv[]){
   cdf_array emis;                 // erg/cm^3/s/ster
   emis.resize(ng);
 
+  //========================//
+  // INTEGRATE EMIS AND EAS //
+  //========================//
+  ofstream emis_vs_opac;
+  emis_vs_opac.open("emis_vs_opac.dat");
+  emis_vs_opac << "# rho(g/cm^3):" << rho << " T(MeV):" << T*pc::k_MeV << " ye:" << ye << endl;
+  double e=0, a=0, s=0;
+  double a_times_blackbody = 0;
+  double mu = chempot * pc::MeV_to_ergs;
+  if(nulibID==1) mu *= -1;
+  if(nulibID>1) mu = 0;
+  nulib_get_eas_arrays(rho, T, ye, nulibID, emis, absopac, scatopac);
+  e = emis.get(nu_grid.size()-1);                               // erg/s/cm^3/ster
+  for(int j=0; j<nu_grid.size(); j++){
+    a = nu_grid.value_at(nu_grid.center(j), absopac);
+    double tmp = a * nu_grid.delta(j)*fermi_blackbody(T,mu,nu_grid.center(j));  // erg/s/cm^3/ster
+    tmp *= (nulibID == 2 ? 4.0 : 1.0);
+    a_times_blackbody += tmp;
+    emis_vs_opac << nu_grid[j]*pc::h_MeV << setw(25) << tmp << setw(25) << emis.get_value(j) << endl;
+  }
+  cout << "Comparing emissivity to absorption opacity integrated against a blackbody (assuming 3 species)." << endl;
+  cout << T*pc::k_MeV << " MeV temperature" << endl;
+  cout << chempot << " MeV chemical potential" << endl;
+  cout << e << " erg/s/cm^3/ster Integrated emissivity" << endl;
+  cout << a_times_blackbody << " erg/s/cm^3/ster BB*absoption" << endl;
+  cout << endl;
+  emis_vs_opac.close();
+
   //===================//
   // SINGLE LINE PLOTS //
   //===================//
-  double e,a,s;
 
   ofstream eas_rho;
   eas_rho.open("eas_rho.dat");
