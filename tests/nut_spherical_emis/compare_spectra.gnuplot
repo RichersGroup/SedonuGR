@@ -8,7 +8,7 @@ r = 1                             #cm
 T = 3.5e11                        #K
 L = 1e43                          #erg/s
 P = 7./8.*4.*pi*r*r*sigma*T*T*T*T #erg/s
-N = L/P
+N = 1 #L/P
 
 set xlabel "Neutrino Frequency (Hz) (2.5e20 Hz/MeV)"
 set ylabel "Energy Flux (erg/s/Hz)"
@@ -17,19 +17,19 @@ set ylabel "Energy Flux (erg/s/Hz)"
 set term pdf
 set output "compare_spectrum_0.pdf"
 set title "Electron Neutrinos"
-plot N*4.*pi*pi*r*r*2.*x*x*x*h/c/c*1/(exp(h*x/(k_b*T))+1.)/6., './species0_I2.spec' using 1:2
+plot pi*4.*pi*r*r*x*x*x*h/c/c*1/(exp(h*x/(k_b*T))+1.)/6., './species0_I2.spec' using 1:2
 set output
 
 set term pdf
 set output "compare_spectrum_1.pdf"
 set title "Electron Anti-Neutrinos"
-plot N*4.*pi*pi*r*r*2.*x*x*x*h/c/c*1/(exp(h*x/(k_b*T))+1.)/6., './species1_I2.spec' using 1:2
+plot 4.*pi*pi*r*r*x*x*x*h/c/c*1/(exp(h*x/(k_b*T))+1.)/6., './species1_I2.spec' using 1:2
 set output
 
 set term pdf
 set output "compare_spectrum_2.pdf"
 set title "Mu/Tau Anti/Neutrinos"
-plot N*4.*pi*pi*r*r*2.*x*x*x*h/c/c*1/(exp(h*x/(k_b*T))+1.)*2./3., './species2_I2.spec' using 1:2
+plot 4.*pi*pi*r*r*x*x*x*h/c/c*1/(exp(h*x/(k_b*T))+1.)*2./3., './species2_I2.spec' using 1:2
 set output
 
 # planck function has units of erg/s/cm^2/Hz/ster
