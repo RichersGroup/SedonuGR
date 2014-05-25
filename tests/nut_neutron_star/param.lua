@@ -13,7 +13,7 @@ reflect_outer= 0
 
 grid_type = "grid_1D_sphere"       -- grid geometry. Must match grid geometry in model file if used  
 model_file  =  "neutron_star.mod"  -- model file. "custom" --> use hard coded model
-nulib_table = "../../external/tables/NuLib.h5" -- NuLib opacity/emissivity table
+nulib_table = "../../external/tables/NuLib_LS220_rho150_temp90_ye60_ng24_ns3_version1.0_20140327.h5" -- NuLib opacity/emissivity table
 write_zones_every   = 1
 write_rays_every    = 1
 write_spectra_every = 1
@@ -35,14 +35,15 @@ max_particles  = 1e6
 -- particle propagation parameters
 
 max_n_steps = 10
-dt = 1
+dt = -1
 step_size = 0.4                    -- move at most step_size*min_grid_length at a time
 
 -- inner source
 
 r_core = 9e5                       -- core radius (cm)
-L_core = 1e51                      -- core luminosity (erg/s)
-T_core = 3.5e11 -- 30MeV           -- core temperature (K)
+T_core = 1.6e11 -- 10MeV           -- core temperature (K)
+core_nue_chem_pot = -2e-5
+core_lum_multiplier = 1.0
 
 -- opacity parameters
 

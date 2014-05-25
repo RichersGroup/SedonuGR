@@ -6,7 +6,7 @@ steady_state = 1                 -- iterative calculation (solve for steady-stat
 solve_T      = 1                 -- (if iterative) solves each zone's temperature based on its absorbed energy
 solve_Ye     = 0                 -- (if iterative) solves each zone's Ye based on its absorbed lepton number
 reflect_outer = 0
-radiative_eq = 1
+radiative_eq = 0
 do_visc      = 1
 visc_specific_heat_rate = 5e10      -- specific heating rate due to viscosity (erg/s/g)
 

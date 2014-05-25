@@ -2,9 +2,9 @@
 
 rho=1e12  #g/cm^3
 T=10      #MeV
-Ye=0.035
-E=5      #MeV
-mu=-30.0755 #MeV
+Ye=0.2
+E=10      #MeV
+mu=4.44614 #MeV
 
 
 all:
