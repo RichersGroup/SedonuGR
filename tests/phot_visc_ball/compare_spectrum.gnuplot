@@ -7,7 +7,7 @@ visc_specific_heat_rate = 5e10
 
 r = 1e5                      #cm
 rho = 1e-15  #g/ccm
-T = 6.86e3                      #K
+T = 6.8559e3                      #K
 Lvisc = 4./3.*pi*r*r*r*rho * visc_specific_heat_rate #erg/s
 print Lvisc
 Lplanck = 4.*pi*r*r*sigma*T*T*T*T         #erg/s
@@ -26,4 +26,3 @@ set output
 # planck function has units of erg/s/cm^2/Hz/ster
 # 4*pi is the total solid angle through which photons are collected
 # pi*r*r is the cross-sectional surface area
-# 10 is because the spectrum is integrated over 10 iterations

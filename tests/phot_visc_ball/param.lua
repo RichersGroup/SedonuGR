@@ -5,6 +5,9 @@ do_neutrinos = 0                 -- simulate neutrinos?
 steady_state = 1                 -- iterative calculation (solve for steady-state configuration)? 
 solve_T      = 1                 -- (if iterative) solves each zone's temperature based on its absorbed energy
 solve_Ye     = 0                 -- (if iterative) solves each zone's Ye based on its absorbed lepton number
+reflect_outer = 0
+radiative_eq = 1
+do_visc      = 1
 visc_specific_heat_rate = 5e10      -- specific heating rate due to viscosity (erg/s/g)
 
 -- input/output files
@@ -24,21 +27,15 @@ phot_spec_nu_grid   = {0,2e15,2e13}     -- {start, stop, bin width}
 
 -- particle creation parameters
 n_emit_core    = 0                 -- # particles to emit from core each timestep
-n_emit_therm   = 0                 -- # particles to emit from zones each timestep ("actual" emission, ignored if radiative_eq)
+n_emit_therm   = 1e5                 -- # particles to emit from zones each timestep ("actual" emission, ignored if radiative_eq)
 n_emit_decay   = 0                 -- # particles to emit from zones each timestep (from non-thermal processes)
-n_emit_visc    = 1e4
-max_particles = 1e6
+max_particles = 1e5
 
 -- particle propagation parameters
 max_n_steps = 10
-dt = 1
+dt = -1
 step_size = 0.4                    -- move at most step_size*min_grid_length at a time
 
-
--- inner source
-r_core = 0                       -- core radius (cm)
-L_core = 0                       -- core luminosity (erg/s)
-T_core = 0                       -- core temperature (K)
 
 -- opacity parameters
 phot_grey_opacity    =  0.1           -- optical grey opacity (cm^2/g)
