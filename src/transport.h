@@ -106,9 +106,9 @@ public:
 
   // items for core emission
   double r_core;
-  double L_core;
   int n_emit_core;
-  cdf_array core_species_cdf;
+  double core_lum_multiplier;
+  cdf_array core_species_luminosity;
 
   // items for zone emission
   int do_visc;

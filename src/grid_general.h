@@ -52,7 +52,7 @@ class grid_general
   /* void reduce_T(); */
   /* void reduce_Ye(); */
 
-  static const double tiny = 1e-7;
+  static const double tiny = 1e-3; // used to overshoot boundary to account for error in boundary distance calculation
 
   // set everything up
   void init(Lua* lua);

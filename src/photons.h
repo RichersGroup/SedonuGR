@@ -11,7 +11,6 @@ protected:
 
   // photon-specific functions
   double klein_nishina(const double) const;
-  double planck(const double T, const double nu) const; // (erg/s/cm^2/Hz/ster)
   void compton_scatter();
 
 public:
@@ -21,6 +20,7 @@ public:
   // required functions
   void myInit(Lua* lua);
   void set_eas(int zone_index);
+  double blackbody(const double T, const double chempot, const double nu) const;
 };
 
 #endif

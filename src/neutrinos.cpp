@@ -1,5 +1,6 @@
 #pragma warning disable 161
 #include <vector>
+#include <cassert>
 #include "neutrinos.h"
 #include "transport.h"
 #include "Lua.h"
@@ -77,21 +78,20 @@ void neutrinos::myInit(Lua* lua)
   // set up core neutrino emission spectrum function (erg/s)
   // normalize to core luminosity. constants don't matter.
   if(sim->n_emit_core > 0){
+    //double L_core = lua->scalar<double>("L_core");
     double T_core = lua->scalar<double>("T_core");
-    double L_core = lua->scalar<double>("L_core");
-    double nue_chem_pot = lua->scalar<double>("nue_chem_pot");
+    double r_core = lua->scalar<double>("r_core");
+    double chempot = lua->scalar<double>("core_nue_chem_pot") * (double)lepton_number;
     #pragma omp parallel for ordered
     for (int j=0;j<nu_grid.size();j++)
     {
-      double chempot = nue_chem_pot * (double)lepton_number; // mu_anue = -mu_nue
       double nu  = nu_grid.center(j);
       double dnu = nu_grid.delta(j);
-      double bb  = nu*nu*nu*fermi_dirac(T_core,nue_chem_pot,nu)*dnu;
       #pragma omp ordered
-      core_emis.set_value(j,bb);
+      core_emis.set_value(j, blackbody(T_core,chempot,nu)*dnu);
     }
     core_emis.normalize();
-    core_emis.N = weight * L_core / 6.0;
+    core_emis.N *= pc::pi * (4.0*pc::pi*r_core*r_core) * weight/6.0;
   }
 
   // set neutrino's min and max values
@@ -110,19 +110,32 @@ void neutrinos::myInit(Lua* lua)
 void neutrinos::set_eas(int zone_index)
 {
     zone* z = &(sim->grid->z[zone_index]);
-
     z->eps_imc = 1;
-    nulib_get_eas_arrays(z->rho, z->T_gas, z->Ye, nulibID,
-			 emis[zone_index], abs_opac[zone_index], scat_opac[zone_index]);
-    emis[zone_index].normalize();
+
+    if(grey_opac < 0){
+    	nulib_get_eas_arrays(z->rho, z->T_gas, z->Ye, nulibID,
+    			emis[zone_index], abs_opac[zone_index], scat_opac[zone_index]);
+    	emis[zone_index].normalize();
+    }
+
+    else{
+    	for (int j=0;j<nu_grid.size();j++)
+    	    {
+    	      double nu  = nu_grid.center(j);        // (Hz)
+    	      double dnu = nu_grid.delta(j);         // (Hz)
+    	      double bb  = blackbody(z->T_gas,0,nu)*dnu;  // (erg/s/cm^2/ster)
+    	      emis[zone_index].set_value(j,grey_opac*eps*bb*z->rho); // (erg/s/cm^3/Hz/ster)
+    	    }
+    	    emis[zone_index].normalize();
+    }
 }
 
+
 //-----------------------------------------------------------------
-// Calculate the fermi-dirac function (erg/s/cm^2/Hz/ster)
-// (normalized to 1, not total luminosity)
+// Calculate the fermi-dirac blackbody function (erg/s/cm^2/Hz/ster)
 //-----------------------------------------------------------------
-double neutrinos::fermi_dirac(const double T, const double chem_pot, const double nu) const
+double neutrinos::blackbody(const double T, const double chem_pot, const double nu) const
 {
-	double zeta = (pc::h*nu - chem_pot)/pc::k/T;
-	return 1.0 / (exp(zeta) + 1.0);
+  double zeta = (pc::h*nu - chem_pot)/pc::k/T;
+  return (pc::h/pc::c/pc::c) * nu*nu*nu / (exp(zeta) + 1.0);
 }

@@ -1,5 +1,6 @@
 #include <math.h>
 #include <gsl/gsl_rng.h>
+#include <cassert>
 #include "species_general.h"
 #include "transport.h"
 #include "physical_constants.h"
@@ -13,7 +14,7 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 void transport::isotropic_scatter(particle* p, const int redistribute) const
 {
-
+  assert(p->ind >= 0);
   // get doppler shift from lab to comoving frame
   double dshift_in = dshift_lab_to_comoving(p);
   

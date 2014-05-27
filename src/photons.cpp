@@ -1,6 +1,7 @@
 #pragma warning disable 161
 #include <limits>
 #include <vector>
+#include <cassert>
 #include "photons.h"
 #include "transport.h"
 #include "Lua.h"
@@ -58,18 +59,18 @@ void photons::myInit(Lua* lua)
   // normalized to core luminosity. constants don't matter.
   if(sim->n_emit_core > 0){
     double T_core = lua->scalar<double>("T_core");
-    double L_core = lua->scalar<double>("L_core");
+    double r_core = lua->scalar<double>("r_core");
+    double chempot = 0;
     #pragma omp parallel for ordered
     for (int j=0;j<nu_grid.size();j++)
     {
       double nu  = nu_grid.center(j);
       double dnu = nu_grid.delta(j);
-      double bb  = planck(T_core,nu)*dnu;
       #pragma omp ordered
-      core_emis.set_value(j,bb); 
+      core_emis.set_value(j, blackbody(T_core,chempot,nu)*dnu);
     }
     core_emis.normalize();
-    core_emis.N = L_core;
+    core_emis.N *= pc::pi * (4.0*pc::pi*r_core*r_core);
   }
 
   // set photon's min and max values
@@ -104,7 +105,7 @@ void photons::set_eas(int zone_index)
     {
       double nu  = nu_grid.center(j);        // (Hz)
       double dnu = nu_grid.delta(j);         // (Hz)
-      double bb  = planck(z->T_gas,nu)*dnu;  // (erg/s/cm^2/ster)
+      double bb  = blackbody(z->T_gas,0,nu)*dnu;  // (erg/s/cm^2/ster)
       emis[zone_index].set_value(j,grey_opac*eps*bb*z->rho); // (erg/s/cm^3/Hz/ster)
     }
     emis[zone_index].normalize();
@@ -129,9 +130,12 @@ double photons::klein_nishina(const double x_input) const
   return KN;
 }
 
-// calculate planck function (erg/s/cm^2/Hz/ster)
-double photons::planck(const double T, const double nu) const
+//================================================//
+// calculate planck function (erg/s/cm^2/Hz/ster) //
+//================================================//
+double photons::blackbody(const double T, const double chempot, const double nu) const
 {
-  double zeta = pc::h*nu/pc::k/T;
+  assert(chempot==0);
+  double zeta = (pc::h*nu - chempot) / (pc::k*T);
   return 2.0*nu*nu*nu*pc::h/pc::c/pc::c/(exp(zeta)-1);
 }

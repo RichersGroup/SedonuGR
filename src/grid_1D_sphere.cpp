@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <cassert>
+#include <limits>
 #include "grid_1D_sphere.h"
 #include "physical_constants.h"
 
@@ -122,7 +123,8 @@ int grid_1D_sphere::get_zone(const double *x) const
 //------------------------------------------------------------
 double  grid_1D_sphere::zone_volume(const int i) const
 {
-  return vol[i];
+	assert(i >= 0);
+	return vol[i];
 }
 
 
@@ -131,8 +133,9 @@ double  grid_1D_sphere::zone_volume(const int i) const
 //------------------------------------------------------------
 double  grid_1D_sphere::zone_min_length(const int i) const
 {
-  if (i == 0) return (r_out[i] - r_out.min);
-  else return (r_out[i] - r_out[i-1]);
+	assert(i >= 0);
+	if (i == 0) return (r_out[i] - r_out.min);
+	else return (r_out[i] - r_out[i-1]);
 }
 
 
@@ -143,6 +146,7 @@ double  grid_1D_sphere::zone_min_length(const int i) const
 void grid_1D_sphere::sample_in_zone
 (const int i, const std::vector<double> ran, double r[3]) const
 {
+	assert(i >= 0);
   // inner radius of shell
   double r1;
   if (i == 0) r1 = r_out.min;
@@ -172,6 +176,7 @@ void grid_1D_sphere::sample_in_zone
 //------------------------------------------------------------
 void grid_1D_sphere::velocity_vector(const int i, const double x[3], double v[3]) const
 {
+	assert(i >= 0);
   // radius in zone
   double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 
@@ -205,7 +210,9 @@ void grid_1D_sphere::write_rays(const int iw) const
 // Reflect off the outer boundary
 //------------------------------------------------------------
 void grid_1D_sphere::reflect_outer(particle *p) const{
-  double dr = r_out[r_out.size()-1]-r_out[r_out.size()-2];
+  double dr = 0;
+  if(r_out.size()>1) dr = r_out[r_out.size()-1]-r_out[r_out.size()-2];
+  else dr = r_out[0]-r_out.min;
   assert( fabs(p->r() - r_out[r_out.size()-1]) < tiny*dr);
   double velDotRhat = p->mu();
   double R = p->r();
@@ -222,22 +229,45 @@ void grid_1D_sphere::reflect_outer(particle *p) const{
   p->x[2] = p->x[2]/R*newR;
   
   // must be inside the boundary, or will get flagged as escaped
+  p->ind = get_zone(p->x);
   assert(p->r() < r_out[r_out.size()-1]);
 }
 
 //------------------------------------------------------------
 // Find distance to outer boundary (less a tiny bit)
+// negative distance means inner boundary
 //------------------------------------------------------------
 double grid_1D_sphere::dist_to_boundary(const particle *p) const{
-  // Theta = angle between radius vector and direction (parallel if outgoing)
-  // Phi   = Pi - Theta (angle on the triangle) (paralell if incoming)
-  double R  = r_out[r_out.size()-1];
+  // Theta = angle between radius vector and direction (Pi if outgoing)
+  // Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
+  double Rout  = r_out[r_out.size()-1];
+  double Rin   = r_out.min;
   double r  = p->r();
-  assert(r<R);
   double mu = p->mu();
-  //double cosPhi = sqrt(1.0 - mu*mu);
-  double d_boundary = -r*mu + sqrt(r*r*(mu*mu-1.0) + R*R);
-  assert(d_boundary >= 0);
-  assert(d_boundary <= 2.*R);
-  return d_boundary * (1.0-tiny);
+  double d_outer_boundary = numeric_limits<double>::infinity();
+  double d_inner_boundary = numeric_limits<double>::infinity();
+  assert(r<Rout);
+  assert(p->ind >= -1);
+
+  // distance to inner boundary
+  if(r >= Rin){
+	  double radical = r*r*(mu*mu-1.0) + Rin*Rin;
+	  if(Rin>0 && mu<0 && radical>=0){
+		  d_inner_boundary = -r*mu - sqrt(radical);
+		  assert(d_inner_boundary <= sqrt(Rout*Rout-Rin*Rin)*(1.0+tiny));
+	  }
+  }
+  else{
+	  d_inner_boundary = -r*mu + sqrt(r*r*(mu*mu-1.0) + Rin*Rin);
+	  assert(d_inner_boundary <= 2.*Rin);
+  }
+  assert(d_inner_boundary >= 0);
+
+  // distance to outer boundary
+  d_outer_boundary = -r*mu + sqrt(r*r*(mu*mu-1.0) + Rout*Rout);
+  assert(d_outer_boundary >= 0);
+  assert(d_outer_boundary <= 2.*Rout);
+
+  // make sure the particle ends up in a reasonable place
+  return min(d_inner_boundary, d_outer_boundary);
 }

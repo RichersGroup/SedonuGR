@@ -204,16 +204,13 @@ void transport::init(Lua* lua)
   // so it's looked at only in species::myInit()
   if(n_emit_core > 0){
     r_core      = lua->scalar<double>("r_core");
-    L_core      = lua->scalar<double>("L_core");
-    core_species_cdf.resize(species_list.size());
+    core_lum_multiplier = lua->scalar<double>("core_lum_multiplier");
+    core_species_luminosity.resize(species_list.size());
     for(int i=0; i<species_list.size(); i++)
-      core_species_cdf.set_value(i, species_list[i]->int_core_emis());
-    core_species_cdf.normalize();
+      core_species_luminosity.set_value(i, species_list[i]->int_core_emis() * core_lum_multiplier);
+    core_species_luminosity.normalize();
   }
-  else{
-    r_core = 0;
-    L_core = 0;
-  }
+  else r_core = 0;
 }
 
 
@@ -290,7 +287,7 @@ void transport::normalize_radiative_quantities(const double dt){
 
     grid->z[i].e_rad    /= vol*pc::c*dt; // erg*dist --> erg/ccm
     grid->z[i].e_abs    /= vol*dt;       // erg      --> erg/ccm/s
-    grid->z[i].l_abs    /= vol*dt;       // num      --> num/vol/s
+    grid->z[i].l_abs    /= vol*dt;       // num      --> num/ccm/s
     // grid->z[i].f_rad[0] /= vol*pc::c*dt;
     // grid->z[i].f_rad[1] /= vol*pc::c*dt;
     // grid->z[i].f_rad[2] /= vol*pc::c*dt;
@@ -320,7 +317,7 @@ int transport::sample_core_species() const
 {
   // randomly sample the species (precomputed CDF)
   double z = rangen.uniform();
-  return core_species_cdf.sample(z);
+  return core_species_luminosity.sample(z);
 }
 
 
@@ -456,17 +453,21 @@ void transport::update_zone_quantities(){
   #pragma omp parallel for schedule(guided)
   for (int i=start; i<end; i++) if( (grid->z[i].rho >= rho_min) && (grid->z[i].rho <= rho_max) )
   {
-    // adjust the temperature based on the heat capacity (erg/K)
-    // assert(grid->z[i].heat_cap > 0);
-    // grid->z[i].T_gas += grid->z[i].e_abs / grid->z[i].heat_cap;
-    // assert(grid->z[i].T_gas >= T_min);
-    // assert(grid->z[i].T_gas <= T_max);
+	  // adjust the temperature based on the heat capacity (erg/K)
+	  if(solve_T){
+		  // assert(grid->z[i].heat_cap > 0);
+		  // grid->z[i].T_gas += grid->z[i].e_abs / grid->z[i].heat_cap;
+		  // assert(grid->z[i].T_gas >= T_min);
+		  // assert(grid->z[i].T_gas <= T_max);
+	  }
 
     // adjust the Ye based on the lepton capacity (number of leptons)
-    double Nbary = grid->z[i].rho * grid->zone_volume(i) * (grid->z[i].Ye/pc::m_p + (1.-grid->z[i].Ye)/pc::m_n);
-    assert(Nbary > 0);
-    grid->z[i].Ye += grid->z[i].l_abs / Nbary;
-    assert(grid->z[i].Ye >= Ye_min);
-    assert(grid->z[i].Ye <= Ye_max);
-  }  
+	  if(solve_Ye){
+		  double Nbary = grid->z[i].rho * grid->zone_volume(i) * (grid->z[i].Ye/pc::m_p + (1.-grid->z[i].Ye)/pc::m_n);
+		  assert(Nbary > 0);
+		  grid->z[i].Ye += grid->z[i].l_abs / Nbary;
+		  assert(grid->z[i].Ye >= Ye_min);
+		  assert(grid->z[i].Ye <= Ye_max);
+	  }
+  }
 }

@@ -19,9 +19,7 @@ class neutrinos: public species_general
   // required functions
   void myInit(Lua* lua);
   void set_eas(int zone_index);
-
-  // other functions
-  double fermi_dirac(const double T, const double chem_pot, const double nu) const; //(unitless)
+  double blackbody(const double T, const double chempot, const double nu) const;
 };
 
 #endif

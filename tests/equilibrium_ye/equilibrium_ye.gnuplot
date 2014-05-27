@@ -16,5 +16,5 @@ set xlabel "Density (g/cm^3)"
 set ylabel "Y_e"
 set output "rho_ye.pdf"
 set xrange [:] reverse
-plot "fluid_00001" using 4:7 title "NuLib", 'eos.dat' using 2:3 w l title "EOS"
+plot "fluid_00001" using 5:7 title "NuLib", 'eos.dat' using 2:3 w l title "EOS"
 set output

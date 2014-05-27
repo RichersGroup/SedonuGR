@@ -1,6 +1,7 @@
 #pragma warning disable 161
 #include <omp.h>
 #include <math.h>
+#include <gsl/gsl_sf_fermi_dirac.h>
 #include "thread_RNG.h"
 #include "transport.h"
 #include "species_general.h"
@@ -51,8 +52,10 @@ void transport::emit_particles(const double dt)
 //------------------------------------------------------------
 void transport::emit_inner_source(const double dt)
 {
-  const double Ep  = L_core*dt/n_emit_core;
-  L_net += L_core;
+  const double Ep  = core_species_luminosity.N * dt/n_emit_core;
+  L_net += core_species_luminosity.N;
+  	  cout << r_core << endl;
+  cout << "# Core Flux: " << core_species_luminosity.N/(4.0*pc::pi*r_core*r_core) << " erg/s/cm^2" << endl;
 
   #pragma omp parallel for
   for (int i=0; i<n_emit_core; i++){
@@ -83,7 +86,6 @@ void transport::emit_zones(const double dt,
 
     #pragma omp single
     {
-      if(verbose) cout << "# L = " << net_lum << endl;
       Ep = net_lum*dt / (double)n_emit;
       L_net += net_lum;
     }

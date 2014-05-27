@@ -57,7 +57,7 @@ int main(int argc, char **argv)
   // read in time stepping parameters
   int steady_state = lua.scalar<int>("steady_state");
   int max_n_steps  = lua.scalar<int>("max_n_steps");
-  double dt          = (steady_state ? 1 : lua.scalar<double>("dt"));
+  double dt        = lua.scalar<double>("dt");
   lua.close();
 
   //===========//

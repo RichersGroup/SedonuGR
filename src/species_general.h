@@ -53,6 +53,9 @@ class species_general
   // set everything up
   void init(Lua* lua, transport* sim);
 
+  // this species' blackbody function (erg/cm^2/s/ster/Hz)
+  virtual double blackbody(const double T, const double chempot, const double nu) const = 0;
+
   // return the emissivity integrated over frequency at the core
   double int_core_emis() const; //(erg/s)
 

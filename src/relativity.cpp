@@ -1,3 +1,4 @@
+#include <cassert>
 #include "transport.h"
 #include "particle.h"
 #include "physical_constants.h"
@@ -56,6 +57,11 @@ void lorentz_transform(particle* p, const double (&v_rel)[3]){
 //------------------------------------------------------------
 double transport::dshift_comoving_to_lab(particle* p) const
 {
+  if(p->ind < 0){
+	  cout << p->r()-1e7<<endl;
+	  cout << p->ind<<endl;
+  }
+  assert(p->ind >= 0);
   double v[3];
   grid->velocity_vector(p->ind,p->x,v); // v_comoving - v_lab
 
