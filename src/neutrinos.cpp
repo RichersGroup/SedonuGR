@@ -79,9 +79,9 @@ void neutrinos::myInit(Lua* lua)
   // normalize to core luminosity. constants don't matter.
   if(sim->n_emit_core > 0){
     //double L_core = lua->scalar<double>("L_core");
-    double T_core = lua->scalar<double>("T_core");
+    double T_core = lua->scalar<double>("T_core") / pc::k_MeV;
     double r_core = lua->scalar<double>("r_core");
-    double chempot = lua->scalar<double>("core_nue_chem_pot") * (double)lepton_number;
+    double chempot = lua->scalar<double>("core_nue_chem_pot") * (double)lepton_number * pc::MeV_to_ergs;
     #pragma omp parallel for ordered
     for (int j=0;j<nu_grid.size();j++)
     {
@@ -91,7 +91,7 @@ void neutrinos::myInit(Lua* lua)
       core_emis.set_value(j, blackbody(T_core,chempot,nu)*dnu);
     }
     core_emis.normalize();
-    core_emis.N *= pc::pi * (4.0*pc::pi*r_core*r_core) * weight/6.0;
+    core_emis.N *= pc::pi * (4.0*pc::pi*r_core*r_core) * weight;
   }
 
   // set neutrino's min and max values

@@ -54,8 +54,7 @@ void transport::emit_inner_source(const double dt)
 {
   const double Ep  = core_species_luminosity.N * dt/n_emit_core;
   L_net += core_species_luminosity.N;
-  	  cout << r_core << endl;
-  cout << "# Core Flux: " << core_species_luminosity.N/(4.0*pc::pi*r_core*r_core) << " erg/s/cm^2" << endl;
+  //cout << "# Core Flux: " << core_species_luminosity.N/(4.0*pc::pi*r_core*r_core) << " erg/s/cm^2" << endl;
 
   #pragma omp parallel for
   for (int i=0; i<n_emit_core; i++){
