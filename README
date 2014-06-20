@@ -20,7 +20,7 @@ Note that the only compilers we've tested are GNU, Intel, and (only on Hopper) P
 #######
 GSL is used to generate random numbers in sedona. If you do not already have GSL installed, you may be able to install it using the following in Ubuntu. This is the recommended way to install GSL. In ubuntu you can check whether these are installed using "dpkg -l | grep 'gsl'" (without the quotes).
 
-    apt-get install gsl-bin libgsl0ldbl
+    apt-get install gsl-bin libgsl0ldbl libsgl0-dev
 
 If you can't install software with a package manager on your machine (e.g. a cluster), then you will have to build it from scratch in your chosen directory. This almost never has to be done, so we won't include directions here. If directions would be helpful, let us know and we can add them. So far, the latest tested version of gsl is 1.15.
 
@@ -30,9 +30,9 @@ If you can't install software with a package manager on your machine (e.g. a clu
 #######
 Lua is a scripting language that is used to read the parameter files. If you do not already have Lua installed, you may be able to install it using the following in Ubuntu. However, you will have to change a flag in make.inc, as for some reason the Ubuntu package manager renames the libraries. Also, the library will be in the default search path, so remove the information that says where everything is. If it works, this is the recommended way to install lua. In ubuntu you can see if lua is installed using "dpkg -l | grep 'lua'" (without the quotes).
 
-    apt-get install lua5.2
-    (in make.inc) #LUA_BASE=external/lua-5.2.2/install #commented out b/c it's in the default search path
-    (in make.inc) #LUA_INCL=$(LUA_BASE)/include        #commented out b/c it's in the default search path
+    apt-get install lua5.2 lua5.2-dev
+    (in make.inc) #LUA_BASE=external/lua-5.2.2/install #commented out b/c it's unused
+    (in make.inc) -I/usr/include/lua5.2                #ubuntu puts lua in a non-standard directory
     (in make.inc) LUA_LIBS=-llua5.2                    #at least this is the name Ubuntu gives the library ("liblua5.2.so")
 
 If you can't install software with a package manager on your machine (e.g. a cluster), then you will have to build it from scratch in your chosen directory. We will install it into the "external" directory here. First, download and extract the source code (this version is the latest version tested with sedona).
@@ -58,13 +58,13 @@ HDF5 is used by NuLib to create and read the opacity tables. IT MUST BE COMPILED
 
 If you need to compile your own copy of hdf5, download the tarball and extract the table:
 
-    wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.11.tar.gz
-    tar -xvf hdf5-1.8.11.tar.gz -C external
-    rm hdf5-1.8.11.tar.gz
+    wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.13.tar.gz
+    tar -xvf hdf5-1.8.13.tar.gz -C external
+    rm hdf5-1.8.13.tar.gz
 
 Go into the directory
 
-    cd external/hdf5-1.8.11
+    cd external/hdf5-1.8.13
 
 Configure the make process. Some versions of gcc have a bug that causes hdf5 to fail tests if any optimization is enabled, so there are two examples below. The only tested compilers are intel and GNU.
 
@@ -77,7 +77,7 @@ Build and test the binaries. This takes quite a while.
     make test
     make install
 
-Everything actually needed for compiling, linking, and running the code is in the external/hdf5-1.8.11/hdf5 subdirectory. The default hdf5 path in make.inc.template points to this location. Make sure that the mpi compiler wrapper scripts (mpif90, etc) use the same compiler that you used to compile hdf5 (see the beginning of the prerequisites section).
+Everything actually needed for compiling, linking, and running the code is in the external/hdf5-1.8.13/hdf5 subdirectory. The default hdf5 path in make.inc.template points to this location. Make sure that the mpi compiler wrapper scripts (mpif90, etc) use the same compiler that you used to compile hdf5 (see the beginning of the prerequisites section).
 
 
 
