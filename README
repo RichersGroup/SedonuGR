@@ -16,6 +16,14 @@ Open make.inc in your favorite text editor and make sure the compiler and compil
 Note that the only compilers we've tested are GNU, Intel, and (only on Hopper) PGI
 
 #######
+# MPI #
+#######
+In Debian-based systems, this should be as easy as
+
+   apt-get install mpich2
+
+
+#######
 # GSL #
 #######
 GSL is used to generate random numbers in sedona. If you do not already have GSL installed, you may be able to install it using the following in Ubuntu. This is the recommended way to install GSL. In ubuntu you can check whether these are installed using "dpkg -l | grep 'gsl'" (without the quotes).

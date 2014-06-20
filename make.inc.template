@@ -25,9 +25,9 @@ LUA_INCL=-I$(LUA_BASE)/include
 LUA_LIBS=-L$(LUA_BASE)/lib -llua -Wl,-rpath,$(LUA_BASE)/lib
 
 #HDF5
-HDF5DIR=$(CURDIR)/external/hdf5-1.8.11/hdf5
-HDF5INCS=-I$(HDF5DIR)/include
-HDF5LIBS=-L$(HDF5DIR)/lib -lhdf5 -lhdf5_fortran -Wl,-rpath,$(HDF5DIR)/lib
+HDF5_DIR=$(CURDIR)/external/hdf5-1.8.13/hdf5
+HDF5INCS=-I$(HDF5_DIR)/include
+HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5 -lhdf5_fortran -Wl,-rpath,$(HDF5_DIR)/lib
 
 #NuLib
 NULIB_DIR=$(CURDIR)/external/NuLib
