@@ -28,7 +28,7 @@ In Debian-based systems, this should be as easy as
 #######
 GSL is used to generate random numbers in sedona. If you do not already have GSL installed, you may be able to install it using the following in Ubuntu. This is the recommended way to install GSL. In ubuntu you can check whether these are installed using "dpkg -l | grep 'gsl'" (without the quotes).
 
-    apt-get install gsl-bin libgsl0ldbl libsgl0-dev
+    apt-get install gsl-bin libgsl0ldbl libgsl0-dev
 
 If you can't install software with a package manager on your machine (e.g. a cluster), then you will have to build it from scratch in your chosen directory. This almost never has to be done, so we won't include directions here. If directions would be helpful, let us know and we can add them. So far, the latest tested version of gsl is 1.15.
 
