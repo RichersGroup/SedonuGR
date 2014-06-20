@@ -9,9 +9,9 @@ r = 1e5                            #cm
 T = 5.0e10                         #K
 rho = 1e10                         #g/cm^3
 Lvisc = 4./3.*pi*r*r*r*rho * visc_specific_heat_rate #erg/s
-print Lvisc
+#print Lvisc
 Lfermi = 7./8.*4.*pi*r*r*sigma*T*T*T*T         #erg/s
-print Lfermi
+#print Lfermi
 N = 10*Lvisc/Lfermi                         # normalize BB spectrum to unit net luminosity, then multiply by expected luminosity
 
 set xlabel "Neutrino Frequency (Hz) (2.5e20 Hz/MeV)"

@@ -41,14 +41,14 @@ step_size = 0.4                    -- move at most step_size*min_grid_length at 
 -- inner source
 
 r_core = 9.9999e5                         -- core radius (cm)
-T_core = 1.16044e11                         -- core temperature (K) (10 MeV)
-core_nue_chem_pot = 0 --0.0000490915 --0.0000245976       -- chempot of Ye=0.2, T=10MeV
+T_core = 1.0                         -- core temperature (K) (10 MeV)
+core_nue_chem_pot = 5.54522 --0.0000490915 --0.0000245976       -- chempot of Ye=0.2, T=10MeV
 core_lum_multiplier = 1.0
 
 -- opacity parameters
 
-nut_grey_opacity    =  -1 --2e-28          -- optical grey opacity (cm^2/g)
-nut_epsilon         =  -1 --1          -- absorption fraction
+nut_grey_opacity    = -1 --2e-28          -- optical grey opacity (cm^2/g)
+nut_epsilon         = -1 --1          -- absorption fraction
 
 -- equilibrium solver parameters
 

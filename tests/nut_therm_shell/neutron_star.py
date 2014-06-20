@@ -8,9 +8,9 @@ R_max = 10*km
 R_min = 9.9999*km
 dx = (R_max-R_min)/nx
 
-rho = 0 #1e12
-temp = 10*MeV
-ye = 0.181845
+rho = 1e12
+temp = 1*MeV
+ye = 0.3
 
 print '1D_sphere', 'GRB',nx,R_min,t0
 

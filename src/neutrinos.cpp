@@ -119,6 +119,7 @@ void neutrinos::set_eas(int zone_index)
     }
 
     else{
+        cout << "# WARNING - grey emissivity calculated from grey opacity assuming chemical potential = 0" << endl;
     	for (int j=0;j<nu_grid.size();j++)
     	    {
     	      double nu  = nu_grid.center(j);        // (Hz)
