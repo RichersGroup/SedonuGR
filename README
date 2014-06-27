@@ -15,6 +15,15 @@ Open make.inc in your favorite text editor and make sure the compiler and compil
 
 Note that the only compilers we've tested are GNU, Intel, and (only on Hopper) PGI
 
+
+########
+# ZLIB #
+########
+In Debian-based systems, this should be as easy as
+
+   apt-get install zlib1g-dev
+
+
 #######
 # MPI #
 #######

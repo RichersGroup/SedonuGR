@@ -20,3 +20,7 @@ external/EOSsuper/nuc_eos.a
 run
 .project
 .cproject
+time_stats_log
+lockfile
+gui_rpc_auth.cfg
+client_state.xml
