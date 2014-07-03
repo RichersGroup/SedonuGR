@@ -63,7 +63,7 @@ void grid_general::write_zones(const int iw) const
 
     outf << z[i].e_rad << " ";
     outf << z[i].rho << " ";
-    outf << z[i].T_gas << " ";
+    outf << z[i].T_gas*pc::k_MeV << " ";
     outf << z[i].Ye << " ";
     outf << endl;
   }
