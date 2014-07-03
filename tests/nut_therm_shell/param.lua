@@ -13,7 +13,7 @@ reflect_outer= 1
 
 grid_type = "grid_1D_sphere"       -- grid geometry. Must match grid geometry in model file if used  
 model_file  =  "neutron_star.mod"  -- model file. "custom" --> use hard coded model
-nulib_table = "../../external/tables/NuLib_LS220_noscatter.h5" -- NuLib opacity/emissivity table
+nulib_table = "../../external/tables/NuLib_LS220_rho150_temp90_ye60_ng24_ns3_Itemp10_Ieta10_version1.0_20140701.h5" -- NuLib opacity/emissivity table
 write_zones_every   = 1
 write_rays_every    = -1
 write_spectra_every = -1
@@ -40,18 +40,21 @@ step_size = 0.4                    -- move at most step_size*min_grid_length at 
 
 -- inner source
 
-r_core = 9.9999e5                         -- core radius (cm)
-T_core = 1.0                         -- core temperature (K) (10 MeV)
-core_nue_chem_pot = 5.54522 --0.0000490915 --0.0000245976       -- chempot of Ye=0.2, T=10MeV
+r_core = 9.9999e5                  -- core radius (cm)
+T_core = 10.0                      -- core temperature (K) (10 MeV)
+core_nue_chem_pot = 0              -- chempot of Ye=0.167031, T=10MeV according to LS220
 core_lum_multiplier = 1.0
 
 -- opacity parameters
 
-nut_grey_opacity    = -1 --2e-28          -- optical grey opacity (cm^2/g)
-nut_epsilon         = -1 --1          -- absorption fraction
+nut_grey_opacity    = -2e-16          -- optical grey opacity (cm^2/g)
+nut_grey_abs_frac   = -1              -- absorption fraction
+nut_nugrid_start    = 1.0
+nut_nugrid_stop     = 6.3e22
+nut_nugrid_n        = 48
 
 -- equilibrium solver parameters
 
-damping = 0.2                      -- changes in values between iterations are decreased by this factor
+damping = 0.1                      -- changes in values between iterations are decreased by this factor
 brent_itmax = 100
 brent_tolerance = 0.01
