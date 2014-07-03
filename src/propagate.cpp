@@ -183,7 +183,6 @@ void transport::propagate(particle* p, const double dt) const
 		this_E_comoving = this_E * dshift * dshift;
         #pragma omp atomic
 		zone->e_abs += this_E_comoving * (opac*abs_frac*zone->eps_imc);
-		//DELETEcout << opac << " " << p->e << endl;
 
 		// store absorbed lepton number (same in both frames, except for the
 		// factor of this_d which is divided out later
