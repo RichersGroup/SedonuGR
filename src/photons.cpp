@@ -17,6 +17,7 @@ void photons::myInit(Lua* lua)
 {
   // set name
   name = "Photons";
+  weight = 1.0;
 
   // poison unused zone properties
   #pragma omp parallel for
@@ -32,46 +33,14 @@ void photons::myInit(Lua* lua)
 
   // read opacity parameters
   grey_opac       = lua->scalar<double>("phot_grey_opacity");
-  eps             = lua->scalar<double>("phot_epsilon");
-  double nu_start = lua->scalar<double>("phot_nu_start");
-  double nu_stop  = lua->scalar<double>("phot_nu_stop");
-  int      n_nu   = lua->scalar<int>("phot_n_nu");
+  grey_abs_frac   = lua->scalar<double>("phot_grey_abs_frac");
+  double nu_start = lua->scalar<double>("phot_nugrid_start");
+  double nu_stop  = lua->scalar<double>("phot_nugrid_stop");
+  int      n_nu   = lua->scalar<int>("phot_nugrid_n");
   lepton_number   = 0;
 
   // initialize the  frequency grid
   nu_grid.init(nu_start,nu_stop,n_nu);
-
-  // allocate space for the grid eas spectrum containers
-  abs_opac.resize(sim->grid->z.size());
-  scat_opac.resize(sim->grid->z.size());
-  emis.resize(sim->grid->z.size());
-
-  // now allocate space for each eas spectrum
-  if(sim->n_emit_core > 0) core_emis.resize(nu_grid.size());
-  #pragma omp parallel for
-  for (int i=0; i<abs_opac.size();  i++){
-    abs_opac[i].resize(nu_grid.size());
-    scat_opac[i].resize(nu_grid.size());
-    emis[i].resize(nu_grid.size());
-  }
-
-  // set up core emission spectrum function (now a blackbody) (erg/s)
-  // normalized to core luminosity. constants don't matter.
-  if(sim->n_emit_core > 0){
-    double T_core = lua->scalar<double>("T_core");
-    double r_core = lua->scalar<double>("r_core");
-    double chempot = 0;
-    #pragma omp parallel for ordered
-    for (int j=0;j<nu_grid.size();j++)
-    {
-      double nu  = nu_grid.center(j);
-      double dnu = nu_grid.delta(j);
-      #pragma omp ordered
-      core_emis.set_value(j, blackbody(T_core,chempot,nu)*dnu);
-    }
-    core_emis.normalize();
-    core_emis.N *= pc::pi * (4.0*pc::pi*r_core*r_core);
-  }
 
   // set photon's min and max values
   T_min   =  1.0;
@@ -89,27 +58,26 @@ void photons::myInit(Lua* lua)
 void photons::set_eas(int zone_index)
 {
   zone* z = &(sim->grid->z[zone_index]);
-  if(grey_opac >= 0)
-  {
-    // fleck factors
-    //double Tg    = sim->grid->z[zone_index].T_gas;
-    //double fleck_beta=4.0*pc::a*pow(Tg,4)/(sim->grid->z[zone_index].e_gas*sim->grid->z[zone_index].rho);
-    //double tfac  = pc::c*grey_opac*epsilon*sim->grid->z[zone_index].rho*t_step;
-    //double f_imc = fleck_alpha*fleck_beta*tfac;
-    //sim->grid->z[zone_index].eps_imc = 1.0/(1.0 + f_imc);
-    //if (sim->radiative_eq) sim->grid->z[zone_index].eps_imc = 1.;
-    z->eps_imc = 1;
+  assert(grey_opac >= 0);
 
-    // leave serial. Parrallelized threads call this function.
-    for (int j=0;j<nu_grid.size();j++)
-    {
-      double nu  = nu_grid.center(j);        // (Hz)
-      double dnu = nu_grid.delta(j);         // (Hz)
-      double bb  = blackbody(z->T_gas,0,nu)*dnu;  // (erg/s/cm^2/ster)
-      emis[zone_index].set_value(j,grey_opac*eps*bb*z->rho); // (erg/s/cm^3/Hz/ster)
-    }
-    emis[zone_index].normalize();
+  // fleck factors
+  //double Tg    = sim->grid->z[zone_index].T_gas;
+  //double fleck_beta=4.0*pc::a*pow(Tg,4)/(sim->grid->z[zone_index].e_gas*sim->grid->z[zone_index].rho);
+  //double tfac  = pc::c*grey_opac*epsilon*sim->grid->z[zone_index].rho*t_step;
+  //double f_imc = fleck_alpha*fleck_beta*tfac;
+  //sim->grid->z[zone_index].eps_imc = 1.0/(1.0 + f_imc);
+  //if (sim->radiative_eq) sim->grid->z[zone_index].eps_imc = 1.;
+  z->eps_imc = 1;
+
+  // leave serial. Parrallelized threads call this function.
+  for (int j=0;j<nu_grid.size();j++)
+  {
+	  double nu  = nu_grid.center(j);        // (Hz)
+	  double dnu = nu_grid.delta(j);         // (Hz)
+	  double bb  = blackbody(z->T_gas,0,nu)*dnu;  // (erg/s/cm^2/ster)
+	  emis[zone_index].set_value(j,grey_opac*grey_abs_frac*bb*z->rho); // (erg/s/cm^3/Hz/ster)
   }
+  emis[zone_index].normalize();
 }
 
 

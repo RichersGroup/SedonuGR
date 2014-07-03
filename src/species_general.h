@@ -22,6 +22,9 @@ class species_general
   // the core emissivity (erg/s - units of N)
   cdf_array core_emis;
 
+  // the numbers of species this represents
+  double weight;
+
   // the zone eas variables
   vector< cdf_array      > emis;
   vector< vector<double> > abs_opac;
@@ -29,7 +32,7 @@ class species_general
 
   // grey opacity and absorption fraction
   double grey_opac; //(cm^2/g)
-  double eps;       //unitless
+  double grey_abs_frac;       //unitless
 
   // pointer to the simulation info (one level up)
   transport* sim;

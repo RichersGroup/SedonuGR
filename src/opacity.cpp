@@ -19,24 +19,16 @@ void species_general::get_opacity(const particle* p, const double dshift, double
 		// comoving frame frequency
 		double nu = p->nu*dshift;
 
-		// absorption opacity
-		double a;
-		if(grey_opac<0) a = nu_grid.value_at(nu,abs_opac[p->ind]);
-		else            a = sim->grid->z[p->ind].rho * grey_opac;
-
-		// scattering opacity
-		double s = 0;
-		if(eps<0 && grey_opac<0) s = nu_grid.value_at(nu,scat_opac[p->ind]);
+		// absorption and scattering opacities
+		double a = max(nu_grid.value_at(nu, abs_opac[p->ind]),0.0);
+		double s = max(nu_grid.value_at(nu,scat_opac[p->ind]),0.0);
 
 		// output - net opacity
 		*opac = a+s;
-  
+		assert(*opac>=0);
+
 		// output - absorption fraction
-		if(eps < 0)
-		{
-			if( (a+s)>0 ) *abs_frac = a/(a+s);
-			else *abs_frac = 0;
-		}
-		else *abs_frac = eps;
+		*abs_frac = (a+s>0 ? a/(a+s) : 0);
+		assert(0<=*abs_frac && *abs_frac<=1.0);
 	}
 }

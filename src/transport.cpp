@@ -137,20 +137,29 @@ void transport::init(Lua* lua)
   /**/ if(do_neutrinos) /**/
   /************************/
   {
-    // read the fortran module into memory
-    if(verbose) cout << "# Initializing NuLib..." << endl;
-    string nulib_table = lua->scalar<string>("nulib_table");
-    nulib_init(nulib_table);
+	  double grey_opac = lua->scalar<double>("nut_grey_opacity");
+	  int num_nut_species = 0;
+	  if(grey_opac < 0){ // get everything from NuLib
+		  // read the fortran module into memory
+		  if(verbose) cout << "# Initializing NuLib..." << endl;
+		  string nulib_table = lua->scalar<string>("nulib_table");
+		  nulib_init(nulib_table);
+		  num_nut_species = nulib_get_nspecies();
+	  }
+	  else{
+		  if(verbose) cout << "# Using grey opacity for electron anti/neutrinos (0 chemical potential)" << endl;
+		  num_nut_species = 2;
+	  }
 
-    // create a species for each in the nulib table
-    int num_nut_species = nulib_get_nspecies();
-    for(int i=0; i<num_nut_species; i++){
-      neutrinos* neutrinos_tmp = new neutrinos;
-      neutrinos_tmp->nulibID = i;
-      neutrinos_tmp->num_nut_species = num_nut_species;
-      neutrinos_tmp->init(lua, this);
-      species_list.push_back(neutrinos_tmp);
-    }
+	  // create the species arrays
+	  for(int i=0; i<num_nut_species; i++){
+		  neutrinos* neutrinos_tmp = new neutrinos;
+		  neutrinos_tmp->nulibID = i;
+		  neutrinos_tmp->num_nut_species = num_nut_species;
+		  neutrinos_tmp->init(lua, this);
+		  species_list.push_back(neutrinos_tmp);
+	  }
+
   }
 
   // complain if we're not simulating anything

@@ -1,6 +1,7 @@
 #pragma warning disable 161
 #include <vector>
 #include <cassert>
+#include <limits>
 #include "neutrinos.h"
 #include "transport.h"
 #include "Lua.h"
@@ -23,23 +24,12 @@ void neutrinos::myInit(Lua* lua)
   spectrum.init(stg,sng,nmu,nphi);
   spectrum.set_name("neutrino_spectrum.dat");
 
-  // read opacity parameters
-  grey_opac = lua->scalar<double>("nut_grey_opacity");
-  eps       = lua->scalar<double>("nut_epsilon");
-
   // set lepton number
-  if(num_nut_species==3){
-	  if(nulibID == 0)   lepton_number =  1;
-	  if(nulibID == 1)   lepton_number = -1;
-	  if(nulibID == 2)   lepton_number =  0;
-  }
-  else{
-	  if(nulibID%2 == 0) lepton_number =  1;
-	  if(nulibID%2 == 1) lepton_number = -1;
-  }
+  if(nulibID == 0)   lepton_number =  1;
+  if(nulibID == 1)   lepton_number = -1;
+  if(nulibID >= 2)   lepton_number =  0;
 
   // set names and spectrum weight
-  double weight;
   if     (nulibID == 0) {name = "Electron Neutrinos";              weight = 1.0;}
   else if(nulibID == 1) {name = "Electron Anti-Neutrinos";         weight = 1.0;}
   else if(nulibID == 2){
@@ -61,46 +51,37 @@ void neutrinos::myInit(Lua* lua)
     cout << "ERROR: Sedona does not know how to deal with a neutrino ID of " << nulibID << "." << endl;
     exit(16);}
 
-  // read in the frequency table
-  nulib_get_nu_grid(nu_grid);
+  // set up the frequency table
+  grey_opac     = lua->scalar<double>("nut_grey_opacity");
+  grey_abs_frac = lua->scalar<double>("nut_grey_abs_frac");
+  if(grey_opac < 0){
+	  nulib_get_nu_grid(nu_grid);
 
-  // allocate space for the grid eas spectrum containers
-  abs_opac.resize(sim->grid->z.size());
-  scat_opac.resize(sim->grid->z.size());
-  emis.resize(sim->grid->z.size());
+	  // set neutrino's min and max values
+	  T_min  =  nulib_get_Tmin();
+	  T_max  =  nulib_get_Tmax();
+	  Ye_min =  nulib_get_Yemin();
+	  Ye_max =  nulib_get_Yemax();
+	  rho_min = nulib_get_rhomin();
+	  rho_max = nulib_get_rhomax();
 
-  // now allocate space for each eas spectrum
-  if(sim->n_emit_core > 0) core_emis.resize(nu_grid.size());
-  for (int i=0; i<emis.size();      i++)      emis[i].resize(nu_grid.size());
-  for (int i=0; i<abs_opac.size();  i++)  abs_opac[i].resize(nu_grid.size());
-  for (int i=0; i<scat_opac.size(); i++) scat_opac[i].resize(nu_grid.size());
+  }
+  else{
+	  double nu_start = lua->scalar<double>("nut_nugrid_start");
+	  double nu_stop  = lua->scalar<double>("nut_nugrid_stop");
+	  int      n_nu   = lua->scalar<int>("nut_nugrid_n");
+	  nu_grid.init(nu_start,nu_stop,n_nu);
 
-  // set up core neutrino emission spectrum function (erg/s)
-  // normalize to core luminosity. constants don't matter.
-  if(sim->n_emit_core > 0){
-    //double L_core = lua->scalar<double>("L_core");
-    double T_core = lua->scalar<double>("T_core") / pc::k_MeV;
-    double r_core = lua->scalar<double>("r_core");
-    double chempot = lua->scalar<double>("core_nue_chem_pot") * (double)lepton_number * pc::MeV_to_ergs;
-    #pragma omp parallel for ordered
-    for (int j=0;j<nu_grid.size();j++)
-    {
-      double nu  = nu_grid.center(j);
-      double dnu = nu_grid.delta(j);
-      #pragma omp ordered
-      core_emis.set_value(j, blackbody(T_core,chempot,nu)*dnu);
-    }
-    core_emis.normalize();
-    core_emis.N *= pc::pi * (4.0*pc::pi*r_core*r_core) * weight;
+	  // set neutrino's min and max values
+	  T_min   =  1.0;
+	  T_max   =  1e12;
+	  Ye_min  = 0;
+	  Ye_max  = 1;
+	  rho_min = -numeric_limits<double>::infinity();
+	  rho_max =  numeric_limits<double>::infinity();
+
   }
 
-  // set neutrino's min and max values
-  T_min  =  nulib_get_Tmin();
-  T_max  =  nulib_get_Tmax();
-  Ye_min =  nulib_get_Yemin();
-  Ye_max =  nulib_get_Yemax();
-  rho_min = nulib_get_rhomin();
-  rho_max = nulib_get_rhomax();
 }
 
 
@@ -109,26 +90,32 @@ void neutrinos::myInit(Lua* lua)
 //-----------------------------------------------------------------
 void neutrinos::set_eas(int zone_index)
 {
-    zone* z = &(sim->grid->z[zone_index]);
-    z->eps_imc = 1;
+	zone* z = &(sim->grid->z[zone_index]);
+	z->eps_imc = 1;
 
-    if(grey_opac < 0){
-    	nulib_get_eas_arrays(z->rho, z->T_gas, z->Ye, nulibID,
-    			emis[zone_index], abs_opac[zone_index], scat_opac[zone_index]);
-    	emis[zone_index].normalize();
-    }
+	if(grey_opac < 0){ // get opacities and emissivity from NuLib
+		nulib_get_eas_arrays(z->rho, z->T_gas, z->Ye, nulibID,
+				emis[zone_index], abs_opac[zone_index], scat_opac[zone_index]);
+		emis[zone_index].normalize();
+	}
 
-    else{
-        cout << "# WARNING - grey emissivity calculated from grey opacity assuming chemical potential = 0" << endl;
-    	for (int j=0;j<nu_grid.size();j++)
-    	    {
-    	      double nu  = nu_grid.center(j);        // (Hz)
-    	      double dnu = nu_grid.delta(j);         // (Hz)
-    	      double bb  = blackbody(z->T_gas,0,nu)*dnu;  // (erg/s/cm^2/ster)
-    	      emis[zone_index].set_value(j,grey_opac*eps*bb*z->rho); // (erg/s/cm^3/Hz/ster)
-    	    }
-    	    emis[zone_index].normalize();
-    }
+	else{ // get emissivity from blackbody and the grey opacity
+		assert(grey_abs_frac>=0 && grey_abs_frac<=1.0);
+		for (int j=0;j<nu_grid.size();j++)
+		{
+			double nu  = nu_grid.center(j);        // (Hz)
+			double dnu = nu_grid.delta(j);         // (Hz)
+			double bb  = blackbody(z->T_gas,0*pc::MeV_to_ergs,nu)*dnu;  // (erg/s/cm^2/ster)
+
+			double a = grey_opac*z->rho*grey_abs_frac;
+			double s = grey_opac*z->rho*(1.0-grey_abs_frac);
+
+			emis[zone_index].set_value(j,a*bb); // (erg/s/cm^3/ster)
+			abs_opac[zone_index][j] = a;        // (1/cm)
+			scat_opac[zone_index][j] = s;       // (1/cm)
+		}
+		emis[zone_index].normalize();
+	}
 }
 
 
