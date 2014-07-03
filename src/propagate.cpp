@@ -79,6 +79,7 @@ void transport::which_event(const particle *p, const double dt, const double dsh
 	double tau_r;                               // random optical depth
 	double opac_lab;                            // opacity in the lab frame
 	assert(p->ind >= -1);
+	assert(opac >=0);
 
 	if(p->ind >= 0){ //i.e. within the simulation region
 		// set pointer to current zone
@@ -97,7 +98,7 @@ void transport::which_event(const particle *p, const double dt, const double dsh
 		// multiply by dshift instead of dividing by dshift here
 		opac_lab = opac*dshift;
 		// random optical depth to next interaction
-		tau_r = -1.0*log(1 - rangen.uniform());
+		tau_r = -1.0*log(1.0 - rangen.uniform());
 		// step size to next interaction event
 		d_interact  = tau_r/opac_lab;
 		if (opac_lab == 0) d_interact = numeric_limits<double>::infinity();
@@ -182,6 +183,7 @@ void transport::propagate(particle* p, const double dt) const
 		this_E_comoving = this_E * dshift * dshift;
         #pragma omp atomic
 		zone->e_abs += this_E_comoving * (opac*abs_frac*zone->eps_imc);
+		//DELETEcout << opac << " " << p->e << endl;
 
 		// store absorbed lepton number (same in both frames, except for the
 		// factor of this_d which is divided out later
@@ -211,7 +213,6 @@ void transport::propagate(particle* p, const double dt) const
 		// Do if interact
 		// ---------------------------------
 		case interact:
-			cout << ".";
 			assert(p->ind >= 0);
 			// random number to check for scattering or absorption
 			z = rangen.uniform();
