@@ -4,13 +4,13 @@ rho=1e12  #g/cm^3
 T=10      #MeV
 Ye=0.2
 E=10      #MeV
-mu=4.44614 #MeV
-
+#mu=3.15281 #MeV (as the EOS wants it) (LS220)
+mu=4.39604 #MeV (as the EOS wants it) (HShen)
 
 all:
 	mkdir -p species_0 species_1 species_2
 	for species in 0 1 2 ; do \
-	./nulib_test.exe ../../external/tables/NuLib_LS220_rho150_temp90_ye60_ng24_ns3_version1.0_20140327.h5 $(rho) $(T) $(Ye) $(mu) $(E) $$species ; \
+	./nulib_test.exe ../../external/tables/NuLib_LS220_rho150_temp90_ye60_ng24_ns3_Itemp10_Ieta10_version1.0_20140701.h5 $(rho) $(T) $(Ye) $(mu) $(E) $$species ; \
 	python eas_rho.py ; \
 	python eas_T.py ; \
 	python eas_ye.py ; \
