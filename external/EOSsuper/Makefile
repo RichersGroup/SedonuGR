@@ -26,7 +26,7 @@ CPPFLAGS=-g -O0 -ansi -Wall -fopenmp -std=c++11 $(EXTRAINCS) -DHAVEGR
 CFLAGS=-g -O0 -std=gnu99 -ansi -Wall -fopenmp
 EXTRALIBS=-lm -L/usr/local/lib -lgsl -lgslcblas -Wl,-rpath,$(HDF5DIR)/lib
 
-all: driver nuc_eos.a Munue_of_RhoTempYe
+all: driver nuc_eos.a Munue_of_RhoTempYe Ye_of_RhoTempMunue
 
 Munue_of_RhoTempYe: $(OBJECTS) $(COBJECTS) $(INCLUDES)
 	$(CPPC) $(CPPFLAGS) $(HDF5INCS) -c Munue_of_RhoTempYe.cc -o Munue_of_RhoTempYe.o
@@ -56,3 +56,4 @@ nuc_eos.a: $(OBJECTS)
 clean:
 	rm -f *.o
 	rm -rf *.cc.*
+	rm Munue_of_RhoTempYe Ye_of_RhoTempMunue

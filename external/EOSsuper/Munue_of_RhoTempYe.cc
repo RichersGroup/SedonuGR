@@ -8,9 +8,6 @@
 #include <cmath>
 
 using namespace nuc_eos;
-const double me = 0.510998910; // in MeV
-const double mp = 938.272046;  // in MeV
-const double mn = 939.565378;  // in MeV
 const double k_MeV = 8.6173324e-11;   // boltzmann constant (Mev/K)
 
 int main(int argc, char* argv[]) {
@@ -25,22 +22,22 @@ int main(int argc, char* argv[]) {
 	double rho = atof(argv[2])*RHOGF;
 	double T = atof(argv[3]);
 	double Ye = atof(argv[4]);
-	std::cout << "rho: " << rho/RHOGF << std::endl;
-	std::cout << "T: "<< T << std::endl;
-	std::cout << "Ye: " << Ye << std::endl;
 
 	// various parameters and output
 	int n=1;
-	double xeps, xprs, xent, xcs2, xdedt, xdpderho, xdpdrhoe, xmunu;
+	double xeps, xprs, xent, xcs2, xdedt, xdpderho, xdpdrhoe;
+	double xa, xh, xn, xp, abar, zbar;
+	double mue, mun, mup, muhat;
 	int keyerr, anyerr;
 
 	// call the equation of state
-	nuc_eos_m_kt1_short(&n,&rho,&T,&Ye,
-			&xeps,&xprs,&xent,&xcs2,&xdedt,
-			&xdpderho,&xdpdrhoe,&xmunu,
-			&keyerr,&anyerr);
+	nuc_eos_m_kt1_full(&n,&rho,&T,&Ye,
+			   &xeps,&xprs,&xent,&xcs2,&xdedt,
+			   &xdpderho,&xdpdrhoe,&xa,&xh,&xn,&xp,&abar,&zbar,
+			   &mue,&mun,&mup,&muhat,
+			   &keyerr,&anyerr);
 
 	// output the answer
-	std::cout << xmunu << std::endl;
+	std::cout << mue-muhat << std::endl;
 	return 0;
 }

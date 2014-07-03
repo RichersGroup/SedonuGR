@@ -8,9 +8,6 @@
 #include <cmath>
 
 using namespace nuc_eos;
-const double me = 0.510998910; // in MeV
-const double mp = 938.272046;  // in MeV
-const double mn = 939.565378;  // in MeV
 const double k_MeV = 8.6173324e-11;   // boltzmann constant (Mev/K)
 
 
@@ -26,31 +23,31 @@ int main(int argc, char* argv[]) {
 	double rho = atof(argv[2])*RHOGF; // input g/ccm --> code units
 	double T = atof(argv[3]);         // MeV
 	double mu = atof(argv[4]);        // MeV
-	//std::cout << "rho: " << rho/RHOGF << std::endl;
-	//std::cout << "T: "<< T << std::endl;
-	//std::cout << "Ye: " << Ye << std::endl;
 
 	// set up the solver
-	double solve_for_munu = mu + (mn-mp); // eos does not include baryon masses
+	double solve_for_munu = mu;// + (mn-mp); // eos does not include baryon masses
 	double ye_min = 0.05;
 	double ye_max = 0.55;
 	double xye = 0.5;
-	double xeps, xprs, xent, xcs2, xdedt, xdpderho, xdpdrhoe, xmunu=10;
+	double xeps, xprs, xent, xcs2, xdedt, xdpderho, xdpdrhoe;
+	double xa, xh, xn, xp, abar, zbar;
+	double mue, mun, mup, muhat, munu=0;
 	int keyerr, anyerr;
 	int n=1;
 	int iter=0;
 	int maxiter = 1000;
-	while(fabs(xmunu-solve_for_munu) > 1e-10 && iter<maxiter){
+	while(fabs(munu-solve_for_munu) > 1e-10 && iter<maxiter){
 		xye = 0.5*(ye_min + ye_max);
-		nuc_eos_m_kt1_short(&n,&rho,&T,&xye,
-				&xeps,&xprs,&xent,&xcs2,&xdedt,
-				&xdpderho,&xdpdrhoe,&xmunu,
-				&keyerr,&anyerr);
-		if(xmunu-solve_for_munu<0) ye_min = xye;
+		nuc_eos_m_kt1_full(&n,&rho,&T,&xye,
+				   &xeps,&xprs,&xent,&xcs2,&xdedt,
+				   &xdpderho,&xdpdrhoe,&xa,&xh,&xn,&xp,&abar,&zbar,
+				   &mue,&mun,&mup,&muhat,
+				   &keyerr,&anyerr);
+		munu = mue-muhat;
+		if(munu-solve_for_munu<0) ye_min = xye;
 		else ye_max = xye;
 		iter++;
 	}
 	std::cout << xye << std::endl;
-
 	return 0;
 }
