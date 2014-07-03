@@ -10,8 +10,8 @@ F90=mpif90
 CXX=mpicxx
 CC=mpicc
 
-F90FLAGS= -O3 -openmp
-CXXFLAGS= -O3 -lifcore -openmp
+F90FLAGS= -O3 -fopenmp
+CXXFLAGS= -O3 -fopenmp
 CCFLAGS= -O3
 
 #GSL
@@ -21,17 +21,17 @@ GSL_LIBS=-L$(GSL_BASE)/lib -lgsl -lgslcblas
 
 #LUA
 #LUA_BASE=$(CURDIR)/external/lua-5.2.2/install
-LUA_INCL=-I$(LUA_BASE)/include
-LUA_LIBS=-L$(LUA_BASE)/lib -llua5.2 -Wl,-rpath,$(LUA_BASE)/lib
+LUA_INCL=-I/usr/include/lua5.2
+LUA_LIBS=-llua5.2
 
 #HDF5
-HDF5DIR=$(CURDIR)/external/hdf5_intel
-HDF5INCS=-I$(HDF5DIR)/include
-HDF5LIBS=-L$(HDF5DIR)/lib -lhdf5 -lhdf5_fortran -Wl,-rpath,$(HDF5DIR)/lib
+HDF5_DIR=/usr/local/hdf5-1.8.13_gnu-4.8.2
+HDF5INCS=-I$(HDF5_DIR)/include
+HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5 -lhdf5_fortran -Wl,-rpath,$(HDF5_DIR)/lib
 
 #NuLib
 NULIB_DIR=$(CURDIR)/external/NuLib
-NULIB_LIBS=$(NULIB_DIR)/src/nulib.a #GNU: -lgfortran
+NULIB_LIBS=$(NULIB_DIR)/src/nulib.a -lgfortran
 
 #OTHER
-OTHER_LIBS= #PGI: -ldl
+OTHER_LIBS=
