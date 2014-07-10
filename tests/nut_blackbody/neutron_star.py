@@ -4,13 +4,16 @@ km = 1.0e5      # cm
 nx = 1
 t0 = -1
 
-R_max = 1e30*km
+R_max = 3e13*km
 R_min = 0*km
 dx = (R_max-R_min)/nx
 
-rho = RHOHERE
-temp = TEMPHERE*MeV
-ye = YEHERE
+#rho = RHOHERE
+#temp = TEMPHERE*MeV
+#ye = YEHERE
+rho = 1.0e12
+temp = 10*MeV
+ye = 0.3
 
 print '1D_sphere', 'GRB',nx,R_min,t0
 
