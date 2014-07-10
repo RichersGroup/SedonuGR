@@ -57,7 +57,7 @@ void transport::propagate_particles(const double dt)
 	} //#pragma omp parallel
 
 	//--- OUPUT ESCAPE STATISTICS ---
-	if (verbose && steady_state){
+	if (verbose){
 		for(int i=0; i<species_list.size(); i++){
 			double per_esc = (100.0*n_escape[i])/n_active[i];
 			if(n_active[i]>0) printf("# %i/%i %s escaped. (%3.2f%%)\n", n_escape[i], n_active[i], species_list[i]->name.c_str(), per_esc);
