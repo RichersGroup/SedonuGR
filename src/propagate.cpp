@@ -50,7 +50,7 @@ void transport::propagate_particles(const double dt)
 		// report energy escaped
         #pragma omp single
 		{
-			if(steady_state && verbose) cout << "# e_esc = " << e_esc << "erg" << endl;
+			if(verbose) cout << "# e_esc = " << e_esc << "erg" << endl;
 			if(dt<0) assert(particles.size()==0);
 		}
 
