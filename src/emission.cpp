@@ -117,7 +117,7 @@ void transport::emit_zones(const double dt,
 double transport::zone_therm_lum(const int zone_index) const{
   double H=0;
   for(int i=0; i<species_list.size(); i++)
-    H += species_list[i]->int_zone_emis(zone_index) * 4*pc::pi * grid->zone_volume(zone_index);
+    H += species_list[i]->integrate_zone_emis(zone_index) * 4*pc::pi * grid->zone_volume(zone_index);
   return H;
 }
 

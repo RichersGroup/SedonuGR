@@ -1,6 +1,7 @@
 #include "species_general.h"
 #include <gsl/gsl_rng.h>
 #include <math.h>
+#include <cassert>
 #include "transport.h"
 #include "physical_constants.h"
 #include "Lua.h"
@@ -56,39 +57,33 @@ void species_general::init(Lua* lua, transport* simulation)
 // return a randomly sampled frequency
 // for a particle emitted from the core
 //----------------------------------------------------------------
-// TODO - could be modified to interpolate via inverse transform sampling, but more complicated
 double species_general::sample_core_nu() const
 {
-	// randomly pick a frequency bin
+	// randomly pick a frequency
 	double z = sim->rangen.uniform();
-	int ilam = core_emis.sample(z);
-
-	// randomly pick a location in the frequency bin
-	z = sim->rangen.uniform();
-	return nu_grid.sample(ilam,z);
+	double result = core_emis.invert_linear(z,&nu_grid);
+	assert(result>0);
+	return result;
 }
 
 //----------------------------------------------------------------
 // return a randomly sampled frequency
 // for a particle emitted from a zone
 //----------------------------------------------------------------
-// TODO - could be modified to interpolate via inverse transform sampling, but more complicated
 double species_general::sample_zone_nu(const int zone_index) const
 {
-	// randomly pick a frequency bin
+	// randomly pick a frequency
 	double z = sim->rangen.uniform();
-	int ilam = emis[zone_index].sample(z);
-
-	// randomly pick a location in the frequency bin
-	z = sim->rangen.uniform();
-	return nu_grid.sample(ilam,z);
+	double result = emis[zone_index].invert_linear(z,&nu_grid);
+	assert(result>0);
+	return result;
 }
 
 
 //----------------------------------------------------------------
 // return the emissivity integrated over nu for the core (erg/s)
 //----------------------------------------------------------------
-double species_general::int_core_emis() const
+double species_general::integrate_core_emis() const
 {
 	return core_emis.N;
 }
@@ -96,7 +91,7 @@ double species_general::int_core_emis() const
 //----------------------------------------------------------------
 // return the emissivity integrated over nu for a zone (erg/s/ster/cm^3)
 //----------------------------------------------------------------
-double species_general::int_zone_emis(const int zone_index) const
+double species_general::integrate_zone_emis(const int zone_index) const
 {
 	return emis[zone_index].N;
 }
@@ -104,8 +99,9 @@ double species_general::int_zone_emis(const int zone_index) const
 
 //----------------------------------------------------------------
 // return the lepton emissivity integrated over nu for a zone (#/s/ster/cm^3)
+// ASSUMES linear cdf sampling
 //----------------------------------------------------------------
-double species_general::int_zone_lepton_emis(const int zone_index) const
+double species_general::integrate_zone_lepton_emis(const int zone_index) const
 {
 	double l_emis = 0;
 	for(int i=0; i<emis[zone_index].size(); i++)

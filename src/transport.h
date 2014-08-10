@@ -36,9 +36,9 @@ private:
   //void initialize_particles(int init_particles);
   void emit_inner_source(double dt);
   void emit_zones(const double dt, 
-		  const int n_emit, 
-		  double (transport::*zone_lum)(const int) const, 
-		  void (transport::*emit_particle)(const int,const double,const double));
+		  	  	  const int n_emit,
+		  	  	  double (transport::*zone_lum)(const int) const,
+		  	  	  void (transport::*emit_particle)(const int,const double,const double));
 
   // what kind of particle to create?
   void create_surface_particle(const double Ep, const double t);

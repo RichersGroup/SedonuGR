@@ -9,6 +9,7 @@
 void species_general::get_opacity(const particle* p, const double dshift, double* opac, double* abs_frac) const
 {
 	assert(p->ind >= -1);
+	assert(p->nu>0);
 
 	if(p->ind == -1){ // particle is within inner boundary
 		*opac = 0;

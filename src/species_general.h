@@ -60,11 +60,11 @@ class species_general
   virtual double blackbody(const double T, const double chempot, const double nu) const = 0;
 
   // return the emissivity integrated over frequency at the core
-  double int_core_emis() const; //(erg/s)
+  double integrate_core_emis() const; //(erg/s)
 
   // return the emissivity integrated over frequency at a zone
-  double int_zone_emis(const int zone_index) const;        //(erg/s/cm^3/ster)
-  double int_zone_lepton_emis(const int zone_index) const; //unitless
+  double integrate_zone_emis(const int zone_index) const;        //(erg/s/cm^3/ster)
+  double integrate_zone_lepton_emis(const int zone_index) const; //unitless
 
   // return the frequency of a particle emitted from the core (Hz)
   double sample_core_nu() const;

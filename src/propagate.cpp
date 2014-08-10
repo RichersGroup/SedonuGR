@@ -161,6 +161,7 @@ void transport::propagate(particle* p, const double dt) const
 	while (p->fate == moving)
 	{
 		assert(p->ind >= -1);
+		assert(p->nu > 0);
 		// set pointer to current zone
 		zone* zone;
 		zone = &(grid->z[p->ind]);
@@ -228,6 +229,7 @@ void transport::propagate(particle* p, const double dt) const
 					else p->fate = absorbed;                        // particle dies
 				}
 			}
+			assert(p->nu > 0);
 			break;
 
 		// ---------------------------------
@@ -242,12 +244,6 @@ void transport::propagate(particle* p, const double dt) const
 		// do if crossing a boundary
 		// ---------------------------------
 		case boundary:
-			if(p->ind >= 0){
-				cout << p->ind << endl;
-				cout << p->r()-1.0e7 << endl;
-				cout << p->x_dot_d() << endl;
-				cout << grid->get_zone(p->x) << endl;
-			}
 			assert(p->ind==-1 || p->ind==-2);
 
 			// if outside the domain
@@ -256,6 +252,7 @@ void transport::propagate(particle* p, const double dt) const
 					grid->reflect_outer(p);
 					assert(p->fate == moving);
 					assert(p->ind >= 0);
+					assert(p->nu > 0);
 				}
 				else p->fate = escaped;
 			}
@@ -275,10 +272,6 @@ void transport::propagate(particle* p, const double dt) const
 		// nothing special happens at the zone edge
 		//-----------------------
 		default:
-			if(p->ind < 0){
-				cout << p->r() << endl;
-				cout << this_d << endl;
-			}
 			assert(event == zoneEdge);
 			assert(p->ind >= 0);
 		}

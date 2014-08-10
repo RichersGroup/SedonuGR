@@ -9,7 +9,9 @@ namespace pc = physical_constants;
 // v_rel = v_newframe - v_oldframe
 double lorentz_factor(const double (&v_rel)[3]){
   double beta2 = (v_rel[0]*v_rel[0] + v_rel[1]*v_rel[1] + v_rel[2]*v_rel[2]) / (pc::c*pc::c);
-  return 1.0 / sqrt(1.0 - beta2);
+  double lfac = 1.0 / sqrt(1.0 - beta2);
+  assert(lfac>=1.0);
+  return lfac;
 }
 
 // dot product of v_rel and relativistic particle direction
@@ -22,12 +24,18 @@ double v_dot_d(const double (&v_rel)[3], const double (&D)[3]){
 // v_rel = v_newframe - v_oldframe
 // v_dot_v is the dot product of the relative velocity and the relativistic particle's direction
 double doppler_shift(const double gamma, const double vdd){
-  return gamma * (1.0 - vdd/pc::c);
+  double dshift = gamma * (1.0 - vdd/pc::c);
+  assert(dshift>0);
+  return dshift;
 }
 
 // apply a lorentz transform to the particle
 // v_rel = v_newframe - v_oldframe
 void lorentz_transform(particle* p, const double (&v_rel)[3]){
+  // check input
+  assert(p->nu > 0);
+  assert(p->e > 0);
+
   // calculate the doppler shift, v dot D, and lorentz factors
   double gamma = lorentz_factor(v_rel);
   double vdd = v_dot_d(v_rel, p->D);
@@ -48,6 +56,12 @@ void lorentz_transform(particle* p, const double (&v_rel)[3]){
   p->D[0] /= norm;
   p->D[1] /= norm;
   p->D[2] /= norm;
+
+  // sanity checks
+  assert(norm>0);
+  assert(p->e > 0);
+  assert(p->nu > 0);
+  assert(dshift > 0);
 }
 
 

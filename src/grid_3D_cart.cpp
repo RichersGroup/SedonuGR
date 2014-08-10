@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cassert>
+#include <limits>
 #include "mpi.h"
 #include "Lua.h"
 #include "grid_3D_cart.h"
@@ -421,6 +422,27 @@ void grid_3D_cart::reflect_outer(particle *p) const{
 // Find distance to outer boundary
 //------------------------------------------------------------
 double grid_3D_cart::dist_to_boundary(const particle *p) const{
-  // not yet implemented
-  return 0;
+	double xmax = x0 + nx*dx;
+	double ymax = y0 + ny*dy;
+	double zmax = z0 + nz*dz;
+
+	bool inside = (p->x[0] >= x0) && (p->x[0] <= xmax) &&
+				  (p->x[1] >= y0) && (p->x[1] <= ymax) &&
+				  (p->x[2] >= z0) && (p->x[2] <= zmax);
+
+	// case: particle is inside the boundaries
+	if(inside){
+		double dist_x = (p->D[0]>0 ? xmax-p->x[0] : p->x[0]-x0);
+		double dist_y = (p->D[1]>0 ? ymax-p->x[1] : p->x[1]-y0);
+		double dist_z = (p->D[2]>0 ? zmax-p->x[2] : p->x[2]-z0);
+		dist_x /= fabs(p->D[0]); assert(dist_x>=0);
+		dist_y /= fabs(p->D[1]); assert(dist_y>=0);
+		dist_z /= fabs(p->D[2]); assert(dist_z>=0);
+		double dist = min(min(dist_x,dist_y),dist_z);
+		assert(dist <= sqrt((xmax-x0)*(xmax-x0) + (ymax-y0)*(ymax-y0) + (zmax-z0)*(zmax-z0)));
+		return dist;
+	}
+
+	// case: particle is outside the boundaries.
+	else return numeric_limits<double>::infinity();
 }

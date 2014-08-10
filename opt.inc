@@ -11,8 +11,8 @@ CXX=mpicxx
 CC=mpicc
 
 F90FLAGS= -O3 -fopenmp
-CXXFLAGS= -O3 -fopenmp
-CCFLAGS= -O3
+CXXFLAGS= -O3 -fopenmp -DNDEBUG
+CCFLAGS= -O3 -DNDEBUG
 
 #GSL
 GSL_BASE=$(GSL_DIR)

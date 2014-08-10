@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
+#include <cassert>
 #include "locate_array.h"
 
 using namespace std;
@@ -118,16 +119,6 @@ double locate_array::log_interpolate_between(const double xval, const int i1, co
   double slope = log(y[i2]/y[i1]) / log(x[i2]/x[i1]);
   double logyval = log(y[i1]) + slope*log(xval/x[i1]);
   return exp(logyval);
-}
-
-
-//---------------------------------------------------------
-// sample uniformally in zone
-//---------------------------------------------------------
-double locate_array::sample(const int i, const double rand) const
-{
-  if (i == 0) return min    + (x[0] - min   )*rand;
-  else return        x[i-1] + (x[i] - x[i-1])*rand;
 }
 
 //---------------------------------------------------------

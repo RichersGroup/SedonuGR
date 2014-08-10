@@ -2,8 +2,8 @@
 
 do_photons   = 0                 -- simulate photons?
 do_neutrinos = 1                 -- simulate neutrinos?
-radiative_eq = 1
-steady_state = 1                 -- iterative calculation (solve for steady-state configuration)? 
+radiative_eq = 0
+steady_state = 0                 -- iterative calculation (solve for steady-state configuration)? 
 solve_T      = 0                 -- (if iterative) solves each zone's temperature based on its absorbed energy
 solve_Ye     = 0                 -- (if iterative) solves each zone's Ye based on its absorbed lepton number
 do_visc = 0
@@ -13,7 +13,7 @@ reflect_outer = 0
 
 grid_type = "grid_1D_sphere"       -- grid geometry. Must match grid geometry in model file if used  
 model_file  =  "empty_sphere.mod"  -- model file. "custom" --> use hard coded model
-nulib_table = "../../external/tables/NuLib.h5" -- NuLib opacity/emissivity table
+nulib_table = "../../external/tables/NuLib_LS220_rho150_temp90_ye60_ng24_ns3_Itemp10_Ieta10_version1.0_20140701.h5" -- NuLib opacity/emissivity table
 write_zones_every   = 1
 write_rays_every    = 1
 write_spectra_every = 1
@@ -27,10 +27,10 @@ nut_spec_n_phi      = 1                -- number of phi bins in output spectrum
 
 -- particle creation parameters
 
-n_emit_core    = 1e5                 -- # particles to emit from core each timestep
+n_emit_core    = 1e7                 -- # particles to emit from core each timestep
 n_emit_therm   = 0                 -- # particles to emit from zones each timestep
 n_emit_decay   = 0                 -- # particles to emit from zones each timestep (from non-thermal processes)
-max_particles  = 1e5
+max_particles  = 1e7
 
 -- particle propagation parameters
 
@@ -41,14 +41,17 @@ step_size = 0.4                    -- move at most step_size*min_grid_length at 
 -- inner source
 
 r_core = 1                         -- core radius (cm)
-T_core = 1.6044e11 -- 10MeV           -- core temperature (K)
+T_core = 10                  -- core temperature (K)
 core_nue_chem_pot = 0           -- core chemical potential (erg)
 core_lum_multiplier = 1.0
 
 -- opacity parameters
 
-nut_grey_opacity    =  0          -- optical grey opacity (cm^2/g)
-nut_epsilon         =  -1          -- absorption fraction
+nut_grey_opacity    =  -1 --0          -- optical grey opacity (cm^2/g)
+nut_grey_abs_frac   =  -1          -- absorption fraction
+nut_nugrid_start    = 1
+nut_nugrid_stop     = 2e10
+nut_nugrid_n=10
 
 -- equilibrium solver parameters
 

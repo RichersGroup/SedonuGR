@@ -141,7 +141,7 @@ double temp_eq_function(int zone_index, double T, transport* sim)
 		// radiation energy emitted. Opacities are
 		// held constant for this (assumed not to change
 		// much from the last time step).
-		E_emitted += 4.0*pc::pi * sim->species_list[i]->int_zone_emis(zone_index);
+		E_emitted += 4.0*pc::pi * sim->species_list[i]->integrate_zone_emis(zone_index);
 	}
 
 	// radiative equillibrium condition: "emission equals absorbtion"
@@ -178,7 +178,7 @@ double Ye_eq_function(int zone_index, double Ye, transport* sim)
 		// radiation energy emitted. Opacities are
 		// held constant for this (assumed not to change
 		// much from the last time step).
-		l_emitted += 4.0*pc::pi * sim->species_list[i]->int_zone_lepton_emis(zone_index);
+		l_emitted += 4.0*pc::pi * sim->species_list[i]->integrate_zone_lepton_emis(zone_index);
 	}
 
 	// radiative equillibrium condition: "emission equals absorbtion"

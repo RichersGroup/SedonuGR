@@ -15,7 +15,7 @@ public:
   int do_log_interpolate;
 
   // constructors
-  locate_array()  {}
+  locate_array()  {do_log_interpolate=0;min=0;}
   locate_array(int n) {init(n);}
 
   // Return size of array (also, # of bins)
@@ -43,7 +43,6 @@ public:
   int    locate(const double) const;
   double interpolate_between(const double,const int,const int,const std::vector<double>&) const;
   double log_interpolate_between(const double,const int,const int,const std::vector<double>&) const;
-  double sample(const int, const double) const;
   void   print() const;
   double value_at(const double nu, const std::vector<double>& array) const;
 

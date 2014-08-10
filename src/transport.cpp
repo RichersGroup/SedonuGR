@@ -216,7 +216,7 @@ void transport::init(Lua* lua)
     core_lum_multiplier = lua->scalar<double>("core_lum_multiplier");
     core_species_luminosity.resize(species_list.size());
     for(int i=0; i<species_list.size(); i++)
-      core_species_luminosity.set_value(i, species_list[i]->int_core_emis() * core_lum_multiplier);
+      core_species_luminosity.set_value(i, species_list[i]->integrate_core_emis() * core_lum_multiplier);
     core_species_luminosity.normalize();
   }
   else r_core = 0;
@@ -326,7 +326,7 @@ int transport::sample_core_species() const
 {
   // randomly sample the species (precomputed CDF)
   double z = rangen.uniform();
-  return core_species_luminosity.sample(z);
+  return core_species_luminosity.sample_index(z);
 }
 
 
@@ -348,14 +348,14 @@ int transport::sample_zone_species(const int zone_index) const
   // set values and normalize
   for(int i=0; i<species_list.size(); i++)
   {
-    integrated_emis = species_list[i]->int_zone_emis(zone_index);
+    integrated_emis = species_list[i]->integrate_zone_emis(zone_index);
     species_cdf.set_value(i,integrated_emis);
   }
   species_cdf.normalize();
 
   // randomly sample the species
   double z = rangen.uniform();
-  return species_cdf.sample(z);
+  return species_cdf.sample_index(z);
 }
 
 
