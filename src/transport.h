@@ -29,6 +29,9 @@ private:
   void synchronize_gas();
   vector<int> my_zone_end;
 
+  // subroutine for calculating timescales
+  void calculate_timescales() const;
+
   // main function to emit particles
   void emit_particles(double dt);
 
@@ -91,7 +94,7 @@ private:
   int    do_neutrinos;
   int    steady_state;
   int    radiative_eq;
-  int    verbose;
+  int    rank0;
 
   // current time in simulation
   double t_now;

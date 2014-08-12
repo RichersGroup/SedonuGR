@@ -13,7 +13,7 @@ namespace pc = physical_constants;
 // Initialize a constant number of particles in each zone
 //------------------------------------------------------------
 // void transport::initialize_particles(const int init_particles){
-//   if (verbose) cout << "# initializing with " << init_particles << " particle per zone\n";
+//   if (rank0) cout << "# initializing with " << init_particles << " particle per zone\n";
 
 //   #pragma omp parallel for
 //   for (int i=0;i<grid->z.size();i++){
@@ -73,28 +73,30 @@ void transport::emit_zones(const double dt,
 			   void (transport::*create_particle)(const int,const double,const double)){
 
   int gridsize = grid->z.size(); 
-  double net_lum = 0;
+  double tmp_net_lum = 0;
   double Ep=0.;
 
   // at this point therm means either viscous heating or regular emission, according to the logic above
   #pragma omp parallel
   {
     // determine the net luminosity of each emission type over the whole grid
-    #pragma omp for reduction(+:net_lum)
-    for(int i=0; i<gridsize; i++) net_lum += (this->*zone_lum)(i);
+    #pragma omp for reduction(+:tmp_net_lum)
+    for(int i=0; i<gridsize; i++) tmp_net_lum += (this->*zone_lum)(i);
 
+    // determine the energy of each emitted particle
     #pragma omp single
     {
-      Ep = net_lum*dt / (double)n_emit;
-      L_net += net_lum;
+      Ep = tmp_net_lum*dt / (double)n_emit;
+      L_net += tmp_net_lum;
     }
     
+    // actually emit the particles in each zone
     #pragma omp for schedule(guided)
     for (int i=0; i<gridsize; i++)
     {
       // this zone's luminosity and number of emitted particles.
       // randomly decide whether last particle gets added based on the remainder.
-      double almost_n_emit  = (double)n_emit * (this->*zone_lum)(i)/net_lum;
+      double almost_n_emit  = (double)n_emit * (this->*zone_lum)(i)/tmp_net_lum;
       int this_n_emit = (int)almost_n_emit + (int)( rangen.uniform() < fmod(almost_n_emit,1.0) );
       
       // create the particles
@@ -123,7 +125,7 @@ double transport::zone_therm_lum(const int zone_index) const{
 
 // return the total decay luminosity from the cell (erg/s)
 double transport::zone_decay_lum(const int zone_index) const{
-  if(verbose) cout << "WARNING: emission in zones from decay is not yet implemented!" << endl;
+  if(rank0) cout << "WARNING: emission in zones from decay is not yet implemented!" << endl;
   return 0;
 }
 
@@ -173,13 +175,11 @@ void transport::create_thermal_particle(const int zone_index, const double Ep, c
   #pragma omp critical
   particles.push_back(p);
 
-  // subtract the particle's energy and leptons from the zone
-  if(!steady_state){
-    #pragma omp atomic
-    grid->z[zone_index].e_abs -= p.e;
-    #pragma omp atomic
-    grid->z[zone_index].l_abs -= p.e/(pc::h*p.nu) * (double)species_list[s]->lepton_number;
-  }
+  // count up the emitted energy/leptons in each zone
+  #pragma omp atomic
+  grid->z[zone_index].e_emit += p.e;
+  #pragma omp atomic
+  grid->z[zone_index].l_emit += p.e/(pc::h*p.nu) * (double)species_list[s]->lepton_number;
 }
 
 
@@ -245,5 +245,5 @@ void transport::create_surface_particle(const double Ep, const double t)
 //------------------------------------------------------------
 void transport::create_decay_particle(const int zone_index, const double Ep, const double t)
 {
-  if(verbose) cout << "WARNING: transport::create_decay_particle is not yet implemented!" << endl;
+  if(rank0) cout << "WARNING: transport::create_decay_particle is not yet implemented!" << endl;
 }

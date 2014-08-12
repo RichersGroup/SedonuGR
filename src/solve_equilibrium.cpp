@@ -123,7 +123,7 @@ double temp_eq_function(int zone_index, double T, transport* sim)
 {
 	// total energy absorbed in zone
 	double E_absorbed = sim->grid->z[zone_index].e_abs;
-	// total energy emitted (to be calculated)
+	// total energy emitted (to be calculated based on emissivities)
 	double E_emitted = 0.;
 
 	// set the zone temperature
@@ -133,10 +133,10 @@ double temp_eq_function(int zone_index, double T, transport* sim)
 	for(int i=0; i<sim->species_list.size(); i++)
 	{
 		// reset the eas variables in this zone
-		// OPTIMIZE - only set the emissivity variable
+		// TODO OPTIMIZE - only set the emissivity variable
 		sim->species_list[i]->set_eas(zone_index);
 
-		// integrate emissison over frequency (angle
+		// integrate emission over frequency (angle
 		// integration gives the 4*PI) to get total
 		// radiation energy emitted. Opacities are
 		// held constant for this (assumed not to change

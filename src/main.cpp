@@ -29,8 +29,8 @@ int main(int argc, char **argv)
   MPI_Comm_size( MPI_COMM_WORLD, &n_procs);
   
   // verbocity
-  const int verbose = (my_rank == 0);
-  if (verbose) cout << "# MPI cores used = " << n_procs << endl;
+  const int rank0 = (my_rank == 0);
+  if (rank0) cout << "# MPI cores used = " << n_procs << endl;
   
   // start timer 
   double proc_time_start = MPI_Wtime();
@@ -41,7 +41,7 @@ int main(int argc, char **argv)
   lua.init( script_file );
 
   // set up the transport module (includes the grid)
-  if(verbose) cout << "# Initializing the transport module..." << endl;
+  if(rank0) cout << "# Initializing the transport module..." << endl;
   transport sim;
   sim.init(&lua);
 
@@ -49,9 +49,9 @@ int main(int argc, char **argv)
   int write_zones_every   = lua.scalar<double>("write_zones_every");
   int write_rays_every    = lua.scalar<double>("write_rays_every");
   int write_spectra_every = lua.scalar<double>("write_spectra_every");
-  if(verbose) cout << "# writing zone file 0" << endl;
+  if(rank0) cout << "# writing zone file 0" << endl;
   sim.grid->write_zones(0);
-  if(verbose) cout << "# writing ray file 0" << endl;
+  if(rank0) cout << "# writing ray file 0" << endl;
   sim.grid->write_rays(0);
 
   // read in time stepping parameters
@@ -64,31 +64,33 @@ int main(int argc, char **argv)
   // TIME LOOP //
   //===========//
   double t = 0;
-  if (verbose) printf("%12s %12s %12s %12s\n","iteration","t","dt","n_particles");
+  if (rank0) printf("%12s %12s %12s %12s\n","iteration","t","dt","n_particles");
   for(int it=1; it<=max_n_steps; it++,t+=dt)
   {
     // do transport step
     sim.step(dt);
 
     // printout time step
-    if(verbose) printf("%12d %12.4e %12.4e %12d\n",it,t,dt, sim.total_particles());
+    if(rank0){
+    	printf("%12d %12.4e %12.4e %12d\n",it,t,dt, sim.total_particles());
 
-    // writeout zone state when appropriate 
-    if((it%write_zones_every)==0 && write_zones_every>0){
-      if(verbose) cout << "# writing zone file " << it << endl;
-      sim.grid->write_zones(it);
-    }
+    	// write zone state when appropriate
+    	if((it%write_zones_every)==0 && write_zones_every>0){
+    		cout << "# writing zone file " << it << endl;
+    		sim.grid->write_zones(it);
+    	}
 
-    // write ray data when appropriate
-    if(it%write_rays_every==0 && write_rays_every>0){
-      if(verbose) cout << "# writing ray file " << it << endl;
-      sim.grid->write_rays(it);
-    }
+    	// write ray data when appropriate
+    	if(it%write_rays_every==0 && write_rays_every>0 && rank0){
+    		cout << "# writing ray file " << it << endl;
+    		sim.grid->write_rays(it);
+    	}
 
-    // print out spectrum in iterative calc
-    if(it%write_spectra_every==0 && write_spectra_every>0){
-      if(verbose) cout << "# writing spectrum file " << it << endl;
-      sim.write_spectra(it);
+    	// print out spectrum in iterative calc
+    	if(it%write_spectra_every==0 && write_spectra_every>0 && rank0){
+    		cout << "# writing spectrum file " << it << endl;
+    		sim.write_spectra(it);
+    	}
     }
   }
 
@@ -98,7 +100,7 @@ int main(int argc, char **argv)
   // calculate the elapsed time 
   double proc_time_end = MPI_Wtime();
   double time_wasted = proc_time_end - proc_time_start;
-  if (verbose) printf("#\n# CALCULATION took %.3e seconds or %.3f mins or %.3f hours\n",
+  if (rank0) printf("#\n# CALCULATION took %.3e seconds or %.3f mins or %.3f hours\n",
 		      time_wasted,time_wasted/60.0,time_wasted/60.0/60.0);
 
   // exit the program

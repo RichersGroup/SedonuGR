@@ -307,7 +307,7 @@ void grid_3D_cart::write_rays(const int iw) const
   outf.open(zonefile);
   outf << setprecision(4);
   outf << scientific;
-  outf << "# r[0] r[1] r[2] rho T_rad T_gas Ye" << endl;
+  outf << "# r[0] e_rad rho T_gas Ye t_eemit t_eabs t_lemit t_labs" << endl;
   j = ny/2;
   k = nz/2;
   for (i=0;i<nx;i++)
@@ -316,11 +316,16 @@ void grid_3D_cart::write_rays(const int iw) const
     coordinates(ind,r); 
     outf << r[0] << " ";
 
-    T_rad = pow(z[ind].e_rad/pc::a,0.25);
+    outf << z[ind].e_rad << " ";
     outf << z[ind].rho   << " ";
-    outf << T_rad        << " ";
     outf << z[ind].T_gas << " ";
     outf << z[ind].Ye    << " ";
+    outf << z[ind].t_eemit << " ";
+    outf << z[ind].t_eabs  << " ";
+    outf << z[ind].t_lemit << " ";
+    outf << z[ind].t_labs  << " ";
+    //outf << 1.0 / fabs(1.0/z[ind].t_eabs - 1.0/z[ind].t_eemit) << "\t";
+    //outf << 1.0 / fabs(1.0/z[ind].t_labs - 1.0/z[ind].t_lemit) << "\t";
     outf << endl;
   }
   outf.close();
@@ -330,7 +335,7 @@ void grid_3D_cart::write_rays(const int iw) const
   outf.open(zonefile);
   outf << setprecision(4);
   outf << scientific;
-  outf << "# r[0] r[1] r[2] rho T_rad T_gas Ye" << endl;
+  outf << "# r[1] e_rad rho T_gas Ye t_eemit t_eabs t_lemit t_labs" << endl;
   i = nx/2;
   k = nz/2;
   for (j=0; j<ny; j++)
@@ -339,11 +344,16 @@ void grid_3D_cart::write_rays(const int iw) const
     coordinates(ind,r); 
     outf << r[1] << " ";
 
-    T_rad = pow(z[ind].e_rad/pc::a,0.25);
+    outf << z[ind].e_rad << " ";
     outf << z[ind].rho   << " ";
-    outf << T_rad        << " ";
     outf << z[ind].T_gas << " ";
     outf << z[ind].Ye    << " ";
+    outf << z[ind].t_eemit << " ";
+    outf << z[ind].t_eabs  << " ";
+    outf << z[ind].t_lemit << " ";
+    outf << z[ind].t_labs  << " ";
+    //outf << 1.0 / fabs(1.0/z[ind].t_eabs - 1.0/z[ind].t_eemit) << "\t";
+    //outf << 1.0 / fabs(1.0/z[ind].t_labs - 1.0/z[ind].t_lemit) << "\t";
     outf << endl;
   }
   outf.close();
@@ -353,7 +363,7 @@ void grid_3D_cart::write_rays(const int iw) const
   outf.open(zonefile);
   outf << setprecision(4);
   outf << scientific;
-  outf << "# r[0] r[1] r[2] rho T_rad T_gas Ye" << endl;
+  outf << "# r[1] e_rad rho T_gas Ye t_eemit t_eabs t_lemit t_labs" << endl;
   i = nx/2;
   j = ny/2;
   for (k=0; k<nz; k++)
@@ -362,11 +372,16 @@ void grid_3D_cart::write_rays(const int iw) const
     coordinates(ind,r); 
     outf << r[2] << " ";
 
-    T_rad = pow(z[ind].e_rad/pc::a,0.25);
+    outf << z[ind].e_rad << " ";
     outf << z[ind].rho   << " ";
-    outf << T_rad        << " ";
     outf << z[ind].T_gas << " ";
     outf << z[ind].Ye    << " ";
+    outf << z[ind].t_eemit << " ";
+    outf << z[ind].t_eabs  << " ";
+    outf << z[ind].t_lemit << " ";
+    outf << z[ind].t_labs  << " ";
+    //outf << 1.0 / fabs(1.0/z[ind].t_eabs - 1.0/z[ind].t_eemit) << "\t";
+    //outf << 1.0 / fabs(1.0/z[ind].t_labs - 1.0/z[ind].t_lemit) << "\t";
     outf << endl;
   }
   outf.close();

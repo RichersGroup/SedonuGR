@@ -50,14 +50,14 @@ void transport::propagate_particles(const double dt)
 		// report energy escaped
         #pragma omp single
 		{
-			if(verbose) cout << "# e_esc = " << e_esc << "erg" << endl;
+			if(rank0) cout << "# e_esc = " << e_esc << "erg" << endl;
 			if(dt<0) assert(particles.size()==0);
 		}
 
 	} //#pragma omp parallel
 
 	//--- OUPUT ESCAPE STATISTICS ---
-	if (verbose){
+	if (rank0){
 		for(int i=0; i<species_list.size(); i++){
 			double per_esc = (100.0*n_escape[i])/n_active[i];
 			if(n_active[i]>0) printf("# %i/%i %s escaped. (%3.2f%%)\n", n_escape[i], n_active[i], species_list[i]->name.c_str(), per_esc);

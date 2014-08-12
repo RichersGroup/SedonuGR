@@ -30,10 +30,18 @@ public:
   real e_rad;                         // radiation energy density  (ergs/cm^3) in lab frame
   real e_abs;                         // radiation energy deposition density rate (ergs/cm^3/s)
   real l_abs;                         // lepton number deposition density rate (cm^-3 s^-1)
+  real e_emit;                        // radiation energy emission rate (erg/ccm/s)
+  real l_emit;						  // lepton number emission rate (cm^-3 s^-1)
   real f_rad[3];                      // radiation force in lab frame
   real eps_imc;                       // fleck factor effective absorption
   real G[3];                          // four force vector in lab frame
   real P11, P12, P13, P22, P23, P33;  // radiation pessure tensor components (symmetric)
+
+  // timescales
+  real t_eabs;    // heating timescale
+  real t_eemit;    // cooling timescale
+  real t_labs;    // leptonization timescale from absorption
+  real t_lemit;   // leptonization timescale from emission
 };
 
 #endif

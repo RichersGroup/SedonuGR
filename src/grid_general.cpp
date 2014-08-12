@@ -51,20 +51,22 @@ void grid_general::write_zones(const int iw) const
   //  outf << setw(12);
   outf << setprecision(4);
   outf << scientific;
-  outf << "# r[0] r[1] r[2] e_rad rho T_gas Ye" << endl;
+  outf << "# r[0]\tr[1]\tr[2]\te_rad\trho\tT_gas\tYe\tt_therm\tt_lep" << endl;
 
   for (int i=0;i<z.size();i++)
   {
     double r[3];
     coordinates(i,r); 
-    outf << r[0] << " ";
-    outf << r[1] << " ";
-    outf << r[2] << " ";
+    outf << r[0] << "\t";
+    outf << r[1] << "\t";
+    outf << r[2] << "\t";
 
-    outf << z[i].e_rad << " ";
-    outf << z[i].rho << " ";
-    outf << z[i].T_gas*pc::k_MeV << " ";
-    outf << z[i].Ye << " ";
+    outf << z[i].e_rad << "\t";
+    outf << z[i].rho << "\t";
+    outf << z[i].T_gas*pc::k_MeV << "\t";
+    outf << z[i].Ye << "\t";
+    outf << 1.0 / fabs(1.0/z[i].t_eabs - 1.0/z[i].t_eemit) << "\t";
+    outf << 1.0 / fabs(1.0/z[i].t_labs - 1.0/z[i].t_lemit) << "\t";
     outf << endl;
   }
   outf.close();
