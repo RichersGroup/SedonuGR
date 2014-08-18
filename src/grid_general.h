@@ -31,6 +31,8 @@ class grid_general
 
  protected:
 
+  static const int dimensionality;
+
   // fill the grid with data from a model file
   virtual void read_model_file(Lua* lua) = 0;
 

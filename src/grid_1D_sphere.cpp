@@ -42,7 +42,7 @@ void grid_1D_sphere::read_model_file(Lua* lua)
   // number of zones
   int n_zones;
   infile >> n_zones;
-  z.resize(n_zones,zone(1));
+  z.resize(n_zones,zone(dimensionality));
   r_out.resize(n_zones);
   vol.resize(n_zones);
 

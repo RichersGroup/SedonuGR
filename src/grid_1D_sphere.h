@@ -13,6 +13,8 @@ class grid_1D_sphere: public grid_general
 
 private:
 
+  static const int dimensionality = 1;
+
   // store location of the outer edge of the zone.
   locate_array r_out;
 

@@ -13,6 +13,8 @@ class grid_2D_sphere: public grid_general
 
 private:
 
+  static int dimensionality = 2;
+
   // store location of the outer edges of the zone.
   // order of zone array: r is increased fastest
   locate_array r_out;

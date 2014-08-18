@@ -13,6 +13,8 @@ class grid_3D_cart: public grid_general
 
 private:
 
+  static const int dimensionality = 3;
+
   // specifics to this geometry
 
   int    nx, ny, nz; // number of zones in each dimension

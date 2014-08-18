@@ -42,7 +42,7 @@ void grid_3D_cart::custom_model(Lua* lua)
 
   // allocate zones
   int n_zones = nx*ny*nz;
-  z.resize(n_zones,zone(3));
+  z.resize(n_zones,zone(dimensionality));
 
   // get a reverse map to x,y,z indices
   ix = new int[n_zones];
@@ -125,7 +125,7 @@ void grid_3D_cart::read_model_file(Lua* lua)
   ix = new int[n_zones];
   iy = new int[n_zones];
   iz = new int[n_zones];
-  z.resize(n_zones,zone(3));
+  z.resize(n_zones,zone(dimensionality));
   int ind = 0;
   bool rx,ry,rz;
   for (int k=0;k<nz;k++)
