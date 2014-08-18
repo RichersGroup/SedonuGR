@@ -36,8 +36,8 @@ public:
   void   sample_in_zone(const int, const std::vector<double>, double[3]) const;
   void   velocity_vector(const int i, const double[3], double[3]) const;
   void   write_rays(const int iw) const;
-  void   coordinates(const int i,double r[3]) const{
-    r[0] = r_out[i]; r[1] = 0; r[2] = 0;}
+  void   cartesian_coordinates(const int z_ind, vector<double>& r) const{
+    r.resize(dimensionality);r[0] = 0.5*(r_out[z_ind]+r_out.bottom(z_ind));}
   void reflect_outer(particle *) const;
   double dist_to_boundary(const particle *) const;
 };

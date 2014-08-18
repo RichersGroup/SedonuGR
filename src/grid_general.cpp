@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <fstream>
 #include <stdlib.h>
+#include <cassert>
 #include "grid_general.h"
 #include "physical_constants.h"
 #include "Lua.h"
@@ -36,27 +37,19 @@ void grid_general::init(Lua* lua)
 //------------------------------------------------------------
 void grid_general::write_zones(const int iw) const
 {
+	assert(z.size()>0);
+	vector<double> r;
+	cartesian_coordinates(0,r);
+	int dimensionality = r.size();
+
   ofstream outf;
   transport::open_file("fluid",iw,outf);
-  outf << setprecision(4);
-  outf << scientific;
-  outf << "# r[0]\tr[1]\tr[2]\te_rad\trho\tT_gas\tYe\tt_therm\tt_lep" << endl;
+  zone::write_header(dimensionality,outf);
 
   for (int i=0;i<z.size();i++)
   {
-    double r[3];
-    coordinates(i,r); 
-    outf << r[0] << "\t";
-    outf << r[1] << "\t";
-    outf << r[2] << "\t";
-
-    outf << z[i].e_rad << "\t";
-    outf << z[i].rho << "\t";
-    outf << z[i].T_gas*pc::k_MeV << "\t";
-    outf << z[i].Ye << "\t";
-    outf << 1.0 / fabs(1.0/z[i].t_eabs - 1.0/z[i].t_eemit) << "\t";
-    outf << 1.0 / fabs(1.0/z[i].t_labs - 1.0/z[i].t_lemit) << "\t";
-    outf << endl;
+    cartesian_coordinates(i,r); 
+    z[i].write_line(r,outf);
   }
   outf.close();
 }

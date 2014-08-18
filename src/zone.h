@@ -1,7 +1,8 @@
 #ifndef _ZONE_H
 #define _ZONE_H
 #include <vector>
-using std::vector;
+#include <fstream>
+using namespace std;
 
 // define real to choose either double or float precision
 typedef double real;
@@ -17,6 +18,10 @@ public:
   // constructors
   zone();
   zone(const int dimensionality);
+
+  // writing utilities
+  static void write_header(const int dimensionality, ofstream& outf);
+  void write_line(const vector<double>& r, ofstream& outf) const;
 
   // fluid properties
   vector<real> v;            // velocity vector (cm/s)

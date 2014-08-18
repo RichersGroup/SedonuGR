@@ -282,11 +282,12 @@ void grid_3D_cart::velocity_vector(const int i, const double x[3], double v[3]) 
 //------------------------------------------------------------
 // cell-centered coordinates of zone i
 //------------------------------------------------------------
-void grid_3D_cart::coordinates(const int i,double r[3]) const
+void grid_3D_cart::cartesian_coordinates(const int z_ind, vector<double>& r) const
 {
-  r[0] = x0 + (ix[i]+0.5)*dx;
-  r[1] = y0 + (iy[i]+0.5)*dy;
-  r[2] = z0 + (iz[i]+0.5)*dz;
+	r.resize(dimensionality);
+  r[0] = x0 + (ix[z_ind]+0.5)*dx;
+  r[1] = y0 + (iy[z_ind]+0.5)*dy;
+  r[2] = z0 + (iz[z_ind]+0.5)*dz;
 }
 
 
@@ -297,88 +298,44 @@ void grid_3D_cart::write_rays(const int iw) const
 {
   int i,j,k;
   int ind;
-  double r[3];
+  vector<double> r;
 
   ofstream outf;
 
   // X-direction
   transport::open_file("ray_x",iw,outf);
-  outf << setprecision(4);
-  outf << scientific;
-  outf << "# r[0] e_rad rho T_gas Ye t_eemit t_eabs t_lemit t_labs" << endl;
+  zone::write_header(dimensionality,outf);
   j = ny/2;
   k = nz/2;
-  for (i=0;i<nx;i++)
-  {
+  for (i=0;i<nx;i++){
     ind = i*ny*nz + j*nz + k;
-    coordinates(ind,r); 
-    outf << r[0] << " ";
-
-    outf << z[ind].e_rad << " ";
-    outf << z[ind].rho   << " ";
-    outf << z[ind].T_gas << " ";
-    outf << z[ind].Ye    << " ";
-    outf << z[ind].t_eemit << " ";
-    outf << z[ind].t_eabs  << " ";
-    outf << z[ind].t_lemit << " ";
-    outf << z[ind].t_labs  << " ";
-    //outf << 1.0 / fabs(1.0/z[ind].t_eabs - 1.0/z[ind].t_eemit) << "\t";
-    //outf << 1.0 / fabs(1.0/z[ind].t_labs - 1.0/z[ind].t_lemit) << "\t";
-    outf << endl;
+    cartesian_coordinates(ind,r); 
+    z[ind].write_line(r,outf);
   }
   outf.close();
 
   // Y-direction
   transport::open_file("ray_y",iw,outf);
-  outf << setprecision(4);
-  outf << scientific;
-  outf << "# r[1] e_rad rho T_gas Ye t_eemit t_eabs t_lemit t_labs" << endl;
+  zone::write_header(dimensionality,outf);
   i = nx/2;
   k = nz/2;
-  for (j=0; j<ny; j++)
-  {
+  for (j=0; j<ny; j++){
     ind = i*ny*nz + j*nz + k;
-    coordinates(ind,r); 
-    outf << r[1] << " ";
-
-    outf << z[ind].e_rad << " ";
-    outf << z[ind].rho   << " ";
-    outf << z[ind].T_gas << " ";
-    outf << z[ind].Ye    << " ";
-    outf << z[ind].t_eemit << " ";
-    outf << z[ind].t_eabs  << " ";
-    outf << z[ind].t_lemit << " ";
-    outf << z[ind].t_labs  << " ";
-    //outf << 1.0 / fabs(1.0/z[ind].t_eabs - 1.0/z[ind].t_eemit) << "\t";
-    //outf << 1.0 / fabs(1.0/z[ind].t_labs - 1.0/z[ind].t_lemit) << "\t";
-    outf << endl;
+    cartesian_coordinates(ind,r); 
+    z[ind].write_line(r,outf);
   }
   outf.close();
 
   // Z-direction
   transport::open_file("ray_z",iw,outf);
-  outf << setprecision(4);
-  outf << scientific;
-  outf << "# r[1] e_rad rho T_gas Ye t_eemit t_eabs t_lemit t_labs" << endl;
+  zone::write_header(dimensionality,outf);
   i = nx/2;
   j = ny/2;
   for (k=0; k<nz; k++)
   {
     ind = i*ny*nz + j*nz + k;
-    coordinates(ind,r); 
-    outf << r[2] << " ";
-
-    outf << z[ind].e_rad << " ";
-    outf << z[ind].rho   << " ";
-    outf << z[ind].T_gas << " ";
-    outf << z[ind].Ye    << " ";
-    outf << z[ind].t_eemit << " ";
-    outf << z[ind].t_eabs  << " ";
-    outf << z[ind].t_lemit << " ";
-    outf << z[ind].t_labs  << " ";
-    //outf << 1.0 / fabs(1.0/z[ind].t_eabs - 1.0/z[ind].t_eemit) << "\t";
-    //outf << 1.0 / fabs(1.0/z[ind].t_labs - 1.0/z[ind].t_lemit) << "\t";
-    outf << endl;
+    cartesian_coordinates(ind,r); 
+    z[ind].write_line(r,outf);
   }
   outf.close();
 }

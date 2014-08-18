@@ -40,7 +40,7 @@ public:
   void      sample_in_zone(const int, const std::vector<double>, double[3]) const;
   void      velocity_vector(const int i, const double[3], double[3]) const;
   void      print() const;
-  void      coordinates(const int i,double r[3]) const;
+  void      cartesian_coordinates(const int z_ind, vector<double>& r) const;
   void      write_rays(const int iw) const;
   void reflect_outer(particle *) const;
   double dist_to_boundary(const particle *) const;
