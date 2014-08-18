@@ -74,6 +74,15 @@ void grid_1D_sphere::custom_model(Lua* lua)
   exit(11);
 }
 
+
+// ------------------------------------------------------------
+// find the coordinates of the zone in geometrical coordinates
+// ------------------------------------------------------------
+void grid_1D_sphere::zone_coordinates(const int z_ind, vector<double>& r) const{
+  r.resize(dimensionality);
+  r[0] = 0.5*(r_out[z_ind]+r_out.bottom(z_ind));
+}
+
 //------------------------------------
 // get the velocity squared of a zone
 //------------------------------------

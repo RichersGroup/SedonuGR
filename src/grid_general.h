@@ -85,7 +85,7 @@ class grid_general
   virtual void velocity_vector(const int i, const double[3],double[3]) const = 0;
   
   // get the coordinates at the center of the zone i
-  virtual void cartesian_coordinates(const int z_ind, vector<double>& r) const = 0;
+  virtual void zone_coordinates(const int z_ind, vector<double>& r) const = 0;
 
   // boundary conditions
   virtual void reflect_outer(particle *) const = 0;

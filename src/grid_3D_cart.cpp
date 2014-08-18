@@ -282,7 +282,7 @@ void grid_3D_cart::velocity_vector(const int i, const double x[3], double v[3]) 
 //------------------------------------------------------------
 // cell-centered coordinates of zone i
 //------------------------------------------------------------
-void grid_3D_cart::cartesian_coordinates(const int z_ind, vector<double>& r) const
+void grid_3D_cart::zone_coordinates(const int z_ind, vector<double>& r) const
 {
 	r.resize(dimensionality);
   r[0] = x0 + (ix[z_ind]+0.5)*dx;
@@ -309,7 +309,7 @@ void grid_3D_cart::write_rays(const int iw) const
   k = nz/2;
   for (i=0;i<nx;i++){
     ind = i*ny*nz + j*nz + k;
-    cartesian_coordinates(ind,r); 
+    zone_coordinates(ind,r); 
     z[ind].write_line(r,outf);
   }
   outf.close();
@@ -321,7 +321,7 @@ void grid_3D_cart::write_rays(const int iw) const
   k = nz/2;
   for (j=0; j<ny; j++){
     ind = i*ny*nz + j*nz + k;
-    cartesian_coordinates(ind,r); 
+    zone_coordinates(ind,r); 
     z[ind].write_line(r,outf);
   }
   outf.close();
@@ -334,7 +334,7 @@ void grid_3D_cart::write_rays(const int iw) const
   for (k=0; k<nz; k++)
   {
     ind = i*ny*nz + j*nz + k;
-    cartesian_coordinates(ind,r); 
+    zone_coordinates(ind,r); 
     z[ind].write_line(r,outf);
   }
   outf.close();

@@ -39,7 +39,7 @@ void grid_general::write_zones(const int iw) const
 {
 	assert(z.size()>0);
 	vector<double> r;
-	cartesian_coordinates(0,r);
+	zone_coordinates(0,r);
 	int dimensionality = r.size();
 
   ofstream outf;
@@ -48,7 +48,7 @@ void grid_general::write_zones(const int iw) const
 
   for (int i=0;i<z.size();i++)
   {
-    cartesian_coordinates(i,r); 
+    zone_coordinates(i,r); 
     z[i].write_line(r,outf);
   }
   outf.close();
