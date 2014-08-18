@@ -12,6 +12,10 @@ class zone
 
 public:
 
+  // constructors
+  zone();
+  zone(const int dimensionality);
+
   // fluid properties
   real v[3];            // velocity vector (cm/s)
   real rho;             // density (g/cm^3)
