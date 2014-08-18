@@ -15,15 +15,10 @@ public:
   // fluid properties
   real v[3];            // velocity vector (cm/s)
   real rho;             // density (g/cm^3)
-  real cs;              // sound speed (cm/s)
-  real p_gas;           // gas pressure
-  real e_gas;           // gas energy density per gram
-  real E_gas;           // gas total energy
   real T_gas;           // gas temperature (K)
   real Ye;              // electron fraction
 
   // store other parameters
-  real ni56;            // nickel fraction
   real H;               // specific heating rate (erg/s/g)
 
   // radiation quantities
@@ -33,9 +28,6 @@ public:
   real e_emit;                        // radiation energy emission rate (erg/ccm/s)
   real l_emit;						  // lepton number emission rate (cm^-3 s^-1)
   real f_rad[3];                      // radiation force in lab frame
-  real eps_imc;                       // fleck factor effective absorption
-  real G[3];                          // four force vector in lab frame
-  real P11, P12, P13, P22, P23, P33;  // radiation pessure tensor components (symmetric)
 
   // timescales
   real t_eabs;    // heating timescale

@@ -91,7 +91,6 @@ void neutrinos::myInit(Lua* lua)
 void neutrinos::set_eas(int zone_index)
 {
 	zone* z = &(sim->grid->z[zone_index]);
-	z->eps_imc = 1;
 
 	if(grey_opac < 0){ // get opacities and emissivity from NuLib
 		nulib_get_eas_arrays(z->rho, z->T_gas, z->Ye, nulibID,

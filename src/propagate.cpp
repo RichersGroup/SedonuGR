@@ -183,18 +183,15 @@ void transport::propagate(particle* p, const double dt) const
 		// Extra dshift definitely needed here (two total) to convert both p->e and this_d to the comoving frame
 		this_E_comoving = this_E * dshift * dshift;
         #pragma omp atomic
-		zone->e_abs += this_E_comoving * (opac*abs_frac*zone->eps_imc);
+		zone->e_abs += this_E_comoving * (opac*abs_frac);
 
 		// store absorbed lepton number (same in both frames, except for the
 		// factor of this_d which is divided out later
 		if(species_list[p->s]->lepton_number != 0){
 			this_l_comoving = species_list[p->s]->lepton_number * p->e/(p->nu*pc::h) * this_d*dshift;
             #pragma omp atomic
-			zone->l_abs += this_l_comoving * (opac*abs_frac*zone->eps_imc);
+			zone->l_abs += this_l_comoving * (opac*abs_frac);
 		}
-
-		// TODO - put back in radiation force tally here
-		// fx_rad =
 
 		// move particle the distance
 		p->x[0] += this_d*p->D[0];
@@ -223,11 +220,7 @@ void transport::propagate(particle* p, const double dt) const
 			{
 				// if this is an iterative calculation, radiative equilibrium is always assumed.
 				if(radiative_eq) isotropic_scatter(p,1);          // particle lives, energy redistributed
-				else{
-					z2 = rangen.uniform();
-					if (z2 > zone->eps_imc) isotropic_scatter(p,1); // particle lives, energy redistributed
-					else p->fate = absorbed;                        // particle dies
-				}
+				else p->fate = absorbed;
 			}
 			assert(p->nu > 0);
 			break;

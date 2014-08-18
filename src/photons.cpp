@@ -60,15 +60,6 @@ void photons::set_eas(int zone_index)
   zone* z = &(sim->grid->z[zone_index]);
   assert(grey_opac >= 0);
 
-  // fleck factors
-  //double Tg    = sim->grid->z[zone_index].T_gas;
-  //double fleck_beta=4.0*pc::a*pow(Tg,4)/(sim->grid->z[zone_index].e_gas*sim->grid->z[zone_index].rho);
-  //double tfac  = pc::c*grey_opac*epsilon*sim->grid->z[zone_index].rho*t_step;
-  //double f_imc = fleck_alpha*fleck_beta*tfac;
-  //sim->grid->z[zone_index].eps_imc = 1.0/(1.0 + f_imc);
-  //if (sim->radiative_eq) sim->grid->z[zone_index].eps_imc = 1.;
-  z->eps_imc = 1;
-
   // leave serial. Parrallelized threads call this function.
   for (int j=0;j<nu_grid.size();j++)
   {
