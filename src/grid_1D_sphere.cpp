@@ -54,6 +54,8 @@ void grid_1D_sphere::read_model_file(Lua* lua)
     infile >> z[i].rho;
     infile >> z[i].T_gas;
     infile >> z[i].Ye;
+    z[i].H = 0;
+    z[i].e_rad = 0;
 
     z[i].v[0] = 0;
     double r0 = r_out.bottom(i);

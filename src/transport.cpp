@@ -534,7 +534,7 @@ void transport::open_file(const char* filebase, const int iw, ofstream& outf){
 	else if(iw < 10000) number_string = "0"    + to_string(iw);
 	else                number_string =          to_string(iw);
 
-	string filename = string(filebase) + "_" + number_string + ".z";
+	string filename = string(filebase) + "_" + number_string + ".dat";
         outf.open(filename.c_str());
 
 }
