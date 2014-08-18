@@ -27,7 +27,7 @@ public:
   void custom_model(Lua* lua);
 
   // required functions
-  int    get_zone(const double *) const;
+  int    zone_index(const double *) const;
   double zone_volume(const int) const;
   double zone_min_length(const int) const;
   void   sample_in_zone(const int, const std::vector<double>, double[3]) const;

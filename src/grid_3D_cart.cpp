@@ -213,7 +213,7 @@ void grid_3D_cart::read_model_file(Lua* lua)
 //------------------------------------------------------------
 // Overly simple search to find zone
 //------------------------------------------------------------
-int grid_3D_cart::get_zone(const double *x) const
+int grid_3D_cart::zone_index(const double *x) const
 {
   int i = floor((x[0]-x0)/dx);
   int j = floor((x[1]-y0)/dy);

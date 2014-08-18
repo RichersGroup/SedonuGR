@@ -64,7 +64,7 @@ class grid_general
   //****** virtual functions (geometry specific)
 
   // get zone index from x,y,z position
-  virtual int get_zone(const double *) const   = 0;
+  virtual int zone_index(const double *) const   = 0;
 
   // return volume of zone i
   virtual double zone_volume(const int i) const         = 0;

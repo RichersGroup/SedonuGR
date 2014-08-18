@@ -205,7 +205,7 @@ void transport::propagate(particle* p, const double dt) const
 		p->t = p->t + this_d/pc::c;
 
 		// get zone location now
-		p->ind = grid->get_zone(p->x);
+		p->ind = grid->zone_index(p->x);
 
 		// now the exciting bit!
 		switch(event){

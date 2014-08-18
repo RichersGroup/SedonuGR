@@ -105,7 +105,7 @@ void grid_1D_sphere::custom_model(Lua* lua)
 //------------------------------------------------------------
 // Overly simple search to find zone
 //------------------------------------------------------------
-int grid_1D_sphere::get_zone(const double *x) const
+int grid_1D_sphere::zone_index(const double *x) const
 {
   double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 
@@ -229,7 +229,7 @@ void grid_1D_sphere::reflect_outer(particle *p) const{
   p->x[2] = p->x[2]/R*newR;
   
   // must be inside the boundary, or will get flagged as escaped
-  p->ind = get_zone(p->x);
+  p->ind = zone_index(p->x);
   assert(p->r() < r_out[r_out.size()-1]);
 }
 

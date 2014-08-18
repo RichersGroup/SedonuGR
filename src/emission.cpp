@@ -221,7 +221,7 @@ void transport::create_surface_particle(const double Ep, const double t)
   p.D[2] = -sint_core*D_xl+cost_core*D_zl;
 
   // get index of current zone
-  p.ind = grid->get_zone(p.x);
+  p.ind = grid->zone_index(p.x);
   if(p.ind < 0){
     printf("WARNING: particle spawned with emit_inner_source is outside the grid.\n");
   }
