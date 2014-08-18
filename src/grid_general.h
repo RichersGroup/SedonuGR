@@ -23,6 +23,7 @@
 #include "zone.h"
 #include "Lua.h"
 #include "particle.h"
+#include "transport.h"
 
 using namespace std;
 
@@ -54,7 +55,7 @@ class grid_general
   /* void reduce_T(); */
   /* void reduce_Ye(); */
 
-  static const double tiny = 1e-3; // used to overshoot boundary to account for error in boundary distance calculation
+  static constexpr double tiny = 1e-3; // used to overshoot boundary to account for error in boundary distance calculation
 
   // set everything up
   void init(Lua* lua);

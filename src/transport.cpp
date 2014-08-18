@@ -8,9 +8,12 @@
 #include <iostream>
 #include <limits>
 #include <cassert>
+#include <fstream>
+#include <string>
 #include "transport.h"
 #include "physical_constants.h"
 #include "Lua.h"
+#include "grid_general.h"
 #include "grid_1D_sphere.h"
 #include "grid_3D_cart.h"
 #include "species_general.h"
@@ -521,4 +524,17 @@ void transport::update_zone_quantities(){
 			assert(z->Ye <= Ye_max);
 		}
 	}
+}
+
+void transport::open_file(const char* filebase, const int iw, ofstream& outf){
+	string number_string;
+	if     (iw < 10)    number_string = "0000" + to_string(iw);
+	else if(iw < 100)   number_string = "000"  + to_string(iw);
+	else if(iw < 1000)  number_string = "00"   + to_string(iw);
+	else if(iw < 10000) number_string = "0"    + to_string(iw);
+	else                number_string =          to_string(iw);
+
+	string filename = string(filebase) + "_" + number_string + ".z";
+        outf.open(filename.c_str());
+
 }

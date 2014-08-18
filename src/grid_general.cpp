@@ -36,19 +36,8 @@ void grid_general::init(Lua* lua)
 //------------------------------------------------------------
 void grid_general::write_zones(const int iw) const
 {
-  char zonefile[1000];
-  char base[1000];
-
-  if (iw < 10) sprintf(base,"_0000%d",iw);
-  else if (iw < 100) sprintf(base,"_000%d",iw);
-  else if (iw < 1000) sprintf(base,"_00%d",iw);
-  else if (iw < 10000) sprintf(base,"_0%d",iw);
-  else sprintf(base,"_%d",iw);
-  sprintf(zonefile,"fluid%s",base);
-
   ofstream outf;
-  outf.open(zonefile);
-  //  outf << setw(12);
+  transport::open_file("fluid",iw,outf);
   outf << setprecision(4);
   outf << scientific;
   outf << "# r[0]\tr[1]\tr[2]\te_rad\trho\tT_gas\tYe\tt_therm\tt_lep" << endl;
@@ -71,62 +60,3 @@ void grid_general::write_zones(const int iw) const
   }
   outf.close();
 }
-
-
-//------------------------------------------------------------
-// Combine the radiation tallies in all zones
-// from all processors using MPI allreduce
-//------------------------------------------------------------
-// void grid_general::reduce_radiation()
-// {
-//   // largest block to reduce
-//   int n_blocks = floor(z.size()/block_size);
-
-//   // reduce in blocks
-//   for (int i=0;i<n_blocks;i++)
-//     reduce_radiation_block(block_size,i*block_size);
-
-//   // get remainder
-//   int remainder = z.size() - n_blocks*block_size;
-//   if (remainder > 0) reduce_radiation_block(remainder,n_blocks*block_size);
-// }
-
-
-//------------------------------------------------------------
-// Combine the radiation tallies in blocks
-// from all processors  using MPI allreduce
-//------------------------------------------------------------
-// void grid_general::reduce_radiation_block(int block_size, int start)
-// {
-//   int nprocs;
-//   MPI_Comm_size( MPI_COMM_WORLD, &nprocs );
-
-//   vector<real> send(block_size,0);
-//   vector<real> receive(block_size,0);
-//   MPI_Datatype type = ( sizeof(real)==4 ? MPI_FLOAT : MPI_DOUBLE);
-
-//   // average e_rad
-//   #pragma omp parallel for
-//   for(int i=0; i<block_size; i++) send[i] = z[start+i].e_rad/nprocs;
-//   MPI_Allreduce(&send.front(), &receive.front(), block_size, type, MPI_SUM, MPI_COMM_WORLD);
-//   #pragma omp parallel for
-//   for(int i=0; i<block_size; i++) z[start+i].e_rad = receive[i];
-
-//   // average e_abs
-//   #pragma omp parallel for
-//   for(int i=0; i<block_size; i++) send[i] = z[start+i].e_abs/nprocs;
-//   MPI_Allreduce(&send.front(), &receive.front(), block_size, type, MPI_SUM, MPI_COMM_WORLD);
-//   #pragma omp parallel for
-//   for(int i=0; i<block_size; i++) z[start+i].e_rad = receive[i];
-
-//   // average l_abs
-//   #pragma omp parallel for
-//   for(int i=0; i<block_size; i++) send[i] = z[start+i].l_abs/nprocs;
-//   MPI_Allreduce(&send.front(), &receive.front(), block_size, type, MPI_SUM, MPI_COMM_WORLD);
-//   #pragma omp parallel for
-//   for(int i=0; i<block_size; i++) z[start+i].e_rad = receive[i];
-
-// }
-
-
-

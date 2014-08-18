@@ -295,24 +295,14 @@ void grid_3D_cart::coordinates(const int i,double r[3]) const
 //------------------------------------------------------------
 void grid_3D_cart::write_rays(const int iw) const
 {
-  char zonefile[1000];
-  char base[1000];
-  int ind;
-  double T_rad;
-  double r[3];
-  ofstream outf;
   int i,j,k;
+  int ind;
+  double r[3];
 
-  if (iw < 10) sprintf(base,"_0000%d",iw);
-  else if (iw < 100) sprintf(base,"_000%d",iw);
-  else if (iw < 1000) sprintf(base,"_00%d",iw);
-  else if (iw < 10000) sprintf(base,"_0%d",iw);
-  else sprintf(base,"_%d",iw);
+  ofstream outf;
 
- 
   // X-direction
-  sprintf(zonefile,"ray%s_x",base);
-  outf.open(zonefile);
+  transport::open_file("ray_x",iw,outf);
   outf << setprecision(4);
   outf << scientific;
   outf << "# r[0] e_rad rho T_gas Ye t_eemit t_eabs t_lemit t_labs" << endl;
@@ -339,8 +329,7 @@ void grid_3D_cart::write_rays(const int iw) const
   outf.close();
 
   // Y-direction
-  sprintf(zonefile,"ray%s_y",base);
-  outf.open(zonefile);
+  transport::open_file("ray_y",iw,outf);
   outf << setprecision(4);
   outf << scientific;
   outf << "# r[1] e_rad rho T_gas Ye t_eemit t_eabs t_lemit t_labs" << endl;
@@ -367,8 +356,7 @@ void grid_3D_cart::write_rays(const int iw) const
   outf.close();
 
   // Z-direction
-  sprintf(zonefile,"ray%s_z",base);
-  outf.open(zonefile);
+  transport::open_file("ray_z",iw,outf);
   outf << setprecision(4);
   outf << scientific;
   outf << "# r[1] e_rad rho T_gas Ye t_eemit t_eabs t_lemit t_labs" << endl;

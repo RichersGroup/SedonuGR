@@ -64,12 +64,12 @@ double cdf_array::inverse_tangent(const int i, const locate_array* xgrid) const{
 	double result = 0.0;
 	double left_secant  = (i==-1  ? numeric_limits<double>::infinity() : inverse_secant(i-1,i,xgrid));
 	double right_secant = (i==N-1 ? numeric_limits<double>::infinity() : inverse_secant(i,i+1,xgrid));
-	assert(!isinf(left_secant) || !isinf(right_secant));
+	assert(!isinf<bool>(left_secant) || !isinf<bool>(right_secant));
 	if     (i==-1 ) result = right_secant;
 	else if(i==N-1) result = left_secant;
 	else{
-		if     (isinf(left_secant )) result = right_secant;
-		else if(isinf(right_secant)) result = left_secant;
+		if     (isinf<bool>(left_secant )) result = right_secant;
+		else if(isinf<bool>(right_secant)) result = left_secant;
 		else                         result = 0.5 * (right_secant + left_secant);
 	}
 	return result;
@@ -133,8 +133,8 @@ double cdf_array::invert_cubic(const double rand, const locate_array* xgrid) con
 	// get left and right tangents
 	double mLeft  = inverse_tangent(i-1,xgrid);
 	double mRight = inverse_tangent(i  ,xgrid);
-	assert(!isinf(mLeft ));
-	assert(!isinf(mRight));
+	assert(!isinf<bool>(mLeft ));
+	assert(!isinf<bool>(mRight));
 
 	// prevent overshoot, ensure monotonicity
 	double slope = inverse_secant(i-1,i,xgrid);
@@ -174,7 +174,7 @@ double cdf_array::invert_linear(const double rand, const locate_array* xgrid) co
 
 	// get the slope between the two adjacent points
 	double slope = inverse_secant(i-1,i,xgrid);
-	assert(!isinf(slope));
+	assert(!isinf<bool>(slope));
 
 	// return interpolated function
 	double result = xLeft + slope*(rand-yLeft);

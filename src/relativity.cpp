@@ -2,6 +2,7 @@
 #include "transport.h"
 #include "particle.h"
 #include "physical_constants.h"
+#include "grid_general.h"
 
 namespace pc = physical_constants;
 

@@ -5,12 +5,12 @@
 #include "particle.h"
 #include "spectrum_array.h"
 #include "Lua.h"
-#include "grid_general.h"
 #include "locate_array.h"
 #include "cdf_array.h"
 #include "thread_RNG.h"
 
 class species_general;
+class grid_general;
 enum ParticleEvent {interact, zoneEdge, timeStep, boundary};
 
 class transport
@@ -131,9 +131,9 @@ public:
   // in-simulation functions to be used by main
   void step(const double dt);
   int  total_particles() const;
-  void write_zones(const int it);
   void write_rays(const int it);
   void write_spectra(const int it);
+  static void open_file(const char* filebase, const int iw, ofstream& outf);
 };
 
 #endif

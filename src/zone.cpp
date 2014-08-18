@@ -34,7 +34,7 @@ zone::zone(const int dimensionality){
 	e_emit = NAN;
 	l_emit = NAN;
 	t_eabs = NAN;
-	t_eemit = NAN;
-	t_labs = NAN;
-	t_lemit = NAN;
+    t_eemit = NAN;
+    t_labs = NAN;
+    t_lemit = NAN;
 }
