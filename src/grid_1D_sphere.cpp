@@ -22,71 +22,44 @@ void grid_1D_sphere::read_model_file(Lua* lua)
   int my_rank;
   MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
   const int rank0 = (my_rank == 0);
+  if(rank0) cout << "# Reading 1D model file" << endl;
 
   // open up the model file, complaining if it fails to open
   string model_file = lua->scalar<string>("model_file");
   ifstream infile;
   infile.open(model_file.c_str());
-  if(infile.fail())
-  {
+  if(infile.fail()){
     cout << "Error: can't read the model file." << model_file << endl;
     exit(4);
   }
 
   // geometry of model
   infile >> grid_type;
+  cout << "grid_type = " << grid_type << endl;
   if(grid_type != "1D_sphere"){
     cout << "Error: grid_type parameter disagrees with the model file." << endl;
   }
 
-  // type of system
-  string system;
-  infile >> system;
-
   // number of zones
   int n_zones;
   infile >> n_zones;
+  cout << "n_zones = " << n_zones << endl;
   z.resize(n_zones);
   r_out.resize(n_zones);
   vol.resize(n_zones);
 
-  // other properties
-  double texp;
+  // read zone properties
   infile >> r_out.min;
-  infile >> texp;
-
-  // read zone properties for a supernova remnant
-  double r0;
-  if(system == "SNR") for(int i=0; i<n_zones; i++)
+  cout << "r_out.min = " << r_out.min << endl;
+  for(int i=0; i<n_zones; i++)
   {
-    if(i==0 && rank0) cout << "# Reading SNR model file..." << endl;
-    infile >> r_out[i];
-    infile >> z[i].rho;
-    infile >> z[i].T_gas;
-    infile >> z[i].ni56;
-
-    z[i].v[0] = r_out[i]/texp;
-    z[i].e_rad = pc::a*pow(z[i].T_gas,4);
-    if(i==0) r0 = r_out.min;
-    else r0 = r_out[i-1];
-    vol[i] = 4.0*pc::pi/3.0*(r_out[i]*r_out[i]*r_out[i] - r0*r0*r0);
-
-    z[i].Ye = -1e99; // poison
-  }
-
-  // read zone properties for a gamma-ray burst
-  else if(system == "GRB") for(int i=0; i<n_zones; i++)
-  {
-    if(i==0 && rank0) cout << "# Reading GRB model file..." << endl;
     infile >> r_out[i];
     infile >> z[i].rho;
     infile >> z[i].T_gas;
     infile >> z[i].Ye;
 
     z[i].v[0] = 0;
-    z[i].e_rad = pc::a*pow(z[i].T_gas,4);
-    if(i==0) r0 = r_out.min;
-    else r0 = r_out[i-1];
+    double r0 = r_out.bottom(i);
     vol[i] = 4.0*pc::pi/3.0*(r_out[i]*r_out[i]*r_out[i] - r0*r0*r0);
   }
 
