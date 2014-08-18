@@ -35,7 +35,6 @@ void grid_1D_sphere::read_model_file(Lua* lua)
 
   // geometry of model
   infile >> grid_type;
-  cout << "grid_type = " << grid_type << endl;
   if(grid_type != "1D_sphere"){
     cout << "Error: grid_type parameter disagrees with the model file." << endl;
   }
@@ -43,14 +42,12 @@ void grid_1D_sphere::read_model_file(Lua* lua)
   // number of zones
   int n_zones;
   infile >> n_zones;
-  cout << "n_zones = " << n_zones << endl;
-  z.resize(n_zones);
+  z.resize(n_zones,zone(1));
   r_out.resize(n_zones);
   vol.resize(n_zones);
 
   // read zone properties
   infile >> r_out.min;
-  cout << "r_out.min = " << r_out.min << endl;
   for(int i=0; i<n_zones; i++)
   {
     infile >> r_out[i];
@@ -73,6 +70,13 @@ void grid_1D_sphere::custom_model(Lua* lua)
 {
   cout << "Error: there is no custom model programmed for grid_1D_sphere." << endl;
   exit(11);
+}
+
+//------------------------------------
+// get the velocity squared of a zone
+//------------------------------------
+double grid_1D_sphere::zone_speed2(const int z_ind) const{
+	return z[z_ind].v[0];
 }
 
 //------------------------------------------------------------

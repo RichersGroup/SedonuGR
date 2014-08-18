@@ -29,6 +29,7 @@ public:
   void custom_model(Lua* lua);
 
   // required functions
+  double zone_speed2(const int z_ind) const;
   int    get_zone(double *);
   double zone_volume(int);
   double zone_min_length(int);

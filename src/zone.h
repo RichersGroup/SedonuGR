@@ -1,5 +1,7 @@
 #ifndef _ZONE_H
 #define _ZONE_H
+#include <vector>
+using std::vector;
 
 // define real to choose either double or float precision
 typedef double real;
@@ -17,7 +19,7 @@ public:
   zone(const int dimensionality);
 
   // fluid properties
-  real v[3];            // velocity vector (cm/s)
+  vector<real> v;            // velocity vector (cm/s)
   real rho;             // density (g/cm^3)
   real T_gas;           // gas temperature (K)
   real Ye;              // electron fraction

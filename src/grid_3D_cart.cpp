@@ -42,7 +42,7 @@ void grid_3D_cart::custom_model(Lua* lua)
 
   // allocate zones
   int n_zones = nx*ny*nz;
-  z.resize(n_zones);
+  z.resize(n_zones,zone(3));
 
   // get a reverse map to x,y,z indices
   ix = new int[n_zones];
@@ -125,7 +125,7 @@ void grid_3D_cart::read_model_file(Lua* lua)
   ix = new int[n_zones];
   iy = new int[n_zones];
   iz = new int[n_zones];
-  z.resize(n_zones);
+  z.resize(n_zones,zone(3));
   int ind = 0;
   bool rx,ry,rz;
   for (int k=0;k<nz;k++)
@@ -208,6 +208,14 @@ void grid_3D_cart::read_model_file(Lua* lua)
     cout << "# maxima:{" << x0+(nx*dx) << ", " << y0+(ny*dy) << ", " << z0+(nz*dz) << "}" << endl;
     cout << "# deltas:{" << dx << ", " << dy << ", " << dz << "}" << endl;
   }
+}
+
+
+//------------------------------------
+// get the velocity squared of a zone
+//------------------------------------
+double grid_3D_cart::zone_speed2(const int z_ind) const{
+	return z[z_ind].v[0]*z[z_ind].v[0] + z[z_ind].v[1]*z[z_ind].v[1] + z[z_ind].v[2]*z[z_ind].v[2];
 }
 
 //------------------------------------------------------------

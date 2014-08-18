@@ -63,6 +63,9 @@ class grid_general
 
   //****** virtual functions (geometry specific)
 
+  // get the velocity squared from the stored velocity vector
+  virtual double zone_speed2(const int z_ind) const = 0;
+
   // get zone index from x,y,z position
   virtual int zone_index(const double *) const   = 0;
 

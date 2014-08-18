@@ -85,9 +85,8 @@ void transport::init(Lua* lua)
     #pragma omp parallel for reduction(+:mass,KE)
 	for (int i=0;i<grid->z.size();i++){
 		double my_mass = grid->z[i].rho * grid->zone_volume(i);
-		double* v = grid->z[i].v;
 		mass      += my_mass;
-		KE        += 0.5 * my_mass * (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+		KE        += 0.5 * my_mass * grid->zone_speed2(i);
 	}
 	if (rank0){
 		cout << "# mass = " << mass << " g" <<endl;
