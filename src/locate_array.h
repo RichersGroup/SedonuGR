@@ -27,16 +27,19 @@ public:
   void init(const std::vector<double>, const double minval);
   void swap(locate_array new_array);
 
-  // center of the bin left of nu_i
-  double center(const int i) const{
-    if (i == 0) return 0.5*(min    + x[0]);
-    else        return 0.5*(x[i-1] + x[i]);
+  // bottom of the bin left of i
+  double bottom(const int i) const{
+	  return (i==0 ? min : x[i-1]);
   }
 
-  // width of the bin left of nu_i
+  // center of the bin left of i
+  double center(const int i) const{
+	  return 0.5 * (bottom(i) + x[i]);
+  }
+
+  // width of the bin left of i
   double delta(const int i) const{
-    if (i == 0) return x[0] - min;
-    else        return x[i] - x[i-1];
+	  return x[i] - bottom(i);
   }
 
 
