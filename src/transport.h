@@ -58,8 +58,8 @@ private:
   int sample_zone_species(int zone_index) const;
 
   // transformation functions
-  double dshift_comoving_to_lab   (particle* p) const;
-  double dshift_lab_to_comoving   (particle* p) const;
+  double dshift_comoving_to_lab   (const particle* p) const;
+  double dshift_lab_to_comoving   (const particle* p) const;
   void   transform_comoving_to_lab(particle* p) const;
   void   transform_lab_to_comoving(particle* p) const;
 

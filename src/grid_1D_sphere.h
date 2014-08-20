@@ -18,8 +18,6 @@ private:
   // store location of the outer edge of the zone.
   locate_array r_out;
 
-  // store volumes explicitly
-  std::vector<double> vol;
 
 public:
 
@@ -29,16 +27,17 @@ public:
   void custom_model(Lua* lua);
 
   // required functions
-  double zone_speed2(const int z_ind) const;
-  int    zone_index(const double *) const;
-  double zone_volume(const int) const;
-  double zone_min_length(const int) const;
-  void   sample_in_zone(const int, const std::vector<double>, double[3]) const;
-  void   velocity_vector(const int i, const double[3], double[3]) const;
-  void   write_rays(const int iw) const;
-  void   zone_coordinates(const int z_ind, vector<double>& r) const;
-  void reflect_outer(particle *) const;
-  double dist_to_boundary(const particle *) const;
+  int    zone_index               (const vector<double>& x                                       ) const;
+  double zone_speed2              (const int z_ind                                               ) const;
+  double zone_volume              (const int z_ind                                               ) const;
+  double zone_min_length          (const int z_ind                                               ) const;
+  void   zone_coordinates         (const int z_ind, vector<double>& r                            ) const;
+  void   zone_directional_indices (const int z_ind, vector<int>& dir_ind                         ) const;
+  void   cartesian_sample_in_zone (const int z_ind, const vector<double>& rand, vector<double>& x) const;
+  void   cartesian_velocity_vector(const vector<double>& x, vector<double>& v                    ) const;
+  void   write_rays               (const int iw                                                  ) const;
+  void   reflect_outer            (particle *p                                                   ) const;
+  double dist_to_boundary         (const particle *p                                             ) const;
 };
 
 

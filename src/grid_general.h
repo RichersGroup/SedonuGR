@@ -49,12 +49,6 @@ class grid_general
   // vector of zones
   std::vector<zone> z;
 
-  // mpi reduce quantities
-  /* void reduce_radiation(); */
-  /* void reduce_radiation_block(int, int); */
-  /* void reduce_T(); */
-  /* void reduce_Ye(); */
-
   static constexpr double tiny = 1e-3; // used to overshoot boundary to account for error in boundary distance calculation
 
   // set everything up
@@ -66,30 +60,33 @@ class grid_general
 
   //****** virtual functions (geometry specific)
 
+  // get directional indices from the zone index
+  virtual void zone_directional_indices(const int z_ind, vector<int>& dir_ind) const = 0;
+
   // get the velocity squared from the stored velocity vector
   virtual double zone_speed2(const int z_ind) const = 0;
 
   // get zone index from x,y,z position
-  virtual int zone_index(const double *) const   = 0;
+  virtual int zone_index(const vector<double>& x) const   = 0;
 
-  // return volume of zone i
-  virtual double zone_volume(const int i) const         = 0;
+  // return volume of zone z_ind
+  virtual double zone_volume(const int z_ind) const         = 0;
 
-  // return the smallest length dimension of zone  i
-  virtual double zone_min_length(const int i) const     = 0;
+  // return the smallest length dimension of zone  z_ind
+  virtual double zone_min_length(const int z_ind) const     = 0;
   
-  // randomly sample a position within the zone i
-  virtual void sample_in_zone(const int,const std::vector<double>,double[3]) const = 0;
+  // randomly sample a position within the zone z_ind
+  virtual void cartesian_sample_in_zone(const int z_ind,const vector<double>& rand, vector<double>& x) const = 0;
   
-  // give the velocity vector at this point in zone i
-  virtual void velocity_vector(const int i, const double[3],double[3]) const = 0;
+  // give the velocity vector at this point
+  virtual void cartesian_velocity_vector(const vector<double>& x, vector<double>& v) const = 0;
   
-  // get the coordinates at the center of the zone i
+  // get the coordinates at the center of the zone z_ind
   virtual void zone_coordinates(const int z_ind, vector<double>& r) const = 0;
 
   // boundary conditions
-  virtual void reflect_outer(particle *) const = 0;
-  virtual double dist_to_boundary(const particle *) const = 0;
+  virtual void reflect_outer(particle *p) const = 0;
+  virtual double dist_to_boundary(const particle *p) const = 0;
 };
 
 

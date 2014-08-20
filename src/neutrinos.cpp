@@ -69,6 +69,7 @@ void neutrinos::myInit(Lua* lua)
   else{
 	  double nu_start = lua->scalar<double>("nut_nugrid_start");
 	  double nu_stop  = lua->scalar<double>("nut_nugrid_stop");
+	  assert(nu_stop > nu_start);
 	  int      n_nu   = lua->scalar<int>("nut_nugrid_n");
 	  nu_grid.init(nu_start,nu_stop,n_nu);
 
@@ -79,7 +80,6 @@ void neutrinos::myInit(Lua* lua)
 	  Ye_max  = 1;
 	  rho_min = -numeric_limits<double>::infinity();
 	  rho_max =  numeric_limits<double>::infinity();
-
   }
 
 }
@@ -124,5 +124,7 @@ void neutrinos::set_eas(int zone_index)
 double neutrinos::blackbody(const double T, const double chem_pot, const double nu) const
 {
   double zeta = (pc::h*nu - chem_pot)/pc::k/T;
-  return (pc::h/pc::c/pc::c) * nu*nu*nu / (exp(zeta) + 1.0);
+  double bb = (pc::h/pc::c/pc::c) * nu*nu*nu / (exp(zeta) + 1.0);
+  assert(bb > 0);
+  return bb;
 }

@@ -12,6 +12,8 @@ using namespace std;
 //------------------------------------------------------
 double cdf_array::get_value(const int i) const
 {
+	assert(i >= 0);
+	assert(i < y.size());
   if (i==0) return y[0];
   else return (y[i] - y[i-1]);  
 }
@@ -22,6 +24,8 @@ double cdf_array::get_value(const int i) const
 //------------------------------------------------------
 void cdf_array::set_value(const int i, const double f)   
 {
+	assert(i >= 0);
+	assert(i < y.size());
   if (i==0) y[0] = f;
   else y[i] = y[i-1] + f;
 }
@@ -36,18 +40,24 @@ void cdf_array::normalize()
 
   // normalize to end = 1.0
   N = y.back();
+  assert(N > 0);
   for (int i=0;i<y.size();i++)   y[i] /= N;
 }
 
 //---------------------------------------------------------
 // Sample the probability distribution using binary search.
-// Pass a random number betwen 0 and 1.
+// Pass a number betwen 0 and 1.
 // Returns the index of the first value larger than yval
 // if larger than largest element, returns size
 //---------------------------------------------------------
-int cdf_array::sample_index(const double yval) const
+int cdf_array::get_index(const double yval) const
 {
-	return upper_bound(y.begin(), y.end(), yval) - y.begin();
+	assert(yval >= 0);
+	assert(yval <= 1.0);
+	int i = upper_bound(y.begin(), y.end(), yval) - y.begin();
+	assert(i >= 0);
+	assert(i <= y.size());
+	return i;
 }
 
 //-----------------------------------------------------
@@ -119,7 +129,7 @@ double cdf_array::invert_cubic(const double rand, const locate_array* xgrid) con
 // This is inconsistent with cubic interpolation.
 {
 	assert(rand>=0 && rand<=1);
-	int i = upper_bound(y.begin(), y.end(), rand) - y.begin();
+	int i = get_index(rand);
 	assert(i<size());
 	assert(i>=0);
 
@@ -161,7 +171,7 @@ double cdf_array::invert_cubic(const double rand, const locate_array* xgrid) con
 double cdf_array::invert_linear(const double rand, const locate_array* xgrid) const
 {
 	assert(rand>=0 && rand<=1);
-	int i = upper_bound(y.begin(), y.end(), rand) - y.begin();
+	int i = get_index(rand);
 	assert(i<size());
 	assert(i>=0);
 

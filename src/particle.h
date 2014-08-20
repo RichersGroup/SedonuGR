@@ -2,6 +2,8 @@
 #define _PARTICLE_H
 #include <math.h>
 #include <stdio.h>
+#include <vector>
+using namespace std;
 
 enum ParticleFate  {moving, stopped, escaped, absorbed};
 
@@ -11,9 +13,10 @@ class particle
 
 public:
   
-  double    x[3];         // x,y,z position
-  double    D[3];         // direction vector, Dx,Dy,Dz
-  int        ind;         // index of the zone in grid where we are
+	particle();
+
+  vector<double> x;         // x,y,z position
+  vector<double> D;         // direction vector, Dx,Dy,Dz
   double       t;         // current time
   double       e;         // total energy in ergs of packet
   double      nu;         // frequency
@@ -32,10 +35,12 @@ public:
     else return x_dot_d()/r();
   }
 
+  void normalize_direction();
+
   void print() const
   {
-    printf("%10.e | %10.3e %10.3e %10.3e %6d | %10.3e %10.3e %10.3e | %10.3e %10.3e\n",
-	   t,x[0],x[1],x[2],ind,D[0],D[1],D[2],e,nu);
+    printf("%10.e | %10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e | %10.3e %10.3e\n",
+	   t,x[0],x[1],x[2],D[0],D[1],D[2],e,nu);
   }
 
 };

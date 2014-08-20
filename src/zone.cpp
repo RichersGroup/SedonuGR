@@ -7,7 +7,7 @@
 #include <fstream>
 #define NaN std::numeric_limits<real>::quiet_NaN()
 
-zone::zone(const int dimensionality = 0){
+zone::zone(const int dimensionality){
 	v.resize(dimensionality);
 	rho = NaN;
 	T_gas = NaN;

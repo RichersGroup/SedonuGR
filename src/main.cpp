@@ -75,7 +75,7 @@ int main(int argc, char **argv)
     	printf("%12d %12.4e %12.4e %12d\n",it,t,dt, sim.total_particles());
 
     	// write zone state when appropriate
-    	if((it%write_zones_every)==0 && write_zones_every>0){
+    	if(it%write_zones_every==0 && write_zones_every>0 && rank0){
     		cout << "# writing zone file " << it << endl;
     		sim.grid->write_zones(it);
     	}

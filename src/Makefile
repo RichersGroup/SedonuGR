@@ -1,7 +1,7 @@
 TARGET = ../gomc
 
-OBJECTS = main.o Lua.o grid_general.o grid_1D_sphere.o grid_3D_cart.o emission.o scatter.o opacity.o locate_array.o cdf_array.o spectrum_array.o nulib_interface.o species_general.o photons.o transport.o neutrinos.o thread_RNG.o solve_equilibrium.o propagate.o relativity.o zone.o
-TEST_OBJECTS = Lua.o grid_general.o grid_1D_sphere.o grid_3D_cart.o transport.o emission.o scatter.o opacity.o locate_array.o cdf_array.o spectrum_array.o nulib_interface.o species_general.o photons.o neutrinos.o thread_RNG.o solve_equilibrium.o propagate.o relativity.o zone.o
+OBJECTS = main.o Lua.o grid_general.o grid_1D_sphere.o grid_3D_cart.o emission.o scatter.o opacity.o locate_array.o cdf_array.o spectrum_array.o nulib_interface.o species_general.o photons.o transport.o neutrinos.o thread_RNG.o solve_equilibrium.o propagate.o relativity.o zone.o particle.o
+TEST_OBJECTS = Lua.o grid_general.o grid_1D_sphere.o grid_3D_cart.o transport.o emission.o scatter.o opacity.o locate_array.o cdf_array.o spectrum_array.o nulib_interface.o species_general.o photons.o neutrinos.o thread_RNG.o solve_equilibrium.o propagate.o relativity.o zone.o particle.o
 
 .PHONY: clean realclean
 

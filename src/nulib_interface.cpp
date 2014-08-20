@@ -1,12 +1,15 @@
 #include <vector>
 #include <iostream>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
+#include <cstdlib>
+#include <string>
+#include <cmath>
+#include <cassert>
+#include <limits>
 #include "zone.h"
 #include "nulib_interface.h"
 #include "physical_constants.h"
 
+#define NaN std::numeric_limits<double>::quiet_NaN()
 using namespace std;
 namespace pc = physical_constants;
 
@@ -146,6 +149,7 @@ void set_globals(){
 /* nulib_get_nspecies */
 /**********************/
 int nulib_get_nspecies(){
+	assert(nulibtable_number_species > 0);
   return nulibtable_number_species;
 }
 
@@ -169,8 +173,17 @@ void nulib_get_eas_arrays(real rho,                     // g/cm^3
 			  vector<real>& nut_absopac,    // cm^-1   
 			  vector<real>& nut_scatopac){  // cm^-1
   
-  int nvars    = nulibtable_number_easvariables;
-  int ngroups  = nulibtable_number_groups;
+	assert(rho >= 0);
+	assert(temp >= 0);
+	assert(ye >= 0);
+	assert(ye <= 1.0);
+	assert(nulibID >= 0);
+
+	int nvars    = nulibtable_number_easvariables;
+	int ngroups  = nulibtable_number_groups;
+	assert(nvars > 0);
+	assert(ngroups > 0);
+
   // apparently it's valid to declare array sizes at runtime like this... if it breaks, use malloc
   double eas_energy[nvars][ngroups]; //[0][*] = energy-bin-integrated emissivity (erg/cm^3/s/ster). 
                                      //[1][*] = absorption opacity (1/cm)
@@ -204,8 +217,8 @@ void nulib_get_eas_arrays(real rho,                     // g/cm^3
     // must rebin to get the integrated value to be at the same location as the opacities. (CDF value corresponds to emission rate at or below that energy)
     nulibtable_single_species_range_energy_(&rho, &temp_MeV, &ye, &lns,
 					    (double*)eas_energy, &ngroups, &nvars);
-    double last_emis = 0;
-    double this_emis = 0;
+    double last_emis = NaN;
+    double this_emis = NaN;
     for(int j=0; j<ngroups; j++){
       last_emis = this_emis;
       this_emis = eas_energy[0][j];
@@ -226,12 +239,21 @@ void nulib_get_pure_emis(real rho,                     // g/cm^3
 			 real ye, int nulibID,
 			 vector<double>& nut_emiss){   // erg/cm^3/s/ster/Hz
   
+	assert(rho >= 0);
+	assert(temp >= 0);
+	assert(ye >= 0);
+	assert(ye <= 1);
+	assert(nulibID >= 0);
+
   vector<double> widths;
   widths.assign(nulibtable_ewidths, 
 		nulibtable_ewidths + nulibtable_number_groups);
  
   int nvars    = nulibtable_number_easvariables;
   int ngroups  = nulibtable_number_groups;
+  assert(nvars > 0);
+  assert(ngroups > 0);
+
   // apparently it's valid to declare array sizes at runtime like this... if it breaks, use malloc
   double eas_energy[nvars][ngroups]; //[0][*] = energy-bin-integrated emissivity (erg/cm^3/s/ster). 
                                      //[1][*] = absorption opacity (1/cm)

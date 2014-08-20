@@ -9,13 +9,14 @@
 #include "physical_constants.h"
 #include "species_general.h"
 
+#define NaN std::numeric_limits<double>::quiet_NaN()
 namespace pc = physical_constants;
 
 void transport::propagate_particles(const double dt)
 {
 	vector<int> n_active(species_list.size(),0);
 	vector<int> n_escape(species_list.size(),0);
-	double e_esc = 0;
+	double e_esc = NaN;
     #pragma omp parallel shared(n_active,n_escape,e_esc) firstprivate(dt)
 	{
 
@@ -72,23 +73,27 @@ void transport::propagate_particles(const double dt)
 //--------------------------------------------------------
 void transport::which_event(const particle *p, const double dt, const double dshift, const double opac,
 		double *d_smallest, ParticleEvent *event) const{
+	assert(dshift > 0);
+	assert(opac >= 0);
+
+	const int z_ind = grid->zone_index(p->x);
 	double d_zone     = numeric_limits<double>::infinity();
 	double d_time     = numeric_limits<double>::infinity();
 	double d_interact = numeric_limits<double>::infinity();
 	double d_boundary = numeric_limits<double>::infinity();
-	double tau_r;                               // random optical depth
-	double opac_lab;                            // opacity in the lab frame
-	assert(p->ind >= -1);
-	assert(opac >=0);
+	double tau_r = NaN;                               // random optical depth
+	double opac_lab = NaN;                            // opacity in the lab frame
+	assert(z_ind >= -1);
 
-	if(p->ind >= 0){ //i.e. within the simulation region
+	if(z_ind >= 0){ //i.e. within the simulation region
 		// set pointer to current zone
 		zone* zone;
-		zone = &(grid->z[p->ind]);
+		zone = &(grid->z[z_ind]);
 
 		// FIND D_ZONE= ====================================================================
 		// maximum step size inside zone
-		d_zone = step_size * grid->zone_min_length(p->ind);
+		d_zone = step_size * grid->zone_min_length(z_ind);
+		assert(d_zone > 0);
 
 		// FIND D_INTERACT =================================================================
 		// convert opacity from comoving to lab frame for the purposes of
@@ -110,10 +115,12 @@ void transport::which_event(const particle *p, const double dt, const double dsh
 	if(dt>0){
 		double tstop = t_now + dt;
 		d_time = (tstop - p->t)*pc::c;
+		assert(d_time > 0);
 	}
 
 	// FIND D_BOUNDARY ================================================================
 	d_boundary = grid->dist_to_boundary(p);
+	assert(d_boundary >= 0);
 
 	// find out what event happens (shortest distance)
 	*d_smallest = numeric_limits<double>::infinity();
@@ -132,8 +139,8 @@ void transport::which_event(const particle *p, const double dt, const double dsh
 	if( d_boundary <= *d_smallest ){
 		*event = boundary;
 		*d_smallest = d_boundary;
-		if(p->ind >= 0) *d_smallest *= (1.0 + grid->tiny); // bump just over the boundary if in simulation domain
-		else *d_smallest *= (1.0 - grid->tiny);            // don't overshoot outward through the inner boundary
+		if(z_ind >= 0) *d_smallest *= (1.0 + grid_general::tiny); // bump just over the boundary if in simulation domain
+		else           *d_smallest *= (1.0 - grid_general::tiny); // don't overshoot outward through the inner boundary
 	}
 }
 
@@ -144,49 +151,54 @@ void transport::which_event(const particle *p, const double dt, const double dsh
 //--------------------------------------------------------
 void transport::propagate(particle* p, const double dt) const
 {
-	assert(p->ind >= -1);
-	assert(p->ind < grid->z.size());
+
 	ParticleEvent event;
 
 	p->fate = moving;
 
 	// local variables
-	double this_d = 0;                            // distance to particle's next event
-	double dshift = 0;                                   // doppler shift
-	double opac = 0, abs_frac = 0;                 // opacity variables
-	double this_E=0, this_E_comoving=0, this_l_comoving=0; // for calculating radiation energy and energy/lepton number absorbed
-	double z=0,z2=0;                                     // random numbers
+	double this_d = NaN;                            // distance to particle's next event
+	double opac = NaN, abs_frac = NaN;                 // opacity variables
+	double rand = NaN;
 
 	// propagate until this flag is set
 	while (p->fate == moving)
 	{
-		assert(p->ind >= -1);
+		int z_ind = grid->zone_index(p->x);
+		assert(z_ind >= -1);
+		assert(z_ind < grid->z.size());
+
 		assert(p->nu > 0);
 		// set pointer to current zone
 		zone* zone;
-		zone = &(grid->z[p->ind]);
+		zone = &(grid->z[z_ind]);
 
 		// doppler shift from comoving to lab
-		dshift = dshift_comoving_to_lab(p);
+		double dshift = dshift_comoving_to_lab(p);
+		assert(dshift > 0);
+
 		// get local opacity and absorption fraction
-		species_list[p->s]->get_opacity(p,dshift,&opac,&abs_frac);
+		species_list[p->s]->get_opacity(p,z_ind,dshift,&opac,&abs_frac);
 
 		// decide which event happens
 		which_event(p,dt,dshift,opac,&this_d,&event);
+		assert(this_d >= 0);
 
 		// tally in contribution to zone's radiation energy (both *lab* frame)
-		this_E = p->e*this_d;
+		double this_E = p->e*this_d;
+		assert(this_E > 0);
         #pragma omp atomic
 		zone->e_rad += this_E;
 
 		// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
 		// Extra dshift definitely needed here (two total) to convert both p->e and this_d to the comoving frame
-		this_E_comoving = this_E * dshift * dshift;
+		double this_E_comoving = this_E * dshift * dshift;
         #pragma omp atomic
 		zone->e_abs += this_E_comoving * (opac*abs_frac);
 
 		// store absorbed lepton number (same in both frames, except for the
 		// factor of this_d which is divided out later
+		double this_l_comoving = 0;
 		if(species_list[p->s]->lepton_number != 0){
 			this_l_comoving = species_list[p->s]->lepton_number * p->e/(p->nu*pc::h) * this_d*dshift;
             #pragma omp atomic
@@ -202,7 +214,8 @@ void transport::propagate(particle* p, const double dt) const
 		p->t = p->t + this_d/pc::c;
 
 		// get zone location now
-		p->ind = grid->zone_index(p->x);
+		z_ind = grid->zone_index(p->x);
+		assert(z_ind < (int)grid->z.size());
 
 		// now the exciting bit!
 		switch(event){
@@ -210,26 +223,26 @@ void transport::propagate(particle* p, const double dt) const
 		// Do if interact
 		// ---------------------------------
 		case interact:
-			assert(p->ind >= 0);
+			assert(z_ind >= 0);
 			// random number to check for scattering or absorption
-			z = rangen.uniform();
+			rand = rangen.uniform();
 
 			// decide whether to scatter or absorb
-			if (z > abs_frac) isotropic_scatter(p,0); // actual scatter - do not redistribute energy
-			else
-			{
+			if (rand > abs_frac) isotropic_scatter(p,0); // actual scatter - do not redistribute energy
+			else{
 				// if this is an iterative calculation, radiative equilibrium is always assumed.
 				if(radiative_eq) isotropic_scatter(p,1);          // particle lives, energy redistributed
 				else p->fate = absorbed;
 			}
 			assert(p->nu > 0);
+			assert(p->e > 0);
 			break;
 
 		// ---------------------------------
 		// do if time step end
 		// ---------------------------------
 		case timeStep:
-			assert(p->ind >= 0);
+			assert(z_ind >= 0);
 			p->fate = stopped;
 			break;
 
@@ -237,21 +250,22 @@ void transport::propagate(particle* p, const double dt) const
 		// do if crossing a boundary
 		// ---------------------------------
 		case boundary:
-			assert(p->ind==-1 || p->ind==-2);
+			assert(z_ind==-1 || z_ind==-2);
 
 			// if outside the domain
-			if(p->ind == -2){
+			if(z_ind == -2){
 				if(reflect_outer){
 					grid->reflect_outer(p);
 					assert(p->fate == moving);
-					assert(p->ind >= 0);
+					assert(z_ind >= 0);
+					assert(z_ind < (int)grid->z.size());
 					assert(p->nu > 0);
 				}
 				else p->fate = escaped;
 			}
 
 			// if inside the inner boundary
-			if(p->ind==-1){
+			if(z_ind==-1){
 				if(p->x_dot_d() >= 0){
 					// set the particle just outside the inner boundary
 					cout << "ERROR: have not yet implemented passing out through the inner boundary without overshooting" << endl;
@@ -266,7 +280,7 @@ void transport::propagate(particle* p, const double dt) const
 		//-----------------------
 		default:
 			assert(event == zoneEdge);
-			assert(p->ind >= 0);
+			assert(z_ind >= 0);
 		}
 
 		// check for core absorption

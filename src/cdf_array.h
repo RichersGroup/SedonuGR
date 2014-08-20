@@ -37,7 +37,7 @@ public:
   void   normalize();         // normalize the cdf, so that final value = 1. Sets N.
   double invert_cubic(const double z, const locate_array* xgrid) const;    // sample value from the CDF, when passed a random #
   double invert_linear(const double z, const locate_array* xgrid) const;
-  int    sample_index(const double z) const;    // sample index from the CDF, when passed a random #
+  int    get_index(const double z) const;    // sample index from the CDF, when passed a random #
   void   print() const;
   void   wipe();
   int    size() const;

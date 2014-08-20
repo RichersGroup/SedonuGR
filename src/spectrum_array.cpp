@@ -7,6 +7,7 @@
 #include <math.h>
 #include <string.h>
 #include <vector>
+#include <cassert>
 #include "spectrum_array.h"
 #include "physical_constants.h"
 
@@ -122,15 +123,23 @@ void spectrum_array::wipe()
 //--------------------------------------------------------------
 int spectrum_array::index(const int t, const int l, const int m, const int p) const
 {
-  return t*a1 + l*a2 + m*a3 + p;
+	assert(t>=0);
+	assert(l>=0);
+	assert(m>=0);
+	assert(p>=0);
+	const int ind = t*a1 + l*a2 + m*a3 + p;
+	assert(ind >= 0);
+	assert(ind < n_elements);
+	return ind;
 }
 
 
 //--------------------------------------------------------------
 // count a particle
 ////--------------------------------------------------------------
-void spectrum_array::count(const double t, const double w, const double E, const double *D)
+void spectrum_array::count(const double t, const double w, const double E, const vector<double> D)
 {
+  assert(D.size()==3);
   double mu  = D[2];
   double phi = atan2(D[1],D[0]);
 

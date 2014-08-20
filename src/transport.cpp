@@ -22,6 +22,7 @@
 #include "cdf_array.h"
 #include "nulib_interface.h"
 
+#define NaN std::numeric_limits<real>::quiet_NaN()
 namespace pc = physical_constants;
 
 //----------------------------------------------------------------------------
@@ -88,6 +89,7 @@ void transport::init(Lua* lua)
     #pragma omp parallel for reduction(+:mass,KE)
 	for (int i=0;i<grid->z.size();i++){
 		double my_mass = grid->z[i].rho * grid->zone_volume(i);
+		assert(my_mass >= 0);
 		mass      += my_mass;
 		KE        += 0.5 * my_mass * grid->zone_speed2(i);
 	}
@@ -251,9 +253,6 @@ void transport::step(const double dt)
 		{
 			zone z = grid->z[i];
 			z.e_rad    = 0;
-			z.f_rad[0] = 0;
-			z.f_rad[1] = 0;
-			z.f_rad[2] = 0;
 			z.l_abs    = 0;
 			z.e_abs    = 0;
 			z.l_emit   = 0;
@@ -321,9 +320,6 @@ void transport::normalize_radiative_quantities(const double dt){
 		z->e_emit   /= vol*dt;       // erg      --> erg/ccm/s
 		z->l_abs    /= vol*dt;       // num      --> num/ccm/s
 		z->l_emit   /= vol*dt;       // num      --> num/ccm/s
-		// z->f_rad[0] /= vol*pc::c*dt;
-		// z->f_rad[1] /= vol*pc::c*dt;
-		// z->f_rad[2] /= vol*pc::c*dt;
 	}
 
 	if(rank0){
@@ -350,7 +346,7 @@ int transport::sample_core_species() const
 {
 	// randomly sample the species (precomputed CDF)
 	double z = rangen.uniform();
-	return core_species_luminosity.sample_index(z);
+	return core_species_luminosity.get_index(z);
 }
 
 
@@ -379,7 +375,7 @@ int transport::sample_zone_species(const int zone_index) const
 
 	// randomly sample the species
 	double z = rangen.uniform();
-	return species_cdf.sample_index(z);
+	return species_cdf.get_index(z);
 }
 
 

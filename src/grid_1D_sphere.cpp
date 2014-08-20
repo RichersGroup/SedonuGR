@@ -42,28 +42,33 @@ void grid_1D_sphere::read_model_file(Lua* lua)
   // number of zones
   int n_zones;
   infile >> n_zones;
+  assert(n_zones > 0);
   z.resize(n_zones,zone(dimensionality));
   r_out.resize(n_zones);
-  vol.resize(n_zones);
 
   // read zone properties
   infile >> r_out.min;
-  for(int i=0; i<n_zones; i++)
+  assert(r_out.min >= 0);
+  for(int z_ind=0; z_ind<n_zones; z_ind++)
   {
-    infile >> r_out[i];
-    infile >> z[i].rho;
-    infile >> z[i].T_gas;
-    infile >> z[i].Ye;
-    z[i].H = 0;
-    z[i].e_rad = 0;
-
-    z[i].v[0] = 0;
-    double r0 = r_out.bottom(i);
-    vol[i] = 4.0*pc::pi/3.0*(r_out[i]*r_out[i]*r_out[i] - r0*r0*r0);
+    infile >> r_out[z_ind];
+    infile >> z[z_ind].rho;
+    infile >> z[z_ind].T_gas;
+    infile >> z[z_ind].Ye;
+    z[z_ind].H = 0;
+    z[z_ind].e_rad = 0;
+    z[z_ind].v[0] = 0;
+    assert(r_out[z_ind] > (z_ind==0 ? r_out.min : r_out[z_ind-1]));
+    assert(z[z_ind].rho >= 0);
+    assert(z[z_ind].T_gas >= 0);
+    assert(z[z_ind].Ye >= 0);
+    assert(z[z_ind].Ye <= 1.0);
+    assert(z[z_ind].v.size() == dimensionality);
   }
 
   infile.close();
 }
+
 
 //------------------------------------------------------------
 // Write a custom model here if you like
@@ -75,104 +80,141 @@ void grid_1D_sphere::custom_model(Lua* lua)
 }
 
 
-// ------------------------------------------------------------
-// find the coordinates of the zone in geometrical coordinates
-// ------------------------------------------------------------
-void grid_1D_sphere::zone_coordinates(const int z_ind, vector<double>& r) const{
-  r.resize(dimensionality);
-  r[0] = 0.5*(r_out[z_ind]+r_out.bottom(z_ind));
-}
-
-//------------------------------------
-// get the velocity squared of a zone
-//------------------------------------
-double grid_1D_sphere::zone_speed2(const int z_ind) const{
-	return z[z_ind].v[0];
-}
-
 //------------------------------------------------------------
-// Overly simple search to find zone
+// Return the zone index containing the position x
 //------------------------------------------------------------
-int grid_1D_sphere::zone_index(const double *x) const
+int grid_1D_sphere::zone_index(const vector<double>& x) const
 {
-  double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+	assert(x.size()==3);
+	double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 
   // check if off the boundaries
   if(r < r_out.min             ) return -1;
   if(r > r_out[r_out.size()-1] ) return -2;
 
   // find in zone array using stl algorithm upper_bound and subtracting iterators
-  return r_out.locate(r);
+  int z_ind = r_out.locate(r);
+  assert(z_ind >= 0);
+  assert(z_ind < (int)z.size());
+  return z_ind;
+}
+
+
+//------------------------------------
+// get the velocity squared of a zone
+//------------------------------------
+double grid_1D_sphere::zone_speed2(const int z_ind) const{
+	assert(z_ind >= 0);
+	assert(z_ind < (int)z.size());
+	return z[z_ind].v[0];
 }
 
 
 //------------------------------------------------------------
-// return volume of zone (precomputed)
+// return volume of zone z_ind
 //------------------------------------------------------------
-double  grid_1D_sphere::zone_volume(const int i) const
+double  grid_1D_sphere::zone_volume(const int z_ind) const
 {
-	assert(i >= 0);
-	return vol[i];
+    assert(z_ind >= 0);
+    assert(z_ind < (int)z.size());
+    double r0 = (z_ind==0 ? r_out.min : r_out[z_ind-1]);
+    double vol = 4.0*pc::pi/3.0*(r_out[z_ind]*r_out[z_ind]*r_out[z_ind] - r0*r0*r0);
+    assert(vol >= 0);
+    return vol;
 }
 
 
 //------------------------------------------------------------
 // return length of zone
 //------------------------------------------------------------
-double  grid_1D_sphere::zone_min_length(const int i) const
+double  grid_1D_sphere::zone_min_length(const int z_ind) const
 {
-	assert(i >= 0);
-	if (i == 0) return (r_out[i] - r_out.min);
-	else return (r_out[i] - r_out[i-1]);
+	assert(z_ind >= 0);
+	assert(z_ind < (int)z.size());
+	double r0 = (z_ind==0 ? r_out.min : r_out[z_ind-1]);
+	double min_len = r_out[z_ind] - r0;
+	assert(min_len >= 0);
+	return min_len;
 }
 
+
+// ------------------------------------------------------------
+// find the coordinates of the zone in geometrical coordinates
+// ------------------------------------------------------------
+void grid_1D_sphere::zone_coordinates(const int z_ind, vector<double>& r) const{
+	assert(z_ind >= 0);
+	assert(z_ind < (int)z.size());
+  r.resize(dimensionality);
+  r[0] = 0.5*(r_out[z_ind]+r_out.bottom(z_ind));
+  assert(r[0] > 0);
+  assert(r[0] < r_out[r_out.size()-1]);
+}
+
+
+//-------------------------------------------
+// get directional indices from zone index
+//-------------------------------------------
+void grid_1D_sphere::zone_directional_indices(const int z_ind, vector<int>& dir_ind) const
+{
+        assert(z_ind >= 0);
+        assert(z_ind < (int)z.size());
+        dir_ind.resize(dimensionality);
+        dir_ind[0] = z_ind;
+}
 
 
 //------------------------------------------------------------
 // sample a random position within the spherical shell
 //------------------------------------------------------------
-void grid_1D_sphere::sample_in_zone
-(const int i, const std::vector<double> ran, double r[3]) const
+void grid_1D_sphere::cartesian_sample_in_zone
+(const int z_ind, const vector<double>& rand, vector<double>& x) const
 {
-	assert(i >= 0);
-  // inner radius of shell
-  double r1;
-  if (i == 0) r1 = r_out.min;
-  else r1 = r_out[i-1];
+	assert(z_ind >= 0);
+	assert(z_ind < (int)z.size());
+	assert(rand.size() == 3);
+	x.resize(dimensionality);
 
-  // outer radius of shell
-  double r2 = r_out[i];
+  // inner and outer radii of shell
+	double r0 = (z_ind==0 ? r_out.min : r_out[z_ind-1]);
+	double r1 = r_out[z_ind];
 
   // sample radial position in shell using a probability integral transform
-  double radius = pow( ran[0]*(r2*r2*r2 - r1*r1*r1) + r1*r1*r1, 1./3.);
+  double radius = pow( rand[0]*(r1*r1*r1 - r0*r0*r0) + r0*r0*r0, 1./3.);
+  assert(radius >= r0);
+  assert(radius <= r1);
 
   // random spatial angles
-  double mu  = 1 - 2.0*ran[1];
-  double phi = 2.0*pc::pi*ran[2];
+  double mu  = 1 - 2.0*rand[1];
+  double phi = 2.0*pc::pi*rand[2];
   double sin_theta = sqrt(1 - mu*mu);
 
   // set the real 3-d coordinates
-  r[0] = radius*sin_theta*cos(phi);
-  r[1] = radius*sin_theta*sin(phi);
-  r[2] = radius*mu;
+  x[0] = radius*sin_theta*cos(phi);
+  x[1] = radius*sin_theta*sin(phi);
+  x[2] = radius*mu;
 }
-
 
 
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void grid_1D_sphere::velocity_vector(const int i, const double x[3], double v[3]) const
+void grid_1D_sphere::cartesian_velocity_vector(const vector<double>& x, vector<double>& v) const
 {
-	assert(i >= 0);
-  // radius in zone
+	assert(x.size()==3);
+	v.resize(3);
+	int z_ind = zone_index(x);
+	assert(z_ind >= 0);
+	assert(z_ind < (int)z.size());
+
+	// radius in zone
   double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 
   // assuming radial velocity (may want to interpolate here)
   // (the other two components are ignored and mean nothing)
-  v[0] = x[0]/r*z[i].v[0];
-  v[1] = x[1]/r*z[i].v[0];
-  v[2] = x[2]/r*z[i].v[0];
+  assert(z[z_ind].v.size()==dimensionality);
+  v[0] = x[0]/r*z[z_ind].v[0];
+  v[1] = x[1]/r*z[z_ind].v[0];
+  v[2] = x[2]/r*z[z_ind].v[0];
 
   // check for pathological case
   if (r == 0)
@@ -198,27 +240,27 @@ void grid_1D_sphere::write_rays(const int iw) const
 // Reflect off the outer boundary
 //------------------------------------------------------------
 void grid_1D_sphere::reflect_outer(particle *p) const{
-  double dr = 0;
-  if(r_out.size()>1) dr = r_out[r_out.size()-1]-r_out[r_out.size()-2];
-  else dr = r_out[0]-r_out.min;
-  assert( fabs(p->r() - r_out[r_out.size()-1]) < tiny*dr);
+  double r0 = (r_out.size()>1 ? r_out[r_out.size()-2] : r_out.min);
+  double rmax = r_out[r_out.size()-1];
+  double dr = rmax - r0;
   double velDotRhat = p->mu();
   double R = p->r();
+  assert( fabs(R - r_out[r_out.size()-1]) < tiny*dr);
 
   // invert the radial component of the velocity
   p->D[0] -= 2.*velDotRhat * p->x[0]/R;
   p->D[1] -= 2.*velDotRhat * p->x[1]/R;
   p->D[2] -= 2.*velDotRhat * p->x[2]/R;
+  p->normalize_direction();
 
   // put the particle just inside the boundary
-  double newR = r_out[r_out.size()-1] - tiny*dr;
+  double newR = rmax - tiny*dr;
   p->x[0] = p->x[0]/R*newR;
   p->x[1] = p->x[1]/R*newR;
   p->x[2] = p->x[2]/R*newR;
   
   // must be inside the boundary, or will get flagged as escaped
-  p->ind = zone_index(p->x);
-  assert(p->r() < r_out[r_out.size()-1]);
+  assert(zone_index(p->x) >= 0);
 }
 
 //------------------------------------------------------------
@@ -235,7 +277,7 @@ double grid_1D_sphere::dist_to_boundary(const particle *p) const{
   double d_outer_boundary = numeric_limits<double>::infinity();
   double d_inner_boundary = numeric_limits<double>::infinity();
   assert(r<Rout);
-  assert(p->ind >= -1);
+  assert(zone_index(p->x) >= -1);
 
   // distance to inner boundary
   if(r >= Rin){

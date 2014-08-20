@@ -16,8 +16,7 @@ class zone
 public:
 
   // constructors
-  zone();
-  zone(const int dimensionality);
+  zone(const int dimensionality=0);
 
   // writing utilities
   static void write_header(const int dimensionality, ofstream& outf);
@@ -38,7 +37,6 @@ public:
   real l_abs;                         // lepton number deposition density rate (cm^-3 s^-1)
   real e_emit;                        // radiation energy emission rate (erg/ccm/s)
   real l_emit;						  // lepton number emission rate (cm^-3 s^-1)
-  real f_rad[3];                      // radiation force in lab frame
 
   // timescales
   real t_eabs;    // heating timescale

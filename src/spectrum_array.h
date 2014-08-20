@@ -49,7 +49,7 @@ public:
   void MPI_average();
   
   // Count a packets
-  void count(const double t, const double w, const double E, const double *D);
+  void count(const double t, const double w, const double E, const vector<double> D);
 
   //  void normalize();
   void rescale(const double);

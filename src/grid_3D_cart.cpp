@@ -215,14 +215,18 @@ void grid_3D_cart::read_model_file(Lua* lua)
 // get the velocity squared of a zone
 //------------------------------------
 double grid_3D_cart::zone_speed2(const int z_ind) const{
+	assert(z_ind > 0);
+	assert(z_ind < (int)z.size());
+	assert(z[z_ind].v.size()==3);
 	return z[z_ind].v[0]*z[z_ind].v[0] + z[z_ind].v[1]*z[z_ind].v[1] + z[z_ind].v[2]*z[z_ind].v[2];
 }
 
 //------------------------------------------------------------
 // Overly simple search to find zone
 //------------------------------------------------------------
-int grid_3D_cart::zone_index(const double *x) const
+int grid_3D_cart::zone_index(const vector<double>& x) const
 {
+	assert(x.size()==3);
   int i = floor((x[0]-x0)/dx);
   int j = floor((x[1]-y0)/dy);
   int k = floor((x[2]-z0)/dz);
@@ -233,15 +237,40 @@ int grid_3D_cart::zone_index(const double *x) const
   if ((k < 0)||(k > nz-1)) return -2;
   
   int ind =  i*ny*nz + j*nz + k;
+  assert(ind > 0);
+  assert(ind < (int)z.size());
   return ind;
+}
+
+//-------------------------------------------
+// get directional indices from zone index
+//-------------------------------------------
+void grid_3D_cart::zone_directional_indices(const int z_ind, vector<int>& dir_ind) const
+{
+        assert(z_ind >= 0);
+        assert(z_ind < (int)z.size());
+
+        dir_ind.resize(dimensionality);
+        dir_ind[0] =  z_ind / (ny*nz);
+        dir_ind[1] = (z_ind % (ny*nz)) / nz;
+        dir_ind[2] =  z_ind % nz;
+
+        assert(dir_ind[0] >= 0);
+        assert(dir_ind[0] < nx);
+        assert(dir_ind[1] >= 0);
+        assert(dir_ind[1] < ny);
+        assert(dir_ind[2] >= 0);
+        assert(dir_ind[2] < nz);
 }
 
 
 //------------------------------------------------------------
 // return volume of zone (precomputed)
 //------------------------------------------------------------
-double grid_3D_cart::zone_volume(const int i) const
+double grid_3D_cart::zone_volume(const int z_ind) const
 {
+    assert(z_ind >= 0);
+    assert(z_ind < (int)z.size());
   return vol;
 }
 
@@ -249,20 +278,24 @@ double grid_3D_cart::zone_volume(const int i) const
 //------------------------------------------------------------
 // sample a random position within the cubical cell
 //------------------------------------------------------------
-void grid_3D_cart::sample_in_zone
-(const int i, const std::vector<double> ran,double r[3]) const
+void grid_3D_cart::cartesian_sample_in_zone
+(const int z_ind, const vector<double>& rand, vector<double>& x) const
 {
-  r[0] = x0 + (ix[i] + ran[0])*dx;
-  r[1] = y0 + (iy[i] + ran[1])*dy;
-  r[2] = z0 + (iz[i] + ran[2])*dz;
+    assert(z_ind >= 0);
+    assert(z_ind < (int)z.size());
+  x[0] = x0 + (ix[z_ind] + rand[0])*dx;
+  x[1] = y0 + (iy[z_ind] + rand[1])*dy;
+  x[2] = z0 + (iz[z_ind] + rand[2])*dz;
 }
 
 
 //------------------------------------------------------------
 // return length of zone
 //------------------------------------------------------------
-double  grid_3D_cart::zone_min_length(const int i) const
+double  grid_3D_cart::zone_min_length(const int z_ind) const
 {
+    assert(z_ind >= 0);
+    assert(z_ind < (int)z.size());
   return min_ds;
 }
 
@@ -271,12 +304,18 @@ double  grid_3D_cart::zone_min_length(const int i) const
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void grid_3D_cart::velocity_vector(const int i, const double x[3], double v[3]) const
+void grid_3D_cart::cartesian_velocity_vector(const vector<double>& x, vector<double>& v) const
 {
+	assert(x.size()==3);
+	v.resize(3);
+	const int z_ind = zone_index(x);
+    assert(z_ind >= 0);
+    assert(z_ind < (int)z.size());
+
   // may want to interpolate here
-  v[0] = z[i].v[0];
-  v[1] = z[i].v[1];
-  v[2] = z[i].v[2];
+  v[0] = z[z_ind].v[0];
+  v[1] = z[z_ind].v[1];
+  v[2] = z[z_ind].v[2];
 }
 
 //------------------------------------------------------------
@@ -284,6 +323,8 @@ void grid_3D_cart::velocity_vector(const int i, const double x[3], double v[3]) 
 //------------------------------------------------------------
 void grid_3D_cart::zone_coordinates(const int z_ind, vector<double>& r) const
 {
+    assert(z_ind >= 0);
+    assert(z_ind < (int)z.size());
 	r.resize(dimensionality);
   r[0] = x0 + (ix[z_ind]+0.5)*dx;
   r[1] = y0 + (iy[z_ind]+0.5)*dy;

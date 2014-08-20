@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <cmath>
+#include <cassert>
 #include "zone.h"
 #include "nulib_interface.h"
 #include "physical_constants.h"
@@ -41,6 +42,10 @@ int main(int argc, char* argv[]){
   nulib_get_Ye_array(ye_grid);
   nulib_get_T_array(T_grid);
   nulib_get_rho_array(rho_grid);
+  assert( nu_grid.size() > 0);
+  assert( ye_grid.size() > 0);
+  assert(  T_grid.size() > 0);
+  assert(rho_grid.size() > 0);
 
   // read in the number of species and groups in the table
   cout << "# of species: "    << nulib_get_nspecies() << endl;
@@ -50,12 +55,13 @@ int main(int argc, char* argv[]){
   cout << "# of T points: "   << T_grid.size()        << " (" <<   T_grid[0] << "-" <<   T_grid[  T_grid.size()-1] << ")" << endl;
 
   //make vectors of appropriate sizes
-  int ng = nu_grid.size();
-  vector<double> absopac  (ng,0); // cm^-1
-  vector<double> scatopac (ng,0); // cm^-1
-  vector<double> pure_emis(ng,0); // erg/cm^3/s/ster/Hz
+  int n_groups = nu_grid.size();
+  assert(n_groups > 0);
+  vector<double> absopac  (n_groups,0); // cm^-1
+  vector<double> scatopac (n_groups,0); // cm^-1
+  vector<double> pure_emis(n_groups,0); // erg/cm^3/s/ster/Hz
   cdf_array emis;                 // erg/cm^3/s/ster
-  emis.resize(ng);
+  emis.resize(n_groups);
 
   //===================//
   // SINGLE LINE PLOTS //

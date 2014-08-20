@@ -7,6 +7,7 @@
 #include "Lua.h"
 #include "physical_constants.h"
 
+#define NaN std::numeric_limits<double>::quiet_NaN()
 namespace pc = physical_constants;
 using namespace std;
 
@@ -19,13 +20,9 @@ void photons::myInit(Lua* lua)
   name = "Photons";
   weight = 1.0;
 
-  // poison unused zone properties
-  #pragma omp parallel for
-  for(int i=0; i<sim->grid->z.size(); i++) sim->grid->z[i].Ye = -1.0e99;
-
   // intialize output spectrum
-  std::vector<double>stg = lua->vector<double>("phot_spec_time_grid");
-  std::vector<double>sng = lua->vector<double>("phot_spec_nu_grid");
+  vector<double>stg = lua->vector<double>("phot_spec_time_grid");
+  vector<double>sng = lua->vector<double>("phot_spec_nu_grid");
   int nmu  = lua->scalar<int>("phot_spec_n_mu");
   int nphi = lua->scalar<int>("phot_spec_n_phi");
   spectrum.init(stg,sng,nmu,nphi);
@@ -38,6 +35,7 @@ void photons::myInit(Lua* lua)
   double nu_stop  = lua->scalar<double>("phot_nugrid_stop");
   int      n_nu   = lua->scalar<int>("phot_nugrid_n");
   lepton_number   = 0;
+  assert(nu_stop >= nu_start);
 
   // initialize the  frequency grid
   nu_grid.init(nu_start,nu_stop,n_nu);
