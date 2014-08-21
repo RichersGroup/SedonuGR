@@ -26,7 +26,6 @@ void photons::myInit(Lua* lua)
   int nmu  = lua->scalar<int>("phot_spec_n_mu");
   int nphi = lua->scalar<int>("phot_spec_n_phi");
   spectrum.init(stg,sng,nmu,nphi);
-  spectrum.set_name("optical_spectrum.dat");
 
   // read opacity parameters
   grey_opac       = lua->scalar<double>("phot_grey_opacity");

@@ -4,6 +4,7 @@
 #include <string>
 #include "particle.h"
 #include "locate_array.h"
+#include "transport.h"
 
 using namespace std;
 
@@ -13,9 +14,6 @@ using namespace std;
 class spectrum_array {
  
 private:
-
-  // spectrum_array name
-  char name[1000];
 
   // bin arrays
   // values represent bin upper walls (the single locate_array.min value is the leftmost wall)
@@ -43,7 +41,6 @@ public:
   // Initialize
   void init(const locate_array tg, const locate_array wg, const locate_array mg, const locate_array pg);
   void init(const std::vector<double>,const std::vector<double>,const int,const int);
-  void set_name(const char *n);
 
   // MPI functions
   void MPI_average();
@@ -56,7 +53,7 @@ public:
   void wipe();
 
   // Print out
-  void print() const;
+  void print(const int iw, const int species) const;
 };
 
 #endif

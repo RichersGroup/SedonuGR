@@ -22,7 +22,6 @@ void neutrinos::myInit(Lua* lua)
   int nmu  = lua->scalar<int>("nut_spec_n_mu");
   int nphi = lua->scalar<int>("nut_spec_n_phi");
   spectrum.init(stg,sng,nmu,nphi);
-  spectrum.set_name("neutrino_spectrum.dat");
 
   // set lepton number
   if(nulibID == 0)   lepton_number =  1;

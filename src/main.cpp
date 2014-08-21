@@ -75,19 +75,19 @@ int main(int argc, char **argv)
     	printf("%12d %12.4e %12.4e %12d\n",it,t,dt, sim.total_particles());
 
     	// write zone state when appropriate
-    	if(it%write_zones_every==0 && write_zones_every>0 && rank0){
+    	if(it%write_zones_every==0 && write_zones_every>0){
     		cout << "# writing zone file " << it << endl;
     		sim.grid->write_zones(it);
     	}
 
     	// write ray data when appropriate
-    	if(it%write_rays_every==0 && write_rays_every>0 && rank0){
+    	if(it%write_rays_every==0 && write_rays_every>0){
     		cout << "# writing ray file " << it << endl;
     		sim.grid->write_rays(it);
     	}
 
     	// print out spectrum in iterative calc
-    	if(it%write_spectra_every==0 && write_spectra_every>0 && rank0){
+    	if(it%write_spectra_every==0 && write_spectra_every>0){
     		cout << "# writing spectrum file " << it << endl;
     		sim.write_spectra(it);
     	}

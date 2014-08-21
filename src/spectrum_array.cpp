@@ -2,12 +2,12 @@
 #include <limits>
 #include <omp.h>
 #include <mpi.h>
-#include <stdio.h>
 #include <iostream>
 #include <math.h>
 #include <string.h>
 #include <vector>
 #include <cassert>
+#include <fstream>
 #include "spectrum_array.h"
 #include "physical_constants.h"
 
@@ -18,16 +18,9 @@ namespace pc = physical_constants;
 //--------------------------------------------------------------
 spectrum_array::spectrum_array()
 {
-  strcpy(name,DEFAULT_NAME);
   a1=0; a2=0; a3=0;
   n_elements=0;
 }
-
-void spectrum_array::set_name(const char *n)
-{
-  strcpy(name,n);
-}
-
 
 //--------------------------------------------------------------
 // Initialization and Allocation
@@ -174,21 +167,18 @@ void spectrum_array::count(const double t, const double w, const double E, const
 //--------------------------------------------------------------
 // print out
 //--------------------------------------------------------------
-void spectrum_array::print() const
+void spectrum_array::print(const int iw, const int species) const
 {
-  int nprocs, myID;
-  MPI_Comm_size( MPI_COMM_WORLD, &nprocs );
-  MPI_Comm_rank( MPI_COMM_WORLD, &myID   );
-
-  if(myID==0){
-    FILE *out = fopen(name,"w");
+    ofstream outf;
+    string filename = "spectrum_species"+to_string(species);
+    transport::open_file(filename.c_str(),iw,outf);
 
     int n_times  = time_grid.size();
     int n_wave   = wave_grid.size();
     int n_mu     = mu_grid.size();
     int n_phi    = phi_grid.size();
 
-    fprintf(out,"# %d %d %d %d\n",n_times,n_wave,n_mu,n_phi);
+    outf << "#" << n_times << " " << n_wave << " " << n_mu << " " << n_phi << endl;
 
     for (int k=0;k<n_mu;k++)
       for (int m=0;m<n_phi;m++)
@@ -196,10 +186,10 @@ void spectrum_array::print() const
 	  for (int j=0;j<n_wave;j++)
 	    {
 	      int id = index(i,j,k,m);
-	      if (n_times > 1)  fprintf(out,"%12.4e ",time_grid.center(i));;
-	      if (n_wave > 1)   fprintf(out,"%12.4e ",wave_grid.center(j));
-	      if (n_mu > 1)     fprintf(out,"%12.4f ",mu_grid.center(k));
-	      if (n_phi> 1)     fprintf(out,"%12.4f ",phi_grid.center(m));
+	      if (n_times > 1)  outf << time_grid.center(i) << " ";
+	      if (n_wave > 1)   outf << wave_grid.center(j) << " ";
+	      if (n_mu > 1)     outf << mu_grid.center(k) << " ";
+	      if (n_phi> 1)     outf << phi_grid.center(m);
 
 	      // the delta is infinity if the bin is a catch-all.
 	      // Use normalization of 1 to match the hard-coded choice of dt=1 for iterative calculations
@@ -208,10 +198,9 @@ void spectrum_array::print() const
 	      double norm = n_mu*n_phi
 		* ( wdel < numeric_limits<double>::infinity() ? wdel : 1 )
 		* ( tdel < numeric_limits<double>::infinity() ? tdel : 1 );
-	      fprintf(out,"%12.5e %10d\n", flux[id]/norm,click[id]);
+	      outf << flux[id]/norm << " " << click[id] << endl;
 	    }
-    fclose(out);
-  }
+    outf.close();
 }
 
 

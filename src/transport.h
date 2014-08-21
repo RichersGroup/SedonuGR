@@ -3,7 +3,6 @@
 #include <mpi.h>
 #include <vector>
 #include "particle.h"
-#include "spectrum_array.h"
 #include "Lua.h"
 #include "locate_array.h"
 #include "cdf_array.h"
@@ -11,6 +10,7 @@
 
 class species_general;
 class grid_general;
+class spectrum_array;
 enum ParticleEvent {interact, zoneEdge, timeStep, boundary};
 
 class transport

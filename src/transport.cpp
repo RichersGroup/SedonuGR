@@ -481,10 +481,7 @@ void transport::write_spectra(const int it)
 {
 	for(int i=0; i<species_list.size(); i++){
 		if(MPI_nprocs>1) species_list[i]->spectrum.MPI_average();
-		char sname[100];
-		sprintf(sname,"species%d_I%d.spec",i,it);
-		species_list[i]->spectrum.set_name(sname);
-		species_list[i]->spectrum.print();
+		species_list[i]->spectrum.print(it,i);
 		species_list[i]->spectrum.wipe();
 	}
 }
