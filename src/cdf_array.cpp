@@ -5,7 +5,14 @@
 #include <limits>
 #include "cdf_array.h"
 #include "locate_array.h"
+#define NaN std::numeric_limits<double>::quiet_NaN()
 using namespace std;
+
+
+// safe constructor
+cdf_array::cdf_array(){
+	N = NaN;
+}
 
 //------------------------------------------------------
 // return the actual y value, not the integrated

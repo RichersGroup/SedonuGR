@@ -25,6 +25,8 @@ private:
   
 public:
 
+  cdf_array();
+
   double N;
   void resize(const int n)  {y.resize(n);}
 
