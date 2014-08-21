@@ -22,11 +22,11 @@ private:
   double x0, y0, z0; // leftmost points
   double vol;        // volume of each zone = dx*dy*dz
   double min_ds;
-  int *ix,*iy,*iz;
   int reflect_x, reflect_y, reflect_z;
 
 public:
 
+  grid_3D_cart();
   virtual ~grid_3D_cart() {}
 
   void read_model_file(Lua* lua);

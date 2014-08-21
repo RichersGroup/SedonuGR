@@ -15,8 +15,8 @@ public:
   int do_log_interpolate;
 
   // constructors
-  locate_array()  {do_log_interpolate=0;min=0;}
-  locate_array(int n) {init(n);}
+  locate_array(int n=0);
+  //locate_array(int n) {init(n);}
 
   // Return size of array (also, # of bins)
   int size() const {return (int)x.size();}

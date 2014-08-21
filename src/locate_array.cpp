@@ -9,16 +9,24 @@
 #include <cassert>
 #include "locate_array.h"
 
+#define NaN std::numeric_limits<double>::quiet_NaN()
 using namespace std;
 
+//-----------------------------
+// safe nan-filled constructor
+//-----------------------------
+locate_array::locate_array(const int n){
+	min = NaN;
+	do_log_interpolate = 0;
+	x.assign(n,NaN);
+}
 
 //---------------------------------------------------------
 // Just allocation the memory for this
 //---------------------------------------------------------
-void locate_array::init(const int n) 
-{
-  x.assign(n,0);
-}
+//void locate_array::init(const int n)
+//{
+//}
 
 //---------------------------------------------------------
 // Initialize with start, stop and delta

@@ -10,7 +10,20 @@
 #include "grid_3D_cart.h"
 #include "physical_constants.h"
 
+#define NaN std::numeric_limits<double>::quiet_NaN()
 namespace pc = physical_constants;
+
+//------------
+// constructor
+//------------
+grid_3D_cart::grid_3D_cart(){
+	nx=0;ny=0;nz=0;
+	dx=NaN;dy=NaN;dz=NaN;
+	x0=NaN;y0=NaN;z0=NaN;
+	vol=NaN;
+	min_ds=NaN;
+	reflect_x=0;reflect_y=0;reflect_z=0;
+}
 
 //------------------------------------------------------------
 // initialize the zone geometry
@@ -43,21 +56,6 @@ void grid_3D_cart::custom_model(Lua* lua)
   // allocate zones
   int n_zones = nx*ny*nz;
   z.resize(n_zones,zone(dimensionality));
-
-  // get a reverse map to x,y,z indices
-  ix = new int[n_zones];
-  iy = new int[n_zones];
-  iz = new int[n_zones];
-  int ind = 0;
-  for (int i=0;i<nx;i++)
-    for (int j=0;j<ny;j++)
-      for (int k=0;k<nz;k++)
-      {
-	ix[ind] = i;
-	iy[ind] = j;
-	iz[ind] = k;
-	ind++;
-      }
 }
 
 //------------------------------------------------------------
@@ -122,9 +120,6 @@ void grid_3D_cart::read_model_file(Lua* lua)
   // First loop - set indices and read zone values in file
   // loop order is the file order
   // index order matches that in get_zone
-  ix = new int[n_zones];
-  iy = new int[n_zones];
-  iz = new int[n_zones];
   z.resize(n_zones,zone(dimensionality));
   int ind = 0;
   bool rx,ry,rz;
@@ -137,9 +132,9 @@ void grid_3D_cart::read_model_file(Lua* lua)
 
     	// create reverse map to x,y,z indices
     	rx=false; ry=false; rz=false;
-    	ix[ind] = i; if(reflect_x && i<nx/2) rx = true;
-    	iy[ind] = j; if(reflect_y && j<ny/2) ry = true;
-    	iz[ind] = k; if(reflect_z && k<nz/2) rz = true;
+    	if(reflect_x && i<nx/2) rx = true;
+    	if(reflect_y && j<ny/2) ry = true;
+    	if(reflect_z && k<nz/2) rz = true;
 
     	// read in values if not in reflected zone
     	if(!rx && !ry && !rz)
@@ -283,9 +278,11 @@ void grid_3D_cart::cartesian_sample_in_zone
 {
     assert(z_ind >= 0);
     assert(z_ind < (int)z.size());
-  x[0] = x0 + (ix[z_ind] + rand[0])*dx;
-  x[1] = y0 + (iy[z_ind] + rand[1])*dy;
-  x[2] = z0 + (iz[z_ind] + rand[2])*dz;
+    vector<int> dir_ind;
+    zone_directional_indices(z_ind,dir_ind);
+  x[0] = x0 + ((double)dir_ind[0] + rand[0])*dx;
+  x[1] = y0 + ((double)dir_ind[1] + rand[1])*dy;
+  x[2] = z0 + ((double)dir_ind[2] + rand[2])*dz;
 }
 
 
@@ -326,9 +323,11 @@ void grid_3D_cart::zone_coordinates(const int z_ind, vector<double>& r) const
     assert(z_ind >= 0);
     assert(z_ind < (int)z.size());
 	r.resize(dimensionality);
-  r[0] = x0 + (ix[z_ind]+0.5)*dx;
-  r[1] = y0 + (iy[z_ind]+0.5)*dy;
-  r[2] = z0 + (iz[z_ind]+0.5)*dz;
+	vector<int> dir_ind;
+	zone_directional_indices(z_ind,dir_ind);
+  r[0] = x0 + ((double)dir_ind[0]+0.5)*dx;
+  r[1] = y0 + ((double)dir_ind[1]+0.5)*dy;
+  r[2] = z0 + ((double)dir_ind[2]+0.5)*dz;
 }
 
 
