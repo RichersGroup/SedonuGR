@@ -7,9 +7,17 @@
 #include "Lua.h"
 #include "physical_constants.h"
 #include "nulib_interface.h"
+#define MAX std::numeric_limits<int>::max()
 
 namespace pc = physical_constants;
 using namespace std;
+
+// constructor
+neutrinos::neutrinos(){
+	num_nut_species = MAX;
+	nulibID = MAX;
+}
+
 
 //----------------------------------------------------------------
 // called from species_general::init (neutrino-specific stuff)

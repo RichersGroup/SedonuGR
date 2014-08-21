@@ -9,6 +9,7 @@
 #include "Lua.h"
 #include "grid_3D_cart.h"
 #include "physical_constants.h"
+#define MAX std::numeric_limits<int>::max()
 
 #define NaN std::numeric_limits<double>::quiet_NaN()
 namespace pc = physical_constants;
@@ -17,12 +18,12 @@ namespace pc = physical_constants;
 // constructor
 //------------
 grid_3D_cart::grid_3D_cart(){
-	nx=0;ny=0;nz=0;
+	nx=-MAX;ny=-MAX;nz=-MAX;
 	dx=NaN;dy=NaN;dz=NaN;
 	x0=NaN;y0=NaN;z0=NaN;
 	vol=NaN;
 	min_ds=NaN;
-	reflect_x=0;reflect_y=0;reflect_z=0;
+	reflect_x=-MAX;reflect_y=-MAX;reflect_z=-MAX;
 }
 
 //------------------------------------------------------------

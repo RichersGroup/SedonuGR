@@ -9,6 +9,7 @@
 #include <cassert>
 #include "locate_array.h"
 
+#define MAX std::numeric_limits<int>::max()
 #define NaN std::numeric_limits<double>::quiet_NaN()
 using namespace std;
 
@@ -17,7 +18,7 @@ using namespace std;
 //-----------------------------
 locate_array::locate_array(const int n){
 	min = NaN;
-	do_log_interpolate = 0;
+	do_log_interpolate = MAX;
 	x.assign(n,NaN);
 }
 

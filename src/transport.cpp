@@ -23,7 +23,45 @@
 #include "nulib_interface.h"
 
 #define NaN std::numeric_limits<real>::quiet_NaN()
+#define MAX std::numeric_limits<int>::max()
 namespace pc = physical_constants;
+
+// constructor
+transport::transport(){
+MPI_nprocs = -MAX;
+MPI_myID = -MAX;
+MPI_real = MPI_DATATYPE_NULL;
+solve_T = -MAX;
+solve_Ye = -MAX;
+damping = NaN;
+brent_itmax = -MAX;
+brent_solve_tolerance = NaN;
+T_min = NaN;
+T_max = NaN;
+Ye_min = NaN;
+Ye_max = NaN;
+rho_min = NaN;
+rho_max = NaN;
+max_particles = -MAX;
+step_size = NaN;
+do_photons = -MAX;
+do_neutrinos = -MAX;
+steady_state = -MAX;
+radiative_eq = -MAX;
+rank0 = -MAX;
+grid = NULL;
+t_now = NaN;
+r_core = NaN;
+n_emit_core = -MAX;
+core_lum_multiplier = NaN;
+do_visc = -MAX;
+n_emit_therm = -MAX;
+n_emit_decay = -MAX;
+visc_specific_heat_rate = NaN;
+L_net = NaN;
+reflect_outer = -MAX;
+}
+
 
 //----------------------------------------------------------------------------
 // Initialize the transport module

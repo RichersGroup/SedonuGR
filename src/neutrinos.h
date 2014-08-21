@@ -11,6 +11,7 @@ class neutrinos: public species_general
 
  public:
 
+	neutrinos();
   virtual ~neutrinos() {}
 
   int num_nut_species;

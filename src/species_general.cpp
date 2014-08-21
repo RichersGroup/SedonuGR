@@ -2,12 +2,29 @@
 #include <gsl/gsl_rng.h>
 #include <math.h>
 #include <cassert>
+#include <limits>
 #include "transport.h"
 #include "physical_constants.h"
 #include "Lua.h"
 #include <list>
 
+#define NaN std::numeric_limits<double>::quiet_NaN()
+#define MAX std::numeric_limits<int>::max()
 namespace pc = physical_constants;
+
+species_general::species_general(){
+weight = NaN;
+grey_opac = NaN;
+grey_abs_frac = NaN;
+lepton_number = MAX;
+T_min = NaN;
+T_max = NaN;
+Ye_min = NaN;
+Ye_max = NaN;
+rho_min = NaN;
+rho_max = NaN;
+sim = NULL;
+}
 
 void species_general::init(Lua* lua, transport* simulation)
 {

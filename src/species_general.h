@@ -42,6 +42,7 @@ class species_general
 
  public:
 
+  species_general();
   virtual ~species_general() {}
 
   // name
