@@ -14,15 +14,6 @@
 namespace pc = physical_constants;
 
 //--------------------------------------------------------------
-// Constructors
-//--------------------------------------------------------------
-spectrum_array::spectrum_array()
-{
-  a1=0; a2=0; a3=0;
-  n_elements=0;
-}
-
-//--------------------------------------------------------------
 // Initialization and Allocation
 //--------------------------------------------------------------
 void spectrum_array::init(const std::vector<double> t, const std::vector<double> w,
@@ -49,10 +40,7 @@ void spectrum_array::init(const std::vector<double> t, const std::vector<double>
   phi_grid.init(-pc::pi,pc::pi,n_phi);
 
   // index parameters
-  n_elements  = n_times*n_wave*n_mu*n_phi;
-  a3 = n_phi;
-  a2 = n_mu*a3;
-  a1 = n_wave*a2;
+  int n_elements  = n_times*n_wave*n_mu*n_phi;
 
   // allocate memory
   click.resize(n_elements);
@@ -81,10 +69,7 @@ void spectrum_array::init(const locate_array tg, const locate_array wg,
   int n_phi    = phi_grid.size();
 
   // index parameters
-  n_elements  = n_times*n_wave*n_mu*n_phi;
-  a3 = n_phi;
-  a2 = n_mu*a3;
-  a1 = n_wave*a2;
+  int n_elements  = n_times*n_wave*n_mu*n_phi;
 
   // allocate memory
   click.resize(n_elements);
@@ -120,9 +105,16 @@ int spectrum_array::index(const int t, const int l, const int m, const int p) co
 	assert(l>=0);
 	assert(m>=0);
 	assert(p>=0);
+	int n_phi = phi_grid.size();
+	int n_wave = wave_grid.size();
+	int n_mu = mu_grid.size();
+	int n_times = time_grid.size();
+	int a3 = n_phi;
+	int a2 = n_mu*a3;
+	int a1 = n_wave*a2;
 	const int ind = t*a1 + l*a2 + m*a3 + p;
 	assert(ind >= 0);
-	assert(ind < n_elements);
+	assert(ind < n_phi*n_wave*n_mu*n_times);
 	return ind;
 }
 
@@ -219,6 +211,7 @@ void spectrum_array::MPI_average()
 {
   int receiving_ID = 0;
   int mpi_procs, myID;
+  const int n_elements = time_grid.size()*wave_grid.size()*mu_grid.size()*phi_grid.size();
 
   // average the flux (receive goes out of scope after section)
   {
@@ -243,8 +236,8 @@ void spectrum_array::MPI_average()
     #pragma omp parallel for
     for (int i=0;i<n_elements;i++)
     {
-      flux[i]  /= mpi_procs;
-      click[i] /= mpi_procs;
+      flux[i]  /= (double)mpi_procs;
+      click[i] /= (double)mpi_procs;
     }
   }
 }

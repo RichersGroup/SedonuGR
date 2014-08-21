@@ -25,19 +25,14 @@ private:
   locate_array phi_grid;
 
   // counting arrays
-  std::vector<double> flux;
-  std::vector<int>    click;
+  vector<double> flux;
+  vector<int>    click;
 
   // Indexing
-  int n_elements;
-  int a1, a2, a3;
-  int index(const int,const int,const int,const int) const;
+  int index(const int t,const int l,const int m,const int p) const;
     
 public:
 
-  // constructors
-  spectrum_array();
-  
   // Initialize
   void init(const locate_array tg, const locate_array wg, const locate_array mg, const locate_array pg);
   void init(const std::vector<double>,const std::vector<double>,const int,const int);

@@ -22,13 +22,6 @@ locate_array::locate_array(const int n){
 }
 
 //---------------------------------------------------------
-// Just allocation the memory for this
-//---------------------------------------------------------
-//void locate_array::init(const int n)
-//{
-//}
-
-//---------------------------------------------------------
 // Initialize with start, stop and delta
 // if start==stop make it a catch-all
 //---------------------------------------------------------
