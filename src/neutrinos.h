@@ -3,24 +3,25 @@
 
 #include "species_general.h"
 #include "Lua.h"
+#include "global_options.h"
 
 class neutrinos: public species_general
 {
 
- protected:  
+protected:
 
- public:
+public:
 
 	neutrinos();
-  virtual ~neutrinos() {}
+	virtual ~neutrinos() {}
 
-  int num_nut_species;
-  int nulibID;
+	int num_nut_species;
+	int nulibID;
 
-  // required functions
-  void myInit(Lua* lua);
-  void set_eas(int zone_index);
-  double blackbody(const double T, const double chempot, const double nu) const;
+	// required functions
+	void myInit(Lua* lua);
+	void set_eas(int zone_index);
+	double blackbody(const double T, const double chempot, const double nu) const;
 };
 
 #endif

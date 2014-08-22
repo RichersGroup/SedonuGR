@@ -6,12 +6,9 @@
 #include <math.h>
 #include <string.h>
 #include <iostream>
-#include <limits>
-#include <cassert>
 #include <fstream>
 #include <string>
 #include "transport.h"
-#include "physical_constants.h"
 #include "Lua.h"
 #include "grid_general.h"
 #include "grid_1D_sphere.h"
@@ -21,46 +18,45 @@
 #include "neutrinos.h"
 #include "cdf_array.h"
 #include "nulib_interface.h"
+#include "global_options.h"
 
-#define NaN std::numeric_limits<real>::quiet_NaN()
-#define MAX std::numeric_limits<int>::max()
+
 namespace pc = physical_constants;
 
 // constructor
 transport::transport(){
 	verbose = -MAX;
-MPI_nprocs = -MAX;
-MPI_myID = -MAX;
-MPI_real = MPI_DATATYPE_NULL;
-solve_T = -MAX;
-solve_Ye = -MAX;
-damping = NaN;
-brent_itmax = -MAX;
-brent_solve_tolerance = NaN;
-T_min = NaN;
-T_max = NaN;
-Ye_min = NaN;
-Ye_max = NaN;
-rho_min = NaN;
-rho_max = NaN;
-max_particles = -MAX;
-step_size = NaN;
-do_photons = -MAX;
-do_neutrinos = -MAX;
-steady_state = -MAX;
-radiative_eq = -MAX;
-rank0 = -MAX;
-grid = NULL;
-t_now = NaN;
-r_core = NaN;
-n_emit_core = -MAX;
-core_lum_multiplier = NaN;
-do_visc = -MAX;
-n_emit_therm = -MAX;
-n_emit_decay = -MAX;
-visc_specific_heat_rate = NaN;
-L_net = NaN;
-reflect_outer = -MAX;
+	MPI_nprocs = -MAX;
+	MPI_myID = -MAX;
+	solve_T = -MAX;
+	solve_Ye = -MAX;
+	damping = NaN;
+	brent_itmax = -MAX;
+	brent_solve_tolerance = NaN;
+	T_min = NaN;
+	T_max = NaN;
+	Ye_min = NaN;
+	Ye_max = NaN;
+	rho_min = NaN;
+	rho_max = NaN;
+	max_particles = -MAX;
+	step_size = NaN;
+	do_photons = -MAX;
+	do_neutrinos = -MAX;
+	steady_state = -MAX;
+	radiative_eq = -MAX;
+	rank0 = -MAX;
+	grid = NULL;
+	t_now = NaN;
+	r_core = NaN;
+	n_emit_core = -MAX;
+	core_lum_multiplier = NaN;
+	do_visc = -MAX;
+	n_emit_therm = -MAX;
+	n_emit_decay = -MAX;
+	visc_specific_heat_rate = NaN;
+	L_net = NaN;
+	reflect_outer = -MAX;
 }
 
 
@@ -74,7 +70,6 @@ void transport::init(Lua* lua)
 	// get mpi rank
 	MPI_Comm_size( MPI_COMM_WORLD, &MPI_nprocs );
 	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID  );
-	MPI_real = ( sizeof(real)==4 ? MPI_FLOAT : MPI_DOUBLE );
 	rank0 = (MPI_myID==0);
 
 	// figure out what emission models we're using
@@ -126,7 +121,7 @@ void transport::init(Lua* lua)
 	// calculate integrated quantities to check
 	double mass = 0.0;
 	double KE   = 0.0;
-    #pragma omp parallel for reduction(+:mass,KE)
+#pragma omp parallel for reduction(+:mass,KE)
 	for (int i=0;i<grid->z.size();i++){
 		double my_mass = grid->z[i].rho * grid->zone_volume(i);
 		assert(my_mass >= 0);
@@ -171,7 +166,7 @@ void transport::init(Lua* lua)
 
 	/**********************/
 	/**/ if(do_photons) /**/
-	/**********************/
+		/**********************/
 	{
 		photons* photons_tmp = new photons;
 		photons_tmp->init(lua, this);
@@ -179,7 +174,7 @@ void transport::init(Lua* lua)
 	}
 	/************************/
 	/**/ if(do_neutrinos) /**/
-	/************************/
+		/************************/
 	{
 		double grey_opac = lua->scalar<double>("nut_grey_opacity");
 		int num_nut_species = 0;
@@ -229,17 +224,15 @@ void transport::init(Lua* lua)
 		if(species_list[i]->rho_min < rho_min) rho_min = species_list[i]->rho_min;
 		if(species_list[i]->rho_max > rho_max) rho_max = species_list[i]->rho_max;
 	}
-	if(T_min >= T_max){
-		cout << "ERROR: invalid temperature range." << endl;
-		exit(14);
-	}
-	if(Ye_min >= Ye_max && do_neutrinos){
-		cout << "ERROR: invalid Ye range." << endl;
-		exit(14);
-	}
+
+	assert(T_min >= 0);
+	assert(T_max > T_min);
+	assert(Ye_min >= 0);
+	assert(Ye_max > Ye_min);
+	assert(Ye_max <= 1.0);
 
 	// initialize all the zone eas variables
-    #pragma omp parallel for collapse(2)
+#pragma omp parallel for collapse(2)
 	for(int i=0; i<species_list.size(); i++)
 		for(int j=0; j<grid->z.size(); j++)
 			species_list[i]->set_eas(j);
@@ -277,18 +270,18 @@ void transport::step(const double dt)
 	// assume 1.0 s. of particles were emitted if dt<0
 	double emission_time = (dt<=0 ? 1.0 : dt);
 
-    #pragma omp parallel
+#pragma omp parallel
 	{
 		// calculate the zone eas variables
-        #pragma omp for collapse(2)
+#pragma omp for collapse(2)
 		for(int i=0; i<species_list.size(); i++)
 			for(int j=0; j<grid->z.size(); j++)
 				species_list[i]->set_eas(j);
 
 		// prepare zone quantities for another round of transport
-        #pragma omp single
+#pragma omp single
 		L_net = 0;
-        #pragma omp for
+#pragma omp for
 		for (int i=0;i<grid->z.size();i++)
 		{
 			zone z = grid->z[i];
@@ -323,7 +316,7 @@ void transport::step(const double dt)
 // calculate various timescales
 //-----------------------------
 void transport::calculate_timescales() const{
-    #pragma omp parallel for
+#pragma omp parallel for
 	for (int i=0;i<grid->z.size();i++){
 		zone *z = &(grid->z[i]);
 		double e_gas = z->rho*pc::k*z->T_gas/pc::m_p;  // gas energy density (erg/ccm)
@@ -340,7 +333,7 @@ void transport::calculate_timescales() const{
 void transport::normalize_radiative_quantities(const double dt){
 	double net_visc_heating = 0;
 
-    #pragma omp parallel for reduction(+:net_visc_heating)
+#pragma omp parallel for reduction(+:net_visc_heating)
 	for (int i=0;i<grid->z.size();i++)
 	{
 		zone *z = &(grid->z[i]);
@@ -426,7 +419,7 @@ int transport::sample_zone_species(const int zone_index) const
 //------------------------------------------------------------
 void transport::reduce_radiation()
 {
-	vector<real> send, receive;
+	vector<double> send, receive;
 	int my_begin, my_end, size;
 
 	//-- EACH PROCESSOR GETS THE REDUCTION INFORMATION IT NEEDS
@@ -443,35 +436,35 @@ void transport::reduce_radiation()
 
 		// reduce e_rad
 		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_rad;
-		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_real, MPI_SUM, MPI_COMM_WORLD);
-		for(int i=my_begin; i<my_end; i++) grid->z[i].e_rad = receive[i-my_begin] / (real)MPI_nprocs;
+		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		for(int i=my_begin; i<my_end; i++) grid->z[i].e_rad = receive[i-my_begin] / (double)MPI_nprocs;
 
 		// reduce e_abs
 		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_abs;
-		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_real, MPI_SUM, MPI_COMM_WORLD);
-		for(int i=my_begin; i<my_end; i++) grid->z[i].e_abs = receive[i-my_begin] / (real)MPI_nprocs;
+		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		for(int i=my_begin; i<my_end; i++) grid->z[i].e_abs = receive[i-my_begin] / (double)MPI_nprocs;
 
 		// reduce l_abs
 		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].l_abs;
-		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_real, MPI_SUM, MPI_COMM_WORLD);
-		for(int i=my_begin; i<my_end; i++) grid->z[i].l_abs = receive[i-my_begin] / (real)MPI_nprocs;
+		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		for(int i=my_begin; i<my_end; i++) grid->z[i].l_abs = receive[i-my_begin] / (double)MPI_nprocs;
 
 		// reduce e_emit
 		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_emit;
-		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_real, MPI_SUM, MPI_COMM_WORLD);
-		for(int i=my_begin; i<my_end; i++) grid->z[i].e_emit = receive[i-my_begin] / (real)MPI_nprocs;
+		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		for(int i=my_begin; i<my_end; i++) grid->z[i].e_emit = receive[i-my_begin] / (double)MPI_nprocs;
 
 		// reduce l_emit
 		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].l_emit;
-		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_real, MPI_SUM, MPI_COMM_WORLD);
-		for(int i=my_begin; i<my_end; i++) grid->z[i].l_emit = receive[i-my_begin] / (real)MPI_nprocs;
+		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		for(int i=my_begin; i<my_end; i++) grid->z[i].l_emit = receive[i-my_begin] / (double)MPI_nprocs;
 
 		// format for single reduce
 		//my_begin = ( proc==0 ? 0 : my_zone_end[proc-1] );
 		//my_end = my_zone_end[proc];
 		//for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].l_emit;
-		//MPI_Reduce(&send.front(), &receive.front(), size, MPI_real, MPI_SUM, proc, MPI_COMM_WORLD);
-		//for(int i=my_begin; i<my_end; i++) grid->z[i].l_emit = receive[i-my_begin] / (real)MPI_nprocs;
+		//MPI_Reduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, proc, MPI_COMM_WORLD);
+		//for(int i=my_begin; i<my_end; i++) grid->z[i].l_emit = receive[i-my_begin] / (double)MPI_nprocs;
 	}
 }
 
@@ -479,7 +472,7 @@ void transport::reduce_radiation()
 // is correct, but all gas quantities are correct.
 void transport::synchronize_gas()
 {
-	vector<real> buffer;
+	vector<double> buffer;
 	int my_begin, my_end, size;
 
 	//-- EACH PROCESSOR SENDS THE GRID INFORMATION IT SOLVED
@@ -496,14 +489,14 @@ void transport::synchronize_gas()
 		// broadcast T_gas
 		if(solve_T){
 			if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->z[i].T_gas;
-			MPI_Bcast(&buffer.front(), size, MPI_real, proc, MPI_COMM_WORLD);
+			MPI_Bcast(&buffer.front(), size, MPI_DOUBLE, proc, MPI_COMM_WORLD);
 			if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->z[i].T_gas = buffer[i-my_begin];
 		}
 
 		// broadcast Ye
 		if(solve_Ye){
 			if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->z[i].Ye;
-			MPI_Bcast(&buffer.front(), size, MPI_real, proc, MPI_COMM_WORLD);
+			MPI_Bcast(&buffer.front(), size, MPI_DOUBLE, proc, MPI_COMM_WORLD);
 			if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->z[i].Ye = buffer[i-my_begin];
 		}
 	}
@@ -535,7 +528,7 @@ void transport::update_zone_quantities(){
 
 	// solve radiative equilibrium temperature and Ye (but only in the zones I'm responsible for)
 	// don't solve if out of density bounds
-    #pragma omp parallel for schedule(guided)
+#pragma omp parallel for schedule(guided)
 	for (int i=start; i<end; i++) if( (grid->z[i].rho >= rho_min) && (grid->z[i].rho <= rho_max) )
 	{
 		zone *z = &(grid->z[i]);
@@ -568,6 +561,6 @@ void transport::open_file(const char* filebase, const int iw, ofstream& outf){
 	else                number_string =          to_string(iw);
 
 	string filename = string(filebase) + "_" + number_string + ".dat";
-        outf.open(filename.c_str());
+	outf.open(filename.c_str());
 
 }

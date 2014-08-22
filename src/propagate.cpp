@@ -1,34 +1,29 @@
 #pragma warning disable 161
-#include <limits>
 #include <omp.h>
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
-#include <cassert>
 #include "transport.h"
-#include "physical_constants.h"
 #include "species_general.h"
-
-#define NaN std::numeric_limits<double>::quiet_NaN()
-namespace pc = physical_constants;
+#include "global_options.h"
 
 void transport::propagate_particles(const double dt)
 {
 	vector<int> n_active(species_list.size(),0);
 	vector<int> n_escape(species_list.size(),0);
 	double e_esc = NaN;
-    #pragma omp parallel shared(n_active,n_escape,e_esc) firstprivate(dt)
+#pragma omp parallel shared(n_active,n_escape,e_esc) firstprivate(dt)
 	{
 
 		//--- MOVE THE PARTICLES AROUND ---
-        #pragma omp for schedule(guided) reduction(+:e_esc)
+#pragma omp for schedule(guided) reduction(+:e_esc)
 		for(int i=0; i<particles.size(); i++){
 			particle* p = &particles[i];
-            #pragma omp atomic
+#pragma omp atomic
 			n_active[p->s]++;
 			propagate(p,dt);
 			if(p->fate == escaped){
-                #pragma omp atomic
+#pragma omp atomic
 				n_escape[p->s]++;
 				species_list[p->s]->spectrum.count(p->t, p->nu, p->e, p->D);
 				e_esc += p->e;
@@ -36,7 +31,7 @@ void transport::propagate_particles(const double dt)
 		} //implied barrier
 
 		//--- REMOVE THE DEAD PARTICLES ---
-        #pragma omp single
+#pragma omp single
 		{
 			vector<particle>::iterator pIter = particles.begin();
 			while(pIter != particles.end()){
@@ -49,7 +44,7 @@ void transport::propagate_particles(const double dt)
 		}
 
 		// report energy escaped
-        #pragma omp single
+#pragma omp single
 		{
 			if(rank0 && verbose) cout << "# e_esc = " << e_esc << "erg" << endl;
 			if(dt<0) assert(particles.size()==0);
@@ -187,13 +182,13 @@ void transport::propagate(particle* p, const double dt) const
 		// tally in contribution to zone's radiation energy (both *lab* frame)
 		double this_E = p->e*this_d;
 		assert(this_E > 0);
-        #pragma omp atomic
+#pragma omp atomic
 		zone->e_rad += this_E;
 
 		// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
 		// Extra dshift definitely needed here (two total) to convert both p->e and this_d to the comoving frame
 		double this_E_comoving = this_E * dshift * dshift;
-        #pragma omp atomic
+#pragma omp atomic
 		zone->e_abs += this_E_comoving * (opac*abs_frac);
 
 		// store absorbed lepton number (same in both frames, except for the
@@ -201,7 +196,7 @@ void transport::propagate(particle* p, const double dt) const
 		double this_l_comoving = 0;
 		if(species_list[p->s]->lepton_number != 0){
 			this_l_comoving = species_list[p->s]->lepton_number * p->e/(p->nu*pc::h) * this_d*dshift;
-            #pragma omp atomic
+#pragma omp atomic
 			zone->l_abs += this_l_comoving * (opac*abs_frac);
 		}
 
@@ -238,17 +233,17 @@ void transport::propagate(particle* p, const double dt) const
 			assert(p->e > 0);
 			break;
 
-		// ---------------------------------
-		// do if time step end
-		// ---------------------------------
+			// ---------------------------------
+			// do if time step end
+			// ---------------------------------
 		case timeStep:
 			assert(z_ind >= 0);
 			p->fate = stopped;
 			break;
 
-		// ---------------------------------
-		// do if crossing a boundary
-		// ---------------------------------
+			// ---------------------------------
+			// do if crossing a boundary
+			// ---------------------------------
 		case boundary:
 			assert(z_ind==-1 || z_ind==-2);
 
@@ -275,9 +270,9 @@ void transport::propagate(particle* p, const double dt) const
 			}
 			break;
 
-		//-----------------------
-		// nothing special happens at the zone edge
-		//-----------------------
+			//-----------------------
+			// nothing special happens at the zone edge
+			//-----------------------
 		default:
 			assert(event == zoneEdge);
 			assert(z_ind >= 0);

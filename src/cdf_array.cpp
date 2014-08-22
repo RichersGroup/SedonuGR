@@ -1,12 +1,9 @@
 #include <algorithm>
 #include <stdio.h>
-#include <cassert>
 #include <cmath>
-#include <limits>
 #include "cdf_array.h"
 #include "locate_array.h"
-#define NaN std::numeric_limits<double>::quiet_NaN()
-using namespace std;
+#include "global_options.h"
 
 
 // safe constructor
@@ -21,20 +18,20 @@ double cdf_array::get_value(const int i) const
 {
 	assert(i >= 0);
 	assert(i < y.size());
-  if (i==0) return y[0];
-  else return (y[i] - y[i-1]);  
+	if (i==0) return y[0];
+	else return (y[i] - y[i-1]);
 }
 
 //------------------------------------------------------
 // set the actual y value, not the integrated
 // must be called in order
 //------------------------------------------------------
-void cdf_array::set_value(const int i, const double f)   
+void cdf_array::set_value(const int i, const double f)
 {
 	assert(i >= 0);
 	assert(i < y.size());
-  if (i==0) y[0] = f;
-  else y[i] = y[i-1] + f;
+	if (i==0) y[0] = f;
+	else y[i] = y[i-1] + f;
 }
 
 //------------------------------------------------------
@@ -42,13 +39,13 @@ void cdf_array::set_value(const int i, const double f)
 //------------------------------------------------------
 void cdf_array::normalize() 
 {
-  // check for zero array, set to all constant
-  if (y.back() == 0) y.assign(y.size(),1.0);
+	// check for zero array, set to all constant
+	if (y.back() == 0) y.assign(y.size(),1.0);
 
-  // normalize to end = 1.0
-  N = y.back();
-  assert(N > 0);
-  for (int i=0;i<y.size();i++)   y[i] /= N;
+	// normalize to end = 1.0
+	N = y.back();
+	assert(N > 0);
+	for (int i=0;i<y.size();i++)   y[i] /= N;
 }
 
 //---------------------------------------------------------
@@ -63,7 +60,7 @@ int cdf_array::get_index(const double yval) const
 	assert(yval <= 1.0);
 	int i = upper_bound(y.begin(), y.end(), yval) - y.begin();
 	assert(i >= 0);
-	assert(i <= y.size());
+	assert(i < y.size());
 	return i;
 }
 
@@ -204,22 +201,22 @@ double cdf_array::invert_linear(const double rand, const locate_array* xgrid) co
 // Simple printout
 //------------------------------------------------------
 void cdf_array::print() const{
-  for (int i=0;i<y.size();i++) 
-    printf("%5d %10.4e %10.4e\n",i,get_value(i),y[i]);
+	for (int i=0;i<y.size();i++)
+		printf("%5d %10.4e %10.4e\n",i,get_value(i),y[i]);
 }
-  
+
 //------------------------------------------------------
 // Clear the arrays
 //------------------------------------------------------
 void cdf_array::wipe()
 {
-  y.assign(y.size(), 1.0);
+	y.assign(y.size(), 1.0);
 }
-  
+
 //------------------------------------------------------------
 // just returning the size of the array
 //------------------------------------------------------------
 int cdf_array::size() const
 {
-  return y.size();
+	return y.size();
 }

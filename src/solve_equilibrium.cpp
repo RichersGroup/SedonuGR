@@ -3,16 +3,11 @@
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
-#include <cassert>
-#include <limits>
 #include "transport.h"
-#include "physical_constants.h"
 #include "Lua.h"
 #include "grid_general.h"
 #include "species_general.h"
-#define NaN std::numeric_limits<double>::quiet_NaN()
-
-namespace pc = physical_constants;
+#include "global_options.h"
 
 double temp_eq_function(int z_ind, double T,  transport* sim);
 double   Ye_eq_function(int z_ind, double Ye, transport* sim);
@@ -34,7 +29,7 @@ void transport::solve_eq_zone_values()
 
 	// solve radiative equilibrium temperature and Ye (but only in the zones I'm responsible for)
 	// don't solve if out of density bounds
-    #pragma omp parallel for schedule(guided)
+#pragma omp parallel for schedule(guided)
 	for (int z_ind=start; z_ind<end; z_ind++) if( (grid->z[z_ind].rho >= rho_min) && (grid->z[z_ind].rho <= rho_max) )
 	{
 		double T_last_iter=NaN, Ye_last_iter=NaN;
@@ -77,9 +72,9 @@ void transport::solve_eq_zone_values()
 		if(iter == brent_itmax){
 			cout << "# WARNING: outer Brent solver hit maximum iterations. (zone:" << z_ind;
 			cout << " processor:" << MPI_myID;
-            #ifdef _OPENMP_
+#ifdef _OPENMP_
 			cout << " thread:" << omp_get_thread_num();
-            #endif
+#endif
 			cout << ")" << endl;
 		}
 

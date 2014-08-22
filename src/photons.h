@@ -3,24 +3,25 @@
 
 #include "species_general.h"
 #include "Lua.h"
+#include "global_options.h"
 
 class photons: public species_general
 {
 
 protected:
 
-  // photon-specific functions
-  double klein_nishina(const double) const;
-  void compton_scatter();
+	// photon-specific functions
+	double klein_nishina(const double) const;
+	void compton_scatter();
 
 public:
 
-  virtual ~photons() {}
+	virtual ~photons() {}
 
-  // required functions
-  void myInit(Lua* lua);
-  void set_eas(int zone_index);
-  double blackbody(const double T, const double chempot, const double nu) const;
+	// required functions
+	void myInit(Lua* lua);
+	void set_eas(int zone_index);
+	double blackbody(const double T, const double chempot, const double nu) const;
 };
 
 #endif

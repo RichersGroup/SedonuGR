@@ -1,29 +1,23 @@
 #include "species_general.h"
 #include <gsl/gsl_rng.h>
 #include <math.h>
-#include <cassert>
-#include <limits>
 #include "transport.h"
-#include "physical_constants.h"
 #include "Lua.h"
 #include <list>
-
-#define NaN std::numeric_limits<double>::quiet_NaN()
-#define MAX std::numeric_limits<int>::max()
-namespace pc = physical_constants;
+#include "global_options.h"
 
 species_general::species_general(){
-weight = NaN;
-grey_opac = NaN;
-grey_abs_frac = NaN;
-lepton_number = MAX;
-T_min = NaN;
-T_max = NaN;
-Ye_min = NaN;
-Ye_max = NaN;
-rho_min = NaN;
-rho_max = NaN;
-sim = NULL;
+	weight = NaN;
+	grey_opac = NaN;
+	grey_abs_frac = NaN;
+	lepton_number = MAX;
+	T_min = NaN;
+	T_max = NaN;
+	Ye_min = NaN;
+	Ye_max = NaN;
+	rho_min = NaN;
+	rho_max = NaN;
+	sim = NULL;
 }
 
 void species_general::init(Lua* lua, transport* simulation)
@@ -41,7 +35,7 @@ void species_general::init(Lua* lua, transport* simulation)
 
 	// allocate space for each eas spectrum
 	if(sim->n_emit_core > 0) core_emis.resize(nu_grid.size());
-    #pragma omp parallel for
+#pragma omp parallel for
 	for (int i=0; i<abs_opac.size();  i++){
 		abs_opac[i].resize(nu_grid.size());
 		scat_opac[i].resize(nu_grid.size());
@@ -54,12 +48,12 @@ void species_general::init(Lua* lua, transport* simulation)
 		double T_core = lua->scalar<double>("T_core") / pc::k_MeV;
 		double r_core = lua->scalar<double>("r_core");
 		double chempot = lua->scalar<double>("core_nue_chem_pot") * (double)lepton_number * pc::MeV_to_ergs;
-        #pragma omp parallel for ordered
+#pragma omp parallel for ordered
 		for (int j=0;j<nu_grid.size();j++)
 		{
 			double nu  = nu_grid.center(j);
 			double dnu = nu_grid.delta(j);
-            #pragma omp ordered
+#pragma omp ordered
 			core_emis.set_value(j, blackbody(T_core,chempot,nu)*dnu);
 		}
 		core_emis.normalize();

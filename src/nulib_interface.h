@@ -3,15 +3,16 @@
 #include <vector>
 #include "cdf_array.h"
 #include "locate_array.h"
+#include "global_options.h"
 
 // returns everything in standard CGS units (i.e. ergs, s, cm, K, Hz)
 
 using namespace std;
 
 void nulib_init(string filename);
-void nulib_get_eas_arrays(real rho, real temp, real ye, int nulibID,
-			      cdf_array& nut_emiss, vector<real>& nut_absopac, vector<real>& nut_scatopac);
-void nulib_get_pure_emis(real rho, real temp, real ye, int nulibID, vector<double>& pure_emis);
+void nulib_get_eas_arrays(double rho, double temp, double ye, int nulibID,
+		cdf_array& nut_emiss, vector<double>& nut_absopac, vector<double>& nut_scatopac);
+void nulib_get_pure_emis(double rho, double temp, double ye, int nulibID, vector<double>& pure_emis);
 void nulib_get_nu_grid(locate_array& nut_nu_grid);
 int nulib_get_nspecies();
 
