@@ -18,7 +18,6 @@
 
 #ifndef _GRID_GENERAL_H
 #define _GRID_GENERAL_H 1
-#include <string>
 #include <iostream>
 #include "zone.h"
 #include "Lua.h"

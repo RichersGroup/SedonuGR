@@ -1,7 +1,7 @@
 TARGET = ../gomc
 
-OBJECTS = main.o Lua.o grid_general.o grid_1D_sphere.o grid_3D_cart.o emission.o scatter.o opacity.o locate_array.o cdf_array.o spectrum_array.o nulib_interface.o species_general.o photons.o transport.o neutrinos.o thread_RNG.o solve_equilibrium.o propagate.o relativity.o zone.o particle.o grid_0D_isotropic.o
-TEST_OBJECTS = Lua.o grid_general.o grid_1D_sphere.o grid_3D_cart.o transport.o emission.o scatter.o opacity.o locate_array.o cdf_array.o spectrum_array.o nulib_interface.o species_general.o photons.o neutrinos.o thread_RNG.o solve_equilibrium.o propagate.o relativity.o zone.o particle.o grid_0D_isotropic.o
+OBJECTS = main.o Lua.o grid_general.o grid_0D_isotropic.o grid_1D_sphere.o grid_2D_sphere.o grid_3D_cart.o emission.o scatter.o opacity.o locate_array.o cdf_array.o spectrum_array.o nulib_interface.o species_general.o photons.o transport.o neutrinos.o thread_RNG.o solve_equilibrium.o propagate.o relativity.o zone.o particle.o tools.o
+TEST_OBJECTS = Lua.o grid_general.o grid_0D_isotropic.o grid_1D_sphere.o grid_2D_sphere.o grid_3D_cart.o transport.o emission.o scatter.o opacity.o locate_array.o cdf_array.o spectrum_array.o nulib_interface.o species_general.o photons.o neutrinos.o thread_RNG.o solve_equilibrium.o propagate.o relativity.o zone.o particle.o tools.o
 
 .PHONY: clean realclean
 
@@ -9,7 +9,7 @@ $(TARGET): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS) $(GSL_LIBS) $(LUA_LDFLAGS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS)
 
 $(OBJECTS): %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<  $(GSL_INCL) $(LUA_INCL) $(OTHER_INCL)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<  $(GSL_INCL) $(LUA_INCL) $(OTHER_INCL) $(HDF5INCS)
 #	$(CXX) $(CXXFLAGS) -MM $*.cpp > $*.d  $(GSL_INCL) $(LUA_INCL)
 
 # pull in dependency info for *existing* .o files so objects get rebuilt if header changes

@@ -1,7 +1,6 @@
 #include <vector>
 #include <iostream>
 #include <cstdlib>
-#include <string>
 #include <cmath>
 #include "zone.h"
 #include "nulib_interface.h"

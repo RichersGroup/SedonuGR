@@ -34,17 +34,18 @@ public:
 	void custom_model(Lua* lua);
 
 	// required functions
-	int  zone_index               (const vector<double>& x                                     ) const;
-	double zone_speed2              (const int z_ind                                           ) const;
-	double zone_volume              (const int z_ind                                           ) const;
-	double zone_min_length          (const int z_ind                                           ) const;
-	void zone_coordinates         (const int z_ind, vector<double>& r                          ) const;
-	void zone_directional_indices (const int z_ind, vector<int>& dir_ind                     ) const;
-	void cartesian_sample_in_zone (const int z_ind, const vector<double>& rand, vector<double>& x) const;
-	void cartesian_velocity_vector(const vector<double>& x, vector<double>& v                    ) const;
-	void write_rays               (const int iw                                              ) const;
-	void reflect_outer            (particle *p                                               ) const;
-	double dist_to_boundary         (const particle *p                                         ) const;
+	int    zone_index               (const vector<double>& x                                       ) const;
+	int    zone_index               (const int i, const int j, const int k                         ) const;
+	double zone_speed2              (const int z_ind                                               ) const;
+	double zone_volume              (const int z_ind                                               ) const;
+	double zone_min_length          (const int z_ind                                               ) const;
+	void   zone_coordinates         (const int z_ind, vector<double>& r                            ) const;
+	void   zone_directional_indices (const int z_ind, vector<int>& dir_ind                         ) const;
+	void   cartesian_sample_in_zone (const int z_ind, const vector<double>& rand, vector<double>& x) const;
+	void   cartesian_velocity_vector(const vector<double>& x, vector<double>& v                    ) const;
+	void   write_rays               (const int iw                                                  ) const;
+	void   reflect_outer            (particle *p                                                   ) const;
+	double dist_to_boundary         (const particle *p                                             ) const;
 };
 
 

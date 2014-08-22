@@ -123,7 +123,7 @@ void grid_3D_cart::read_model_file(Lua* lua)
 			for (int i=0;i<nx;i++)
 			{
 				// set current index
-				ind = i*ny*nz + j*nz + k;
+				ind = zone_index(i,j,k);
 
 				// create reverse map to x,y,z indices
 				rx=false; ry=false; rz=false;
@@ -159,7 +159,7 @@ void grid_3D_cart::read_model_file(Lua* lua)
 			for (int i=0;i<nx;i++)
 			{
 				// set current index
-				ind = i*ny*nz + j*nz + k;
+				ind = zone_index(i,j,k);
 
 				// are we in a reflection zone?
 				rx=false; ry=false; rz=false;
@@ -173,7 +173,7 @@ void grid_3D_cart::read_model_file(Lua* lua)
 				if(rz) origin_k = (nz-1)-k; else origin_k = k;
 				if(rx || ry || rz)
 				{
-					origin_ind = origin_i*ny*nz + origin_j*nz + origin_k;
+					origin_ind = zone_index(origin_i,origin_j,origin_k);
 					z[ind].rho   = z[origin_ind].rho;
 					z[ind].T_gas = z[origin_ind].T_gas;
 					z[ind].Ye    = z[origin_ind].Ye;
@@ -225,10 +225,26 @@ int grid_3D_cart::zone_index(const vector<double>& x) const
 	if ((j < 0)||(j > ny-1)) return -2;
 	if ((k < 0)||(k > nz-1)) return -2;
 
-	int ind =  i*ny*nz + j*nz + k;
+	int ind = zone_index(i,j,k);
 	assert(ind > 0);
 	assert(ind < (int)z.size());
 	return ind;
+}
+
+
+//-------------------------------------------------
+// get the zone index from the directional indices
+//-------------------------------------------------
+int grid_3D_cart::zone_index(const int i, const int j, const int k) const{
+	assert(i >= 0);
+	assert(j >= 0);
+	assert(k >= 0);
+	assert(i < nx);
+	assert(j < ny);
+	assert(k < nz);
+	const int z_ind = i*ny*nz + j*nz + k;
+	assert(z_ind < (int)z.size());
+	return z_ind;
 }
 
 //-------------------------------------------
@@ -344,7 +360,7 @@ void grid_3D_cart::write_rays(const int iw) const
 	j = ny/2;
 	k = nz/2;
 	for (i=0;i<nx;i++){
-		ind = i*ny*nz + j*nz + k;
+		ind = zone_index(i,j,k);
 		zone_coordinates(ind,r);
 		z[ind].write_line(r,outf);
 	}
@@ -356,7 +372,7 @@ void grid_3D_cart::write_rays(const int iw) const
 	i = nx/2;
 	k = nz/2;
 	for (j=0; j<ny; j++){
-		ind = i*ny*nz + j*nz + k;
+		ind = zone_index(i,j,k);
 		zone_coordinates(ind,r);
 		z[ind].write_line(r,outf);
 	}
@@ -369,7 +385,7 @@ void grid_3D_cart::write_rays(const int iw) const
 	j = ny/2;
 	for (k=0; k<nz; k++)
 	{
-		ind = i*ny*nz + j*nz + k;
+		ind = zone_index(i,j,k);
 		zone_coordinates(ind,r);
 		z[ind].write_line(r,outf);
 	}

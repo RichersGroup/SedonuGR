@@ -8,6 +8,7 @@
 #include <limits>
 #include <cassert>
 #include <mpi.h>
+#include <string>
 using real = float; // or float
 const MPI_Datatype MPI_real = ( sizeof(real)==4 ? MPI_FLOAT : MPI_DOUBLE );
 #define NaN std::numeric_limits<real>::quiet_NaN()
@@ -17,6 +18,8 @@ using namespace std;
 
 #include "physical_constants.h"
 namespace pc = physical_constants;
+
+string trim(const string s);
 
 #endif
 

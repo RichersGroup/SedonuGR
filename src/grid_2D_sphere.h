@@ -1,9 +1,10 @@
-#ifndef _GRID_1D_SPHERE_H
-#define _GRID_1D_SPHERE_H 1
+#ifndef _GRID_2D_SPHERE_H
+#define _GRID_2D_SPHERE_H 1
 
 #include "grid_general.h"
 #include "locate_array.h"
 #include <vector>
+#include "global_options.h"
 
 //*******************************************
 // 1-Dimensional Spherical geometry
@@ -13,34 +14,36 @@ class grid_2D_sphere: public grid_general
 
 private:
 
-  static int dimensionality = 2;
+	static const int dimensionality = 2;
 
-  // store location of the outer edges of the zone.
-  // order of zone array: r is increased fastest
-  locate_array r_out;
-  locate_array theta_out;
+	// store location of the outer edges of the zone.
+	// order of zone array: r is increased fastest
+	locate_array r_out;
+	locate_array theta_out;
 
-  // store volumes explicitly
-  std::vector<double> vol;
+	// store volumes explicitly
+	std::vector<double> vol;
 
 public:
 
-  virtual ~grid_1D_sphere() {}
+	virtual ~grid_2D_sphere() {}
 
-  void read_model_file(Lua* lua);
-  void custom_model(Lua* lua);
+	void read_model_file(Lua* lua);
+	void custom_model(Lua* lua);
 
-  // required functions
-  double zone_speed2(const int z_ind) const;
-  int    get_zone(double *);
-  double zone_volume(int);
-  double zone_min_length(int);
-  void   sample_in_zone(int, std::vector<double>, double[3]);
-  void   velocity_vector(int i, double[3], double[3]);
-  void   write_ray(int iw);
-  void   coordinates(int i,double r[3]);
-  void reflect_outer(particle *) const;
-  double dist_to_boundary(const particle *) const;
+	// required functions
+	int    zone_index             (const vector<double>& x                                       ) const;
+	int    zone_index             (const int i, const int j                                      ) const;
+	double zone_speed2            (const int z_ind                                               ) const;
+	double zone_volume            (const int z_ind                                               ) const;
+	double zone_min_length        (const int z_ind                                               ) const;
+	void zone_coordinates         (const int z_ind, vector<double>& r                            ) const;
+	void zone_directional_indices (const int z_ind, vector<int>& dir_ind                         ) const;
+	void cartesian_sample_in_zone (const int z_ind, const vector<double>& rand, vector<double>& x) const;
+	void cartesian_velocity_vector(const vector<double>& x, vector<double>& v                    ) const;
+	void write_rays               (const int iw                                                  ) const;
+	void reflect_outer            (particle *p                                                   ) const;
+	double dist_to_boundary       (const particle *p                                             ) const;
 };
 
 
