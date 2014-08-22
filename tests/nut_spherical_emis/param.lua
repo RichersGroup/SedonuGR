@@ -1,5 +1,6 @@
 -- what are we simulating?
 
+verbose      = 1
 do_photons   = 0                 -- simulate photons?
 do_neutrinos = 1                 -- simulate neutrinos?
 radiative_eq = 0

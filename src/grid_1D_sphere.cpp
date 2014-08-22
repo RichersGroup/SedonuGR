@@ -22,7 +22,7 @@ void grid_1D_sphere::read_model_file(Lua* lua)
   int my_rank;
   MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
   const int rank0 = (my_rank == 0);
-  if(rank0) cout << "# Reading 1D model file" << endl;
+  if(rank0) cout << "#   Reading 1D model file" << endl;
 
   // open up the model file, complaining if it fails to open
   string model_file = lua->scalar<string>("model_file");

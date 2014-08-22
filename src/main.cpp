@@ -46,12 +46,13 @@ int main(int argc, char **argv)
   sim.init(&lua);
 
   // write initial grid data
+  int verbose             = lua.scalar<int>("verbose");
   int write_zones_every   = lua.scalar<double>("write_zones_every");
   int write_rays_every    = lua.scalar<double>("write_rays_every");
   int write_spectra_every = lua.scalar<double>("write_spectra_every");
-  if(rank0) cout << "# writing zone file 0" << endl;
+  if(rank0 && verbose) cout << "# writing zone file 0" << endl;
   sim.grid->write_zones(0);
-  if(rank0) cout << "# writing ray file 0" << endl;
+  if(rank0 && verbose) cout << "# writing ray file 0" << endl;
   sim.grid->write_rays(0);
 
   // read in time stepping parameters
@@ -76,19 +77,19 @@ int main(int argc, char **argv)
 
     	// write zone state when appropriate
     	if(it%write_zones_every==0 && write_zones_every>0){
-    		cout << "# writing zone file " << it << endl;
+    		if(verbose) cout << "# writing zone file " << it << endl;
     		sim.grid->write_zones(it);
     	}
 
     	// write ray data when appropriate
     	if(it%write_rays_every==0 && write_rays_every>0){
-    		cout << "# writing ray file " << it << endl;
+    		if(verbose) cout << "# writing ray file " << it << endl;
     		sim.grid->write_rays(it);
     	}
 
     	// print out spectrum in iterative calc
     	if(it%write_spectra_every==0 && write_spectra_every>0){
-    		cout << "# writing spectrum file " << it << endl;
+    		if(verbose) cout << "# writing spectrum file " << it << endl;
     		sim.write_spectra(it);
     	}
     }

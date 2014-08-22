@@ -103,6 +103,8 @@ public:
 
   transport();
 
+  int verbose;
+
   // arrays of species
   vector<species_general*> species_list;
 

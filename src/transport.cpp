@@ -28,6 +28,7 @@ namespace pc = physical_constants;
 
 // constructor
 transport::transport(){
+	verbose = -MAX;
 MPI_nprocs = -MAX;
 MPI_myID = -MAX;
 MPI_real = MPI_DATATYPE_NULL;
@@ -85,6 +86,7 @@ void transport::init(Lua* lua)
 	reflect_outer = lua->scalar<int>("reflect_outer");
 
 	// read simulation parameters
+	verbose      = lua->scalar<int>("verbose");
 	do_photons   = lua->scalar<int>("do_photons");
 	do_neutrinos = lua->scalar<int>("do_neutrinos");
 	radiative_eq = lua->scalar<int>("radiative_eq");
@@ -132,8 +134,8 @@ void transport::init(Lua* lua)
 		KE        += 0.5 * my_mass * grid->zone_speed2(i);
 	}
 	if (rank0){
-		cout << "# mass = " << mass << " g" <<endl;
-		cout << "# KE = " << KE << " erg" << endl;
+		cout << "#   mass = " << mass << " g" <<endl;
+		cout << "#   KE = " << KE << " erg" << endl;
 	}
 
 	//===============//
@@ -189,7 +191,7 @@ void transport::init(Lua* lua)
 			num_nut_species = nulib_get_nspecies();
 		}
 		else{
-			if(rank0) cout << "# Using grey opacity for electron anti/neutrinos (0 chemical potential)" << endl;
+			if(rank0) cout << "#   Using grey opacity for electron anti/neutrinos (0 chemical potential)" << endl;
 			num_nut_species = 2;
 		}
 
@@ -360,7 +362,7 @@ void transport::normalize_radiative_quantities(const double dt){
 		z->l_emit   /= vol*dt;       // num      --> num/ccm/s
 	}
 
-	if(rank0){
+	if(rank0 && verbose){
 		if(do_visc) cout << "# Viscous heating: " << net_visc_heating << " erg/s" << endl;
 		cout << "# Net luminosity from (zones+decay+core+re-emission): " << L_net << " erg/s" << endl;
 	}
