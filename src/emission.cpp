@@ -1,4 +1,3 @@
-#pragma warning disable 161
 #include <omp.h>
 #include <math.h>
 #include <gsl/gsl_sf_fermi_dirac.h>
@@ -13,7 +12,6 @@
 void transport::emit_particles(const double dt)
 {
 	assert(dt > 0);
-	int old_size = particles.size();
 
 	// complain if we're out of room for particles
 	assert(n_emit_core >= 0);
@@ -64,7 +62,7 @@ void transport::emit_zones(const double dt,
 	assert(dt > 0);
 	assert(n_emit >= 0);
 
-	int gridsize = grid->z.size();
+	unsigned gridsize = grid->z.size();
 	double tmp_net_lum = NaN;
 	double Ep = NaN;
 
@@ -73,7 +71,7 @@ void transport::emit_zones(const double dt,
 	{
 		// determine the net luminosity of each emission type over the whole grid
 #pragma omp for reduction(+:tmp_net_lum)
-		for(int i=0; i<gridsize; i++){
+		for(unsigned i=0; i<gridsize; i++){
 			double zone_luminosity = (this->*zone_lum)(i);
 			assert(zone_luminosity >= 0);
 			tmp_net_lum += zone_luminosity;
@@ -88,17 +86,17 @@ void transport::emit_zones(const double dt,
 
 		// actually emit the particles in each zone
 #pragma omp for schedule(guided)
-		for (int i=0; i<gridsize; i++)
+		for (unsigned i=0; i<gridsize; i++)
 		{
 			// this zone's luminosity and number of emitted particles.
 			// randomly decide whether last particle gets added based on the remainder.
 			double almost_n_emit  = (double)n_emit * (this->*zone_lum)(i)/tmp_net_lum;
-			int this_n_emit = (int)almost_n_emit + (int)( rangen.uniform() < fmod(almost_n_emit,1.0) );
+			unsigned this_n_emit = (int)almost_n_emit + (int)( rangen.uniform() < fmod(almost_n_emit,1.0) );
 			assert(this_n_emit >= 0);
 
 			// create the particles
 			double t;
-			for (int k=0; k<this_n_emit; k++){
+			for (unsigned k=0; k<this_n_emit; k++){
 				t = t_now + dt*rangen.uniform();
 				(this->*create_particle)(i,Ep,t);
 			}
@@ -115,7 +113,7 @@ void transport::emit_zones(const double dt,
 // return the cell's luminosity from thermal emission (erg/s)
 double transport::zone_therm_lum(const int zone_index) const{
 	double H=0;
-	for(int i=0; i<species_list.size(); i++){
+	for(unsigned i=0; i<species_list.size(); i++){
 		double species_lum = species_list[i]->integrate_zone_emis(zone_index) * 4*pc::pi * grid->zone_volume(zone_index);
 		assert(species_lum >= 0);
 		H += species_lum;
@@ -234,7 +232,7 @@ void transport::create_surface_particle(const double Ep, const double t)
 	// sample the species and frequency
 	int s = sample_core_species();
 	assert(s >= 0);
-	assert(s < species_list.size());
+	assert(s < (int)species_list.size());
 	p.s = s;
 	p.nu = species_list[s]->sample_core_nu();
 

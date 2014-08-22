@@ -188,7 +188,7 @@ void nulib_get_eas_arrays(double rho,                     // g/cm^3
 		cout << "ERROR: nulibtable has different number of eas variables than 3" << endl;
 		exit(EXIT_FAILURE);
 	}
-	if(ngroups != nut_absopac.size()){
+	if(ngroups != (int)nut_absopac.size()){
 		cout << "ERROR: nulibtable has different number of energies than the eas arrays." << endl;
 		exit(EXIT_FAILURE);
 	}
@@ -242,7 +242,6 @@ void nulib_get_pure_emis(double rho,                     // g/cm^3
 	vector<double> widths;
 	widths.assign(nulibtable_ewidths,
 			nulibtable_ewidths + nulibtable_number_groups);
-	double poison = -1e100;
 
 	int nvars    = nulibtable_number_easvariables;
 	int ngroups  = nulibtable_number_groups;
@@ -259,7 +258,7 @@ void nulib_get_pure_emis(double rho,                     // g/cm^3
 		cout << "ERROR: nulibtable has different number of eas variables than 3" << endl;
 		exit(EXIT_FAILURE);
 	}
-	if(ngroups != nut_emiss.size()){
+	if(ngroups != (int)nut_emiss.size()){
 		cout << "ERROR: nulibtable has different number of energies than the eas arrays." << endl;
 		exit(EXIT_FAILURE);
 	}
@@ -291,7 +290,7 @@ void nulib_get_nu_grid(locate_array& nu_grid){ // Hz
 			nulibtable_energies + nulibtable_number_groups);
 
 	// convert from MeV to frequency using the Planck constant
-	for(int i=0; i<nu_grid.size(); i++) nu_grid.x[i] /= pc::h_MeV;
+	for(unsigned i=0; i<nu_grid.size(); i++) nu_grid.x[i] /= pc::h_MeV;
 	nu_grid.do_log_interpolate = 1;
 	nu_grid.min = nulibtable_ebottom[0];
 }
@@ -303,12 +302,12 @@ void nulib_get_nu_grid(locate_array& nu_grid){ // Hz
 void nulib_get_rho_array(vector<double>& array){ // g/cm^3
 	array.assign(nulibtable_logrho,
 			nulibtable_logrho  + nulibtable_nrho);
-	for(int i=0; i<array.size(); i++) array[i] = pow(10.0, array[i]);
+	for(unsigned i=0; i<array.size(); i++) array[i] = pow(10.0, array[i]);
 }
 void nulib_get_T_array(vector<double>& array){ // K
 	array.assign(nulibtable_logtemp,
 			nulibtable_logtemp + nulibtable_ntemp);
-	for(int i=0; i<array.size(); i++) array[i] = pow(10.0, array[i]) / pc::k_MeV; // convert from MeV to K
+	for(unsigned i=0; i<array.size(); i++) array[i] = pow(10.0, array[i]) / pc::k_MeV; // convert from MeV to K
 }
 void nulib_get_Ye_array(vector<double>& array){
 	array.assign(nulibtable_ye,

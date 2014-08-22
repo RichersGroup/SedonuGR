@@ -42,7 +42,7 @@ public:
 	int    get_index(const double z) const;    // sample index from the CDF, when passed a random #
 	void   print() const;
 	void   wipe();
-	int    size() const;
+	unsigned size() const;
 
 };
 

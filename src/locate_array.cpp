@@ -1,4 +1,3 @@
-#pragma warning disable 161
 #include <vector>
 #include <algorithm>
 #include <iostream>
@@ -39,7 +38,7 @@ void locate_array::init(const double start, const double stop, const double del)
 
 		min = start;
 #pragma omp parallel for
-		for (int i=0; i<n-1; i++){
+		for(int i=0; i<n-1; i++){
 			x[i] = start + (double)(i+1)*del;
 			if(i>0) assert(x[i] > x[i-1]);
 		}
@@ -70,7 +69,7 @@ void locate_array::init(const double start, const double stop, const int n)
 
 		min = start;
 #pragma omp parallel for
-		for (int i=0; i<n-1; i++){
+		for(int i=0; i<n-1; i++){
 			x[i] = start + (i+1)*del;
 			if(i>0) assert(x[i] > x[i-1]);
 		}
@@ -100,7 +99,7 @@ int locate_array::locate(const double xval) const
 	// values mark bin tops, so this is what we want
 	int ind = upper_bound(x.begin(), x.end(), xval) - x.begin();
 	assert(ind >= 0);
-	assert(ind <= x.size());
+	assert(ind <= (int)x.size());
 	return ind;
 } 
 
@@ -113,8 +112,8 @@ double locate_array::interpolate_between(const double xval, const int i1, const 
 	assert(y.size() == x.size());
 	assert(i1 >= 0);
 	assert(i2 >= 0);
-	assert(i1 < y.size());
-	assert(i2 < y.size());
+	assert(i1 < (int)y.size());
+	assert(i2 < (int)y.size());
 	assert(i1 < i2);
 	double slope = (y[i2]-y[i1]) / (x[i2]-x[i1]);
 	double yval = y[i1] + slope*(xval - x[i1]);
@@ -130,8 +129,8 @@ double locate_array::log_interpolate_between(const double xval, const int i1, co
 	assert(y.size() == x.size());
 	assert(i1 >= 0);
 	assert(i2 >= 0);
-	assert(i1 < y.size());
-	assert(i2 < y.size());
+	assert(i1 < (int)y.size());
+	assert(i2 < (int)y.size());
 	assert(i1 < i2);
 	assert(y[i2] >= 0);
 	assert(y[i1] >= 0);
@@ -156,7 +155,7 @@ void locate_array::print() const
 {
 	printf("# Print Locate Array; n_elements = %lu\n",x.size());
 	printf("min %12.4e\n",min);
-	for (int i=0;i<x.size();i++)
+	for(unsigned i=0;i<x.size();i++)
 		printf("%4d %12.4e\n",i,x[i]);
 }
 
@@ -167,7 +166,7 @@ void locate_array::print() const
 // assumes 1-1 correspondence between y and locate_array
 //---------------------------------------------------------
 double locate_array::value_at(const double xval, const vector<double>& y) const{
-	int ind = locate(xval);
+	unsigned ind = locate(xval);
 	assert(ind >= 0);
 	assert(ind <= x.size());
 

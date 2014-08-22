@@ -50,25 +50,25 @@ int main(int argc, char* argv[]){
 	nulib_get_nu_grid(nu_grid);
 	grid_file << "Energy Grid (bin tops) (MeV)" << endl;
 	grid_file << "min:" << nu_grid.min << endl;
-	for(int i=0; i<nu_grid.size(); i++) grid_file << nu_grid.x[i]*pc::h_MeV << endl;
+	for(unsigned i=0; i<nu_grid.size(); i++) grid_file << nu_grid.x[i]*pc::h_MeV << endl;
 	grid_file << endl;
 
 	vector<double> ye_grid;
 	nulib_get_Ye_array(ye_grid);
 	grid_file << "Ye grid" << endl;
-	for(int i=0; i<ye_grid.size(); i++) grid_file << ye_grid[i] << endl;
+	for(unsigned i=0; i<ye_grid.size(); i++) grid_file << ye_grid[i] << endl;
 	grid_file << endl;
 
 	vector<double> T_grid; // K
 	nulib_get_T_array(T_grid);
 	grid_file << "T grid (MeV)" << endl;
-	for(int i=0; i<T_grid.size(); i++) grid_file << T_grid[i]*pc::k_MeV << endl;
+	for(unsigned i=0; i<T_grid.size(); i++) grid_file << T_grid[i]*pc::k_MeV << endl;
 	grid_file << endl;
 
 	vector<double> rho_grid; // g/cm^3
 	nulib_get_rho_array(rho_grid);
 	grid_file << "rho grid (g/cm^3)" << endl;
-	for(int i=0; i<rho_grid.size(); i++) grid_file << rho_grid[i] << endl;
+	for(unsigned i=0; i<rho_grid.size(); i++) grid_file << rho_grid[i] << endl;
 	grid_file << endl;
 
 	grid_file.close();
@@ -104,7 +104,7 @@ int main(int argc, char* argv[]){
 	if(nulibID>1) mu = 0;
 	nulib_get_eas_arrays(rho, T, ye, nulibID, emis, absopac, scatopac);
 	e = emis.get(nu_grid.size()-1);                               // erg/s/cm^3/ster
-	for(int j=0; j<nu_grid.size(); j++){
+	for(unsigned j=0; j<nu_grid.size(); j++){
 		a = nu_grid.value_at(nu_grid.center(j), absopac);
 		double tmp = a * nu_grid.delta(j)*fermi_blackbody(T,mu,nu_grid.center(j));  // erg/s/cm^3/ster
 		double tmp_pdm = a * nu_grid.delta(j)*fermi_blackbody(T,mu_pdm,nu_grid.center(j));  // erg/s/cm^3/ster
@@ -178,10 +178,10 @@ int main(int argc, char* argv[]){
 	eas_E_rho << "# T(MeV)="<<T*pc::k_MeV << " ye="<<ye << " rho_min(g/cm^3)="<<nulib_get_rhomin() << " rho_max(g/cm^3)="<<nulib_get_rhomax() << " Nrho=" << rho_grid.size() << endl;
 	eas_E_rho << setw(25) << "# rho(g/cm^3)" << setw(25) << "E(MeV)" << setw(25) << "emis(erg/cm^3/s/ster/Hz)" << setw(25) << "absopac(cm^2/g)" << setw(25) << "scatopac(cm^2/g)" << endl;
 
-	for(int i=0; i<rho_grid.size(); i++){
+	for(unsigned i=0; i<rho_grid.size(); i++){
 		nulib_get_eas_arrays(rho_grid[i], T, ye, nulibID, emis, absopac, scatopac);
 		nulib_get_pure_emis (rho_grid[i], T, ye, nulibID, pure_emis);
-		for(int j=0; j<nu_grid.size(); j++){
+		for(unsigned j=0; j<nu_grid.size(); j++){
 			e = pure_emis[j];
 			a = nu_grid.value_at(nu_grid[j], absopac);
 			s = nu_grid.value_at(nu_grid[j], scatopac);
@@ -200,10 +200,10 @@ int main(int argc, char* argv[]){
 	eas_E_T << "# rho(g/cm^3)="<<rho << " ye="<<ye << " T_min(MeV)="<<nulib_get_Tmin()*pc::k_MeV << " T_max(MeV)="<<nulib_get_Tmax()*pc::k_MeV << " NT=" << T_grid.size() << endl;
 	eas_E_T << setw(25) << "# T(MeV)" << setw(25) << "E(MeV)" << setw(25) << "emis(erg/cm^3/s/ster/Hz)" << setw(25) << "absopac(cm^2/g)" << setw(25) << "scatopac(cm^2/g)" << endl;
 
-	for(int i=0; i<T_grid.size(); i++){
+	for(unsigned i=0; i<T_grid.size(); i++){
 		nulib_get_eas_arrays(rho, T_grid[i], ye, nulibID, emis, absopac, scatopac);
 		nulib_get_pure_emis (rho_grid[i], T, ye, nulibID, pure_emis);
-		for(int j=0; j<nu_grid.size(); j++){
+		for(unsigned j=0; j<nu_grid.size(); j++){
 			e = pure_emis[j];
 			a = nu_grid.value_at(nu_grid[j], absopac);
 			s = nu_grid.value_at(nu_grid[j], scatopac);
@@ -222,10 +222,10 @@ int main(int argc, char* argv[]){
 	eas_E_ye << "# T(MeV)="<<T*pc::k_MeV << " rho(g/cm^3)="<<rho << " ye_min="<<nulib_get_Yemin() << " ye_max="<<nulib_get_Yemax() << " Nye=" << ye_grid.size() << endl;
 	eas_E_ye << setw(25) << "# ye" << setw(25) << "E(MeV)" << setw(25) << "emis(erg/cm^3/s/ster/Hz)" << setw(25) << "absopac(cm^2/g)" << setw(25) << "scatopac(cm^2/g)" << endl;
 
-	for(int i=0; i<ye_grid.size(); i++){
+	for(unsigned i=0; i<ye_grid.size(); i++){
 		nulib_get_eas_arrays(rho, T, ye_grid[i], nulibID, emis, absopac, scatopac);
 		nulib_get_pure_emis (rho_grid[i], T, ye, nulibID, pure_emis);
-		for(int j=0; j<nu_grid.size(); j++){
+		for(unsigned j=0; j<nu_grid.size(); j++){
 			e = pure_emis[j];
 			a = nu_grid.value_at(nu_grid[j], absopac);
 			s = nu_grid.value_at(nu_grid[j], scatopac);

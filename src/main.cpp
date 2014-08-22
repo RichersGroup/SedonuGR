@@ -55,7 +55,6 @@ int main(int argc, char **argv)
 	sim.grid->write_rays(0);
 
 	// read in time stepping parameters
-	int steady_state = lua.scalar<int>("steady_state");
 	int max_n_steps  = lua.scalar<int>("max_n_steps");
 	double dt        = lua.scalar<double>("dt");
 	lua.close();

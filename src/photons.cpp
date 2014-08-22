@@ -1,4 +1,3 @@
-#pragma warning disable 161
 #include <limits>
 #include <vector>
 #include <cassert>
@@ -54,7 +53,7 @@ void photons::set_eas(int zone_index)
 	assert(grey_opac >= 0);
 
 	// leave serial. Parrallelized threads call this function.
-	for (int j=0;j<nu_grid.size();j++)
+	for(unsigned j=0;j<nu_grid.size();j++)
 	{
 		double nu  = nu_grid.center(j);        // (Hz)
 		double dnu = nu_grid.delta(j);         // (Hz)

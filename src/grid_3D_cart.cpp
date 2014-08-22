@@ -389,8 +389,7 @@ void grid_3D_cart::reflect_outer(particle *p) const{
 	}
 	if(p->x[1] < y0){
 		assert(p->D[1]<0);
-		p->D[1] = -p->D[1];					real poison = -1e100;
-
+		p->D[1] = -p->D[1];
 		p->x[2] = y0 + tiny*dy;
 	}
 	if(p->x[2] < z0){

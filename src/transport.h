@@ -27,7 +27,7 @@ private:
 	int MPI_myID;
 	void reduce_radiation();
 	void synchronize_gas();
-	vector<int> my_zone_end;
+	vector<unsigned> my_zone_end;
 
 	// subroutine for calculating timescales
 	void calculate_timescales() const;

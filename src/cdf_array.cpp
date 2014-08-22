@@ -17,7 +17,7 @@ cdf_array::cdf_array(){
 double cdf_array::get_value(const int i) const
 {
 	assert(i >= 0);
-	assert(i < y.size());
+	assert(i < (int)y.size());
 	if (i==0) return y[0];
 	else return (y[i] - y[i-1]);
 }
@@ -29,7 +29,7 @@ double cdf_array::get_value(const int i) const
 void cdf_array::set_value(const int i, const double f)
 {
 	assert(i >= 0);
-	assert(i < y.size());
+	assert(i < (int)y.size());
 	if (i==0) y[0] = f;
 	else y[i] = y[i-1] + f;
 }
@@ -45,7 +45,7 @@ void cdf_array::normalize()
 	// normalize to end = 1.0
 	N = y.back();
 	assert(N > 0);
-	for (int i=0;i<y.size();i++)   y[i] /= N;
+	for(unsigned i=0;i<y.size();i++)   y[i] /= N;
 }
 
 //---------------------------------------------------------
@@ -60,7 +60,7 @@ int cdf_array::get_index(const double yval) const
 	assert(yval <= 1.0);
 	int i = upper_bound(y.begin(), y.end(), yval) - y.begin();
 	assert(i >= 0);
-	assert(i < y.size());
+	assert(i < (int)y.size());
 	return i;
 }
 
@@ -94,7 +94,6 @@ double cdf_array::inverse_tangent(const int i, const locate_array* xgrid) const{
 // (CDF is x value, xgrid is y value)
 //--------------------------------------
 double cdf_array::inverse_secant(const int i, const int j, const locate_array* xgrid) const{
-	int N = size();
 	assert(i>=-1 && i<N-1);
 	assert(j>=0  && j<N  );
 	assert(j>i);
@@ -134,7 +133,7 @@ double cdf_array::invert_cubic(const double rand, const locate_array* xgrid) con
 {
 	assert(rand>=0 && rand<=1);
 	int i = get_index(rand);
-	assert(i<size());
+	assert(i<(int)size());
 	assert(i>=0);
 
 	// check for degenerate case (left and right values are equal)
@@ -176,7 +175,7 @@ double cdf_array::invert_linear(const double rand, const locate_array* xgrid) co
 {
 	assert(rand>=0 && rand<=1);
 	int i = get_index(rand);
-	assert(i<size());
+	assert(i<(int)size());
 	assert(i>=0);
 
 	// check for degenerate case (left and right values are equal)
@@ -201,7 +200,7 @@ double cdf_array::invert_linear(const double rand, const locate_array* xgrid) co
 // Simple printout
 //------------------------------------------------------
 void cdf_array::print() const{
-	for (int i=0;i<y.size();i++)
+	for(unsigned i=0;i<y.size();i++)
 		printf("%5d %10.4e %10.4e\n",i,get_value(i),y[i]);
 }
 
@@ -216,7 +215,7 @@ void cdf_array::wipe()
 //------------------------------------------------------------
 // just returning the size of the array
 //------------------------------------------------------------
-int cdf_array::size() const
+unsigned cdf_array::size() const
 {
 	return y.size();
 }

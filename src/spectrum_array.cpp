@@ -1,4 +1,3 @@
-#pragma warning disable 161
 #include <limits>
 #include <omp.h>
 #include <mpi.h>
@@ -37,7 +36,7 @@ void spectrum_array::init(const std::vector<double> t, const std::vector<double>
 	phi_grid.init(-pc::pi,pc::pi,n_phi);
 
 	// index parameters
-	int n_elements  = n_times*n_wave*n_mu*n_phi;
+	unsigned n_elements  = n_times*n_wave*n_mu*n_phi;
 
 	// allocate memory
 	click.resize(n_elements);
@@ -66,7 +65,7 @@ void spectrum_array::init(const locate_array tg, const locate_array wg,
 	int n_phi    = phi_grid.size();
 
 	// index parameters
-	int n_elements  = n_times*n_wave*n_mu*n_phi;
+	unsigned n_elements  = n_times*n_wave*n_mu*n_phi;
 
 	// allocate memory
 	click.resize(n_elements);
@@ -83,7 +82,7 @@ void spectrum_array::init(const locate_array tg, const locate_array wg,
 void spectrum_array::wipe()
 {
 #pragma omp parallel for
-	for (int i=0;i<click.size();i++)
+	for(unsigned i=0;i<click.size();i++)
 	{
 		flux[i]   = 0;
 		click[i]  = 0;
@@ -129,10 +128,10 @@ void spectrum_array::count(const double t, const double w, const double E, const
 	if ((t<time_grid.min) || (mu<mu_grid.min) || (phi<phi_grid.min)) return;
 
 	// locate bin number in all dimensions.
-	int t_bin = time_grid.locate(t);
-	int l_bin = wave_grid.locate(w);
-	int m_bin =   mu_grid.locate(mu);
-	int p_bin =  phi_grid.locate(phi);
+	unsigned t_bin = time_grid.locate(t);
+	unsigned l_bin = wave_grid.locate(w);
+	unsigned m_bin =   mu_grid.locate(mu);
+	unsigned p_bin =  phi_grid.locate(phi);
 
 	// if off the RIGHT of time/mu/phi grids, just return without counting
 	if((t_bin == time_grid.size()) ||
@@ -162,17 +161,17 @@ void spectrum_array::print(const int iw, const int species) const
 	string filename = "spectrum_species"+to_string(species);
 	transport::open_file(filename.c_str(),iw,outf);
 
-	int n_times  = time_grid.size();
-	int n_wave   = wave_grid.size();
-	int n_mu     = mu_grid.size();
-	int n_phi    = phi_grid.size();
+	unsigned n_times  = time_grid.size();
+	unsigned n_wave   = wave_grid.size();
+	unsigned n_mu     = mu_grid.size();
+	unsigned n_phi    = phi_grid.size();
 
 	outf << "#" << n_times << " " << n_wave << " " << n_mu << " " << n_phi << endl;
 
-	for (int k=0;k<n_mu;k++)
-		for (int m=0;m<n_phi;m++)
-			for (int i=0;i<n_times;i++)
-				for (int j=0;j<n_wave;j++)
+	for (unsigned k=0;k<n_mu;k++)
+		for (unsigned m=0;m<n_phi;m++)
+			for (unsigned i=0;i<n_times;i++)
+				for (unsigned j=0;j<n_wave;j++)
 				{
 					int id = index(i,j,k,m);
 					if (n_times > 1)  outf << time_grid.center(i) << " ";
@@ -196,7 +195,7 @@ void spectrum_array::print(const int iw, const int species) const
 void  spectrum_array::rescale(double r)
 {
 #pragma omp parallel for
-	for (int i=0;i<flux.size();i++) flux[i] *= r;
+	for(unsigned i=0;i<flux.size();i++) flux[i] *= r;
 }
 
 
@@ -208,7 +207,7 @@ void spectrum_array::MPI_average()
 {
 	int receiving_ID = 0;
 	int mpi_procs, myID;
-	const int n_elements = time_grid.size()*wave_grid.size()*mu_grid.size()*phi_grid.size();
+	const unsigned n_elements = time_grid.size()*wave_grid.size()*mu_grid.size()*phi_grid.size();
 
 	// average the flux (receive goes out of scope after section)
 	{
@@ -231,7 +230,7 @@ void spectrum_array::MPI_average()
 	MPI_Comm_rank( MPI_COMM_WORLD, &myID      );
 	if(myID == receiving_ID){
 #pragma omp parallel for
-		for (int i=0;i<n_elements;i++)
+		for(unsigned i=0;i<n_elements;i++)
 		{
 			flux[i]  /= (double)mpi_procs;
 			click[i] /= (double)mpi_procs;

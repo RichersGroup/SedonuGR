@@ -36,7 +36,7 @@ void species_general::init(Lua* lua, transport* simulation)
 	// allocate space for each eas spectrum
 	if(sim->n_emit_core > 0) core_emis.resize(nu_grid.size());
 #pragma omp parallel for
-	for (int i=0; i<abs_opac.size();  i++){
+	for(unsigned i=0; i<abs_opac.size();  i++){
 		abs_opac[i].resize(nu_grid.size());
 		scat_opac[i].resize(nu_grid.size());
 		emis[i].resize(nu_grid.size());
@@ -49,7 +49,7 @@ void species_general::init(Lua* lua, transport* simulation)
 		double r_core = lua->scalar<double>("r_core");
 		double chempot = lua->scalar<double>("core_nue_chem_pot") * (double)lepton_number * pc::MeV_to_ergs;
 #pragma omp parallel for ordered
-		for (int j=0;j<nu_grid.size();j++)
+		for(unsigned j=0;j<nu_grid.size();j++)
 		{
 			double nu  = nu_grid.center(j);
 			double dnu = nu_grid.delta(j);
@@ -115,7 +115,7 @@ double species_general::integrate_zone_emis(const int zone_index) const
 double species_general::integrate_zone_lepton_emis(const int zone_index) const
 {
 	double l_emis = 0;
-	for(int i=0; i<emis[zone_index].size(); i++)
+	for(unsigned i=0; i<emis[zone_index].size(); i++)
 	{
 		l_emis += lepton_number * emis[zone_index].get_value(i) / (pc::h*nu_grid.x[i]);
 	}

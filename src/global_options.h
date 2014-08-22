@@ -1,6 +1,10 @@
 #ifndef _GLOBAL_OPTIONS_H
 #define _GLOBAL_OPTIONS_H 1
 
+#ifdef __INTEL_COMPILER
+#pragma warning disable 161
+#endif
+
 #include <limits>
 #include <cassert>
 #include <mpi.h>

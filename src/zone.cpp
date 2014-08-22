@@ -32,7 +32,7 @@ void zone::write_header(const int dimensionality, ofstream& outf){
 
 void zone::write_line(const vector<double>& r, ofstream& outf) const{
 	assert(r.size()>=0);
-	for(int i=0; i<r.size(); i++) outf << r[i] << " ";
+	for(unsigned i=0; i<r.size(); i++) outf << r[i] << " ";
 	outf << e_rad << " ";
 	outf << rho   << " ";
 	outf << T_gas << " ";

@@ -1,4 +1,3 @@
-#pragma warning disable 161
 #include <omp.h>
 #include <stdio.h>
 #include <math.h>
@@ -17,7 +16,7 @@ void transport::propagate_particles(const double dt)
 
 		//--- MOVE THE PARTICLES AROUND ---
 #pragma omp for schedule(guided) reduction(+:e_esc)
-		for(int i=0; i<particles.size(); i++){
+		for(unsigned i=0; i<particles.size(); i++){
 			particle* p = &particles[i];
 #pragma omp atomic
 			n_active[p->s]++;
@@ -54,7 +53,7 @@ void transport::propagate_particles(const double dt)
 
 	//--- OUPUT ESCAPE STATISTICS ---
 	if (rank0 && verbose){
-		for(int i=0; i<species_list.size(); i++){
+		for(unsigned i=0; i<species_list.size(); i++){
 			double per_esc = (100.0*n_escape[i])/n_active[i];
 			if(n_active[i]>0) printf("# %i/%i %s escaped. (%3.2f%%)\n", n_escape[i], n_active[i], species_list[i]->name.c_str(), per_esc);
 			else printf("# No active %s.\n", species_list[i]->name.c_str());
@@ -81,10 +80,6 @@ void transport::which_event(const particle *p, const double dt, const double dsh
 	assert(z_ind >= -1);
 
 	if(z_ind >= 0){ //i.e. within the simulation region
-		// set pointer to current zone
-		zone* zone;
-		zone = &(grid->z[z_ind]);
-
 		// FIND D_ZONE= ====================================================================
 		// maximum step size inside zone
 		d_zone = step_size * grid->zone_min_length(z_ind);
@@ -161,7 +156,7 @@ void transport::propagate(particle* p, const double dt) const
 	{
 		int z_ind = grid->zone_index(p->x);
 		assert(z_ind >= -1);
-		assert(z_ind < grid->z.size());
+		assert(z_ind < (int)grid->z.size());
 
 		assert(p->nu > 0);
 		// set pointer to current zone

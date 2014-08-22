@@ -1,4 +1,3 @@
-#pragma warning disable 161
 #include <omp.h>
 #include <stdio.h>
 #include <math.h>
@@ -25,12 +24,12 @@ void transport::solve_eq_zone_values()
 	int end = my_zone_end[MPI_myID];
 	assert(end >= start);
 	assert(start >= 0);
-	assert(end < grid->z.size());
+	assert(end < (int)grid->z.size());
 
 	// solve radiative equilibrium temperature and Ye (but only in the zones I'm responsible for)
 	// don't solve if out of density bounds
 #pragma omp parallel for schedule(guided)
-	for (int z_ind=start; z_ind<end; z_ind++) if( (grid->z[z_ind].rho >= rho_min) && (grid->z[z_ind].rho <= rho_max) )
+	for(int z_ind=start; z_ind<end; z_ind++) if( (grid->z[z_ind].rho >= rho_min) && (grid->z[z_ind].rho <= rho_max) )
 	{
 		double T_last_iter=NaN, Ye_last_iter=NaN;
 		double T_last_step=NaN, Ye_last_step=NaN;
@@ -135,7 +134,7 @@ double temp_eq_function(int z_ind, double T, transport* sim)
 	sim->grid->z[z_ind].T_gas = T;
 
 	// include the emission from all species
-	for(int i=0; i<sim->species_list.size(); i++)
+	for(unsigned i=0; i<sim->species_list.size(); i++)
 	{
 		// reset the eas variables in this zone
 		// TODO OPTIMIZE - only set the emissivity variable
@@ -179,7 +178,7 @@ double Ye_eq_function(int z_ind, double Ye, transport* sim)
 	sim->grid->z[z_ind].Ye = Ye;
 
 	// include the emission from all species
-	for(int i=0; i<sim->species_list.size(); i++)
+	for(unsigned i=0; i<sim->species_list.size(); i++)
 	{
 		// reset the eas variables in this zone
 		// OPTIMIZE - only set the emissivity variable
@@ -224,6 +223,7 @@ double transport::brent_method(int z_ind, double (*eq_function)(int,double,trans
 	double fa=(*eq_function)(z_ind,a,this);
 	double fb=(*eq_function)(z_ind,b,this);
 	double fc,p,q,r,s,tol1,xm;
+	e = INFINITY;
 
 	//if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0))
 	//  printf("Root must be bracketed in zbrent");

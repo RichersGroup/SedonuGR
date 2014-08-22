@@ -31,7 +31,7 @@ void transport::isotropic_scatter(particle* p, const int redistribute) const
 		p->nu = species_list[p->s]->sample_zone_nu(z_ind);
 		assert(p->nu > 0);
 		assert(p->s >= 0);
-		assert(p->s < species_list.size());
+		assert(p->s < (int)species_list.size());
 	}
 
 	// lorentz transform back to lab frame

@@ -1,4 +1,3 @@
-#pragma warning disable 161
 #include <omp.h>
 #include <mpi.h>
 #include <stdlib.h>
@@ -122,7 +121,7 @@ void transport::init(Lua* lua)
 	double mass = 0.0;
 	double KE   = 0.0;
 #pragma omp parallel for reduction(+:mass,KE)
-	for (int i=0;i<grid->z.size();i++){
+	for(unsigned i=0;i<grid->z.size();i++){
 		double my_mass = grid->z[i].rho * grid->zone_volume(i);
 		assert(my_mass >= 0);
 		mass      += my_mass;
@@ -215,7 +214,7 @@ void transport::init(Lua* lua)
 	Ye_max  = -numeric_limits<double>::infinity();
 	rho_min =  numeric_limits<double>::infinity();
 	rho_max = -numeric_limits<double>::infinity();
-	for(int i=0; i<species_list.size(); i++)
+	for(unsigned i=0; i<species_list.size(); i++)
 	{
 		if(species_list[i]->T_min   < T_min  ) T_min   = species_list[i]->T_min;
 		if(species_list[i]->T_max   > T_max  ) T_max   = species_list[i]->T_max;
@@ -233,8 +232,8 @@ void transport::init(Lua* lua)
 
 	// initialize all the zone eas variables
 #pragma omp parallel for collapse(2)
-	for(int i=0; i<species_list.size(); i++)
-		for(int j=0; j<grid->z.size(); j++)
+	for(unsigned i=0; i<species_list.size(); i++)
+		for(unsigned j=0; j<grid->z.size(); j++)
 			species_list[i]->set_eas(j);
 
 	// scatter initial particles in the simulation area
@@ -252,7 +251,7 @@ void transport::init(Lua* lua)
 		r_core      = lua->scalar<double>("r_core");
 		core_lum_multiplier = lua->scalar<double>("core_lum_multiplier");
 		core_species_luminosity.resize(species_list.size());
-		for(int i=0; i<species_list.size(); i++)
+		for(unsigned i=0; i<species_list.size(); i++)
 			core_species_luminosity.set_value(i, species_list[i]->integrate_core_emis() * core_lum_multiplier);
 		core_species_luminosity.normalize();
 	}
@@ -274,15 +273,15 @@ void transport::step(const double dt)
 	{
 		// calculate the zone eas variables
 #pragma omp for collapse(2)
-		for(int i=0; i<species_list.size(); i++)
-			for(int j=0; j<grid->z.size(); j++)
+		for(unsigned i=0; i<species_list.size(); i++)
+			for(unsigned j=0; j<grid->z.size(); j++)
 				species_list[i]->set_eas(j);
 
 		// prepare zone quantities for another round of transport
 #pragma omp single
 		L_net = 0;
 #pragma omp for
-		for (int i=0;i<grid->z.size();i++)
+		for(unsigned i=0;i<grid->z.size();i++)
 		{
 			zone z = grid->z[i];
 			z.e_rad    = 0;
@@ -317,7 +316,7 @@ void transport::step(const double dt)
 //-----------------------------
 void transport::calculate_timescales() const{
 #pragma omp parallel for
-	for (int i=0;i<grid->z.size();i++){
+	for(unsigned i=0;i<grid->z.size();i++){
 		zone *z = &(grid->z[i]);
 		double e_gas = z->rho*pc::k*z->T_gas/pc::m_p;  // gas energy density (erg/ccm)
 		z->t_eabs  = e_gas / z->e_abs;
@@ -334,7 +333,7 @@ void transport::normalize_radiative_quantities(const double dt){
 	double net_visc_heating = 0;
 
 #pragma omp parallel for reduction(+:net_visc_heating)
-	for (int i=0;i<grid->z.size();i++)
+	for(unsigned i=0;i<grid->z.size();i++)
 	{
 		zone *z = &(grid->z[i]);
 		double vol = grid->zone_volume(i);
@@ -399,7 +398,7 @@ int transport::sample_zone_species(const int zone_index) const
 	species_cdf.resize(species_list.size());
 
 	// set values and normalize
-	for(int i=0; i<species_list.size(); i++)
+	for(unsigned i=0; i<species_list.size(); i++)
 	{
 		integrated_emis = species_list[i]->integrate_zone_emis(zone_index);
 		species_cdf.set_value(i,integrated_emis);
@@ -512,7 +511,7 @@ double transport::zone_visc_heat_rate(const int zone_index) const{
 // Write the spectra to disk (using data since the last write)
 void transport::write_spectra(const int it)
 {
-	for(int i=0; i<species_list.size(); i++){
+	for(unsigned i=0; i<species_list.size(); i++){
 		if(MPI_nprocs>1) species_list[i]->spectrum.MPI_average();
 		species_list[i]->spectrum.print(it,i);
 		species_list[i]->spectrum.wipe();

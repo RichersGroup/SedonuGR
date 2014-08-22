@@ -1,4 +1,3 @@
-#pragma warning disable 161
 #include <mpi.h>
 #include <math.h>
 #include <iostream>
@@ -41,7 +40,7 @@ void grid_general::write_zones(const int iw) const
 	transport::open_file("fluid",iw,outf);
 	zone::write_header(dimensionality,outf);
 
-	for (int i=0;i<z.size();i++)
+	for (unsigned i=0;i<z.size();i++)
 	{
 		zone_coordinates(i,r);
 		z[i].write_line(r,outf);
