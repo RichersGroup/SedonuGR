@@ -272,8 +272,10 @@ void grid_3D_cart::cartesian_sample_in_zone
 {
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
+	x.resize(3);
 	vector<int> dir_ind;
 	zone_directional_indices(z_ind,dir_ind);
+	assert(dir_ind.size()==dimensionality);
 	x[0] = x0 + ((double)dir_ind[0] + rand[0])*dx;
 	x[1] = y0 + ((double)dir_ind[1] + rand[1])*dy;
 	x[2] = z0 + ((double)dir_ind[2] + rand[2])*dz;

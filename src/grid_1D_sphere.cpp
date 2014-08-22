@@ -99,7 +99,7 @@ int grid_1D_sphere::zone_index(const vector<double>& x) const
 double grid_1D_sphere::zone_speed2(const int z_ind) const{
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
-	return z[z_ind].v[0];
+	return z[z_ind].v[0]*z[z_ind].v[0];
 }
 
 
@@ -165,7 +165,7 @@ void grid_1D_sphere::cartesian_sample_in_zone
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
 	assert(rand.size() == 3);
-	x.resize(dimensionality);
+	x.resize(3);
 
 	// inner and outer radii of shell
 	double r0 = (z_ind==0 ? r_out.min : r_out[z_ind-1]);

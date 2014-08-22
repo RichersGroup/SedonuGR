@@ -265,8 +265,8 @@ PARAMETERS
 
    do_photons   = [0,1] -- simulate photons?
    do_neutrinos = [0,1] -- simulate neutrinos?
-   do_visc      = [0,1] -- add energy source to matter absorption representing viscous heating. Simply adds some amount of energy to each zone's e_abs immediately after particles are propagated.
-   radiative_eq = [0,1] -- immediately re-emit particles that are absorbed? 0 allows particles to die on absorption.
+   do_visc      = [0,1] -- add energy source to matter absorption representing viscous heating. Simply adds some amount of energy to each zone's e_abs immediately after particles are propagated. Uninitialized heating rates are NaN's.
+   radiative_eq = [0,1] -- immediately re-emit particles that are absorbed, and ? 0 allows particles to die on absorption.
    steady_state = [0,1] -- do iterative calculation? An iterative calculation solves for the equilibrium gas and radiation field. All particles are allowed to propagate until escape or absorption during each iteration, and the fluid values that would cause the zones to emit everything they absorb is solved for. That is, conservation of energy and lepton number are not considered since we aren't evolving in time, just finding an equilibrium. This activates the solve_* parameters.
    solve_T      = [0,1] -- (if steady_state) solve for T such that each zone emits the energy it absorbs?
    solve_Ye     = [0,1] -- (if steady_state) solve for Ye such that the zone emits the lepton number it absorbs?
@@ -274,7 +274,7 @@ PARAMETERS
 
 -- input/output files --
 
-   grid_type           = ["grid_1D_sphere","grid_3D_cart"] -- which type of grid is the input data for?
+   grid_type           = ["grid_0D_point","grid_1D_sphere","grid_2D_sphere","grid_3D_cart"] -- which type of grid is the input data for?
    model_file          = "filename" -- filename of the model containing the background fluid data
    nulib_table         = "filename" -- (if do_neutrinos) neutrino opacity table
    write_zones_every   = [n]        -- write the fluid data every n iterations
