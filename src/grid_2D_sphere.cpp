@@ -514,7 +514,6 @@ void grid_2D_sphere::reflect_outer(particle *p) const{
 // Find distance to outer boundary
 //------------------------------------------------------------
 double grid_2D_sphere::dist_to_boundary(const particle *p) const{
-	// TODO - consider boundaries in theta
 	// Theta = angle between radius vector and direction (Pi if outgoing)
 	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
 	double Rout  = r_out[r_out.size()-1];
@@ -545,10 +544,11 @@ double grid_2D_sphere::dist_to_boundary(const particle *p) const{
 	assert(d_outer_boundary >= 0);
 	assert(d_outer_boundary <= 2.*Rout);
 
-
-	// distances to the theta boundaries
-
+	// distances to the theta boundaries - NOT IMPLEMENTED THETA BOUNDARIES
+	assert( fabs((theta_out[theta_out.size()-1] - theta_out.min) - pc::pi) < tiny);
+	double theta_dist = INFINITY;
 
 	// make sure the particle ends up in a reasonable place
-	return min(d_inner_boundary, d_outer_boundary);
+	const double r_dist = min(d_inner_boundary, d_outer_boundary);
+	return min(r_dist,theta_dist);
 }

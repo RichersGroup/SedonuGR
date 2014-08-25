@@ -283,12 +283,12 @@ void transport::step(const double dt)
 #pragma omp for
 		for(unsigned i=0;i<grid->z.size();i++)
 		{
-			zone z = grid->z[i];
-			z.e_rad    = 0;
-			z.l_abs    = 0;
-			z.e_abs    = 0;
-			z.l_emit   = 0;
-			z.e_emit   = 0;
+			zone* z = &(grid->z[i]);
+			z->e_rad    = 0;
+			z->l_abs    = 0;
+			z->e_abs    = 0;
+			z->l_emit   = 0;
+			z->e_emit   = 0;
 		}
 	} // #pragma omp parallel
 

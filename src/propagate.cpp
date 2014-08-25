@@ -10,7 +10,7 @@ void transport::propagate_particles(const double dt)
 {
 	vector<int> n_active(species_list.size(),0);
 	vector<int> n_escape(species_list.size(),0);
-	double e_esc = NaN;
+	double e_esc = 0;
 #pragma omp parallel shared(n_active,n_escape,e_esc) firstprivate(dt)
 	{
 
@@ -45,7 +45,7 @@ void transport::propagate_particles(const double dt)
 		// report energy escaped
 #pragma omp single
 		{
-			if(rank0 && verbose) cout << "# e_esc = " << e_esc << "erg" << endl;
+			if(rank0 && verbose) cout << "# e_esc = " << e_esc << " erg" << endl;
 			if(dt<0) assert(particles.size()==0);
 		}
 
@@ -247,8 +247,8 @@ void transport::propagate(particle* p, const double dt) const
 				if(reflect_outer){
 					grid->reflect_outer(p);
 					assert(p->fate == moving);
-					assert(z_ind >= 0);
-					assert(z_ind < (int)grid->z.size());
+					assert(grid->zone_index(p->x) >= 0);
+					assert(grid->zone_index(p->x) < (int)grid->z.size());
 					assert(p->nu > 0);
 				}
 				else p->fate = escaped;

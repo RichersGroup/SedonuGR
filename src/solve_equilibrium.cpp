@@ -24,7 +24,7 @@ void transport::solve_eq_zone_values()
 	int end = my_zone_end[MPI_myID];
 	assert(end >= start);
 	assert(start >= 0);
-	assert(end < (int)grid->z.size());
+	assert(end <= (int)grid->z.size());
 
 	// solve radiative equilibrium temperature and Ye (but only in the zones I'm responsible for)
 	// don't solve if out of density bounds

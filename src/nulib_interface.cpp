@@ -210,8 +210,8 @@ void nulib_get_eas_arrays(double rho,                     // g/cm^3
 		// must rebin to get the integrated value to be at the same location as the opacities. (CDF value corresponds to emission rate at or below that energy)
 		nulibtable_single_species_range_energy_(&rho, &temp_MeV, &ye, &lns,
 				(double*)eas_energy, &ngroups, &nvars);
-		double last_emis = NaN;
-		double this_emis = NaN;
+		double last_emis = 0;
+		double this_emis = 0;
 		for(int j=0; j<ngroups; j++){
 			last_emis = this_emis;
 			this_emis = eas_energy[0][j];

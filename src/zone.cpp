@@ -34,13 +34,13 @@ void zone::write_line(const vector<double>& r, ofstream& outf) const{
 	for(unsigned i=0; i<r.size(); i++) outf << r[i] << " ";
 	outf << e_rad << " ";
 	outf << rho   << " ";
-	outf << T_gas << " ";
+	outf << T_gas*pc::k_MeV << " ";
 	outf << Ye    << " ";
 	//outf << t_eemit << " ";
 	//outf << t_eabs  << " ";
 	//outf << t_lemit << " ";
 	//outf << t_labs  << " ";
-	outf << 1.0 / fabs(1.0/t_eabs - 1.0/t_eemit) << "\t";
-	outf << 1.0 / fabs(1.0/t_labs - 1.0/t_lemit) << "\t";
+	outf << 1.0 / fabs(1.0/t_eabs - 1.0/t_eemit) << " ";
+	outf << 1.0 / fabs(1.0/t_labs - 1.0/t_lemit) << " ";
 	outf << endl;
 }
