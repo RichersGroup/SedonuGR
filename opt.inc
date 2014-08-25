@@ -8,11 +8,9 @@ BASEDIR=$(CURDIR)
 #compiler configuration
 F90=mpif90
 CXX=mpicxx
-CC=mpicc
 
 F90FLAGS= -O3 -fopenmp
-CXXFLAGS= -O3 -fopenmp -DNDEBUG
-CCFLAGS= -O3 -DNDEBUG
+CXXFLAGS= -O3 -fopenmp -Wall -std=c++0x
 
 #GSL
 GSL_BASE=$(GSL_DIR)
@@ -27,7 +25,7 @@ LUA_LIBS=-llua5.2
 #HDF5
 HDF5_DIR=/usr/local/hdf5-1.8.13_gnu-4.8.2
 HDF5INCS=-I$(HDF5_DIR)/include
-HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5 -lhdf5_fortran -Wl,-rpath,$(HDF5_DIR)/lib
+HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5 -lhdf5_fortran -lhdf5_cpp -Wl,-rpath,$(HDF5_DIR)/lib
 
 #NuLib
 NULIB_DIR=$(CURDIR)/external/NuLib

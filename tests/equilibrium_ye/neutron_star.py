@@ -2,7 +2,6 @@ MeV = 1.1605e10
 km = 1.0e5
 
 nx = 100
-r_in = 0
 
 R_max = 10*km
 R_min = 9*km
@@ -12,7 +11,7 @@ ye_max = 0.2
 
 temp = 5*MeV
 
-print '1D_sphere',nx,r_in
+print '1D_sphere',nx,R_min
 
 for i  in range(1,nx+1):
     R = R_min + i*dx

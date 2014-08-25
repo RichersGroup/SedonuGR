@@ -14,21 +14,24 @@ const double mn = 939.565378;  // in MeV
 
 double beta_eq_ye(const double rho, const double T){
   //std::cout << T << std::endl;
-  double solve_for_munu = me+mp-mn;
+  double solve_for_munu = 0;
   double ye_min = 0.05;
   double ye_max = 0.55;
   double xye = 0.5;
   double xeps, xprs, xent, xcs2, xdedt, xdpderho, xdpdrhoe, xmunu=10;
+  double xa,xh,xn,xp,abar,zbar,mue,mun,mup,muhat;
   int keyerr, anyerr;
   int n=1;
   int iter=0;
   int maxiter = 1000;
   while(fabs(xmunu-solve_for_munu) > 1e-10 && iter<maxiter){
     xye = 0.5*(ye_min + ye_max);
-    nuc_eos_m_kt1_short(&n,&rho,&T,&xye,
-			&xeps,&xprs,&xent,&xcs2,&xdedt,
-			&xdpderho,&xdpdrhoe,&xmunu,
-			&keyerr,&anyerr);
+    nuc_eos_m_kt1_full(&n,&rho,&T,&Ye,
+		       &xeps,&xprs,&xent,&xcs2,&xdedt,
+		       &xdpderho,&xdpdrhoe,&xa,&xh,&xn,&xp,&abar,&zbar,
+		       &mue,&mun,&mup,&muhat,
+		       &keyerr,&anyerr);
+    xmunu = mue-muhat;
     if(xmunu-solve_for_munu<0) ye_min = xye;
     else ye_max = xye;
     iter++;
