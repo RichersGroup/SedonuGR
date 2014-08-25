@@ -63,7 +63,7 @@ void transport::emit_zones(const double dt,
 	assert(n_emit >= 0);
 
 	unsigned gridsize = grid->z.size();
-	double tmp_net_lum = NaN;
+	double tmp_net_lum = 0;
 	double Ep = NaN;
 
 	// at this point therm means either viscous heating or regular emission, according to the logic above
