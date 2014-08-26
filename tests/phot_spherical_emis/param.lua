@@ -1,9 +1,10 @@
 -- what are we simulating?
 
+verbose      = 1
 do_photons   = 1                 -- simulate photons?
 do_neutrinos = 0                 -- simulate neutrinos?
-steady_state = 1                 -- iterative calculation (solve for steady-state configuration)? 
-solve_T      = 1                 -- (if iterative) solves each zone's temperature based on its absorbed energy
+steady_state = 0
+solve_T      = 0                 -- (if iterative) solves each zone's temperature based on its absorbed energy
 solve_Ye     = 0                 -- (if iterative) solves each zone's Ye based on its absorbed lepton number
 do_visc      = 0
 radiative_eq = 1
@@ -40,16 +41,17 @@ step_size = 0.4                    -- move at most step_size*min_grid_length at 
 -- inner source
 
 r_core = 2e15                       -- core radius (cm)
-T_core = 10000                      -- core temperature (K)
+T_core = 8.61733238e-7                      -- core temperature (K)
+core_nue_chem_pot = 0
 core_lum_multiplier = 1.0
 
 -- opacity parameters
 
 phot_grey_opacity    =  0.0 --1           -- optical grey opacity (cm^2/g)
-phot_epsilon         =  1.0           -- absorption fraction
-phot_nu_start        =  0             -- photon opacity grid start
-phot_nu_stop         =  2e15          -- photon opacity grid stop
-phot_n_nu            =  100           -- photon opacity grid number of points along frequency
+phot_grey_abs_frac   =  1.0           -- absorption fraction
+phot_nugrid_start    =  0             -- photon opacity grid start
+phot_nugrid_stop     =  2e15          -- photon opacity grid stop
+phot_nugrid_n        =  100           -- photon opacity grid number of points along frequency
 
 -- equilibrium solver parameters
 
