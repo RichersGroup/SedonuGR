@@ -1,5 +1,6 @@
 -- what are we simulating?
 
+verbose      = 1
 do_photons   = 1                 -- simulate photons?
 do_neutrinos = 0                 -- simulate neutrinos?
 steady_state = 1                 -- iterative calculation (solve for steady-state configuration)? 
@@ -39,10 +40,10 @@ step_size = 0.4                    -- move at most step_size*min_grid_length at 
 
 -- opacity parameters
 phot_grey_opacity    =  0.1           -- optical grey opacity (cm^2/g)
-phot_epsilon         =  1.0           -- absorption fraction
-phot_nu_start        =  0             -- photon opacity grid start
-phot_nu_stop         =  2e15          -- photon opacity grid stop
-phot_n_nu            =  500           -- photon opacity grid number of points along frequency
+phot_grey_abs_frac   =  1.0           -- absorption fraction
+phot_nugrid_start        =  0             -- photon opacity grid start
+phot_nugrid_stop         =  2e15          -- photon opacity grid stop
+phot_nugrid_n            =  500           -- photon opacity grid number of points along frequency
 
 
 -- equilibrium solver parameters

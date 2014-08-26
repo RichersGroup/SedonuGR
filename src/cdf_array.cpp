@@ -17,7 +17,7 @@ cdf_array::cdf_array(){
 double cdf_array::get_value(const int i) const
 {
 	assert(i >= 0);
-	assert(i < (int)y.size());
+	assert(i < (int)size());
 	if (i==0) return y[0];
 	else return (y[i] - y[i-1]);
 }
@@ -29,7 +29,7 @@ double cdf_array::get_value(const int i) const
 void cdf_array::set_value(const int i, const double f)
 {
 	assert(i >= 0);
-	assert(i < (int)y.size());
+	assert(i < (int)size());
 	if (i==0) y[0] = f;
 	else y[i] = y[i-1] + f;
 }
@@ -60,7 +60,7 @@ int cdf_array::get_index(const double yval) const
 	assert(yval <= 1.0);
 	int i = upper_bound(y.begin(), y.end(), yval) - y.begin();
 	assert(i >= 0);
-	assert(i < (int)y.size());
+	assert(i < (int)size());
 	return i;
 }
 
@@ -72,7 +72,7 @@ int cdf_array::get_index(const double yval) const
 double cdf_array::inverse_tangent(const int i, const locate_array* xgrid) const{
 	int N = size();
 	assert(i>=-1);
-	assert(i<=N-1);
+	assert(i<=(int)size()-1);
 
 	// two-point stencil on boundary, 3-point stencil elsewhere. Keep out infinities.
 	double result = 0.0;
@@ -94,8 +94,8 @@ double cdf_array::inverse_tangent(const int i, const locate_array* xgrid) const{
 // (CDF is x value, xgrid is y value)
 //--------------------------------------
 double cdf_array::inverse_secant(const int i, const int j, const locate_array* xgrid) const{
-	assert(i>=-1 && i<N-1);
-	assert(j>=0  && j<N  );
+	assert(i>=-1 && i<(int)size()-1);
+	assert(j>=0  && j<(int)size()  );
 	assert(j>i);
 
 	double result = 0.0;

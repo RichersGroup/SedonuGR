@@ -20,7 +20,7 @@ set ylabel "Energy Flux (erg/s/Hz)"
 set xrange [0:2e15]
 set term pdf
 set output "compare_spectrum.pdf"
-plot N*4*pi*pi*r*r*2*x*x*x*h/c/c*1/(exp(h*x/(k_b*T))-1), './species0_I10.spec' using 1:2
+plot N*4*pi*pi*r*r*2*x*x*x*h/c/c*1/(exp(h*x/(k_b*T))-1), './spectrum_species0_00010.dat' using 1:2
 set output
 
 # planck function has units of erg/s/cm^2/Hz/ster
