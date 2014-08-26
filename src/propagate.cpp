@@ -46,7 +46,7 @@ void transport::propagate_particles(const double dt)
 #pragma omp single
 		{
 			if(rank0 && verbose) cout << "# e_esc = " << e_esc << " erg" << endl;
-			if(dt<0) assert(particles.size()==0);
+			if(steady_state) assert(particles.size()==0);
 		}
 
 	} //#pragma omp parallel
@@ -102,7 +102,8 @@ void transport::which_event(const particle *p, const double dt, const double dsh
 
 	// FIND D_TIME ====================================================================
 	// find distance to end of time step
-	if(dt>0){
+	if(!steady_state){
+		assert(dt > 0);
 		double tstop = t_now + dt;
 		d_time = (tstop - p->t)*pc::c;
 		assert(d_time > 0);

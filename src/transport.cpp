@@ -259,7 +259,9 @@ void transport::init(Lua* lua)
 }
 
 
-
+double transport::current_time(){
+	return t_now;
+}
 
 //------------------------------------------------------------
 // take a transport time step 
@@ -267,7 +269,7 @@ void transport::init(Lua* lua)
 void transport::step(const double dt)
 {
 	// assume 1.0 s. of particles were emitted if dt<0
-	double emission_time = (dt<=0 ? 1.0 : dt);
+	double emission_time = (steady_state ? 1.0 : dt);
 
 #pragma omp parallel
 	{
@@ -294,7 +296,7 @@ void transport::step(const double dt)
 
 	// emit, propagate, and normalize. dt<0 still corresponds to allowing escape to infinity
 	emit_particles(emission_time);
-	propagate_particles(dt);
+	propagate_particles(emission_time);
 	normalize_radiative_quantities(emission_time);
 
 	// solve for T_gas and Ye structure
@@ -305,7 +307,7 @@ void transport::step(const double dt)
 	calculate_timescales();
 
 	// advance time step
-	if (dt>0) t_now += dt;
+	if (!steady_state) t_now += dt;
 }
 
 

@@ -62,16 +62,15 @@ int main(int argc, char **argv)
 	//===========//
 	// TIME LOOP //
 	//===========//
-	double t = 0;
 	if (rank0) printf("%12s %12s %12s %12s\n","iteration","t","dt","n_particles");
-	for(int it=1; it<=max_n_steps; it++,t+=dt)
+	for(int it=1; it<=max_n_steps; it++)
 	{
 		// do transport step
 		sim.step(dt);
 
 		// printout time step
 		if(rank0){
-			printf("%12d %12.4e %12.4e %12d\n",it,t,dt, sim.total_particles());
+			printf("%12d %12.4e %12.4e %12d\n",it,sim.current_time(),dt, sim.total_particles());
 
 			// write zone state when appropriate
 			if(it%write_zones_every==0 && write_zones_every>0){

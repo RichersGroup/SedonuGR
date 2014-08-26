@@ -150,8 +150,8 @@ double temp_eq_function(int z_ind, double T, transport* sim)
 
 	// radiative equillibrium condition: "emission equals absorbtion"
 	// return to Brent function to iterate this to zero
-	assert(E_emitted > 0);
-	assert(E_absorbed > 0);
+	assert(E_emitted >= 0);
+	assert(E_absorbed >= 0);
 	return (E_emitted - E_absorbed);
 }
 

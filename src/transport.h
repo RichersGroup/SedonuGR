@@ -104,6 +104,7 @@ public:
 	transport();
 
 	int verbose;
+	double current_time();
 
 	// arrays of species
 	vector<species_general*> species_list;
