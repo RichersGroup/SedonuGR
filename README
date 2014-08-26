@@ -308,7 +308,7 @@ PARAMETERS
 -- particle propagation parameters --
 
    max_n_steps = [int>=0]    -- stop after this many iterations
-   dt          = [float>0]   -- dt for time iteration. dt<0 --> propagate until dead or escaped (if iterate --> dt is used to judge assumptions about timescales)
+   dt          = [float>0]   -- dt for time iteration. ignored if steady_state
    step_size   = [0<float<1] -- maximum fraction of a zone length a particle is allowed to travel before updating opacity information
 
 -- opacity parameters --
