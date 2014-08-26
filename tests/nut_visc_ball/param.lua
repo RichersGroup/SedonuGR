@@ -1,5 +1,6 @@
 -- what are we simulating?
 
+verbose      = 1
 do_photons   = 0                 -- simulate photons?
 do_neutrinos = 1                 -- simulate neutrinos?
 steady_state = 1                 -- iterative calculation (solve for steady-state configuration)? 
@@ -13,7 +14,7 @@ reflect_outer= 0
 
 grid_type = "grid_1D_sphere"       -- grid geometry. Must match grid geometry in model file if used  
 model_file  =  "neutron_star.mod"  -- model file. "custom" --> use hard coded model
-nulib_table = "../../external/tables/NuLib_LS220_rho150_temp90_ye60_ng24_ns3_version1.0_20140327.h5" -- NuLib opacity/emissivity table
+nulib_table = "../../external/tables/NuLib_LS220_rho150_temp90_ye60_ng24_ns3_Itemp10_Ieta10_version1.0_20140701.h5" -- NuLib opacity/emissivity table
 write_zones_every   = 1
 write_rays_every    = 1
 write_spectra_every = 1
@@ -42,7 +43,7 @@ step_size = 0.4                    -- move at most step_size*min_grid_length at 
 -- opacity parameters
 
 nut_grey_opacity    =  -1          -- optical grey opacity (cm^2/g)
-nut_epsilon         =  -1          -- absorption fraction
+nut_grey_abs_frac   =  -1          -- absorption fraction
 
 -- equilibrium solver parameters
 
