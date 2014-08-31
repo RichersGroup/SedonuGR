@@ -166,7 +166,13 @@ void spectrum_array::print(const int iw, const int species) const
 	unsigned n_mu     = mu_grid.size();
 	unsigned n_phi    = phi_grid.size();
 
-	outf << "#" << n_times << " " << n_wave << " " << n_mu << " " << n_phi << endl;
+	outf << "# " << "n_times:" << n_times << " " << "n_wave:" << n_wave << " " << "n_mu:" << n_mu << " " << "n_phi:" << n_phi << endl;
+	outf << "# ";
+	outf << (n_times>1 ? "t(s) "          : "");
+	outf << (n_wave >1 ? "frequency(Hz) " : "");
+	outf << (n_mu   >1 ? "mu "            : "");
+	outf << (n_phi  >1 ? "phi "           : "");
+	outf << "integrated_flux(erg) counts" << endl;
 
 	for (unsigned k=0;k<n_mu;k++)
 		for (unsigned m=0;m<n_phi;m++)
@@ -176,8 +182,8 @@ void spectrum_array::print(const int iw, const int species) const
 					int id = index(i,j,k,m);
 					if (n_times > 1)  outf << time_grid.center(i) << " ";
 					if (n_wave > 1)   outf << wave_grid.center(j) << " ";
-					if (n_mu > 1)     outf << mu_grid.center(k) << " ";
-					if (n_phi> 1)     outf << phi_grid.center(m);
+					if (n_mu > 1)     outf << mu_grid.center(k)   << " ";
+					if (n_phi> 1)     outf << phi_grid.center(m)  << " ";
 
 					// the delta is infinity if the bin is a catch-all.
 					// Use normalization of 1 to match the hard-coded choice of dt=1 for iterative calculations

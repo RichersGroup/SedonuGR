@@ -27,19 +27,23 @@ tests: $(OBJECTS)
 	cp $(TARGET) ../tests/phot_spherical_emis
 	cp $(TARGET) ../tests/phot_visc_ball
 	cp $(TARGET) ../tests/nut_spherical_emis
+	cp $(TARGET) ../tests/nut_spherical_emis_2D
 	cp $(TARGET) ../tests/nut_visc_ball
 	cp $(TARGET) ../tests/nut_therm_shell
 	cp $(TARGET) ../tests/nut_neutron_star
+	cp $(TARGET) ../tests/nut_neutron_star_2D
 	cp $(TARGET) ../tests/nut_blackbody
 	cp $(TARGET) ../tests/equilibrium_ye
 
 testsclean:
 	$(MAKE) -C ../tests/phot_spherical_emis clean
 	$(MAKE) -C ../tests/phot_visc_ball clean
+	$(MAKE) -C ../tests/nut_spherical_emis_2D clean
 	$(MAKE) -C ../tests/nut_spherical_emis clean
 	$(MAKE) -C ../tests/nut_visc_ball clean
 	$(MAKE) -C ../tests/nut_therm_shell clean
 	$(MAKE) -C ../tests/nut_neutron_star clean
+	$(MAKE) -C ../tests/nut_neutron_star_2D clean
 	$(MAKE) -C ../tests/nut_blackbody clean
 	$(MAKE) -C ../tests/equilibrium_ye clean
 	$(MAKE) -C ../tests/nulib_plots clean

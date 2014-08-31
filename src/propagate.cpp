@@ -97,7 +97,7 @@ void transport::which_event(const particle *p, const double dt, const double dsh
 		// step size to next interaction event
 		d_interact  = tau_r/opac_lab;
 		if (opac_lab == 0) d_interact = numeric_limits<double>::infinity();
-		assert(d_interact>0);
+		assert(d_interact>=0);
 	}
 
 	// FIND D_TIME ====================================================================
@@ -177,7 +177,7 @@ void transport::propagate(particle* p, const double dt) const
 
 		// tally in contribution to zone's radiation energy (both *lab* frame)
 		double this_E = p->e*this_d;
-		assert(this_E > 0);
+		assert(this_E >= 0);
 #pragma omp atomic
 		zone->e_rad += this_E;
 

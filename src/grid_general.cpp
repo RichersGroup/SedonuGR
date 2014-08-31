@@ -15,7 +15,7 @@ void grid_general::init(Lua* lua)
 {
 	// read the model file or fill in custom model
 	std::string model_file = lua->scalar<std::string>("model_file");
-	if(model_file == "custom_model") custom_model(lua);
+	if(model_file == "custom") custom_model(lua);
 	else read_model_file(lua);
 
 	// complain if the grid is obviously not right
@@ -39,11 +39,14 @@ void grid_general::write_zones(const int iw) const
 	ofstream outf;
 	transport::open_file("fluid",iw,outf);
 	zone::write_header(dimensionality,outf);
+	vector<int> dir_ind;
 
-	for (unsigned i=0;i<z.size();i++)
+	for (unsigned z_ind=0; z_ind<z.size(); z_ind++)
 	{
-		zone_coordinates(i,r);
-		z[i].write_line(r,outf);
+	        zone_directional_indices(z_ind, dir_ind);
+		if(dir_ind[dir_ind.size()-1]==0) outf << endl;
+		zone_coordinates(z_ind,r);
+		z[z_ind].write_line(r,outf);
 	}
 	outf.close();
 }

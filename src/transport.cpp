@@ -11,6 +11,7 @@
 #include "Lua.h"
 #include "grid_general.h"
 #include "grid_1D_sphere.h"
+#include "grid_2D_sphere.h"
 #include "grid_3D_cart.h"
 #include "species_general.h"
 #include "photons.h"
@@ -109,6 +110,7 @@ void transport::init(Lua* lua)
 
 	// create a grid of the appropriate type
 	if     (grid_type == "grid_1D_sphere") grid = new grid_1D_sphere;
+	else if(grid_type == "grid_2D_sphere") grid = new grid_2D_sphere;
 	else if(grid_type == "grid_3D_cart"  ) grid = new grid_3D_cart;
 	else{
 		if(rank0) std::cout << "# ERROR: the requested grid type is not implemented." << std::endl;
@@ -301,7 +303,7 @@ void transport::step(const double dt)
 
 	// solve for T_gas and Ye structure
 	if(MPI_nprocs>1) reduce_radiation();      // so each processor has necessary info to solve its zones
-	if(steady_state) solve_eq_zone_values();  // solve T,Ye s.t. E_abs=E_emit and N_abs=N_emit
+	if(steady_state && (solve_T || solve_Ye)) solve_eq_zone_values();  // solve T,Ye s.t. E_abs=E_emit and N_abs=N_emit
 	else update_zone_quantities();            // update T,Ye based on heat capacity and number of leptons
 	if(MPI_nprocs>1) synchronize_gas();       // each processor broadcasts its solved zones to the other processors
 	calculate_timescales();

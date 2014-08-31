@@ -69,10 +69,7 @@ void locate_array::init(const double start, const double stop, const int n)
 
 		min = start;
 #pragma omp parallel for
-		for(int i=0; i<n-1; i++){
-			x[i] = start + (i+1)*del;
-			if(i>0) assert(x[i] > x[i-1]);
-		}
+		for(int i=0; i<n-1; i++) x[i] = start + (i+1)*del;
 		x[n-1] = stop;
 		assert(x[n-1] > x[n-2]);
 	}

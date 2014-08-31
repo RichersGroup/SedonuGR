@@ -215,8 +215,66 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 //------------------------------------------------------------
 void grid_2D_sphere::custom_model(Lua* lua)
 {
-	cout << "Error: there is no custom model programmed for grid_2D_sphere." << endl;
-	exit(11);
+	// verbocity
+	int my_rank;
+	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
+	const int rank0 = (my_rank == 0);
+	if(rank0) cout << "#   Reading 1D model file, mapping to 2D" << endl;
+
+	// open up the model file, complaining if it fails to open
+	string model_file = "neutron_star.mod";
+	ifstream infile;
+	infile.open(model_file.c_str());
+	if(infile.fail()){
+		cout << "Error: can't read the model file." << model_file << endl;
+		exit(4);
+	}
+
+	// geometry of model
+	infile >> grid_type;
+	if(grid_type != "1D_sphere"){
+		cout << "Error: grid_type parameter disagrees with the model file." << endl;
+	}
+
+	// number of zones
+	int r_zones,theta_zones;
+	theta_zones = 4;
+	infile >> r_zones;
+	assert(r_zones > 0);
+	z.resize(r_zones*theta_zones,zone(dimensionality));
+	r_out.resize(r_zones);
+	theta_out.resize(theta_zones);
+
+	// read zone properties
+	infile >> r_out.min;
+	assert(r_out.min >= 0);
+	theta_out.min = 0;
+	for(int j=0; j<theta_zones; j++) theta_out[j] = theta_out.min + (double)(j+1) * pc::pi / (double)theta_zones;
+	for(int i=0; i<r_zones; i++)
+	{
+		infile >> r_out[i];
+		assert(r_out[i] > (i==0 ? r_out.min : r_out[i-1]));
+
+		int base_ind = zone_index(i,0);
+		infile >> z[base_ind].rho;
+		infile >> z[base_ind].T_gas;
+		infile >> z[base_ind].Ye;
+		z[base_ind].H = 0;
+		z[base_ind].e_rad = 0;
+		z[base_ind].v[0] = 0;
+		assert(z[base_ind].rho >= 0);
+		assert(z[base_ind].T_gas >= 0);
+		assert(z[base_ind].Ye >= 0);
+		assert(z[base_ind].Ye <= 1.0);
+		assert(z[base_ind].v.size() == dimensionality);
+
+		for(int j=0; j<theta_zones; j++){
+			int z_ind = zone_index(i,j);
+			z[z_ind] = z[base_ind];
+		}
+	}
+
+	infile.close();
 }
 
 //------------------------------------------------------------
@@ -226,7 +284,7 @@ int grid_2D_sphere::zone_index(const vector<double>& x) const
 {
 	assert(x.size()==3);
 	const double r  = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
-	const double theta = atan2(fabs(x[1]), sqrt(x[0]*x[0] + x[2]*x[2]) );
+	const double theta = atan2(sqrt(x[0]*x[0] + x[1]*x[1]), x[2]);
 	assert(r >= 0);
 	assert(theta >= 0);
 	assert(theta <= pc::pi);
@@ -307,15 +365,12 @@ double grid_2D_sphere::zone_min_length(const int z_ind) const
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 
-	const double     r0 = r_out.bottom(i);
-	const double theta0 = theta_out.bottom(j);
-
 	// the 'minimum lengts' are just approximate.
-	const double r_len     =      r_out[i] - r0;
-	const double theta_len = (theta_out[j] - theta0) * r0;
+	const double r_len     = (    r_out[i] -     r_out.bottom(i));
+	const double theta_len = (theta_out[j] - theta_out.bottom(j)) * r_out.bottom(i);
 
 	// if r_in is zero, there will be problems, but simulations would not have done this.
-	if(r0 == 0) return r_len;
+	if(r_out.bottom(i) == 0) return r_len;
 	else return min(r_len, theta_len);
 
 }
@@ -326,7 +381,7 @@ double grid_2D_sphere::zone_min_length(const int z_ind) const
 void grid_2D_sphere::zone_coordinates(const int z_ind, vector<double>& r) const
 {
 	assert(z_ind >= 0);
-	assert(z_ind < (int)r_out.size());
+	assert(z_ind < (int)(r_out.size()*theta_out.size()));
 	r.resize(dimensionality);
 
 	vector<int> dir_ind(dimensionality,0);
@@ -352,8 +407,8 @@ void grid_2D_sphere::zone_directional_indices(const int z_ind, vector<int>& dir_
 	dir_ind.resize(dimensionality);
 	dir_ind[0] = z_ind / theta_out.size();
 	dir_ind[1] = z_ind % theta_out.size();
-	assert(dir_ind[0] > 0);
-	assert(dir_ind[1] > 0);
+	assert(dir_ind[0] >= 0);
+	assert(dir_ind[1] >= 0);
 	assert(dir_ind[0] < (int)    r_out.size());
 	assert(dir_ind[1] < (int)theta_out.size());
 }
@@ -404,7 +459,7 @@ void grid_2D_sphere::cartesian_sample_in_zone(const int z_ind, const vector<doub
 void grid_2D_sphere::cartesian_velocity_vector(const vector<double>& x, vector<double>& v) const
 {
 	assert(x.size()==3);
-	assert(v.size()==3);
+	v.resize(3,0);
 	int z_ind = zone_index(x);
 
 	// radius in zone
@@ -418,6 +473,7 @@ void grid_2D_sphere::cartesian_velocity_vector(const vector<double>& x, vector<d
 	double ysign = x[1]/fabs(x[1]);
 	double zsign = x[2]/fabs(x[2]);
 
+	// remember, symmetry axis is along the z-axis
 	v[0] = x[0]/r*vr + x[2]*vtheta/sqrt(1.0+x[0]*x[0]/(x[1]*x[1])) * xsign;
 	v[1] = x[1]/r*vr + x[2]*vtheta/sqrt(1.0+x[1]*x[1]/(x[0]*x[0])) * ysign;
 	v[2] = x[2]/r*vr - vtheta*sqrt(x[0]*x[0]+x[1]*x[1]);
@@ -448,6 +504,7 @@ void grid_2D_sphere::write_rays(int iw) const
 
 	// along theta=0
 	transport::open_file("ray_t0",iw,outf);
+	zone::write_header(dimensionality,outf);
 	j = 0;
 	for(i=0; i<r_out.size(); i++){
 		int z_ind = zone_index(i,j);
@@ -458,6 +515,7 @@ void grid_2D_sphere::write_rays(int iw) const
 
 	// along theta=pi/2
 	transport::open_file("ray_t.5",iw,outf);
+	zone::write_header(dimensionality,outf);
 	j = theta_out.size()/2;
 	for(i=0; i<r_out.size(); i++){
 		int z_ind = zone_index(i,j);
@@ -468,6 +526,7 @@ void grid_2D_sphere::write_rays(int iw) const
 
 	// along theta=pi
 	transport::open_file("ray_t1",iw,outf);
+	zone::write_header(dimensionality,outf);
 	j = theta_out.size()-1;
 	for(i=0; i<r_out.size(); i++){
 		int z_ind = zone_index(i,j);
@@ -478,6 +537,7 @@ void grid_2D_sphere::write_rays(int iw) const
 
 	// along theta
 	transport::open_file("ray_r.5",iw,outf);
+	zone::write_header(dimensionality,outf);
 	i = r_out.size()/2;
 	for(j=0; j<theta_out.size(); j++){
 		int z_ind = zone_index(i,j);
