@@ -131,13 +131,14 @@ double locate_array::log_interpolate_between(const double xval, const int i1, co
 	assert(i1 < i2);
 	assert(y[i2] >= 0);
 	assert(y[i1] >= 0);
+	assert(x[i2] > x[i1]);
 
 	// safeguard against equal opacities
 	if(y[i1]==y[i2]) return y[i1];
 
 	// now we need the values to be larger than zero
 	assert(y[i1] > 0);
-	assert(y[i2] > y[i1]);
+	assert(y[i2] > 0);
 
 	// do logarithmic interpolation
 	double slope = log(y[i2]/y[i1]) / log(x[i2]/x[i1]);

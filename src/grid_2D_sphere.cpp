@@ -113,7 +113,7 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	dataset = file.openDataSet("/dens");
 	space = dataset.getSpace();
 	space.getSimpleExtentDims(dims);
-	assert(dataset.getTypeClass() == H5T_IEEE_F32LE);
+	assert(dataset.getTypeClass() == H5T_FLOAT);
 	assert(space.getSimpleExtentNdims()==dataset_rank);
 	assert((int)dims[0] == iprocs*jprocs);
 	assert((int)dims[1] == 1);
@@ -126,11 +126,18 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	float vely[dims[0]][dims[1]][dims[2]][dims[3]]; // cm/s
 	float efrc[dims[0]][dims[1]][dims[2]][dims[3]]; //
 	float temp[dims[0]][dims[1]][dims[2]][dims[3]]; // K
-	file.openDataSet("/dens").read(&(dens[0][0][0][0]),H5::PredType::IEEE_F32LE);
-	file.openDataSet("/velx").read(&(velx[0][0][0][0]),H5::PredType::IEEE_F32LE);
-	file.openDataSet("/vely").read(&(vely[0][0][0][0]),H5::PredType::IEEE_F32LE);
-	file.openDataSet("/efrc").read(&(efrc[0][0][0][0]),H5::PredType::IEEE_F32LE);
-	file.openDataSet("/temp").read(&(temp[0][0][0][0]),H5::PredType::IEEE_F32LE);
+	dataset = file.openDataSet("/dens");
+	dataset.read(&(dens[0][0][0][0]),H5::PredType::IEEE_F32LE);
+	dataset = file.openDataSet("/velx");
+	dataset.read(&(velx[0][0][0][0]),H5::PredType::IEEE_F32LE);
+	dataset = file.openDataSet("/vely");
+	dataset.read(&(vely[0][0][0][0]),H5::PredType::IEEE_F32LE);
+	dataset = file.openDataSet("/efrc");
+	dataset.read(&(efrc[0][0][0][0]),H5::PredType::IEEE_F32LE);
+	dataset = file.openDataSet("/temp");
+	dataset.read(&(temp[0][0][0][0]),H5::PredType::IEEE_F32LE);
+	dataset.close();
+	file.close();
 
 
 	//=========================//
@@ -156,7 +163,7 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 		if(i==0) xCoords_file >> r_out.min;
 		else xCoords_file >> trash;
 		xCoords_file >> trash;
-		xCoords_file >> r_out[i-nghost];
+		xCoords_file >> r_out[i];
 		xCoords_file >> trash;
 	}
 
@@ -166,10 +173,10 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	yCoords_file.seekg(0); // seek back to beginning of the file
 	for(int i=0; i<nghost; i++) getline(yCoords_file,line); // trash the first four lines (ghost points)
 	for(int i=0; i<ntheta; i++){
-		if(i==0) yCoords_file >> r_out.min;
+		if(i==0) yCoords_file >> theta_out.min;
 		else yCoords_file >> trash;
 		yCoords_file >> trash;
-		yCoords_file >> r_out[i-nghost];
+		yCoords_file >> theta_out[i];
 		yCoords_file >> trash;
 	}
 
@@ -195,8 +202,8 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 
 			// zone values
 			z[ind].rho    = dens[proc][kb][jb][ib];
-			z[ind].T_gas  = dens[proc][kb][jb][ib];
-			z[ind].Ye     = dens[proc][kb][jb][ib];
+			z[ind].T_gas  = temp[proc][kb][jb][ib];
+			z[ind].Ye     = efrc[proc][kb][jb][ib];
 			const float vr      = dens[proc][kb][jb][ib];
 			const float vtheta  = dens[proc][kb][jb][ib];
 			assert((int)z[ind].v.size()==dimensionality);

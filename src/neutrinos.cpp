@@ -125,6 +125,6 @@ double neutrinos::blackbody(const double T, const double chem_pot, const double 
 {
 	double zeta = (pc::h*nu - chem_pot)/pc::k/T;
 	double bb = (pc::h*nu) * (nu/pc::c) * (nu/pc::c) / (exp(zeta) + 1.0);
-	assert(bb > 0);
+	assert(bb >= 0);
 	return bb;
 }
