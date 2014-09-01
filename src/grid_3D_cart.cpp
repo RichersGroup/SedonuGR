@@ -207,7 +207,9 @@ double grid_3D_cart::zone_speed2(const int z_ind) const{
 	assert(z_ind > 0);
 	assert(z_ind < (int)z.size());
 	assert(z[z_ind].v.size()==3);
-	return z[z_ind].v[0]*z[z_ind].v[0] + z[z_ind].v[1]*z[z_ind].v[1] + z[z_ind].v[2]*z[z_ind].v[2];
+	double speed2 = z[z_ind].v[0]*z[z_ind].v[0] + z[z_ind].v[1]*z[z_ind].v[1] + z[z_ind].v[2]*z[z_ind].v[2];
+	assert(speed2 <= pc::c*pc::c);
+	return speed2;
 }
 
 //------------------------------------------------------------
@@ -325,6 +327,8 @@ void grid_3D_cart::cartesian_velocity_vector(const vector<double>& x, vector<dou
 	v[0] = z[z_ind].v[0];
 	v[1] = z[z_ind].v[1];
 	v[2] = z[z_ind].v[2];
+
+	assert(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] <= pc::c*pc::c);
 }
 
 //------------------------------------------------------------

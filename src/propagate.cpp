@@ -158,11 +158,12 @@ void transport::propagate(particle* p, const double dt) const
 		int z_ind = grid->zone_index(p->x);
 		assert(z_ind >= -1);
 		assert(z_ind < (int)grid->z.size());
+		int in_grid = (z_ind >= 0);
 
 		assert(p->nu > 0);
 		// set pointer to current zone
 		zone* zone;
-		zone = &(grid->z[z_ind]);
+		if(in_grid) zone = &(grid->z[z_ind]);
 
 		// doppler shift from comoving to lab
 		double dshift = dshift_comoving_to_lab(p);
@@ -178,22 +179,28 @@ void transport::propagate(particle* p, const double dt) const
 		// tally in contribution to zone's radiation energy (both *lab* frame)
 		double this_E = p->e*this_d;
 		assert(this_E >= 0);
-#pragma omp atomic
-		zone->e_rad += this_E;
+		if(in_grid){
+			#pragma omp atomic
+			zone->e_rad += this_E;
+		}
 
 		// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
 		// Extra dshift definitely needed here (two total) to convert both p->e and this_d to the comoving frame
 		double this_E_comoving = this_E * dshift * dshift;
-#pragma omp atomic
-		zone->e_abs += this_E_comoving * (opac*abs_frac);
+		if(in_grid){
+			#pragma omp atomic
+			zone->e_abs += this_E_comoving * (opac*abs_frac);
+		}
 
 		// store absorbed lepton number (same in both frames, except for the
 		// factor of this_d which is divided out later
 		double this_l_comoving = 0;
 		if(species_list[p->s]->lepton_number != 0){
 			this_l_comoving = species_list[p->s]->lepton_number * p->e/(p->nu*pc::h) * this_d*dshift;
-#pragma omp atomic
-			zone->l_abs += this_l_comoving * (opac*abs_frac);
+			if(in_grid){
+				#pragma omp atomic
+				zone->l_abs += this_l_comoving * (opac*abs_frac);
+			}
 		}
 
 		// move particle the distance
@@ -206,6 +213,7 @@ void transport::propagate(particle* p, const double dt) const
 
 		// get zone location now
 		z_ind = grid->zone_index(p->x);
+		assert(z_ind >= -2);
 		assert(z_ind < (int)grid->z.size());
 
 		// now the exciting bit!
@@ -257,12 +265,13 @@ void transport::propagate(particle* p, const double dt) const
 
 			// if inside the inner boundary
 			if(z_ind==-1){
-				if(p->x_dot_d() >= 0){
+				if(p->r() < r_core) p->fate = absorbed;
+				else if(p->x_dot_d() >= 0){
 					// set the particle just outside the inner boundary
 					cout << "ERROR: have not yet implemented passing out through the inner boundary without overshooting" << endl;
 					exit(5);
 				}
-				else assert(p->fate == moving);
+				else assert(p->fate == moving); // the particle just went into the inner boundary
 			}
 			break;
 

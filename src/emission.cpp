@@ -90,15 +90,21 @@ void transport::emit_zones(const double dt,
 		{
 			// this zone's luminosity and number of emitted particles.
 			// randomly decide whether last particle gets added based on the remainder.
-			double almost_n_emit  = (double)n_emit * (this->*zone_lum)(i)/tmp_net_lum;
-			unsigned this_n_emit = (int)almost_n_emit + (int)( rangen.uniform() < fmod(almost_n_emit,1.0) );
-			assert(this_n_emit >= 0);
+			unsigned n_regular_emit = (double)n_emit * (this->*zone_lum)(i)/tmp_net_lum;
+			double remainder_energy = (this->*zone_lum)(i)*dt - (double)n_regular_emit*Ep;
+			assert(remainder_energy >= 0);
+			assert(remainder_energy <= Ep);
+			assert(n_regular_emit >= 0);
 
 			// create the particles
 			double t;
-			for (unsigned k=0; k<this_n_emit; k++){
+			for (unsigned k=0; k<n_regular_emit; k++){
 				t = t_now + dt*rangen.uniform();
 				(this->*create_particle)(i,Ep,t);
+			}
+			if(remainder_energy > 0){
+				t = t_now + dt*rangen.uniform();
+				(this->*create_particle)(i,remainder_energy,t);
 			}
 		}// loop over zones
 	}// #pragma omp parallel

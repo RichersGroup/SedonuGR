@@ -100,7 +100,7 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	const int nr     = nxb*iprocs;
 	const int ntheta = nyb*jprocs;
 	const int n_zones = nr*ntheta;
-	z.resize(n_zones, zone(dimensionality));
+	z.resize(n_zones, zone(3));
 
 
 	//=========================//
@@ -124,18 +124,24 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	float dens[dims[0]][dims[1]][dims[2]][dims[3]]; // g/ccm
 	float velx[dims[0]][dims[1]][dims[2]][dims[3]]; // cm/s
 	float vely[dims[0]][dims[1]][dims[2]][dims[3]]; // cm/s
+	float angz[dims[0]][dims[1]][dims[2]][dims[3]]; // cm^2/s
 	float efrc[dims[0]][dims[1]][dims[2]][dims[3]]; //
 	float temp[dims[0]][dims[1]][dims[2]][dims[3]]; // K
+	float hvis[dims[0]][dims[1]][dims[2]][dims[3]]; // erg/g/s
 	dataset = file.openDataSet("/dens");
 	dataset.read(&(dens[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset = file.openDataSet("/velx");
 	dataset.read(&(velx[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset = file.openDataSet("/vely");
 	dataset.read(&(vely[0][0][0][0]),H5::PredType::IEEE_F32LE);
+	dataset = file.openDataSet("/angz");
+	dataset.read(&(angz[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset = file.openDataSet("/efrc");
 	dataset.read(&(efrc[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset = file.openDataSet("/temp");
 	dataset.read(&(temp[0][0][0][0]),H5::PredType::IEEE_F32LE);
+	dataset = file.openDataSet("/hvis");
+	dataset.read(&(hvis[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset.close();
 	file.close();
 
@@ -184,35 +190,49 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	//===============//
 	// fill the grid //
 	//===============//
+	int do_visc = lua->scalar<int>("do_visc");
 	const int kb = 0;
+#pragma omp parallel for
 	for(unsigned proc=0; proc<dims[0]; proc++){
 		for(unsigned jb=0; jb<dims[2]; jb++) for(unsigned ib=0; ib<dims[3]; ib++){
 			// indices. moving by one proc in the x direction increases proc by 1
 			const int i_global = (proc%iprocs)*nxb + ib;
 			const int j_global = (proc/iprocs)*nyb + jb;
-			const int ny_global = jprocs*nyb;
-			const int ind = i_global*ny_global + j_global; // moving along the y direction increments the index by 1
+			const int z_ind = zone_index(i_global, j_global);
 			assert(i_global < nr);
 			assert(j_global < ntheta);
-			assert(ind < n_zones);
+			assert(z_ind < n_zones);
 
-			// coordinates and geometry
-			const float r0     = (i_global==0 ?     r_out.min :     r_out[i_global-1]);
-			const float r     = 0.5 * (    r0 +     r_out[i_global]);
+			// zone position
+			vector<double> r;
+			zone_coordinates(z_ind,r);
+			assert(r.size()==2);
 
 			// zone values
-			z[ind].rho    = dens[proc][kb][jb][ib];
-			z[ind].T_gas  = temp[proc][kb][jb][ib];
-			z[ind].Ye     = efrc[proc][kb][jb][ib];
-			const float vr      = dens[proc][kb][jb][ib];
-			const float vtheta  = dens[proc][kb][jb][ib];
-			assert((int)z[ind].v.size()==dimensionality);
-			z[ind].v[0] = vr;
-			z[ind].v[1] = vtheta/r;
-			assert(z[ind].rho   >= 0.0);
-			assert(z[ind].T_gas >= 0.0);
-			assert(z[ind].Ye    >= 0.0);
-			assert(z[ind].Ye    <= 1.0);
+			z[z_ind].rho           = dens[proc][kb][jb][ib];
+			z[z_ind].T_gas         = temp[proc][kb][jb][ib];
+			z[z_ind].Ye            = efrc[proc][kb][jb][ib];
+			if(do_visc) z[z_ind].H = hvis[proc][kb][jb][ib];
+			double vr              = velx[proc][kb][jb][ib];
+			double vtheta          = vely[proc][kb][jb][ib];
+			double vphi            = angz[proc][kb][jb][ib]/r[0];
+			double speed2 = vr*vr + vtheta*vtheta + vphi*vphi;
+			if(speed2 >= pc::c*pc::c){
+				vr     *= (1.0-tiny)* pc::c*pc::c/speed2;
+				vtheta *= (1.0-tiny)* pc::c*pc::c/speed2;
+				vphi   *= (1.0-tiny)* pc::c*pc::c/speed2;
+			}
+			assert(fabs(vr) < pc::c);
+			assert(fabs(vtheta) < pc::c);
+			assert(vr*vr + vtheta*vtheta < pc::c*pc::c);
+			assert((int)z[z_ind].v.size()==3);
+			z[z_ind].v[0] = vr;
+			z[z_ind].v[1] = vtheta;
+			z[z_ind].v[2] = vphi;
+			assert(z[z_ind].rho   >= 0.0);
+			assert(z[z_ind].T_gas >= 0.0);
+			assert(z[z_ind].Ye    >= 0.0);
+			assert(z[z_ind].Ye    <= 1.0);
 		}
 	}
 }
@@ -248,7 +268,7 @@ void grid_2D_sphere::custom_model(Lua* lua)
 	theta_zones = 4;
 	infile >> r_zones;
 	assert(r_zones > 0);
-	z.resize(r_zones*theta_zones,zone(dimensionality));
+	z.resize(r_zones*theta_zones,zone(3));
 	r_out.resize(r_zones);
 	theta_out.resize(theta_zones);
 
@@ -268,12 +288,13 @@ void grid_2D_sphere::custom_model(Lua* lua)
 		infile >> z[base_ind].Ye;
 		z[base_ind].H = 0;
 		z[base_ind].e_rad = 0;
+		assert(z[base_ind].v.size() == 3);
 		z[base_ind].v[0] = 0;
+		z[base_ind].v[1] = 0;
 		assert(z[base_ind].rho >= 0);
 		assert(z[base_ind].T_gas >= 0);
 		assert(z[base_ind].Ye >= 0);
 		assert(z[base_ind].Ye <= 1.0);
-		assert(z[base_ind].v.size() == dimensionality);
 
 		for(int j=0; j<theta_zones; j++){
 			int z_ind = zone_index(i,j);
@@ -334,8 +355,11 @@ double grid_2D_sphere::zone_speed2(const int z_ind) const{
 	assert(z_ind < (int)z.size());
 	vector<double> r;
 	zone_coordinates(z_ind,r);
-	assert((int)r.size()==dimensionality);
-	return z[z_ind].v[0]*z[z_ind].v[0] + (z[z_ind].v[1]*r[0])*(z[z_ind].v[1]*r[0]);
+	assert((int)r.size()==2);
+	const vector<double> v = z[z_ind].v;
+	double speed2 = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+	assert(speed2 <= pc::c*pc::c);
+	return speed2;
 }
 
 
@@ -348,7 +372,7 @@ double grid_2D_sphere::zone_volume(const int z_ind) const
 	assert(z_ind < (int)z.size());
 	vector<int> dir_ind;
 	zone_directional_indices(z_ind,dir_ind);
-	assert(dir_ind.size()==dimensionality);
+	assert(dir_ind.size()==2);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 	const double r0     =     r_out.bottom(i);
@@ -368,7 +392,7 @@ double grid_2D_sphere::zone_min_length(const int z_ind) const
 {
 	vector<int> dir_ind;
 	zone_directional_indices(z_ind,dir_ind);
-	assert((int)dir_ind.size()==dimensionality);
+	assert((int)dir_ind.size()==2);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 
@@ -389,11 +413,11 @@ void grid_2D_sphere::zone_coordinates(const int z_ind, vector<double>& r) const
 {
 	assert(z_ind >= 0);
 	assert(z_ind < (int)(r_out.size()*theta_out.size()));
-	r.resize(dimensionality);
+	r.resize(2);
 
-	vector<int> dir_ind(dimensionality,0);
+	vector<int> dir_ind(2,0);
 	zone_directional_indices(z_ind, dir_ind);
-	assert(dir_ind.size() == dimensionality);
+	assert(dir_ind.size() == 2);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 
@@ -411,7 +435,7 @@ void grid_2D_sphere::zone_directional_indices(const int z_ind, vector<int>& dir_
 {
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
-	dir_ind.resize(dimensionality);
+	dir_ind.resize(2);
 	dir_ind[0] = z_ind / theta_out.size();
 	dir_ind[1] = z_ind % theta_out.size();
 	assert(dir_ind[0] >= 0);
@@ -429,7 +453,7 @@ void grid_2D_sphere::cartesian_sample_in_zone(const int z_ind, const vector<doub
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
 	assert(rand.size()==3);
-	assert(x.size()==3);
+	x.resize(3);
 
 	// radius and theta indices
 	vector<int> dir_ind;
@@ -468,34 +492,49 @@ void grid_2D_sphere::cartesian_velocity_vector(const vector<double>& x, vector<d
 	assert(x.size()==3);
 	v.resize(3,0);
 	int z_ind = zone_index(x);
+	assert(z_ind >= -1);
 
-	// radius in zone
-	double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+	// if within inner sphere, z_ind=-1. Leave velocity at 0.
+	if(z_ind >= 0){
 
-	// Based on position, calculate what the 3-velocity is
-	assert(z[z_ind].v.size()==dimensionality);
-	double vr   = z[z_ind].v[0];
-	double vtheta = z[z_ind].v[1];
-	double xsign = x[0]/fabs(x[0]);
-	double ysign = x[1]/fabs(x[1]);
-	double zsign = x[2]/fabs(x[2]);
+		// radius in zone
+		double r    = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+		double rhat = sqrt(x[0]*x[0] + x[1]*x[1]);
+		int along_axis = (rhat/r < tiny);
 
-	// remember, symmetry axis is along the z-axis
-	v[0] = x[0]/r*vr + x[2]*vtheta/sqrt(1.0+x[0]*x[0]/(x[1]*x[1])) * xsign;
-	v[1] = x[1]/r*vr + x[2]*vtheta/sqrt(1.0+x[1]*x[1]/(x[0]*x[0])) * ysign;
-	v[2] = x[2]/r*vr - vtheta*sqrt(x[0]*x[0]+x[1]*x[1]);
+		// Based on position, calculate what the 3-velocity is
+		assert(z[z_ind].v.size()==3);
+		double vr     = z[z_ind].v[0];
+		double vtheta = z[z_ind].v[1];
+		double vphi   = z[z_ind].v[2];
 
-	// check for pathological cases
-	if (r == 0){ // set everything to 0
-		v[0] = 0;
-		v[1] = 0;
-		v[2] = 0;
+		vector<double> vr_cart(3,0);
+		vr_cart[0] = vr * x[0]/r;
+		vr_cart[1] = vr * x[1]/r;
+		vr_cart[2] = vr * x[2]/r;
+
+		vector<double> vtheta_cart(3,0);
+		vtheta_cart[0] =  (along_axis ? 0 : vtheta * x[2]/r * x[0]/rhat );
+		vtheta_cart[1] =  (along_axis ? 0 : vtheta * x[2]/r * x[1]/rhat );
+		vtheta_cart[2] = -vtheta * rhat/r;
+
+		vector<double> vphi_cart(3,0);
+		vphi_cart[0] = (along_axis ? 0 : -vphi * x[1]/rhat );
+		vphi_cart[1] = (along_axis ? 0 :  vphi * x[0]/rhat );
+		vphi_cart[2] = 0;
+
+		// remember, symmetry axis is along the z-axis
+		for(int i=0; i<3; i++) v[i] = vr_cart[i] + vtheta_cart[i] + vphi_cart[i];
+
+		// check for pathological case
+		if (r == 0){ // set everything to 0
+			v[0] = 0;
+			v[1] = 0;
+			v[2] = 0;
+		}
 	}
-	if(x[0]==0 && x[1]==0){ // ignore the phi component
-		v[0] = 0;
-		v[1] = 0;
-		v[2] = vr*zsign;
-	}
+
+	assert(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] <= pc::c*pc::c);
 }
 
 
@@ -511,7 +550,7 @@ void grid_2D_sphere::write_rays(int iw) const
 
 	// along theta=0
 	transport::open_file("ray_t0",iw,outf);
-	zone::write_header(dimensionality,outf);
+	zone::write_header(2,outf);
 	j = 0;
 	for(i=0; i<r_out.size(); i++){
 		int z_ind = zone_index(i,j);
@@ -522,7 +561,7 @@ void grid_2D_sphere::write_rays(int iw) const
 
 	// along theta=pi/2
 	transport::open_file("ray_t.5",iw,outf);
-	zone::write_header(dimensionality,outf);
+	zone::write_header(2,outf);
 	j = theta_out.size()/2;
 	for(i=0; i<r_out.size(); i++){
 		int z_ind = zone_index(i,j);
@@ -533,7 +572,7 @@ void grid_2D_sphere::write_rays(int iw) const
 
 	// along theta=pi
 	transport::open_file("ray_t1",iw,outf);
-	zone::write_header(dimensionality,outf);
+	zone::write_header(2,outf);
 	j = theta_out.size()-1;
 	for(i=0; i<r_out.size(); i++){
 		int z_ind = zone_index(i,j);
@@ -544,7 +583,7 @@ void grid_2D_sphere::write_rays(int iw) const
 
 	// along theta
 	transport::open_file("ray_r.5",iw,outf);
-	zone::write_header(dimensionality,outf);
+	zone::write_header(2,outf);
 	i = r_out.size()/2;
 	for(j=0; j<theta_out.size(); j++){
 		int z_ind = zone_index(i,j);

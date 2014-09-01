@@ -249,17 +249,25 @@ void transport::init(Lua* lua)
 	//=================//
 	// the core temperature is used only in setting its emis vector
 	// so it's looked at only in species::myInit()
+	r_core = lua->scalar<double>("r_core");
 	if(n_emit_core > 0){
-		r_core      = lua->scalar<double>("r_core");
 		core_lum_multiplier = lua->scalar<double>("core_lum_multiplier");
 		core_species_luminosity.resize(species_list.size());
 		for(unsigned i=0; i<species_list.size(); i++)
 			core_species_luminosity.set_value(i, species_list[i]->integrate_core_emis() * core_lum_multiplier);
 		core_species_luminosity.normalize();
 	}
-	else r_core = 0;
+
+	// check the parameters
+	check_parameters();
 }
 
+void transport::check_parameters() const{
+	if(do_visc && n_emit_therm<=0 && radiative_eq){
+		cout << "do_visc means viscosity heats the gas. Must emit initial thermal particles ALONG WITH the re-radiated ones from radiative_eq for consistency. Energy in must equal energy out." << endl;
+		exit(10);
+	}
+}
 
 double transport::current_time(){
 	return t_now;
@@ -270,7 +278,7 @@ double transport::current_time(){
 //------------------------------------------------------------
 void transport::step(const double dt)
 {
-	// assume 1.0 s. of particles were emitted if dt<0
+	// assume 1.0 s. of particles were emitted if steady_state
 	double emission_time = (steady_state ? 1.0 : dt);
 
 #pragma omp parallel
@@ -296,7 +304,7 @@ void transport::step(const double dt)
 		}
 	} // #pragma omp parallel
 
-	// emit, propagate, and normalize. dt<0 still corresponds to allowing escape to infinity
+	// emit, propagate, and normalize. steady_state means no propagation time limit.
 	emit_particles(emission_time);
 	propagate_particles(emission_time);
 	normalize_radiative_quantities(emission_time);
@@ -507,8 +515,9 @@ void transport::synchronize_gas()
 
 
 // rate at which viscosity energizes the fluid (erg/s)
-double transport::zone_visc_heat_rate(const int zone_index) const{
-	return visc_specific_heat_rate * grid->z[zone_index].rho * grid->zone_volume(zone_index);
+double transport::zone_visc_heat_rate(const int z_ind) const{
+	if(visc_specific_heat_rate >= 0) return visc_specific_heat_rate * grid->z[z_ind].rho * grid->zone_volume(z_ind);
+	else                             return grid->z[z_ind].H        * grid->z[z_ind].rho * grid->zone_volume(z_ind);
 }
 
 

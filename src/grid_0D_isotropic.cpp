@@ -76,7 +76,9 @@ int grid_0D_isotropic::zone_index(const vector<double>& x) const
 //------------------------------------
 double grid_0D_isotropic::zone_speed2(const int z_ind) const{
 	assert(z_ind == 0);
-	return z[0].v[0]*z[0].v[0] + z[0].v[1]*z[0].v[1] + z[0].v[2]*z[0].v[2];
+	double speed2 = z[0].v[0]*z[0].v[0] + z[0].v[1]*z[0].v[1] + z[0].v[2]*z[0].v[2];
+	assert(speed2 <= pc::c*pc::c);
+	return speed2;
 }
 
 
@@ -143,6 +145,7 @@ void grid_0D_isotropic::cartesian_velocity_vector(const vector<double>& x, vecto
 	assert(x.size()==3);
 	v.resize(3);
 	v.assign(z[0].v.begin(),z[0].v.end());
+	assert(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] <= pc::c*pc::c);
 }
 
 

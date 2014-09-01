@@ -99,7 +99,9 @@ int grid_1D_sphere::zone_index(const vector<double>& x) const
 double grid_1D_sphere::zone_speed2(const int z_ind) const{
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
-	return z[z_ind].v[0]*z[z_ind].v[0];
+	double speed2 = z[z_ind].v[0]*z[z_ind].v[0];
+	assert(speed2 <= pc::c*pc::c);
+	return speed2;
 }
 
 
@@ -216,6 +218,8 @@ void grid_1D_sphere::cartesian_velocity_vector(const vector<double>& x, vector<d
 		v[1] = 0;
 		v[2] = 0;
 	}
+
+	assert(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] <= pc::c*pc::c);
 }
 
 

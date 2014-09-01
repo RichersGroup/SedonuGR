@@ -20,7 +20,7 @@ public:
 	void write_line(const vector<double>& r, ofstream& outf) const;
 
 	// fluid properties
-	vector<double> v;            // velocity vector (cm/s)
+	vector<double> v;       // velocity vector (cm/s)
 	double rho;             // density (g/cm^3)
 	double T_gas;           // gas temperature (K)
 	double Ye;              // electron fraction

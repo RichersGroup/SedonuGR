@@ -99,6 +99,9 @@ private:
 	// current time in simulation
 	double t_now;
 
+	// check parameters
+	void check_parameters() const;
+
 public:
 
 	transport();
