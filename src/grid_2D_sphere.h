@@ -21,9 +21,6 @@ private:
 	locate_array r_out;
 	locate_array theta_out;
 
-	// store volumes explicitly
-	std::vector<double> vol;
-
 public:
 
 	virtual ~grid_2D_sphere() {}

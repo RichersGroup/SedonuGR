@@ -263,8 +263,8 @@ void transport::init(Lua* lua)
 }
 
 void transport::check_parameters() const{
-	if(do_visc && n_emit_therm<=0 && radiative_eq){
-		cout << "do_visc means viscosity heats the gas. Must emit initial thermal particles ALONG WITH the re-radiated ones from radiative_eq for consistency. Energy in must equal energy out." << endl;
+	if(n_emit_therm>=0 && radiative_eq){
+		cout << "ERROR: Emitting particles at beginning of timestep AND re-emitting them is inconsistent." << endl;
 		exit(10);
 	}
 }

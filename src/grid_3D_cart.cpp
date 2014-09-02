@@ -204,7 +204,7 @@ void grid_3D_cart::read_model_file(Lua* lua)
 // get the velocity squared of a zone
 //------------------------------------
 double grid_3D_cart::zone_speed2(const int z_ind) const{
-	assert(z_ind > 0);
+	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
 	assert(z[z_ind].v.size()==3);
 	double speed2 = z[z_ind].v[0]*z[z_ind].v[0] + z[z_ind].v[1]*z[z_ind].v[1] + z[z_ind].v[2]*z[z_ind].v[2];
@@ -227,10 +227,10 @@ int grid_3D_cart::zone_index(const vector<double>& x) const
 	if ((j < 0)||(j > ny-1)) return -2;
 	if ((k < 0)||(k > nz-1)) return -2;
 
-	int ind = zone_index(i,j,k);
-	assert(ind > 0);
-	assert(ind < (int)z.size());
-	return ind;
+	int z_ind = zone_index(i,j,k);
+	assert(z_ind >= 0);
+	assert(z_ind < (int)z.size());
+	return z_ind;
 }
 
 

@@ -213,9 +213,9 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 			z[z_ind].T_gas         = temp[proc][kb][jb][ib];
 			z[z_ind].Ye            = efrc[proc][kb][jb][ib];
 			if(do_visc) z[z_ind].H = hvis[proc][kb][jb][ib];
-			double vr              = velx[proc][kb][jb][ib];
-			double vtheta          = vely[proc][kb][jb][ib];
-			double vphi            = angz[proc][kb][jb][ib]/r[0];
+			double vr              = 0;//velx[proc][kb][jb][ib];
+			double vtheta          = 0;//vely[proc][kb][jb][ib];
+			double vphi            = 0;//angz[proc][kb][jb][ib]/r[0];
 			double speed2 = vr*vr + vtheta*vtheta + vphi*vphi;
 			if(speed2 >= pc::c*pc::c){
 				vr     *= (1.0-tiny)* pc::c*pc::c/speed2;
