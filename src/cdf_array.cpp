@@ -40,12 +40,17 @@ void cdf_array::set_value(const int i, const double f)
 void cdf_array::normalize() 
 {
 	// check for zero array, set to all constant
-	if (y.back() == 0) y.assign(y.size(),1.0);
+	if (y.back() == 0){
+		y.assign(y.size(),1.0);
+		N = 0;
+	}
 
 	// normalize to end = 1.0
-	N = y.back();
-	assert(N > 0);
-	for(unsigned i=0;i<y.size();i++)   y[i] /= N;
+	else{
+		N = y.back();
+		assert(N > 0);
+		for(unsigned i=0;i<y.size();i++)   y[i] /= ( N>0 ? N : 1 );
+	}
 }
 
 //---------------------------------------------------------
