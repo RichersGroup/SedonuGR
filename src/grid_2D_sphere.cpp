@@ -533,8 +533,6 @@ void grid_2D_sphere::cartesian_velocity_vector(const vector<double>& x, vector<d
 			v[2] = 0;
 		}
 	}
-
-	//assert(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] <= pc::c*pc::c);
 }
 
 
