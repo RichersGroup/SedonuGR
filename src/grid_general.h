@@ -70,7 +70,7 @@ public:
 	virtual int zone_index(const vector<double>& x) const   = 0;
 
 	// return volume of zone z_ind
-	virtual double zone_volume(const int z_ind) const         = 0;
+	virtual double zone_lab_volume(const int z_ind) const         = 0;
 
 	// return the smallest length dimension of zone  z_ind
 	virtual double zone_min_length(const int z_ind) const     = 0;
@@ -86,7 +86,7 @@ public:
 
 	// boundary conditions
 	virtual void reflect_outer(particle *p) const = 0;
-	virtual double dist_to_boundary(const particle *p) const = 0;
+	virtual double lab_dist_to_boundary(const particle *p) const = 0;
 };
 
 

@@ -6,32 +6,35 @@
 #include "species_general.h"
 #include "global_options.h"
 
-void transport::propagate_particles(const double dt)
+void transport::propagate_particles(const double lab_dt)
 {
 	vector<int> n_active(species_list.size(),0);
 	vector<int> n_escape(species_list.size(),0);
-	double e_esc = 0;
-#pragma omp parallel shared(n_active,n_escape,e_esc) firstprivate(dt)
+	double e_esc_lab = 0;
+    #pragma omp parallel shared(n_active,n_escape,e_esc_lab)
 	{
 
 		//--- MOVE THE PARTICLES AROUND ---
-#pragma omp for schedule(guided) reduction(+:e_esc)
+        #pragma omp for schedule(guided) reduction(+:e_esc_lab)
 		for(unsigned i=0; i<particles.size(); i++){
 			particle* p = &particles[i];
-#pragma omp atomic
+            #pragma omp atomic
 			n_active[p->s]++;
-			propagate(p,dt);
+			propagate(p,lab_dt);
 			if(p->fate == escaped){
-#pragma omp atomic
+                #pragma omp atomic
 				n_escape[p->s]++;
 				species_list[p->s]->spectrum.count(p->t, p->nu, p->e, p->D);
-				e_esc += p->e;
+				e_esc_lab += p->e;
 			}
 		} //implied barrier
 
-		//--- REMOVE THE DEAD PARTICLES ---
-#pragma omp single
+        #pragma omp single
 		{
+			// store the escaped energy in the transport class
+			L_esc_lab = e_esc_lab; // to be normalized later
+
+			// remove the dead particles
 			vector<particle>::iterator pIter = particles.begin();
 			while(pIter != particles.end()){
 				if(pIter->fate==absorbed || pIter->fate==escaped){
@@ -40,15 +43,8 @@ void transport::propagate_particles(const double dt)
 				}
 				else pIter++;
 			}
-		}
-
-		// report energy escaped
-#pragma omp single
-		{
-			if(rank0 && verbose) cout << "# e_esc = " << e_esc << " erg" << endl;
 			if(steady_state) assert(particles.size()==0);
 		}
-
 	} //#pragma omp parallel
 
 	//--- OUPUT ESCAPE STATISTICS ---
@@ -65,10 +61,9 @@ void transport::propagate_particles(const double dt)
 //--------------------------------------------------------
 // Decide what happens to the particle
 //--------------------------------------------------------
-void transport::which_event(const particle *p, const double dt, const double dshift, const double opac,
+void transport::which_event(const particle *p, const double dt, const double lab_opac,
 		double *d_smallest, ParticleEvent *event) const{
-	assert(dshift > 0);
-	assert(opac >= 0);
+	assert(lab_opac >= 0);
 
 	const int z_ind = grid->zone_index(p->x);
 	double d_zone     = numeric_limits<double>::infinity();
@@ -76,7 +71,6 @@ void transport::which_event(const particle *p, const double dt, const double dsh
 	double d_interact = numeric_limits<double>::infinity();
 	double d_boundary = numeric_limits<double>::infinity();
 	double tau_r = NaN;                               // random optical depth
-	double opac_lab = NaN;                            // opacity in the lab frame
 	assert(z_ind >= -1);
 
 	if(z_ind >= 0){ //i.e. within the simulation region
@@ -86,17 +80,11 @@ void transport::which_event(const particle *p, const double dt, const double dsh
 		assert(d_zone > 0);
 
 		// FIND D_INTERACT =================================================================
-		// convert opacity from comoving to lab frame for the purposes of
-		// determining the interaction distance in the lab frame
-		// This corresponds to equation 90.8 in Mihalas&Mihalas. You multiply
-		// the comoving opacity by nu_0 over nu, which is why you
-		// multiply by dshift instead of dividing by dshift here
-		opac_lab = opac*dshift;
 		// random optical depth to next interaction
 		tau_r = -1.0*log(1.0 - rangen.uniform());
 		// step size to next interaction event
-		d_interact  = tau_r/opac_lab;
-		if (opac_lab == 0) d_interact = numeric_limits<double>::infinity();
+		d_interact  = tau_r/lab_opac;
+		if (lab_opac == 0) d_interact = numeric_limits<double>::infinity();
 		assert(d_interact>=0);
 	}
 
@@ -110,15 +98,13 @@ void transport::which_event(const particle *p, const double dt, const double dsh
 	}
 
 	// FIND D_BOUNDARY ================================================================
-	d_boundary = grid->dist_to_boundary(p);
+	d_boundary = grid->lab_dist_to_boundary(p);
 	assert(d_boundary >= 0);
 
-	// find out what event happens (shortest distance)
+	// find out what event happens (shortest distance) =====================================
 	*d_smallest = numeric_limits<double>::infinity();
-	if( d_interact <= *d_smallest ){
-		*event  = interact;
-		*d_smallest = d_interact;
-	}
+	*event = interact;
+	*d_smallest = d_interact;
 	if( d_zone <= *d_smallest ){
 		*event  = zoneEdge;
 		*d_smallest = d_zone;
@@ -136,11 +122,128 @@ void transport::which_event(const particle *p, const double dt, const double dsh
 }
 
 
+void transport::do_event(const ParticleEvent event, const double abs_frac, particle* p){
+	// get zone location now
+	int z_ind = grid->zone_index(p->x);
+	assert(z_ind >= -2);
+	assert(z_ind < (int)grid->z.size());
+
+	// now the exciting bit!
+	switch(event){
+	    // ---------------------------------
+	    // Do if interact
+	    // ---------------------------------
+	case interact:
+		event_interact(p,z_ind,abs_frac);
+		assert(p->nu > 0);
+		assert(p->e > 0);
+		break;
+
+		// ---------------------------------
+		// do if time step end
+		// ---------------------------------
+	case timeStep:
+		assert(z_ind >= 0);
+		p->fate = stopped;
+		break;
+
+		// ---------------------------------
+		// do if crossing a boundary
+		// ---------------------------------
+	case boundary:
+		event_boundary(p,z_ind);
+		break;
+
+		//-----------------------
+		// nothing special happens at the zone edge
+		//-----------------------
+	default:
+		assert(event == zoneEdge);
+		assert(z_ind >= 0);
+	}
+
+	// check for core absorption
+	if(p->r() < r_core) p->fate = absorbed;
+}
+
+void transport::event_boundary(particle* p, const int z_ind) const{
+	assert(z_ind==-1 || z_ind==-2);
+
+	// if outside the domain
+	if(z_ind == -2){
+		if(reflect_outer){
+			grid->reflect_outer(p);
+			assert(p->fate == moving);
+			assert(grid->zone_index(p->x) >= 0);
+			assert(grid->zone_index(p->x) < (int)grid->z.size());
+			assert(p->nu > 0);
+		}
+		else p->fate = escaped;
+	}
+
+	// if inside the inner boundary
+	if(z_ind==-1){
+		if(p->r() < r_core) p->fate = absorbed;
+		else if(p->x_dot_d() >= 0){
+			// set the particle just outside the inner boundary
+			cout << "ERROR: have not yet implemented passing out through the inner boundary without overshooting" << endl;
+			exit(5);
+		}
+		else assert(p->fate == moving); // the particle just went into the inner boundary
+	}
+}
+
+void transport::tally_radiation(const particle* p, const double dshift_l2c, const double lab_d, const double lab_opac, const double abs_frac) const{
+	int z_ind = grid->zone_index(p->x);
+	assert(z_ind >= 0);
+	assert(z_ind < (int)grid->z.size());
+	assert(dshift_l2c > 0);
+	assert(lab_d > 0);
+	assert(lab_opac >= 0);
+	assert(abs_frac >= 0);
+	assert(abs_frac <= 1);
+
+	// get comoving values
+	double com_e = p->e * dshift_l2c;
+	double com_nu = p->nu * dshift_l2c;
+	double com_d  = lab_d / dshift_l2c;
+	double com_opac = lab_opac / dshift_l2c;
+	assert(com_e > 0);
+	assert(com_nu > 0);
+	assert(com_d > 0);
+	assert(com_opac >= 0);
+
+	// set pointer to the current zone
+	zone* zone;
+	zone = &(grid->z[z_ind]);
+
+	// tally in contribution to zone's radiation energy (both *lab* frame)
+	#pragma omp atomic
+	zone->e_rad += com_e * com_d;
+	assert(zone->e_rad >= 0);
+
+	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
+	// Extra dshift definitely needed here (two total) to convert both p->e and this_d to the comoving frame
+	#pragma omp atomic
+	zone->e_abs += com_e * com_d * (com_opac*abs_frac);
+	assert(zone->e_abs >= 0);
+
+	// store absorbed lepton number (same in both frames, except for the
+	// factor of this_d which is divided out later
+	double this_l_comoving = 0;
+	if(species_list[p->s]->lepton_number != 0){
+		this_l_comoving = species_list[p->s]->lepton_number * com_e/(com_nu*pc::h) * com_d;
+        #pragma omp atomic
+		zone->l_abs += this_l_comoving * (com_opac*abs_frac);
+	}
+
+}
+
 //--------------------------------------------------------
 // Propagate a single monte carlo particle until
 // it  escapes, is absorbed, or the time step ends
 //--------------------------------------------------------
-void transport::propagate(particle* p, const double dt) const
+void transport::propagate(particle* p, const double lab_dt)
 {
 
 	ParticleEvent event;
@@ -148,142 +251,50 @@ void transport::propagate(particle* p, const double dt) const
 	p->fate = moving;
 
 	// local variables
-	double this_d = NaN;                            // distance to particle's next event
-	double opac = NaN, abs_frac = NaN;                 // opacity variables
-	double rand = NaN;
+	double lab_d = NaN;                            // distance to particle's next event
+	double lab_opac = NaN, com_opac = NaN, abs_frac = NaN;                 // opacity variables
+	double dshift_l2c = NaN;
+	double com_nu = NaN;
 
 	// propagate until this flag is set
 	while (p->fate == moving)
 	{
+		assert(p->nu > 0);
+
 		int z_ind = grid->zone_index(p->x);
 		assert(z_ind >= -1);
 		assert(z_ind < (int)grid->z.size());
-		int in_grid = (z_ind >= 0);
+		int on_grid = (z_ind >= 0);
 
-		assert(p->nu > 0);
-		// set pointer to current zone
-		zone* zone;
-		if(in_grid) zone = &(grid->z[z_ind]);
+		if(good_zone(z_ind) && on_grid){ // avoid handling fluff zones if unnecessary
+			// doppler shift from comoving to lab (nu0/nu)
+			dshift_l2c = dshift_lab_to_comoving(p);
+			assert(dshift_l2c > 0);
 
-		// doppler shift from comoving to lab
-		double dshift = dshift_comoving_to_lab(p);
-		assert(dshift > 0);
-
-		// get local opacity and absorption fraction
-		species_list[p->s]->get_opacity(p,z_ind,dshift,&opac,&abs_frac);
+			// get local opacity and absorption fraction
+			com_nu = p->nu * dshift_l2c;
+			species_list[p->s]->get_opacity(com_nu,z_ind,&com_opac,&abs_frac);
+			lab_opac = com_opac * dshift_l2c;
+		}
+		else{
+			lab_opac = 0;
+			dshift_l2c = NaN;
+		}
 
 		// decide which event happens
-		which_event(p,dt,dshift,opac,&this_d,&event);
-		assert(this_d >= 0);
+		which_event(p,lab_dt,lab_opac,&lab_d,&event);
+		assert(lab_d >= 0);
 
-		// tally in contribution to zone's radiation energy (both *lab* frame)
-		double this_E = p->e*this_d;
-		assert(this_E >= 0);
-		if(in_grid){
-			#pragma omp atomic
-			zone->e_rad += this_E;
-		}
-
-		// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
-		// Extra dshift definitely needed here (two total) to convert both p->e and this_d to the comoving frame
-		double this_E_comoving = this_E * dshift * dshift;
-		if(in_grid){
-			#pragma omp atomic
-			zone->e_abs += this_E_comoving * (opac*abs_frac);
-		}
-
-		// store absorbed lepton number (same in both frames, except for the
-		// factor of this_d which is divided out later
-		double this_l_comoving = 0;
-		if(species_list[p->s]->lepton_number != 0){
-			this_l_comoving = species_list[p->s]->lepton_number * p->e/(p->nu*pc::h) * this_d*dshift;
-			if(in_grid){
-				#pragma omp atomic
-				zone->l_abs += this_l_comoving * (opac*abs_frac);
-			}
-		}
+		// accumulate counts of radiation energy, absorption, etc
+		if(good_zone(z_ind) && on_grid) tally_radiation(p,dshift_l2c,lab_d,lab_opac,abs_frac);
 
 		// move particle the distance
-		p->x[0] += this_d*p->D[0];
-		p->x[1] += this_d*p->D[1];
-		p->x[2] += this_d*p->D[2];
+		p->x[0] += lab_d*p->D[0];
+		p->x[1] += lab_d*p->D[1];
+		p->x[2] += lab_d*p->D[2];
+		p->t = p->t + lab_d/pc::c;
 
-		// advance the time
-		p->t = p->t + this_d/pc::c;
-
-		// get zone location now
-		z_ind = grid->zone_index(p->x);
-		assert(z_ind >= -2);
-		assert(z_ind < (int)grid->z.size());
-
-		// now the exciting bit!
-		switch(event){
-		// ---------------------------------
-		// Do if interact
-		// ---------------------------------
-		case interact:
-			assert(z_ind >= 0);
-			// random number to check for scattering or absorption
-			rand = rangen.uniform();
-
-			// decide whether to scatter or absorb
-			if (rand > abs_frac) isotropic_scatter(p,0); // actual scatter - do not redistribute energy
-			else{
-				// if this is an iterative calculation, radiative equilibrium is always assumed.
-				if(radiative_eq) isotropic_scatter(p,1);          // particle lives, energy redistributed
-				else p->fate = absorbed;
-			}
-			assert(p->nu > 0);
-			assert(p->e > 0);
-			break;
-
-			// ---------------------------------
-			// do if time step end
-			// ---------------------------------
-		case timeStep:
-			assert(z_ind >= 0);
-			p->fate = stopped;
-			break;
-
-			// ---------------------------------
-			// do if crossing a boundary
-			// ---------------------------------
-		case boundary:
-			assert(z_ind==-1 || z_ind==-2);
-
-			// if outside the domain
-			if(z_ind == -2){
-				if(reflect_outer){
-					grid->reflect_outer(p);
-					assert(p->fate == moving);
-					assert(grid->zone_index(p->x) >= 0);
-					assert(grid->zone_index(p->x) < (int)grid->z.size());
-					assert(p->nu > 0);
-				}
-				else p->fate = escaped;
-			}
-
-			// if inside the inner boundary
-			if(z_ind==-1){
-				if(p->r() < r_core) p->fate = absorbed;
-				else if(p->x_dot_d() >= 0){
-					// set the particle just outside the inner boundary
-					cout << "ERROR: have not yet implemented passing out through the inner boundary without overshooting" << endl;
-					exit(5);
-				}
-				else assert(p->fate == moving); // the particle just went into the inner boundary
-			}
-			break;
-
-			//-----------------------
-			// nothing special happens at the zone edge
-			//-----------------------
-		default:
-			assert(event == zoneEdge);
-			assert(z_ind >= 0);
-		}
-
-		// check for core absorption
-		if(p->r() < r_core) p->fate = absorbed;
+		// do the selected event
+		do_event(event,abs_frac,p);
 	}
 }

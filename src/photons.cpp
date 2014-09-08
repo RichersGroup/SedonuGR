@@ -57,7 +57,7 @@ void photons::set_eas(int zone_index)
 	{
 		double nu  = nu_grid.center(j);        // (Hz)
 		double dnu = nu_grid.delta(j);         // (Hz)
-		double bb  = blackbody(z->T_gas,0,nu)*dnu;  // (erg/s/cm^2/ster)
+		double bb  = blackbody(z->T,0,nu)*dnu;  // (erg/s/cm^2/ster)
 		emis[zone_index].set_value(j,grey_opac*grey_abs_frac*bb*z->rho); // (erg/s/cm^3/Hz/ster)
 	}
 	emis[zone_index].normalize();

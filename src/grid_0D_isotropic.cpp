@@ -35,15 +35,15 @@ void grid_0D_isotropic::read_model_file(Lua* lua)
 	// number of zones
 	z.resize(1,zone(3));
 	infile >> z[0].rho;
-	infile >> z[0].T_gas;
+	infile >> z[0].T;
 	infile >> z[0].Ye;
-	z[0].H = 0;
+	z[0].H_com = 0;
 	z[0].e_rad = 0;
 	z[0].v[0] = 0;
 	z[0].v[1] = 0;
 	z[0].v[2] = 0;
 	assert(z[0].rho >= 0);
-	assert(z[0].T_gas >= 0);
+	assert(z[0].T >= 0);
 	assert(z[0].Ye >= 0);
 	assert(z[0].Ye <= 1.0);
 	assert(z[0].v.size() == 3);
@@ -85,7 +85,7 @@ double grid_0D_isotropic::zone_speed2(const int z_ind) const{
 //------------------------------------------------------------
 // return volume of zone z_ind
 //------------------------------------------------------------
-double  grid_0D_isotropic::zone_volume(const int z_ind) const
+double  grid_0D_isotropic::zone_lab_volume(const int z_ind) const
 {
 	assert(z_ind == 0);
 	return 1.0;
@@ -170,6 +170,6 @@ void grid_0D_isotropic::reflect_outer(particle *p) const{
 // Find distance to outer boundary (less a tiny bit)
 // negative distance means inner boundary
 //------------------------------------------------------------
-double grid_0D_isotropic::dist_to_boundary(const particle *p) const{
+double grid_0D_isotropic::lab_dist_to_boundary(const particle *p) const{
 	return INFINITY;
 }

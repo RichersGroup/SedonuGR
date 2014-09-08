@@ -93,7 +93,7 @@ void neutrinos::set_eas(int zone_index)
 	zone* z = &(sim->grid->z[zone_index]);
 
 	if(grey_opac < 0){ // get opacities and emissivity from NuLib
-		nulib_get_eas_arrays(z->rho, z->T_gas, z->Ye, nulibID,
+		nulib_get_eas_arrays(z->rho, z->T, z->Ye, nulibID,
 				emis[zone_index], abs_opac[zone_index], scat_opac[zone_index]);
 		emis[zone_index].normalize();
 	}
@@ -104,7 +104,7 @@ void neutrinos::set_eas(int zone_index)
 		{
 			double nu  = nu_grid.center(j);        // (Hz)
 			double dnu = nu_grid.delta(j);         // (Hz)
-			double bb  = blackbody(z->T_gas,0*pc::MeV_to_ergs,nu)*dnu;  // (erg/s/cm^2/ster)
+			double bb  = blackbody(z->T,0*pc::MeV_to_ergs,nu)*dnu;  // (erg/s/cm^2/ster)
 
 			double a = grey_opac*z->rho*grey_abs_frac;
 			double s = grey_opac*z->rho*(1.0-grey_abs_frac);

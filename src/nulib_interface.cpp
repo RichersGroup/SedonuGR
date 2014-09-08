@@ -220,7 +220,7 @@ void nulib_get_eas_arrays(double rho,                     // g/cm^3
 			nut_scatopac[j] =      eas_energy[2][j];
 		}
 	}
-	nut_emiss.N = 1.0;
+	nut_emiss.N = NaN;
 }
 
 

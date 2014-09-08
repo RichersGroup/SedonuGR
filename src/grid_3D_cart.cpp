@@ -135,7 +135,7 @@ void grid_3D_cart::read_model_file(Lua* lua)
 				if(!rx && !ry && !rz)
 				{
 					infile >> z[ind].rho;
-					infile >> z[ind].T_gas;
+					infile >> z[ind].T;
 					infile >> z[ind].Ye;
 					infile >> z[ind].v[0];
 					infile >> z[ind].v[1];
@@ -143,7 +143,7 @@ void grid_3D_cart::read_model_file(Lua* lua)
 				}
 				else{ //poison values
 					z[ind].rho   = NaN;
-					z[ind].T_gas = NaN;
+					z[ind].T     = NaN;
 					z[ind].Ye    = NaN;
 					z[ind].v[0]  = NaN;
 					z[ind].v[1]  = NaN;
@@ -175,7 +175,7 @@ void grid_3D_cart::read_model_file(Lua* lua)
 				{
 					origin_ind = zone_index(origin_i,origin_j,origin_k);
 					z[ind].rho   = z[origin_ind].rho;
-					z[ind].T_gas = z[origin_ind].T_gas;
+					z[ind].T = z[origin_ind].T;
 					z[ind].Ye    = z[origin_ind].Ye;
 					z[ind].v[0]  = z[origin_ind].v[0];
 					z[ind].v[1]  = z[origin_ind].v[1];
@@ -274,7 +274,7 @@ void grid_3D_cart::zone_directional_indices(const int z_ind, vector<int>& dir_in
 //------------------------------------------------------------
 // return volume of zone (precomputed)
 //------------------------------------------------------------
-double grid_3D_cart::zone_volume(const int z_ind) const
+double grid_3D_cart::zone_lab_volume(const int z_ind) const
 {
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
@@ -481,7 +481,7 @@ void grid_3D_cart::reflect_outer(particle *p) const{
 //------------------------------------------------------------
 // Find distance to outer boundary
 //------------------------------------------------------------
-double grid_3D_cart::dist_to_boundary(const particle *p) const{
+double grid_3D_cart::lab_dist_to_boundary(const particle *p) const{
 	double xmax = x0 + nx*dx;
 	double ymax = y0 + ny*dy;
 	double zmax = z0 + nz*dz;

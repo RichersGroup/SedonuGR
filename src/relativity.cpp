@@ -80,6 +80,7 @@ double transport::dshift_comoving_to_lab(const particle* p) const
 	double gamma = lorentz_factor(v);
 	double vdd = v_dot_d(v, p->D);
 	double dshift = doppler_shift(gamma,vdd);
+	assert(dshift>0);
 	return dshift;
 }
 
@@ -94,6 +95,7 @@ double transport::dshift_lab_to_comoving(const particle* p) const
 	double gamma = lorentz_factor(v);
 	double vdd = v_dot_d(v, p->D);
 	double dshift = doppler_shift(gamma,vdd);
+	assert(dshift>0);
 	return dshift;
 }
 
@@ -125,4 +127,11 @@ void transport::transform_lab_to_comoving(particle* p) const
 	// v_rel = v_comoving - v_lab  --> v keeps its sign.
 
 	lorentz_transform(p,v);
+}
+
+double transport::comoving_dt(const double lab_dt, const int z_ind) const{
+	assert(lab_dt>0);
+	assert(z_ind >= 0);
+	assert(z_ind < (int)grid->z.size());
+	return lab_dt / lorentz_factor(grid->z[z_ind].v);
 }

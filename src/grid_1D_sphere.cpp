@@ -46,14 +46,14 @@ void grid_1D_sphere::read_model_file(Lua* lua)
 	{
 		infile >> r_out[z_ind];
 		infile >> z[z_ind].rho;
-		infile >> z[z_ind].T_gas;
+		infile >> z[z_ind].T;
 		infile >> z[z_ind].Ye;
-		z[z_ind].H = 0;
+		z[z_ind].H_com = 0;
 		z[z_ind].e_rad = 0;
 		z[z_ind].v[0] = 0;
 		assert(r_out[z_ind] > (z_ind==0 ? r_out.min : r_out[z_ind-1]));
 		assert(z[z_ind].rho >= 0);
-		assert(z[z_ind].T_gas >= 0);
+		assert(z[z_ind].T >= 0);
 		assert(z[z_ind].Ye >= 0);
 		assert(z[z_ind].Ye <= 1.0);
 		assert(z[z_ind].v.size() == dimensionality);
@@ -108,7 +108,7 @@ double grid_1D_sphere::zone_speed2(const int z_ind) const{
 //------------------------------------------------------------
 // return volume of zone z_ind
 //------------------------------------------------------------
-double  grid_1D_sphere::zone_volume(const int z_ind) const
+double  grid_1D_sphere::zone_lab_volume(const int z_ind) const
 {
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
@@ -264,7 +264,7 @@ void grid_1D_sphere::reflect_outer(particle *p) const{
 // Find distance to outer boundary (less a tiny bit)
 // negative distance means inner boundary
 //------------------------------------------------------------
-double grid_1D_sphere::dist_to_boundary(const particle *p) const{
+double grid_1D_sphere::lab_dist_to_boundary(const particle *p) const{
 	// Theta = angle between radius vector and direction (Pi if outgoing)
 	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
 	double Rout  = r_out[r_out.size()-1];

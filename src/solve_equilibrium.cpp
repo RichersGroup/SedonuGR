@@ -28,7 +28,7 @@ void transport::solve_eq_zone_values()
 
 	// solve radiative equilibrium temperature and Ye (but only in the zones I'm responsible for)
 	// don't solve if out of density bounds
-#pragma omp parallel for schedule(guided)
+    #pragma omp parallel for schedule(guided)
 	for(int z_ind=start; z_ind<end; z_ind++) if( (grid->z[z_ind].rho >= rho_min) && (grid->z[z_ind].rho <= rho_max) )
 	{
 		double T_last_iter=NaN, Ye_last_iter=NaN;
@@ -40,7 +40,7 @@ void transport::solve_eq_zone_values()
 		if(solve_T)
 		{
 			T_error  = 10*brent_solve_tolerance;
-			T_last_step  = grid->z[z_ind].T_gas;
+			T_last_step  = grid->z[z_ind].T;
 		}
 		if(solve_Ye)
 		{
@@ -54,9 +54,9 @@ void transport::solve_eq_zone_values()
 		{
 			if(solve_T)
 			{
-				T_last_iter  = grid->z[z_ind].T_gas;
-				grid->z[z_ind].T_gas = brent_method(z_ind, temp_eq_function, T_min,  T_max);
-				T_error  = fabs( (grid->z[z_ind].T_gas - T_last_iter ) / (T_last_iter ) );
+				T_last_iter  = grid->z[z_ind].T;
+				grid->z[z_ind].T = brent_method(z_ind, temp_eq_function, T_min,  T_max);
+				T_error  = fabs( (grid->z[z_ind].T - T_last_iter ) / (T_last_iter ) );
 			}
 			if(solve_Ye)
 			{
@@ -82,15 +82,15 @@ void transport::solve_eq_zone_values()
 		{
 			if(solve_T)
 			{
-				dT_step  = grid->z[z_ind].T_gas - T_last_step;
-				grid->z[z_ind].T_gas =  T_last_step + (1.0 - damping)*dT_step;
-				if(grid->z[z_ind].T_gas > T_max){
-					cout << "# WARNING: Changing T_gas in zone " << z_ind << " from " << grid->z[z_ind].T_gas << " to T_max=" << T_max << endl;
-					grid->z[z_ind].T_gas = T_max;}
-				if(grid->z[z_ind].T_gas < T_min){
-					cout << "# WARNING: Changing T_gas in zone " << z_ind << " from " << grid->z[z_ind].T_gas << " to T_min=" << T_min << endl;
-					grid->z[z_ind].T_gas = T_min;}
-				if(grid->z[z_ind].T_gas != grid->z[z_ind].T_gas){
+				dT_step  = grid->z[z_ind].T - T_last_step;
+				grid->z[z_ind].T =  T_last_step + (1.0 - damping)*dT_step;
+				if(grid->z[z_ind].T > T_max){
+					cout << "# WARNING: Changing T_gas in zone " << z_ind << " from " << grid->z[z_ind].T << " to T_max=" << T_max << endl;
+					grid->z[z_ind].T = T_max;}
+				if(grid->z[z_ind].T < T_min){
+					cout << "# WARNING: Changing T_gas in zone " << z_ind << " from " << grid->z[z_ind].T << " to T_min=" << T_min << endl;
+					grid->z[z_ind].T = T_min;}
+				if(grid->z[z_ind].T != grid->z[z_ind].T){
 					cout << "# ERROR: T_gas is nan." << endl;
 					exit(5);}
 			}
@@ -131,7 +131,7 @@ double temp_eq_function(int z_ind, double T, transport* sim)
 	double E_emitted = 0.;
 
 	// set the zone temperature
-	sim->grid->z[z_ind].T_gas = T;
+	sim->grid->z[z_ind].T = T;
 
 	// include the emission from all species
 	for(unsigned i=0; i<sim->species_list.size(); i++)

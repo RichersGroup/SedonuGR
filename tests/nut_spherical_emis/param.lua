@@ -4,7 +4,7 @@ verbose      = 1
 do_photons   = 0                 -- simulate photons?
 do_neutrinos = 1                 -- simulate neutrinos?
 radiative_eq = 0
-steady_state = 0                 -- iterative calculation (solve for steady-state configuration)? 
+steady_state = 1                 -- iterative calculation (solve for steady-state configuration)? 
 solve_T      = 0                 -- (if iterative) solves each zone's temperature based on its absorbed energy
 solve_Ye     = 0                 -- (if iterative) solves each zone's Ye based on its absorbed lepton number
 do_visc = 0
@@ -30,7 +30,6 @@ nut_spec_n_phi      = 1                -- number of phi bins in output spectrum
 
 n_emit_core    = 1e7                 -- # particles to emit from core each timestep
 n_emit_therm   = 0                 -- # particles to emit from zones each timestep
-n_emit_decay   = 0                 -- # particles to emit from zones each timestep (from non-thermal processes)
 max_particles  = 1e7
 
 -- particle propagation parameters

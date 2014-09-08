@@ -52,10 +52,10 @@ transport::transport(){
 	n_emit_core = -MAX;
 	core_lum_multiplier = NaN;
 	do_visc = -MAX;
-	n_emit_therm = -MAX;
-	n_emit_decay = -MAX;
+	n_emit_zones = -MAX;
 	visc_specific_heat_rate = NaN;
-	L_net = NaN;
+	L_net_lab = NaN;
+	L_esc_lab = NaN;
 	reflect_outer = -MAX;
 }
 
@@ -74,8 +74,7 @@ void transport::init(Lua* lua)
 
 	// figure out what emission models we're using
 	n_emit_core  = lua->scalar<int>("n_emit_core");
-	n_emit_decay = lua->scalar<int>("n_emit_decay");
-	n_emit_therm = lua->scalar<int>("n_emit_therm");
+	n_emit_zones = lua->scalar<int>("n_emit_therm");
 	do_visc      = lua->scalar<int>("do_visc");
 	if(do_visc) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");
 	reflect_outer = lua->scalar<int>("reflect_outer");
@@ -122,9 +121,9 @@ void transport::init(Lua* lua)
 	// calculate integrated quantities to check
 	double mass = 0.0;
 	double KE   = 0.0;
-#pragma omp parallel for reduction(+:mass,KE)
+    #pragma omp parallel for reduction(+:mass,KE)
 	for(unsigned i=0;i<grid->z.size();i++){
-		double my_mass = grid->z[i].rho * grid->zone_volume(i);
+		double my_mass = grid->z[i].rho * grid->zone_lab_volume(i);
 		assert(my_mass >= 0);
 		mass      += my_mass;
 		KE        += 0.5 * my_mass * grid->zone_speed2(i);
@@ -167,7 +166,7 @@ void transport::init(Lua* lua)
 
 	/**********************/
 	/**/ if(do_photons) /**/
-		/**********************/
+	/**********************/
 	{
 		photons* photons_tmp = new photons;
 		photons_tmp->init(lua, this);
@@ -175,7 +174,7 @@ void transport::init(Lua* lua)
 	}
 	/************************/
 	/**/ if(do_neutrinos) /**/
-		/************************/
+	/************************/
 	{
 		double grey_opac = lua->scalar<double>("nut_grey_opacity");
 		int num_nut_species = 0;
@@ -233,7 +232,7 @@ void transport::init(Lua* lua)
 	assert(Ye_max <= 1.0);
 
 	// initialize all the zone eas variables
-#pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2)
 	for(unsigned i=0; i<species_list.size(); i++)
 		for(unsigned j=0; j<grid->z.size(); j++)
 			species_list[i]->set_eas(j);
@@ -263,7 +262,7 @@ void transport::init(Lua* lua)
 }
 
 void transport::check_parameters() const{
-	if(n_emit_therm>=0 && radiative_eq){
+	if(n_emit_zones>0 && radiative_eq){
 		cout << "ERROR: Emitting particles at beginning of timestep AND re-emitting them is inconsistent." << endl;
 		exit(10);
 	}
@@ -276,26 +275,29 @@ double transport::current_time(){
 //------------------------------------------------------------
 // take a transport time step 
 //------------------------------------------------------------
-void transport::step(const double dt)
+void transport::step(const double lab_dt)
 {
 	// assume 1.0 s. of particles were emitted if steady_state
-	double emission_time = (steady_state ? 1.0 : dt);
+	double emission_time = (steady_state ? 1.0 : lab_dt);
 
-#pragma omp parallel
+    #pragma omp parallel
 	{
 		// calculate the zone eas variables
-#pragma omp for collapse(2)
+        #pragma omp for collapse(2)
 		for(unsigned i=0; i<species_list.size(); i++)
 			for(unsigned j=0; j<grid->z.size(); j++)
 				species_list[i]->set_eas(j);
 
 		// prepare zone quantities for another round of transport
-#pragma omp single
-		L_net = 0;
-#pragma omp for
-		for(unsigned i=0;i<grid->z.size();i++)
+        #pragma omp single
 		{
-			zone* z = &(grid->z[i]);
+			L_net_lab = 0;
+			L_esc_lab = 0;
+		}
+        #pragma omp for
+		for(unsigned z_ind=0;z_ind<grid->z.size();z_ind++)
+		{
+			zone* z = &(grid->z[z_ind]);
 			z->e_rad    = 0;
 			z->l_abs    = 0;
 			z->e_abs    = 0;
@@ -317,7 +319,7 @@ void transport::step(const double dt)
 	calculate_timescales();
 
 	// advance time step
-	if (!steady_state) t_now += dt;
+	if (!steady_state) t_now += lab_dt;
 }
 
 
@@ -330,7 +332,7 @@ void transport::calculate_timescales() const{
 #pragma omp parallel for
 	for(unsigned i=0;i<grid->z.size();i++){
 		zone *z = &(grid->z[i]);
-		double e_gas = z->rho*pc::k*z->T_gas/pc::m_p;  // gas energy density (erg/ccm)
+		double e_gas = z->rho*pc::k*z->T/pc::m_p;  // gas energy density (erg/ccm)
 		z->t_eabs  = e_gas / z->e_abs;
 		z->t_eemit = e_gas / z->e_emit;
 		z->t_labs  = z->rho/pc::m_p / z->l_abs;
@@ -341,34 +343,44 @@ void transport::calculate_timescales() const{
 //----------------------------------------------------------------------------
 // normalize the radiative quantities
 //----------------------------------------------------------------------------
-void transport::normalize_radiative_quantities(const double dt){
+void transport::normalize_radiative_quantities(const double lab_dt){
 	double net_visc_heating = 0;
 
-#pragma omp parallel for reduction(+:net_visc_heating)
-	for(unsigned i=0;i<grid->z.size();i++)
+	// normalize zone quantities
+    #pragma omp parallel for reduction(+:net_visc_heating)
+	for(unsigned z_ind=0;z_ind<grid->z.size();z_ind++)
 	{
-		zone *z = &(grid->z[i]);
-		double vol = grid->zone_volume(i);
-
-		// include re-emission in L_net
-		L_net += (radiative_eq ? z->e_abs/dt : 0);
+		zone *z = &(grid->z[z_ind]);
+		double four_vol = grid->zone_lab_volume(z_ind) * lab_dt; // Lorentz invariant - same in lab and comoving frames
 
 		// add heat absorbed from viscosity to tally of e_abs
-		if(do_visc){
-			z->e_abs += zone_visc_heat_rate(i) * dt; // erg
-			net_visc_heating += zone_visc_heat_rate(i);      // erg/s
+		if(do_visc && good_zone(z_ind)){
+			z->e_abs += zone_comoving_visc_heat_rate(z_ind) * comoving_dt(lab_dt,z_ind); // erg, comoving frame
+			net_visc_heating += zone_comoving_visc_heat_rate(z_ind);      // erg/s
 		}
 
-		z->e_rad    /= vol*pc::c*dt; // erg*dist --> erg/ccm
-		z->e_abs    /= vol*dt;       // erg      --> erg/ccm/s
-		z->e_emit   /= vol*dt;       // erg      --> erg/ccm/s
-		z->l_abs    /= vol*dt;       // num      --> num/ccm/s
-		z->l_emit   /= vol*dt;       // num      --> num/ccm/s
+		if(!good_zone(z_ind)){
+			assert(z->e_abs == 0.0);
+			assert(z->l_abs == 0.0);
+			assert(z->e_emit == 0.0);
+			assert(z->l_emit == 0.0);
+		}
+
+		z->e_rad    /= four_vol*pc::c; // erg*dist --> erg/ccm
+		z->e_abs    /= four_vol;       // erg      --> erg/ccm/s
+		z->e_emit   /= four_vol;       // erg      --> erg/ccm/s
+		z->l_abs    /= four_vol;       // num      --> num/ccm/s
+		z->l_emit   /= four_vol;       // num      --> num/ccm/s
 	}
 
+	// normalize global quantities
+	L_net_lab /= lab_dt;
+	L_esc_lab /= lab_dt;
+
 	if(rank0 && verbose){
-		if(do_visc) cout << "# Viscous heating: " << net_visc_heating << " erg/s" << endl;
-		cout << "# Net luminosity from (zones+decay+core+re-emission): " << L_net << " erg/s" << endl;
+		if(do_visc) cout << "# Summed comoving-frame viscous heating: " << net_visc_heating << " erg/s" << endl;
+		cout << "# Net lab-frame luminosity from (zones+core+re-emission): " << L_net_lab << " erg/s" << endl;
+		cout << "# Net lab-frame escape luminosity: " << L_esc_lab << " erg/s" << endl;
 	}
 }
 
@@ -499,9 +511,9 @@ void transport::synchronize_gas()
 
 		// broadcast T_gas
 		if(solve_T){
-			if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->z[i].T_gas;
+			if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->z[i].T;
 			MPI_Bcast(&buffer.front(), size, MPI_DOUBLE, proc, MPI_COMM_WORLD);
-			if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->z[i].T_gas = buffer[i-my_begin];
+			if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->z[i].T = buffer[i-my_begin];
 		}
 
 		// broadcast Ye
@@ -515,9 +527,9 @@ void transport::synchronize_gas()
 
 
 // rate at which viscosity energizes the fluid (erg/s)
-double transport::zone_visc_heat_rate(const int z_ind) const{
-	if(visc_specific_heat_rate >= 0) return visc_specific_heat_rate * grid->z[z_ind].rho * grid->zone_volume(z_ind);
-	else                             return grid->z[z_ind].H        * grid->z[z_ind].rho * grid->zone_volume(z_ind);
+double transport::zone_comoving_visc_heat_rate(const int z_ind) const{
+	if(visc_specific_heat_rate >= 0) return visc_specific_heat_rate * grid->z[z_ind].rho * grid->zone_lab_volume(z_ind);
+	else                             return grid->z[z_ind].H_com    * grid->z[z_ind].rho * grid->zone_lab_volume(z_ind);
 }
 
 
@@ -540,7 +552,7 @@ void transport::update_zone_quantities(){
 
 	// solve radiative equilibrium temperature and Ye (but only in the zones I'm responsible for)
 	// don't solve if out of density bounds
-#pragma omp parallel for schedule(guided)
+    #pragma omp parallel for schedule(guided)
 	for (int i=start; i<end; i++) if( (grid->z[i].rho >= rho_min) && (grid->z[i].rho <= rho_max) )
 	{
 		zone *z = &(grid->z[i]);
@@ -555,7 +567,7 @@ void transport::update_zone_quantities(){
 
 		// adjust the Ye based on the lepton capacity (number of leptons)
 		if(solve_Ye){
-			double Nbary = z->rho * grid->zone_volume(i) * (z->Ye/pc::m_p + (1.-z->Ye)/pc::m_n);
+			double Nbary = z->rho * grid->zone_lab_volume(i) * (z->Ye/pc::m_p + (1.-z->Ye)/pc::m_n);
 			assert(Nbary > 0);
 			z->Ye += (z->l_abs-z->l_emit) / Nbary;
 			assert(z->Ye >= Ye_min);
@@ -575,4 +587,12 @@ void transport::open_file(const char* filebase, const int iw, ofstream& outf){
 	string filename = string(filebase) + "_" + number_string + ".dat";
 	outf.open(filename.c_str());
 
+}
+
+bool transport::good_zone(const int z_ind) const{
+	//const zone* z = &(grid->z[z_ind]);
+	//return (z->rho >= rho_min && z->rho <= rho_max &&
+	//  	    z->Ye  >= Ye_min  && z->Ye  <=  Ye_max &&
+	//        z->T   >=  T_min  && z->T   <=   T_max);
+	return grid->zone_speed2(z_ind) < pc::c*pc::c;
 }

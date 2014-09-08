@@ -37,27 +37,24 @@ private:
 
 	// emit from where?
 	//void initialize_particles(int init_particles);
-	void emit_inner_source(double dt);
-	void emit_zones(const double dt,
-			const int n_emit,
-			double (transport::*zone_lum)(const int) const,
-			void (transport::*emit_particle)(const int,const double,const double));
+	void emit_inner_source(const double dt);
+	void emit_zones(const double dt);
 
 	// what kind of particle to create?
 	void create_surface_particle(const double Ep, const double t);
 	void create_thermal_particle(const int zone_index, const double Ep, const double t);
-	void create_decay_particle(const int zone_index, const double Ep, const double t);
 
 	// per-zone luminosity functions
-	double zone_visc_heat_rate(const int zone_index) const;
-	double zone_therm_lum(const int zone_index) const;
-	double zone_decay_lum(const int zone_index) const;
+	double zone_comoving_visc_heat_rate(const int zone_index) const;
+	double zone_comoving_therm_emit_energy (const int zone_index, const double lab_dt) const;
+	double zone_comoving_therm_emit_leptons(const int zone_index, const double lab_dt) const;
 
 	// species sampling functions
 	int sample_core_species() const;
 	int sample_zone_species(int zone_index) const;
 
 	// transformation functions
+	double comoving_dt(const double lab_dt, const int z_ind) const;
 	double dshift_comoving_to_lab   (const particle* p) const;
 	double dshift_lab_to_comoving   (const particle* p) const;
 	void   transform_comoving_to_lab(particle* p) const;
@@ -65,9 +62,14 @@ private:
 
 	// propagate the particles
 	void propagate_particles(const double dt);
-	void propagate(particle* p, const double dt) const;
-	void which_event(const particle* p,const double dt, const double dshift, const double opac, double* d_smallest, ParticleEvent *event) const;
-	void isotropic_scatter(particle* p, const int redistribute) const;
+	void propagate(particle* p, const double dt);
+	void do_event(const ParticleEvent event, const double abs_frac, particle* p);
+	void tally_radiation(const particle* p, const double dshift_l2c, const double lab_d, const double lab_opac, const double abs_frac) const;
+	void which_event(const particle* p,const double dt, const double lab_opac, double* d_smallest, ParticleEvent *event) const;
+	void event_boundary(particle* p, const int z_ind) const;
+	void event_interact(particle* p, const int z_ind, const double abs_frac);
+	void isotropic_scatter(particle* p) const;
+	void re_emit(particle* p, const int z_ind) const;
 
 	// solve for temperature and Ye (if steady_state)
 	int    solve_T;
@@ -101,6 +103,7 @@ private:
 
 	// check parameters
 	void check_parameters() const;
+	bool good_zone(const int z_ind) const;
 
 public:
 
@@ -123,11 +126,12 @@ public:
 
 	// items for zone emission
 	int do_visc;
-	int n_emit_therm, n_emit_decay;
+	int n_emit_zones;
 	double visc_specific_heat_rate;
 
 	// net luminosity
-	double L_net;
+	double L_net_lab;
+	double L_esc_lab;
 	int reflect_outer;
 
 	// random number generator

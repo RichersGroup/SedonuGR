@@ -19,23 +19,23 @@ public:
 	static void write_header(const int dimensionality, ofstream& outf);
 	void write_line(const vector<double>& r, ofstream& outf) const;
 
-	// fluid properties
+	// fluid properties (rho,T are in comoving frame. Ye is invariant.)
 	vector<double> v;       // velocity vector (cm/s)
 	double rho;             // density (g/cm^3)
-	double T_gas;           // gas temperature (K)
+	double T;               // gas temperature (K)
 	double Ye;              // electron fraction
 
 	// store other parameters
-	double H;               // specific heating rate (erg/s/g)
+	double H_com;               // specific heating rate (erg/s/g)
 
-	// radiation quantities
+	// radiation quantities (all in comoving frame) (dVdt and lepton number are relativistic invariants)
 	double e_rad;                         // radiation energy density  (ergs/cm^3) in lab frame
 	double e_abs;                         // radiation energy deposition density rate (ergs/cm^3/s)
 	double l_abs;                         // lepton number deposition density rate (cm^-3 s^-1)
 	double e_emit;                        // radiation energy emission rate (erg/ccm/s)
 	double l_emit;						  // lepton number emission rate (cm^-3 s^-1)
 
-	// timescales
+	// timescales (all in lab frame)
 	double t_eabs;    // heating timescale
 	double t_eemit;    // cooling timescale
 	double t_labs;    // leptonization timescale from absorption

@@ -192,48 +192,48 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	//===============//
 	int do_visc = lua->scalar<int>("do_visc");
 	const int kb = 0;
-#pragma omp parallel for
-	for(unsigned proc=0; proc<dims[0]; proc++){
-		for(unsigned jb=0; jb<dims[2]; jb++) for(unsigned ib=0; ib<dims[3]; ib++){
-			// indices. moving by one proc in the x direction increases proc by 1
-			const int i_global = (proc%iprocs)*nxb + ib;
-			const int j_global = (proc/iprocs)*nyb + jb;
-			const int z_ind = zone_index(i_global, j_global);
-			assert(i_global < nr);
-			assert(j_global < ntheta);
-			assert(z_ind < n_zones);
+    #pragma omp parallel for collapse(3)
+	for(unsigned proc=0; proc<dims[0]; proc++)
+		for(unsigned jb=0; jb<dims[2]; jb++)
+			for(unsigned ib=0; ib<dims[3]; ib++){
+				// indices. moving by one proc in the x direction increases proc by 1
+				const int i_global = (proc%iprocs)*nxb + ib;
+				const int j_global = (proc/iprocs)*nyb + jb;
+				const int z_ind = zone_index(i_global, j_global);
+				assert(i_global < nr);
+				assert(j_global < ntheta);
+				assert(z_ind < n_zones);
 
-			// zone position
-			vector<double> r;
-			zone_coordinates(z_ind,r);
-			assert(r.size()==2);
+				// zone position
+				vector<double> r;
+				zone_coordinates(z_ind,r);
+				assert(r.size()==2);
 
-			// zone values
-			z[z_ind].rho           = dens[proc][kb][jb][ib];
-			z[z_ind].T_gas         = temp[proc][kb][jb][ib];
-			z[z_ind].Ye            = efrc[proc][kb][jb][ib];
-			if(do_visc) z[z_ind].H = hvis[proc][kb][jb][ib];
-			double vr              = 0;//velx[proc][kb][jb][ib];
-			double vtheta          = 0;//vely[proc][kb][jb][ib];
-			double vphi            = 0;//angz[proc][kb][jb][ib]/r[0];
-			double speed2 = vr*vr + vtheta*vtheta + vphi*vphi;
-			if(speed2 >= pc::c*pc::c){
-				vr     *= (1.0-tiny)* pc::c*pc::c/speed2;
-				vtheta *= (1.0-tiny)* pc::c*pc::c/speed2;
-				vphi   *= (1.0-tiny)* pc::c*pc::c/speed2;
-			}
-			assert(fabs(vr) < pc::c);
-			assert(fabs(vtheta) < pc::c);
-			assert(vr*vr + vtheta*vtheta < pc::c*pc::c);
-			assert((int)z[z_ind].v.size()==3);
-			z[z_ind].v[0] = vr;
-			z[z_ind].v[1] = vtheta;
-			z[z_ind].v[2] = vphi;
-			assert(z[z_ind].rho   >= 0.0);
-			assert(z[z_ind].T_gas >= 0.0);
-			assert(z[z_ind].Ye    >= 0.0);
-			assert(z[z_ind].Ye    <= 1.0);
-		}
+				// zone values
+				z[z_ind].rho               = dens[proc][kb][jb][ib];
+				z[z_ind].T                 = temp[proc][kb][jb][ib];
+				z[z_ind].Ye                = efrc[proc][kb][jb][ib];
+				if(do_visc) z[z_ind].H_com = hvis[proc][kb][jb][ib];
+				double vr              = velx[proc][kb][jb][ib];
+				double vtheta          = vely[proc][kb][jb][ib];
+				double vphi            = angz[proc][kb][jb][ib]/r[0];
+				//double speed2 = vr*vr + vtheta*vtheta + vphi*vphi;
+				//if(speed2 >= pc::c*pc::c){
+				//	vr     *= (1.0-tiny)* pc::c*pc::c/speed2;
+				//	vtheta *= (1.0-tiny)* pc::c*pc::c/speed2;
+				//	vphi   *= (1.0-tiny)* pc::c*pc::c/speed2;
+				//.}
+				//assert(fabs(vr) < pc::c);
+				//assert(fabs(vtheta) < pc::c);
+				//assert(vr*vr + vtheta*vtheta < pc::c*pc::c);
+				assert((int)z[z_ind].v.size()==3);
+				z[z_ind].v[0] = vr;
+				z[z_ind].v[1] = vtheta;
+				z[z_ind].v[2] = vphi;
+				assert(z[z_ind].rho   >= 0.0);
+				assert(z[z_ind].T >= 0.0);
+				assert(z[z_ind].Ye    >= 0.0);
+				assert(z[z_ind].Ye    <= 1.0);
 	}
 }
 
@@ -284,15 +284,15 @@ void grid_2D_sphere::custom_model(Lua* lua)
 
 		int base_ind = zone_index(i,0);
 		infile >> z[base_ind].rho;
-		infile >> z[base_ind].T_gas;
+		infile >> z[base_ind].T;
 		infile >> z[base_ind].Ye;
-		z[base_ind].H = 0;
+		z[base_ind].H_com = 0;
 		z[base_ind].e_rad = 0;
 		assert(z[base_ind].v.size() == 3);
 		z[base_ind].v[0] = 0;
 		z[base_ind].v[1] = 0;
 		assert(z[base_ind].rho >= 0);
-		assert(z[base_ind].T_gas >= 0);
+		assert(z[base_ind].T >= 0);
 		assert(z[base_ind].Ye >= 0);
 		assert(z[base_ind].Ye <= 1.0);
 
@@ -358,7 +358,7 @@ double grid_2D_sphere::zone_speed2(const int z_ind) const{
 	assert((int)r.size()==2);
 	const vector<double> v = z[z_ind].v;
 	double speed2 = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
-	assert(speed2 <= pc::c*pc::c);
+	//assert(speed2 <= pc::c*pc::c);
 	return speed2;
 }
 
@@ -366,7 +366,7 @@ double grid_2D_sphere::zone_speed2(const int z_ind) const{
 //------------------------------------------------------------
 // return volume of zone
 //------------------------------------------------------------
-double grid_2D_sphere::zone_volume(const int z_ind) const
+double grid_2D_sphere::zone_lab_volume(const int z_ind) const
 {
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
@@ -534,7 +534,7 @@ void grid_2D_sphere::cartesian_velocity_vector(const vector<double>& x, vector<d
 		}
 	}
 
-	assert(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] <= pc::c*pc::c);
+	//assert(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] <= pc::c*pc::c);
 }
 
 
@@ -619,7 +619,7 @@ void grid_2D_sphere::reflect_outer(particle *p) const{
 //------------------------------------------------------------
 // Find distance to outer boundary
 //------------------------------------------------------------
-double grid_2D_sphere::dist_to_boundary(const particle *p) const{
+double grid_2D_sphere::lab_dist_to_boundary(const particle *p) const{
 	// Theta = angle between radius vector and direction (Pi if outgoing)
 	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
 	double Rout  = r_out[r_out.size()-1];

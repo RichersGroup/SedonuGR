@@ -76,7 +76,7 @@ public:
 
 	// set the emissivity, absorption opacity, and scattering opacity
 	virtual void set_eas(const int zone_index) = 0;
-	void get_opacity(const particle* p, const int z_ind, const double dshift, double* opac, double* abs_frac) const;
+	void get_opacity(const double com_nu, const int z_ind, double* opac, double* abs_frac) const;
 
 	// min and max values for the Brent solver
 	double T_min,  T_max; //(K)

@@ -7,9 +7,9 @@
 zone::zone(const int dimensionality){
 	v.resize(dimensionality);
 	rho = NaN;
-	T_gas = NaN;
+	T = NaN;
 	Ye = NaN;
-	H = NaN;
+	H_com = NaN;
 	e_rad = NaN;
 	e_abs = NaN;
 	l_abs = NaN;
@@ -34,7 +34,7 @@ void zone::write_line(const vector<double>& r, ofstream& outf) const{
 	for(unsigned i=0; i<r.size(); i++) outf << r[i] << " ";
 	outf << e_rad << " ";
 	outf << rho   << " ";
-	outf << T_gas*pc::k_MeV << " ";
+	outf << T*pc::k_MeV << " ";
 	outf << Ye    << " ";
 	//outf << t_eemit << " ";
 	//outf << t_eabs  << " ";

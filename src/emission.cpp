@@ -9,24 +9,22 @@
 //------------------------------------------------------------
 // emit new particles
 //------------------------------------------------------------
-void transport::emit_particles(const double dt)
+void transport::emit_particles(const double lab_dt)
 {
-	assert(dt > 0);
+	assert(lab_dt > 0);
 
 	// complain if we're out of room for particles
 	assert(n_emit_core >= 0);
-	assert(n_emit_therm >= 0);
-	assert(n_emit_decay >= 0);
-	int n_emit = n_emit_core + n_emit_therm + n_emit_decay;
+	assert(n_emit_zones >= 0);
+	int n_emit = n_emit_core + n_emit_zones;
 	if (total_particles() + n_emit > max_particles){
 		cout << "# ERROR: Not enough particle space\n";
 		exit(10);
 	}
 
 	// emit from the core and/or the zones
-	if(n_emit_core >0) emit_inner_source(dt);
-	if(n_emit_therm>0) emit_zones(dt, n_emit_therm, &transport::zone_therm_lum,      &transport::create_thermal_particle);
-	if(n_emit_decay>0) emit_zones(dt, n_emit_decay, &transport::zone_decay_lum,      &transport::create_decay_particle);
+	if(n_emit_core >0) emit_inner_source(lab_dt);
+	if(n_emit_zones>0) emit_zones(lab_dt);
 }
 
 
@@ -35,17 +33,16 @@ void transport::emit_particles(const double dt)
 // Currently written to emit photons with 
 // blackblody spectrum based on T_core and L_core
 //------------------------------------------------------------
-void transport::emit_inner_source(const double dt)
+void transport::emit_inner_source(const double lab_dt)
 {
-	assert(dt > 0);
+	assert(lab_dt > 0);
 	assert(core_species_luminosity.N > 0);
-	const double Ep  = core_species_luminosity.N * dt/n_emit_core;
-	L_net += core_species_luminosity.N;
+	const double Ep  = core_species_luminosity.N * lab_dt/n_emit_core;
 	assert(Ep > 0);
 
-#pragma omp parallel for
+    #pragma omp parallel for
 	for (int i=0; i<n_emit_core; i++){
-		double t = t_now + dt*rangen.uniform();
+		double t = t_now + lab_dt*rangen.uniform();
 		create_surface_particle(Ep,t);
 	}
 }
@@ -54,58 +51,41 @@ void transport::emit_inner_source(const double dt)
 //--------------------------------------------------------------------------
 // emit particles due to viscous heating
 //--------------------------------------------------------------------------
-void transport::emit_zones(const double dt,
-		const int n_emit,
-		double (transport::*zone_lum)(const int) const,
-		void (transport::*create_particle)(const int,const double,const double)){
+void transport::emit_zones(const double lab_dt){
 
-	assert(dt > 0);
-	assert(n_emit >= 0);
+	assert(lab_dt > 0);
 
 	unsigned gridsize = grid->z.size();
-	double tmp_net_lum = 0;
-	double Ep = NaN;
+	double tmp_net_energy = 0;
 
 	// at this point therm means either viscous heating or regular emission, according to the logic above
-#pragma omp parallel
+    #pragma omp parallel
 	{
 		// determine the net luminosity of each emission type over the whole grid
-#pragma omp for reduction(+:tmp_net_lum)
-		for(unsigned i=0; i<gridsize; i++){
-			double zone_luminosity = (this->*zone_lum)(i);
-			assert(zone_luminosity >= 0);
-			tmp_net_lum += zone_luminosity;
-		}
-
-		// determine the energy of each emitted particle
-#pragma omp single
-		{
-			Ep = tmp_net_lum*dt / (double)n_emit;
-			L_net += tmp_net_lum;
-		}
+		// proper normalization due to frames not physical - just for distributing particles somewhat reasonably
+        #pragma omp for reduction(+:tmp_net_energy)
+		for(unsigned z_ind=0; z_ind<gridsize; z_ind++) tmp_net_energy += zone_comoving_therm_emit_energy(z_ind,lab_dt);
 
 		// actually emit the particles in each zone
-#pragma omp for schedule(guided)
-		for (unsigned i=0; i<gridsize; i++)
+        #pragma omp for schedule(guided)
+		for (unsigned z_ind=0; z_ind<gridsize; z_ind++)
 		{
-			// this zone's luminosity and number of emitted particles.
-			// randomly decide whether last particle gets added based on the remainder.
-			unsigned n_regular_emit = (double)n_emit * (this->*zone_lum)(i)/tmp_net_lum;
-			double remainder_energy = (this->*zone_lum)(i)*dt - (double)n_regular_emit*Ep;
-			assert(remainder_energy >= 0);
-			assert(remainder_energy <= Ep);
-			assert(n_regular_emit >= 0);
+			// how much this zone emits. Always emits correct energy even if number of particles doesn't add up.
+			double com_emit_energy = zone_comoving_therm_emit_energy(z_ind,lab_dt);
+			unsigned this_n_emit = (double)n_emit_zones * com_emit_energy / tmp_net_energy;
+			if(com_emit_energy>0 && this_n_emit==0) this_n_emit = 1;
+			double Ep = com_emit_energy / (double)this_n_emit;
 
 			// create the particles
 			double t;
-			for (unsigned k=0; k<n_regular_emit; k++){
-				t = t_now + dt*rangen.uniform();
-				(this->*create_particle)(i,Ep,t);
+			for (unsigned k=0; k<this_n_emit; k++){
+				t = t_now + lab_dt*rangen.uniform();
+				create_thermal_particle(z_ind,Ep,t);
 			}
-			if(remainder_energy > 0){
-				t = t_now + dt*rangen.uniform();
-				(this->*create_particle)(i,remainder_energy,t);
-			}
+
+			// record emissivity
+			grid->z[z_ind].e_emit = com_emit_energy;
+			grid->z[z_ind].l_emit = zone_comoving_therm_emit_leptons(z_ind,lab_dt);
 		}// loop over zones
 	}// #pragma omp parallel
 }
@@ -116,23 +96,29 @@ void transport::emit_zones(const double dt,
 // Helper functions for emit_zones
 //----------------------------------------------------------------------------------------
 
-// return the cell's luminosity from thermal emission (erg/s)
-double transport::zone_therm_lum(const int zone_index) const{
+// return the cell's luminosity from thermal emission (erg/s, comoving frame)
+double transport::zone_comoving_therm_emit_energy(const int z_ind, const double lab_dt) const{
 	double H=0;
+	double four_vol = grid->zone_lab_volume(z_ind) * lab_dt; //relativistic invariant - same in comoving frame.
 	for(unsigned i=0; i<species_list.size(); i++){
-		double species_lum = species_list[i]->integrate_zone_emis(zone_index) * 4*pc::pi * grid->zone_volume(zone_index);
+		double species_lum = species_list[i]->integrate_zone_emis(z_ind) * 4*pc::pi * four_vol;
 		assert(species_lum >= 0);
 		H += species_lum;
 	}
+	assert(H>=0);
 	return H;
 }
 
-// return the total decay luminosity from the cell (erg/s)
-double transport::zone_decay_lum(const int zone_index) const{
-	if(rank0) cout << "WARNING: emission in zones from decay is not yet implemented!" << endl;
-	return 0;
+// return the cell's luminosity from thermal emission (erg/s, comoving frame)
+double transport::zone_comoving_therm_emit_leptons(const int z_ind, const double lab_dt) const{
+	double L=0;
+	double four_vol = grid->zone_lab_volume(z_ind) * lab_dt; //relativistic invariant - same in comoving frame.
+	for(unsigned i=0; i<species_list.size(); i++){
+		double species_lum = species_list[i]->integrate_zone_lepton_emis(z_ind) * 4*pc::pi * four_vol;
+		L += species_lum;
+	}
+	return L;
 }
-
 
 //------------------------------------------------------------
 // General function to create a particle in zone i
@@ -181,14 +167,12 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	transform_comoving_to_lab(&p);
 
 	// add to particle vector
-#pragma omp critical
+    #pragma omp critical
 	particles.push_back(p);
 
-	// count up the emitted energy/leptons in each zone
-#pragma omp atomic
-	grid->z[z_ind].e_emit += p.e;
-#pragma omp atomic
-	grid->z[z_ind].l_emit += p.e/(pc::h*p.nu) * (double)species_list[s]->lepton_number;
+	// count up the emitted energy in each zone
+    #pragma omp atomic
+	L_net_lab += p.e;
 }
 
 
@@ -246,15 +230,8 @@ void transport::create_surface_particle(const double Ep, const double t)
 	transform_comoving_to_lab(&p);
 
 	// add to particle vector
-#pragma omp critical
+    #pragma omp critical
 	particles.push_back(p);
-}
-
-
-//------------------------------------------------------------
-// General function to create a particle from radioactive decay
-//------------------------------------------------------------
-void transport::create_decay_particle(const int zone_index, const double Ep, const double t)
-{
-	if(rank0) cout << "WARNING: transport::create_decay_particle is not yet implemented!" << endl;
+    #pragma omp atomic
+	L_net_lab += p.e;
 }
