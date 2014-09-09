@@ -127,7 +127,9 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	float angz[dims[0]][dims[1]][dims[2]][dims[3]]; // cm^2/s
 	float efrc[dims[0]][dims[1]][dims[2]][dims[3]]; //
 	float temp[dims[0]][dims[1]][dims[2]][dims[3]]; // K
-	float hvis[dims[0]][dims[1]][dims[2]][dims[3]]; // erg/g/s
+	float hvis[dims[0]][dims[1]][dims[2]][dims[3]]; // erg/g/s (viscous heating)
+	float gamn[dims[0]][dims[1]][dims[2]][dims[3]]; // erg/g/s (net neutrino heating-cooling)
+	float ncfn[dims[0]][dims[1]][dims[2]][dims[3]]; // 1/s     (net rate of change of Ye)
 	dataset = file.openDataSet("/dens");
 	dataset.read(&(dens[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset = file.openDataSet("/velx");
@@ -142,6 +144,10 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	dataset.read(&(temp[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset = file.openDataSet("/hvis");
 	dataset.read(&(hvis[0][0][0][0]),H5::PredType::IEEE_F32LE);
+	dataset = file.openDataSet("/gamn");
+	dataset.read(&(gamn[0][0][0][0]),H5::PredType::IEEE_F32LE);
+	dataset = file.openDataSet("/ncfn");
+	dataset.read(&(ncfn[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset.close();
 	file.close();
 
@@ -235,6 +241,45 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 				assert(z[z_ind].Ye    >= 0.0);
 				assert(z[z_ind].Ye    <= 1.0);
 	}
+
+
+	//================================//
+	// output timescales in data file //
+	//================================//
+	vector<double> z_gamn(z.size());
+	vector<double> z_ncfn(z.size());
+	for(unsigned proc=0; proc<dims[0]; proc++)
+		for(unsigned jb=0; jb<dims[2]; jb++)
+			for(unsigned ib=0; ib<dims[3]; ib++){
+				// indices. moving by one proc in the x direction increases proc by 1
+				const int i_global = (proc%iprocs)*nxb + ib;
+				const int j_global = (proc/iprocs)*nyb + jb;
+				const int z_ind = zone_index(i_global, j_global);
+				assert(i_global < nr);
+				assert(j_global < ntheta);
+				assert(z_ind < n_zones);
+
+				z_gamn[z_ind] = gamn[proc][kb][jb][ib];
+				z_ncfn[z_ind] = ncfn[proc][kb][jb][ib];
+			}
+
+	ofstream outf;
+	outf.open("rates_flash.dat");
+	outf << "r theta gamn(1/s) ncfn(erg/g/s)" << endl;
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
+		// zone position
+		vector<double> r;
+		zone_coordinates(z_ind,r);
+		assert(r.size()==2);
+
+		//double gamma = transport::lorentz_factor(z[z_ind].v);
+		//double m_zone = z[z_ind].rho * zone_lab_volume(z_ind)*gamma;
+		//double t_lep = 1.0/z_gamn[z_ind];
+		//double t_therm = m_zone*pc::k*z[z_ind].T/z_ncfn[z_ind];
+		if(z_ind%theta_out.size() == 0) outf << endl;
+		outf << r[0] << " " << r[1] << " " << z_gamn[z_ind] << " " << z_ncfn[z_ind] << endl;
+	}
+	outf.close();
 }
 
 //------------------------------------------------------------
@@ -344,22 +389,6 @@ int grid_2D_sphere::zone_index(const int i, const int j) const
 	const int z_ind = i*theta_out.size() + j;
 	assert(z_ind < (int)z.size());
 	return z_ind;
-}
-
-
-//------------------------------------
-// get the velocity squared of a zone
-//------------------------------------
-double grid_2D_sphere::zone_speed2(const int z_ind) const{
-	assert(z_ind >= 0);
-	assert(z_ind < (int)z.size());
-	vector<double> r;
-	zone_coordinates(z_ind,r);
-	assert((int)r.size()==2);
-	const vector<double> v = z[z_ind].v;
-	double speed2 = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
-	//assert(speed2 <= pc::c*pc::c);
-	return speed2;
 }
 
 
@@ -548,45 +577,45 @@ void grid_2D_sphere::write_rays(int iw) const
 
 	// along theta=0
 	transport::open_file("ray_t0",iw,outf);
-	zone::write_header(2,outf);
+	write_header(outf);
 	j = 0;
 	for(i=0; i<r_out.size(); i++){
 		int z_ind = zone_index(i,j);
 		zone_coordinates(z_ind,r);
-		z[z_ind].write_line(r,outf);
+		write_line(outf,z_ind);
 	}
 	outf.close();
 
 	// along theta=pi/2
 	transport::open_file("ray_t.5",iw,outf);
-	zone::write_header(2,outf);
+	write_header(outf);
 	j = theta_out.size()/2;
 	for(i=0; i<r_out.size(); i++){
 		int z_ind = zone_index(i,j);
 		zone_coordinates(z_ind,r);
-		z[z_ind].write_line(r,outf);
+		write_line(outf,z_ind);
 	}
 	outf.close();
 
 	// along theta=pi
 	transport::open_file("ray_t1",iw,outf);
-	zone::write_header(2,outf);
+	write_header(outf);
 	j = theta_out.size()-1;
 	for(i=0; i<r_out.size(); i++){
 		int z_ind = zone_index(i,j);
 		zone_coordinates(z_ind,r);
-		z[z_ind].write_line(r,outf);
+		write_line(outf,z_ind);
 	}
 	outf.close();
 
 	// along theta
 	transport::open_file("ray_r.5",iw,outf);
-	zone::write_header(2,outf);
+	write_header(outf);
 	i = r_out.size()/2;
 	for(j=0; j<theta_out.size(); j++){
 		int z_ind = zone_index(i,j);
 		zone_coordinates(z_ind,r);
-		z[z_ind].write_line(r,outf);
+		write_line(outf,z_ind);
 	}
 	outf.close();
 }

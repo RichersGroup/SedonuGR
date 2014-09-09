@@ -8,6 +8,7 @@
 
 void transport::propagate_particles(const double lab_dt)
 {
+	if(verbose) cout << "# Propagating particles..." << endl;
 	vector<int> n_active(species_list.size(),0);
 	vector<int> n_escape(species_list.size(),0);
 	double e_esc_lab = 0;
@@ -51,8 +52,8 @@ void transport::propagate_particles(const double lab_dt)
 	if (rank0 && verbose){
 		for(unsigned i=0; i<species_list.size(); i++){
 			double per_esc = (100.0*n_escape[i])/n_active[i];
-			if(n_active[i]>0) printf("# %i/%i %s escaped. (%3.2f%%)\n", n_escape[i], n_active[i], species_list[i]->name.c_str(), per_esc);
-			else printf("# No active %s.\n", species_list[i]->name.c_str());
+			if(n_active[i]>0) printf("#   %i/%i %s escaped. (%3.2f%%)\n", n_escape[i], n_active[i], species_list[i]->name.c_str(), per_esc);
+			else printf("#   No active %s.\n", species_list[i]->name.c_str());
 		}
 	}
 }
@@ -198,7 +199,7 @@ void transport::tally_radiation(const particle* p, const double dshift_l2c, cons
 	assert(z_ind >= 0);
 	assert(z_ind < (int)grid->z.size());
 	assert(dshift_l2c > 0);
-	assert(lab_d > 0);
+	assert(lab_d >= 0);
 	assert(lab_opac >= 0);
 	assert(abs_frac >= 0);
 	assert(abs_frac <= 1);
@@ -266,7 +267,7 @@ void transport::propagate(particle* p, const double lab_dt)
 		assert(z_ind < (int)grid->z.size());
 		int on_grid = (z_ind >= 0);
 
-		if(good_zone(z_ind) && on_grid){ // avoid handling fluff zones if unnecessary
+		if(grid->good_zone(z_ind) && on_grid){ // avoid handling fluff zones if unnecessary
 			// doppler shift from comoving to lab (nu0/nu)
 			dshift_l2c = dshift_lab_to_comoving(p);
 			assert(dshift_l2c > 0);
@@ -286,7 +287,7 @@ void transport::propagate(particle* p, const double lab_dt)
 		assert(lab_d >= 0);
 
 		// accumulate counts of radiation energy, absorption, etc
-		if(good_zone(z_ind) && on_grid) tally_radiation(p,dshift_l2c,lab_d,lab_opac,abs_frac);
+		if(grid->good_zone(z_ind) && on_grid) tally_radiation(p,dshift_l2c,lab_d,lab_opac,abs_frac);
 
 		// move particle the distance
 		p->x[0] += lab_d*p->D[0];

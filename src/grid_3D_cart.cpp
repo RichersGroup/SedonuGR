@@ -200,18 +200,6 @@ void grid_3D_cart::read_model_file(Lua* lua)
 }
 
 
-//------------------------------------
-// get the velocity squared of a zone
-//------------------------------------
-double grid_3D_cart::zone_speed2(const int z_ind) const{
-	assert(z_ind >= 0);
-	assert(z_ind < (int)z.size());
-	assert(z[z_ind].v.size()==3);
-	double speed2 = z[z_ind].v[0]*z[z_ind].v[0] + z[z_ind].v[1]*z[z_ind].v[1] + z[z_ind].v[2]*z[z_ind].v[2];
-	assert(speed2 <= pc::c*pc::c);
-	return speed2;
-}
-
 //------------------------------------------------------------
 // Overly simple search to find zone
 //------------------------------------------------------------
@@ -353,81 +341,81 @@ void grid_3D_cart::zone_coordinates(const int z_ind, vector<double>& r) const
 void grid_3D_cart::write_rays(const int iw) const
 {
 	int i,j,k;
-	int ind;
+	int z_ind;
 	vector<double> r;
 
 	ofstream outf;
 
 	// XY-slice
 	transport::open_file("slice_xy",iw,outf);
-	zone::write_header(dimensionality,outf);
+	write_header(outf);
 	k = nz/2;
 	for(i=0; i<nx; i++) for(j=0; j<ny; j++){
 		if(j==0) outf << endl;
-		ind = zone_index(i,j,k);
-		zone_coordinates(ind,r);
-		z[ind].write_line(r,outf);
+		z_ind = zone_index(i,j,k);
+		zone_coordinates(z_ind,r);
+		write_line(outf,z_ind);
 	}
 	outf.close();
 
 	// XZ-slice
 	transport::open_file("slice_xz",iw,outf);
-	zone::write_header(dimensionality,outf);
+	write_header(outf);
 	j = ny/2;
 	for(i=0; i<nx; i++) for(k=0; k<nz; k++){
 		if(k==0) outf << endl;
-		ind = zone_index(i,j,k);
-		zone_coordinates(ind,r);
-		z[ind].write_line(r,outf);
+		z_ind = zone_index(i,j,k);
+		zone_coordinates(z_ind,r);
+		write_line(outf,z_ind);
 	}
 	outf.close();
 
 	// YZ-slice
 	transport::open_file("slice_yz",iw,outf);
-	zone::write_header(dimensionality,outf);
+	write_header(outf);
 	i = nx/2;
 	for(j=0; j<ny; j++) for(k=0; k<nz; k++){
 		if(k==0) outf << endl;
-		ind = zone_index(i,j,k);
-		zone_coordinates(ind,r);
-		z[ind].write_line(r,outf);
+		z_ind = zone_index(i,j,k);
+		zone_coordinates(z_ind,r);
+		write_line(outf,z_ind);
 	}
 	outf.close();
 
 	// X-direction
 	transport::open_file("ray_x",iw,outf);
-	zone::write_header(dimensionality,outf);
+	write_header(outf);
 	j = ny/2;
 	k = nz/2;
 	for (i=0;i<nx;i++){
-		ind = zone_index(i,j,k);
-		zone_coordinates(ind,r);
-		z[ind].write_line(r,outf);
+		z_ind = zone_index(i,j,k);
+		zone_coordinates(z_ind,r);
+		write_line(outf,z_ind);
 	}
 	outf.close();
 
 	// Y-direction
 	transport::open_file("ray_y",iw,outf);
-	zone::write_header(dimensionality,outf);
+	write_header(outf);
 	i = nx/2;
 	k = nz/2;
 	for (j=0; j<ny; j++){
-		ind = zone_index(i,j,k);
-		zone_coordinates(ind,r);
-		z[ind].write_line(r,outf);
+		z_ind = zone_index(i,j,k);
+		zone_coordinates(z_ind,r);
+		write_line(outf,z_ind);
 	}
 	outf.close();
 
 	// Z-direction
 	transport::open_file("ray_z",iw,outf);
-	zone::write_header(dimensionality,outf);
+	write_header(outf);
 	i = nx/2;
 	j = ny/2;
 	for (k=0; k<nz; k++)
 	{
-		ind = zone_index(i,j,k);
-		zone_coordinates(ind,r);
-		z[ind].write_line(r,outf);
+		z_ind = zone_index(i,j,k);
+		zone_coordinates(z_ind,r);
+		write_line(outf,z_ind);
 	}
 	outf.close();
 }

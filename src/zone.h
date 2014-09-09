@@ -15,10 +15,6 @@ public:
 	// constructors
 	zone(const int dimensionality=0);
 
-	// writing utilities
-	static void write_header(const int dimensionality, ofstream& outf);
-	void write_line(const vector<double>& r, ofstream& outf) const;
-
 	// fluid properties (rho,T are in comoving frame. Ye is invariant.)
 	vector<double> v;       // velocity vector (cm/s)
 	double rho;             // density (g/cm^3)

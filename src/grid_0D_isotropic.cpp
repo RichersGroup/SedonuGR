@@ -71,17 +71,6 @@ int grid_0D_isotropic::zone_index(const vector<double>& x) const
 }
 
 
-//------------------------------------
-// get the velocity squared of a zone
-//------------------------------------
-double grid_0D_isotropic::zone_speed2(const int z_ind) const{
-	assert(z_ind == 0);
-	double speed2 = z[0].v[0]*z[0].v[0] + z[0].v[1]*z[0].v[1] + z[0].v[2]*z[0].v[2];
-	assert(speed2 <= pc::c*pc::c);
-	return speed2;
-}
-
-
 //------------------------------------------------------------
 // return volume of zone z_ind
 //------------------------------------------------------------

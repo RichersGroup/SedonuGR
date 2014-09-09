@@ -11,6 +11,7 @@
 //------------------------------------------------------------
 void transport::emit_particles(const double lab_dt)
 {
+	if(verbose) cout << "# Emitting particles..." << endl;
 	assert(lab_dt > 0);
 
 	// complain if we're out of room for particles
@@ -98,26 +99,32 @@ void transport::emit_zones(const double lab_dt){
 
 // return the cell's luminosity from thermal emission (erg/s, comoving frame)
 double transport::zone_comoving_therm_emit_energy(const int z_ind, const double lab_dt) const{
-	double H=0;
-	double four_vol = grid->zone_lab_volume(z_ind) * lab_dt; //relativistic invariant - same in comoving frame.
-	for(unsigned i=0; i<species_list.size(); i++){
-		double species_lum = species_list[i]->integrate_zone_emis(z_ind) * 4*pc::pi * four_vol;
-		assert(species_lum >= 0);
-		H += species_lum;
+	if(!grid->good_zone(z_ind)) return 0; //don't emit from superluminal zones
+	else{
+		double H=0;
+		double four_vol = grid->zone_lab_volume(z_ind) * lab_dt; //relativistic invariant - same in comoving frame.
+		for(unsigned i=0; i<species_list.size(); i++){
+			double species_lum = species_list[i]->integrate_zone_emis(z_ind) * 4*pc::pi * four_vol;
+			assert(species_lum >= 0);
+			H += species_lum;
+		}
+		assert(H>=0);
+		return H;
 	}
-	assert(H>=0);
-	return H;
 }
 
 // return the cell's luminosity from thermal emission (erg/s, comoving frame)
 double transport::zone_comoving_therm_emit_leptons(const int z_ind, const double lab_dt) const{
-	double L=0;
-	double four_vol = grid->zone_lab_volume(z_ind) * lab_dt; //relativistic invariant - same in comoving frame.
-	for(unsigned i=0; i<species_list.size(); i++){
-		double species_lum = species_list[i]->integrate_zone_lepton_emis(z_ind) * 4*pc::pi * four_vol;
-		L += species_lum;
+	if(!grid->good_zone(z_ind)) return 0; //don't emit from superluminal zones
+	else{
+		double L=0;
+		double four_vol = grid->zone_lab_volume(z_ind) * lab_dt; //relativistic invariant - same in comoving frame.
+		for(unsigned i=0; i<species_list.size(); i++){
+			double species_lum = species_list[i]->integrate_zone_lepton_emis(z_ind) * 4*pc::pi * four_vol;
+			L += species_lum;
+		}
+		return L;
 	}
-	return L;
 }
 
 //------------------------------------------------------------

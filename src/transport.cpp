@@ -121,16 +121,19 @@ void transport::init(Lua* lua)
 	// calculate integrated quantities to check
 	double mass = 0.0;
 	double KE   = 0.0;
+	double TE   = 0.0;
     #pragma omp parallel for reduction(+:mass,KE)
-	for(unsigned i=0;i<grid->z.size();i++){
-		double my_mass = grid->z[i].rho * grid->zone_lab_volume(i);
+	for(unsigned z_ind=0;z_ind<grid->z.size();z_ind++){
+		double my_mass = grid->z[z_ind].rho * grid->zone_comoving_volume(z_ind);
 		assert(my_mass >= 0);
-		mass      += my_mass;
-		KE        += 0.5 * my_mass * grid->zone_speed2(i);
+		mass += my_mass;
+		KE   += 0.5 * my_mass * grid->zone_speed2(z_ind);
+		TE   += my_mass / pc::m_n * pc::k * grid->z[z_ind].T;
 	}
 	if (rank0){
 		cout << "#   mass = " << mass << " g" <<endl;
 		cout << "#   KE = " << KE << " erg" << endl;
+		cout << "#   TE = " << TE << "erg" << endl;
 	}
 
 	//===============//
@@ -354,12 +357,12 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		double four_vol = grid->zone_lab_volume(z_ind) * lab_dt; // Lorentz invariant - same in lab and comoving frames
 
 		// add heat absorbed from viscosity to tally of e_abs
-		if(do_visc && good_zone(z_ind)){
+		if(do_visc && grid->good_zone(z_ind)){
 			z->e_abs += zone_comoving_visc_heat_rate(z_ind) * comoving_dt(lab_dt,z_ind); // erg, comoving frame
 			net_visc_heating += zone_comoving_visc_heat_rate(z_ind);      // erg/s
 		}
 
-		if(!good_zone(z_ind)){
+		if(!grid->good_zone(z_ind)){
 			assert(z->e_abs == 0.0);
 			assert(z->l_abs == 0.0);
 			assert(z->e_emit == 0.0);
@@ -377,10 +380,11 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 	L_net_lab /= lab_dt;
 	L_esc_lab /= lab_dt;
 
+	// output useful stuff
 	if(rank0 && verbose){
 		if(do_visc) cout << "# Summed comoving-frame viscous heating: " << net_visc_heating << " erg/s" << endl;
-		cout << "# Net lab-frame luminosity from (zones+core+re-emission): " << L_net_lab << " erg/s" << endl;
-		cout << "# Net lab-frame escape luminosity: " << L_esc_lab << " erg/s" << endl;
+		cout << "#   " << L_net_lab << " erg/s Net lab-frame luminosity from (zones+core+re-emission): " << endl;
+		cout << "#   " << L_esc_lab << " erg/s Net lab-frame escape luminosity: " << endl;
 	}
 }
 
@@ -528,8 +532,8 @@ void transport::synchronize_gas()
 
 // rate at which viscosity energizes the fluid (erg/s)
 double transport::zone_comoving_visc_heat_rate(const int z_ind) const{
-	if(visc_specific_heat_rate >= 0) return visc_specific_heat_rate * grid->z[z_ind].rho * grid->zone_lab_volume(z_ind);
-	else                             return grid->z[z_ind].H_com    * grid->z[z_ind].rho * grid->zone_lab_volume(z_ind);
+	if(visc_specific_heat_rate >= 0) return visc_specific_heat_rate * grid->z[z_ind].rho * grid->zone_comoving_volume(z_ind);
+	else                             return grid->z[z_ind].H_com    * grid->z[z_ind].rho * grid->zone_comoving_volume(z_ind);
 }
 
 
@@ -567,7 +571,7 @@ void transport::update_zone_quantities(){
 
 		// adjust the Ye based on the lepton capacity (number of leptons)
 		if(solve_Ye){
-			double Nbary = z->rho * grid->zone_lab_volume(i) * (z->Ye/pc::m_p + (1.-z->Ye)/pc::m_n);
+			double Nbary = grid->zone_rest_mass(i) / mean_mass(i);
 			assert(Nbary > 0);
 			z->Ye += (z->l_abs-z->l_emit) / Nbary;
 			assert(z->Ye >= Ye_min);
@@ -589,10 +593,6 @@ void transport::open_file(const char* filebase, const int iw, ofstream& outf){
 
 }
 
-bool transport::good_zone(const int z_ind) const{
-	//const zone* z = &(grid->z[z_ind]);
-	//return (z->rho >= rho_min && z->rho <= rho_max &&
-	//  	    z->Ye  >= Ye_min  && z->Ye  <=  Ye_max &&
-	//        z->T   >=  T_min  && z->T   <=   T_max);
-	return grid->zone_speed2(z_ind) < pc::c*pc::c;
+double transport::mean_mass(const double Ye){
+	return 1.0 / (Ye/pc::m_p + (1.0-Ye)/pc::m_n);
 }

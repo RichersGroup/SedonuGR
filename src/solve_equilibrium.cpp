@@ -17,6 +17,7 @@ double   Ye_eq_function(int z_ind, double Ye, transport* sim);
 //-------------------------------------------------------------
 void transport::solve_eq_zone_values()
 {
+	cout << "# Solving for equilibrium values" << endl;
 	assert(brent_solve_tolerance > 0);
 
 	// remember what zones I'm responsible for

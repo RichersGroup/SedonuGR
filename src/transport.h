@@ -103,7 +103,6 @@ private:
 
 	// check parameters
 	void check_parameters() const;
-	bool good_zone(const int z_ind) const;
 
 public:
 
@@ -146,6 +145,9 @@ public:
 	void write_rays(const int it);
 	void write_spectra(const int it);
 	static void open_file(const char* filebase, const int iw, ofstream& outf);
+	static double lorentz_factor(const vector<double>& v);
+	static double dot(const vector<double>& a, const vector<double>& b);
+	static double mean_mass(const double Ye);
 };
 
 #endif

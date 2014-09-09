@@ -93,18 +93,6 @@ int grid_1D_sphere::zone_index(const vector<double>& x) const
 }
 
 
-//------------------------------------
-// get the velocity squared of a zone
-//------------------------------------
-double grid_1D_sphere::zone_speed2(const int z_ind) const{
-	assert(z_ind >= 0);
-	assert(z_ind < (int)z.size());
-	double speed2 = z[z_ind].v[0]*z[z_ind].v[0];
-	assert(speed2 <= pc::c*pc::c);
-	return speed2;
-}
-
-
 //------------------------------------------------------------
 // return volume of zone z_ind
 //------------------------------------------------------------

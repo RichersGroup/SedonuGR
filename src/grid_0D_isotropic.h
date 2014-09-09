@@ -25,7 +25,6 @@ public:
 
 	// required functions
 	int  zone_index               (const vector<double>& x                                     ) const;
-	double zone_speed2            (const int z_ind                                           ) const;
 	double zone_lab_volume            (const int z_ind                                           ) const;
 	double zone_min_length        (const int z_ind                                           ) const;
 	void zone_coordinates         (const int z_ind, vector<double>& r                          ) const;

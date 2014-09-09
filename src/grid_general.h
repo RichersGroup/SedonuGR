@@ -56,6 +56,8 @@ public:
 
 	// write out zone information
 	void write_zones(const int iw) const;
+	void write_header(ofstream& outf) const;
+	void write_line(ofstream& outf, const int z_ind) const;
 	virtual void write_rays(const int iw) const = 0;
 
 	//****** virtual functions (geometry specific)
@@ -64,13 +66,18 @@ public:
 	virtual void zone_directional_indices(const int z_ind, vector<int>& dir_ind) const = 0;
 
 	// get the velocity squared from the stored velocity vector
-	virtual double zone_speed2(const int z_ind) const = 0;
+	double zone_speed2(const int z_ind) const;
 
 	// get zone index from x,y,z position
 	virtual int zone_index(const vector<double>& x) const   = 0;
 
 	// return volume of zone z_ind
 	virtual double zone_lab_volume(const int z_ind) const         = 0;
+
+	// return rest mass in cell
+	double zone_rest_mass(const int z_ind) const;
+	double zone_comoving_volume(const int z_ind) const;
+	bool good_zone(const int z_ind) const;
 
 	// return the smallest length dimension of zone  z_ind
 	virtual double zone_min_length(const int z_ind) const     = 0;
