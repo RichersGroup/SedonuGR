@@ -162,3 +162,7 @@ void grid_0D_isotropic::reflect_outer(particle *p) const{
 double grid_0D_isotropic::lab_dist_to_boundary(const particle *p) const{
 	return INFINITY;
 }
+
+double grid_0D_isotropic::zone_radius(const int z_ind) const{
+	return 0;
+}

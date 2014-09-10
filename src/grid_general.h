@@ -90,6 +90,7 @@ public:
 
 	// get the coordinates at the center of the zone z_ind
 	virtual void zone_coordinates(const int z_ind, vector<double>& r) const = 0;
+	virtual double zone_radius(const int z_ind) const = 0;
 
 	// boundary conditions
 	virtual void reflect_outer(particle *p) const = 0;

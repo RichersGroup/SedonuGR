@@ -286,3 +286,9 @@ double grid_1D_sphere::lab_dist_to_boundary(const particle *p) const{
 	// make sure the particle ends up in a reasonable place
 	return min(d_inner_boundary, d_outer_boundary);
 }
+
+double grid_1D_sphere::zone_radius(const int z_ind) const{
+	assert(z_ind >= 0);
+	assert(z_ind < (int)z.size());
+	return r_out[z_ind];
+}

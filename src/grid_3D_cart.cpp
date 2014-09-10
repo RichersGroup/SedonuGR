@@ -494,3 +494,12 @@ double grid_3D_cart::lab_dist_to_boundary(const particle *p) const{
 	// case: particle is outside the boundaries.
 	else return numeric_limits<double>::infinity();
 }
+
+
+double grid_3D_cart::zone_radius(const int z_ind) const{
+	assert(z_ind >= 0);
+	assert(z_ind < (int)z.size());
+	vector<double> r;
+	zone_coordinates(z_ind,r);
+	return sqrt(transport::dot(r,r));
+}

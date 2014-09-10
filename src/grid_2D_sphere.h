@@ -40,6 +40,7 @@ public:
 	void write_rays               (const int iw                                                  ) const;
 	void reflect_outer            (particle *p                                                   ) const;
 	double lab_dist_to_boundary       (const particle *p                                             ) const;
+	double zone_radius            (const int z_ind) const;
 };
 
 
