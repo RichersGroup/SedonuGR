@@ -120,6 +120,7 @@ void transport::which_event(const particle *p, const double dt, const double lab
 		if(z_ind >= 0) *d_smallest *= (1.0 + grid_general::tiny); // bump just over the boundary if in simulation domain
 		else           *d_smallest *= (1.0 - grid_general::tiny); // don't overshoot outward through the inner boundary
 	}
+	assert(*d_smallest >= 0);
 }
 
 
