@@ -87,7 +87,7 @@ void grid_general::write_line(ofstream& outf, const int z_ind) const{
 
 	outf << zone_speed2(z_ind) << " ";
 
-	double net_neutrino_energy_source = (z[z_ind].e_abs - z[z_ind].e_emit) / z[z_ind].rho;
+	double net_neutrino_energy_source = (z[z_ind].e_abs - z[z_ind].e_emit) / z[z_ind].rho - z[z_ind].H_com;
 	outf << net_neutrino_energy_source << " ";
 
 	double n_baryons_per_ccm = z[z_ind].rho / transport::mean_mass(z[z_ind].Ye);
