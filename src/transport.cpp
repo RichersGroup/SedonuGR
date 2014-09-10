@@ -67,6 +67,7 @@ transport::transport(){
 //----------------------------------------------------------------------------
 void transport::init(Lua* lua)
 { 
+	if(verbose && rank0) cout << "# Initializing transport..." << endl;
 	// get mpi rank
 	MPI_Comm_size( MPI_COMM_WORLD, &MPI_nprocs );
 	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID  );
@@ -183,9 +184,10 @@ void transport::init(Lua* lua)
 		int num_nut_species = 0;
 		if(grey_opac < 0){ // get everything from NuLib
 			// read the fortran module into memory
-			if(rank0) cout << "# Initializing NuLib..." << endl;
+			if(rank0) cout << "# Initializing NuLib...";
 			string nulib_table = lua->scalar<string>("nulib_table");
 			nulib_init(nulib_table);
+			if(rank0) cout << "finished." << endl;
 			num_nut_species = nulib_get_nspecies();
 		}
 		else{
