@@ -382,7 +382,7 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 
 	// output useful stuff
 	if(rank0 && verbose){
-		if(do_visc) cout << "# Summed comoving-frame viscous heating: " << net_visc_heating << " erg/s" << endl;
+		if(do_visc) cout << "#   " << net_visc_heating << " erg/s Summed comoving-frame viscous heating: " << endl;
 		cout << "#   " << L_net_lab << " erg/s Net lab-frame luminosity from (zones+core+re-emission): " << endl;
 		cout << "#   " << L_esc_lab << " erg/s Net lab-frame escape luminosity: " << endl;
 	}
