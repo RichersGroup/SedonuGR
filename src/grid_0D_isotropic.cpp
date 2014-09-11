@@ -11,32 +11,14 @@
 //------------------------------------------------------------
 void grid_0D_isotropic::read_model_file(Lua* lua)
 {
-	// verbocity
-	int my_rank;
-	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-	const int rank0 = (my_rank == 0);
-	if(rank0) cout << "#   Reading 1D model file" << endl;
-
-	// open up the model file, complaining if it fails to open
-	string model_file = lua->scalar<string>("model_file");
-	ifstream infile;
-	infile.open(model_file.c_str());
-	if(infile.fail()){
-		cout << "Error: can't read the model file." << model_file << endl;
-		exit(4);
-	}
-
-	// geometry of model
-	infile >> grid_type;
-	if(grid_type != "1D_sphere"){
-		cout << "Error: grid_type parameter disagrees with the model file." << endl;
-	}
-
 	// number of zones
 	z.resize(1,zone(3));
-	infile >> z[0].rho;
-	infile >> z[0].T;
-	infile >> z[0].Ye;
+	z[0].rho = lua->scalar<double>("rho");
+	z[0].T   = lua->scalar<double>("T")/pc::k_MeV;
+	z[0].Ye  = lua->scalar<double>("Ye");
+	cout << "#   rho = " << z[0].rho << " g/ccm" << endl;
+	cout << "#   T = " << z[0].T << " K" << endl;
+	cout << "#   Ye = " << z[0].Ye << endl;
 	z[0].H_com = 0;
 	z[0].e_rad = 0;
 	z[0].v[0] = 0;
@@ -47,8 +29,6 @@ void grid_0D_isotropic::read_model_file(Lua* lua)
 	assert(z[0].Ye >= 0);
 	assert(z[0].Ye <= 1.0);
 	assert(z[0].v.size() == 3);
-
-	infile.close();
 }
 
 
@@ -87,7 +67,7 @@ double  grid_0D_isotropic::zone_lab_volume(const int z_ind) const
 double  grid_0D_isotropic::zone_min_length(const int z_ind) const
 {
 	assert(z_ind == 0);
-	return 1.0;
+	return INFINITY;
 }
 
 

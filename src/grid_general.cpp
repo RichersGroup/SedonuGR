@@ -41,7 +41,7 @@ void grid_general::write_zones(const int iw) const
 	for (unsigned z_ind=0; z_ind<z.size(); z_ind++)
 	{
 		zone_directional_indices(z_ind, dir_ind);
-		if(dir_ind[dir_ind.size()-1]==0) outf << endl;
+		if(dir_ind.size()>0) if(dir_ind[dir_ind.size()-1]==0) outf << endl;
 		write_line(outf,z_ind);
 	}
 	outf.close();
@@ -67,7 +67,7 @@ void grid_general::write_header(ofstream& outf) const{
 	zone_coordinates(0,r);
 	const int dimensionality = r.size();
 	for(int i=0; i<dimensionality; i++) outf << "r[" << i << "] ";
-	outf << "e_rad(erg/ccm)  rho(g/ccm)  T_gas(K)  Ye  t_therm  t_lep  |v|(cm/s)  H-C(erg/g/s)  dYe_dt(1/s)" << endl;
+	outf << "e_rad(erg/ccm)  rho(g/ccm)  T_gas(MeV)  Ye  t_therm  t_lep  |v|(cm/s)  H-C(erg/g/s)  dYe_dt(1/s)" << endl;
 }
 
 void grid_general::write_line(ofstream& outf, const int z_ind) const{

@@ -100,7 +100,7 @@ void transport::emit_zones(const double lab_dt){
 // return the cell's luminosity from thermal emission (erg/s, comoving frame)
 double transport::zone_comoving_therm_emit_energy(const int z_ind, const double lab_dt) const{
 	if(!grid->good_zone(z_ind)) return 0;                 // don't emit from superluminal zones
-	else if(grid->zone_radius(z_ind) <= r_core) return 0; // don't emit within core
+	else if(grid->zone_radius(z_ind) < r_core) return 0; // don't emit within core
 	else{
 		double H=0;
 		double four_vol = grid->zone_lab_volume(z_ind) * lab_dt; //relativistic invariant - same in comoving frame.

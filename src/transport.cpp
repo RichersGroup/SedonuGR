@@ -10,6 +10,7 @@
 #include "transport.h"
 #include "Lua.h"
 #include "grid_general.h"
+#include "grid_0D_isotropic.h"
 #include "grid_1D_sphere.h"
 #include "grid_2D_sphere.h"
 #include "grid_3D_cart.h"
@@ -86,9 +87,9 @@ void transport::init(Lua* lua)
 	do_neutrinos = lua->scalar<int>("do_neutrinos");
 	radiative_eq = lua->scalar<int>("radiative_eq");
 	steady_state = lua->scalar<int>("steady_state");
+	solve_T       = lua->scalar<int>("solve_T");
+	solve_Ye      = lua->scalar<int>("solve_Ye");
 	if(steady_state){
-		solve_T       = lua->scalar<int>("solve_T");
-		solve_Ye      = lua->scalar<int>("solve_Ye");
 		if(solve_T || solve_Ye){
 			damping               = lua->scalar<double>("damping");
 			brent_itmax           = lua->scalar<int>("brent_itmax");
@@ -109,9 +110,10 @@ void transport::init(Lua* lua)
 	string grid_type = lua->scalar<string>("grid_type");
 
 	// create a grid of the appropriate type
-	if     (grid_type == "grid_1D_sphere") grid = new grid_1D_sphere;
-	else if(grid_type == "grid_2D_sphere") grid = new grid_2D_sphere;
-	else if(grid_type == "grid_3D_cart"  ) grid = new grid_3D_cart;
+	if     (grid_type == "grid_0D_isotropic") grid = new grid_0D_isotropic;
+	else if(grid_type == "grid_1D_sphere"   ) grid = new grid_1D_sphere;
+	else if(grid_type == "grid_2D_sphere"   ) grid = new grid_2D_sphere;
+	else if(grid_type == "grid_3D_cart"     ) grid = new grid_3D_cart;
 	else{
 		if(rank0) std::cout << "# ERROR: the requested grid type is not implemented." << std::endl;
 		exit(3);}
@@ -318,8 +320,10 @@ void transport::step(const double lab_dt)
 
 	// solve for T_gas and Ye structure
 	if(MPI_nprocs>1) reduce_radiation();      // so each processor has necessary info to solve its zones
-	if(steady_state && (solve_T || solve_Ye)) solve_eq_zone_values();  // solve T,Ye s.t. E_abs=E_emit and N_abs=N_emit
-	else update_zone_quantities();            // update T,Ye based on heat capacity and number of leptons
+	if(solve_T || solve_Ye){
+		if(steady_state) solve_eq_zone_values();  // solve T,Ye s.t. E_abs=E_emit and N_abs=N_emit
+		else update_zone_quantities();            // update T,Ye based on heat capacity and number of leptons
+	}
 	if(MPI_nprocs>1) synchronize_gas();       // each processor broadcasts its solved zones to the other processors
 	calculate_timescales();
 

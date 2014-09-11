@@ -12,10 +12,13 @@ reflect_outer= 1
 
 -- input/output files
 
-grid_type = "grid_1D_sphere"       -- grid geometry. Must match grid geometry in model file if used  
+grid_type = "grid_0D_isotropic"       -- grid geometry. Must match grid geometry in model file if used  
+rho = 1e12
+T   = 10
+Ye  = 0.15
 model_file  =  "neutron_star.mod"  -- model file. "custom" --> use hard coded model
-nulib_table = "../../external/tables/NuLib_LS220_rho100_temp60_ye40_ng24_ns3_Itemp10_Ieta10_version1.0_20140629.h5" -- NuLib opacity/emissivity table
-write_zones_every   = 100
+nulib_table = "../../external/tables/NuLib_LS220_rho100_temp60_ye40_ng24_ns3_Itemp10_Ieta10_version1.0_20140629.h5" --"../../external/tables/NuLib_LS220_rho100_temp60_ye40_ng24_ns3_Itemp10_Ieta10_version1.0_20140629.h5" -- NuLib opacity/emissivity table
+write_zones_every   = 1
 write_rays_every    = -1
 write_spectra_every = -1
 
@@ -29,14 +32,14 @@ nut_spec_n_phi      = 1                -- number of phi bins in output spectrum
 -- particle creation parameters
 
 n_emit_core    = 0                 -- # particles to emit from core each timestep
-n_emit_therm   = 100000                 -- # particles to emit from zones each timestep
+n_emit_therm   = 1e6                 -- # particles to emit from zones each timestep
 n_emit_decay   = 0                 -- # particles to emit from zones each timestep (from non-thermal processes)
 max_particles  = 1e7
 
 -- particle propagation parameters
 
-max_n_steps = 100
-dt = 0.00001
+max_n_steps = 500
+dt = 1e-4
 step_size = 1.0                    -- move at most step_size*min_grid_length at a time
 
 -- inner source
