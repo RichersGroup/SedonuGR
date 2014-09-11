@@ -15,11 +15,11 @@ public:
 
 	particle();
 
-	vector<double> x;         // x,y,z position
-	vector<double> D;         // direction vector, Dx,Dy,Dz
+	vector<double> x;         // x,y,z position (cm)
+	vector<double> D;         // direction vector, Dx,Dy,Dz (normalized to unit magnitude)
 	double       t;         // current time
 	double       e;         // total energy in ergs of packet
-	double      nu;         // frequency
+	double      nu;         // frequency (Hz)
 	int          s;         // species number
 	ParticleFate fate;
 
