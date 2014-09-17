@@ -130,6 +130,11 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	float hvis[dims[0]][dims[1]][dims[2]][dims[3]]; // erg/g/s (viscous heating)
 	float gamn[dims[0]][dims[1]][dims[2]][dims[3]]; // erg/g/s (net neutrino heating-cooling)
 	float ncfn[dims[0]][dims[1]][dims[2]][dims[3]]; // 1/s     (net rate of change of Ye)
+	float eint[dims[0]][dims[1]][dims[2]][dims[3]]; // erg/g   (internal energy density)
+	float atms[dims[0]][dims[1]][dims[2]][dims[3]]; //         (hydrogen mass fraction)
+	float neut[dims[0]][dims[1]][dims[2]][dims[3]]; //         (neutron  mass fraction)
+	float prot[dims[0]][dims[1]][dims[2]][dims[3]]; //         (proton   mass fraction)
+	float alfa[dims[0]][dims[1]][dims[2]][dims[3]]; //         (alpha    mass fraction)
 	dataset = file.openDataSet("/dens");
 	dataset.read(&(dens[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset = file.openDataSet("/velx");
@@ -148,6 +153,16 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	dataset.read(&(gamn[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset = file.openDataSet("/ncfn");
 	dataset.read(&(ncfn[0][0][0][0]),H5::PredType::IEEE_F32LE);
+	dataset = file.openDataSet("/eint");
+	dataset.read(&(eint[0][0][0][0]),H5::PredType::IEEE_F32LE);
+	dataset = file.openDataSet("/atms");
+	dataset.read(&(atms[0][0][0][0]),H5::PredType::IEEE_F32LE);
+	dataset = file.openDataSet("/neut");
+	dataset.read(&(neut[0][0][0][0]),H5::PredType::IEEE_F32LE);
+	dataset = file.openDataSet("/prot");
+	dataset.read(&(prot[0][0][0][0]),H5::PredType::IEEE_F32LE);
+	dataset = file.openDataSet("/alfa");
+	dataset.read(&(alfa[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset.close();
 	file.close();
 
@@ -198,7 +213,8 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	//===============//
 	int do_visc = lua->scalar<int>("do_visc");
 	const int kb = 0;
-    #pragma omp parallel for collapse(3)
+	double newtonian_eint_total;
+    #pragma omp parallel for collapse(3) reduction(+:newtonian_eint_total)
 	for(unsigned proc=0; proc<dims[0]; proc++)
 		for(unsigned jb=0; jb<dims[2]; jb++)
 			for(unsigned ib=0; ib<dims[3]; ib++){
@@ -240,7 +256,9 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 				assert(z[z_ind].T >= 0.0);
 				assert(z[z_ind].Ye    >= 0.0);
 				assert(z[z_ind].Ye    <= 1.0);
+				newtonian_eint_total += eint[proc][kb][jb][ib] * z[z_ind].rho * zone_lab_volume(z_ind);
 	}
+	cout << "#   Newtonian total internal energy: " << newtonian_eint_total << " erg" << endl;
 
 
 	//================================//
@@ -278,6 +296,53 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 		//double t_therm = m_zone*pc::k*z[z_ind].T/z_ncfn[z_ind];
 		if(z_ind%theta_out.size() == 0) outf << endl;
 		outf << r[0] << " " << r[1] << " " << z_gamn[z_ind] << " " << z_ncfn[z_ind] << endl;
+	}
+	outf.close();
+
+	//=================================//
+	// output composition in data file //
+	//=================================//
+	vector<double> z_atms(z.size());
+	vector<double> z_neut(z.size());
+	vector<double> z_prot(z.size());
+	vector<double> z_alfa(z.size());
+	for(unsigned proc=0; proc<dims[0]; proc++)
+		for(unsigned jb=0; jb<dims[2]; jb++)
+			for(unsigned ib=0; ib<dims[3]; ib++){
+				// indices. moving by one proc in the x direction increases proc by 1
+				const int i_global = (proc%iprocs)*nxb + ib;
+				const int j_global = (proc/iprocs)*nyb + jb;
+				const int z_ind = zone_index(i_global, j_global);
+				assert(i_global < nr);
+				assert(j_global < ntheta);
+				assert(z_ind < n_zones);
+
+				z_atms[z_ind] = atms[proc][kb][jb][ib];
+				z_neut[z_ind] = neut[proc][kb][jb][ib];
+				z_prot[z_ind] = prot[proc][kb][jb][ib];
+				z_alfa[z_ind] = alfa[proc][kb][jb][ib];
+			}
+
+	outf.open("initial_composition.dat");
+	outf << "r theta x_hydrogen x_neutrons x_protons x_alpha 1-x_total derived_Ye data_Ye T(MeV)" << endl;
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
+		// zone position
+		vector<double> r;
+		zone_coordinates(z_ind,r);
+		assert(r.size()==2);
+
+		// calculate electron fraction
+		double m_H = pc::m_p;
+		double abar = 1.0 / (z_prot[z_ind] + z_neut[z_ind] + z_alfa[z_ind]/4.0);
+		double zbar = abar * (z_prot[z_ind] + 2.0*z_alfa[z_ind]/4.0);
+		double total_nucleons = /*z_atms[z_ind]/m_H + */z_prot[z_ind]/pc::m_p + z_neut[z_ind]/pc::m_n +     z_alfa[z_ind]/pc::m_alpha;
+		double total_protons  = /*z_atms[z_ind]/m_H + */z_prot[z_ind]/pc::m_p                         + 2.0*z_alfa[z_ind]/pc::m_alpha;
+		double ye_calculated  = zbar/abar;//total_protons / total_nucleons;
+
+		if(z_ind%theta_out.size() == 0) outf << endl;
+		outf << r[0] << " " << r[1] << " " << z_atms[z_ind] << " " << z_neut[z_ind] << " " << z_prot[z_ind] << " " << z_alfa[z_ind] << " ";
+        outf << 1.0-(z_atms[z_ind]+z_neut[z_ind]+z_prot[z_ind]+z_alfa[z_ind]) << " " << ye_calculated << " " << z[z_ind].Ye << " ";
+        outf << z[z_ind].T*pc::k_MeV << endl;
 	}
 	outf.close();
 }
