@@ -16,19 +16,18 @@ void thread_RNG::init(){
 	const gsl_rng_type* TypeR = gsl_rng_default;
 	gsl_rng_env_setup();
 
-#pragma omp parallel default(none) shared(my_mpiID,TypeR,gsl_rng_default_seed)
+    #pragma omp parallel default(none) shared(my_mpiID,TypeR,gsl_rng_default_seed)
 	{
-#ifdef _OPENMP
+        #ifdef _OPENMP
 		const int nthreads = omp_get_num_threads();
 		const int my_ompID = omp_get_thread_num();
-#else
+		#else
 		const int nthreads = 1;
 		const int my_ompID = 0;
-#endif
-		if(my_mpiID==0 && my_ompID==0) printf("#   Using %d threads on each MPI rank.\n", nthreads);
+		#endif
 
 		// assign a unique RNG to each thread
-#pragma omp single
+        #pragma omp single
 		generators.resize(nthreads);
 		for(int i=0; i<nthreads; i++){
 			gsl_rng_default_seed = (unsigned int)time(NULL) + my_mpiID*nthreads + my_ompID;
@@ -43,11 +42,11 @@ void thread_RNG::init(){
 // return a uniformily distributed random number (thread safe)
 //-----------------------------------------------------------------
 double thread_RNG::uniform(){
-#ifdef _OPENMP
+    #ifdef _OPENMP
 	const int my_ompID = omp_get_thread_num();
-#else
+    #else
 	const int my_ompID = 0;
-#endif
+    #endif
 
 	return gsl_rng_uniform(generators[my_ompID]);
 }

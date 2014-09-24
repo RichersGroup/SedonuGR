@@ -164,16 +164,16 @@ void locate_array::print() const
 // assumes 1-1 correspondence between y and locate_array
 //---------------------------------------------------------
 double locate_array::value_at(const double xval, const vector<double>& y) const{
-	unsigned ind = locate(xval);
+	int ind = locate(xval);
 	assert(ind >= 0);
-	assert(ind <= x.size());
+	assert(ind <= (int)x.size());
 
 	int i1, i2;
 	if(ind == 0){                // If off left side of grid
 		i1 = 0;
 		i2 = 1;
 	}
-	else if(ind < x.size()){    // If within expected region of grid
+	else if(ind < (int)x.size()){    // If within expected region of grid
 		i1 = ind - 1;
 		i2 = ind;
 	}

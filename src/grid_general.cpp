@@ -73,7 +73,6 @@ void grid_general::write_header(ofstream& outf) const{
 void grid_general::write_line(ofstream& outf, const int z_ind) const{
 	vector<double> r;
 	zone_coordinates(z_ind,r);
-	assert(r.size()>=0);
 
 	for(unsigned i=0; i<r.size(); i++) outf << r[i] << " ";
 

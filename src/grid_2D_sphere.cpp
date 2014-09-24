@@ -213,7 +213,7 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	//===============//
 	int do_visc = lua->scalar<int>("do_visc");
 	const int kb = 0;
-	double newtonian_eint_total;
+	double newtonian_eint_total = 0;
     #pragma omp parallel for collapse(3) reduction(+:newtonian_eint_total)
 	for(unsigned proc=0; proc<dims[0]; proc++)
 		for(unsigned jb=0; jb<dims[2]; jb++)
@@ -332,11 +332,8 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 		assert(r.size()==2);
 
 		// calculate electron fraction
-		double m_H = pc::m_p;
 		double abar = 1.0 / (z_prot[z_ind] + z_neut[z_ind] + z_alfa[z_ind]/4.0);
 		double zbar = abar * (z_prot[z_ind] + 2.0*z_alfa[z_ind]/4.0);
-		double total_nucleons = /*z_atms[z_ind]/m_H + */z_prot[z_ind]/pc::m_p + z_neut[z_ind]/pc::m_n +     z_alfa[z_ind]/pc::m_alpha;
-		double total_protons  = /*z_atms[z_ind]/m_H + */z_prot[z_ind]/pc::m_p                         + 2.0*z_alfa[z_ind]/pc::m_alpha;
 		double ye_calculated  = zbar/abar;//total_protons / total_nucleons;
 
 		if(z_ind%theta_out.size() == 0) outf << endl;

@@ -7,7 +7,7 @@
 // lorentz factor ("gamma")
 // v_rel = v_newframe - v_oldframe
 double transport::lorentz_factor(const vector<double>& v){
-	assert(v.size()==3);
+	assert(v.size()<=3);
 	assert(dot(v,v) < pc::c*pc::c);
 	double beta2 = dot(v,v) / (pc::c*pc::c);
 	double lfac = 1.0 / sqrt(1.0 - beta2);
