@@ -29,7 +29,6 @@ int main(int argc, char **argv)
 
 	// verbocity
 	const int rank0 = (my_rank == 0);
-	if (rank0) cout << "# MPI cores used = " << n_procs << endl;
 
 	// start timer
 	double proc_time_start = MPI_Wtime();
@@ -40,7 +39,6 @@ int main(int argc, char **argv)
 	lua.init( script_file );
 
 	// set up the transport module (includes the grid)
-	if(rank0) cout << "# Initializing the transport module..." << endl;
 	transport sim;
 	sim.init(&lua);
 
@@ -84,10 +82,10 @@ int main(int argc, char **argv)
 				sim.grid->write_rays(it);
 			}
 
-			// print out spectrum in iterative calc
+			// print out spectrum when appropriate
 			if(it%write_spectra_every==0 && write_spectra_every>0){
-				if(verbose) cout << "# writing spectrum file " << it << endl;
-				sim.write_spectra(it);
+				if(verbose) cout << "# writing spectrum files " << it << endl;
+				for(unsigned i=0; i<sim.species_list.size(); i++) sim.species_list[i]->spectrum.print(it,i);
 			}
 		}
 	}

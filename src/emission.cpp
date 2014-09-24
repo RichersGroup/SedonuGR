@@ -11,11 +11,12 @@
 //------------------------------------------------------------
 void transport::emit_particles(const double lab_dt)
 {
-	if(verbose) cout << "# Emitting particles..." << endl;
+	if(verbose && rank0) cout << "# Emitting particles..." << endl;
 	assert(lab_dt > 0);
 
 	// complain if we're out of room for particles
-	assert(n_emit_core >= 0);
+	if(steady_state) assert(particles.empty());
+	assert(n_emit_core  >= 0);
 	assert(n_emit_zones >= 0);
 	int n_emit = n_emit_core + n_emit_zones;
 	if (total_particles() + n_emit > max_particles){
@@ -26,6 +27,12 @@ void transport::emit_particles(const double lab_dt)
 	// emit from the core and/or the zones
 	if(n_emit_core >0) emit_inner_source(lab_dt);
 	if(n_emit_zones>0) emit_zones(lab_dt);
+
+	if(verbose && rank0){
+		cout << "# Particle vector size: " << particles.size() << endl;
+		cout << "# Particle vector capcity: " << particles.capacity() << endl;
+	}
+	if(steady_state) assert(particles.size()>=(unsigned)n_emit);
 }
 
 

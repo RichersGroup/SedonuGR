@@ -212,7 +212,6 @@ void  spectrum_array::rescale(double r)
 void spectrum_array::MPI_average()
 {
 	int receiving_ID = 0;
-	int mpi_procs, myID;
 	const unsigned n_elements = time_grid.size()*wave_grid.size()*mu_grid.size()*phi_grid.size();
 
 	// average the flux (receive goes out of scope after section)
@@ -223,7 +222,7 @@ void spectrum_array::MPI_average()
 		flux.swap(receive);
 	}
 
-	// average clicks (receive goes out of scope after section)
+	// accumulate clicks (receive goes out of scope after section)
 	{
 		vector<int> receive;
 		receive.resize(n_elements);
@@ -232,14 +231,11 @@ void spectrum_array::MPI_average()
 	}
 
 	// only have the receiving ID do the division
+	int mpi_procs, myID;
 	MPI_Comm_size( MPI_COMM_WORLD, &mpi_procs );
 	MPI_Comm_rank( MPI_COMM_WORLD, &myID      );
 	if(myID == receiving_ID){
-#pragma omp parallel for
-		for(unsigned i=0;i<n_elements;i++)
-		{
-			flux[i]  /= (double)mpi_procs;
-			click[i] /= (double)mpi_procs;
-		}
+        #pragma omp parallel for
+		for(unsigned i=0;i<n_elements;i++) rescale(1./(double)mpi_procs);
 	}
 }
