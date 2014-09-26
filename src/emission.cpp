@@ -175,7 +175,7 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	assert(p.nu > 0);
 
 	// lorentz transform from the comoving to lab frame
-	transform_comoving_to_lab(&p);
+	transform_comoving_to_lab(&p,z_ind);
 
 	// add to particle vector
 	assert(particles.size() < particles.capacity());

@@ -586,11 +586,11 @@ void grid_2D_sphere::cartesian_sample_in_zone(const int z_ind, const vector<doub
 //------------------------------------------------------------
 // get the cartesian velocity vector (cm/s)
 //------------------------------------------------------------
-void grid_2D_sphere::cartesian_velocity_vector(const vector<double>& x, vector<double>& v) const
+void grid_2D_sphere::cartesian_velocity_vector(const vector<double>& x, vector<double>& v, int z_ind) const
 {
 	assert(x.size()==3);
 	v.resize(3,0);
-	int z_ind = zone_index(x);
+	if(z_ind < 0) z_ind = zone_index(x);
 	assert(z_ind >= -1);
 
 	// if within inner sphere, z_ind=-1. Leave velocity at 0.

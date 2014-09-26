@@ -18,10 +18,10 @@ void transport::event_interact(particle* p, const int z_ind, const double abs_fr
 	// transform into the comoving frame
 	if(do_absorb_kill) p->fate = absorbed;
 	else{
-		transform_lab_to_comoving(p);
+		transform_lab_to_comoving(p,z_ind);
 		if(do_elastic_scatter) isotropic_scatter(p);
 		if(do_absorb_reemit)   re_emit(p,z_ind);
-		transform_comoving_to_lab(p);
+		transform_comoving_to_lab(p,z_ind);
 
 		// tally the re-emitted energy in the lab frame
 		if(do_absorb_reemit) L_net_lab += p->e;

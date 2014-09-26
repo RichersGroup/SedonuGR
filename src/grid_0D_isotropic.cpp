@@ -109,7 +109,7 @@ void grid_0D_isotropic::cartesian_sample_in_zone
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void grid_0D_isotropic::cartesian_velocity_vector(const vector<double>& x, vector<double>& v) const
+void grid_0D_isotropic::cartesian_velocity_vector(const vector<double>& x, vector<double>& v, int z_ind) const
 {
 	assert(x.size()==3);
 	v.resize(3);

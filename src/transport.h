@@ -55,10 +55,10 @@ private:
 
 	// transformation functions
 	double comoving_dt(const double lab_dt, const int z_ind) const;
-	double dshift_comoving_to_lab   (const particle* p) const;
-	double dshift_lab_to_comoving   (const particle* p) const;
-	void   transform_comoving_to_lab(particle* p) const;
-	void   transform_lab_to_comoving(particle* p) const;
+	double dshift_comoving_to_lab   (const particle* p, const int z_ind=-1) const;
+	double dshift_lab_to_comoving   (const particle* p, const int z_ind=-1) const;
+	void   transform_comoving_to_lab(particle* p, const int z_ind=-1) const;
+	void   transform_lab_to_comoving(particle* p, const int z_ind=-1) const;
 
 	// propagate the particles
 	void propagate_particles(const double dt);
@@ -71,6 +71,7 @@ private:
 	void event_interact(particle* p, const int z_ind, const double abs_frac);
 	void isotropic_scatter(particle* p) const;
 	void re_emit(particle* p, const int z_ind) const;
+	void remove_dead_particles();
 
 	// solve for temperature and Ye (if steady_state)
 	int    solve_T;

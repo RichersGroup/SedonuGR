@@ -70,10 +70,10 @@ void lorentz_transform(particle* p, const vector<double> v){
 // get the doppler shift when moving from frame_to_frame
 // does not change any particle properties
 //------------------------------------------------------------
-double transport::dshift_comoving_to_lab(const particle* p) const
+double transport::dshift_comoving_to_lab(const particle* p, const int z_ind) const
 {
 	vector<double> v;
-	grid->cartesian_velocity_vector(p->x,v); // v_comoving - v_lab
+	grid->cartesian_velocity_vector(p->x,v,z_ind); // v_comoving - v_lab
 
 	// new frame is lab frame. old frame is comoving frame.
 	// v_rel = v_lab - v_comoving  --> v must flip sign.
@@ -88,10 +88,10 @@ double transport::dshift_comoving_to_lab(const particle* p) const
 	return dshift;
 }
 
-double transport::dshift_lab_to_comoving(const particle* p) const
+double transport::dshift_lab_to_comoving(const particle* p, const int z_ind) const
 {
 	vector<double> v;
-	grid->cartesian_velocity_vector(p->x,v); // v_comoving - v_lab
+	grid->cartesian_velocity_vector(p->x,v,z_ind); // v_comoving - v_lab
 
 	// new frame is comoving frame. old frame is lab frame.
 	// v_rel = v_comoving - v_lab  -->  v keeps its sign
@@ -108,10 +108,10 @@ double transport::dshift_lab_to_comoving(const particle* p) const
 // do a lorentz transformation; modifies the energy, frequency
 // and direction vector of the particle
 //------------------------------------------------------------
-void transport::transform_comoving_to_lab(particle* p) const
+void transport::transform_comoving_to_lab(particle* p, const int z_ind) const
 {
 	vector<double> v;
-	grid->cartesian_velocity_vector(p->x,v); // v_comoving - v_lab
+	grid->cartesian_velocity_vector(p->x,v,z_ind); // v_comoving - v_lab
 
 	// new frame is lab frame. old frame is comoving frame.
 	// v_rel = v_lab - v_comoving  --> v must flip sign.
@@ -122,10 +122,10 @@ void transport::transform_comoving_to_lab(particle* p) const
 	lorentz_transform(p,v);
 }
 
-void transport::transform_lab_to_comoving(particle* p) const
+void transport::transform_lab_to_comoving(particle* p, const int z_ind) const
 {
 	vector<double> v;
-	grid->cartesian_velocity_vector(p->x,v); // v_comoving - v_lab
+	grid->cartesian_velocity_vector(p->x,v,z_ind); // v_comoving - v_lab
 
 	// new frame is lab frame. old frame is comoving frame.
 	// v_rel = v_comoving - v_lab  --> v keeps its sign.

@@ -183,11 +183,11 @@ void grid_1D_sphere::cartesian_sample_in_zone
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void grid_1D_sphere::cartesian_velocity_vector(const vector<double>& x, vector<double>& v) const
+void grid_1D_sphere::cartesian_velocity_vector(const vector<double>& x, vector<double>& v, int z_ind) const
 {
 	assert(x.size()==3);
 	v.resize(3);
-	int z_ind = zone_index(x);
+	if(z_ind < 0) z_ind = zone_index(x);
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
 

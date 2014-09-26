@@ -315,11 +315,11 @@ double  grid_3D_cart::zone_min_length(const int z_ind) const
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void grid_3D_cart::cartesian_velocity_vector(const vector<double>& x, vector<double>& v) const
+void grid_3D_cart::cartesian_velocity_vector(const vector<double>& x, vector<double>& v, int z_ind) const
 {
 	assert(x.size()==3);
 	v.resize(3);
-	const int z_ind = zone_index(x);
+	if(z_ind<0) z_ind = zone_index(x);
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
 

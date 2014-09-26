@@ -30,6 +30,10 @@ void transport::propagate_particles(const double lab_dt)
 	L_esc_lab += e_esc_lab; // to be normalized later
 
 	// remove the dead particles
+	remove_dead_particles();
+}
+
+void transport::remove_dead_particles(){
 	vector<particle>::iterator pIter = particles.begin();
 	while(pIter != particles.end()){
 		if(pIter->fate==absorbed || pIter->fate==escaped){
@@ -201,16 +205,19 @@ void transport::tally_radiation(const particle* p, const double dshift_l2c, cons
 	// set pointer to the current zone
 	zone* zone;
 	zone = &(grid->z[z_ind]);
+	double to_add=0;
 
 	// tally in contribution to zone's radiation energy (both *lab* frame)
+	to_add = com_e * com_d;
 	#pragma omp atomic
-	zone->e_rad += com_e * com_d;
+	zone->e_rad += to_add;
 	assert(zone->e_rad >= 0);
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
 	// Extra dshift definitely needed here (two total) to convert both p->e and this_d to the comoving frame
+	to_add = com_e * com_d * (com_opac*abs_frac);
 	#pragma omp atomic
-	zone->e_abs += com_e * com_d * (com_opac*abs_frac);
+	zone->e_abs += to_add;
 	assert(zone->e_abs >= 0);
 
 	// store absorbed lepton number (same in both frames, except for the
@@ -218,8 +225,9 @@ void transport::tally_radiation(const particle* p, const double dshift_l2c, cons
 	double this_l_comoving = 0;
 	if(species_list[p->s]->lepton_number != 0){
 		this_l_comoving = species_list[p->s]->lepton_number * com_e/(com_nu*pc::h) * com_d;
+		to_add = this_l_comoving * (com_opac*abs_frac);
         #pragma omp atomic
-		zone->l_abs += this_l_comoving * (com_opac*abs_frac);
+		zone->l_abs += to_add;
 	}
 
 }
@@ -253,7 +261,7 @@ void transport::propagate(particle* p, const double lab_dt)
 
 		if(grid->good_zone(z_ind) && on_grid){ // avoid handling fluff zones if unnecessary
 			// doppler shift from comoving to lab (nu0/nu)
-			dshift_l2c = dshift_lab_to_comoving(p);
+			dshift_l2c = dshift_lab_to_comoving(p,z_ind);
 			assert(dshift_l2c > 0);
 
 			// get local opacity and absorption fraction
