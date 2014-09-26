@@ -70,8 +70,14 @@ void species_general::init(Lua* lua, transport* simulation)
 //----------------------------------------------------------------
 double species_general::sample_core_nu() const
 {
+  assert(nu_grid.min >= 0);
+
 	// randomly pick a frequency
 	double rand = sim->rangen.uniform();
+
+	// make sure we don't get a zero frequency
+	if(rand==0 && nu_grid.min==0) while(rand==0) rand = sim->rangen.uniform();
+
 	double result = core_emis.invert_linear(rand,&nu_grid);
 	assert(result>0);
 	return result;
@@ -83,8 +89,14 @@ double species_general::sample_core_nu() const
 //----------------------------------------------------------------
 double species_general::sample_zone_nu(const int zone_index) const
 {
+  assert(nu_grid.min >= 0);
+
 	// randomly pick a frequency
 	double rand = sim->rangen.uniform();
+
+	// make sure we don't get a zero frequency
+	if(rand==0 && nu_grid.min==0) while(rand==0) rand = sim->rangen.uniform();
+
 	double result = emis[zone_index].invert_linear(rand,&nu_grid);
 	assert(result>0);
 	return result;

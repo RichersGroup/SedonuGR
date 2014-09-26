@@ -238,7 +238,7 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 				if(do_visc) z[z_ind].H_com = hvis[proc][kb][jb][ib];
 				double vr              = velx[proc][kb][jb][ib];
 				double vtheta          = vely[proc][kb][jb][ib];
-				double vphi            = angz[proc][kb][jb][ib]/r[0];
+				double vphi            = angz[proc][kb][jb][ib]/r[0]/sin(r[1]);
 				//double speed2 = vr*vr + vtheta*vtheta + vphi*vphi;
 				//if(speed2 >= pc::c*pc::c){
 				//	vr     *= (1.0-tiny)* pc::c*pc::c/speed2;
@@ -560,9 +560,17 @@ void grid_2D_sphere::cartesian_sample_in_zone(const int z_ind, const vector<doub
 
 	// sample radial position in shell using a probability integral transform
 	double radius = pow( rand[0]*(r1*r1*r1 - r0*r0*r0) + r0*r0*r0, 1./3.);
+	assert(radius >= r0*(1.-tiny));
+	assert(radius <= r1*(1.+tiny));
+	radius = max(r0,radius);
+	radius = min(r1,radius);
 
 	// sample cos(theta) uniformily
 	double mu = mu0 + (mu1-mu0)*rand[1];
+	assert(mu >= mu0*(1.-tiny));
+	assert(mu <= mu1*(1.+tiny));
+	mu = max(mu0, mu);
+	mu = min(mu1, mu);
 	double sin_theta = sqrt(1-mu*mu);
 
 	// sample phi uniformily

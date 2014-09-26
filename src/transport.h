@@ -65,6 +65,7 @@ private:
 	void propagate(particle* p, const double dt);
 	void do_event(const ParticleEvent event, const double abs_frac, particle* p);
 	void tally_radiation(const particle* p, const double dshift_l2c, const double lab_d, const double lab_opac, const double abs_frac) const;
+	void reset_radiation();
 	void which_event(const particle* p,const double dt, const double lab_opac, double* d_smallest, ParticleEvent *event) const;
 	void event_boundary(particle* p, const int z_ind) const;
 	void event_interact(particle* p, const int z_ind, const double abs_frac);
@@ -128,9 +129,17 @@ public:
 	int n_emit_zones;
 	double visc_specific_heat_rate;
 
-	// net luminosity
+	// how many times do we emit+propagate each timestep?
+	int emissions_per_timestep;
+
+	// global radiation quantities
 	double L_net_lab;
 	double L_esc_lab;
+	vector<long> n_active;
+	vector<long> n_escape;
+
+
+	// reflect off the outer boundary?
 	int reflect_outer;
 
 	// random number generator
@@ -143,7 +152,6 @@ public:
 	void step(const double dt);
 	int  total_particles() const;
 	void write_rays(const int it);
-	void write_spectra(const int it);
 	static void open_file(const char* filebase, const int iw, ofstream& outf);
 	static double lorentz_factor(const vector<double>& v);
 	static double dot(const vector<double>& a, const vector<double>& b);

@@ -58,6 +58,7 @@ transport::transport(){
 	L_net_lab = NaN;
 	L_esc_lab = NaN;
 	reflect_outer = -MAX;
+	emissions_per_timestep = -MAX;
 }
 
 
@@ -68,15 +69,24 @@ transport::transport(){
 //----------------------------------------------------------------------------
 void transport::init(Lua* lua)
 { 
-	if(verbose && rank0) cout << "# Initializing transport..." << endl;
 	// get mpi rank
 	MPI_Comm_size( MPI_COMM_WORLD, &MPI_nprocs );
 	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID  );
 	rank0 = (MPI_myID==0);
+	if(rank0){
+		cout << "# Initializing transport..." << endl;
+		cout << "#   Using " << MPI_nprocs << " MPI ranks" << endl;
+                #ifdef _OPENMP
+		    #pragma omp parallel
+		    #pragma omp single
+		    cout << "#   Using " << omp_get_num_threads()  << " threads on each MPI rank." << endl;
+                #endif
+	}
 
 	// figure out what emission models we're using
 	n_emit_core  = lua->scalar<int>("n_emit_core");
 	n_emit_zones = lua->scalar<int>("n_emit_therm");
+	emissions_per_timestep = lua->scalar<int>("emissions_per_timestep");
 	do_visc      = lua->scalar<int>("do_visc");
 	if(do_visc) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");
 	reflect_outer = lua->scalar<int>("reflect_outer");
@@ -98,10 +108,6 @@ void transport::init(Lua* lua)
 	}
 	step_size     = lua->scalar<double>("step_size");
 
-
-	// Reserve all the memory we might need right now. Speeds up particle additions.
-	max_particles = lua->scalar<int>("max_particles");
-	particles.reserve(max_particles);
 
 	//=================//
 	// SET UP THE GRID //
@@ -137,7 +143,7 @@ void transport::init(Lua* lua)
 		vector<double> r;
 		grid->zone_coordinates(z_ind,r);
 
-		//if(grid->z[z_ind].rho > 1.0e8 && r[1] > pc::pi/3.0 && r[1] < pc::pi/2.0){
+		//if(grid->z[z_ind].rho > 1.0e8){ // && r[1] > pc::pi/3.0 && r[1] < pc::pi/2.0){
 		total_rest_mass += rest_mass;
 		total_nonrel_mass += nonrel_mass;
 		total_rel_KE    += (rest_mass>0 ? (lorentz_factor(grid->z[z_ind].v) - 1.0) * rest_mass * pc::c*pc::c : 0);
@@ -151,6 +157,10 @@ void transport::init(Lua* lua)
 		cout << "#   KE = " << total_rel_KE << " erg (nonrel: " << total_nonrel_KE << " erg)" << endl;
 		cout << "#   TE = " << total_rel_TE << " erg (nonrel: " << total_nonrel_TE << " erg)" << endl;
 	}
+
+	// Reserve all the memory we might need right now. Speeds up particle additions.
+	max_particles = lua->scalar<int>("max_particles");
+	particles.reserve(max_particles + grid->z.size()); // to allow for at most 1 additional particle in each cell
 
 	//===============//
 	// GENERAL SETUP //
@@ -222,6 +232,8 @@ void transport::init(Lua* lua)
 	}
 
 	// complain if we're not simulating anything
+	n_active.resize(species_list.size(),0);
+	n_escape.resize(species_list.size(),0);
 	if(species_list.size() == 0)
 	{
 		if(rank0) cout << "ERROR: you must simulate at least one species of particle." << endl;
@@ -300,7 +312,45 @@ void transport::step(const double lab_dt)
 	// assume 1.0 s. of particles were emitted if steady_state
 	double emission_time = (steady_state ? 1.0 : lab_dt);
 
-    #pragma omp parallel
+	// reset radiation quantities
+	reset_radiation();
+
+	// emit, propagate, and normalize. steady_state means no propagation time limit.
+	for(int i=0; i<emissions_per_timestep; i++){
+	  if(rank0 && verbose) cout << "#   subcycle " << i << "/" << emissions_per_timestep << endl;
+		emit_particles(emission_time);
+		propagate_particles(emission_time);
+	}
+	if(MPI_nprocs>1) reduce_radiation();      // so each processor has necessary info to solve its zones
+	normalize_radiative_quantities(emission_time);
+
+	// solve for T_gas and Ye structure
+	if(solve_T || solve_Ye){
+		if(steady_state) solve_eq_zone_values();  // solve T,Ye s.t. E_abs=E_emit and N_abs=N_emit
+		else update_zone_quantities();            // update T,Ye based on heat capacity and number of leptons
+	}
+	if(MPI_nprocs>1) synchronize_gas();       // each processor broadcasts its solved zones to the other processors
+	if(rank0) calculate_timescales();
+
+	// advance time step
+	if (!steady_state) t_now += lab_dt;
+}
+
+
+//----------------------------
+// reset radiation quantities
+//------------------------------
+void transport::reset_radiation(){
+	// clear global radiation quantities
+	L_net_lab = 0;
+	L_esc_lab = 0;
+	for(unsigned i=0; i<species_list.size(); i++){
+		species_list[i]->spectrum.wipe();
+		n_active[i] = 0;
+		n_escape[i] = 0;
+	}
+
+	#pragma omp parallel
 	{
 		// calculate the zone eas variables
         #pragma omp for collapse(2)
@@ -309,11 +359,6 @@ void transport::step(const double lab_dt)
 				species_list[i]->set_eas(j);
 
 		// prepare zone quantities for another round of transport
-        #pragma omp single
-		{
-			L_net_lab = 0;
-			L_esc_lab = 0;
-		}
         #pragma omp for
 		for(unsigned z_ind=0;z_ind<grid->z.size();z_ind++)
 		{
@@ -325,27 +370,7 @@ void transport::step(const double lab_dt)
 			z->e_emit   = 0;
 		}
 	} // #pragma omp parallel
-
-	// emit, propagate, and normalize. steady_state means no propagation time limit.
-	emit_particles(emission_time);
-	propagate_particles(emission_time);
-	normalize_radiative_quantities(emission_time);
-
-	// solve for T_gas and Ye structure
-	if(MPI_nprocs>1) reduce_radiation();      // so each processor has necessary info to solve its zones
-	if(solve_T || solve_Ye){
-		if(steady_state) solve_eq_zone_values();  // solve T,Ye s.t. E_abs=E_emit and N_abs=N_emit
-		else update_zone_quantities();            // update T,Ye based on heat capacity and number of leptons
-	}
-	if(MPI_nprocs>1) synchronize_gas();       // each processor broadcasts its solved zones to the other processors
-	calculate_timescales();
-
-	// advance time step
-	if (!steady_state) t_now += lab_dt;
 }
-
-
-
 
 //-----------------------------
 // calculate various timescales
@@ -366,9 +391,11 @@ void transport::calculate_timescales() const{
 // normalize the radiative quantities
 //----------------------------------------------------------------------------
 void transport::normalize_radiative_quantities(const double lab_dt){
+	if(verbose && rank0) cout << "# Normalizing Radiative Quantities" << endl;
 	double net_visc_heating = 0;
 
 	// normalize zone quantities
+	double multiplier = (double)emissions_per_timestep;
     #pragma omp parallel for reduction(+:net_visc_heating)
 	for(unsigned z_ind=0;z_ind<grid->z.size();z_ind++)
 	{
@@ -388,19 +415,27 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 			assert(z->l_emit == 0.0);
 		}
 
-		z->e_rad    /= four_vol*pc::c; // erg*dist --> erg/ccm
-		z->e_abs    /= four_vol;       // erg      --> erg/ccm/s
-		z->e_emit   /= four_vol;       // erg      --> erg/ccm/s
-		z->l_abs    /= four_vol;       // num      --> num/ccm/s
-		z->l_emit   /= four_vol;       // num      --> num/ccm/s
+		z->e_rad    /= multiplier*four_vol*pc::c; // erg*dist --> erg/ccm
+		z->e_abs    /= multiplier*four_vol;       // erg      --> erg/ccm/s
+		z->e_emit   /= multiplier*four_vol;       // erg      --> erg/ccm/s
+		z->l_abs    /= multiplier*four_vol;       // num      --> num/ccm/s
+		z->l_emit   /= multiplier*four_vol;       // num      --> num/ccm/s
 	}
 
 	// normalize global quantities
-	L_net_lab /= lab_dt;
-	L_esc_lab /= lab_dt;
+	L_net_lab /= multiplier*lab_dt;
+	L_esc_lab /= multiplier*lab_dt;
+	for(unsigned i=0; i<species_list.size(); i++) species_list[i]->spectrum.rescale(1./(multiplier*lab_dt));
 
 	// output useful stuff
 	if(rank0 && verbose){
+		unsigned long total_active = 0;
+		for(unsigned i=0; i<species_list.size(); i++){
+			double per_esc = (100.0*(double)n_escape[i])/(double)n_active[i];
+			total_active += n_active[i];
+			cout << "#   " << n_escape[i] << "/" << n_active[i] << " " << species_list[i]->name << " escaped. (" << per_esc << "\%)" << endl;
+		}
+		cout << "#   " << total_active << " total active particles" << endl;
 		if(do_visc) cout << "#   " << net_visc_heating << " erg/s Summed comoving-frame viscous heating: " << endl;
 		cout << "#   " << L_net_lab << " erg/s Net lab-frame luminosity from (zones+core+re-emission): " << endl;
 		cout << "#   " << L_esc_lab << " erg/s Net lab-frame escape luminosity: " << endl;
@@ -465,10 +500,36 @@ int transport::sample_zone_species(const int zone_index) const
 //------------------------------------------------------------
 void transport::reduce_radiation()
 {
-	vector<double> send, receive;
+	if(verbose && rank0) cout << "# Reducing Radiation" << endl;
 	int my_begin, my_end, size;
 
+	// reduce the spectra
+	if(verbose && rank0) cout << "#   spectra" << endl;
+	for(unsigned i=0; i<species_list.size(); i++) species_list[i]->spectrum.MPI_average();
+
+	// reduce the global luminosity scalars
+	if(verbose && rank0) cout << "#   global scalars" << endl;
+	double sendscalar;
+	sendscalar = L_esc_lab;
+	MPI_Reduce(&sendscalar,&L_esc_lab,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+	L_esc_lab /= (double)MPI_nprocs;
+	sendscalar = L_net_lab;
+	MPI_Reduce(&sendscalar,&L_net_lab,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+	L_net_lab /= (double)MPI_nprocs;
+
+	// reduce the numbers of particles active/escaped
+	if(verbose && rank0) cout << "#   particle numbers" << endl;
+	vector<long> sendint(species_list.size(),0);
+	vector<long> receiveint(species_list.size(),0);
+	for(unsigned i=0; i<species_list.size(); i++) sendint[i] = n_escape[i];
+	MPI_Allreduce(&sendint.front(), &receiveint.front(), n_escape.size(), MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
+	for(unsigned i=0; i<species_list.size(); i++) n_escape[i] = receiveint[i];
+	for(unsigned i=0; i<species_list.size(); i++) sendint[i] = n_active[i];
+	MPI_Allreduce(&sendint.front(), &receiveint.front(), n_active.size(), MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
+	for(unsigned i=0; i<species_list.size(); i++) n_active[i] = receiveint[i];
+
 	//-- EACH PROCESSOR GETS THE REDUCTION INFORMATION IT NEEDS
+	if(verbose && rank0) cout << "#   fluid" << endl;
 	for(int proc=0; proc<MPI_nprocs; proc++){
 
 		// set the begin and end indices so a process covers range [begin,end)
@@ -477,8 +538,8 @@ void transport::reduce_radiation()
 
 		// set the computation size and create the send/receive vectors
 		size = my_end - my_begin;
-		send.resize(size);
-		receive.resize(size);
+		vector<double> send(size,0);
+		vector<double> receive(size,0);
 
 		// reduce e_rad
 		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_rad;
@@ -518,6 +579,7 @@ void transport::reduce_radiation()
 // is correct, but all gas quantities are correct.
 void transport::synchronize_gas()
 {
+	if(verbose && rank0) cout << "# Synchronizing Gas" << endl;
 	vector<double> buffer;
 	int my_begin, my_end, size;
 
@@ -556,19 +618,9 @@ double transport::zone_comoving_visc_heat_rate(const int z_ind) const{
 }
 
 
-// Write the spectra to disk (using data since the last write)
-void transport::write_spectra(const int it)
-{
-	for(unsigned i=0; i<species_list.size(); i++){
-		if(MPI_nprocs>1) species_list[i]->spectrum.MPI_average();
-		species_list[i]->spectrum.print(it,i);
-		species_list[i]->spectrum.wipe();
-	}
-}
-
-
 // update zone quantities based on heat capacity and lepton capacity
 void transport::update_zone_quantities(){
+	if(verbose && rank0) cout << "# Updating Zone Quantities" << endl;
 	// remember what zones I'm responsible for
 	int start = ( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
 	int end = my_zone_end[MPI_myID];

@@ -285,6 +285,18 @@ void grid_3D_cart::cartesian_sample_in_zone
 	x[0] = x0 + ((double)dir_ind[0] + rand[0])*dx;
 	x[1] = y0 + ((double)dir_ind[1] + rand[1])*dy;
 	x[2] = z0 + ((double)dir_ind[2] + rand[2])*dz;
+	assert(x[0] >= x0*(1.-tiny));
+	assert(x[1] >= y0*(1.-tiny));
+	assert(x[2] >= z0*(1.-tiny));
+	assert(x[0] >= (x0+(double)dir_ind[0]*dx)*(1.+tiny));
+	assert(x[1] >= (y0+(double)dir_ind[1]*dy)*(1.+tiny));
+	assert(x[2] >= (z0+(double)dir_ind[2]*dz)*(1.+tiny));
+	x[0] = max(x[0], x0);
+	x[1] = max(x[1], y0);
+	x[2] = max(x[2], z0);
+	x[0] = min(x[0], x0+(double)dir_ind[0]*dx);
+	x[1] = min(x[1], y0+(double)dir_ind[1]*dy);
+	x[2] = min(x[2], z0+(double)dir_ind[2]*dz);
 }
 
 

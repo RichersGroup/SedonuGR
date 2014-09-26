@@ -163,8 +163,10 @@ void grid_1D_sphere::cartesian_sample_in_zone
 
 	// sample radial position in shell using a probability integral transform
 	double radius = pow( rand[0]*(r1*r1*r1 - r0*r0*r0) + r0*r0*r0, 1./3.);
-	assert(radius >= r0);
-	assert(radius <= r1);
+	assert(radius >= r0*(1.-tiny));
+	assert(radius <= r1*(1.+tiny));
+	if(radius<r0) radius = r0;
+	if(radius>r1) radius = r1;
 
 	// random spatial angles
 	double mu  = 1 - 2.0*rand[1];

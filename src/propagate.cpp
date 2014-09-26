@@ -8,54 +8,37 @@
 
 void transport::propagate_particles(const double lab_dt)
 {
-	if(verbose) cout << "# Propagating particles..." << endl;
-	vector<int> n_active(species_list.size(),0);
-	vector<int> n_escape(species_list.size(),0);
+	if(verbose && rank0) cout << "# Propagating particles..." << endl;
 	double e_esc_lab = 0;
-    #pragma omp parallel shared(n_active,n_escape,e_esc_lab)
-	{
 
-		//--- MOVE THE PARTICLES AROUND ---
-        #pragma omp for schedule(guided) reduction(+:e_esc_lab)
-		for(unsigned i=0; i<particles.size(); i++){
-			particle* p = &particles[i];
-            #pragma omp atomic
-			n_active[p->s]++;
-			propagate(p,lab_dt);
-			if(p->fate == escaped){
-                #pragma omp atomic
-				n_escape[p->s]++;
-				species_list[p->s]->spectrum.count(p->t, p->nu, p->e, p->D);
-				e_esc_lab += p->e;
-			}
-		} //implied barrier
-
-        #pragma omp single
-		{
-			// store the escaped energy in the transport class
-			L_esc_lab = e_esc_lab; // to be normalized later
-
-			// remove the dead particles
-			vector<particle>::iterator pIter = particles.begin();
-			while(pIter != particles.end()){
-				if(pIter->fate==absorbed || pIter->fate==escaped){
-					*pIter = particles[particles.size()-1];
-					particles.pop_back();
-				}
-				else pIter++;
-			}
-			if(steady_state) assert(particles.size()==0);
+	//--- MOVE THE PARTICLES AROUND ---
+    #pragma omp parallel for schedule(guided) reduction(+:e_esc_lab)
+	for(unsigned i=0; i<particles.size(); i++){
+		particle* p = &particles[i];
+        #pragma omp atomic
+		n_active[p->s]++;
+		propagate(p,lab_dt);
+		if(p->fate == escaped){
+			#pragma omp atomic
+			n_escape[p->s]++;
+			species_list[p->s]->spectrum.count(p->t, p->nu, p->e, p->D);
+			e_esc_lab += p->e;
 		}
-	} //#pragma omp parallel
+	} //#pragma omp parallel fpr
 
-	//--- OUPUT ESCAPE STATISTICS ---
-	if (rank0 && verbose){
-		for(unsigned i=0; i<species_list.size(); i++){
-			double per_esc = (100.0*n_escape[i])/n_active[i];
-			if(n_active[i]>0) printf("#   %i/%i %s escaped. (%3.2f%%)\n", n_escape[i], n_active[i], species_list[i]->name.c_str(), per_esc);
-			else printf("#   No active %s.\n", species_list[i]->name.c_str());
+	// store the escaped energy in the transport class
+	L_esc_lab += e_esc_lab; // to be normalized later
+
+	// remove the dead particles
+	vector<particle>::iterator pIter = particles.begin();
+	while(pIter != particles.end()){
+		if(pIter->fate==absorbed || pIter->fate==escaped){
+			*pIter = particles[particles.size()-1];
+			particles.pop_back();
 		}
+		else pIter++;
 	}
+	if(steady_state) assert(particles.empty());
 }
 
 
@@ -212,7 +195,7 @@ void transport::tally_radiation(const particle* p, const double dshift_l2c, cons
 	double com_opac = lab_opac / dshift_l2c;
 	assert(com_e > 0);
 	assert(com_nu > 0);
-	assert(com_d > 0);
+	assert(com_d >= 0);
 	assert(com_opac >= 0);
 
 	// set pointer to the current zone

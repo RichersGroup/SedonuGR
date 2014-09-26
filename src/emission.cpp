@@ -28,10 +28,6 @@ void transport::emit_particles(const double lab_dt)
 	if(n_emit_core >0) emit_inner_source(lab_dt);
 	if(n_emit_zones>0) emit_zones(lab_dt);
 
-	if(verbose && rank0){
-		cout << "# Particle vector size: " << particles.size() << endl;
-		cout << "# Particle vector capcity: " << particles.capacity() << endl;
-	}
 	if(steady_state) assert(particles.size()>=(unsigned)n_emit);
 }
 
@@ -67,15 +63,15 @@ void transport::emit_zones(const double lab_dt){
 	double tmp_net_energy = 0;
 
 	// at this point therm means either viscous heating or regular emission, according to the logic above
-    #pragma omp parallel
+    //#pragma omp parallel
 	{
 		// determine the net luminosity of each emission type over the whole grid
 		// proper normalization due to frames not physical - just for distributing particles somewhat reasonably
-        #pragma omp for reduction(+:tmp_net_energy)
+        #pragma omp parallel for reduction(+:tmp_net_energy)
 		for(unsigned z_ind=0; z_ind<gridsize; z_ind++) tmp_net_energy += zone_comoving_therm_emit_energy(z_ind,lab_dt);
 
 		// actually emit the particles in each zone
-        #pragma omp for schedule(guided)
+        //#pragma omp for schedule(guided)
 		for (unsigned z_ind=0; z_ind<gridsize; z_ind++)
 		{
 			// how much this zone emits. Always emits correct energy even if number of particles doesn't add up.
@@ -182,7 +178,8 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	transform_comoving_to_lab(&p);
 
 	// add to particle vector
-    #pragma omp critical
+	assert(particles.size() < particles.capacity());
+    //#pragma omp critical
 	particles.push_back(p);
 
 	// count up the emitted energy in each zone
