@@ -317,7 +317,7 @@ void transport::step(const double lab_dt)
 
 	// emit, propagate, and normalize. steady_state means no propagation time limit.
 	for(int i=0; i<emissions_per_timestep; i++){
-	  if(rank0 && verbose) cout << "#   subcycle " << i << "/" << emissions_per_timestep << endl;
+	  if(rank0 && verbose) cout << "#   subcycle " << i+1 << "/" << emissions_per_timestep << endl;
 		emit_particles(emission_time);
 		propagate_particles(emission_time);
 	}
