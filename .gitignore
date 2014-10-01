@@ -9,12 +9,6 @@
 make.inc
 *gomc
 src/*.d
-tests/*/*.dat
-tests/*/*.mod
-tests/*/*.pdf
-tests/*/plot_defaults.pyc
-tests/nulib_plots/species_*
-tests/nulib_plots/nulib_eas_single
 external/hdf5*
 external/EOSsuper/driver
 external/EOSsuper/nuc_eos.a
