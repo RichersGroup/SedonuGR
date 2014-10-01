@@ -14,6 +14,7 @@ Open make.inc in your favorite text editor and make sure the compiler and compil
     grep 'Compiler' <hdf5_directory>/lib/libhdf5.settings
 
 Note that the only compilers we've tested are GNU, Intel, and (only on Hopper) PGI
+Intel 12 and below appear not to work. On Zwicky I use Intel 14 and gcc 4.8.1.
 
 
 ########
@@ -31,6 +32,7 @@ In Debian-based systems, this should be as easy as
 
    apt-get install mpich2
 
+On Zwicky, I use the intel MPI implementation and the intel compilers.
 
 #######
 # GSL #
@@ -54,13 +56,13 @@ Lua is a scripting language that is used to read the parameter files. If you do 
 
 If you can't install software with a package manager on your machine (e.g. a cluster), then you will have to build it from scratch in your chosen directory. We will install it into the "external" directory here. First, download and extract the source code (this version is the latest version tested with sedona).
 
-    wget http://www.lua.org/ftp/lua-5.2.2.tar.gz
-    tar -xvf lua-5.2.2.tar.gz -C external
-    rm lua-5.2.2.tar.gz
+    wget http://www.lua.org/ftp/lua-5.2.3.tar.gz
+    tar -xvf lua-5.2.3.tar.gz -C external
+    rm lua-5.2.3.tar.gz
 
-Change into the lua directory to build it. See Lua's readme for more detailed options. These work for me, however.
+Change into the lua directory to build it. If there are linking errors, you will need to add MYLIBS=-ltermcap to the make line. See Lua's readme for more detailed options. These work for me, however.
 
-    cd external/lua-5.2.2
+    cd external/lua-5.2.3
     make linux            # or "make macosx" or "make posix". See the lua readme for more information 
     make test             # success if you see the version string
     make local            # to choose installation directory, do "make install INSTALL_TOP=/path/to/directory"
@@ -85,8 +87,8 @@ Go into the directory
 
 Configure the make process. Some versions of gcc have a bug that causes hdf5 to fail tests if any optimization is enabled, so there are two examples below. The only tested compilers are intel and GNU.
 
-    FC=gfortran CC=gcc CFLAGS=-O0 ./configure --enable-fortran   #for GNU compilers
-    FC=ifort CC=icc ./configure --enable-fortran                 #for Intel compilers
+    FC=gfortran CC=gcc CXX=g++  CFLAGS=-O0 ./configure --enable-fortran --enable-cxx   #for GNU compilers
+    FC=ifort    CC=icc CXX=icpc            ./configure --enable-fortran --enable-cxx   #for Intel compilers
 
 Build and test the binaries. This takes quite a while.
 
