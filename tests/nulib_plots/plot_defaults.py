@@ -11,7 +11,7 @@ from matplotlib import rc
 rc('text', usetex=True)
 rc('font', family='serif')
 rc('font', serif='palatino')
-rc('font', weight='bolder')
+rc('font', weight='bold')
 rc('mathtext', default='sf')
 rc("lines", markeredgewidth=2)
 rc("lines", linewidth=3)

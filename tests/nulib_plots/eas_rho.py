@@ -76,13 +76,13 @@ labelsize=30
 
 xlabelx = 0.5
 xlabely = -0.3
-xlabelstring = r'$\rho$ (g/cm$^3$)'
+xlabelstring = r'$\rho$ (g/ccm)'
 text(xlabelx,xlabely,xlabelstring,fontsize=labelsize,
           horizontalalignment="center",transform=ax[0].transAxes)
 
 y0labelx = -0.15
 y0labely = 0.5
-y0labelstring = r'$\epsilon$ (erg/cm$^3$/s/ster)'
+y0labelstring = r'$\epsilon$ (erg/ccm/s/ster)'
 text(y0labelx,y0labely,y0labelstring,fontsize=0.8*labelsize,
          verticalalignment="center",rotation='vertical',transform=ax[0].transAxes)
 
