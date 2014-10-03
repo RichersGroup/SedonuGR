@@ -9,6 +9,7 @@
 neutrinos::neutrinos(){
 	num_nut_species = MAX;
 	nulibID = MAX;
+	cutoff=0;
 }
 
 
@@ -52,6 +53,7 @@ void neutrinos::myInit(Lua* lua)
 		exit(16);}
 
 	// set up the frequency table
+	cutoff        = lua->scalar<double>("nut_cdf_cutoff");
 	grey_opac     = lua->scalar<double>("nut_grey_opacity");
 	grey_abs_frac = lua->scalar<double>("nut_grey_abs_frac");
 	if(grey_opac < 0){
@@ -91,11 +93,12 @@ void neutrinos::myInit(Lua* lua)
 void neutrinos::set_eas(int zone_index)
 {
 	zone* z = &(sim->grid->z[zone_index]);
+	double ngroups = (double)emis[zone_index].size();
 
 	if(grey_opac < 0){ // get opacities and emissivity from NuLib
 		nulib_get_eas_arrays(z->rho, z->T, z->Ye, nulibID,
 				emis[zone_index], abs_opac[zone_index], scat_opac[zone_index]);
-		emis[zone_index].normalize();
+		emis[zone_index].normalize(cutoff/ngroups);
 	}
 
 	else{ // get emissivity from blackbody and the grey opacity
@@ -113,7 +116,7 @@ void neutrinos::set_eas(int zone_index)
 			abs_opac[zone_index][j] = a;        // (1/cm)
 			scat_opac[zone_index][j] = s;       // (1/cm)
 		}
-		emis[zone_index].normalize();
+		emis[zone_index].normalize(cutoff/ngroups);
 	}
 }
 

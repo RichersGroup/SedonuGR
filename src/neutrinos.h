@@ -17,6 +17,7 @@ public:
 
 	int num_nut_species;
 	int nulibID;
+	double cutoff;
 
 	// required functions
 	void myInit(Lua* lua);

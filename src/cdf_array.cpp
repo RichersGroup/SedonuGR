@@ -30,26 +30,36 @@ void cdf_array::set_value(const int i, const double f)
 {
 	assert(i >= 0);
 	assert(i < (int)size());
-	if (i==0) y[0] = f;
-	else y[i] = y[i-1] + f;
+	y[i] = ( i==0 ? f : y[i-1]+f );
 }
 
 //------------------------------------------------------
 // Normalize such that the last entry is 1.0
 //------------------------------------------------------
-void cdf_array::normalize() 
+void cdf_array::normalize(double cutoff)
 {
 	// check for zero array, set to all constant
 	if (y.back() == 0){
 		y.assign(y.size(),1.0);
 		N = 0;
 	}
-
 	// normalize to end = 1.0
 	else{
 		N = y.back();
 		assert(N > 0);
 		for(unsigned i=0;i<y.size();i++)   y[i] /= ( N>0 ? N : 1 );
+	}
+
+	// set values below cutoff to 0
+	if(cutoff>0){
+		for(unsigned i=0; i<y.size(); i++){
+			double val = get_value(i);
+			if(val < cutoff) set_value(i,0);
+			else set_value(i,val);
+		}
+		double tmp=N;
+		normalize();
+		N *= tmp;
 	}
 }
 
