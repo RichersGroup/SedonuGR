@@ -26,7 +26,7 @@ CPPFLAGS=-g -O0 -ansi -Wall -fopenmp -std=c++11 $(EXTRAINCS) -DHAVEGR
 CFLAGS=-g -O0 -std=gnu99 -ansi -Wall -fopenmp
 EXTRALIBS=-lm -L/usr/local/lib -lgsl -lgslcblas -Wl,-rpath,$(HDF5DIR)/lib
 
-all: driver nuc_eos.a Munue_of_RhoTempYe Ye_of_RhoTempMunue
+all: nuc_eos.a Munue_of_RhoTempYe Ye_of_RhoTempMunue
 
 Munue_of_RhoTempYe: $(OBJECTS) $(COBJECTS) $(INCLUDES)
 	$(CPPC) $(CPPFLAGS) $(HDF5INCS) -c Munue_of_RhoTempYe.cc -o Munue_of_RhoTempYe.o
@@ -38,10 +38,6 @@ Ye_of_RhoTempMunue: $(OBJECTS) $(COBJECTS) $(INCLUDES)
 
 testi: testi.cc
 	$(CPPC) $(CPPFLAGS) -o testi testi.cc -Ivecmathlib
-
-driver: $(OBJECTS) $(COBJECTS) $(INCLUDES)
-	$(CPPC) $(CPPFLAGS) $(HDF5INCS) -c driver.cc -o driver.o
-	$(CPPC) $(CPPFLAGS) -o driver $(OBJECTS) $(COBJECTS) $(HDF5LIBS) $(EXTRALIBS) driver.o
 
 $(OBJECTS): %.o: %.cc $(INCLUDES)
 	$(CPPC) $(CPPFLAGS) $(HDF5INCS) -c $< -o $@
