@@ -16,9 +16,6 @@ void grid_0D_isotropic::read_model_file(Lua* lua)
 	z[0].rho = lua->scalar<double>("rho");
 	z[0].T   = lua->scalar<double>("T")/pc::k_MeV;
 	z[0].Ye  = lua->scalar<double>("Ye");
-	cout << "#   rho = " << z[0].rho << " g/ccm" << endl;
-	cout << "#   T = " << z[0].T << " K" << endl;
-	cout << "#   Ye = " << z[0].Ye << endl;
 	z[0].H_com = 0;
 	z[0].e_rad = 0;
 	z[0].v[0] = 0;
