@@ -35,7 +35,7 @@ void species_general::init(Lua* lua, transport* simulation)
 
 	// allocate space for each eas spectrum
 	if(sim->n_emit_core > 0) core_emis.resize(nu_grid.size());
-#pragma omp parallel for
+    #pragma omp parallel for
 	for(unsigned i=0; i<abs_opac.size();  i++){
 		abs_opac[i].resize(nu_grid.size());
 		scat_opac[i].resize(nu_grid.size());
@@ -43,26 +43,41 @@ void species_general::init(Lua* lua, transport* simulation)
 	}
 
 	// set up core emission spectrum function (erg/s)
-	if(sim->n_emit_core > 0){
-		//double L_core = lua->scalar<double>("L_core");
-		double T_core = lua->scalar<double>("T_core") / pc::k_MeV;
-		double r_core = lua->scalar<double>("r_core");
-		double chempot = lua->scalar<double>("core_nue_chem_pot") * (double)lepton_number * pc::MeV_to_ergs;
-#pragma omp parallel for ordered
-		for(unsigned j=0;j<nu_grid.size();j++)
-		{
-			double nu  = nu_grid.center(j);
-			double dnu = nu_grid.delta(j);
-#pragma omp ordered
-			core_emis.set_value(j, blackbody(T_core,chempot,nu)*dnu);
-		}
-		core_emis.normalize();
-		core_emis.N *= pc::pi * (4.0*pc::pi*r_core*r_core) * weight;
-	}
+	//double L_core = lua->scalar<double>("L_core");
+	double T_core = lua->scalar<double>("T_core") / pc::k_MeV;
+	double r_core = lua->scalar<double>("r_core");
+	double chempot = lua->scalar<double>("core_nue_chem_pot") * (double)lepton_number * pc::MeV_to_ergs;
+	if(sim->n_emit_core > 0) set_cdf_to_BB(T_core, chempot, core_emis);
+	core_emis.N *= pc::pi * (4.0*pc::pi*r_core*r_core) * weight;
 }
 
 
+//-----------------------------------------------------
+// set cdf to blackbody distribution
+// units of emis.N: erg/s/cm^2/ster
+//-----------------------------------------------------
+void species_general::set_cdf_to_BB(const double T, const double chempot, cdf_array& emis){
+    #pragma omp parallel for ordered
+	for(unsigned j=0;j<nu_grid.size();j++)
+	{
+		double nu  = nu_grid.center(j);
+		double dnu = nu_grid.delta(j);
+        #pragma omp ordered
+		emis.set_value(j, blackbody(T,chempot,nu)*dnu);
+	}
+	emis.normalize();
+}
 
+
+void species_general::set_emis_to_BB_edens(const double T, const double chempot){
+	// This sort of abuses the original meaning of the emissivity arrays for initial particle creation.
+	// usage here: units of emis.N are erg/ccm
+	// original usage: units of emis.N are erg/s
+	for(unsigned z_ind=0; z_ind<emis.size(); z_ind++){
+		set_cdf_to_BB(T,chempot,emis[z_ind]);
+		emis[z_ind].N *= 4.0*pc::pi/pc::c;
+	}
+}
 
 //----------------------------------------------------------------
 // return a randomly sampled frequency

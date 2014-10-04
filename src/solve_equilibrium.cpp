@@ -125,6 +125,7 @@ double temp_eq_function(int z_ind, double T, transport* sim)
 	assert(z_ind >= 0);
 	assert(z_ind < (int)sim->grid->z.size());
 	assert(T >= 0);
+	assert(sim->grid->z[z_ind].e_abs >= 0);
 
 	// total energy absorbed in zone
 	double E_absorbed = sim->grid->z[z_ind].e_abs;

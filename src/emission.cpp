@@ -15,7 +15,6 @@ void transport::emit_particles(const double lab_dt)
 	assert(lab_dt > 0);
 
 	// complain if we're out of room for particles
-	if(steady_state) assert(particles.empty());
 	assert(n_emit_core  >= 0);
 	assert(n_emit_zones >= 0);
 	int n_emit = n_emit_core + n_emit_zones;
@@ -25,19 +24,36 @@ void transport::emit_particles(const double lab_dt)
 	}
 
 	// emit from the core and/or the zones
-	if(n_emit_core >0) emit_inner_source(lab_dt);
-	if(n_emit_zones>0) emit_zones(lab_dt);
+	if(n_emit_core >0) emit_inner_source(n_emit_core, lab_dt);
+	if(n_emit_zones>0) emit_zones(n_emit_zones, lab_dt);
 
-	if(steady_state) assert(particles.size()>=(unsigned)n_emit);
+	if(iterative) assert(particles.size()>=(unsigned)n_emit);
 }
 
+//------------------------------------------------------------
+// begin with a blackbody distribution of particles
+//------------------------------------------------------------
+void transport::initialize_blackbody(double T, double munue){
+	// remove existing particles
+	particles.resize(0);
+
+	for(unsigned z_ind=0; z_ind<grid->z.size(); z_ind++){
+		// prep the emissivities
+		for(unsigned s=0; s<species_list.size(); s++)
+			species_list[s]->set_emis_to_BB_edens(T,munue*(double)species_list[s]->lepton_number);
+
+		emit_zones(n_initial,1.0,t_now); // this is a hack - 1.0 causes perfect BB energy density
+		grid->z[z_ind].e_emit = 0;
+		grid->z[z_ind].l_emit = 0;
+	}
+}
 
 //------------------------------------------------------------
 // inject particles from a central luminous source
 // Currently written to emit photons with 
 // blackblody spectrum based on T_core and L_core
 //------------------------------------------------------------
-void transport::emit_inner_source(const double lab_dt)
+void transport::emit_inner_source(const int n_emit_core, const double lab_dt, double t)
 {
 	assert(lab_dt > 0);
 	assert(core_species_luminosity.N > 0);
@@ -46,7 +62,7 @@ void transport::emit_inner_source(const double lab_dt)
 
     #pragma omp parallel for
 	for (int i=0; i<n_emit_core; i++){
-		double t = t_now + lab_dt*rangen.uniform();
+		if(t<0) t = t_now + lab_dt*rangen.uniform();
 		create_surface_particle(Ep,t);
 	}
 }
@@ -55,8 +71,7 @@ void transport::emit_inner_source(const double lab_dt)
 //--------------------------------------------------------------------------
 // emit particles due to viscous heating
 //--------------------------------------------------------------------------
-void transport::emit_zones(const double lab_dt){
-
+void transport::emit_zones(const int n_emit, const double lab_dt, double t){
 	assert(lab_dt > 0);
 
 	unsigned gridsize = grid->z.size();
@@ -76,14 +91,13 @@ void transport::emit_zones(const double lab_dt){
 		{
 			// how much this zone emits. Always emits correct energy even if number of particles doesn't add up.
 			double com_emit_energy = zone_comoving_therm_emit_energy(z_ind,lab_dt);
-			unsigned this_n_emit = (double)n_emit_zones * com_emit_energy / tmp_net_energy;
+			unsigned this_n_emit = (double)n_emit * (com_emit_energy / tmp_net_energy);
 			if(com_emit_energy>0 && this_n_emit==0) this_n_emit = 1;
 			double Ep = com_emit_energy / (double)this_n_emit;
 
 			// create the particles
-			double t;
 			for (unsigned k=0; k<this_n_emit; k++){
-				t = t_now + lab_dt*rangen.uniform();
+				if(t<0) t = t_now + lab_dt*rangen.uniform();
 				create_thermal_particle(z_ind,Ep,t);
 			}
 

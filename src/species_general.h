@@ -41,6 +41,9 @@ protected:
 	// species-specific initialization stuff
 	virtual void myInit(Lua* lua) = 0;
 
+	// set a CDF to blackbody distribution
+	void set_cdf_to_BB(const double T, const double chempot, cdf_array& emis);
+
 public:
 
 	species_general();
@@ -76,6 +79,7 @@ public:
 
 	// set the emissivity, absorption opacity, and scattering opacity
 	virtual void set_eas(const int zone_index) = 0;
+	void set_emis_to_BB_edens(const double T, const double chempot);
 	void get_opacity(const double com_nu, const int z_ind, double* opac, double* abs_frac) const;
 
 	// min and max values for the Brent solver

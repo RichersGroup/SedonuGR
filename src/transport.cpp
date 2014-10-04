@@ -44,7 +44,7 @@ transport::transport(){
 	step_size = NaN;
 	do_photons = -MAX;
 	do_neutrinos = -MAX;
-	steady_state = -MAX;
+	iterative = -MAX;
 	radiative_eq = -MAX;
 	rank0 = -MAX;
 	grid = NULL;
@@ -59,6 +59,9 @@ transport::transport(){
 	L_esc_lab = NaN;
 	reflect_outer = -MAX;
 	emissions_per_timestep = -MAX;
+	n_initial = -MAX;
+	initial_BB_T = NaN;
+	initial_BB_munue = NaN;
 }
 
 
@@ -96,10 +99,10 @@ void transport::init(Lua* lua)
 	do_photons   = lua->scalar<int>("do_photons");
 	do_neutrinos = lua->scalar<int>("do_neutrinos");
 	radiative_eq = lua->scalar<int>("radiative_eq");
-	steady_state = lua->scalar<int>("steady_state");
+	iterative = lua->scalar<int>("iterative");
 	solve_T       = lua->scalar<int>("solve_T");
 	solve_Ye      = lua->scalar<int>("solve_Ye");
-	if(steady_state){
+	if(iterative){
 		if(solve_T || solve_Ye){
 			damping               = lua->scalar<double>("damping");
 			brent_itmax           = lua->scalar<int>("brent_itmax");
@@ -263,17 +266,12 @@ void transport::init(Lua* lua)
 	assert(Ye_max > Ye_min);
 	assert(Ye_max <= 1.0);
 
-	// initialize all the zone eas variables
-    #pragma omp parallel for collapse(2)
-	for(unsigned i=0; i<species_list.size(); i++)
-		for(unsigned j=0; j<grid->z.size(); j++)
-			species_list[i]->set_eas(j);
-
-	// scatter initial particles in the simulation area
-	// don't initialize them if iterative calculation. They all come from the core.
-	// int init_particles = lua->scalar<int>("init_particles");
-	// if(!steady_state) initialize_particles(init_particles);
-
+	// set up initial particle creation
+	n_initial = lua->scalar<int>("n_initial");
+	if(n_initial>0){
+		initial_BB_T     = lua->scalar<double>("initial_BB_T")/pc::k_MeV;
+		initial_BB_munue = lua->scalar<double>("initial_BB_munue")*pc::MeV_to_ergs;
+	}
 
 	//=================//
 	// SET UP THE CORE //
@@ -310,7 +308,12 @@ double transport::current_time(){
 void transport::step(const double lab_dt)
 {
 	// assume 1.0 s. of particles were emitted if steady_state
-	double emission_time = (steady_state ? 1.0 : lab_dt);
+	double emission_time = (lab_dt<0 ? 1.0 : lab_dt);
+	if(iterative) assert(particles.empty());
+
+	// distribute initial particles in the simulation area
+	// don't initialize them if iterative calculation. They all come from the core.
+	if(n_initial>0) initialize_blackbody(initial_BB_T,initial_BB_munue);
 
 	// reset radiation quantities
 	reset_radiation();
@@ -319,21 +322,21 @@ void transport::step(const double lab_dt)
 	for(int i=0; i<emissions_per_timestep; i++){
 	  if(rank0 && verbose) cout << "#   subcycle " << i+1 << "/" << emissions_per_timestep << endl;
 		emit_particles(emission_time);
-		propagate_particles(emission_time);
+		propagate_particles(lab_dt);
 	}
 	if(MPI_nprocs>1) reduce_radiation();      // so each processor has necessary info to solve its zones
 	normalize_radiative_quantities(emission_time);
 
 	// solve for T_gas and Ye structure
 	if(solve_T || solve_Ye){
-		if(steady_state) solve_eq_zone_values();  // solve T,Ye s.t. E_abs=E_emit and N_abs=N_emit
+		if(iterative) solve_eq_zone_values();  // solve T,Ye s.t. E_abs=E_emit and N_abs=N_emit
 		else update_zone_quantities();            // update T,Ye based on heat capacity and number of leptons
 	}
 	if(MPI_nprocs>1) synchronize_gas();       // each processor broadcasts its solved zones to the other processors
 	if(rank0) calculate_timescales();
 
 	// advance time step
-	if (!steady_state) t_now += lab_dt;
+	if (!iterative) t_now += lab_dt;
 }
 
 

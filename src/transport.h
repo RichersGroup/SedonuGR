@@ -37,8 +37,9 @@ private:
 
 	// emit from where?
 	//void initialize_particles(int init_particles);
-	void emit_inner_source(const double dt);
-	void emit_zones(const double dt);
+	void initialize_blackbody(const double T, const double munue);
+	void emit_inner_source(const int n_emit, const double dt, double t=-1);
+	void emit_zones(const int n_emit, const double dt, double t=-1);
 
 	// what kind of particle to create?
 	void create_surface_particle(const double Ep, const double t);
@@ -96,7 +97,7 @@ private:
 	double step_size;
 	int    do_photons;
 	int    do_neutrinos;
-	int    steady_state;
+	int    iterative;
 	int    radiative_eq;
 	int    rank0;
 
@@ -129,6 +130,11 @@ public:
 	int do_visc;
 	int n_emit_zones;
 	double visc_specific_heat_rate;
+
+	// initial particle creation
+	int n_initial;
+	double initial_BB_T;
+	double initial_BB_munue;
 
 	// how many times do we emit+propagate each timestep?
 	int emissions_per_timestep;
