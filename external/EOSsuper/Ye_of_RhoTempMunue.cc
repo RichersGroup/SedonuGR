@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 	double solve_for_munu = mu;// + (mn-mp); // eos does not include baryon masses
 	double ye_min = 0.05;
 	double ye_max = 0.55;
-	double xye = 0.5;
+	double xye = 0.0;
 	double xeps, xprs, xent, xcs2, xdedt, xdpderho, xdpdrhoe;
 	double xa, xh, xn, xp, abar, zbar;
 	double mue, mun, mup, muhat, munu=0;
@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
 	int n=1;
 	int iter=0;
 	int maxiter = 1000;
-	while(fabs(munu-solve_for_munu) > 1e-10 && iter<maxiter){
+	do{
 		xye = 0.5*(ye_min + ye_max);
 		nuc_eos_m_kt1_full(&n,&rho,&T,&xye,
 				   &xeps,&xprs,&xent,&xcs2,&xdedt,
@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
 		if(munu-solve_for_munu<0) ye_min = xye;
 		else ye_max = xye;
 		iter++;
-	}
+	} while(fabs(munu-solve_for_munu) > 1e-10 && iter<maxiter);
 	std::cout << xye << std::endl;
 	return 0;
 }
