@@ -9,7 +9,7 @@ dx = (R_max-R_min)/nx
 
 rho = RHO_HERE
 temp = 1*MeV
-ye = 0.3
+ye = 0.55
 
 print '1D_sphere',nx,R_min
 

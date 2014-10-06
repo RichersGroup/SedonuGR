@@ -1,8 +1,7 @@
 .PHONY: all clean
 
 all:
-	python neutron_star.py > neutron_star.mod
-	./gomc
+	python run_many.py
 
 clean:
 	rm -f *.spec ray_* fluid_* *.pdf shell.mod
