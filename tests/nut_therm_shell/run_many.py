@@ -71,7 +71,7 @@ def run_test(rho,T,Ye):
 
 ### BEGIN SCRIPT ###
 
-#os.system("rm results.dat")
+os.system("rm results.dat")
 
 rho0 = 10**(0.5*(min_logrho + max_logrho))
 T0   = 10**(0.5*(min_logT   + max_logT  ))
@@ -82,14 +82,14 @@ dye     = (max_ye     - min_ye    ) / (n_ye  - 1.0)
 
 for i in range (0, n_rho):
     logrho = min_logrho + i*dlogrho
-    #run_test(10**logrho,T0,ye0)
+    run_test(10**logrho,T0,ye0)
 
 for i in range (0, n_T):
     logT = min_logT + i*dlogT
-    #run_test(rho0,10**logT,ye0)
+    run_test(rho0,10**logT,ye0)
 
 for i in range (0, n_ye):
     ye = min_ye + i*dye
-    #run_test(rho0,T0,ye)
+    run_test(rho0,T0,ye)
 
 plot()
