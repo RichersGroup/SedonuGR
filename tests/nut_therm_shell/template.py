@@ -4,10 +4,10 @@ km = 1.0e5      # cm
 nx = 1
 
 R_max = 10*km
-R_min = 9.9999*km
+R_min = 9.99999*km
 dx = (R_max-R_min)/nx
 
-rho = 1e12
+rho = RHO_HERE
 temp = 1*MeV
 ye = 0.3
 

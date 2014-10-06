@@ -5,4 +5,4 @@ all:
 	./gomc
 
 clean:
-	rm -f *.spec ray_* fluid_* *.pdf neutron_star.mod
+	rm -f *.spec ray_* fluid_* *.pdf shell.mod
