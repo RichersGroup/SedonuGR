@@ -42,9 +42,9 @@ step_size = 0.4
 
 -- inner source
 
-r_core = 1
-T_core = 10
-core_nue_chem_pot = 0
+r_core = 9.99999e5                  -- core radius (cm)
+T_core = 10                      -- core temperature (K) (10 MeV)
+core_nue_chem_pot = 15.3143              -- chempot of Ye=0.167031, T=10MeV according to LS220
 core_lum_multiplier = 1.0
 
 -- opacity parameters
