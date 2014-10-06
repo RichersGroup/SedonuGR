@@ -64,10 +64,10 @@ private:
 	// propagate the particles
 	void propagate_particles(const double dt);
 	void propagate(particle* p, const double dt);
-	void do_event(const ParticleEvent event, const double abs_frac, particle* p);
-	void tally_radiation(const particle* p, const double dshift_l2c, const double lab_d, const double lab_opac, const double abs_frac) const;
+	void move(particle* p, const double lab_d);
+	void tally_radiation(const particle* p, const int z_ind, const double dshift_l2c, const double lab_d, const double lab_opac, const double abs_frac) const;
 	void reset_radiation();
-	void which_event(const particle* p,const double dt, const double lab_opac, double* d_smallest, ParticleEvent *event) const;
+	void which_event(const particle* p,const int z_ind, const double dt, const double lab_opac, double* d_smallest, ParticleEvent *event) const;
 	void event_boundary(particle* p, const int z_ind) const;
 	void event_interact(particle* p, const int z_ind, const double abs_frac);
 	void isotropic_scatter(particle* p) const;

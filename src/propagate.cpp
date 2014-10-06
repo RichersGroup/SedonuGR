@@ -51,11 +51,10 @@ void transport::remove_dead_particles(){
 //--------------------------------------------------------
 // Decide what happens to the particle
 //--------------------------------------------------------
-void transport::which_event(const particle *p, const double dt, const double lab_opac,
+void transport::which_event(const particle *p, const int z_ind, const double dt, const double lab_opac,
 		double *d_smallest, ParticleEvent *event) const{
 	assert(lab_opac >= 0);
 
-	const int z_ind = grid->zone_index(p->x);
 	double d_zone     = numeric_limits<double>::infinity();
 	double d_time     = numeric_limits<double>::infinity();
 	double d_interact = numeric_limits<double>::infinity();
@@ -88,7 +87,7 @@ void transport::which_event(const particle *p, const double dt, const double lab
 
 	// FIND D_BOUNDARY ================================================================
 	d_boundary = grid->lab_dist_to_boundary(p);
-	assert(d_boundary >= 0);
+	assert(d_boundary > 0);
 
 	// find out what event happens (shortest distance) =====================================
 	*d_smallest = numeric_limits<double>::infinity();
@@ -111,50 +110,6 @@ void transport::which_event(const particle *p, const double dt, const double lab
 	assert(*d_smallest >= 0);
 }
 
-
-void transport::do_event(const ParticleEvent event, const double abs_frac, particle* p){
-	// get zone location now
-	int z_ind = grid->zone_index(p->x);
-	assert(z_ind >= -2);
-	assert(z_ind < (int)grid->z.size());
-
-	// now the exciting bit!
-	switch(event){
-	    // ---------------------------------
-	    // Do if interact
-	    // ---------------------------------
-	case interact:
-		event_interact(p,z_ind,abs_frac);
-		assert(p->nu > 0);
-		assert(p->e > 0);
-		break;
-
-		// ---------------------------------
-		// do if time step end
-		// ---------------------------------
-	case timeStep:
-		assert(z_ind >= 0);
-		p->fate = stopped;
-		break;
-
-		// ---------------------------------
-		// do if crossing a boundary
-		// ---------------------------------
-	case boundary:
-		event_boundary(p,z_ind);
-		break;
-
-		//-----------------------
-		// nothing special happens at the zone edge
-		//-----------------------
-	default:
-		assert(event == zoneEdge);
-		assert(z_ind >= 0);
-	}
-
-	// check for core absorption
-	if(p->r() < r_core) p->fate = absorbed;
-}
 
 void transport::event_boundary(particle* p, const int z_ind) const{
 	assert(z_ind==-1 || z_ind==-2);
@@ -183,8 +138,7 @@ void transport::event_boundary(particle* p, const int z_ind) const{
 	}
 }
 
-void transport::tally_radiation(const particle* p, const double dshift_l2c, const double lab_d, const double lab_opac, const double abs_frac) const{
-	int z_ind = grid->zone_index(p->x);
+void transport::tally_radiation(const particle* p, const int z_ind, const double dshift_l2c, const double lab_d, const double lab_opac, const double abs_frac) const{
 	assert(z_ind >= 0);
 	assert(z_ind < (int)grid->z.size());
 	assert(dshift_l2c > 0);
@@ -233,6 +187,13 @@ void transport::tally_radiation(const particle* p, const double dshift_l2c, cons
 
 }
 
+void transport::move(particle* p, double lab_d){
+	p->x[0] += lab_d*p->D[0];
+	p->x[1] += lab_d*p->D[1];
+	p->x[2] += lab_d*p->D[2];
+	p->t = p->t + lab_d/pc::c;
+}
+
 //--------------------------------------------------------
 // Propagate a single monte carlo particle until
 // it  escapes, is absorbed, or the time step ends
@@ -258,9 +219,8 @@ void transport::propagate(particle* p, const double lab_dt)
 		int z_ind = grid->zone_index(p->x);
 		assert(z_ind >= -1);
 		assert(z_ind < (int)grid->z.size());
-		int on_grid = (z_ind >= 0);
 
-		if(grid->good_zone(z_ind) && on_grid){ // avoid handling fluff zones if unnecessary
+		if(grid->good_zone(z_ind) && z_ind>=0){ // avoid handling fluff zones if unnecessary
 			// doppler shift from comoving to lab (nu0/nu)
 			dshift_l2c = dshift_lab_to_comoving(p,z_ind);
 			assert(dshift_l2c > 0);
@@ -276,19 +236,63 @@ void transport::propagate(particle* p, const double lab_dt)
 		}
 
 		// decide which event happens
-		which_event(p,lab_dt,lab_opac,&lab_d,&event);
+		which_event(p,z_ind,lab_dt,lab_opac,&lab_d,&event);
 		assert(lab_d >= 0);
 
 		// accumulate counts of radiation energy, absorption, etc
-		if(grid->good_zone(z_ind) && on_grid) tally_radiation(p,dshift_l2c,lab_d,lab_opac,abs_frac);
+		if(grid->good_zone(z_ind) && z_ind>=0) tally_radiation(p,z_ind,dshift_l2c,lab_d,lab_opac,abs_frac);
 
 		// move particle the distance
-		p->x[0] += lab_d*p->D[0];
-		p->x[1] += lab_d*p->D[1];
-		p->x[2] += lab_d*p->D[2];
-		p->t = p->t + lab_d/pc::c;
+		move(p,lab_d);
+		z_ind = grid->zone_index(p->x);
 
 		// do the selected event
-		do_event(event,abs_frac,p);
+		// now the exciting bit!
+		switch(event){
+		    // ---------------------------------
+		    // Do if interact
+		    // ---------------------------------
+		case interact:
+			event_interact(p,z_ind,abs_frac);
+			assert(p->nu > 0);
+			assert(p->e > 0);
+			break;
+
+			// ---------------------------------
+			// do if time step end
+			// ---------------------------------
+		case timeStep:
+			assert(z_ind >= 0);
+			p->fate = stopped;
+			break;
+
+			// ---------------------------------
+			// do if crossing a boundary
+			// ---------------------------------
+		case boundary:{
+			//it's only when the distance to move is tiny that floating point precision becomes an issue
+			//keep moving by larger and larger steps until it's off grid
+			{
+				int i=1;
+				while(z_ind>=0){
+					move(p,pow(2.0,i)*lab_d);
+					z_ind = grid->zone_index(p->x);
+					i++;
+				}
+			}
+			event_boundary(p,z_ind);
+			break;
+		}
+
+			//-----------------------
+			// nothing special happens at the zone edge
+			//-----------------------
+		default:
+			assert(event == zoneEdge);
+			assert(z_ind >= 0);
+		}
+
+		// check for core absorption
+		if(p->r() < r_core) p->fate = absorbed;
 	}
 }
