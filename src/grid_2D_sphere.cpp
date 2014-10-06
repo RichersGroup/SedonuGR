@@ -745,7 +745,8 @@ double grid_2D_sphere::lab_dist_to_boundary(const particle *p) const{
 
 	// distance to outer boundary
 	d_outer_boundary = -r*mu + sqrt(r*r*(mu*mu-1.0) + Rout*Rout);
-	assert(d_outer_boundary >= 0);
+	if(d_outer_boundary<=0 && fabs(d_outer_boundary/Rin)<tiny*(Rout-r_out[r_out.size()-1])) d_outer_boundary = tiny*(Rout-r_out[r_out.size()-1]);
+	assert(d_outer_boundary > 0);
 	assert(d_outer_boundary <= 2.*Rout);
 
 	// distances to the theta boundaries - NOT IMPLEMENTED THETA BOUNDARIES

@@ -278,12 +278,13 @@ double grid_1D_sphere::lab_dist_to_boundary(const particle *p) const{
 		d_inner_boundary = -r*mu + sqrt(r*r*(mu*mu-1.0) + Rin*Rin);
 		assert(d_inner_boundary <= 2.*Rin);
 	}
-	if(d_inner_boundary<0 && fabs(d_inner_boundary/Rin)<tiny*(r_out[0]-Rin)) d_inner_boundary = tiny*(r_out[0]-Rin);
-	assert(d_inner_boundary >= 0);
+	if(d_inner_boundary<=0 && fabs(d_inner_boundary/Rin)<tiny*(r_out[0]-Rin)) d_inner_boundary = tiny*(r_out[0]-Rin);
+	assert(d_inner_boundary > 0);
 
 	// distance to outer boundary
 	d_outer_boundary = -r*mu + sqrt(r*r*(mu*mu-1.0) + Rout*Rout);
-	assert(d_outer_boundary >= 0);
+	if(d_outer_boundary<=0 && fabs(d_outer_boundary/Rin)<tiny*(Rout-r_out[r_out.size()-1])) d_outer_boundary = tiny*(Rout-r_out[r_out.size()-1]);
+	assert(d_outer_boundary > 0);
 	assert(d_outer_boundary <= 2.*Rout);
 
 	// make sure the particle ends up in a reasonable place
