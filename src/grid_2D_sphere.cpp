@@ -740,6 +740,7 @@ double grid_2D_sphere::lab_dist_to_boundary(const particle *p) const{
 		d_inner_boundary = -r*mu + sqrt(r*r*(mu*mu-1.0) + Rin*Rin);
 		assert(d_inner_boundary <= 2.*Rin);
 	}
+	if(d_inner_boundary<0 && fabs(d_inner_boundary/Rin)<tiny*(r_out[0]-Rin)) d_inner_boundary = tiny*(r_out[0]-Rin);
 	assert(d_inner_boundary >= 0);
 
 	// distance to outer boundary
