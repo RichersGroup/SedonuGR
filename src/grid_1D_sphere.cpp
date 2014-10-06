@@ -83,7 +83,7 @@ int grid_1D_sphere::zone_index(const vector<double>& x) const
 
 	// check if off the boundaries
 	if(r < r_out.min             ) return -1;
-	if(r > r_out[r_out.size()-1] ) return -2;
+	if(r >= r_out[r_out.size()-1] ) return -2;
 
 	// find in zone array using stl algorithm upper_bound and subtracting iterators
 	int z_ind = r_out.locate(r);

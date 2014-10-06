@@ -425,10 +425,10 @@ int grid_2D_sphere::zone_index(const vector<double>& x) const
 	assert(theta <= pc::pi);
 
 	// check if off the boundaries
-	if(r     <= r_out.min                    ) return -1;
-	if(r     >  r_out[r_out.size()-1]        ) return -2;
-	if(theta <= theta_out.min                ) return -2;
-	if(theta >  theta_out[theta_out.size()-1]) return -2;
+	if(r     <  r_out.min                    ) return -1;
+	if(r     >= r_out[r_out.size()-1]        ) return -2;
+	if(theta <  theta_out.min                ) return -2;
+	if(theta >= theta_out[theta_out.size()-1]) return -2;
 
 	// find in zone array using stl algorithm upper_bound and subtracting iterators
 	const int i =     r_out.locate(r    );
