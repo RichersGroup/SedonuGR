@@ -48,6 +48,7 @@ def plot():
 
 def run_test(rho,T,Ye):
     print "Currently running: rho="+str(rho)+"g/ccm T="+str(T)+"MeV Ye="+str(Ye)
+    os.system("rm -f fluid_*.dat")
 
     mu = munue(rho,T,Ye,eosfile)
     string = "sed " + \
