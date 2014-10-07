@@ -66,8 +66,8 @@ int main(int argc, char* argv[]){
 	nulib_get_eas_arrays(rho, T, ye, nulibID, emis, absopac, scatopac);
 	nulib_get_pure_emis (rho, T, ye, nulibID, pure_emis);
 	cout << "e = " << nu_grid.value_at(myfreq, pure_emis) << " erg/cm^3/s/ster/Hz" << endl;
-	cout << "a = " << nu_grid.value_at(myfreq, absopac)   << " cm^2/g" << endl;
-	cout << "s = " << nu_grid.value_at(myfreq, scatopac)  << " cm^2/g" << endl;
+	cout << "a = " << nu_grid.value_at(myfreq, absopac)   << " 1/cm" << endl;
+	cout << "s = " << nu_grid.value_at(myfreq, scatopac)  << " 1/cm" << endl;
 
 	return 0;
 }
