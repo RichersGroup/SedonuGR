@@ -25,7 +25,7 @@ write_spectra_every = -1
 -- spectrum parameters
 
 nut_spec_time_grid  = {1,1,1}
-nut_spec_nu_grid    = {0,0,0}
+nut_spec_nu_grid    = {1,1,1}
 nut_spec_n_mu       = 1
 nut_spec_n_phi      = 1
 
@@ -53,6 +53,7 @@ T_core = 0
 
 nut_grey_opacity  =  -1
 nut_grey_abs_frac =  -1
+nut_cdf_cutoff    = 1e-2
 
 -- equilibrium solver parameters
 
