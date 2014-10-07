@@ -31,6 +31,9 @@ protected:
 	vector< vector<double> > abs_opac;
 	vector< vector<double> > scat_opac;
 
+	// cdf array interpolation order (currently only 1 or 3)
+	int cdf_interpolation_order;
+
 	// grey opacity and absorption fraction
 	double grey_opac; //(cm^2/g)
 	double grey_abs_frac;       //unitless

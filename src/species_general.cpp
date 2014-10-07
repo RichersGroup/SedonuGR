@@ -18,6 +18,7 @@ species_general::species_general(){
 	rho_min = NaN;
 	rho_max = NaN;
 	sim = NULL;
+	cdf_interpolation_order = 0;
 }
 
 void species_general::init(Lua* lua, transport* simulation)
@@ -49,6 +50,7 @@ void species_general::init(Lua* lua, transport* simulation)
 	double chempot = lua->scalar<double>("core_nue_chem_pot") * (double)lepton_number * pc::MeV_to_ergs;
 	if(sim->n_emit_core > 0) set_cdf_to_BB(T_core, chempot, core_emis);
 	core_emis.N *= pc::pi * (4.0*pc::pi*r_core*r_core) * weight;
+	cdf_interpolation_order = lua->scalar<int>("cdf_interpolation_order");
 }
 
 
@@ -93,7 +95,10 @@ double species_general::sample_core_nu() const
 	// make sure we don't get a zero frequency
 	if(rand==0 && nu_grid.min==0) while(rand==0) rand = sim->rangen.uniform();
 
-	double result = core_emis.invert_linear(rand,&nu_grid);
+	double result = 0;
+	assert(cdf_interpolation_order==1 || cdf_interpolation_order==3);
+	if     (cdf_interpolation_order==1) result = core_emis.invert_linear(rand,&nu_grid);
+	else if(cdf_interpolation_order==3) result = core_emis.invert_cubic(rand,&nu_grid);
 	assert(result>0);
 	return result;
 }
@@ -112,7 +117,10 @@ double species_general::sample_zone_nu(const int zone_index) const
 	// make sure we don't get a zero frequency
 	if(rand==0 && nu_grid.min==0) while(rand==0) rand = sim->rangen.uniform();
 
-	double result = emis[zone_index].invert_linear(rand,&nu_grid);
+	double result = 0;
+	assert(cdf_interpolation_order==1 || cdf_interpolation_order==3);
+	if     (cdf_interpolation_order==1) result = emis[zone_index].invert_linear(rand,&nu_grid);
+	else if(cdf_interpolation_order==3) result = emis[zone_index].invert_cubic(rand,&nu_grid);
 	assert(result>0);
 	return result;
 }

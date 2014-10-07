@@ -182,6 +182,8 @@ double cdf_array::invert_cubic(const double rand, const locate_array* xgrid) con
 	double t = (rand-yLeft)/h;
 	assert(t>=0 && t<=1);
 	double result = xLeft*h00(t) + h*mLeft*h10(t) + xRight*h01(t) + h*mRight*h11(t);
+	result = max(xLeft,result);
+	result = min(xRight,result);
 	assert(xLeft<=result);
 	assert(xRight>=result);
 	return result;
