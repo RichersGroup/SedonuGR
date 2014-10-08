@@ -1,3 +1,4 @@
+#include "global_options.h"
 #include <iomanip>
 #include <vector>
 #include <iostream>
@@ -7,7 +8,6 @@
 #include <cmath>
 #include "zone.h"
 #include "nulib_interface.h"
-#include "global_options.h"
 
 namespace pc = physical_constants;
 using namespace std;

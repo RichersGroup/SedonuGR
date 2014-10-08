@@ -1,9 +1,9 @@
 #ifndef _NULIB_INTERFACE_H
 #define _NULIB_INTERFACE_H
+#include "global_options.h"
 #include <vector>
 #include "cdf_array.h"
 #include "locate_array.h"
-#include "global_options.h"
 
 // returns everything in standard CGS units (i.e. ergs, s, cm, K, Hz)
 
