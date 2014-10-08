@@ -1,9 +1,9 @@
 #ifndef _GRID_0D_ISOTROPIC_H
 #define _GRID_0D_ISOTROPIC_H 1
 
+#include "global_options.h"
 #include "grid_general.h"
 #include "locate_array.h"
-#include "global_options.h"
 #include <vector>
 
 //*******************************************

@@ -18,12 +18,12 @@
 
 #ifndef _GRID_GENERAL_H
 #define _GRID_GENERAL_H 1
+#include "global_options.h"
 #include <iostream>
 #include "zone.h"
 #include "Lua.h"
 #include "particle.h"
 #include "transport.h"
-#include "global_options.h"
 
 using namespace std;
 

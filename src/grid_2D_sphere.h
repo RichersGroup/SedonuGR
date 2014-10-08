@@ -1,10 +1,10 @@
 #ifndef _GRID_2D_SPHERE_H
 #define _GRID_2D_SPHERE_H 1
 
+#include "global_options.h"
 #include "grid_general.h"
 #include "locate_array.h"
 #include <vector>
-#include "global_options.h"
 
 //*******************************************
 // 1-Dimensional Spherical geometry
