@@ -1,3 +1,4 @@
+#include "global_options.h"
 #include <vector>
 #include <algorithm>
 #include <iostream>
@@ -5,7 +6,6 @@
 #include <math.h>
 #include <stdio.h>
 #include "locate_array.h"
-#include "global_options.h"
 
 //-----------------------------
 // safe nan-filled constructor

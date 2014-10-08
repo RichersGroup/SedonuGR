@@ -1,3 +1,4 @@
+#include "grid_3D_cart.h"
 #include <cmath>
 #include <cstdlib>
 #include <fstream>
@@ -6,7 +7,6 @@
 #include "global_options.h"
 #include "mpi.h"
 #include "Lua.h"
-#include "grid_3D_cart.h"
 
 //------------
 // constructor

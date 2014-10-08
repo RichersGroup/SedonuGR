@@ -1,8 +1,8 @@
+#include "global_options.h"
 #include "thread_RNG.h"
 #include <ctime>
 #include <mpi.h>
 #include <omp.h>
-#include "global_options.h"
 
 //-----------------------------------------------------------------
 // initialize the RNG system

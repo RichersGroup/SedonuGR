@@ -1,9 +1,9 @@
+#include "global_options.h"
 #include <algorithm>
 #include <stdio.h>
 #include <cmath>
 #include "cdf_array.h"
 #include "locate_array.h"
-#include "global_options.h"
 
 
 // safe constructor

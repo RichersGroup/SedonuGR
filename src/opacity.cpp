@@ -1,7 +1,7 @@
+#include "global_options.h"
 #include "species_general.h"
 #include "transport.h"
 #include "locate_array.h"
-#include "global_options.h"
 
 //-----------------------------------------------------------------
 // get opacity at the frequency

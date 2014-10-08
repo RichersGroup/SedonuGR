@@ -1,10 +1,10 @@
+#include "global_options.h"
 #include <vector>
 #include <iostream>
 #include <cstdlib>
 #include <cmath>
 #include "zone.h"
 #include "nulib_interface.h"
-#include "global_options.h"
 
 // These are fortran functions and module variables in nulib.a
 extern "C"{

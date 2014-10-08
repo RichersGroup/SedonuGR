@@ -1,8 +1,8 @@
+#include "global_options.h"
 #include <math.h>
 #include <gsl/gsl_rng.h>
 #include "species_general.h"
 #include "transport.h"
-#include "global_options.h"
 
 //------------------------------------------------------------
 // physics of absorption/scattering

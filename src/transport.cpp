@@ -1,3 +1,4 @@
+#include "global_options.h"
 #include <omp.h>
 #include <mpi.h>
 #include <stdlib.h>
@@ -19,7 +20,6 @@
 #include "neutrinos.h"
 #include "cdf_array.h"
 #include "nulib_interface.h"
-#include "global_options.h"
 
 
 namespace pc = physical_constants;
@@ -436,7 +436,7 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		for(unsigned i=0; i<species_list.size(); i++){
 			double per_esc = (100.0*(double)n_escape[i])/(double)n_active[i];
 			total_active += n_active[i];
-			cout << "#   " << n_escape[i] << "/" << n_active[i] << " " << species_list[i]->name << " escaped. (" << per_esc << "\%)" << endl;
+			cout << "#   " << n_escape[i] << "/" << n_active[i] << " " << species_list[i]->name << " escaped. (" << per_esc << "%)" << endl;
 		}
 		cout << "#   " << total_active << " total active particles" << endl;
 		if(do_visc) cout << "#   " << net_visc_heating << " erg/s Summed comoving-frame viscous heating: " << endl;

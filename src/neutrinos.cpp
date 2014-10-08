@@ -1,9 +1,9 @@
+#include "global_options.h"
 #include <vector>
 #include "neutrinos.h"
 #include "transport.h"
 #include "Lua.h"
 #include "nulib_interface.h"
-#include "global_options.h"
 
 // constructor
 neutrinos::neutrinos(){

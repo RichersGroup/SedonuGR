@@ -1,10 +1,10 @@
+#include "global_options.h"
 #include <omp.h>
 #include <math.h>
 #include <gsl/gsl_sf_fermi_dirac.h>
 #include "thread_RNG.h"
 #include "transport.h"
 #include "species_general.h"
-#include "global_options.h"
 
 //------------------------------------------------------------
 // emit new particles

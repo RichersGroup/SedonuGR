@@ -1,6 +1,7 @@
 #ifndef _SPECIES_H
 #define _SPECIES_H
 
+#include "global_options.h"
 #include <list>
 #include "particle.h"
 #include "spectrum_array.h"
@@ -8,7 +9,6 @@
 #include "grid_general.h"
 #include "locate_array.h"
 #include "cdf_array.h"
-#include "global_options.h"
 
 class transport;
 

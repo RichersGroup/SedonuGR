@@ -1,3 +1,4 @@
+#include "global_options.h"
 #include <omp.h>
 #include <stdio.h>
 #include <math.h>
@@ -6,7 +7,6 @@
 #include "Lua.h"
 #include "grid_general.h"
 #include "species_general.h"
-#include "global_options.h"
 
 double temp_eq_function(int z_ind, double T,  transport* sim);
 double   Ye_eq_function(int z_ind, double Ye, transport* sim);

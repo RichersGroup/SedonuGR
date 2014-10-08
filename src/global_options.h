@@ -5,13 +5,13 @@
 #pragma warning disable 161
 #endif
 
+#include <mpi.h>
 #include <limits>
 #include <cassert>
-#include <mpi.h>
 #include <string>
-using real = float; // or float
-const MPI_Datatype MPI_real = ( sizeof(real)==4 ? MPI_FLOAT : MPI_DOUBLE );
-#define NaN std::numeric_limits<real>::quiet_NaN()
+//using real = float; // or float
+//const MPI_Datatype MPI_real = ( sizeof(real)==4 ? MPI_FLOAT : MPI_DOUBLE );
+#define NaN std::numeric_limits<double>::quiet_NaN()
 #define MAX std::numeric_limits<int>::max()
 
 using namespace std;

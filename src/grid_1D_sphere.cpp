@@ -1,10 +1,10 @@
+#include "global_options.h"
 #include <algorithm>
 #include <math.h>
 #include <stdlib.h>
 #include <fstream>
 #include <iostream>
 #include "grid_1D_sphere.h"
-#include "global_options.h"
 
 //------------------------------------------------------------
 // initialize the zone geometry from model file

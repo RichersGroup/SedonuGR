@@ -1,10 +1,10 @@
+#include "global_options.h"
 #include <limits>
 #include <vector>
 #include <cassert>
 #include "photons.h"
 #include "transport.h"
 #include "Lua.h"
-#include "global_options.h"
 
 //----------------------------------------------------------------
 // called from species_general::init (photon-specific stuff)

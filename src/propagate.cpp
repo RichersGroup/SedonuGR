@@ -1,10 +1,10 @@
+#include "global_options.h"
 #include <omp.h>
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
 #include "transport.h"
 #include "species_general.h"
-#include "global_options.h"
 
 void transport::propagate_particles(const double lab_dt)
 {

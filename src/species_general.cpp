@@ -1,10 +1,10 @@
+#include "global_options.h"
 #include "species_general.h"
 #include <gsl/gsl_rng.h>
 #include <math.h>
 #include "transport.h"
 #include "Lua.h"
 #include <list>
-#include "global_options.h"
 
 species_general::species_general(){
 	weight = NaN;

@@ -1,3 +1,4 @@
+#include "global_options.h"
 #include <algorithm>
 #include <mpi.h>
 #include <math.h>
@@ -7,7 +8,6 @@
 #include <cstdio>
 #include "H5Cpp.h"
 #include "grid_2D_sphere.h"
-#include "global_options.h"
 
 //------------------------------------------------------------
 // initialize the zone geometry from model file
