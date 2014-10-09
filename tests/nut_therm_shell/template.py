@@ -4,12 +4,12 @@ km = 1.0e5      # cm
 nx = 1
 
 R_max = 10*km
-R_min = 9.99999*km
+R_min = 9.9999*km
 dx = (R_max-R_min)/nx
 
 rho = RHO_HERE
-temp = 1*MeV
-ye = 0.55
+temp = 10*MeV
+ye = 0.3
 
 print '1D_sphere',nx,R_min
 
