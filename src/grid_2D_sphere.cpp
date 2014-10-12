@@ -258,7 +258,7 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 				assert(z[z_ind].Ye    <= 1.0);
 				newtonian_eint_total += eint[proc][kb][jb][ib] * z[z_ind].rho * zone_lab_volume(z_ind);
 	}
-	cout << "#   Newtonian total internal energy: " << newtonian_eint_total << " erg" << endl;
+	if(rank0) cout << "#   Newtonian total internal energy: " << newtonian_eint_total << " erg" << endl;
 
 
 	//================================//
@@ -567,11 +567,11 @@ void grid_2D_sphere::cartesian_sample_in_zone(const int z_ind, const vector<doub
 
 	// sample cos(theta) uniformily
 	double mu = mu0 + (mu1-mu0)*rand[1];
-	assert(mu >= mu0*(1.-tiny));
-	assert(mu <= mu1*(1.+tiny));
 	mu = max(mu0, mu);
 	mu = min(mu1, mu);
 	double sin_theta = sqrt(1-mu*mu);
+	assert(sin_theta >= -1.0);
+	assert(sin_theta <= 1.0);
 
 	// sample phi uniformily
 	double phi = 2.0*pc::pi*rand[2];
@@ -762,5 +762,11 @@ double grid_2D_sphere::lab_dist_to_boundary(const particle *p) const{
 double grid_2D_sphere::zone_radius(const int z_ind) const{
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
-	return r_out[z_ind];
+
+	// radius and theta indices
+	vector<int> dir_ind;
+	zone_directional_indices(z_ind,dir_ind);
+	int i = dir_ind[0];
+
+	return r_out[i];
 }

@@ -27,7 +27,7 @@ void transport::emit_particles(const double lab_dt)
 	if(n_emit_core >0) emit_inner_source(n_emit_core, lab_dt);
 	if(n_emit_zones>0) emit_zones(n_emit_zones, lab_dt);
 
-	if(iterative) assert(particles.size()>=(unsigned)n_emit);
+	if(iterative) assert(particles.size() >= (unsigned)n_emit - grid->z.size()/2);
 }
 
 //------------------------------------------------------------
@@ -91,7 +91,7 @@ void transport::emit_zones(const int n_emit, const double lab_dt, double t){
 		{
 			// how much this zone emits. Always emits correct energy even if number of particles doesn't add up.
 			double com_emit_energy = zone_comoving_therm_emit_energy(z_ind,lab_dt);
-			unsigned this_n_emit = (double)n_emit * (com_emit_energy / tmp_net_energy);
+			unsigned this_n_emit = (double)n_emit * (com_emit_energy / tmp_net_energy) + 0.5;
 			if(com_emit_energy>0 && this_n_emit==0) this_n_emit = 1;
 			double Ep = com_emit_energy / (double)this_n_emit;
 
