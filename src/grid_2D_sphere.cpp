@@ -53,7 +53,6 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 
 	// set up the structures in memory
 	const size_t stringsize = 81;
-	const int array_length = 15;
 	struct pair_t{
 		char name[stringsize];
 		int value;
@@ -68,7 +67,6 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	const int list_rank = 1;
 	assert(space.getSimpleExtentNdims()==list_rank);                 // 1D array
 	space.getSimpleExtentDims(&dim);
-	assert(dim==array_length);                                       // 15 elements long
 	assert(dataset.getTypeClass() == H5T_COMPOUND);                  // filled with structs
 	assert(comptype.getNmembers()==2);                               // each struct has 2 elements
 	assert(comptype.getMemberName(0)=="name");                       // first element is the name
@@ -78,9 +76,9 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	assert(comptype.getMemberDataType(0).getSize() == stringsize-1); // the name is 80 characters long, 1 extra for the null terminate
 
 	// read the data
-	pair_t integer_data[array_length];
-	dataset.read(integer_data,mempair_t);
-	for(int i=0; i<array_length; i++) integer_data[i].name[stringsize-1] = '\0';
+	vector<pair_t> integer_data(dim);
+	dataset.read(&(integer_data[0]),mempair_t);
+	for(int i=0; i<dim; i++) integer_data[i].name[stringsize-1] = '\0';
 	assert(trim(string(integer_data[0].name)) == string("nxb")); // make sure we're looking at the right fields
 	assert(trim(string(integer_data[1].name)) == string("nyb"));
 	assert(trim(string(integer_data[2].name)) == string("nzb"));
