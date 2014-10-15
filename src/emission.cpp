@@ -27,7 +27,10 @@ void transport::emit_particles(const double lab_dt)
 	if(n_emit_core >0) emit_inner_source(n_emit_core, lab_dt);
 	if(n_emit_zones>0) emit_zones(n_emit_zones, lab_dt);
 
-	if(iterative) assert(particles.size() >= (unsigned)n_emit - grid->z.size()/2);
+	if(iterative){
+	  assert(particles.size() >= (unsigned)n_emit - grid->z.size());
+	  assert(particles.size() <= (unsigned)n_emit + 2*grid->z.size());
+	}
 }
 
 //------------------------------------------------------------
@@ -84,6 +87,7 @@ void transport::emit_zones(const int n_emit, const double lab_dt, double t){
 		// proper normalization due to frames not physical - just for distributing particles somewhat reasonably
         #pragma omp parallel for reduction(+:tmp_net_energy)
 		for(unsigned z_ind=0; z_ind<gridsize; z_ind++) tmp_net_energy += zone_comoving_therm_emit_energy(z_ind,lab_dt);
+		assert(tmp_net_energy>0);
 
 		// actually emit the particles in each zone
         //#pragma omp for schedule(guided)
