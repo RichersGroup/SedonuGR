@@ -101,7 +101,8 @@ bool grid_general::good_zone(const int z_ind) const{
 	//return (z->rho >= rho_min && z->rho <= rho_max &&
 	//  	    z->Ye  >= Ye_min  && z->Ye  <=  Ye_max &&
 	//        z->T   >=  T_min  && z->T   <=   T_max);
-	return zone_speed2(z_ind) < pc::c*pc::c;
+        if(z_ind < 0) return false;
+	else return zone_speed2(z_ind) < pc::c*pc::c;
 }
 
 
