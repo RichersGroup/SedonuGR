@@ -19,11 +19,10 @@ neutrinos::neutrinos(){
 void neutrinos::myInit(Lua* lua)
 {
 	// intialize output spectrum
-	std::vector<double>stg = lua->vector<double>("nut_spec_time_grid");
 	std::vector<double>sng = lua->vector<double>("nut_spec_nu_grid");
 	int nmu  = lua->scalar<int>("nut_spec_n_mu");
 	int nphi = lua->scalar<int>("nut_spec_n_phi");
-	spectrum.init(stg,sng,nmu,nphi);
+	spectrum.init(sng,nmu,nphi);
 
 	// set lepton number
 	if(nulibID == 0)   lepton_number =  1;

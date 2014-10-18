@@ -16,11 +16,10 @@ void photons::myInit(Lua* lua)
 	weight = 1.0;
 
 	// intialize output spectrum
-	vector<double>stg = lua->vector<double>("phot_spec_time_grid");
 	vector<double>sng = lua->vector<double>("phot_spec_nu_grid");
 	int nmu  = lua->scalar<int>("phot_spec_n_mu");
 	int nphi = lua->scalar<int>("phot_spec_n_phi");
-	spectrum.init(stg,sng,nmu,nphi);
+	spectrum.init(sng,nmu,nphi);
 
 	// read opacity parameters
 	grey_opac       = lua->scalar<double>("phot_grey_opacity");

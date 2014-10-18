@@ -21,7 +21,7 @@ void transport::propagate_particles(const double lab_dt)
 		if(p->fate == escaped){
 			#pragma omp atomic
 			n_escape[p->s]++;
-			species_list[p->s]->spectrum.count(p->t, p->nu, p->e, p->D);
+			species_list[p->s]->spectrum.count(p->nu, p->e, p->D);
 			e_esc_lab += p->e;
 		}
 	} //#pragma omp parallel fpr
