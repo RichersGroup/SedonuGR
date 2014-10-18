@@ -78,7 +78,7 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	// read the data
 	vector<pair_t> integer_data(dim);
 	dataset.read(&(integer_data[0]),mempair_t);
-	for(int i=0; i<dim; i++) integer_data[i].name[stringsize-1] = '\0';
+	for(unsigned i=0; i<dim; i++) integer_data[i].name[stringsize-1] = '\0';
 	assert(trim(string(integer_data[0].name)) == string("nxb")); // make sure we're looking at the right fields
 	assert(trim(string(integer_data[1].name)) == string("nyb"));
 	assert(trim(string(integer_data[2].name)) == string("nzb"));
