@@ -100,17 +100,18 @@ int spectrum_array::index(const int nu_bin, const int mu_bin, const int phi_bin)
 //--------------------------------------------------------------
 // count a particle
 ////--------------------------------------------------------------
-void spectrum_array::count(const double nu, const double E, const vector<double> D)
+void spectrum_array::count(const particle* p, const double E)
 {
-	assert(D.size()==3);
-	double mu  = D[2];
-	double phi = atan2(D[1],D[0]);
+	assert(p->D.size()==3);
+	assert(E>=0);
+	double mu  = p->D[2];           // component along z axis
+	double phi = atan2(p->D[1],p->D[0]);  // projection into x-y plane
 
 	// if off the LEFT of mu/phi grids, just return without counting
 	if ((mu<mu_grid.min) || (phi<phi_grid.min)) return;
 
 	// locate bin number in all dimensions.
-	unsigned nu_bin  = nu_grid.locate(nu);
+	unsigned nu_bin  = nu_grid.locate(p->nu);
 	unsigned mu_bin  =   mu_grid.locate(mu);
 	unsigned phi_bin =  phi_grid.locate(phi);
 
