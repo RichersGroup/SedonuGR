@@ -19,8 +19,8 @@ void spectrum_array::init(const std::vector<double> w,
 	double w_start = w[0];
 	double w_stop  = w[1];
 	double w_del   = w[2];
-	wave_grid.init(w_start,w_stop,w_del);
-	int n_wave   = wave_grid.size();
+	nu_grid.init(w_start,w_stop,w_del);
+	int n_wave   = nu_grid.size();
 
 	// asign mu grid
 	mu_grid.init(-1,1,n_mu);
@@ -46,11 +46,11 @@ void spectrum_array::init(const locate_array wg,
 		const locate_array mg, const locate_array pg)
 {
 	// initialize locate arrays by swapping with the inputs
-	wave_grid.swap(wg);
+	nu_grid.swap(wg);
 	mu_grid.swap(mg);
 	phi_grid.swap(pg);
 
-	int n_wave   = wave_grid.size();
+	int n_wave   = nu_grid.size();
 	int n_mu     = mu_grid.size();
 	int n_phi    = phi_grid.size();
 
@@ -70,7 +70,7 @@ void spectrum_array::init(const locate_array wg,
 //--------------------------------------------------------------
 void spectrum_array::wipe()
 {
-        #pragma omp parallel for
+    #pragma omp parallel for
 	for(unsigned i=0;i<flux.size();i++) flux[i]   = 0;
 }
 
@@ -80,19 +80,19 @@ void spectrum_array::wipe()
 // handles the indexing: should be called in this order
 //    group, mu, phi
 //--------------------------------------------------------------
-int spectrum_array::index(const int g, const int m, const int p) const
+int spectrum_array::index(const int nu_bin, const int mu_bin, const int phi_bin) const
 {
-	assert(g>=0);
-	assert(m>=0);
-	assert(p>=0);
+	assert(nu_bin>=0);
+	assert(mu_bin>=0);
+	assert(phi_bin>=0);
 	int n_phi = phi_grid.size();
-	int n_wave = wave_grid.size();
-	int n_mu = mu_grid.size();
+	int n_nu  =  nu_grid.size();
+	int n_mu  =  mu_grid.size();
 	int a3 = n_phi;
 	int a2 = n_mu*a3;
-	const int ind = g*a2 + m*a3 + p;
+	const int ind = nu_bin*a2 + mu_bin*a3 + phi_bin;
 	assert(ind >= 0);
-	assert(ind < n_phi*n_wave*n_mu);
+	assert(ind < n_phi*n_nu*n_mu);
 	return ind;
 }
 
@@ -100,7 +100,7 @@ int spectrum_array::index(const int g, const int m, const int p) const
 //--------------------------------------------------------------
 // count a particle
 ////--------------------------------------------------------------
-void spectrum_array::count(const double w, const double E, const vector<double> D)
+void spectrum_array::count(const double nu, const double E, const vector<double> D)
 {
 	assert(D.size()==3);
 	double mu  = D[2];
@@ -110,20 +110,20 @@ void spectrum_array::count(const double w, const double E, const vector<double> 
 	if ((mu<mu_grid.min) || (phi<phi_grid.min)) return;
 
 	// locate bin number in all dimensions.
-	unsigned l_bin = wave_grid.locate(w);
-	unsigned m_bin =   mu_grid.locate(mu);
-	unsigned p_bin =  phi_grid.locate(phi);
+	unsigned nu_bin  = nu_grid.locate(nu);
+	unsigned mu_bin  =   mu_grid.locate(mu);
+	unsigned phi_bin =  phi_grid.locate(phi);
 
-	// if off the RIGHT of time/mu/phi grids, just return without counting
-	if((m_bin ==   mu_grid.size()) || (p_bin ==  phi_grid.size())) return;
+	// if off the RIGHT of mu/phi grids, just return without counting
+	if((mu_bin ==   mu_grid.size()) || (phi_bin ==  phi_grid.size())) return;
 
 	// if off RIGHT of wavelength grid, store in last bin (LEFT is accounted for by locate)
-	if (l_bin == wave_grid.size()) l_bin--;
+	if (nu_bin == nu_grid.size()) nu_bin--;
 
 	// add to counters
-	int ind = index(l_bin,m_bin,p_bin);
+	int ind = index(nu_bin,mu_bin,phi_bin);
 
-        #pragma omp atomic
+    #pragma omp atomic
 	flux[ind]  += E;
 }
 
@@ -138,30 +138,30 @@ void spectrum_array::print(const int iw, const int species) const
 	string filename = "spectrum_species"+to_string(species);
 	transport::open_file(filename.c_str(),iw,outf);
 
-	unsigned n_wave   = wave_grid.size();
-	unsigned n_mu     = mu_grid.size();
-	unsigned n_phi    = phi_grid.size();
+	unsigned n_nu  =  nu_grid.size();
+	unsigned n_mu  =  mu_grid.size();
+	unsigned n_phi = phi_grid.size();
 
-	outf << "# " << "n_wave:" << n_wave << " " << "n_mu:" << n_mu << " " << "n_phi:" << n_phi << endl;
+	outf << "# " << "n_nu:" << n_nu << " " << "n_mu:" << n_mu << " " << "n_phi:" << n_phi << endl;
 	outf << "# ";
-	outf << (n_wave >1 ? "frequency(Hz) " : "");
-	outf << (n_mu   >1 ? "mu "            : "");
-	outf << (n_phi  >1 ? "phi "           : "");
+	outf << (n_nu >1 ? "frequency(Hz) " : "");
+	outf << (n_mu >1 ? "mu "            : "");
+	outf << (n_phi>1 ? "phi "           : "");
 	outf << "integrated_flux(erg) counts" << endl;
 
 	for (unsigned k=0;k<n_mu;k++)
 		for (unsigned m=0;m<n_phi;m++)
-			for (unsigned j=0;j<n_wave;j++)
+			for (unsigned j=0;j<n_nu;j++)
 			{
 				int id = index(j,k,m);
-				if (n_wave > 1)   outf << wave_grid.center(j) << " ";
-				if (n_mu > 1)     outf << mu_grid.center(k)   << " ";
-				if (n_phi> 1)     outf << phi_grid.center(m)  << " ";
+				if (n_nu > 1) outf <<  nu_grid.center(j) << " ";
+				if (n_mu > 1) outf <<  mu_grid.center(k) << " ";
+				if (n_phi> 1) outf << phi_grid.center(m) << " ";
 
 				// the delta is infinity if the bin is a catch-all.
-				double wdel = wave_grid.delta(j);
+				double wdel = nu_grid.delta(j);
 				double norm = n_mu*n_phi
-				  * ( wdel < numeric_limits<double>::infinity() ? wdel : 1 );
+						* ( wdel < numeric_limits<double>::infinity() ? wdel : 1 );
 				outf << flux[id]/norm << endl;
 			}
 	outf.close();
@@ -182,7 +182,7 @@ void  spectrum_array::rescale(double r)
 void spectrum_array::MPI_average()
 {
 	int receiving_ID = 0;
-	const unsigned n_elements = wave_grid.size()*mu_grid.size()*phi_grid.size();
+	const unsigned n_elements = nu_grid.size()*mu_grid.size()*phi_grid.size();
 
 	// average the flux (receive goes out of scope after section)
 	vector<double> receive;

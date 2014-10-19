@@ -20,7 +20,7 @@ private:
 	// values represent bin upper walls (the single locate_array.min value is the leftmost wall)
 	// underflow is combined into leftmost bin (right of the locate_array.min)
 	// overflow is combined into the rightmost bin (left of locate_array[size-1])
-	locate_array wave_grid;
+	locate_array nu_grid;
 	locate_array mu_grid;
 	locate_array phi_grid;
 
@@ -28,12 +28,12 @@ private:
 	vector<double> flux;
 
 	// Indexing
-	int index(const int l,const int m,const int p) const;
+	int index(const int nu_bin,const int mu_bin,const int phi_bin) const;
 
 public:
 
 	// Initialize
-	void init(const locate_array wg, const locate_array mg, const locate_array pg);
+	void init(const locate_array nu_grid, const locate_array mu_grid, const locate_array phi_grid);
 	void init(const std::vector<double> nu_grid, const int n_mu, const int n_phi);
 
 	// MPI functions
