@@ -171,7 +171,6 @@ void spectrum_array::print(const int iw, const int species) const
 
 void  spectrum_array::rescale(double r)
 {
-        #pragma omp parallel for
 	for(unsigned i=0;i<flux.size();i++) flux[i] *= r;
 }
 
@@ -182,21 +181,16 @@ void  spectrum_array::rescale(double r)
 // only process 0 gets the reduced spectrum to print
 void spectrum_array::MPI_average()
 {
-	int receiving_ID = 0;
 	const unsigned n_elements = nu_grid.size()*mu_grid.size()*phi_grid.size();
 
 	// average the flux (receive goes out of scope after section)
 	vector<double> receive;
 	receive.resize(n_elements);
-	MPI_Reduce(&flux.front(), &receive.front(), n_elements, MPI_DOUBLE, MPI_SUM, receiving_ID, MPI_COMM_WORLD);
+	MPI_Reduce(&flux.front(), &receive.front(), n_elements, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	flux.swap(receive);
 
 	// only have the receiving ID do the division
-	int mpi_procs, myID;
-	MPI_Comm_size( MPI_COMM_WORLD, &mpi_procs );
+	int myID;
 	MPI_Comm_rank( MPI_COMM_WORLD, &myID      );
-	if(myID == receiving_ID){
-                #pragma omp parallel for
-		for(unsigned i=0;i<n_elements;i++) rescale(1./(double)mpi_procs);
-	}
+	if(myID == 0) rescale(1./(double)mpi_procs);
 }
