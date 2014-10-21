@@ -67,7 +67,7 @@ void grid_general::write_header(ofstream& outf) const{
 	zone_coordinates(0,r);
 	const int dimensionality = r.size();
 	for(int i=0; i<dimensionality; i++) outf << "r[" << i << "] ";
-	outf << "e_rad(erg/ccm)  rho(g/ccm)  T_gas(MeV)  Ye  t_therm  t_lep  |v|(cm/s)  H-C(erg/g/s)  dYe_dt(1/s)" << endl;
+	outf << "e_rad(erg/ccm)  rho(g/ccm)  T_gas(MeV)  Ye  t_therm  t_lep  |v|(cm/s)  H-C(erg/g/s)  dYe_dt(1/s) integrated_distribution(erg/ccm)" << endl;
 }
 
 void grid_general::write_line(ofstream& outf, const int z_ind) const{
@@ -92,6 +92,10 @@ void grid_general::write_line(ofstream& outf, const int z_ind) const{
 	double n_baryons_per_ccm = z[z_ind].rho / transport::mean_mass(z[z_ind].Ye);
 	double dYe_dt = (z[z_ind].l_abs - z[z_ind].l_emit) / n_baryons_per_ccm;
 	outf << dYe_dt << " ";
+
+	double integrated_distribution = 0;
+	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) integrated_distribution += z[z_ind].distribution[s].integrate();
+	outf << integrated_distribution << " ";
 
 	outf << endl;
 }

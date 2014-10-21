@@ -111,7 +111,10 @@ void spectrum_array::count(const vector<double>& D, const double nu, const doubl
 	if(phi>  pc::pi) phi -= 2.0*pc::pi;
 
 	// if off the LEFT of mu/phi grids, just return without counting
-	if ((mu<mu_grid.min) || (phi<phi_grid.min)) return;
+	if ((mu<mu_grid.min) || (phi<phi_grid.min)){
+		cout << "Lost a particle off the left of the spectrum array!" << endl;
+		return;
+	}
 
 	// locate bin number in all dimensions.
 	unsigned nu_bin  = nu_grid.locate(nu);
@@ -120,10 +123,7 @@ void spectrum_array::count(const vector<double>& D, const double nu, const doubl
 
 	// if off the RIGHT of mu/phi grids, just return without counting
 	if((mu_bin ==   mu_grid.size()) || (phi_bin ==  phi_grid.size())){
-		cout << "Lost a particle off the spectrum array!" << endl;
-		cout << "mu = " << mu << " (" << mu_bin << ")" << endl;
-		cout << "nu = " << nu << " (" << nu_bin << ")" << endl;
-		cout << "phi = " << phi << " (" << phi_bin << ")" << endl;
+		cout << "Lost a particle off the right of the spectrum array!" << endl;
 		return;
 	}
 

@@ -428,7 +428,7 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		z->l_abs    /= multiplier*four_vol;       // num      --> num/ccm/s
 		z->l_emit   /= multiplier*four_vol;       // num      --> num/ccm/s
 
-		if(do_distribution) for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].rescale(1./(multiplier));
+		if(do_distribution) for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].rescale(1./(multiplier*four_vol*pc::c));
 	}
 
 	// normalize global quantities
