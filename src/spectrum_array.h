@@ -40,11 +40,14 @@ public:
 	void MPI_average();
 
 	// Count a packets
-	void count(const particle* p, const double E);
+	void count(const vector<double>& D, const double nu, const double E);
 
 	//  void normalize();
 	void rescale(const double);
 	void wipe();
+
+	// rintegrate over nu,mu,phi
+	double integrate() const;
 
 	// Print out
 	void print(const int iw, const int species) const;

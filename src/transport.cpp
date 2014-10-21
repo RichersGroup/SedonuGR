@@ -374,7 +374,7 @@ void transport::reset_radiation(){
 			z->l_emit   = 0;
 			z->e_emit   = 0;
 
-			for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].wipe();
+			if(do_distribution) for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].wipe();
 		}
 	} // #pragma omp parallel
 }
@@ -428,7 +428,7 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		z->l_abs    /= multiplier*four_vol;       // num      --> num/ccm/s
 		z->l_emit   /= multiplier*four_vol;       // num      --> num/ccm/s
 
-		for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].rescale(1./(multiplier));
+		if(do_distribution) for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].rescale(1./(multiplier));
 	}
 
 	// normalize global quantities

@@ -99,23 +99,33 @@ int spectrum_array::index(const int nu_bin, const int mu_bin, const int phi_bin)
 //--------------------------------------------------------------
 // count a particle
 ////--------------------------------------------------------------
-void spectrum_array::count(const particle* p, const double E)
+void spectrum_array::count(const vector<double>& D, const double nu, const double E)
 {
-	assert(p->D.size()==3);
+	assert(D.size()==3);
 	assert(E>=0);
-	double mu  = p->D[2];           // component along z axis
-	double phi = atan2(p->D[1],p->D[0]);  // projection into x-y plane
+	double mu  = D[2];           // component along z axis
+	mu = max(-1.0,mu);
+	mu = min( 1.0,mu);
+	double phi = atan2(D[1],D[0]);  // projection into x-y plane
+	if(phi< -pc::pi) phi += 2.0*pc::pi;
+	if(phi>  pc::pi) phi -= 2.0*pc::pi;
 
 	// if off the LEFT of mu/phi grids, just return without counting
 	if ((mu<mu_grid.min) || (phi<phi_grid.min)) return;
 
 	// locate bin number in all dimensions.
-	unsigned nu_bin  = nu_grid.locate(p->nu);
+	unsigned nu_bin  = nu_grid.locate(nu);
 	unsigned mu_bin  =   mu_grid.locate(mu);
 	unsigned phi_bin =  phi_grid.locate(phi);
 
 	// if off the RIGHT of mu/phi grids, just return without counting
-	if((mu_bin ==   mu_grid.size()) || (phi_bin ==  phi_grid.size())) return;
+	if((mu_bin ==   mu_grid.size()) || (phi_bin ==  phi_grid.size())){
+		cout << "Lost a particle off the spectrum array!" << endl;
+		cout << "mu = " << mu << " (" << mu_bin << ")" << endl;
+		cout << "nu = " << nu << " (" << nu_bin << ")" << endl;
+		cout << "phi = " << phi << " (" << phi_bin << ")" << endl;
+		return;
+	}
 
 	// if off RIGHT of wavelength grid, store in last bin (LEFT is accounted for by locate)
 	if (nu_bin == nu_grid.size()) nu_bin--;
@@ -127,7 +137,18 @@ void spectrum_array::count(const particle* p, const double E)
 	flux[ind]  += E;
 }
 
-
+double spectrum_array::integrate() const{
+	double integral = 0;
+	for(unsigned nu_bin=0; nu_bin<nu_grid.size(); nu_bin++){
+		for(unsigned mu_bin=0; mu_bin<mu_grid.size(); mu_bin++){
+			for(unsigned phi_bin=0; phi_bin<phi_grid.size(); phi_bin++){
+				int ind = index(nu_bin,mu_bin,phi_bin);
+				integral += flux[ind];
+			}
+		}
+	}
+	return integral;
+}
 
 //--------------------------------------------------------------
 // print out

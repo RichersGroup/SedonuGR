@@ -21,7 +21,7 @@ void transport::propagate_particles(const double lab_dt)
 		if(p->fate == escaped){
 			#pragma omp atomic
 			n_escape[p->s]++;
-			species_list[p->s]->spectrum.count(p, p->e);
+			species_list[p->s]->spectrum.count(p->D, p->nu, p->e);
 			e_esc_lab += p->e;
 		}
 	} //#pragma omp parallel fpr
@@ -169,25 +169,22 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	assert(zone->e_rad >= 0);
 
 	// tally in contribution to zone's distribution function (lab frame)
+	// use rhat, thetahat, phihat as basis functions so rotational symmetries give accurate results
 	if(do_distribution){
 		double r = sqrt(dot(p->x,p->x));
 		double rp = sqrt(p->x[0]*p->x[0] + p->x[1]*p->x[1]);
 		double x=p->x[0], y=p->x[1], z=p->x[2];
-		vector<double> rhat = {x/r,
-					           y/r,
-					           z/r};
-		vector<double> thetahat = {z/r * x/rp,
-								   z/r * y/rp,
-								   z/r * z/r - 1};
-		vector<double> phihat = {-y/rp,
-								  x/rp,
-								  0};
+		vector<double> rhat     = {x/r,   		y/r,	     z/r		   };
+		vector<double> thetahat = {z/r * x/rp,	z/r * y/rp,	 z/r * z/r - 1 };
+		vector<double> phihat   = {-y/rp,		x/rp,		 0			   };
 		if(rp==0){
 			if(r==0) rhat = {0,0,1};
 			thetahat = {0,1,0};
 			phihat   = {1,0,0};
 		}
-		zone->distribution[p->s].count(p, to_add);
+		vector<double> D_newbasis = {dot(p->D,rhat), dot(p->D,thetahat), dot(p->D,phihat)};
+		normalize(D_newbasis);
+		zone->distribution[p->s].count(D_newbasis, p->nu, to_add);
 	}
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
