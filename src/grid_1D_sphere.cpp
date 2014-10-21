@@ -238,7 +238,7 @@ void grid_1D_sphere::reflect_outer(particle *p) const{
 	p->D[0] -= 2.*velDotRhat * p->x[0]/R;
 	p->D[1] -= 2.*velDotRhat * p->x[1]/R;
 	p->D[2] -= 2.*velDotRhat * p->x[2]/R;
-	p->normalize_direction();
+	transport::normalize(p->D);
 
 	// put the particle just inside the boundary
 	double newR = rmax - tiny*dr;

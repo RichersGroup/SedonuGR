@@ -184,7 +184,7 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	p.D[0] = smu*cos(phi);
 	p.D[1] = smu*sin(phi);
 	p.D[2] = mu;
-	p.normalize_direction();
+	normalize(p.D);
 
 	// sample the species and frequency
 	int s = sample_zone_species(z_ind);
@@ -244,7 +244,7 @@ void transport::create_surface_particle(const double Ep, const double t)
 	p.D[0] = cost_core*cosp_core*D_xl-sinp_core*D_yl+sint_core*cosp_core*D_zl;
 	p.D[1] = cost_core*sinp_core*D_xl+cosp_core*D_yl+sint_core*sinp_core*D_zl;
 	p.D[2] = -sint_core*D_xl+cost_core*D_zl;
-	p.normalize_direction();
+	normalize(p.D);
 
 	// get index of current zone
 	assert(grid->zone_index(p.x) >= 0);

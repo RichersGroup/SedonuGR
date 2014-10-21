@@ -27,6 +27,13 @@ double transport::dot(const vector<double>& a, const vector<double>& b){
 	return product;
 }
 
+// normalize a vector
+void transport::normalize(vector<double>& a){
+	assert(a.size()>0);
+	double magnitude = sqrt(dot(a,a));
+	for(unsigned i=0; i<a.size(); i++) a[i] /= magnitude;
+}
+
 // v_dot_d is the dot product of the relative velocity and the relativistic particle's direction
 double doppler_shift(const double gamma, const double vdd){
 	assert(gamma > 0);
@@ -57,7 +64,7 @@ void lorentz_transform(particle* p, const vector<double> v){
 	p->D[0] = 1.0/dshift * (p->D[0] - gamma*v[0]/pc::c * (1 - gamma*vdd/pc::c/(gamma+1)) );
 	p->D[1] = 1.0/dshift * (p->D[1] - gamma*v[1]/pc::c * (1 - gamma*vdd/pc::c/(gamma+1)) );
 	p->D[2] = 1.0/dshift * (p->D[2] - gamma*v[2]/pc::c * (1 - gamma*vdd/pc::c/(gamma+1)) );
-	p->normalize_direction();
+	transport::normalize(p->D);
 
 	// sanity checks
 	assert(p->e > 0);

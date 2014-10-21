@@ -35,8 +35,6 @@ public:
 		else return x_dot_d()/r();
 	}
 
-	void normalize_direction();
-
 	void print() const
 	{
 		printf("%10.e | %10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e | %10.3e %10.3e\n",

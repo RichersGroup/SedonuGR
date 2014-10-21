@@ -700,7 +700,7 @@ void grid_2D_sphere::reflect_outer(particle *p) const{
 
 	// invert the radial component of the velocity
 	for(int i=0; i<3; i++) p->D[i] -= 2.*velDotRhat * p->x[i]/p->r();
-	p->normalize_direction();
+	transport::normalize(p->D);
 
 	// put the particle just inside the boundary
 	double newR = r_out[r_out.size()-1] - tiny*dr;
