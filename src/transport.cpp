@@ -44,6 +44,7 @@ transport::transport(){
 	step_size = NaN;
 	do_photons = -MAX;
 	do_neutrinos = -MAX;
+	do_distribution = -MAX;
 	iterative = -MAX;
 	radiative_eq = -MAX;
 	rank0 = -MAX;
@@ -98,6 +99,7 @@ void transport::init(Lua* lua)
 	verbose      = lua->scalar<int>("verbose");
 	do_photons   = lua->scalar<int>("do_photons");
 	do_neutrinos = lua->scalar<int>("do_neutrinos");
+	do_distribution = lua->scalar<int>("do_distribution");
 	radiative_eq = lua->scalar<int>("radiative_eq");
 	iterative = lua->scalar<int>("iterative");
 	solve_T       = lua->scalar<int>("solve_T");
@@ -371,6 +373,8 @@ void transport::reset_radiation(){
 			z->e_abs    = 0;
 			z->l_emit   = 0;
 			z->e_emit   = 0;
+
+			for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].wipe();
 		}
 	} // #pragma omp parallel
 }
@@ -423,6 +427,8 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		z->e_emit   /= multiplier*four_vol;       // erg      --> erg/ccm/s
 		z->l_abs    /= multiplier*four_vol;       // num      --> num/ccm/s
 		z->l_emit   /= multiplier*four_vol;       // num      --> num/ccm/s
+
+		for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].rescale(1./(multiplier));
 	}
 
 	// normalize global quantities
@@ -543,6 +549,10 @@ void transport::reduce_radiation()
 		size = my_end - my_begin;
 		vector<double> send(size,0);
 		vector<double> receive(size,0);
+
+		// reduce distribution
+		for(unsigned s=0; s<species_list.size(); s++)
+			for(int i=my_begin; i<my_end; i++) grid->z[i].distribution[s].MPI_average();
 
 		// reduce e_rad
 		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_rad;

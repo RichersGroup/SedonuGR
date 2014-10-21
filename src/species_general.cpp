@@ -25,6 +25,7 @@ void species_general::init(Lua* lua, transport* simulation)
 {
 	// set the pointer to see the simulation info
 	sim = simulation;
+	assert(sim->grid->z.size()>0);
 
 	// call child's init function
 	myInit(lua);
@@ -51,6 +52,19 @@ void species_general::init(Lua* lua, transport* simulation)
 	if(sim->n_emit_core > 0) set_cdf_to_BB(T_core, chempot, core_emis);
 	core_emis.N *= pc::pi * (4.0*pc::pi*r_core*r_core) * weight;
 	cdf_interpolation_order = lua->scalar<int>("cdf_interpolation_order");
+
+    // set up the spectrum in each zone
+    bool do_distribution = lua->scalar<int>("do_distribution");
+    if(do_distribution){
+    	int n_mu = lua->scalar<int>("distribution_nmu");
+    	int n_phi = lua->scalar<int>("distribution_nphi");
+		#pragma omp parallel for
+    	for(unsigned z_ind=0; z_ind<sim->grid->z.size(); z_ind++){
+    		spectrum_array tmp_spectrum;
+    		tmp_spectrum.init(nu_grid, n_mu, n_phi);
+    		sim->grid->z[z_ind].distribution.push_back(tmp_spectrum);
+    	}
+    }
 }
 
 

@@ -70,8 +70,7 @@ void spectrum_array::init(const locate_array wg,
 //--------------------------------------------------------------
 void spectrum_array::wipe()
 {
-    #pragma omp parallel for
-	for(unsigned i=0;i<flux.size();i++) flux[i]   = 0;
+	for(unsigned i=0;i<flux.size();i++) flux[i] = 0;
 }
 
 
@@ -186,11 +185,12 @@ void spectrum_array::MPI_average()
 	// average the flux (receive goes out of scope after section)
 	vector<double> receive;
 	receive.resize(n_elements);
-	MPI_Reduce(&flux.front(), &receive.front(), n_elements, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Allreduce(&flux.front(), &receive.front(), n_elements, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 	flux.swap(receive);
 
 	// only have the receiving ID do the division
-	int myID;
+	int myID, mpi_procs;
+	MPI_Comm_size( MPI_COMM_WORLD, &mpi_procs );
 	MPI_Comm_rank( MPI_COMM_WORLD, &myID      );
 	if(myID == 0) rescale(1./(double)mpi_procs);
 }

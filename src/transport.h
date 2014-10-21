@@ -97,6 +97,7 @@ private:
 	double step_size;
 	int    do_photons;
 	int    do_neutrinos;
+	int    do_distribution;
 	int    iterative;
 	int    radiative_eq;
 	int    rank0;
@@ -162,6 +163,7 @@ public:
 	static void open_file(const char* filebase, const int iw, ofstream& outf);
 	static double lorentz_factor(const vector<double>& v);
 	static double dot(const vector<double>& a, const vector<double>& b);
+	static void normalize(vector<double>& a);
 	static double mean_mass(const double Ye);
 };
 
