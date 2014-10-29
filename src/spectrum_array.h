@@ -29,6 +29,9 @@ private:
 
 	// Indexing
 	int index(const int nu_bin,const int mu_bin,const int phi_bin) const;
+	int  nu_bin(const int index) const;
+	int  mu_bin(const int index) const;
+	int phi_bin(const int index) const;
 
 public:
 
@@ -49,6 +52,12 @@ public:
 	// integrate over nu,mu,phi
 	double integrate() const;
 	void integrate_over_direction(vector<double>& edens) const;
+
+	// get bin centers and indices
+	int size() const;
+	double  nu_center(const int index) const;
+	double  mu_center(const int index) const;
+	double phi_center(const int index) const;
 
 	// Print out
 	void print(const int iw, const int species) const;

@@ -95,6 +95,60 @@ int spectrum_array::index(const int nu_bin, const int mu_bin, const int phi_bin)
 	return ind;
 }
 
+//----------------
+// get bin indices
+//----------------
+int spectrum_array::nu_bin(const int index) const{
+	assert(index>0);
+	assert(index<flux.size());
+	int result = index / (phi_grid.size()*mu_grid.size());
+	assert(result>0);
+	assert(result<nu_grid.size());
+	return result;
+}
+int spectrum_array::mu_bin(const int index) const{
+	assert(index>0);
+	assert(index<flux.size());
+	double result =  (index%(phi_grid.size()*mu_grid.size())) / phi_grid.size();
+	assert(result>0);
+	assert(result<mu_grid.size());
+	return result;
+}
+int spectrum_array::phi_bin(const int index) const{
+	assert(index>0);
+	assert(index<flux.size());
+	double result = index % phi_grid.size();
+	assert(result>0);
+	assert(result<phi_grid.size());
+	return result;
+}
+
+//--------------------
+// get centers of bins
+//--------------------
+double spectrum_array::nu_center(const int index) const{
+	assert(index>0);
+	assert(index<flux.size());
+	return nu_grid.center(nu_bin(index));
+}
+double spectrum_array::mu_center(const int index) const{
+	assert(index>0);
+	assert(index<flux.size());
+	return mu_grid.center(mu_bin(index));
+}
+double spectrum_array::phi_center(const int index) const{
+	assert(index>0);
+	assert(index<flux.size());
+	return phi_grid.center(phi_bin(index));
+}
+
+
+//----------------------
+// get size of spectrum
+//----------------------
+int spectrum_array::size() const{
+	return flux.size();
+}
 
 //--------------------------------------------------------------
 // count a particle
