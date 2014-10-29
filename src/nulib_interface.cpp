@@ -8,7 +8,8 @@
 
 // These are fortran functions and module variables in nulib.a
 extern "C"{
-void nulibtable_range_species_range_energy_(double*, //rho
+void nulibtable_range_species_range_energy_(
+		double*, //rho
 		double*, //temp
 		double*, //ye
 		double*, //eas_species_energy (3D array)
@@ -16,7 +17,8 @@ void nulibtable_range_species_range_energy_(double*, //rho
 		int*,    //number of groups
 		int*);   //number of easvariables (3)
 
-void nulibtable_single_species_range_energy_(double*, //rho
+void nulibtable_single_species_range_energy_(
+		double*, //rho
 		double*, //temp
 		double*, //Ye
 		int*,    //species number
@@ -159,7 +161,8 @@ void nulib_init(string filename){
 /* get_nut_eas_arrays */
 /**********************/
 // leave serial - called per grid zone
-void nulib_get_eas_arrays(double rho,                     // g/cm^3
+void nulib_get_eas_arrays(
+		double rho,                     // g/cm^3
 		double temp,                    // K
 		double ye, int nulibID,
 		cdf_array& nut_emiss,         // erg/cm^3/s/ster
@@ -227,7 +230,8 @@ void nulib_get_eas_arrays(double rho,                     // g/cm^3
 /***********************/
 /* nulib_get_pure_emis */
 /***********************/
-void nulib_get_pure_emis(double rho,                     // g/cm^3
+void nulib_get_pure_emis(
+		double rho,                     // g/cm^3
 		double temp,                    // K
 		double ye, int nulibID,
 		vector<double>& nut_emiss){   // erg/cm^3/s/ster/Hz
