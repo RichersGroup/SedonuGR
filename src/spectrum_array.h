@@ -55,6 +55,7 @@ public:
 
 	// get bin centers and indices
 	int size() const;
+	double get(const int index) const;
 	double  nu_center(const int index) const;
 	double  mu_center(const int index) const;
 	double phi_center(const int index) const;

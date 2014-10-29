@@ -142,6 +142,12 @@ double spectrum_array::phi_center(const int index) const{
 	return phi_grid.center(phi_bin(index));
 }
 
+//-------
+// getter
+//-------
+double spectrum_array::get(const int index) const{
+	return flux[index];
+}
 
 //----------------------
 // get size of spectrum
