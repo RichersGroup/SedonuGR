@@ -4,6 +4,7 @@
 #include "transport.h"
 #include "Lua.h"
 #include "nulib_interface.h"
+#include <cmath>
 
 // constructor
 neutrinos::neutrinos(){
@@ -129,4 +130,64 @@ double neutrinos::blackbody(const double T, const double chem_pot, const double 
 	double bb = (pc::h*nu) * (nu/pc::c) * (nu/pc::c) / (exp(zeta) + 1.0);
 	assert(bb >= 0);
 	return bb;
+}
+
+//-------------------------------------------------------------------------------------------------------------
+// Calculate the neutrino anti-neutrino annihilation rate (erg/ccm/s) from the distribution functions (erg/ccm)
+//-------------------------------------------------------------------------------------------------------------
+double cos_angle_between(const double mu1, const double mu2, const double phi1, const double phi2){
+	assert(mu1<=1.0 && mu1>=-1.0);
+	assert(mu2<=1.0 && mu2>=-1.0);
+	double result = mu1*mu2 + sqrt((1.0-mu1*mu1)*(1.0-mu2*mu2))*cos(phi2-phi1); // Bruenn 1985 eq. A7
+
+	// make sure numerical error doesn't push it beyond {-1,1}
+	result = min(result, 1.0);
+	result = max(result,-1.0);
+	return result;
+}
+double neutrinos::annihilation_rate(
+		const spectrum_array& nu_dist,     // erg/ccm (integrated over angular bin and energy bin)
+		const spectrum_array& nubar_dist,  // erg/ccm (integrated over angular bin and energy bin)
+		const double weight1,			   // number of species represented by first spectrum
+		const double weight2,			   // number of species represented by first spectrum
+		const bool electron_type){         // is this an electron-type interaction?
+
+	// constants
+	using namespace pc;
+	double mec2 = m_e*c*c; // erg
+	double C1pC2,C3; // from Ruffert+97 (paper II) above equation 4
+	if(electron_type){
+		C1pC2 = (CV-CA)*(CV-CA) + (CV+CA)*(CV+CA); // ~2.34
+		C3 = 2./3. * (2.*CV*CV - CA*CA);           // ~1.06
+	}
+	else{
+		C1pC2 = (CV-CA)*(CV-CA) + (CV+CA-2.)*(CV+CA-2.);     // ~0.50
+		C3 = 2./3. * (2.*(CV-1.)*(CV-1.) - (CA-1.)*(CA-1.)); // ~-0.16
+	}
+
+	// integrate over all bins
+	double Q = 0;
+	for(unsigned i=0; i<nu_dist.size(); i++){
+		double avg_nu  = nu_dist.nu_center(i)*pc::h; // erg
+		double avg_mu  = nu_dist.mu_center(i);
+		double avg_phi = nu_dist.phi_center(i);
+		double nudist_edens = nu_dist.get(i)/weight1; // erg/ccm
+
+		for(unsigned j=0; j<nubar_dist.size(); j++){
+			double avg_nubar  = nubar_dist.nu_center(j)*pc::h; // erg
+			double avg_mubar  = nubar_dist.mu_center(j);
+			double avg_phibar = nubar_dist.phi_center(j);
+			double nubardist_edens = nubar_dist.get(j)/weight2; // erg/ccm
+
+			double costheta = cos_angle_between(avg_mu,avg_mubar,avg_phi,avg_phibar);
+			Q += nudist_edens * nubardist_edens * (avg_nu + avg_nubar) * (1.0-costheta) * (
+					C1pC2/3.0 * (1-costheta) +
+					C3 * mec2*mec2 / (avg_nu*avg_nubar)
+					);
+		}
+	}
+
+	Q *= pc::sigma0*pc::c / (4.*mec2*mec2); // erg/ccm/s
+
+	return Q;
 }
