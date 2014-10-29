@@ -26,6 +26,10 @@ const double ev_to_ergs =  1.60217646e-12;
 const double cm_to_angs =  1.0e8;
 const double angs_to_cm =  1.0e-8;
 
+const double CA = 0.5;
+const double CV = 0.96;
+const double sigma0 = 1.76e-44; // weak interaction cross section (cm^2)
+
 const double thomson_cs = 0.66523e-24;       // Thomson cross-section cm-2
 const double sigma_tot = 0.0265400193567;    // integrated line coefficent (cm^2 Hz)
 }
