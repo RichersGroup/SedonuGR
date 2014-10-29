@@ -79,18 +79,17 @@ void spectrum_array::wipe()
 // handles the indexing: should be called in this order
 //    group, mu, phi
 //--------------------------------------------------------------
-int spectrum_array::index(const int nu_bin, const int mu_bin, const int phi_bin) const
+unsigned spectrum_array::index(const unsigned nu_bin, const unsigned mu_bin, const unsigned phi_bin) const
 {
-	assert(nu_bin>=0);
-	assert(mu_bin>=0);
-	assert(phi_bin>=0);
-	int n_phi = phi_grid.size();
-	int n_nu  =  nu_grid.size();
-	int n_mu  =  mu_grid.size();
+	unsigned n_phi = phi_grid.size();
+	unsigned n_nu  =  nu_grid.size();
+	unsigned n_mu  =  mu_grid.size();
+	assert(nu_bin < n_nu);
+	assert(mu_bin < n_mu);
+	assert(phi_bin < n_phi);
 	int a3 = n_phi;
 	int a2 = n_mu*a3;
-	const int ind = nu_bin*a2 + mu_bin*a3 + phi_bin;
-	assert(ind >= 0);
+	const unsigned ind = nu_bin*a2 + mu_bin*a3 + phi_bin;
 	assert(ind < n_phi*n_nu*n_mu);
 	return ind;
 }
@@ -98,27 +97,21 @@ int spectrum_array::index(const int nu_bin, const int mu_bin, const int phi_bin)
 //----------------
 // get bin indices
 //----------------
-int spectrum_array::nu_bin(const int index) const{
-	assert(index>0);
+unsigned spectrum_array::nu_bin(const unsigned index) const{
 	assert(index<flux.size());
-	int result = index / (phi_grid.size()*mu_grid.size());
-	assert(result>0);
+	unsigned result = index / (phi_grid.size()*mu_grid.size());
 	assert(result<nu_grid.size());
 	return result;
 }
-int spectrum_array::mu_bin(const int index) const{
-	assert(index>0);
+unsigned spectrum_array::mu_bin(const unsigned index) const{
 	assert(index<flux.size());
 	double result =  (index%(phi_grid.size()*mu_grid.size())) / phi_grid.size();
-	assert(result>0);
 	assert(result<mu_grid.size());
 	return result;
 }
-int spectrum_array::phi_bin(const int index) const{
-	assert(index>0);
+unsigned spectrum_array::phi_bin(const unsigned index) const{
 	assert(index<flux.size());
 	double result = index % phi_grid.size();
-	assert(result>0);
 	assert(result<phi_grid.size());
 	return result;
 }
@@ -126,18 +119,15 @@ int spectrum_array::phi_bin(const int index) const{
 //--------------------
 // get centers of bins
 //--------------------
-double spectrum_array::nu_center(const int index) const{
-	assert(index>0);
+double spectrum_array::nu_center(const unsigned index) const{
 	assert(index<flux.size());
 	return nu_grid.center(nu_bin(index));
 }
-double spectrum_array::mu_center(const int index) const{
-	assert(index>0);
+double spectrum_array::mu_center(const unsigned index) const{
 	assert(index<flux.size());
 	return mu_grid.center(mu_bin(index));
 }
-double spectrum_array::phi_center(const int index) const{
-	assert(index>0);
+double spectrum_array::phi_center(const unsigned index) const{
 	assert(index<flux.size());
 	return phi_grid.center(phi_bin(index));
 }
@@ -152,7 +142,7 @@ double spectrum_array::get(const int index) const{
 //----------------------
 // get size of spectrum
 //----------------------
-int spectrum_array::size() const{
+unsigned spectrum_array::size() const{
 	return flux.size();
 }
 

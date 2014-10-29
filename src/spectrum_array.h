@@ -28,10 +28,10 @@ private:
 	vector<double> flux;
 
 	// Indexing
-	int index(const int nu_bin,const int mu_bin,const int phi_bin) const;
-	int  nu_bin(const int index) const;
-	int  mu_bin(const int index) const;
-	int phi_bin(const int index) const;
+	unsigned index(const unsigned nu_bin,const unsigned mu_bin,const unsigned phi_bin) const;
+	unsigned  nu_bin(const unsigned index) const;
+	unsigned  mu_bin(const unsigned index) const;
+	unsigned phi_bin(const unsigned index) const;
 
 public:
 
@@ -54,11 +54,11 @@ public:
 	void integrate_over_direction(vector<double>& edens) const;
 
 	// get bin centers and indices
-	int size() const;
+	unsigned size() const;
 	double get(const int index) const;
-	double  nu_center(const int index) const;
-	double  mu_center(const int index) const;
-	double phi_center(const int index) const;
+	double  nu_center(const unsigned index) const;
+	double  mu_center(const unsigned index) const;
+	double phi_center(const unsigned index) const;
 
 	// Print out
 	void print(const int iw, const int species) const;
