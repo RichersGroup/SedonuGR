@@ -101,6 +101,7 @@ private:
 	int    iterative;
 	int    radiative_eq;
 	int    rank0;
+	double ratio_emit_by_zone;
 
 	// current time in simulation
 	double t_now;

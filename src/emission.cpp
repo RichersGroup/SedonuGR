@@ -79,15 +79,23 @@ void transport::emit_zones(const int n_emit, const double lab_dt, double t){
 
 	unsigned gridsize = grid->z.size();
 	double tmp_net_energy = 0;
+	unsigned n_emitting_zones = 0;
+	assert(ratio_emit_by_zone>=0.);
+	assert(ratio_emit_by_zone<=1.);
 
 	// at this point therm means either viscous heating or regular emission, according to the logic above
     //#pragma omp parallel
 	{
 		// determine the net luminosity of each emission type over the whole grid
 		// proper normalization due to frames not physical - just for distributing particles somewhat reasonably
-        #pragma omp parallel for reduction(+:tmp_net_energy)
-		for(unsigned z_ind=0; z_ind<gridsize; z_ind++) tmp_net_energy += zone_comoving_therm_emit_energy(z_ind,lab_dt);
+	    #pragma omp parallel for reduction(+:tmp_net_energy,n_emitting_zones)
+		for(unsigned z_ind=0; z_ind<gridsize; z_ind++){
+			double com_emit_energy = zone_comoving_therm_emit_energy(z_ind,lab_dt);
+			tmp_net_energy += com_emit_energy;
+			n_emitting_zones += (com_emit_energy>0 ? 1 : 0);
+		}
 		assert(tmp_net_energy>0);
+		assert(n_emitting_zones>0);
 
 		// actually emit the particles in each zone
         //#pragma omp for schedule(guided)
@@ -95,7 +103,11 @@ void transport::emit_zones(const int n_emit, const double lab_dt, double t){
 		{
 			// how much this zone emits. Always emits correct energy even if number of particles doesn't add up.
 			double com_emit_energy = zone_comoving_therm_emit_energy(z_ind,lab_dt);
-			unsigned this_n_emit = (double)n_emit * (com_emit_energy / tmp_net_energy) + 0.5;
+			unsigned this_n_emit = 0;
+
+			this_n_emit += (1. - ratio_emit_by_zone) * (double)n_emit * (com_emit_energy / tmp_net_energy)                      + 0.5;
+			this_n_emit += (     ratio_emit_by_zone) * (double)n_emit / (double)n_emitting_zones * (com_emit_energy<=0 ? 0 : 1) + 0.5;
+
 			if(com_emit_energy>0 && this_n_emit==0) this_n_emit = 1;
 			double Ep = com_emit_energy / (double)this_n_emit;
 

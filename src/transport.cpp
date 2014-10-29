@@ -63,6 +63,7 @@ transport::transport(){
 	n_initial = -MAX;
 	initial_BB_T = NaN;
 	initial_BB_munue = NaN;
+	ratio_emit_by_zone = NAN;
 }
 
 
@@ -90,6 +91,7 @@ void transport::init(Lua* lua)
 	// figure out what emission models we're using
 	n_emit_core  = lua->scalar<int>("n_emit_core");
 	n_emit_zones = lua->scalar<int>("n_emit_therm");
+	if(n_emit_zones>0) ratio_emit_by_zone = lua->scalar<double>("ratio_emit_by_zone");
 	emissions_per_timestep = lua->scalar<int>("emissions_per_timestep");
 	do_visc      = lua->scalar<int>("do_visc");
 	if(do_visc) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");
@@ -539,7 +541,7 @@ void transport::reduce_radiation()
 
 	//-- EACH PROCESSOR GETS THE REDUCTION INFORMATION IT NEEDS
 	if(verbose && rank0) cout << "#   fluid" << endl;
-	for(int proc=0; proc<MPI_nprocs; proc++){
+	//for(int proc=0; proc<MPI_nprocs; proc++){
 
 		// set the begin and end indices so a process covers range [begin,end)
 		my_begin = 0;
@@ -551,8 +553,9 @@ void transport::reduce_radiation()
 		vector<double> receive(size,0);
 
 		// reduce distribution
-		for(unsigned s=0; s<species_list.size(); s++)
-			for(int i=my_begin; i<my_end; i++) grid->z[i].distribution[s].MPI_average();
+		if(do_distribution)
+			for(unsigned s=0; s<species_list.size(); s++)
+				for(int i=my_begin; i<my_end; i++) grid->z[i].distribution[s].MPI_average();
 
 		// reduce e_rad
 		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_rad;
@@ -585,7 +588,7 @@ void transport::reduce_radiation()
 		//for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].l_emit;
 		//MPI_Reduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, proc, MPI_COMM_WORLD);
 		//for(int i=my_begin; i<my_end; i++) grid->z[i].l_emit = receive[i-my_begin] / (double)MPI_nprocs;
-	}
+	//}
 }
 
 // after this, only the processor's chunk of radiation quantities

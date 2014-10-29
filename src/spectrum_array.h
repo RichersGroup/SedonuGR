@@ -46,8 +46,9 @@ public:
 	void rescale(const double);
 	void wipe();
 
-	// rintegrate over nu,mu,phi
+	// integrate over nu,mu,phi
 	double integrate() const;
+	void integrate_over_direction(vector<double>& edens) const;
 
 	// Print out
 	void print(const int iw, const int species) const;
