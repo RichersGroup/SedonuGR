@@ -148,8 +148,6 @@ double cos_angle_between(const double mu1, const double mu2, const double phi1, 
 double neutrinos::annihilation_rate(
 		const spectrum_array& nu_dist,     // erg/ccm (integrated over angular bin and energy bin)
 		const spectrum_array& nubar_dist,  // erg/ccm (integrated over angular bin and energy bin)
-		const double weight1,			   // number of species represented by first spectrum
-		const double weight2,			   // number of species represented by first spectrum
 		const bool electron_type){         // is this an electron-type interaction?
 
 	// constants
@@ -168,26 +166,27 @@ double neutrinos::annihilation_rate(
 	// integrate over all bins
 	double Q = 0;
 	for(unsigned i=0; i<nu_dist.size(); i++){
-		double avg_nu  = nu_dist.nu_center(i)*pc::h; // erg
+		double avg_e   = nu_dist.nu_center(i)*pc::h; // erg
 		double avg_mu  = nu_dist.mu_center(i);
 		double avg_phi = nu_dist.phi_center(i);
-		double nudist_edens = nu_dist.get(i)/weight1; // erg/ccm
+		double nudist_edens = nu_dist.get(i); // erg/ccm
 
 		for(unsigned j=0; j<nubar_dist.size(); j++){
-			double avg_nubar  = nubar_dist.nu_center(j)*pc::h; // erg
+			double avg_ebar   = nubar_dist.nu_center(j)*pc::h; // erg
 			double avg_mubar  = nubar_dist.mu_center(j);
 			double avg_phibar = nubar_dist.phi_center(j);
-			double nubardist_edens = nubar_dist.get(j)/weight2; // erg/ccm
+			double nubardist_edens = nubar_dist.get(j); // erg/ccm
 
 			double costheta = cos_angle_between(avg_mu,avg_mubar,avg_phi,avg_phibar);
-			Q += nudist_edens * nubardist_edens * (avg_nu + avg_nubar) * (1.0-costheta) * (
+			Q += nudist_edens * nubardist_edens * (avg_e + avg_ebar) * (1.0-costheta) * (
 					C1pC2/3.0 * (1-costheta) +
-					C3 * mec2*mec2 / (avg_nu*avg_nubar)
+					C3 * mec2*mec2 / (avg_e*avg_ebar)
 					);
 		}
 	}
 
 	Q *= pc::sigma0*pc::c / (4.*mec2*mec2); // erg/ccm/s
+	assert(Q >= 0);
 
 	return Q;
 }

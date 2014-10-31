@@ -19,4 +19,5 @@ zone::zone(const int dimensionality){
 	t_eemit = NaN;
 	t_labs = NaN;
 	t_lemit = NaN;
+	Q_annihil = NaN;
 }

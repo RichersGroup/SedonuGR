@@ -31,6 +31,7 @@ private:
 
 	// subroutine for calculating timescales
 	void calculate_timescales() const;
+	void calculate_annihilation() const;
 
 	// main function to emit particles
 	void emit_particles(double dt);

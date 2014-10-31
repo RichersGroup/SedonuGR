@@ -23,9 +23,6 @@ protected:
 	// the core emissivity (erg/s - units of N)
 	cdf_array core_emis;
 
-	// the numbers of species this represents
-	double weight;
-
 	// the zone eas variables
 	vector< cdf_array      > emis;
 	vector< vector<double> > abs_opac;
@@ -57,6 +54,9 @@ public:
 
 	// lepton number (the particle property, {-1,0,1})
 	int lepton_number;
+
+	// the numbers of species this represents
+	double weight;
 
 	// this species' spectrum
 	spectrum_array spectrum;

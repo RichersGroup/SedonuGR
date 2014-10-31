@@ -337,7 +337,10 @@ void transport::step(const double lab_dt)
 		else update_zone_quantities();            // update T,Ye based on heat capacity and number of leptons
 	}
 	if(MPI_nprocs>1) synchronize_gas();       // each processor broadcasts its solved zones to the other processors
+
+	// post-processing
 	if(rank0) calculate_timescales();
+	if(do_distribution && do_neutrinos) calculate_annihilation();
 
 	// advance time step
 	if (!iterative) t_now += lab_dt;
@@ -375,6 +378,7 @@ void transport::reset_radiation(){
 			z->e_abs    = 0;
 			z->l_emit   = 0;
 			z->e_emit   = 0;
+			z->Q_annihil = 0;
 
 			if(do_distribution) for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].wipe();
 		}
@@ -382,10 +386,65 @@ void transport::reset_radiation(){
 }
 
 //-----------------------------
+// calculate annihilation rates
+//-----------------------------
+void transport::calculate_annihilation() const{
+	if(rank0 && verbose) cout << "# Calculating annihilation rates...";
+	double Q_annihil_net = 0;
+
+    #pragma omp parallel for reduction(+:Q_annihil_net)
+	for(unsigned z_ind=0; z_ind<grid->z.size(); z_ind++){
+
+		// based on nulib's prescription for which species each distribution represents
+		unsigned s_nue    = 0;
+		unsigned s_nubare = 1;
+		double Q = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nue   ],
+												grid->z[z_ind].distribution[s_nubare],
+												true);
+		if(species_list.size()==3){
+			unsigned s_nux = 2;
+			Q += 2.0 * neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nux],
+													grid->z[z_ind].distribution[s_nux],
+													false);
+		}
+		else if(species_list.size()==4){
+			unsigned s_nux = 2;
+			unsigned s_nubarx = 3;
+			Q += 2.0 * neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nux   ],
+					  	  	  	  	  	  	  	    grid->z[z_ind].distribution[s_nubarx],
+					  	  	  	  	  	  	  	    false);
+		}
+		else if(species_list.size()==6){
+			unsigned s_numu = 2;
+			unsigned s_nubarmu = 3;
+			unsigned s_nutau = 4;
+			unsigned s_nubartau = 5;
+			Q += neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_numu   ],
+											  grid->z[z_ind].distribution[s_nubarmu],
+											  false);
+			Q += neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nutau   ],
+											  grid->z[z_ind].distribution[s_nubartau],
+											  false);
+		}
+		else{
+			cout << "ERROR: wrong species list size in calculate_annihilation" << endl;
+			exit(34);
+		}
+
+		// set the value in grid
+		assert(Q >= 0);
+		grid->z[z_ind].Q_annihil = Q;                      // erg/ccm/s
+		Q_annihil_net += Q * grid->zone_lab_volume(z_ind); // erg/s
+	}
+	cout << "finished." << endl;
+	if(rank0 && verbose) cout << "# Net neutrino annihilation rate: " << Q_annihil_net << " erg/s" << endl;
+}
+
+//-----------------------------
 // calculate various timescales
 //-----------------------------
 void transport::calculate_timescales() const{
-#pragma omp parallel for
+    #pragma omp parallel for
 	for(unsigned i=0;i<grid->z.size();i++){
 		zone *z = &(grid->z[i]);
 		double e_gas = z->rho*pc::k*z->T/pc::m_p;  // gas energy density (erg/ccm)
@@ -430,13 +489,15 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		z->l_abs    /= multiplier*four_vol;       // num      --> num/ccm/s
 		z->l_emit   /= multiplier*four_vol;       // num      --> num/ccm/s
 
-		if(do_distribution) for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].rescale(1./(multiplier*four_vol*pc::c));
+		// erg*dist --> erg/ccm, represents *one* species, not *all* of them
+		if(do_distribution) for(unsigned s=0; s<species_list.size(); s++)
+			z->distribution[s].rescale(1./(multiplier*four_vol*pc::c * species_list[s]->weight));
 	}
 
 	// normalize global quantities
 	L_net_lab /= multiplier*lab_dt;
 	L_esc_lab /= multiplier*lab_dt;
-	for(unsigned i=0; i<species_list.size(); i++) species_list[i]->spectrum.rescale(1./(multiplier*lab_dt));
+	for(unsigned s=0; s<species_list.size(); s++) species_list[s]->spectrum.rescale(1./(multiplier*lab_dt * species_list[s]->weight));
 
 	// output useful stuff
 	if(rank0 && verbose){

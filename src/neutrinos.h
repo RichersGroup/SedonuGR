@@ -23,8 +23,7 @@ public:
 	void myInit(Lua* lua);
 	void set_eas(int zone_index);
 	double blackbody(const double T, const double chempot, const double nu) const;
-	static double annihilation_rate(const spectrum_array& nu_dist, const spectrum_array& nbar_dist,
-			const double weight1, const double weight2, const bool electron_type);
+	static double annihilation_rate(const spectrum_array& nu_dist, const spectrum_array& nbar_dist, const bool electron_type);
 };
 
 #endif
