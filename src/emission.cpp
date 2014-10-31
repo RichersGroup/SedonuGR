@@ -11,7 +11,7 @@
 //------------------------------------------------------------
 void transport::emit_particles(const double lab_dt)
 {
-	if(verbose && rank0) cout << "# Emitting particles..." << endl;
+	if(verbose && rank0) cout << "# Emitting particles...";
 	assert(lab_dt > 0);
 
 	// complain if we're out of room for particles
@@ -31,6 +31,7 @@ void transport::emit_particles(const double lab_dt)
 	  assert(particles.size() >= (unsigned)n_emit - grid->z.size());
 	  assert(particles.size() <= (unsigned)n_emit + 2*grid->z.size());
 	}
+	cout << "finished." << endl;
 }
 
 //------------------------------------------------------------

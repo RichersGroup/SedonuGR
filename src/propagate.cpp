@@ -8,7 +8,7 @@
 
 void transport::propagate_particles(const double lab_dt)
 {
-	if(verbose && rank0) cout << "# Propagating particles..." << endl;
+	if(verbose && rank0) cout << "# Propagating particles...";
 	double e_esc_lab = 0;
 
 	//--- MOVE THE PARTICLES AROUND ---
@@ -31,6 +31,8 @@ void transport::propagate_particles(const double lab_dt)
 
 	// remove the dead particles
 	remove_dead_particles();
+
+	cout << "finished." << endl;
 }
 
 void transport::remove_dead_particles(){

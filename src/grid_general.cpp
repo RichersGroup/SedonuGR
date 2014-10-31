@@ -67,7 +67,7 @@ void grid_general::write_header(ofstream& outf) const{
 	zone_coordinates(0,r);
 	const int dimensionality = r.size();
 	for(int i=0; i<dimensionality; i++) outf << "r[" << i << "] ";
-	outf << "1-e_rad(erg/ccm)  2-rho(g/ccm)  3-T_gas(MeV)  4-Ye  5-t_therm  6-t_lep  7-|v|(cm/s)  8-H-C(erg/g/s)  9-dYe_dt(1/s) 10-integrated_distribution(erg/ccm)" << endl;
+	outf << "1-e_rad(erg/ccm)  2-rho(g/ccm)  3-T_gas(MeV)  4-Ye  5-t_therm  6-t_lep  7-|v|(cm/s)  8-H-C(erg/g/s)  9-dYe_dt(1/s) 10-annihilation_rate(erg/ccm/s)" << endl;
 }
 
 void grid_general::write_line(ofstream& outf, const int z_ind) const{
@@ -93,12 +93,7 @@ void grid_general::write_line(ofstream& outf, const int z_ind) const{
 	double dYe_dt = (z[z_ind].l_abs - z[z_ind].l_emit) / n_baryons_per_ccm;
 	outf << dYe_dt << " ";
 
-	for(unsigned s=0; s<z[z_ind].distribution.size(); s++){
-		vector<double> edens;
-		z[z_ind].distribution[s].integrate_over_direction(edens);
-		for(unsigned nu_bin=0; nu_bin<edens.size(); nu_bin++) outf << edens[nu_bin] << " ";
-	}
-
+	outf << z[z_ind].Q_annihil << " ";
 	outf << endl;
 }
 
