@@ -76,10 +76,10 @@ void nuc_eos_C_ReadTable(char* nuceos_table_name)
 {
   using namespace nuc_eos;
 
-  fprintf(stdout,"*******************************\n");
-  fprintf(stdout,"Reading nuc_eos table file:\n");
-  fprintf(stdout,"%s\n",nuceos_table_name);
-  fprintf(stdout,"*******************************\n");
+  //fprintf(stdout,"*******************************\n");
+  //fprintf(stdout,"Reading nuc_eos table file:\n");
+  //fprintf(stdout,"%s\n",nuceos_table_name);
+  //fprintf(stdout,"*******************************\n");
 
   hid_t file;
   if (!file_is_readable(nuceos_table_name)) {
