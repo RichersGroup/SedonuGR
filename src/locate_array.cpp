@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include "locate_array.h"
 
+enum interpolation_method {constant, linear, log, power};
+
 //-----------------------------
 // safe nan-filled constructor
 //-----------------------------
@@ -117,6 +119,7 @@ double locate_array::interpolate_between(const double xval, const int i1, const 
 	return yval;
 }
 
+// TODO - interpolate s.t. y = y1 (y2/y1)^((x-x1)/(x2-x1))
 
 //---------------------------------------------------------
 // Log-Log Interpolation of a passed array
