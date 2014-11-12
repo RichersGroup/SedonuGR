@@ -32,7 +32,7 @@ void transport::propagate_particles(const double lab_dt)
 	// remove the dead particles
 	remove_dead_particles();
 
-	cout << "finished." << endl;
+	if(verbose && rank0) cout << "finished." << endl;
 }
 
 void transport::remove_dead_particles(){
