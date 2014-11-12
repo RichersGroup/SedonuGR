@@ -106,12 +106,12 @@ int main(int argc, char* argv[]){
 	e = emis.get(nu_grid.size()-1);                               // erg/s/cm^3/ster
 	for(unsigned j=0; j<nu_grid.size(); j++){
 		a = nu_grid.value_at(nu_grid.center(j), absopac);
-		double tmp = a * nu_grid.delta(j)*fermi_blackbody(T,mu,nu_grid.center(j));  // erg/s/cm^3/ster
+		double tmp     = a * nu_grid.delta(j)*fermi_blackbody(T,mu    ,nu_grid.center(j));  // erg/s/cm^3/ster
 		double tmp_pdm = a * nu_grid.delta(j)*fermi_blackbody(T,mu_pdm,nu_grid.center(j));  // erg/s/cm^3/ster
 		double tmp_mdm = a * nu_grid.delta(j)*fermi_blackbody(T,mu_mdm,nu_grid.center(j));  // erg/s/cm^3/ster
 		tmp *= (nulibID == 2 ? 4.0 : 1.0);
 		a_times_blackbody += tmp;
-		emis_vs_opac << nu_grid[j]*pc::h_MeV << setw(25) << tmp_mdm << setw(25) << tmp << setw(25) << tmp_pdm << setw(25) << emis.get_value(j) << endl;
+		emis_vs_opac << nu_grid.center(j)*pc::h_MeV << setw(25) << tmp_mdm << setw(25) << tmp << setw(25) << tmp_pdm << setw(25) << emis.get_value(j) << endl;
 	}
 	cout << "Comparing emissivity to absorption opacity integrated against a blackbody (assuming 3 species)." << endl;
 	cout << T*pc::k_MeV << " MeV temperature" << endl;
