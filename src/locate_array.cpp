@@ -7,14 +7,13 @@
 #include <stdio.h>
 #include "locate_array.h"
 
-enum interpolation_method {constant, linear, log, power};
 
 //-----------------------------
 // safe nan-filled constructor
 //-----------------------------
 locate_array::locate_array(const int n){
 	min = NaN;
-	do_log_interpolate = MAX;
+	interpolation_method = constant;
 	x.assign(n,NaN);
 }
 
@@ -22,7 +21,7 @@ locate_array::locate_array(const int n){
 // Initialize with start, stop and delta
 // if start==stop make it a catch-all
 //---------------------------------------------------------
-void locate_array::init(const double start, const double stop, const double del)
+void locate_array::init(const double start, const double stop, const double del, const InterpolationMethod imeth)
 {
 	assert(stop >= start);
 	assert(del > 0);
@@ -36,7 +35,7 @@ void locate_array::init(const double start, const double stop, const double del)
 		int n = ceil( (stop-start)/del );
 		n = max(n,1);
 		x.resize(n);
-		do_log_interpolate = 0;
+		interpolation_method = imeth;
 
 		min = start;
         #pragma omp parallel for
@@ -54,7 +53,7 @@ void locate_array::init(const double start, const double stop, const double del)
 // if start==stop make it a catch-all
 // if n==0 make it a catch-all
 //---------------------------------------------------------
-void locate_array::init(const double start, const double stop, const int n)
+void locate_array::init(const double start, const double stop, const int n, const InterpolationMethod imeth)
 {
 	assert(stop >= start);
 	assert(n >= 0);
@@ -67,7 +66,7 @@ void locate_array::init(const double start, const double stop, const int n)
 	else{
 		double del = (stop - start)/(double)n;
 		x.resize(n);
-		do_log_interpolate = 0;
+		interpolation_method = constant;
 
 		min = start;
         #pragma omp parallel for
@@ -80,10 +79,10 @@ void locate_array::init(const double start, const double stop, const int n)
 //---------------------------------------------------------
 // Initialize with passed vector
 //---------------------------------------------------------
-void locate_array::init(const std::vector<double> a, const double minval)
+void locate_array::init(const std::vector<double> a, const double minval, const InterpolationMethod imeth)
 {
 	min = minval;
-	do_log_interpolate = 0;
+	interpolation_method = constant;
 	x.assign(a.begin(), a.end());
 }
 
@@ -104,52 +103,6 @@ int locate_array::locate(const double xval) const
 
 
 //---------------------------------------------------------
-// Linear Interpolation of a passed array
-//---------------------------------------------------------
-double locate_array::interpolate_between(const double xval, const int i1, const int i2, const vector<double>& y) const
-{
-	assert(y.size() == x.size());
-	assert(i1 >= 0);
-	assert(i2 >= 0);
-	assert(i1 < (int)y.size());
-	assert(i2 < (int)y.size());
-	assert(i1 < i2);
-	double slope = (y[i2]-y[i1]) / (x[i2]-x[i1]);
-	double yval = y[i1] + slope*(xval - x[i1]);
-	return yval;
-}
-
-// TODO - interpolate s.t. y = y1 (y2/y1)^((x-x1)/(x2-x1))
-
-//---------------------------------------------------------
-// Log-Log Interpolation of a passed array
-//---------------------------------------------------------
-double locate_array::log_interpolate_between(const double xval, const int i1, const int i2, const vector<double>& y) const
-{
-	assert(y.size() == x.size());
-	assert(i1 >= 0);
-	assert(i2 >= 0);
-	assert(i1 < (int)y.size());
-	assert(i2 < (int)y.size());
-	assert(i1 < i2);
-	assert(y[i2] >= 0);
-	assert(y[i1] >= 0);
-	assert(x[i2] > x[i1]);
-
-	// safeguard against equal opacities
-	if(y[i1]==y[i2]) return y[i1];
-
-	// now we need the values to be larger than zero
-	assert(y[i1] > 0);
-	assert(y[i2] > 0);
-
-	// do logarithmic interpolation
-	double slope = log(y[i2]/y[i1]) / log(x[i2]/x[i1]);
-	double logyval = log(y[i1]) + slope*log(xval/x[i1]);
-	return exp(logyval);
-}
-
-//---------------------------------------------------------
 // simple printout
 //---------------------------------------------------------
 void locate_array::print() const
@@ -164,29 +117,78 @@ void locate_array::print() const
 
 //---------------------------------------------------------
 // find the value of y at the locate_array's value of xval
-// assumes 1-1 correspondence between y and locate_array
+// assumes y array values are stored at center of locate_array bins
 //---------------------------------------------------------
+double lin_interpolate_between(const double xval, const double xleft, const double xright, const double yleft, const double yright){
+	assert(xleft<xright);
+	double slope = (yright-yleft) / (xright-xleft);
+	double yval = yleft + slope*(xval - xleft);
+	return yval;
+}
+double log_interpolate_between(const double xval, const double xleft, const double xright, const double yleft, const double yright){
+	assert(xleft<xright);
+	assert(xleft  > 0);
+	assert(xright > 0);
+	assert(yleft  > 0);
+	assert(yright > 0);
+
+	// safeguard against equal opacities
+	if(yleft==yright) return yleft;
+
+	// do logarithmic interpolation
+	double slope = log(yright/yleft) / log(xright/xleft);
+	double logyval = log(yleft) + slope*log(xval/xleft);
+	return exp(logyval);
+}
+double pow_interpolate_between(const double xval, const double xleft, const double xright, const double yleft, const double yright){
+	assert(xleft<xright);
+	assert(xleft  > 0);
+	assert(xright > 0);
+
+	// safeguard against equal opacities
+	if(yleft==yright) return yleft;
+
+	// do power interpolation
+	double exponent = (xval-xleft)/(xright-xleft);
+	double base = (yright/yleft);
+	return yleft * pow(base,exponent);
+}
 double locate_array::value_at(const double xval, const vector<double>& y) const{
 	int ind = locate(xval);
 	assert(ind >= 0);
 	assert(ind <= (int)x.size());
 
-	int i1, i2;
-	if(ind == 0){                // If off left side of grid
-		i1 = 0;
-		i2 = 1;
-	}
-	else if(ind < (int)x.size()){    // If within expected region of grid
-		i1 = ind - 1;
-		i2 = ind;
-	}
-	else{ //if(ind == x.size()) // If off the right side of the grid
-		i1 = x.size() - 2;
-		i2 = x.size() - 1;
-	}
+	if(interpolation_method == constant) return y[ind];
+	else{
+		int i1, i2;
+		if(ind == 0 || xval<=center(0)){   // If off left side of grid
+			i1 = 0;
+			i2 = 1;
+		}
+		else if(ind==x.size() || xval>=center(x.size()-1)){ // If off the right side of the grid
+			i1 = x.size() - 2;
+			i2 = x.size() - 1;
+		}
+		else{    // If within expected region of grid
+			if(xval<center(ind)){
+				i1 = ind - 1;
+				i2 = ind;
+			}
+			else{
+				i1 = ind;
+				i2 = ind + 1;
+			}
+		}
+		double xleft  = center(i1);
+		double xright = center(i2);
+		double yleft  = y[i1];
+		double yright = y[i2];
 
-	if(do_log_interpolate) return log_interpolate_between(xval, i1, i2, y);
-	else                   return     interpolate_between(xval, i1, i2, y);
+
+		if     (interpolation_method == linear     ) return lin_interpolate_between(xval,xleft,xright,yleft,yright);
+		else if(interpolation_method == logarithmic) return log_interpolate_between(xval,xleft,xright,yleft,yright);
+		else{ assert(interpolation_method == power );return pow_interpolate_between(xval,xleft,xright,yleft,yright);}
+	}
 }
 
 
@@ -200,7 +202,7 @@ void locate_array::swap(locate_array new_array){
 	new_array.min = min_tmp;
 
 	// swap the do_log_interpolate parameters
-	int tmp = do_log_interpolate;
-	do_log_interpolate = new_array.do_log_interpolate;
-	new_array.do_log_interpolate = tmp;
+	InterpolationMethod tmp = interpolation_method;
+	interpolation_method = new_array.interpolation_method;
+	new_array.interpolation_method = tmp;
 }

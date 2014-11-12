@@ -295,7 +295,6 @@ void nulib_get_nu_grid(locate_array& nu_grid){ // Hz
 
 	// convert from MeV to frequency using the Planck constant
 	for(unsigned i=0; i<nu_grid.size(); i++) nu_grid.x[i] /= pc::h_MeV;
-	nu_grid.do_log_interpolate = 1;
 	nu_grid.min = nulibtable_ebottom[0];
 }
 

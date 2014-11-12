@@ -13,7 +13,7 @@ public:
 	double min;
 
 	// other parameters
-	int do_log_interpolate;
+	InterpolationMethod interpolation_method;
 
 	// constructors
 	locate_array(int n=0);
@@ -22,10 +22,10 @@ public:
 	// Return size of array (also, # of bins)
 	unsigned size() const {return (int)x.size();}
 
-	void init(const int);
-	void init(const double,const double,const double);
-	void init(const double,const double,const int);
-	void init(const std::vector<double>, const double minval);
+	void init(const int size);
+	void init(const double start,const double stop,const double del, const InterpolationMethod imeth=constant);
+	void init(const double start,const double stop,const int n, const InterpolationMethod imeth=constant);
+	void init(const std::vector<double> a, const double minval, const InterpolationMethod imeth=constant);
 	void swap(locate_array new_array);
 
 	// bottom of the bin left of i
@@ -45,8 +45,6 @@ public:
 
 
 	int    locate(const double) const;
-	double interpolate_between(const double,const int,const int,const std::vector<double>&) const;
-	double log_interpolate_between(const double,const int,const int,const std::vector<double>&) const;
 	void   print() const;
 	double value_at(const double nu, const std::vector<double>& array) const;
 
