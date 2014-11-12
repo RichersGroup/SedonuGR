@@ -38,6 +38,7 @@ int     nulibtable_nye;
 double* nulibtable_energies;
 double* nulibtable_ewidths;
 double* nulibtable_ebottom;
+double* nulibtable_etop;
 double* nulibtable_logrho;
 double* nulibtable_logtemp;
 double* nulibtable_ye;
@@ -61,6 +62,7 @@ extern int     nulibtable_mp_nulibtable_nye_;
 extern double* nulibtable_mp_nulibtable_energies_;
 extern double* nulibtable_mp_nulibtable_ewidths_;
 extern double* nulibtable_mp_nulibtable_ebottom_;
+extern double* nulibtable_mp_nulibtable_etop_;
 extern double* nulibtable_mp_nulibtable_logrho_;
 extern double* nulibtable_mp_nulibtable_logtemp_;
 extern double* nulibtable_mp_nulibtable_ye_;
@@ -80,6 +82,7 @@ extern int     __nulibtable_MOD_nulibtable_nye;
 extern double* __nulibtable_MOD_nulibtable_energies;
 extern double* __nulibtable_MOD_nulibtable_ewidths;
 extern double* __nulibtable_MOD_nulibtable_ebottom;
+extern double* __nulibtable_MOD_nulibtable_etop;
 extern double* __nulibtable_MOD_nulibtable_logrho;
 extern double* __nulibtable_MOD_nulibtable_logtemp;
 extern double* __nulibtable_MOD_nulibtable_ye;
@@ -109,6 +112,7 @@ void set_globals(){
 	nulibtable_energies             = nulibtable_mp_nulibtable_energies_;
 	nulibtable_ewidths              = nulibtable_mp_nulibtable_ewidths_;
 	nulibtable_ebottom              = nulibtable_mp_nulibtable_ebottom_;
+	nulibtable_etop                 = nulibtable_mp_nulibtable_etop_;
 	nulibtable_logrho               = nulibtable_mp_nulibtable_logrho_;
 	nulibtable_logtemp              = nulibtable_mp_nulibtable_logtemp_;
 	nulibtable_ye                   = nulibtable_mp_nulibtable_ye_;
@@ -128,6 +132,7 @@ void set_globals(){
 	nulibtable_energies            = __nulibtable_MOD_nulibtable_energies;
 	nulibtable_ewidths             = __nulibtable_MOD_nulibtable_ewidths;
 	nulibtable_ebottom             = __nulibtable_MOD_nulibtable_ebottom;
+	nulibtable_etop                = __nulibtable_MOD_nulibtable_etop;
 	nulibtable_logrho              = __nulibtable_MOD_nulibtable_logrho;
 	nulibtable_logtemp             = __nulibtable_MOD_nulibtable_logtemp;
 	nulibtable_ye                  = __nulibtable_MOD_nulibtable_ye;
@@ -213,12 +218,8 @@ void nulib_get_eas_arrays(
 		// must rebin to get the integrated value to be at the same location as the opacities. (CDF value corresponds to emission rate at or below that energy)
 		nulibtable_single_species_range_energy_(&rho, &temp_MeV, &ye, &lns,
 				(double*)eas_energy, &ngroups, &nvars);
-		double last_emis = 0;
-		double this_emis = 0;
 		for(int j=0; j<ngroups; j++){
-			last_emis = this_emis;
-			this_emis = eas_energy[0][j];
-			nut_emiss.set_value(j, 0.5*(last_emis + this_emis) );
+			nut_emiss.set_value(j, eas_energy[0][j]);
 			nut_absopac [j] =      eas_energy[1][j];
 			nut_scatopac[j] =      eas_energy[2][j];
 		}
@@ -289,8 +290,8 @@ void nulib_get_pure_emis(
 // Fill in the locate array with values of the array stored in the fortran module
 void nulib_get_nu_grid(locate_array& nu_grid){ // Hz
 	// assign values from the NuLib module to nu_grid
-	nu_grid.x.assign(nulibtable_energies,
-			nulibtable_energies + nulibtable_number_groups);
+	nu_grid.x.assign(nulibtable_etop,
+			nulibtable_etop + nulibtable_number_groups);
 
 	// convert from MeV to frequency using the Planck constant
 	for(unsigned i=0; i<nu_grid.size(); i++) nu_grid.x[i] /= pc::h_MeV;
