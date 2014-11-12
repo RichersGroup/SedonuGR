@@ -3,12 +3,13 @@
 verbose      = 1
 do_photons   = 0
 do_neutrinos = 1
-steady_state = 1
+iterative    = 1
 radiative_eq = 0
 solve_T      = 0
 solve_Ye     = 0
 do_visc=0
 reflect_outer= 0
+do_distribution = 0
 
 -- input/output files
 
@@ -31,11 +32,14 @@ nut_spec_n_phi      = 1
 
 -- particle creation parameters
 
+n_initial      = 0
 n_emit_core    = 0
 n_emit_therm   = NPARTICLES_HERE
 n_emit_decay   = 0
 max_particles  = NPARTICLES_HERE
+ratio_emit_by_zone = 0
 emissions_per_timestep = 1
+cdf_interpolation_order = 1
 
 -- particle propagation parameters
 
@@ -46,7 +50,7 @@ step_size = 1.0
 -- inner source
 
 r_core = 0
-L_core = 0
+core_nue_chem_pot = 0
 T_core = 0
 
 -- opacity parameters
@@ -54,6 +58,7 @@ T_core = 0
 nut_grey_opacity  =  -1
 nut_grey_abs_frac =  -1
 nut_cdf_cutoff    = 1e-2
+opac_interp_method = 0
 
 -- equilibrium solver parameters
 

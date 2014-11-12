@@ -6,21 +6,24 @@ from numpy import Inf
 
 # INPUTS
 eosfile   = "/data/tables/EOS/HShen.h5"
-nulibfile = "\"\/data\/tables\/NuLib\/NuLib_HShen_noscat.h5\"" # requires backslashes b/c it gets put within regex
+nulibfile = "\"\/data\/tables\/NuLib\/NuLib_Helmholtz_noscat.h5\"" # requires backslashes b/c it gets put within regex
 
 min_logrho = 8  #g/ccm
 max_logrho = 15 #g/ccm
-n_rho = 100
+n_rho = 50
+center_logrho = 10
 
 min_logT = -1 #MeV
 max_logT = 2  #MeV
-n_T = 100
+n_T = 50
+center_logT = 0.5;
 
 min_ye = 0.05
 max_ye = 0.55
-n_ye = 100
+n_ye = 50
+center_ye = 0.3
 
-nparticles = 1e7
+nparticles = 1e6
 
 
 # Constants
@@ -55,7 +58,7 @@ def write_predicted(rho,T,Ye):
     string = str(etot)+" "+str(rho)+" "+str(T)+" "+str(Ye)+" "+str(mu)
     os.system("echo "+string+" >> predicted.dat")
 
-def plot():
+def plot(rho0,T0,ye0):
     string = "sed " + \
              "-e 's/RHO_HERE/"    + str(rho0)         + "/g' " + \
              "-e 's/TEMP_HERE/"   + str(T0)           + "/g' " + \
@@ -74,10 +77,10 @@ def run_test(rho,T,Ye):
              "-e 's/NULIB_HERE/"      + nulibfile       + "/g' " + \
              "-e 's/NPARTICLES_HERE/" + str(nparticles) + "/g' " + \
              "template.lua > param.lua"
-    #os.system(string)
-    #os.system("./gomc")
+    os.system(string)
+    os.system("mpirun -np 16 -env OMP_NUM_THREADS 2 ./gomc")
 
-    #write_results()
+    write_results()
     write_predicted(rho,T,Ye)
 
 
@@ -88,9 +91,9 @@ def run_test(rho,T,Ye):
 os.system("rm results.dat")
 os.system("rm predicted.dat")
 
-rho0 = 10**(0.5*(min_logrho + max_logrho))
-T0   = 10**(0.5*(min_logT   + max_logT  ))
-ye0  =      0.5*(min_ye     + max_ye    )
+rho0 = 10**(center_logrho)
+T0   = 10**(center_logT  )
+ye0  =      center_ye
 dlogrho = (max_logrho - min_logrho) / (n_rho - 1.0)
 dlogT   = (max_logT   - min_logT  ) / (n_T   - 1.0)
 dye     = (max_ye     - min_ye    ) / (n_ye  - 1.0)
@@ -107,4 +110,4 @@ for i in range (0, n_ye):
     ye = min_ye + i*dye
     run_test(rho0,T0,ye)
 
-plot()
+plot(rho0,T0,ye0)
