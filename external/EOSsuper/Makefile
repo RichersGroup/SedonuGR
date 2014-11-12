@@ -26,7 +26,7 @@ CPPFLAGS=-g -O0 -ansi -Wall -fopenmp -std=c++11 $(EXTRAINCS) -DHAVEGR
 CFLAGS=-g -O0 -std=gnu99 -ansi -Wall -fopenmp
 EXTRALIBS=-lm -L/usr/local/lib -lgsl -lgslcblas -Wl,-rpath,$(HDF5DIR)/lib
 
-all: nuc_eos.a Munue_of_RhoTempYe Ye_of_RhoTempMunue
+all: nuc_eos.a Munue_of_RhoTempYe Ye_of_RhoTempMunue All_of_RhoTempYe
 
 Munue_of_RhoTempYe: $(OBJECTS) $(COBJECTS) $(INCLUDES)
 	$(CPPC) $(CPPFLAGS) $(HDF5INCS) -c Munue_of_RhoTempYe.cc -o Munue_of_RhoTempYe.o
@@ -35,6 +35,10 @@ Munue_of_RhoTempYe: $(OBJECTS) $(COBJECTS) $(INCLUDES)
 Ye_of_RhoTempMunue: $(OBJECTS) $(COBJECTS) $(INCLUDES)
 	$(CPPC) $(CPPFLAGS) $(HDF5INCS) -c Ye_of_RhoTempMunue.cc -o Ye_of_RhoTempMunue.o
 	$(CPPC) $(CPPFLAGS) -o Ye_of_RhoTempMunue $(OBJECTS) $(COBJECTS) $(HDF5LIBS) $(EXTRALIBS) Ye_of_RhoTempMunue.o
+
+All_of_RhoTempYe: $(OBJECTS) $(COBJECTS) $(INCLUDES)
+	$(CPPC) $(CPPFLAGS) $(HDF5INCS) -c All_of_RhoTempYe.cc -o All_of_RhoTempYe.o
+	$(CPPC) $(CPPFLAGS) -o All_of_RhoTempYe $(OBJECTS) $(COBJECTS) $(HDF5LIBS) $(EXTRALIBS) All_of_RhoTempYe.o
 
 testi: testi.cc
 	$(CPPC) $(CPPFLAGS) -o testi testi.cc -Ivecmathlib
@@ -52,4 +56,4 @@ nuc_eos.a: $(OBJECTS)
 clean:
 	rm -f *.o
 	rm -rf *.cc.*
-	rm Munue_of_RhoTempYe Ye_of_RhoTempMunue
+	rm Munue_of_RhoTempYe Ye_of_RhoTempMunue All_of_RhoTempYe

@@ -13,7 +13,7 @@ const double k_MeV = 8.6173324e-11;   // boltzmann constant (Mev/K)
 int main(int argc, char* argv[]) {
 
 	if(argc!=5){
-		std::cout << "Usage: Mue_of_RhoTempYe(MeV,incl. rest masses) EOSfile rho(g/ccm) T(MeV) Ye" << std::endl;
+		std::cout << "Usage: Munue_of_RhoTempYe(MeV,incl. rest masses) EOSfile rho(g/ccm) T(MeV) Ye" << std::endl;
 		exit(1);
 	}
 
