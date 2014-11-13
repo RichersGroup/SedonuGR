@@ -25,6 +25,8 @@
 #include "particle.h"
 #include "transport.h"
 
+class transport;
+
 using namespace std;
 
 class grid_general

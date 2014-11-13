@@ -13,6 +13,12 @@
 //------------------------------------------------------------
 void grid_general::init(Lua* lua)
 {
+	// MPI stuff
+	int my_rank,n_procs;
+	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
+	MPI_Comm_size( MPI_COMM_WORLD, &n_procs);
+	bool rank0 = (my_rank==0);
+
 	// read the model file or fill in custom model
 	std::string model_file = lua->scalar<std::string>("model_file");
 	if(model_file == "custom") custom_model(lua);
@@ -22,6 +28,37 @@ void grid_general::init(Lua* lua)
 	if(z.size()==0){
 		cout << "Error: there are no grid zones." << endl;
 		exit(5);
+	}
+
+	// calculate integrated quantities to check
+	double total_nonrel_mass = 0.0;
+	double total_rest_mass   = 0.0;
+	double total_rel_KE      = 0.0;
+	double total_nonrel_KE   = 0.0;
+	double total_rel_TE      = 0.0;
+	double total_nonrel_TE   = 0.0;
+    #pragma omp parallel for reduction(+:total_nonrel_mass, total_rest_mass, total_rel_KE, total_nonrel_KE, total_rel_TE, total_nonrel_TE)
+	for(unsigned z_ind=0;z_ind<z.size();z_ind++){
+		double rest_mass   = z[z_ind].rho * zone_comoving_volume(z_ind);
+		assert(rest_mass >= 0);
+		double nonrel_mass = z[z_ind].rho * zone_lab_volume(z_ind);
+		assert(nonrel_mass >= 0);
+		vector<double> r;
+		zone_coordinates(z_ind,r);
+
+		//if(grid->z[z_ind].rho > 1.0e8){ // && r[1] > pc::pi/3.0 && r[1] < pc::pi/2.0){
+		total_rest_mass += rest_mass;
+		total_nonrel_mass += nonrel_mass;
+		total_rel_KE    += (rest_mass>0 ? (transport::lorentz_factor(z[z_ind].v) - 1.0) * rest_mass * pc::c*pc::c : 0);
+		total_nonrel_KE += 0.5 * nonrel_mass * zone_speed2(z_ind);
+		total_rel_TE    += (rest_mass>0 ? rest_mass   / pc::m_n * pc::k * z[z_ind].T : 0);
+		total_nonrel_TE += nonrel_mass / pc::m_n * pc::k * z[z_ind].T;
+		//}
+	}
+	if (rank0){
+		cout << "#   mass = " << total_rest_mass << " g (nonrel: " << total_nonrel_mass << " g)" <<endl;
+		cout << "#   KE = " << total_rel_KE << " erg (nonrel: " << total_nonrel_KE << " erg)" << endl;
+		cout << "#   TE = " << total_rel_TE << " erg (nonrel: " << total_nonrel_TE << " erg)" << endl;
 	}
 }
 
