@@ -104,6 +104,11 @@ private:
 	int    rank0;
 	double ratio_emit_by_zone;
 
+	// output parameters
+	int write_zones_every;
+	int write_rays_every;
+	int write_spectra_every;
+
 	// current time in simulation
 	double t_now;
 
@@ -160,6 +165,7 @@ public:
 
 	// in-simulation functions to be used by main
 	void step(const double dt);
+	void write(const int it) const;
 	int  total_particles() const;
 	void write_rays(const int it);
 	static void open_file(const char* filebase, const int iw, ofstream& outf);

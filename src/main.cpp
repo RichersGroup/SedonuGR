@@ -26,8 +26,6 @@ int main(int argc, char **argv)
 	MPI_Init( &argc, &argv );
 	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
 	MPI_Comm_size( MPI_COMM_WORLD, &n_procs);
-
-	// verbocity
 	const int rank0 = (my_rank == 0);
 
 	// start timer
@@ -41,16 +39,6 @@ int main(int argc, char **argv)
 	// set up the transport module (includes the grid)
 	transport sim;
 	sim.init(&lua);
-
-	// write initial grid data
-	int verbose             = lua.scalar<int>("verbose");
-	int write_zones_every   = lua.scalar<double>("write_zones_every");
-	int write_rays_every    = lua.scalar<double>("write_rays_every");
-	int write_spectra_every = lua.scalar<double>("write_spectra_every");
-	if(rank0 && verbose) cout << "# writing zone file 0" << endl;
-	sim.grid->write_zones(0);
-	if(rank0 && verbose) cout << "# writing ray file 0" << endl;
-	sim.grid->write_rays(0);
 
 	// read in time stepping parameters
 	int max_n_steps  = lua.scalar<int>("max_n_steps");
@@ -67,32 +55,13 @@ int main(int argc, char **argv)
 		sim.step(dt);
 
 		// printout time step
-		if(rank0){
-			printf("%12d %12.4e %12.4e %12d\n",it,sim.current_time(),dt, sim.total_particles());
-
-			// write zone state when appropriate
-			if(it%write_zones_every==0 && write_zones_every>0){
-				if(verbose) cout << "# writing zone file " << it << endl;
-				sim.grid->write_zones(it);
-			}
-
-			// write ray data when appropriate
-			if(it%write_rays_every==0 && write_rays_every>0){
-				if(verbose) cout << "# writing ray file " << it << endl;
-				sim.grid->write_rays(it);
-			}
-
-			// print out spectrum when appropriate
-			if(it%write_spectra_every==0 && write_spectra_every>0){
-				if(verbose) cout << "# writing spectrum files " << it << endl;
-				for(unsigned i=0; i<sim.species_list.size(); i++) sim.species_list[i]->spectrum.print(it,i);
-			}
-		}
+		sim.write(it);
+		if(rank0) printf("%12d %12.4e %12.4e %12d\n",it,sim.current_time(),dt, sim.total_particles());
 	}
 
-	//===========================//
-	// PRINT FINAL DATA AND EXIT //
-	//===========================//
+	//===================//
+	// FINALIZE AND EXIT //
+	//===================//
 	// calculate the elapsed time
 	double proc_time_end = MPI_Wtime();
 	double time_wasted = proc_time_end - proc_time_start;

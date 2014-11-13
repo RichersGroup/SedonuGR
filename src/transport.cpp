@@ -115,6 +115,15 @@ void transport::init(Lua* lua)
 	}
 	step_size     = lua->scalar<double>("step_size");
 
+	// output parameters
+	write_zones_every   = lua->scalar<double>("write_zones_every");
+	write_rays_every    = lua->scalar<double>("write_rays_every");
+	write_spectra_every = lua->scalar<double>("write_spectra_every");
+	if(rank0 && verbose) cout << "# writing zone file 0" << endl;
+	grid->write_zones(0);
+	if(rank0 && verbose) cout << "# writing ray file 0" << endl;
+	grid->write_rays(0);
+
 
 	//=================//
 	// SET UP THE GRID //
@@ -313,6 +322,31 @@ void transport::step(const double lab_dt)
 	if (!iterative) t_now += lab_dt;
 }
 
+
+//---------------------------------
+// write all the necessary output
+//---------------------------------
+void transport::write(const int it) const{
+	if(rank0){
+		// write zone state when appropriate
+		if(it%write_zones_every==0 && write_zones_every>0){
+			if(verbose) cout << "# writing zone file " << it << endl;
+			grid->write_zones(it);
+		}
+
+		// write ray data when appropriate
+		if(it%write_rays_every==0 && write_rays_every>0){
+			if(verbose) cout << "# writing ray file " << it << endl;
+			grid->write_rays(it);
+		}
+
+		// print out spectrum when appropriate
+		if(it%write_spectra_every==0 && write_spectra_every>0){
+			if(verbose) cout << "# writing spectrum files " << it << endl;
+			for(unsigned i=0; i<species_list.size(); i++) species_list[i]->spectrum.print(it,i);
+		}
+	}
+}
 
 //----------------------------
 // reset radiation quantities
