@@ -114,6 +114,7 @@ private:
 
 	// check parameters
 	void check_parameters() const;
+	void init_core(const double r_core, const double T_core, const double munue_core);
 
 public:
 

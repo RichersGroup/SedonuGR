@@ -20,16 +20,10 @@ protected:
 	// the frequency grid for emissivity/opacity (Hz)
 	locate_array nu_grid;
 
-	// the core emissivity (erg/s - units of N)
-	cdf_array core_emis;
-
 	// the zone eas variables
 	vector< cdf_array      > emis;
 	vector< vector<double> > abs_opac;
 	vector< vector<double> > scat_opac;
-
-	// cdf array interpolation order (currently only 1 or 3)
-	int cdf_interpolation_order;
 
 	// grey opacity and absorption fraction
 	double grey_opac; //(cm^2/g)
@@ -40,9 +34,6 @@ protected:
 
 	// species-specific initialization stuff
 	virtual void myInit(Lua* lua) = 0;
-
-	// set a CDF to blackbody distribution
-	void set_cdf_to_BB(const double T, const double chempot, cdf_array& emis);
 
 public:
 
@@ -61,11 +52,17 @@ public:
 	// this species' spectrum
 	spectrum_array spectrum;
 
+	// the core emissivity (erg/s - units of N)
+	cdf_array core_emis;
+
 	// set everything up
 	void init(Lua* lua, transport* sim);
 
 	// this species' blackbody function (erg/cm^2/s/ster/Hz)
 	virtual double blackbody(const double T, const double chempot, const double nu) const = 0;
+
+	// set a CDF to blackbody distribution
+	void set_cdf_to_BB(const double T, const double chempot, cdf_array& emis);
 
 	// return the emissivity integrated over frequency at the core
 	double integrate_core_emis() const; //(erg/s)

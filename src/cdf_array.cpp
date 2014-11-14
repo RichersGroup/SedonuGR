@@ -7,8 +7,10 @@
 
 
 // safe constructor
-cdf_array::cdf_array(){
+cdf_array::cdf_array(const int iorder){
 	N = NaN;
+	assert(iorder==1 || iorder==3);
+	interpolation_order = iorder;
 }
 
 //------------------------------------------------------

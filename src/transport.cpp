@@ -247,26 +247,41 @@ void transport::init(Lua* lua)
 	// set up initial particle creation
 	n_initial = lua->scalar<int>("n_initial");
 	if(n_initial>0){
-		initial_BB_T     = lua->scalar<double>("initial_BB_T")/pc::k_MeV;
-		initial_BB_munue = lua->scalar<double>("initial_BB_munue")*pc::MeV_to_ergs;
+		initial_BB_T     = lua->scalar<double>("initial_BB_T")/pc::k_MeV; // K
+		initial_BB_munue = lua->scalar<double>("initial_BB_munue")*pc::MeV_to_ergs; // erg
 	}
 
 	//=================//
 	// SET UP THE CORE //
 	//=================//
-	// the core temperature is used only in setting its emis vector
-	// so it's looked at only in species::myInit()
-	r_core = lua->scalar<double>("r_core");
-	if(n_emit_core > 0){
-		core_lum_multiplier = lua->scalar<double>("core_lum_multiplier");
-		core_species_luminosity.resize(species_list.size());
-		for(unsigned i=0; i<species_list.size(); i++)
-			core_species_luminosity.set_value(i, species_list[i]->integrate_core_emis() * core_lum_multiplier);
-		core_species_luminosity.normalize();
-	}
+	core_lum_multiplier = lua->scalar<double>("core_lum_multiplier");
+	double T_core = lua->scalar<double>("T_core") / pc::k_MeV;    // K
+	double r_core = lua->scalar<double>("r_core");   // cm
+	double munue_core = lua->scalar<double>("core_nue_chem_pot") * pc::MeV_to_ergs; // erg
+	if(n_emit_core>0) init_core(r_core, T_core, munue_core);
 
 	// check the parameters
 	check_parameters();
+}
+
+//-----------------------------------
+// set up core (without reading lua)
+//-----------------------------------
+void transport::init_core(const double r_core /*cm*/, const double T_core /*K*/, const double munue_core /*erg*/){
+	assert(n_emit_core>0);
+	assert(r_core>0);
+	assert(T_core>0);
+	assert(species_list.size()>0);
+
+	// set up core emission spectrum function (erg/s)
+	core_species_luminosity.resize(species_list.size());
+	for(unsigned s=0; s<species_list.size(); s++){
+		double chempot = munue_core * (double)species_list[s]->lepton_number; // erg
+		if(n_emit_core > 0) species_list[s]->set_cdf_to_BB(T_core, chempot, species_list[s]->core_emis);
+		species_list[s]->core_emis.N *= pc::pi * (4.0*pc::pi*r_core*r_core) * species_list[s]->weight;
+		core_species_luminosity.set_value(s, species_list[s]->integrate_core_emis() * core_lum_multiplier);
+	}
+	core_species_luminosity.normalize();
 }
 
 void transport::check_parameters() const{

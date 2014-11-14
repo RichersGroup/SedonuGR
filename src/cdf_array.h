@@ -25,7 +25,8 @@ private:
 
 public:
 
-	cdf_array();
+	cdf_array(const int iorder = 1);
+	int interpolation_order;
 
 	double N;
 	void resize(const int n)  {y.resize(n);}

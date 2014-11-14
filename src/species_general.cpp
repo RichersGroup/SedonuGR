@@ -18,7 +18,6 @@ species_general::species_general(){
 	rho_min = NaN;
 	rho_max = NaN;
 	sim = NULL;
-	cdf_interpolation_order = 0;
 }
 
 void species_general::init(Lua* lua, transport* simulation)
@@ -44,15 +43,6 @@ void species_general::init(Lua* lua, transport* simulation)
 		emis[i].resize(nu_grid.size());
 	}
 
-	// set up core emission spectrum function (erg/s)
-	//double L_core = lua->scalar<double>("L_core");
-	double T_core = lua->scalar<double>("T_core") / pc::k_MeV;
-	double r_core = lua->scalar<double>("r_core");
-	double chempot = lua->scalar<double>("core_nue_chem_pot") * (double)lepton_number * pc::MeV_to_ergs;
-	if(sim->n_emit_core > 0) set_cdf_to_BB(T_core, chempot, core_emis);
-	core_emis.N *= pc::pi * (4.0*pc::pi*r_core*r_core) * weight;
-	cdf_interpolation_order = lua->scalar<int>("cdf_interpolation_order");
-
     // set up the spectrum in each zone
     bool do_distribution = lua->scalar<int>("do_distribution");
     if(do_distribution){
@@ -62,7 +52,7 @@ void species_general::init(Lua* lua, transport* simulation)
     	for(unsigned z_ind=0; z_ind<sim->grid->z.size(); z_ind++){
     		spectrum_array tmp_spectrum;
     		locate_array tmp_mugrid, tmp_phigrid;
-		tmp_mugrid.init( -1     , 1     , n_mu );
+    		tmp_mugrid.init( -1     , 1     , n_mu );
     		tmp_phigrid.init(-pc::pi, pc::pi, n_phi);
     		tmp_spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
     		sim->grid->z[z_ind].distribution.push_back(tmp_spectrum);
@@ -120,9 +110,9 @@ double species_general::sample_core_nu() const
 	if(rand==0 && nu_grid.min==0) while(rand==0) rand = sim->rangen.uniform();
 
 	double result = 0;
-	assert(cdf_interpolation_order==1 || cdf_interpolation_order==3);
-	if     (cdf_interpolation_order==1) result = core_emis.invert_linear(rand,&nu_grid);
-	else if(cdf_interpolation_order==3) result = core_emis.invert_cubic(rand,&nu_grid);
+	assert(core_emis.interpolation_order==1 || core_emis.interpolation_order==3);
+	if     (core_emis.interpolation_order==1) result = core_emis.invert_linear(rand,&nu_grid);
+	else if(core_emis.interpolation_order==3) result = core_emis.invert_cubic(rand,&nu_grid);
 	assert(result>0);
 	return result;
 }
@@ -142,9 +132,9 @@ double species_general::sample_zone_nu(const int zone_index) const
 	if(rand==0 && nu_grid.min==0) while(rand==0) rand = sim->rangen.uniform();
 
 	double result = 0;
-	assert(cdf_interpolation_order==1 || cdf_interpolation_order==3);
-	if     (cdf_interpolation_order==1) result = emis[zone_index].invert_linear(rand,&nu_grid);
-	else if(cdf_interpolation_order==3) result = emis[zone_index].invert_cubic(rand,&nu_grid);
+	assert(core_emis.interpolation_order==1 || core_emis.interpolation_order==3);
+	if     (core_emis.interpolation_order==1) result = emis[zone_index].invert_linear(rand,&nu_grid);
+	else if(core_emis.interpolation_order==3) result = emis[zone_index].invert_cubic(rand,&nu_grid);
 	assert(result>0);
 	return result;
 }
