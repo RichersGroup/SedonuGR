@@ -10,7 +10,6 @@ $(TARGET): $(OBJECTS)
 
 $(OBJECTS): %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<  $(GSL_INCL) $(LUA_INCL) $(OTHER_INCL) $(HDF5INCS)
-#	$(CXX) $(CXXFLAGS) -MM $*.cpp > $*.d  $(GSL_INCL) $(LUA_INCL)
 
 # pull in dependency info for *existing* .o files so objects get rebuilt if header changes
 -include $(OBJECTS:.o=.d)
@@ -33,7 +32,6 @@ tests: $(OBJECTS)
 	cp $(TARGET) ../tests/nut_therm_shell
 	cp $(TARGET) ../tests/nut_neutron_star
 	cp $(TARGET) ../tests/nut_neutron_star_2D
-	cp $(TARGET) ../tests/nut_blackbody
 	cp $(TARGET) ../tests/equilibrium_ye
 
 testsclean:

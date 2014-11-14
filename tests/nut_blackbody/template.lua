@@ -15,10 +15,10 @@ do_distribution = 0
 
 grid_type = "grid_0D_isotropic"
 model_file = ""
-rho = RHO_HERE
-T   = TEMP_HERE
-Ye  = YE_HERE
-nulib_table = NULIB_HERE
+rho = 0
+T   = 0
+Ye  = 0
+nulib_table = "/data/tables/NuLib/NuLib_HShen_noscat_highnures.h5"
 write_zones_every   = 1
 write_rays_every    = -1
 write_spectra_every = -1
@@ -34,9 +34,9 @@ nut_spec_n_phi      = 1
 
 n_initial      = 0
 n_emit_core    = 0
-n_emit_therm   = NPARTICLES_HERE
+n_emit_therm   = 1e6
 n_emit_decay   = 0
-max_particles  = NPARTICLES_HERE
+max_particles  = 1e6
 ratio_emit_by_zone = 0
 emissions_per_timestep = 1
 cdf_interpolation_order = 1
@@ -57,7 +57,7 @@ T_core = 0
 
 nut_grey_opacity  =  -1
 nut_grey_abs_frac =  -1
-nut_cdf_cutoff    = 1e-2
+nut_cdf_cutoff    = 0 --1e-2
 opac_interp_method = 0
 
 -- equilibrium solver parameters
