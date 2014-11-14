@@ -4,4 +4,4 @@ all:
 	python run_many.py
 
 clean:
-	rm -f *.spec ray_* fluid_* *.pdf
+	rm -f *.pdf compare.gnuplot results.dat predicted.dat param.lua
