@@ -49,19 +49,19 @@ int main(int argc, char **argv)
 	double max_logT  , min_logT  , T0;
 	double max_ye    , min_ye    , ye0;
 	int n_rho, n_T, n_ye;
-	assert(argc==13);
-	sscanf(argv[1 ], "%lf", &min_logrho);
-	sscanf(argv[2 ], "%lf", &max_logrho);
-	sscanf(argv[3 ], "%lf", &rho0);
-	sscanf(argv[4 ], "%d" , &n_rho);
-	sscanf(argv[5 ], "%lf", &min_logT);
-	sscanf(argv[6 ], "%lf", &max_logT);
-	sscanf(argv[7 ], "%lf", &T0);
-	sscanf(argv[8 ], "%d" , &n_T);
-	sscanf(argv[9 ], "%lf", &min_ye);
-	sscanf(argv[10], "%lf", &max_ye);
-	sscanf(argv[11], "%lf", &ye0);
-	sscanf(argv[12], "%d" , &n_ye);
+	assert(argc==14);
+	sscanf(argv[2 ], "%lf", &min_logrho);
+	sscanf(argv[3 ], "%lf", &max_logrho);
+	sscanf(argv[4 ], "%lf", &rho0);
+	sscanf(argv[5 ], "%d" , &n_rho);
+	sscanf(argv[6 ], "%lf", &min_logT);
+	sscanf(argv[7 ], "%lf", &max_logT);
+	sscanf(argv[8 ], "%lf", &T0);
+	sscanf(argv[9 ], "%d" , &n_T);
+	sscanf(argv[10], "%lf", &min_ye);
+	sscanf(argv[11], "%lf", &max_ye);
+	sscanf(argv[12], "%lf", &ye0);
+	sscanf(argv[13], "%d" , &n_ye);
 	double dlogT   = (max_logT   - min_logT  ) / ((double)n_T   - 1.0);
 	double dlogrho = (max_logrho - min_logrho) / ((double)n_rho - 1.0);
 	double dye     = (max_ye     - min_ye    ) / ((double)n_ye  - 1.0);
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
 
 	// open up the lua parameter file
 	Lua lua;
-	string script_file = ("modified.lua");
+	string script_file = ( argc>1 ? string(argv[1]) : "param.lua");
 	lua.init( script_file );
 
 	// set up the transport module (includes the grid)
