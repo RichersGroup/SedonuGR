@@ -24,6 +24,7 @@ realclean: clean
 tests: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o ../tests/nulib_plots/nulib_test.exe nulib_test.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL)
 	$(CXX) $(CXXFLAGS) -o ../tests/nulib_plots/nulib_eas_single nulib_eas_single.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL)
+	$(CXX) $(CXXFLAGS) -o ../tests/nut_blackbody/nut_blackbody.exe nut_blackbody.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL)
 	cp $(TARGET) ../tests/phot_spherical_emis
 	cp $(TARGET) ../tests/phot_visc_ball
 	cp $(TARGET) ../tests/nut_spherical_emis
