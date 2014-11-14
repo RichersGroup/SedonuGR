@@ -12,7 +12,7 @@
 #include "EOSsuper_interface.h"
 #include "species_general.h"
 
-void run_test(const bool rank0, const double dt, const double rho, const double T_MeV, const double target_ye, transport& sim, ofstream& outf){
+void run_test(const int nsteps, const bool rank0, const double dt, const double rho, const double T_MeV, const double target_ye, transport& sim, ofstream& outf){
 	if(rank0) cout << "Currently running: rho=" << rho << "g/ccm T_core=" << T_MeV << "MeV Ye=" << target_ye << endl;
 
 	// set the fluid properties
@@ -25,9 +25,10 @@ void run_test(const bool rank0, const double dt, const double rho, const double 
 	assert(sim.core_species_luminosity.N>0);
 
 	// do the transport step
-	sim.step(dt);
+	for(int i=0; i<nsteps; i++) sim.step(dt);
 
 	// write the data out to file
+	outf << rho << " " << T_MeV << " " << target_ye << " " << munue*pc::ergs_to_MeV << " ";
 	sim.grid->write_line(outf,0);
 }
 
@@ -86,6 +87,7 @@ int main(int argc, char **argv)
 
 	// read in time stepping parameters
 	double dt        = lua.scalar<double>("dt");
+	int max_n_steps  = lua.scalar<int>("max_n_steps");
 	lua.close();
 
 	// check parameters
@@ -100,21 +102,21 @@ int main(int argc, char **argv)
 	//==============//
 	for(int i=0; i<n_rho; i++){
 		double logrho = min_logrho + i*dlogrho;
-		run_test(rank0, dt,pow(10,logrho),T0,ye0,sim,outf);
+		run_test(max_n_steps, rank0, dt,pow(10,logrho),T0,ye0,sim,outf);
 	}
 	//==================//
 	// TEMPERATURE LOOP //
 	//==================//
 	for(int i=0; i<n_T; i++){
 		double logT = min_logT + i*dlogT;
-		run_test(rank0, dt,rho0,pow(10,logT),ye0,sim,outf);
+		run_test(max_n_steps, rank0, dt,rho0,pow(10,logT),ye0,sim,outf);
 	}
 	//=========//
 	// YE LOOP //
 	//=========//
 	for(int i=0; i<n_ye; i++){
 		double ye = min_ye + i*dye;
-		run_test(rank0, dt,rho0,T0,ye,sim,outf);
+		run_test(max_n_steps, rank0, dt,rho0,T0,ye,sim,outf);
 	}
 
 	//===================//
