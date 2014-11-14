@@ -78,8 +78,10 @@ void grid_1D_sphere::custom_model(Lua* lua)
 //------------------------------------------------------------
 int grid_1D_sphere::zone_index(const vector<double>& x) const
 {
+	assert(z.size()>0);
 	assert(x.size()==3);
 	double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+	assert(r>0);
 
 	// check if off the boundaries
 	if(r < r_out.min             ) return -1;
@@ -88,6 +90,12 @@ int grid_1D_sphere::zone_index(const vector<double>& x) const
 	// find in zone array using stl algorithm upper_bound and subtracting iterators
 	int z_ind = r_out.locate(r);
 	assert(z_ind >= 0);
+	if(z_ind>=z.size()){
+		cout << z_ind << endl;
+		cout << z.size() << endl;
+		cout << r << endl;
+		cout << r_out[0] << endl;
+	}
 	assert(z_ind < (int)z.size());
 	return z_ind;
 }

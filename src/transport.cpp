@@ -256,7 +256,7 @@ void transport::init(Lua* lua)
 	//=================//
 	core_lum_multiplier = lua->scalar<double>("core_lum_multiplier");
 	double T_core = lua->scalar<double>("T_core") / pc::k_MeV;    // K
-	double r_core = lua->scalar<double>("r_core");   // cm
+	r_core = lua->scalar<double>("r_core");   // cm
 	double munue_core = lua->scalar<double>("core_nue_chem_pot") * pc::MeV_to_ergs; // erg
 	if(n_emit_core>0) init_core(r_core, T_core, munue_core);
 

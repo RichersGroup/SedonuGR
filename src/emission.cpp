@@ -63,6 +63,7 @@ void transport::emit_inner_source(const int n_emit_core, const double lab_dt, do
 	assert(core_species_luminosity.N > 0);
 	const double Ep  = core_species_luminosity.N * lab_dt/n_emit_core;
 	assert(Ep > 0);
+	assert(r_core>0);
 
     #pragma omp parallel for
 	for (int i=0; i<n_emit_core; i++){
