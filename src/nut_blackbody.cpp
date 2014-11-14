@@ -71,7 +71,7 @@ int main(int argc, char **argv)
 
 	// open up the lua parameter file
 	Lua lua;
-	string script_file = ( argc>1 ? string(argv[1]) : "param.lua");
+	string script_file = string(argv[1]);
 	lua.init( script_file );
 
 	// set up the transport module (includes the grid)
