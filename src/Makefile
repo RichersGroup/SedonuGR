@@ -6,7 +6,7 @@ TEST_OBJECTS = Lua.o grid_general.o grid_0D_isotropic.o grid_1D_sphere.o grid_2D
 .PHONY: clean realclean
 
 $(TARGET): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS) $(GSL_LIBS) $(LUA_LDFLAGS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS) $(GSL_LIBS) $(LUA_LDFLAGS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(EOSSUPER_LIBS) 
 
 $(OBJECTS): %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<  $(GSL_INCL) $(LUA_INCL) $(OTHER_INCL) $(HDF5INCS)
@@ -21,15 +21,15 @@ realclean: clean
 	rm -f $(TARGET)
 
 tests: $(OBJECTS)
-	$(CXX) $(CXXFLAGS) -o ../tests/nulib_plots/nulib_test.exe nulib_test.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL)
-	$(CXX) $(CXXFLAGS) -o ../tests/nulib_plots/nulib_eas_single nulib_eas_single.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL)
-	$(CXX) $(CXXFLAGS) -o ../tests/nut_blackbody/nut_blackbody.exe nut_blackbody.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL)
+	$(CXX) $(CXXFLAGS) -o ../tests/nulib_plots/nulib_test.exe nulib_test.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(EOSSUPER_LIBS) $(OTHER_LIBS) $(LUA_INCL)
+	$(CXX) $(CXXFLAGS) -o ../tests/nulib_plots/nulib_eas_single nulib_eas_single.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(EOSSUPER_LIBS) $(OTHER_LIBS) $(LUA_INCL)
+	$(CXX) $(CXXFLAGS) -o ../tests/nut_blackbody/nut_blackbody.exe nut_blackbody.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(EOSSUPER_LIBS) $(OTHER_LIBS) $(LUA_INCL)
+	$(CXX) $(CXXFLAGS) -o ../tests/nut_therm_shell/nut_therm_shell.exe nut_therm_shell.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(EOSSUPER_LIBS) $(OTHER_LIBS) $(LUA_INCL)
 	cp $(TARGET) ../tests/phot_spherical_emis
 	cp $(TARGET) ../tests/phot_visc_ball
 	cp $(TARGET) ../tests/nut_spherical_emis
 	cp $(TARGET) ../tests/nut_spherical_emis_2D
 	cp $(TARGET) ../tests/nut_visc_ball
-	cp $(TARGET) ../tests/nut_therm_shell
 	cp $(TARGET) ../tests/nut_neutron_star
 	cp $(TARGET) ../tests/nut_neutron_star_2D
 	cp $(TARGET) ../tests/equilibrium_ye

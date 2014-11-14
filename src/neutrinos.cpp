@@ -8,8 +8,8 @@
 
 // constructor
 neutrinos::neutrinos(){
-	num_nut_species = MAX;
-	nulibID = MAX;
+	num_nut_species = MAXLIM;
+	nulibID = MAXLIM;
 	cutoff=0;
 }
 
@@ -124,7 +124,7 @@ void neutrinos::set_eas(int zone_index)
 //-----------------------------------------------------------------
 // Calculate the fermi-dirac blackbody function (erg/s/cm^2/Hz/ster)
 //-----------------------------------------------------------------
-double neutrinos::blackbody(const double T, const double chem_pot, const double nu) const
+double neutrinos::blackbody(const double T /*K*/, const double chem_pot /*erg*/, const double nu /*Hz*/) const
 {
 	double zeta = (pc::h*nu - chem_pot)/pc::k/T;
 	double bb = (pc::h*nu) * (nu/pc::c) * (nu/pc::c) / (exp(zeta) + 1.0);

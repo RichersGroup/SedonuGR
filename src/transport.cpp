@@ -26,13 +26,13 @@ namespace pc = physical_constants;
 
 // constructor
 transport::transport(){
-	verbose = -MAX;
-	MPI_nprocs = -MAX;
-	MPI_myID = -MAX;
-	solve_T = -MAX;
-	solve_Ye = -MAX;
+	verbose = -MAXLIM;
+	MPI_nprocs = -MAXLIM;
+	MPI_myID = -MAXLIM;
+	solve_T = -MAXLIM;
+	solve_Ye = -MAXLIM;
 	damping = NaN;
-	brent_itmax = -MAX;
+	brent_itmax = -MAXLIM;
 	brent_solve_tolerance = NaN;
 	T_min = NaN;
 	T_max = NaN;
@@ -40,33 +40,33 @@ transport::transport(){
 	Ye_max = NaN;
 	rho_min = NaN;
 	rho_max = NaN;
-	max_particles = -MAX;
+	max_particles = -MAXLIM;
 	step_size = NaN;
-	do_photons = -MAX;
-	do_neutrinos = -MAX;
-	do_distribution = -MAX;
-	iterative = -MAX;
-	radiative_eq = -MAX;
-	rank0 = -MAX;
+	do_photons = -MAXLIM;
+	do_neutrinos = -MAXLIM;
+	do_distribution = -MAXLIM;
+	iterative = -MAXLIM;
+	radiative_eq = -MAXLIM;
+	rank0 = -MAXLIM;
 	grid = NULL;
 	t_now = NaN;
 	r_core = NaN;
-	n_emit_core = -MAX;
+	n_emit_core = -MAXLIM;
 	core_lum_multiplier = NaN;
-	do_visc = -MAX;
-	n_emit_zones = -MAX;
+	do_visc = -MAXLIM;
+	n_emit_zones = -MAXLIM;
 	visc_specific_heat_rate = NaN;
 	L_net_lab = NaN;
 	L_esc_lab = NaN;
-	reflect_outer = -MAX;
-	emissions_per_timestep = -MAX;
-	n_initial = -MAX;
+	reflect_outer = -MAXLIM;
+	emissions_per_timestep = -MAXLIM;
+	n_initial = -MAXLIM;
 	initial_BB_T = NaN;
 	initial_BB_munue = NaN;
 	ratio_emit_by_zone = NAN;
-	write_rays_every = -MAX;
-	write_spectra_every = -MAX;
-	write_zones_every = -MAX;
+	write_rays_every = -MAXLIM;
+	write_spectra_every = -MAXLIM;
+	write_zones_every = -MAXLIM;
 }
 
 

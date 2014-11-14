@@ -114,7 +114,6 @@ private:
 
 	// check parameters
 	void check_parameters() const;
-	void init_core(const double r_core, const double T_core, const double munue_core);
 
 public:
 
@@ -134,6 +133,7 @@ public:
 	int n_emit_core;
 	double core_lum_multiplier;
 	cdf_array core_species_luminosity;
+	void init_core(const double r_core, const double T_core, const double munue_core);
 
 	// items for zone emission
 	int do_visc;

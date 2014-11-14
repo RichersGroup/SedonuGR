@@ -10,7 +10,7 @@ species_general::species_general(){
 	weight = NaN;
 	grey_opac = NaN;
 	grey_abs_frac = NaN;
-	lepton_number = MAX;
+	lepton_number = MAXLIM;
 	T_min = NaN;
 	T_max = NaN;
 	Ye_min = NaN;

@@ -12,12 +12,12 @@
 // constructor
 //------------
 grid_3D_cart::grid_3D_cart(){
-	nx=-MAX;ny=-MAX;nz=-MAX;
+	nx=-MAXLIM;ny=-MAXLIM;nz=-MAXLIM;
 	dx=NaN;dy=NaN;dz=NaN;
 	x0=NaN;y0=NaN;z0=NaN;
 	vol=NaN;
 	min_ds=NaN;
-	reflect_x=-MAX;reflect_y=-MAX;reflect_z=-MAX;
+	reflect_x=-MAXLIM;reflect_y=-MAXLIM;reflect_z=-MAXLIM;
 }
 
 //------------------------------------------------------------
