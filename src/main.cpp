@@ -45,6 +45,11 @@ int main(int argc, char **argv)
 	double dt        = lua.scalar<double>("dt");
 	lua.close();
 
+	// initial output
+	sim.grid->write_zones(0);
+	sim.grid->write_rays(0);
+
+
 	//===========//
 	// TIME LOOP //
 	//===========//

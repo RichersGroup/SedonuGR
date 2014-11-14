@@ -165,7 +165,7 @@ double locate_array::value_at(const double xval, const vector<double>& y) const{
 			i1 = 0;
 			i2 = 1;
 		}
-		else if(ind==x.size() || xval>=center(x.size()-1)){ // If off the right side of the grid
+		else if(ind==(int)x.size() || xval>=center(x.size()-1)){ // If off the right side of the grid
 			i1 = x.size() - 2;
 			i2 = x.size() - 1;
 		}

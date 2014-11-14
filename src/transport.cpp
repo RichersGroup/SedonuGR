@@ -64,6 +64,9 @@ transport::transport(){
 	initial_BB_T = NaN;
 	initial_BB_munue = NaN;
 	ratio_emit_by_zone = NAN;
+	write_rays_every = -MAX;
+	write_spectra_every = -MAX;
+	write_zones_every = -MAX;
 }
 
 
@@ -119,11 +122,6 @@ void transport::init(Lua* lua)
 	write_zones_every   = lua->scalar<double>("write_zones_every");
 	write_rays_every    = lua->scalar<double>("write_rays_every");
 	write_spectra_every = lua->scalar<double>("write_spectra_every");
-	if(rank0 && verbose) cout << "# writing zone file 0" << endl;
-	grid->write_zones(0);
-	if(rank0 && verbose) cout << "# writing ray file 0" << endl;
-	grid->write_rays(0);
-
 
 	//=================//
 	// SET UP THE GRID //
