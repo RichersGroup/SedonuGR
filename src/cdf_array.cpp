@@ -144,12 +144,12 @@ double h11(const double t){
 	assert(0.0<=t && t<=1.0);
 	return t*t*(t-1.0);
 }
-double cdf_array::invert_cubic(const double rand, const locate_array* xgrid) const
+double cdf_array::invert_cubic(const double rand, const locate_array* xgrid, const int i_in) const
 // INCONSISTENCY - the emissivity is integrated assuming piecewise constant.
 // This is inconsistent with cubic interpolation.
 {
 	assert(rand>=0 && rand<=1);
-	int i = get_index(rand);
+	int i = (i_in<0 ? get_index(rand) : i_in);
 	assert(i<(int)size());
 	assert(i>=0);
 
@@ -190,10 +190,10 @@ double cdf_array::invert_cubic(const double rand, const locate_array* xgrid) con
 	assert(xRight>=result);
 	return result;
 }
-double cdf_array::invert_linear(const double rand, const locate_array* xgrid) const
+double cdf_array::invert_linear(const double rand, const locate_array* xgrid, const int i_in) const
 {
 	assert(rand>=0 && rand<=1);
-	int i = get_index(rand);
+	int i = (i_in<0 ? get_index(rand) : i_in);
 	assert(i<(int)size());
 	assert(i>=0);
 

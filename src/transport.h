@@ -43,13 +43,14 @@ private:
 	void emit_zones(const int n_emit, const double dt, double t=-1);
 
 	// what kind of particle to create?
-	void create_surface_particle(const double Ep, const double t);
-	void create_thermal_particle(const int zone_index, const double Ep, const double t);
+	void create_surface_particle(const double Ep, const double t, const int s=-1, const int g=-1);
+	void create_thermal_particle(const int zone_index, const double Ep, const double t, const int s=-1, const int g=-1);
 
 	// per-zone luminosity functions
 	double zone_comoving_visc_heat_rate(const int zone_index) const;
 	double zone_comoving_therm_emit_energy (const int zone_index, const double lab_dt) const;
 	double zone_comoving_therm_emit_leptons(const int zone_index, const double lab_dt) const;
+	double  bin_comoving_therm_emit_energy(const int z_ind, const int s, const int g, const double lab_dt) const;
 
 	// species sampling functions
 	int sample_core_species() const;
@@ -102,7 +103,6 @@ private:
 	int    iterative;
 	int    radiative_eq;
 	int    rank0;
-	double ratio_emit_by_zone;
 
 	// output parameters
 	int write_zones_every;
@@ -118,6 +118,7 @@ private:
 	// check quality
 	double Q_zones() const;
 	double Q_core() const;
+	int number_of_bins() const;
 
 public:
 
@@ -142,6 +143,8 @@ public:
 	// items for zone emission
 	int do_visc;
 	int n_emit_zones;
+	double ratio_energy_emit_by_bin;
+	int n_emit_per_bin;
 	double visc_specific_heat_rate;
 
 	// initial particle creation

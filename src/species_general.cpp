@@ -99,7 +99,7 @@ void species_general::set_emis_to_BB_edens(const double T, const double chempot)
 // return a randomly sampled frequency
 // for a particle emitted from the core
 //----------------------------------------------------------------
-double species_general::sample_core_nu() const
+double species_general::sample_core_nu(const int g) const
 {
   assert(nu_grid.min >= 0);
 
@@ -111,8 +111,8 @@ double species_general::sample_core_nu() const
 
 	double result = 0;
 	assert(core_emis.interpolation_order==1 || core_emis.interpolation_order==3);
-	if     (core_emis.interpolation_order==1) result = core_emis.invert_linear(rand,&nu_grid);
-	else if(core_emis.interpolation_order==3) result = core_emis.invert_cubic(rand,&nu_grid);
+	if     (core_emis.interpolation_order==1) result = core_emis.invert_linear(rand,&nu_grid,g);
+	else if(core_emis.interpolation_order==3) result = core_emis.invert_cubic(rand,&nu_grid,g);
 	assert(result>0);
 	return result;
 }
@@ -121,7 +121,7 @@ double species_general::sample_core_nu() const
 // return a randomly sampled frequency
 // for a particle emitted from a zone
 //----------------------------------------------------------------
-double species_general::sample_zone_nu(const int zone_index) const
+double species_general::sample_zone_nu(const int zone_index, const int g) const
 {
   assert(nu_grid.min >= 0);
 
@@ -133,8 +133,8 @@ double species_general::sample_zone_nu(const int zone_index) const
 
 	double result = 0;
 	assert(core_emis.interpolation_order==1 || core_emis.interpolation_order==3);
-	if     (core_emis.interpolation_order==1) result = emis[zone_index].invert_linear(rand,&nu_grid);
-	else if(core_emis.interpolation_order==3) result = emis[zone_index].invert_cubic(rand,&nu_grid);
+	if     (core_emis.interpolation_order==1) result = emis[zone_index].invert_linear(rand,&nu_grid,g);
+	else if(core_emis.interpolation_order==3) result = emis[zone_index].invert_cubic(rand,&nu_grid,g);
 	assert(result>0);
 	return result;
 }
@@ -178,4 +178,12 @@ double species_general::min_bin_emis(const int z_ind) const{
 		if(this_emis<min_emis && this_emis>0) min_emis = this_emis;
 	}
 	return min_emis;
+}
+
+double species_general::bin_emis(const int z_ind, const int g) const{
+	return emis[z_ind].get_value(g);
+}
+
+int species_general::number_of_bins(){
+	return nu_grid.size();
 }

@@ -72,10 +72,10 @@ public:
 	double integrate_zone_lepton_emis(const int zone_index) const; //unitless
 
 	// return the frequency of a particle emitted from the core (Hz)
-	double sample_core_nu() const;
+	double sample_core_nu(const int g=-1) const;
 
 	// return the frequency of a particle emitted from a zone (Hz)
-	double sample_zone_nu(const int zone_index) const;
+	double sample_zone_nu(const int zone_index, const int g=-1) const;
 
 	// set the emissivity, absorption opacity, and scattering opacity
 	virtual void set_eas(const int zone_index) = 0;
@@ -83,7 +83,9 @@ public:
 	void get_opacity(const double com_nu, const int z_ind, double* opac, double* abs_frac) const;
 
 	// minimum zone emissivity
+	double bin_emis(const int zone_index, const int g) const;
 	double min_bin_emis(const int zone_index) const;
+	int number_of_bins();
 
 	// min and max values for the Brent solver
 	double T_min,  T_max; //(K)
