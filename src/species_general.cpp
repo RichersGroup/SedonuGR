@@ -170,3 +170,12 @@ double species_general::integrate_zone_lepton_emis(const int zone_index) const
 	}
 	return l_emis * emis[zone_index].N;
 }
+
+double species_general::min_bin_emis(const int z_ind) const{
+	double min_emis = numeric_limits<double>::infinity();
+	for(unsigned g=0; g<emis[z_ind].size(); g++){
+		double this_emis = emis[z_ind].get_value(g);
+		if(this_emis<min_emis && this_emis>0) min_emis = this_emis;
+	}
+	return min_emis;
+}

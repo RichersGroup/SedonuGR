@@ -282,6 +282,47 @@ void transport::init_core(const double r_core /*cm*/, const double T_core /*K*/,
 		core_species_luminosity.set_value(s, species_list[s]->integrate_core_emis() * core_lum_multiplier);
 	}
 	core_species_luminosity.normalize();
+
+	// check emission quality from core
+	if(verbose) cout << "# Q_core = " << Q_core() << endl;
+}
+
+
+// estimate the quality of the core emission (#emitted per bin)
+double transport::Q_core() const{
+	assert(n_emit_core>0);
+	assert(r_core>0);
+	assert(species_list.size()>0);
+
+	double min_emis = numeric_limits<double>::infinity();
+	double net_emis = 0;
+	for(unsigned s=0; s<species_list.size(); s++){
+		for(unsigned g=0; g<species_list[s]->core_emis.size(); g++){
+			double this_emis = species_list[s]->core_emis.get_value(g);
+			if(this_emis < min_emis) min_emis = this_emis;
+			net_emis += this_emis;
+		}
+	}
+	return min_emis/net_emis * (double)n_emit_core;
+}
+
+
+// estimate the quality of the zone emission (#emitted per bin)
+double transport::Q_zones() const{
+	assert(n_emit_zones>0);
+	assert(species_list.size()>0);
+	assert(grid->z.size()>0);
+
+	double min_emis = numeric_limits<double>::infinity();
+	double net_emis = 0;
+	for(unsigned s=0; s<species_list.size(); s++){
+		for(unsigned z_ind=0; z_ind<grid->z.size(); z_ind++){
+			double this_min_emis = species_list[s]->min_bin_emis(z_ind);
+			if(this_min_emis < min_emis) min_emis = this_min_emis;
+			net_emis += species_list[s]->integrate_zone_emis(z_ind);
+		}
+	}
+	return min_emis/net_emis * (double)n_emit_zones;
 }
 
 void transport::check_parameters() const{
@@ -526,6 +567,8 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		cout << "#   " << L_net_lab << " erg/s Net lab-frame luminosity from (zones+core+re-emission): " << endl;
 		cout << "#   " << L_esc_lab << " erg/s Net lab-frame escape luminosity: " << endl;
 	}
+
+	if(verbose && rank0) cout << "#   Q_zones = " << Q_zones() << endl;
 }
 
 

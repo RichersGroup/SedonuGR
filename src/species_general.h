@@ -82,6 +82,9 @@ public:
 	void set_emis_to_BB_edens(const double T, const double chempot);
 	void get_opacity(const double com_nu, const int z_ind, double* opac, double* abs_frac) const;
 
+	// minimum zone emissivity
+	double min_bin_emis(const int zone_index) const;
+
 	// min and max values for the Brent solver
 	double T_min,  T_max; //(K)
 	double Ye_min, Ye_max;

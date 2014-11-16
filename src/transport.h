@@ -115,6 +115,10 @@ private:
 	// check parameters
 	void check_parameters() const;
 
+	// check quality
+	double Q_zones() const;
+	double Q_core() const;
+
 public:
 
 	transport();
