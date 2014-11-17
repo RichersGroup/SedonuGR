@@ -22,8 +22,8 @@ protected:
 
 	// the zone eas variables
 	vector< cdf_array      > emis;
-	vector< vector<double> > abs_opac;
-	vector< vector<double> > scat_opac;
+	vector< vector<double> > abs_opac;  // 1/cm
+	vector< vector<double> > scat_opac; // 1/cm
 
 	// grey opacity and absorption fraction
 	double grey_opac; //(cm^2/g)
@@ -81,6 +81,7 @@ public:
 	virtual void set_eas(const int zone_index) = 0;
 	void set_emis_to_BB_edens(const double T, const double chempot);
 	void get_opacity(const double com_nu, const int z_ind, double* opac, double* abs_frac) const;
+	double sum_opacity(const int z_ind, const int group) const;
 
 	// minimum zone emissivity
 	double bin_emis(const int zone_index, const int g) const;

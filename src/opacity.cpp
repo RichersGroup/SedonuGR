@@ -30,3 +30,7 @@ void species_general::get_opacity(const double com_nu, const int z_ind, double* 
 		assert(0<=*abs_frac && *abs_frac<=1.0);
 	}
 }
+
+double species_general::sum_opacity(const int z_ind, const int group) const{
+	return abs_opac[z_ind][group] + scat_opac[z_ind][group];
+}

@@ -82,7 +82,7 @@ void transport::emit_inner_source(const int n_emit_core_per_bin, const double la
 	}
 
 	if(n_emit_core_per_bin > 0){
-        #pragma omp parallel for collapse(2)
+        #pragma omp parallel for
 		for(unsigned s=0; s<species_list.size(); s++){
 			for(unsigned g=0; g<species_list[s]->core_emis.size(); g++){
 				double emis = species_list[s]->core_emis.get_value(g)*species_list[s]->core_emis.N;
