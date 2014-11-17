@@ -52,7 +52,7 @@ public:
 	// this species' spectrum
 	spectrum_array spectrum;
 
-	// the core emissivity (erg/s - units of N)
+	// the core emissivity (units of core_emis.N are erg/s)
 	cdf_array core_emis;
 
 	// set everything up
@@ -85,7 +85,7 @@ public:
 	// minimum zone emissivity
 	double bin_emis(const int zone_index, const int g) const;
 	double min_bin_emis(const int zone_index) const;
-	int number_of_bins();
+	unsigned number_of_bins();
 
 	// min and max values for the Brent solver
 	double T_min,  T_max; //(K)

@@ -25,7 +25,7 @@ void run_test(const bool rank0, const double dt, const double rho, const double 
 	sim.step(dt);
 
 	// write the data out to file
-	sim.grid->write_line(outf,0);
+	if(rank0) sim.grid->write_line(outf,0);
 }
 
 //--------------------------------------------------------

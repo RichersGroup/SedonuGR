@@ -39,8 +39,8 @@ private:
 	// emit from where?
 	//void initialize_particles(int init_particles);
 	void initialize_blackbody(const double T, const double munue);
-	void emit_inner_source(const int n_emit, const double dt, double t=-1);
-	void emit_zones(const int n_emit, const double dt, double t=-1);
+	void emit_inner_source(const int n_emit_per_bin, const double dt, double t=-1);
+	void emit_zones(const int n_emit_per_bin, const double dt, double t=-1);
 
 	// what kind of particle to create?
 	void create_surface_particle(const double Ep, const double t, const int s=-1, const int g=-1);
@@ -143,8 +143,6 @@ public:
 	// items for zone emission
 	int do_visc;
 	int n_emit_zones;
-	double ratio_energy_emit_by_bin;
-	int n_emit_per_bin;
 	double visc_specific_heat_rate;
 
 	// initial particle creation
@@ -154,6 +152,7 @@ public:
 
 	// how many times do we emit+propagate each timestep?
 	int emissions_per_timestep;
+	double ratio_emit_by_bin;
 
 	// global radiation quantities
 	double L_net_lab;

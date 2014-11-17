@@ -181,9 +181,9 @@ double species_general::min_bin_emis(const int z_ind) const{
 }
 
 double species_general::bin_emis(const int z_ind, const int g) const{
-	return emis[z_ind].get_value(g);
+	return emis[z_ind].get_value(g) * emis[z_ind].N;
 }
 
-int species_general::number_of_bins(){
+unsigned species_general::number_of_bins(){
 	return nu_grid.size();
 }

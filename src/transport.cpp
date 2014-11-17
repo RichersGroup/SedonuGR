@@ -52,7 +52,6 @@ transport::transport(){
 	t_now = NaN;
 	r_core = NaN;
 	n_emit_core = -MAXLIM;
-	n_emit_per_bin = -MAXLIM;
 	core_lum_multiplier = NaN;
 	do_visc = -MAXLIM;
 	n_emit_zones = -MAXLIM;
@@ -64,7 +63,7 @@ transport::transport(){
 	n_initial = -MAXLIM;
 	initial_BB_T = NaN;
 	initial_BB_munue = NaN;
-	ratio_energy_emit_by_bin = NAN;
+	ratio_emit_by_bin = NAN;
 	write_rays_every = -MAXLIM;
 	write_spectra_every = -MAXLIM;
 	write_zones_every = -MAXLIM;
@@ -99,8 +98,7 @@ void transport::init(Lua* lua)
 	n_emit_core  = lua->scalar<int>("n_emit_core");
 	n_emit_zones = lua->scalar<int>("n_emit_therm");
 	emissions_per_timestep = lua->scalar<int>("emissions_per_timestep");
-	ratio_energy_emit_by_bin = lua->scalar<double>("ratio_emit_by_bin");
-	if(ratio_energy_emit_by_bin > 0) n_emit_per_bin = lua->scalar<int>("n_emit_per_bin");
+	ratio_emit_by_bin = lua->scalar<double>("ratio_emit_by_bin");
 
 	// read simulation parameters
 	verbose      = lua->scalar<int>("verbose");
@@ -280,13 +278,13 @@ void transport::init_core(const double r_core /*cm*/, const double T_core /*K*/,
 	for(unsigned s=0; s<species_list.size(); s++){
 		double chempot = munue_core * (double)species_list[s]->lepton_number; // erg
 		if(n_emit_core > 0) species_list[s]->set_cdf_to_BB(T_core, chempot, species_list[s]->core_emis);
-		species_list[s]->core_emis.N *= pc::pi * (4.0*pc::pi*r_core*r_core) * species_list[s]->weight * core_lum_multiplier;
+		species_list[s]->core_emis.N *= pc::pi * (4.0*pc::pi*r_core*r_core) * species_list[s]->weight * core_lum_multiplier; // erg/s
 		core_species_luminosity.set_value(s, species_list[s]->integrate_core_emis());
 	}
 	core_species_luminosity.normalize();
 
 	// check emission quality from core
-	if(verbose) cout << "# Q_core = " << Q_core() << endl;
+	if(verbose && rank0) cout << "# Q_core = " << Q_core() << endl;
 }
 
 
@@ -332,8 +330,8 @@ void transport::check_parameters() const{
 		cout << "ERROR: Emitting particles at beginning of timestep AND re-emitting them is inconsistent." << endl;
 		exit(10);
 	}
-	assert(ratio_energy_emit_by_bin >= 0.0);
-	assert(ratio_energy_emit_by_bin <= 1.0);
+	assert(ratio_emit_by_bin >= 0.0);
+	assert(ratio_emit_by_bin <= 1.0);
 }
 
 double transport::current_time(){
@@ -572,7 +570,7 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		cout << "#   " << L_esc_lab << " erg/s Net lab-frame escape luminosity: " << endl;
 	}
 
-	if(verbose && rank0) cout << "#   Q_zones = " << Q_zones() << endl;
+	if(verbose && rank0 && n_emit_zones>0) cout << "#   Q_zones = " << Q_zones() << endl;
 }
 
 
@@ -808,6 +806,6 @@ double transport::mean_mass(const double Ye){
 
 int transport::number_of_bins() const{
 	int number_energy_bins = 0;
-	for(int s = 0; s<species_list.size(); s++) number_energy_bins += species_list[s]->number_of_bins();
-	return grid->z.size() * number_energy_bins;
+	for(unsigned s = 0; s<species_list.size(); s++) number_energy_bins += species_list[s]->number_of_bins();
+	return number_energy_bins;
 }

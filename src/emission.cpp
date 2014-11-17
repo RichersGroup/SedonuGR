@@ -11,26 +11,30 @@
 //------------------------------------------------------------
 void transport::emit_particles(const double lab_dt)
 {
-	if(verbose && rank0) cout << "# Emitting particles...";
 	assert(lab_dt > 0);
 
 	// complain if we're out of room for particles
 	assert(n_emit_core  >= 0);
 	assert(n_emit_zones >= 0);
-	int n_emit = n_emit_core + n_emit_zones + n_emit_per_bin*number_of_bins();
+	int n_emit = n_emit_core + n_emit_zones;
 	if (total_particles() + n_emit > max_particles){
 		cout << "# ERROR: Not enough particle space\n";
 		exit(10);
 	}
 
-	// emit from the core and/or the zones
-	if(n_emit_core >0) emit_inner_source(n_emit_core, lab_dt);
-	if(n_emit_zones>0) emit_zones(n_emit_zones, lab_dt);
-
-	if(iterative){
-	  assert(particles.size() >= (unsigned)n_emit - grid->z.size());
-	  assert(particles.size() <= (unsigned)n_emit + 2*grid->z.size());
+	// set how many partices are going to bin-wise emission
+	int n_emit_core_per_bin  = ratio_emit_by_bin * n_emit_core  / (number_of_bins()               );
+	int n_emit_zones_per_bin = ratio_emit_by_bin * n_emit_zones / (number_of_bins()*grid->z.size());
+	if(verbose && rank0 && ratio_emit_by_bin>0){
+		cout << "#   " << n_emit_core_per_bin  << " particles per core bin" << endl;
+		cout << "#   " << n_emit_zones_per_bin << " particles per zone bin" << endl;
 	}
+
+
+	// emit from the core and/or the zones
+	if(verbose && rank0) cout << "# Emitting particles...";
+	if(n_emit_core >0) emit_inner_source(n_emit_core_per_bin, lab_dt);
+	if(n_emit_zones>0) emit_zones(n_emit_zones_per_bin, lab_dt);
 	if(verbose && rank0) cout << "finished." << endl;
 }
 
@@ -57,26 +61,34 @@ void transport::initialize_blackbody(double T, double munue){
 // Currently written to emit photons with 
 // blackblody spectrum based on T_core and L_core
 //------------------------------------------------------------
-void transport::emit_inner_source(const int n_emit_core, const double lab_dt, double t)
+void transport::emit_inner_source(const int n_emit_core_per_bin, const double lab_dt, double t)
 {
 	assert(lab_dt > 0);
 	assert(core_species_luminosity.N > 0);
-	const double Ep  = core_species_luminosity.N * lab_dt/n_emit_core * (1.0 - ratio_energy_emit_by_bin);
-	assert(Ep > 0);
-	assert(r_core>0);
+	int n_emit_core_binwise = n_emit_core_per_bin*number_of_bins();
+	int n_emit_core_regular = n_emit_core - n_emit_core_binwise;
+	assert(n_emit_core_regular>=0);
 
-    #pragma omp parallel for
-	for (int i=0; i<n_emit_core; i++){
-		if(t<0) t = t_now + lab_dt*rangen.uniform();
-		create_surface_particle(Ep,t);
+	if(n_emit_core_regular>0 && ratio_emit_by_bin<1.0){
+		const double Ep  = core_species_luminosity.N * lab_dt/n_emit_core_regular * (1.0 - ratio_emit_by_bin);
+		assert(Ep > 0);
+		assert(r_core>0);
+
+        #pragma omp parallel for
+		for (int i=0; i<n_emit_core_regular; i++){
+			if(t<0) t = t_now + lab_dt*rangen.uniform();
+			create_surface_particle(Ep,t);
+		}
 	}
 
-	if(n_emit_per_bin>0){
+	if(n_emit_core_per_bin > 0){
+        #pragma omp parallel for collapse(2)
 		for(unsigned s=0; s<species_list.size(); s++){
 			for(unsigned g=0; g<species_list[s]->core_emis.size(); g++){
-				for(int k=0; k<n_emit_per_bin; k++){
+				double emis = species_list[s]->core_emis.get_value(g)*species_list[s]->core_emis.N;
+				double bin_Ep = emis*lab_dt/n_emit_core_per_bin * ratio_emit_by_bin;
+				if(bin_Ep>0) for(int k=0; k<n_emit_core_per_bin; k++){
 					if(t<0) t = t_now + lab_dt*rangen.uniform();
-					double bin_Ep = species_list[s]->core_emis.get_value(g) * ratio_energy_emit_by_bin;
 					create_surface_particle(bin_Ep,t,s,g);
 				}
 			}
@@ -88,51 +100,52 @@ void transport::emit_inner_source(const int n_emit_core, const double lab_dt, do
 //--------------------------------------------------------------------------
 // emit particles due to viscous heating
 //--------------------------------------------------------------------------
-void transport::emit_zones(const int n_emit, const double lab_dt, double t){
+void transport::emit_zones(const int n_emit_zones_per_bin, const double lab_dt, double t){
 	assert(lab_dt > 0);
 
 	unsigned gridsize = grid->z.size();
 	double tmp_net_energy = 0;
-	unsigned n_emitting_zones = 0;
-	assert(ratio_energy_emit_by_bin>=0.);
-	assert(ratio_energy_emit_by_bin<=1.);
+	int n_emit_zones_regular = n_emit_zones - n_emit_zones_per_bin*grid->z.size()*number_of_bins();
+	assert(n_emit_zones_regular>=0);
+
 
 	// at this point therm means either viscous heating or regular emission, according to the logic above
     //#pragma omp parallel
 	{
 		// determine the net luminosity of each emission type over the whole grid
 		// proper normalization due to frames not physical - just for distributing particles somewhat reasonably
-	    #pragma omp parallel for reduction(+:tmp_net_energy,n_emitting_zones)
+	    #pragma omp parallel for reduction(+:tmp_net_energy)
 		for(unsigned z_ind=0; z_ind<gridsize; z_ind++){
 			double com_emit_energy = zone_comoving_therm_emit_energy(z_ind,lab_dt);
 			tmp_net_energy += com_emit_energy;
-			n_emitting_zones += (com_emit_energy>0 ? 1 : 0);
 		}
 		assert(tmp_net_energy>0);
-		assert(n_emitting_zones>0);
 
 		// actually emit the particles in each zone
         //#pragma omp for schedule(guided)
 		for (unsigned z_ind=0; z_ind<gridsize; z_ind++)
 		{
-			// how much this zone emits. Always emits correct energy even if number of particles doesn't add up.
 			double com_emit_energy = zone_comoving_therm_emit_energy(z_ind,lab_dt);
-			double this_n_emit = (double)n_emit * (com_emit_energy / tmp_net_energy) + 0.5;
-			if(com_emit_energy>0 && this_n_emit==0) this_n_emit = 1;
-			double Ep = com_emit_energy / (double)this_n_emit * (1.0 - ratio_energy_emit_by_bin);
-			for (unsigned k=0; k<this_n_emit; k++){
-				if(t<0) t = t_now + lab_dt*rangen.uniform();
-				create_thermal_particle(z_ind,Ep,t);
+
+			if(n_emit_zones_regular>0 && ratio_emit_by_bin<1.0){
+				// how much this zone emits. Always emits correct energy even if number of particles doesn't add up.
+				double this_n_emit = (double)n_emit_zones_regular * (com_emit_energy / tmp_net_energy) + 0.5;
+				if(com_emit_energy>0 && this_n_emit==0) this_n_emit = 1;
+				double Ep = com_emit_energy / (double)this_n_emit * (1.0 - ratio_emit_by_bin);
+				for (unsigned k=0; k<this_n_emit; k++){
+					if(t<0) t = t_now + lab_dt*rangen.uniform();
+					create_thermal_particle(z_ind,Ep,t);
+				}
 			}
 
 
 			// create particles in all bins
-			if(n_emit_per_bin>0){
+			if(n_emit_zones_per_bin > 0){
 				for(unsigned s=0; s<species_list.size(); s++){
-					for(unsigned g=0; g<species_list[s]->core_emis.size(); g++){
-						for(int k=0; k<n_emit_per_bin; k++){
+					for(unsigned g=0; g<species_list[s]->number_of_bins(); g++){
+						double bin_Ep = bin_comoving_therm_emit_energy(z_ind, s, g, lab_dt)/n_emit_zones_per_bin * ratio_emit_by_bin;
+						if(bin_Ep>0) for(int k=0; k<n_emit_zones_per_bin; k++){
 							if(t<0) t = t_now + lab_dt*rangen.uniform();
-							double bin_Ep = bin_comoving_therm_emit_energy(z_ind, s, g, lab_dt) * ratio_energy_emit_by_bin;
 							create_thermal_particle(z_ind,bin_Ep,t,s,g);
 						}
 					}
@@ -233,10 +246,10 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	normalize(p.D);
 
 	// sample the species and frequency
-	p.s = (s>0 ? s : sample_zone_species(z_ind) );
+	p.s = (s>=0 ? s : sample_zone_species(z_ind) );
 	assert(p.s >= 0);
 	assert(p.s < (int)species_list.size());
-	p.nu = species_list[s]->sample_zone_nu(z_ind,g);
+	p.nu = species_list[p.s]->sample_zone_nu(z_ind,g);
 	assert(p.nu > 0);
 
 	// lorentz transform from the comoving to lab frame
@@ -297,10 +310,10 @@ void transport::create_surface_particle(const double Ep, const double t, const i
 	assert(grid->zone_index(p.x) >= 0);
 
 	// sample the species and frequency
-	p.s = (s>0 ? s : sample_core_species());
+	p.s = (s>=0 ? s : sample_core_species());
 	assert(p.s >= 0);
 	assert(p.s < (int)species_list.size());
-	p.nu = species_list[s]->sample_core_nu(g);
+	p.nu = species_list[p.s]->sample_core_nu(g);
 
 	// lorentz transform from the comoving to lab frame
 	transform_comoving_to_lab(&p);

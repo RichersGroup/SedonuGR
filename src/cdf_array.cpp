@@ -180,8 +180,10 @@ double cdf_array::invert_cubic(const double rand, const locate_array* xgrid, con
 	}
 
 	// return interpolated function
-	double h = y[i]-yLeft;
-	double t = (rand-yLeft)/h;
+	double h = yRight-yLeft;
+	double t = 0;
+	if(i_in<0) t = (rand-yLeft)/h;
+	else t = rand*(yRight-yLeft)/h;
 	assert(t>=0 && t<=1);
 	double result = xLeft*h00(t) + h*mLeft*h10(t) + xRight*h01(t) + h*mRight*h11(t);
 	result = max(xLeft,result);
@@ -209,7 +211,9 @@ double cdf_array::invert_linear(const double rand, const locate_array* xgrid, co
 	assert(!isinf<bool>(slope));
 
 	// return interpolated function
-	double result = xLeft + slope*(rand-yLeft);
+	double result = 0;
+	if(i_in<0) result = xLeft + slope*(rand-yLeft);
+	else result = xLeft + rand*slope*(yRight-yLeft);
 	assert(xLeft<=result);
 	assert(xRight>=result);
 	return result;
