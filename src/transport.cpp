@@ -258,6 +258,9 @@ void transport::init(Lua* lua)
 	double T_core = lua->scalar<double>("T_core") / pc::k_MeV;    // K
 	r_core = lua->scalar<double>("r_core");   // cm
 	double munue_core = lua->scalar<double>("core_nue_chem_pot") * pc::MeV_to_ergs; // erg
+	int iorder = lua->scalar<int>("cdf_interpolation_order");
+	core_species_luminosity.interpolation_order = iorder;
+	for(unsigned s=0; s<species_list.size(); s++) species_list[s]->core_emis.interpolation_order = iorder;
 	if(n_emit_core>0) init_core(r_core, T_core, munue_core);
 
 	// check the parameters
@@ -431,7 +434,8 @@ void transport::reset_radiation(){
 		{
 			zone* z = &(grid->z[z_ind]);
 			z->e_rad    = 0;
-			z->l_abs    = 0;
+			z->nue_abs  = 0;
+			z->anue_abs = 0;
 			z->e_abs    = 0;
 			z->l_emit   = 0;
 			z->e_emit   = 0;
@@ -507,7 +511,7 @@ void transport::calculate_timescales() const{
 		double e_gas = z->rho*pc::k*z->T/pc::m_p;  // gas energy density (erg/ccm)
 		z->t_eabs  = e_gas / z->e_abs;
 		z->t_eemit = e_gas / z->e_emit;
-		z->t_labs  = z->rho/pc::m_p / z->l_abs;
+		z->t_labs  = z->rho/pc::m_p / (z->nue_abs-z->anue_abs);
 		z->t_lemit = z->rho/pc::m_p / z->l_emit;
 	}
 }
@@ -535,7 +539,8 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 
 		if(!grid->good_zone(z_ind)){
 			assert(z->e_abs == 0.0);
-			assert(z->l_abs == 0.0);
+			assert(z->nue_abs == 0.0);
+			assert(z->anue_abs == 0.0);
 			assert(z->e_emit == 0.0);
 			assert(z->l_emit == 0.0);
 		}
@@ -543,7 +548,8 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		z->e_rad    /= multiplier*four_vol*pc::c; // erg*dist --> erg/ccm
 		z->e_abs    /= multiplier*four_vol;       // erg      --> erg/ccm/s
 		z->e_emit   /= multiplier*four_vol;       // erg      --> erg/ccm/s
-		z->l_abs    /= multiplier*four_vol;       // num      --> num/ccm/s
+		z->nue_abs  /= multiplier*four_vol;       // num      --> num/ccm/s
+		z->anue_abs /= multiplier*four_vol;       // num      --> num/ccm/s
 		z->l_emit   /= multiplier*four_vol;       // num      --> num/ccm/s
 
 		// erg*dist --> erg/ccm, represents *one* species, not *all* of them
@@ -687,10 +693,15 @@ void transport::reduce_radiation()
 		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 		for(int i=my_begin; i<my_end; i++) grid->z[i].e_abs = receive[i-my_begin] / (double)MPI_nprocs;
 
-		// reduce l_abs
-		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].l_abs;
+		// reduce nue_abs
+		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].nue_abs;
 		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-		for(int i=my_begin; i<my_end; i++) grid->z[i].l_abs = receive[i-my_begin] / (double)MPI_nprocs;
+		for(int i=my_begin; i<my_end; i++) grid->z[i].nue_abs = receive[i-my_begin] / (double)MPI_nprocs;
+
+		// reduce anue_abs
+		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].anue_abs;
+		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		for(int i=my_begin; i<my_end; i++) grid->z[i].anue_abs = receive[i-my_begin] / (double)MPI_nprocs;
 
 		// reduce e_emit
 		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_emit;
@@ -780,7 +791,7 @@ void transport::update_zone_quantities(){
 		if(solve_Ye){
 			double Nbary = grid->zone_rest_mass(i) / mean_mass(i);
 			assert(Nbary > 0);
-			z->Ye += (z->l_abs-z->l_emit) / Nbary;
+			z->Ye += (z->nue_abs-z->anue_abs - z->l_emit) / Nbary;
 			assert(z->Ye >= Ye_min);
 			assert(z->Ye <= Ye_max);
 		}

@@ -200,10 +200,16 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	// factor of this_d which is divided out later
 	double this_l_comoving = 0;
 	if(species_list[p->s]->lepton_number != 0){
-		this_l_comoving = species_list[p->s]->lepton_number * com_e/(com_nu*pc::h) * com_d;
+		this_l_comoving = com_e/(com_nu*pc::h) * com_d;
 		to_add = this_l_comoving * (com_opac*abs_frac);
-        #pragma omp atomic
-		zone->l_abs += to_add;
+		if(species_list[p->s]->lepton_number == 1){
+            #pragma omp atomic
+			zone->nue_abs += to_add;
+		}
+		else if(species_list[p->s]->lepton_number == -1){
+            #pragma omp atomic
+			zone->anue_abs += to_add;
+		}
 	}
 }
 

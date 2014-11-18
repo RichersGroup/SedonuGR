@@ -218,6 +218,15 @@ double cdf_array::invert_linear(const double rand, const locate_array* xgrid, co
 	assert(xRight>=result);
 	return result;
 }
+double cdf_array::invert_piecewise(const double rand, const locate_array* xgrid, const int i_in) const
+{
+	assert(rand>=0 && rand<=1);
+	int i = (i_in<0 ? get_index(rand) : i_in);
+	assert(i<(int)size());
+	assert(i>=0);
+
+	return xgrid->center(i);
+}
 
 //------------------------------------------------------
 // Simple printout

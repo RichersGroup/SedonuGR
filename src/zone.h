@@ -28,7 +28,8 @@ public:
 	// radiation quantities (all in comoving frame) (dVdt and lepton number are relativistic invariants)
 	double e_rad;                         // radiation energy density  (ergs/cm^3) in lab frame
 	double e_abs;                         // radiation energy deposition density rate (ergs/cm^3/s)
-	double l_abs;                         // lepton number deposition density rate (cm^-3 s^-1)
+	double nue_abs;                       // electron neutrino number deposition density rate (cm^-3 s^-1)
+	double anue_abs;                      // electron anti-neutrino number deposition density rate (cm^-3 s^-1)
 	double e_emit;                        // radiation energy emission rate (erg/ccm/s)
 	double l_emit;						  // lepton number emission rate (cm^-3 s^-1)
 	vector<spectrum_array> distribution;  // radiation energy density for each species (erg/ccm. Integrated over bin frequency and direction)

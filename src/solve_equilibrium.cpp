@@ -8,8 +8,9 @@
 #include "grid_general.h"
 #include "species_general.h"
 
-double temp_eq_function(int z_ind, double T,  transport* sim);
-double   Ye_eq_function(int z_ind, double Ye, transport* sim);
+double    temp_eq_function(int z_ind, double T,  transport* sim);
+double  Ye_nue_eq_function(int z_ind, double Ye, transport* sim);
+double Ye_anue_eq_function(int z_ind, double Ye, transport* sim);
 
 
 //-------------------------------------------------------------
@@ -62,7 +63,13 @@ void transport::solve_eq_zone_values()
 			if(solve_Ye)
 			{
 				Ye_last_iter = grid->z[z_ind].Ye;
-				grid->z[z_ind].Ye    = brent_method(z_ind, Ye_eq_function,   Ye_min, Ye_max);
+				double nue_abs = grid->z[z_ind].nue_abs;
+				double anue_abs = grid->z[z_ind].anue_abs;
+				double weight2 =  nue_abs / (nue_abs+anue_abs);
+				double weight1 = anue_abs / (nue_abs+anue_abs);
+				double Ye1 = brent_method(z_ind, Ye_nue_eq_function,   Ye_min, Ye_max);
+				double Ye2 = brent_method(z_ind, Ye_anue_eq_function,  Ye_min, Ye_max);
+				grid->z[z_ind].Ye = weight1*Ye1 + weight2*Ye2;
 				Ye_error = fabs( (grid->z[z_ind].Ye    - Ye_last_iter) / (Ye_last_iter) );
 			}
 			iter++;
@@ -72,9 +79,9 @@ void transport::solve_eq_zone_values()
 		if(iter == brent_itmax){
 			cout << "# WARNING: outer Brent solver hit maximum iterations. (zone:" << z_ind;
 			cout << " processor:" << MPI_myID;
-#ifdef _OPENMP_
+            #ifdef _OPENMP_
 			cout << " thread:" << omp_get_thread_num();
-#endif
+            #endif
 			cout << ")" << endl;
 		}
 
@@ -164,7 +171,7 @@ double temp_eq_function(int z_ind, double T, transport* sim)
 // The Brent solver below to determine the temperature such
 // that RadEq holds
 //----------------------------------------------------------------------------
-double Ye_eq_function(int z_ind, double Ye, transport* sim)
+double Ye_nue_eq_function(int z_ind, double Ye, transport* sim)
 {
 	assert(z_ind >= 0);
 	assert(z_ind < (int)sim->grid->z.size());
@@ -172,7 +179,7 @@ double Ye_eq_function(int z_ind, double Ye, transport* sim)
 	assert(Ye <= 1);
 
 	// total energy absorbed in zone
-	double l_absorbed = sim->grid->z[z_ind].l_abs;
+	double l_absorbed = sim->grid->z[z_ind].nue_abs;
 	// total energy emitted (to be calculated)
 	double l_emitted = 0.;
 
@@ -180,7 +187,7 @@ double Ye_eq_function(int z_ind, double Ye, transport* sim)
 	sim->grid->z[z_ind].Ye = Ye;
 
 	// include the emission from all species
-	for(unsigned i=0; i<sim->species_list.size(); i++)
+	for(unsigned i=0; i<sim->species_list.size(); i++) if(sim->species_list[i]->lepton_number>0)
 	{
 		// reset the eas variables in this zone
 		// OPTIMIZE - only set the emissivity variable
@@ -192,6 +199,43 @@ double Ye_eq_function(int z_ind, double Ye, transport* sim)
 		// held constant for this (assumed not to change
 		// much from the last time step).
 		l_emitted += 4.0*pc::pi * sim->species_list[i]->integrate_zone_lepton_emis(z_ind);
+		assert(l_emitted>0);
+	}
+
+	// radiative equillibrium condition: "emission equals absorbtion"
+	// return to Brent function to iterate this to zero
+	return (l_emitted - l_absorbed);
+}
+double Ye_anue_eq_function(int z_ind, double Ye, transport* sim)
+{
+	assert(z_ind >= 0);
+	assert(z_ind < (int)sim->grid->z.size());
+	assert(Ye >= 0);
+	assert(Ye <= 1);
+
+	// total energy absorbed in zone
+	double l_absorbed = sim->grid->z[z_ind].anue_abs;
+	// total energy emitted (to be calculated)
+	double l_emitted = 0.;
+
+	// set the zone temperature
+	sim->grid->z[z_ind].Ye = Ye;
+
+	// include the emission from all species
+	for(unsigned i=0; i<sim->species_list.size(); i++) if(sim->species_list[i]->lepton_number<0)
+	{
+		// reset the eas variables in this zone
+		// OPTIMIZE - only set the emissivity variable
+		sim->species_list[i]->set_eas(z_ind);
+
+		// integrate emissison over frequency (angle
+		// integration gives the 4*PI) to get total
+		// radiation energy emitted. Opacities are
+		// held constant for this (assumed not to change
+		// much from the last time step).
+		// minus sign since integrate_zone_lepton_emis will return a negative number
+		l_emitted -= 4.0*pc::pi * sim->species_list[i]->integrate_zone_lepton_emis(z_ind);
+		assert(l_emitted>0);
 	}
 
 	// radiative equillibrium condition: "emission equals absorbtion"

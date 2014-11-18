@@ -12,7 +12,8 @@ zone::zone(const int dimensionality){
 	H_com = NaN;
 	e_rad = NaN;
 	e_abs = NaN;
-	l_abs = NaN;
+	nue_abs = NaN;
+	anue_abs = NaN;
 	e_emit = NaN;
 	l_emit = NaN;
 	t_eabs = NaN;

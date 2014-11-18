@@ -36,11 +36,13 @@ void species_general::init(Lua* lua, transport* simulation)
 
 	// allocate space for each eas spectrum
 	if(sim->n_emit_core > 0) core_emis.resize(nu_grid.size());
+	int iorder = lua->scalar<int>("cdf_interpolation_order");
     #pragma omp parallel for
 	for(unsigned i=0; i<abs_opac.size();  i++){
 		abs_opac[i].resize(nu_grid.size());
 		scat_opac[i].resize(nu_grid.size());
 		emis[i].resize(nu_grid.size());
+		emis[i].interpolation_order = iorder;
 	}
 
     // set up the spectrum in each zone
@@ -110,8 +112,9 @@ double species_general::sample_core_nu(const int g) const
 	if(rand==0 && nu_grid.min==0) while(rand==0) rand = sim->rangen.uniform();
 
 	double result = 0;
-	assert(core_emis.interpolation_order==1 || core_emis.interpolation_order==3);
-	if     (core_emis.interpolation_order==1) result = core_emis.invert_linear(rand,&nu_grid,g);
+	assert(core_emis.interpolation_order==1 || core_emis.interpolation_order==3 || core_emis.interpolation_order==0);
+	if     (core_emis.interpolation_order==0) result = core_emis.invert_piecewise(rand,&nu_grid,g);
+	else if(core_emis.interpolation_order==1) result = core_emis.invert_linear(rand,&nu_grid,g);
 	else if(core_emis.interpolation_order==3) result = core_emis.invert_cubic(rand,&nu_grid,g);
 	assert(result>0);
 	return result;
@@ -132,8 +135,9 @@ double species_general::sample_zone_nu(const int zone_index, const int g) const
 	if(rand==0 && nu_grid.min==0) while(rand==0) rand = sim->rangen.uniform();
 
 	double result = 0;
-	assert(core_emis.interpolation_order==1 || core_emis.interpolation_order==3);
-	if     (core_emis.interpolation_order==1) result = emis[zone_index].invert_linear(rand,&nu_grid,g);
+	assert(core_emis.interpolation_order==1 || core_emis.interpolation_order==3 || core_emis.interpolation_order==0);
+	if     (core_emis.interpolation_order==0) result = emis[zone_index].invert_piecewise(rand,&nu_grid,g);
+	else if(core_emis.interpolation_order==1) result = emis[zone_index].invert_linear(rand,&nu_grid,g);
 	else if(core_emis.interpolation_order==3) result = emis[zone_index].invert_cubic(rand,&nu_grid,g);
 	assert(result>0);
 	return result;

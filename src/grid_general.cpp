@@ -127,7 +127,7 @@ void grid_general::write_line(ofstream& outf, const int z_ind) const{
 	outf << net_neutrino_energy_source << "\t";
 
 	double n_baryons_per_ccm = z[z_ind].rho / transport::mean_mass(z[z_ind].Ye);
-	double dYe_dt = (z[z_ind].l_abs - z[z_ind].l_emit) / n_baryons_per_ccm;
+	double dYe_dt = (z[z_ind].nue_abs-z[z_ind].anue_abs - z[z_ind].l_emit) / n_baryons_per_ccm;
 	outf << dYe_dt << "\t";
 
 	outf << z[z_ind].Q_annihil << "\t";
