@@ -6,7 +6,6 @@
 *ray_*
 *fluid_*
 *.exe
-make.inc
 *gomc
 src/*.d
 external/hdf5*
