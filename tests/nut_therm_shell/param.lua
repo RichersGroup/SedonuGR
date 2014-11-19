@@ -30,13 +30,13 @@ nut_spec_n_phi      = 1
 -- particle creation parameters
 
 n_initial      = 0
-n_emit_core    = 1e6
+n_emit_core    = 1e5
 n_emit_therm   = 0
-max_particles  = 1e6
+max_particles  = 1e5
 emissions_per_timestep = 1
-cdf_interpolation_order = 1
-nut_cdf_cutoff = 1e-2
-ratio_emit_by_zone = 0
+cdf_interpolation_order = 0
+nut_cdf_cutoff = 0
+ratio_emit_by_bin = 1
 
 -- particle propagation parameters
 
@@ -61,4 +61,4 @@ opac_interp_method = 0
 
 damping = 0.1
 brent_itmax = 100
-brent_tolerance = 1e-5
+brent_tolerance = 1e-10

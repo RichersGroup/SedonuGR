@@ -9,21 +9,21 @@
 #include <fstream>
 #include "Lua.h"
 #include "transport.h"
-#include "EOSsuper_interface.h"
 #include "species_general.h"
 #include "grid_general.h"
+#include "nulib_interface.h"
 
 double run_test(const int nsteps, const bool rank0, const double dt, const double rho, const double T_MeV, const double target_ye, transport& sim, ofstream& outf){
 	if(rank0) cout << "Currently running: rho=" << rho << "g/ccm T_core=" << T_MeV << "MeV Ye=" << target_ye << endl;
 
 	// set the fluid properties
 	sim.grid->z[0].rho = rho;
-	sim.grid->z[0].T = min(T_MeV/pc::k_MeV*1.1,100/pc::k_MeV);
-	sim.grid->z[0].Ye = min(target_ye*1.1,0.55);
+	sim.grid->z[0].T = T_MeV/pc::k_MeV; //min(T_MeV/pc::k_MeV*1.1,100/pc::k_MeV);
+	sim.grid->z[0].Ye = target_ye; //min(target_ye*1.1,0.55);
 	double T_core = T_MeV/pc::k_MeV;
 
 	// reconfigure the core
-	double munue = EOSsuper_munue(rho,T_core,target_ye);
+	double munue = nulib_eos_munue(rho,T_core,target_ye);
 	sim.init_core(sim.r_core,T_core,munue);
 	assert(sim.core_species_luminosity.N>0);
 
@@ -91,7 +91,7 @@ int main(int argc, char **argv)
 	double proc_time_start = MPI_Wtime();
 
 	// read in eos table
-	nuc_eos::nuc_eos_C_ReadTable(argv[14]);
+	nulib_eos_read_table(argv[14]);
 
 	// open up the lua parameter file
 	Lua lua;
