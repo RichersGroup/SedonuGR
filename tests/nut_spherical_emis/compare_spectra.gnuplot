@@ -1,3 +1,4 @@
+set pointsize 0.25
 k_b = 1.3806488e-16 # erg/K
 c = 2.99e10         #cm/s
 h = 6.62606957e-27  #erg/Hz
