@@ -15,7 +15,7 @@ reflect_outer = 0
 
 grid_type = "grid_1D_sphere"
 model_file  =  "empty_sphere.mod"
-nulib_table = "/home/srichers/software/NuLib/NuLib_LS220_rho82_temp65_ye65_ng48_ns3_version1.0_20141027.h5"  --"/data/tables/NuLib/NuLib_HShen_noscat_integrated.h5"
+nulib_table = "/data/tables/NuLib/NuLib_HShen_noscat_highnures.h5"
 write_zones_every   = 1
 write_rays_every    = 1
 write_spectra_every = 1
@@ -36,11 +36,11 @@ distribution_nphi = 2
 n_initial      = 0
 n_emit_core    = 1e6
 n_emit_therm   = 0
-max_particles  = 1e7
+max_particles  = 1e6
 emissions_per_timestep = 1
 cdf_interpolation_order = 1
-nut_cdf_cutoff    = 1e-2
-ratio_emit_by_zone = 0
+nut_cdf_cutoff    = 0
+ratio_emit_by_bin = 0
 
 -- particle propagation parameters
 
@@ -52,7 +52,7 @@ step_size = 0.4
 
 r_core = 9.99999e5                  -- core radius (cm)
 T_core = 10                      -- core temperature (K) (10 MeV)
-core_nue_chem_pot = 10              -- chempot of Ye=0.167031, T=10MeV according to LS220
+core_nue_chem_pot = 0              -- chempot of Ye=0.167031, T=10MeV according to LS220
 core_lum_multiplier = 1.0
 
 -- opacity parameters
