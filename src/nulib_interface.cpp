@@ -27,6 +27,10 @@ void nulibtable_single_species_range_energy_(
 		int*);   //number of easvariables(3)
 
 void nulibtable_reader_(char*,int);
+
+void read_eos_table_(char* filename);
+
+void set_eos_variables_(double* eos_variables);
 }
 // The global variables that will be used, independent of fortran compiler version
 int     nulibtable_number_species;
@@ -48,6 +52,7 @@ double  nulibtable_logrho_min;
 double  nulibtable_logrho_max;
 double  nulibtable_ye_min;
 double  nulibtable_ye_max;
+int     nulib_total_eos_variables;
 
 // The format of the fortran variables the fortran compiler provides
 // assumes C and Fortran compilers are the same
@@ -72,6 +77,7 @@ extern double  nulibtable_mp_nulibtable_logrho_min_;
 extern double  nulibtable_mp_nulibtable_logrho_max_;
 extern double  nulibtable_mp_nulibtable_ye_min_;
 extern double  nulibtable_mp_nulibtable_ye_max_;
+extern int     nulib_mp_total_eos_variables_;
 #elif defined __GNUC__
 extern int     __nulibtable_MOD_nulibtable_number_species;
 extern int     __nulibtable_MOD_nulibtable_number_easvariables;
@@ -92,6 +98,7 @@ extern double  __nulibtable_MOD_nulibtable_logrho_min;
 extern double  __nulibtable_MOD_nulibtable_logrho_max;
 extern double  __nulibtable_MOD_nulibtable_ye_min;
 extern double  __nulibtable_MOD_nulibtable_ye_max;
+extern int     __nulib_MOD_total_eos_variables;
 #elif defined __PGI
 #else
 #warning "The fortran interface is only configured for Intel and GNU compilers. Attempting default variable names. If this does not work you must modify src/nulib_interface.cpp to get your C++ and Fortran compilers to play nicely together."
@@ -101,7 +108,7 @@ extern double  __nulibtable_MOD_nulibtable_ye_max;
 /**************************************/
 /* set the universal global variables */
 /**************************************/
-void set_globals(){
+void nulibtable_set_globals(){
 #ifdef __INTEL_COMPILER
 	nulibtable_number_species       = nulibtable_mp_nulibtable_number_species_;
 	nulibtable_number_easvariables  = nulibtable_mp_nulibtable_number_easvariables_;
@@ -144,6 +151,13 @@ void set_globals(){
 	nulibtable_ye_max              = __nulibtable_MOD_nulibtable_ye_max;
 #endif
 }
+void nulib_set_globals(){
+#ifdef __INTEL_COMPILER
+	nulib_total_eos_variables       = nulib_mp_total_eos_variables_;
+#elif defined __GNUC__
+	nulib_total_eos_variables      = __nulib_MOD_total_eos_variables;
+#endif
+}
 
 /**********************/
 /* nulib_get_nspecies */
@@ -158,7 +172,7 @@ int nulib_get_nspecies(){
 /**************/
 void nulib_init(string filename){
 	nulibtable_reader_((char*)filename.c_str(), filename.length());
-	set_globals();
+	nulibtable_set_globals();
 }
 
 
@@ -326,3 +340,24 @@ double nulib_get_rhomin() {return pow(10,nulibtable_logrho_min);}
 double nulib_get_rhomax() {return pow(10,nulibtable_logrho_max);}
 double nulib_get_Yemin()  {return nulibtable_ye_min;}
 double nulib_get_Yemax()  {return nulibtable_ye_max;}
+
+/*************/
+/* eos calls */
+/*************/
+void nulib_eos_read_table(char* eos_filename){
+	read_eos_table_(eos_filename);
+	nulib_set_globals();
+}
+
+double nulib_eos_munue(const double rho, const double temp, const double ye){
+	double eos_variables[nulib_total_eos_variables];
+	for(int i=0; i<nulib_total_eos_variables; i++) eos_variables[i] = 0;
+	eos_variables[0] = rho;
+	eos_variables[1] = temp * pc::k_MeV;
+	eos_variables[2] = ye;
+
+	set_eos_variables_(eos_variables);
+	double mue = eos_variables[10];
+	double muhat = eos_variables[13];
+	return (mue-muhat)*pc::MeV_to_ergs;
+}

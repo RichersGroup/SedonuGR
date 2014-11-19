@@ -23,6 +23,9 @@ double nulib_get_Yemax();
 double nulib_get_rhomin();
 double nulib_get_rhomax();
 
+void   nulib_eos_read_table(char* eos_filename);
+double nulib_eos_munue(const double rho, const double temp, const double ye);
+
 void nulib_get_rho_array(vector<double>& array);
 void nulib_get_T_array(vector<double>& array);
 void nulib_get_Ye_array(vector<double>& array);
