@@ -33,9 +33,5 @@ NULIB_LIBS=$(NULIB_DIR)/nulib.a -lgfortran $(NULIB_DIR)/nuc_eos/nuc_eos.a $(NULI
 HELMHOLTZ_EOS=0
 MODINC="-I ./"
 
-#EOSsuper
-EOSSUPER_DIR=$(CURDIR)/external/EOSsuper
-EOSSUPER_LIBS=$(EOSSUPER_DIR)/nuc_eos_full.o $(EOSSUPER_DIR)/nuc_eos.a
-
 #OTHER
 OTHER_LIBS=
