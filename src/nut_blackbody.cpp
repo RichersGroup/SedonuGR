@@ -10,6 +10,7 @@
 #include "Lua.h"
 #include "transport.h"
 #include "species_general.h"
+#include "nulib_interface.h"
 #include "global_options.h"
 
 
@@ -23,6 +24,10 @@ void run_test(const bool rank0, const double dt, const double rho, const double 
 
 	// do the transport step
 	sim.step(dt);
+
+	// get the chemical potential
+	double munue = nulib_eos_munue(rho,T/pc::k_MeV,ye);
+	if(rank0) outf << munue*pc::ergs_to_MeV << "\t";
 
 	// write the data out to file
 	if(rank0) sim.grid->write_line(outf,0);
@@ -49,7 +54,7 @@ int main(int argc, char **argv)
 	double max_logT  , min_logT  , T0;
 	double max_ye    , min_ye    , ye0;
 	int n_rho, n_T, n_ye;
-	assert(argc==14);
+	assert(argc==15);
 	sscanf(argv[2 ], "%lf", &min_logrho);
 	sscanf(argv[3 ], "%lf", &max_logrho);
 	sscanf(argv[4 ], "%lf", &rho0);
@@ -68,6 +73,9 @@ int main(int argc, char **argv)
 
 	// start timer
 	double proc_time_start = MPI_Wtime();
+
+	// read in eos table
+	nulib_eos_read_table(argv[14]);
 
 	// open up the lua parameter file
 	Lua lua;
@@ -88,7 +96,7 @@ int main(int argc, char **argv)
 
 	// open the output file
 	ofstream outf;
-	outf.open("results.dat");
+	if(rank0) outf.open("results.dat");
 
 	//==============//
 	// DENSITY LOOP //
@@ -122,7 +130,7 @@ int main(int argc, char **argv)
 			time_wasted,time_wasted/60.0,time_wasted/60.0/60.0);
 
 	// exit the program
-	outf.close();
+	if(rank0) outf.close();
 	MPI_Finalize();
 	return 0;
 }
