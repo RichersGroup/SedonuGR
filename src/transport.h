@@ -77,8 +77,6 @@ private:
 	void remove_dead_particles();
 
 	// solve for temperature and Ye (if steady_state)
-	int    solve_T;
-	int    solve_Ye;
 	double damping;
 	int    brent_itmax;
 	double brent_solve_tolerance;
@@ -90,9 +88,6 @@ private:
 	void update_zone_quantities();
 
 	// stored minimum and maximum values to assure safety
-	double T_min,  T_max;
-	double Ye_min, Ye_max;
-	double rho_min, rho_max;
 	int max_particles;
 
 	// simulation parameters
@@ -126,6 +121,12 @@ public:
 
 	int verbose;
 	double current_time();
+
+	int    solve_T;
+	int    solve_Ye;
+	double T_min,  T_max;
+	double Ye_min, Ye_max;
+	double rho_min, rho_max;
 
 	// arrays of species
 	vector<species_general*> species_list;

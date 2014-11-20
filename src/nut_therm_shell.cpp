@@ -18,6 +18,12 @@ double run_test(const int nsteps, const bool rank0, const double dt, const doubl
 
 	// set the fluid properties
 	sim.grid->z[0].rho = rho;
+	double error = 1.2;
+	if(sim.solve_T>0 ) sim.grid->z[0].T  = min(T_MeV/pc::k_MeV*error,sim.T_max);
+	else               sim.grid->z[0].T  = T_MeV/pc::k_MeV;
+	if(sim.solve_Ye>0) sim.grid->z[0].Ye = min(target_ye*error,sim.Ye_max);
+	else               sim.grid->z[0].Ye = target_ye;
+
 	sim.grid->z[0].T = T_MeV/pc::k_MeV; //min(T_MeV/pc::k_MeV*1.1,100/pc::k_MeV);
 	sim.grid->z[0].Ye = target_ye; //min(target_ye*1.1,0.55);
 	double T_core = T_MeV/pc::k_MeV;
