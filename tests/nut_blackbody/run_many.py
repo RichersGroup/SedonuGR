@@ -72,6 +72,7 @@ print string
 os.system(string)
 
 results = np.loadtxt("results.dat",usecols=(0,2,3,4))
+os.system("rm -f predicted.dat")
 for i in range(len(results)):
     munue = results[i][0]
     rho   = results[i][1]

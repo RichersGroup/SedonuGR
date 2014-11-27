@@ -12,6 +12,9 @@ using namespace std;
 void nulib_init(string filename);
 void nulib_get_eas_arrays(double rho, double temp, double ye, int nulibID,
 		cdf_array& nut_emiss, vector<double>& nut_absopac, vector<double>& nut_scatopac);
+void nulib_get_epannihil_kernels(double rho, double temp, double ye, int nulibID,
+								 vector< vector< vector<double> > >& phi_production,
+								 vector< vector< vector<double> > >& phi_annihilation);
 void nulib_get_pure_emis(double rho, double temp, double ye, int nulibID, vector<double>& pure_emis);
 void nulib_get_nu_grid(locate_array& nut_nu_grid);
 int nulib_get_nspecies();

@@ -104,7 +104,7 @@ void grid_general::write_header(ofstream& outf) const{
 	zone_coordinates(0,r);
 	const int dimensionality = r.size();
 	for(int i=0; i<dimensionality; i++) outf << "r[" << i << "] ";
-	outf << "1-e_rad(erg/ccm)  2-rho(g/ccm)  3-T_gas(MeV)  4-Ye  5-t_therm  6-t_lep  7-|v|(cm/s)  8-H-C(erg/g/s)  9-dYe_dt(1/s) 10-annihilation_rate(erg/ccm/s)" << endl;
+	outf << "1-comoving_volume(ccm)  2-rho(g/ccm)  3-T_gas(MeV)  4-Ye  5-e_rad(erg/ccm)  6-H_vis(erg/s/g) 7-t_therm  8-t_lep  9-|v|(cm/s)  10-H-C(erg/g/s)  11-dYe_dt(1/s) 12-annihilation_rate(erg/ccm/s)" << endl;
 }
 
 void grid_general::write_line(ofstream& outf, const int z_ind) const{
@@ -113,10 +113,12 @@ void grid_general::write_line(ofstream& outf, const int z_ind) const{
 
 	for(unsigned i=0; i<r.size(); i++) outf << r[i] << " ";
 
-	outf << z[z_ind].e_rad << "\t";
+	outf << zone_comoving_volume(z_ind) << "\t";
 	outf << z[z_ind].rho   << "\t";
 	outf << z[z_ind].T*pc::k_MeV << "\t";
 	outf << z[z_ind].Ye    << "\t";
+	outf << z[z_ind].H_com << "\t";
+	outf << z[z_ind].e_rad << "\t";
 
 	outf << 1.0 / fabs(1.0/z[z_ind].t_eabs - 1.0/z[z_ind].t_eemit) << "\t";
 	outf << 1.0 / fabs(1.0/z[z_ind].t_labs - 1.0/z[z_ind].t_lemit) << "\t";
