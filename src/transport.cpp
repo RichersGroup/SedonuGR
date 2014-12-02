@@ -761,7 +761,7 @@ void transport::synchronize_gas()
 // rate at which viscosity energizes the fluid (erg/s)
 double transport::zone_comoving_visc_heat_rate(const int z_ind) const{
 	if(visc_specific_heat_rate >= 0) return visc_specific_heat_rate * grid->z[z_ind].rho * grid->zone_comoving_volume(z_ind);
-	else                             return grid->z[z_ind].H_com    * grid->z[z_ind].rho * grid->zone_comoving_volume(z_ind);
+	else                             return grid->z[z_ind].H_vis    * grid->z[z_ind].rho * grid->zone_comoving_volume(z_ind);
 }
 
 

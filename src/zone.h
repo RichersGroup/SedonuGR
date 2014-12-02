@@ -23,7 +23,7 @@ public:
 	double Ye;              // electron fraction
 
 	// store other parameters
-	double H_com;               // specific heating rate (erg/s/g)
+	double H_vis;               // specific heating rate (erg/s/g)
 
 	// radiation quantities (all in comoving frame) (dVdt and lepton number are relativistic invariants)
 	double e_rad;                         // radiation energy density  (ergs/cm^3) in lab frame

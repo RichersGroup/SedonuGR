@@ -48,7 +48,7 @@ void grid_1D_sphere::read_model_file(Lua* lua)
 		infile >> z[z_ind].rho;
 		infile >> z[z_ind].T;
 		infile >> z[z_ind].Ye;
-		z[z_ind].H_com = 0;
+		z[z_ind].H_vis = 0;
 		z[z_ind].e_rad = 0;
 		z[z_ind].v[0] = 0;
 		assert(r_out[z_ind] > (z_ind==0 ? r_out.min : r_out[z_ind-1]));

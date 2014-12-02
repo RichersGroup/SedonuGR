@@ -37,7 +37,9 @@ void grid_general::init(Lua* lua)
 	double total_nonrel_KE   = 0.0;
 	double total_rel_TE      = 0.0;
 	double total_nonrel_TE   = 0.0;
-    #pragma omp parallel for reduction(+:total_nonrel_mass, total_rest_mass, total_rel_KE, total_nonrel_KE, total_rel_TE, total_nonrel_TE)
+	double total_hvis        = 0.0;
+	int do_visc = lua->scalar<int>("do_visc");
+    #pragma omp parallel for reduction(+:total_nonrel_mass, total_rest_mass, total_rel_KE, total_nonrel_KE, total_rel_TE, total_nonrel_TE, total_hvis)
 	for(unsigned z_ind=0;z_ind<z.size();z_ind++){
 		double rest_mass   = z[z_ind].rho * zone_comoving_volume(z_ind);
 		assert(rest_mass >= 0);
@@ -53,12 +55,14 @@ void grid_general::init(Lua* lua)
 		total_nonrel_KE += 0.5 * nonrel_mass * zone_speed2(z_ind);
 		total_rel_TE    += (rest_mass>0 ? rest_mass   / pc::m_n * pc::k * z[z_ind].T : 0);
 		total_nonrel_TE += nonrel_mass / pc::m_n * pc::k * z[z_ind].T;
+		if(do_visc) total_hvis += z[z_ind].H_vis * z[z_ind].rho * zone_comoving_volume(z_ind);
 		//}
 	}
 	if (rank0){
 		cout << "#   mass = " << total_rest_mass << " g (nonrel: " << total_nonrel_mass << " g)" <<endl;
 		cout << "#   KE = " << total_rel_KE << " erg (nonrel: " << total_nonrel_KE << " erg)" << endl;
 		cout << "#   TE = " << total_rel_TE << " erg (nonrel: " << total_nonrel_TE << " erg)" << endl;
+		if(do_visc) cout << "#   hvis = " << total_hvis << " erg/s" << endl;
 	}
 }
 
@@ -102,9 +106,21 @@ void grid_general::write_header(ofstream& outf) const{
 	outf << "# ";
 	vector<double> r;
 	zone_coordinates(0,r);
-	const int dimensionality = r.size();
-	for(int i=0; i<dimensionality; i++) outf << "r[" << i << "] ";
-	outf << "1-comoving_volume(ccm)  2-rho(g/ccm)  3-T_gas(MeV)  4-Ye  5-e_rad(erg/ccm)  6-H_vis(erg/s/g) 7-t_therm  8-t_lep  9-|v|(cm/s)  10-H-C(erg/g/s)  11-dYe_dt(1/s) 12-annihilation_rate(erg/ccm/s)" << endl;
+	unsigned c=0;
+	for(unsigned i=0; i<r.size(); i++) outf << ++c << "-r[" << i << "]  ";
+	outf << ++c << "-comoving_volume(ccm)  ";
+	outf << ++c << "-rho(g/ccm)  ";
+	outf << ++c << "-T_gas(MeV)  ";
+	outf << ++c << "-Ye  ";
+	outf << ++c << "-e_rad(erg/ccm)  ";
+	outf << ++c << "-H_vis(erg/s/g)  ";
+	outf << ++c << "-t_therm  ";
+	outf << ++c << "-t_lep  ";
+	outf << ++c << "-|v|(cm/s)  ";
+	outf << ++c << "-H-C(erg/g/s)  ";
+	outf << ++c << "-dYe_dt(1/s)  ";
+	outf << ++c << "-annihilation_rate(erg/ccm/s)  ";
+	outf << endl;
 }
 
 void grid_general::write_line(ofstream& outf, const int z_ind) const{
@@ -117,15 +133,15 @@ void grid_general::write_line(ofstream& outf, const int z_ind) const{
 	outf << z[z_ind].rho   << "\t";
 	outf << z[z_ind].T*pc::k_MeV << "\t";
 	outf << z[z_ind].Ye    << "\t";
-	outf << z[z_ind].H_com << "\t";
 	outf << z[z_ind].e_rad << "\t";
+	outf << z[z_ind].H_vis << "\t";
 
 	outf << 1.0 / fabs(1.0/z[z_ind].t_eabs - 1.0/z[z_ind].t_eemit) << "\t";
 	outf << 1.0 / fabs(1.0/z[z_ind].t_labs - 1.0/z[z_ind].t_lemit) << "\t";
 
 	outf << zone_speed2(z_ind) << "\t";
 
-	double net_neutrino_energy_source = (z[z_ind].e_abs - z[z_ind].e_emit) / z[z_ind].rho - z[z_ind].H_com;
+	double net_neutrino_energy_source = (z[z_ind].e_abs - z[z_ind].e_emit) / z[z_ind].rho - z[z_ind].H_vis;
 	outf << net_neutrino_energy_source << "\t";
 
 	double n_baryons_per_ccm = z[z_ind].rho / transport::mean_mass(z[z_ind].Ye);

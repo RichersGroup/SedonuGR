@@ -233,7 +233,7 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 				z[z_ind].rho               = dens[proc][kb][jb][ib];
 				z[z_ind].T                 = temp[proc][kb][jb][ib];
 				z[z_ind].Ye                = efrc[proc][kb][jb][ib];
-				if(do_visc) z[z_ind].H_com = hvis[proc][kb][jb][ib];
+				if(do_visc) z[z_ind].H_vis = hvis[proc][kb][jb][ib];
 				double vr              = velx[proc][kb][jb][ib];
 				double vtheta          = vely[proc][kb][jb][ib];
 				double vphi            = angz[proc][kb][jb][ib]/r[0]/sin(r[1]);
@@ -293,7 +293,7 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 		//double t_lep = 1.0/z_gamn[z_ind];
 		//double t_therm = m_zone*pc::k*z[z_ind].T/z_ncfn[z_ind];
 		if(z_ind%theta_out.size() == 0) outf << endl;
-		outf << r[0] << " " << r[1] << " " << z_gamn[z_ind] << " " << z_ncfn[z_ind] << " " << z[z_ind].H_com << endl;
+		outf << r[0] << " " << r[1] << " " << z_gamn[z_ind] << " " << z_ncfn[z_ind] << " " << z[z_ind].H_vis << endl;
 	}
 	outf.close();
 
@@ -391,7 +391,7 @@ void grid_2D_sphere::custom_model(Lua* lua)
 		infile >> z[base_ind].rho;
 		infile >> z[base_ind].T;
 		infile >> z[base_ind].Ye;
-		z[base_ind].H_com = 0;
+		z[base_ind].H_vis = 0;
 		z[base_ind].e_rad = 0;
 		assert(z[base_ind].v.size() == 3);
 		z[base_ind].v[0] = 0;

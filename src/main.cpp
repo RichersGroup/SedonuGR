@@ -46,8 +46,10 @@ int main(int argc, char **argv)
 	lua.close();
 
 	// initial output
-	sim.grid->write_zones(0);
-	sim.grid->write_rays(0);
+	if(rank0){
+		sim.grid->write_zones(0);
+		sim.grid->write_rays(0);
+	}
 
 
 	//===========//

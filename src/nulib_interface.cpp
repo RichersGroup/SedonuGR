@@ -34,7 +34,7 @@ void nulibtable_epannihil_single_species_range_energy_(
 		int* ngroups2,
 		int* n_phis);
 
-void nulibtable_reader_(char*,bool*,bool*,int);
+void nulibtable_reader_(char*,int*,int*,int);
 
 void read_eos_table_(char* filename);
 
@@ -222,8 +222,8 @@ int nulib_get_nspecies(){
 /* nulib_init */
 /**************/
 void nulib_init(string filename){
-	bool include_Ielectron = false;
-	bool include_epannihil_kernels = false;
+	int include_Ielectron = 0;//false;
+	int include_epannihil_kernels = 0;//false;
 	nulibtable_reader_((char*)filename.c_str(), &include_Ielectron, &include_epannihil_kernels, filename.length());
 	nulibtable_set_globals();
 }

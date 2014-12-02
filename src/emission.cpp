@@ -129,7 +129,7 @@ void transport::emit_zones(const int n_emit_zones_per_bin, const double lab_dt, 
 
 			if(n_emit_zones_regular>0 && ratio_emit_by_bin<1.0){
 				// how much this zone emits. Always emits correct energy even if number of particles doesn't add up.
-				double this_n_emit = (double)n_emit_zones_regular * (com_emit_energy / tmp_net_energy) + 0.5;
+				unsigned this_n_emit = (double)n_emit_zones_regular * (com_emit_energy / tmp_net_energy) + 0.5;
 				if(com_emit_energy>0 && this_n_emit==0) this_n_emit = 1;
 				double Ep = com_emit_energy / (double)this_n_emit * (1.0 - ratio_emit_by_bin);
 				for (unsigned k=0; k<this_n_emit; k++){

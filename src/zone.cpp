@@ -9,7 +9,7 @@ zone::zone(const int dimensionality){
 	rho = NaN;
 	T = NaN;
 	Ye = NaN;
-	H_com = NaN;
+	H_vis = NaN;
 	e_rad = NaN;
 	e_abs = NaN;
 	nue_abs = NaN;
