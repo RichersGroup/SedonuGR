@@ -497,7 +497,7 @@ void transport::calculate_annihilation() const{
 		grid->z[z_ind].Q_annihil = Q;                      // erg/ccm/s
 		Q_annihil_net += Q * grid->zone_lab_volume(z_ind); // erg/s
 	}
-	cout << "finished." << endl;
+	if(rank0) cout << "finished." << endl;
 	if(rank0 && verbose) cout << "# Net neutrino annihilation rate: " << Q_annihil_net << " erg/s" << endl;
 }
 

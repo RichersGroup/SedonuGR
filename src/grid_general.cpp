@@ -120,6 +120,12 @@ void grid_general::write_header(ofstream& outf) const{
 	outf << ++c << "-H-C(erg/g/s)  ";
 	outf << ++c << "-dYe_dt(1/s)  ";
 	outf << ++c << "-annihilation_rate(erg/ccm/s)  ";
+	for(unsigned s=0; s<z[0].distribution.size(); s++){
+		for(unsigned g=0; g<z[0].distribution[s].size(); g++){
+			outf << ++c << "-s"<<s<<"g"<<g<<"edens(erg/ccm)  ";
+		}
+	}
+	if(z[0].distribution.size()>0) outf << ++c << "-integrated_edens(erg/ccm)  ";
 	outf << endl;
 }
 
@@ -149,6 +155,19 @@ void grid_general::write_line(ofstream& outf, const int z_ind) const{
 	outf << dYe_dt << "\t";
 
 	outf << z[z_ind].Q_annihil << "\t";
+
+	double integrated_edens = 0;
+	for(unsigned s=0; s<z[z_ind].distribution.size(); s++){
+		vector<double> direction_integrated_edens;
+		z[z_ind].distribution[s].integrate_over_direction(direction_integrated_edens);
+		assert(direction_integrated_edens.size() == z[z_ind].distribution[s].size());
+		for(unsigned g=0; g<z[z_ind].distribution[s].size(); g++){
+			outf << direction_integrated_edens[g] << "\t";
+			integrated_edens += direction_integrated_edens[g];
+		}
+	}
+	if(z[z_ind].distribution.size()>0) outf << integrated_edens << "\t";
+
 	outf << endl;
 }
 
@@ -157,8 +176,9 @@ bool grid_general::good_zone(const int z_ind) const{
 	//return (z->rho >= rho_min && z->rho <= rho_max &&
 	//  	    z->Ye  >= Ye_min  && z->Ye  <=  Ye_max &&
 	//        z->T   >=  T_min  && z->T   <=   T_max);
-        if(z_ind < 0) return false;
-	else return zone_speed2(z_ind) < pc::c*pc::c;
+	if(z_ind < 0) return false;
+	else if(zone_speed2(z_ind) > pc::c*pc::c) return false;
+	else return true;
 }
 
 
