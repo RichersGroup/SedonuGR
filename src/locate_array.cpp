@@ -192,7 +192,7 @@ double locate_array::value_at(const double xval, const vector<double>& y) const{
 }
 
 
-void locate_array::swap(locate_array new_array){
+void locate_array::swap(locate_array& new_array){
 	// swap the vectors
 	x.swap(new_array.x);
 
@@ -205,4 +205,16 @@ void locate_array::swap(locate_array new_array){
 	InterpolationMethod tmp = interpolation_method;
 	interpolation_method = new_array.interpolation_method;
 	new_array.interpolation_method = tmp;
+}
+
+void locate_array::copy(const locate_array& new_array){
+	// copy the vector
+	x.resize(new_array.x.size());
+	for(unsigned i=0; i<new_array.x.size(); i++) x[i] = new_array.x[i];
+
+	// copy the minimum value
+	min = new_array.min;
+
+	// copy the do_log_interpolate parameter
+	interpolation_method = new_array.interpolation_method;
 }

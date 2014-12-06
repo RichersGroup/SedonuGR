@@ -114,18 +114,18 @@ void grid_general::write_header(ofstream& outf) const{
 	outf << ++c << "-Ye  ";
 	outf << ++c << "-e_rad(erg/ccm)  ";
 	outf << ++c << "-H_vis(erg/s/g)  ";
-	outf << ++c << "-t_therm  ";
-	outf << ++c << "-t_lep  ";
+	//outf << ++c << "-t_therm  ";
+	//outf << ++c << "-t_lep  ";
 	outf << ++c << "-|v|(cm/s)  ";
 	outf << ++c << "-H-C(erg/g/s)  ";
 	outf << ++c << "-dYe_dt(1/s)  ";
 	outf << ++c << "-annihilation_rate(erg/ccm/s)  ";
+	if(z[0].distribution.size()>0) outf << ++c << "-integrated_edens(erg/ccm)  ";
 	for(unsigned s=0; s<z[0].distribution.size(); s++){
 		for(unsigned g=0; g<z[0].distribution[s].size(); g++){
 			outf << ++c << "-s"<<s<<"g"<<g<<"edens(erg/ccm)  ";
 		}
 	}
-	if(z[0].distribution.size()>0) outf << ++c << "-integrated_edens(erg/ccm)  ";
 	outf << endl;
 }
 
@@ -142,8 +142,8 @@ void grid_general::write_line(ofstream& outf, const int z_ind) const{
 	outf << z[z_ind].e_rad << "\t";
 	outf << z[z_ind].H_vis << "\t";
 
-	outf << 1.0 / fabs(1.0/z[z_ind].t_eabs - 1.0/z[z_ind].t_eemit) << "\t";
-	outf << 1.0 / fabs(1.0/z[z_ind].t_labs - 1.0/z[z_ind].t_lemit) << "\t";
+	//outf << 1.0 / fabs(1.0/z[z_ind].t_eabs - 1.0/z[z_ind].t_eemit) << "\t";
+	//outf << 1.0 / fabs(1.0/z[z_ind].t_labs - 1.0/z[z_ind].t_lemit) << "\t";
 
 	outf << zone_speed2(z_ind) << "\t";
 

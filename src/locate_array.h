@@ -26,7 +26,8 @@ public:
 	void init(const double start,const double stop,const double del, const InterpolationMethod imeth=constant);
 	void init(const double start,const double stop,const int n, const InterpolationMethod imeth=constant);
 	void init(const std::vector<double> a, const double minval, const InterpolationMethod imeth=constant);
-	void swap(locate_array new_array);
+	void swap(locate_array& new_array);
+	void copy(const locate_array& new_array);
 
 	// bottom of the bin left of i
 	double bottom(const int i) const{

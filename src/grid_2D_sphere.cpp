@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <cstdio>
 #include "H5Cpp.h"
 #include "grid_2D_sphere.h"
@@ -126,8 +127,9 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	float efrc[dims[0]][dims[1]][dims[2]][dims[3]]; //
 	float temp[dims[0]][dims[1]][dims[2]][dims[3]]; // K
 	float hvis[dims[0]][dims[1]][dims[2]][dims[3]]; // erg/g/s (viscous heating)
-	float gamn[dims[0]][dims[1]][dims[2]][dims[3]]; // erg/g/s (net neutrino heating-cooling)
-	float ncfn[dims[0]][dims[1]][dims[2]][dims[3]]; // 1/s     (net rate of change of Ye)
+	float gamn[dims[0]][dims[1]][dims[2]][dims[3]]; // 1/s     (net rate of change of Ye)
+	float ncfn[dims[0]][dims[1]][dims[2]][dims[3]]; // erg/g/s (net     charged-current neutrino heating-cooling)
+	float nprs[dims[0]][dims[1]][dims[2]][dims[3]]; // erg/g/s (net non-charged-current neutrino heating-cooling)
 	float eint[dims[0]][dims[1]][dims[2]][dims[3]]; // erg/g   (internal energy density)
 	float atms[dims[0]][dims[1]][dims[2]][dims[3]]; //         (hydrogen mass fraction)
 	float neut[dims[0]][dims[1]][dims[2]][dims[3]]; //         (neutron  mass fraction)
@@ -151,6 +153,8 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	dataset.read(&(gamn[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset = file.openDataSet("/ncfn");
 	dataset.read(&(ncfn[0][0][0][0]),H5::PredType::IEEE_F32LE);
+	dataset = file.openDataSet("/nprs");
+	dataset.read(&(nprs[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset = file.openDataSet("/eint");
 	dataset.read(&(eint[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset = file.openDataSet("/atms");
@@ -262,84 +266,124 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	//================================//
 	// output timescales in data file //
 	//================================//
-	vector<double> z_gamn(z.size());
-	vector<double> z_ncfn(z.size());
-	for(unsigned proc=0; proc<dims[0]; proc++)
-		for(unsigned jb=0; jb<dims[2]; jb++)
-			for(unsigned ib=0; ib<dims[3]; ib++){
-				// indices. moving by one proc in the x direction increases proc by 1
-				const int i_global = (proc%iprocs)*nxb + ib;
-				const int j_global = (proc/iprocs)*nyb + jb;
-				const int z_ind = zone_index(i_global, j_global);
-				assert(i_global < nr);
-				assert(j_global < ntheta);
-				assert(z_ind < n_zones);
+	if(rank0){
+		int width = 15;
 
-				z_gamn[z_ind] = gamn[proc][kb][jb][ib];
-				z_ncfn[z_ind] = ncfn[proc][kb][jb][ib];
-			}
+		vector<double> z_gamn(z.size());
+		vector<double> z_ncfn(z.size());
+		vector<double> z_nprs(z.size());
+		vector<double> z_eint(z.size());
+		for(unsigned proc=0; proc<dims[0]; proc++)
+			for(unsigned jb=0; jb<dims[2]; jb++)
+				for(unsigned ib=0; ib<dims[3]; ib++){
+					// indices. moving by one proc in the x direction increases proc by 1
+					const int i_global = (proc%iprocs)*nxb + ib;
+					const int j_global = (proc/iprocs)*nyb + jb;
+					const int z_ind = zone_index(i_global, j_global);
+					assert(i_global < nr);
+					assert(j_global < ntheta);
+					assert(z_ind < n_zones);
 
-	ofstream outf;
-	outf.open("rates_flash.dat");
-	outf << "r theta gamn(1/s) ncfn(erg/g/s) hvis(erg/g/s)" << endl;
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
-		// zone position
-		vector<double> r;
-		zone_coordinates(z_ind,r);
-		assert(r.size()==2);
+					z_gamn[z_ind] = gamn[proc][kb][jb][ib];
+					z_ncfn[z_ind] = ncfn[proc][kb][jb][ib];
+					z_nprs[z_ind] = nprs[proc][kb][jb][ib];
+					z_eint[z_ind] = eint[proc][kb][jb][ib];
+				}
 
-		//double gamma = transport::lorentz_factor(z[z_ind].v);
-		//double m_zone = z[z_ind].rho * zone_lab_volume(z_ind)*gamma;
-		//double t_lep = 1.0/z_gamn[z_ind];
-		//double t_therm = m_zone*pc::k*z[z_ind].T/z_ncfn[z_ind];
-		if(z_ind%theta_out.size() == 0) outf << endl;
-		outf << r[0] << " " << r[1] << " " << z_gamn[z_ind] << " " << z_ncfn[z_ind] << " " << z[z_ind].H_vis << endl;
+		ofstream outf;
+		outf.open("rates_flash.dat");
+		outf << setw(width) << "r(cm)";
+		outf << setw(width) << "theta";
+		outf << setw(width) << "gamn(1/s)";
+		outf << setw(width) << "ncfn(erg/g/s)";
+		outf << setw(width) << "nprs(erg/g/s)";
+		outf << setw(width) << "hvis(erg/g/s)";
+		outf << setw(width) << "eint(erg/g)";
+		outf << setw(width) << endl;
+		for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
+			// zone position
+			vector<double> r;
+			zone_coordinates(z_ind,r);
+			assert(r.size()==2);
+
+			//double gamma = transport::lorentz_factor(z[z_ind].v);
+			//double m_zone = z[z_ind].rho * zone_lab_volume(z_ind)*gamma;
+			//double t_lep = 1.0/z_gamn[z_ind];
+			//double t_therm = m_zone*pc::k*z[z_ind].T/z_ncfn[z_ind];
+			if(z_ind%theta_out.size() == 0) outf << endl;
+			outf << setw(width) << r[0];
+			outf << setw(width) << r[1];
+			outf << setw(width) << z_gamn[z_ind];
+			outf << setw(width) << z_ncfn[z_ind];
+			outf << setw(width) << z_nprs[z_ind];
+			outf << setw(width) << z[z_ind].H_vis;
+			outf << setw(width) << z_eint[z_ind];
+			outf << endl;
+		}
+		outf.close();
+
+		//=================================//
+		// output composition in data file //
+		//=================================//
+		vector<double> z_atms(z.size());
+		vector<double> z_neut(z.size());
+		vector<double> z_prot(z.size());
+		vector<double> z_alfa(z.size());
+		for(unsigned proc=0; proc<dims[0]; proc++)
+			for(unsigned jb=0; jb<dims[2]; jb++)
+				for(unsigned ib=0; ib<dims[3]; ib++){
+					// indices. moving by one proc in the x direction increases proc by 1
+					const int i_global = (proc%iprocs)*nxb + ib;
+					const int j_global = (proc/iprocs)*nyb + jb;
+					const int z_ind = zone_index(i_global, j_global);
+					assert(i_global < nr);
+					assert(j_global < ntheta);
+					assert(z_ind < n_zones);
+
+					z_atms[z_ind] = atms[proc][kb][jb][ib];
+					z_neut[z_ind] = neut[proc][kb][jb][ib];
+					z_prot[z_ind] = prot[proc][kb][jb][ib];
+					z_alfa[z_ind] = alfa[proc][kb][jb][ib];
+				}
+
+		outf.open("initial_composition.dat");
+		outf << setw(width) << "r(cm)";
+		outf << setw(width) << "theta";
+		outf << setw(width) << "x_hydrogen";
+		outf << setw(width) << "x_neutrons";
+		outf << setw(width) << "x_protons";
+		outf << setw(width) << "x_alpha";
+		outf << setw(width) << "(1-x_total)";
+		outf << setw(width) << "derived_Ye";
+		outf << setw(width) << "data_Ye";
+		outf << setw(width) << "T(MeV)";
+		outf << endl;
+		for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
+			// zone position
+			vector<double> r;
+			zone_coordinates(z_ind,r);
+			assert(r.size()==2);
+
+			// calculate electron fraction
+			double abar = 1.0 / (z_prot[z_ind] + z_neut[z_ind] + z_alfa[z_ind]/4.0);
+			double zbar = abar * (z_prot[z_ind] + 2.0*z_alfa[z_ind]/4.0);
+			double ye_calculated  = zbar/abar;//total_protons / total_nucleons;
+
+			if(z_ind%theta_out.size() == 0) outf << endl;
+			outf << setw(width) << r[0];
+			outf << setw(width) << r[1];
+			outf << setw(width) << z_atms[z_ind];
+			outf << setw(width) << z_neut[z_ind];
+			outf << setw(width) << z_prot[z_ind];
+			outf << setw(width) << z_alfa[z_ind];
+			outf << setw(width) << 1.0-(z_atms[z_ind]+z_neut[z_ind]+z_prot[z_ind]+z_alfa[z_ind]);
+			outf << setw(width) << ye_calculated;
+			outf << setw(width) << z[z_ind].Ye;
+			outf << setw(width) << z[z_ind].T*pc::k_MeV;
+			outf << endl;
+		}
+		outf.close();
 	}
-	outf.close();
-
-	//=================================//
-	// output composition in data file //
-	//=================================//
-	vector<double> z_atms(z.size());
-	vector<double> z_neut(z.size());
-	vector<double> z_prot(z.size());
-	vector<double> z_alfa(z.size());
-	for(unsigned proc=0; proc<dims[0]; proc++)
-		for(unsigned jb=0; jb<dims[2]; jb++)
-			for(unsigned ib=0; ib<dims[3]; ib++){
-				// indices. moving by one proc in the x direction increases proc by 1
-				const int i_global = (proc%iprocs)*nxb + ib;
-				const int j_global = (proc/iprocs)*nyb + jb;
-				const int z_ind = zone_index(i_global, j_global);
-				assert(i_global < nr);
-				assert(j_global < ntheta);
-				assert(z_ind < n_zones);
-
-				z_atms[z_ind] = atms[proc][kb][jb][ib];
-				z_neut[z_ind] = neut[proc][kb][jb][ib];
-				z_prot[z_ind] = prot[proc][kb][jb][ib];
-				z_alfa[z_ind] = alfa[proc][kb][jb][ib];
-			}
-
-	outf.open("initial_composition.dat");
-	outf << "r theta x_hydrogen x_neutrons x_protons x_alpha 1-x_total derived_Ye data_Ye T(MeV)" << endl;
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
-		// zone position
-		vector<double> r;
-		zone_coordinates(z_ind,r);
-		assert(r.size()==2);
-
-		// calculate electron fraction
-		double abar = 1.0 / (z_prot[z_ind] + z_neut[z_ind] + z_alfa[z_ind]/4.0);
-		double zbar = abar * (z_prot[z_ind] + 2.0*z_alfa[z_ind]/4.0);
-		double ye_calculated  = zbar/abar;//total_protons / total_nucleons;
-
-		if(z_ind%theta_out.size() == 0) outf << endl;
-		outf << r[0] << " " << r[1] << " " << z_atms[z_ind] << " " << z_neut[z_ind] << " " << z_prot[z_ind] << " " << z_alfa[z_ind] << " ";
-        outf << 1.0-(z_atms[z_ind]+z_neut[z_ind]+z_prot[z_ind]+z_alfa[z_ind]) << " " << ye_calculated << " " << z[z_ind].Ye << " ";
-        outf << z[z_ind].T*pc::k_MeV << endl;
-	}
-	outf.close();
 }
 
 //------------------------------------------------------------
