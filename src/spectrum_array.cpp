@@ -46,9 +46,9 @@ void spectrum_array::init(const locate_array wg,
 		const locate_array mg, const locate_array pg)
 {
 	// initialize locate arrays by swapping with the inputs
-	nu_grid.swap(wg);
-	mu_grid.swap(mg);
-	phi_grid.swap(pg);
+	nu_grid.copy(wg);
+	mu_grid.copy(mg);
+	phi_grid.copy(pg);
 
 	int n_wave   = nu_grid.size();
 	int n_mu     = mu_grid.size();
