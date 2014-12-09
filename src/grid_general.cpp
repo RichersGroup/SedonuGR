@@ -21,6 +21,7 @@ void grid_general::init(Lua* lua)
 
 	// read the model file or fill in custom model
 	std::string model_file = lua->scalar<std::string>("model_file");
+	int do_relativity = lua->scalar<int>("do_relativity");
 	if(model_file == "custom") custom_model(lua);
 	else read_model_file(lua);
 
@@ -56,6 +57,7 @@ void grid_general::init(Lua* lua)
 		total_rel_TE    += (rest_mass>0 ? rest_mass   / pc::m_n * pc::k * z[z_ind].T : 0);
 		total_nonrel_TE += nonrel_mass / pc::m_n * pc::k * z[z_ind].T;
 		if(do_visc) total_hvis += z[z_ind].H_vis * z[z_ind].rho * zone_comoving_volume(z_ind);
+		if(!do_relativity) for(unsigned i=0; i<z[z_ind].v.size(); i++) z[z_ind].v[i] = 0;
 		//}
 	}
 	if (rank0){
