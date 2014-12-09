@@ -96,7 +96,10 @@ int main(int argc, char **argv)
 
 	// open the output file
 	ofstream outf;
-	if(rank0) outf.open("results.dat");
+	if(rank0){
+		outf.open("results.dat");
+		sim.grid->write_header(outf);
+	}
 
 	//==============//
 	// DENSITY LOOP //
