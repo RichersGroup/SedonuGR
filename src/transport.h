@@ -140,6 +140,7 @@ public:
 	double core_lum_multiplier;
 	cdf_array core_species_luminosity;
 	void init_core(const double r_core, const double T_core, const double munue_core);
+	void init_core(const double r_core, const vector<double>& T_core, const vector<double>& mu_core, const vector<double>& L_core);
 
 	// items for zone emission
 	int do_visc;
