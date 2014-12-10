@@ -53,7 +53,6 @@ void neutrinos::myInit(Lua* lua)
 
 	// intialize output spectrum
 	assert(nu_grid.size()>0);
-	std::vector<double>sng = lua->vector<double>("nut_spec_nu_grid");
 	int nmu  = lua->scalar<int>("nut_spec_n_mu");
 	int nphi = lua->scalar<int>("nut_spec_n_phi");
 	spectrum_array tmp_spectrum;
@@ -156,6 +155,8 @@ double neutrinos::annihilation_rate(
 		const spectrum_array& nu_dist,     // erg/ccm (integrated over angular bin and energy bin)
 		const spectrum_array& nubar_dist,  // erg/ccm (integrated over angular bin and energy bin)
 		const bool electron_type){         // is this an electron-type interaction?
+
+	assert(nu_dist.size() == nubar_dist.size());
 
 	// constants
 	using namespace pc;

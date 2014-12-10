@@ -96,6 +96,7 @@ void transport::init(Lua* lua)
 	if(do_visc) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");
 	reflect_outer = lua->scalar<int>("reflect_outer");
 	n_emit_zones = lua->scalar<int>("n_emit_therm");
+	n_emit_core  = lua->scalar<int>("n_emit_core");
 	emissions_per_timestep = lua->scalar<int>("emissions_per_timestep");
 	ratio_emit_by_bin = lua->scalar<double>("ratio_emit_by_bin");
 
@@ -253,38 +254,36 @@ void transport::init(Lua* lua)
 	//=================//
 	// SET UP THE CORE //
 	//=================//
-	int core_emit_method = lua->scalar<int>("core_emit_method");
-	assert(core_emit_method>=0 && core_emit_method<=2);
-	if(core_emit_method>0){
-		n_emit_core  = lua->scalar<int>("n_emit_core");
-		r_core = lua->scalar<double>("r_core");   // cm
+	r_core = lua->scalar<double>("r_core");   // cm
+	if(n_emit_core>0){
+		core_emit_method = lua->scalar<int>("core_emit_method");
+		assert(core_emit_method==1 && core_emit_method==2);
 		int iorder = lua->scalar<int>("cdf_interpolation_order");
 		core_species_luminosity.interpolation_order = iorder;
 		for(unsigned s=0; s<species_list.size(); s++) species_list[s]->core_emis.interpolation_order = iorder;
-	}
-	if(core_emit_method==1){ // give temperature, mu, multiplier
-		assert(n_emit_core>0);
-		core_lum_multiplier = lua->scalar<double>("core_lum_multiplier");
-		double T_core = lua->scalar<double>("T_core") / pc::k_MeV;    // K
-		double munue_core = lua->scalar<double>("core_nue_chem_pot") * pc::MeV_to_ergs; // erg
-		init_core(r_core, T_core, munue_core);
-	}
-	if(core_emit_method==2){ // give temperature, mu, luminosity
-		assert(species_list.size()==3);
-		assert(n_emit_core>0);
-		vector<double> T_core(species_list.size(),0);
-		T_core[0] = lua->scalar<double>("T0_core") / pc::k_MeV; //K
-		T_core[1] = lua->scalar<double>("T1_core") / pc::k_MeV; //K
-		T_core[2] = lua->scalar<double>("T2_core") / pc::k_MeV; //K
-		vector<double> L_core(species_list.size(),0);
-		L_core[0] = lua->scalar<double>("L0_core"); //erg/s
-		L_core[1] = lua->scalar<double>("L1_core"); //erg/s
-		L_core[2] = lua->scalar<double>("L2_core"); //erg/s
-		vector<double> mu_core(species_list.size(),0);
-		mu_core[0] = lua->scalar<double>("L0_core") * pc::MeV_to_ergs; //erg
-		mu_core[1] = lua->scalar<double>("L1_core") * pc::MeV_to_ergs; //erg
-		mu_core[2] = lua->scalar<double>("L2_core") * pc::MeV_to_ergs; //erg
-		init_core(r_core,T_core,mu_core,L_core);
+
+		if(core_emit_method==1){ // give temperature, mu, multiplier
+			core_lum_multiplier = lua->scalar<double>("core_lum_multiplier");
+			double T_core = lua->scalar<double>("T_core") / pc::k_MeV;    // K
+			double munue_core = lua->scalar<double>("core_nue_chem_pot") * pc::MeV_to_ergs; // erg
+			init_core(r_core, T_core, munue_core);
+		}
+		if(core_emit_method==2){ // give temperature, mu, luminosity
+			assert(species_list.size()==3);
+			vector<double> T_core(species_list.size(),0);
+			T_core[0] = lua->scalar<double>("T0_core") / pc::k_MeV; //K
+			T_core[1] = lua->scalar<double>("T1_core") / pc::k_MeV; //K
+			T_core[2] = lua->scalar<double>("T2_core") / pc::k_MeV; //K
+			vector<double> L_core(species_list.size(),0);
+			L_core[0] = lua->scalar<double>("L0_core"); //erg/s
+			L_core[1] = lua->scalar<double>("L1_core"); //erg/s
+			L_core[2] = lua->scalar<double>("L2_core"); //erg/s
+			vector<double> mu_core(species_list.size(),0);
+			mu_core[0] = lua->scalar<double>("mu0_core") * pc::MeV_to_ergs; //erg
+			mu_core[1] = lua->scalar<double>("mu1_core") * pc::MeV_to_ergs; //erg
+			mu_core[2] = lua->scalar<double>("mu2_core") * pc::MeV_to_ergs; //erg
+			init_core(r_core,T_core,mu_core,L_core);
+		}
 	}
 
 	// check the parameters

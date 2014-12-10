@@ -138,6 +138,7 @@ public:
 	double r_core;
 	int n_emit_core;
 	double core_lum_multiplier;
+	int core_emit_method;
 	cdf_array core_species_luminosity;
 	void init_core(const double r_core, const double T_core, const double munue_core);
 	void init_core(const double r_core, const vector<double>& T_core, const vector<double>& mu_core, const vector<double>& L_core);

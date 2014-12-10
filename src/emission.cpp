@@ -14,11 +14,15 @@ void transport::emit_particles(const double lab_dt)
 	assert(lab_dt > 0);
 
 	// complain if we're out of room for particles
-	assert(n_emit_core  >= 0);
-	assert(n_emit_zones >= 0);
+	assert(n_emit_core  >= 0 || n_emit_zones >= 0);
 	int n_emit = n_emit_core + n_emit_zones;
 	if (total_particles() + n_emit > max_particles){
-		cout << "# ERROR: Not enough particle space\n";
+		if(rank0){
+			cout << "Total particles: " << total_particles() << endl;
+			cout << "n_emit: " << n_emit << endl;
+			cout << "max_particles: " << max_particles << endl;
+			cout << "# ERROR: Not enough particle space\n";
+		}
 		exit(10);
 	}
 

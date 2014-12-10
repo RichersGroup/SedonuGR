@@ -460,10 +460,11 @@ void grid_2D_sphere::custom_model(Lua* lua)
 int grid_2D_sphere::zone_index(const vector<double>& x) const
 {
 	assert(x.size()==3);
-	const double r  = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
-	const double theta = atan2(sqrt(x[0]*x[0] + x[1]*x[1]), x[2]);
+	double r  = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+	double theta = atan2(sqrt(x[0]*x[0] + x[1]*x[1]), x[2]);
 	assert(r >= 0);
 	assert(theta >= 0);
+	if(fabs(theta-pc::pi)<tiny) theta = pc::pi;
 	assert(theta <= pc::pi);
 
 	// check if off the boundaries
