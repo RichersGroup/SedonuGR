@@ -181,15 +181,17 @@ double neutrinos::annihilation_rate(
 
 		for(unsigned j=0; j<nubar_dist.size(); j++){
 			double avg_ebar   = nubar_dist.nu_center(j)*pc::h; // erg
-			double avg_mubar  = nubar_dist.mu_center(j);
-			double avg_phibar = nubar_dist.phi_center(j);
-			double nubardist_edens = nubar_dist.get(j); // erg/ccm
+			if(avg_e+avg_ebar > 2.0*pc::m_e*pc::c*pc::c){
+				double avg_mubar  = nubar_dist.mu_center(j);
+				double avg_phibar = nubar_dist.phi_center(j);
+				double nubardist_edens = nubar_dist.get(j); // erg/ccm
 
-			double costheta = cos_angle_between(avg_mu,avg_mubar,avg_phi,avg_phibar);
-			Q += nudist_edens * nubardist_edens * (avg_e + avg_ebar) * (1.0-costheta) * (
-					C1pC2/3.0 * (1-costheta) +
-					C3 * mec2*mec2 / (avg_e*avg_ebar)
-					);
+				double costheta = cos_angle_between(avg_mu,avg_mubar,avg_phi,avg_phibar);
+				Q += nudist_edens * nubardist_edens * (avg_e + avg_ebar - 2.0*pc::m_e*pc::c*pc::c) * (1.0-costheta) * (
+						C1pC2/3.0 * (1-costheta) +
+						C3 * mec2*mec2 / (avg_e*avg_ebar)
+						);
+			}
 		}
 	}
 
