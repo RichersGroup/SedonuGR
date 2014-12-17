@@ -216,7 +216,8 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	int do_visc = lua->scalar<int>("do_visc");
 	const int kb = 0;
 	double newtonian_eint_total = 0;
-    #pragma omp parallel for collapse(3) reduction(+:newtonian_eint_total)
+	double net_HmC = 0;
+    #pragma omp parallel for collapse(3) reduction(+:newtonian_eint_total,net_HmC)
 	for(unsigned proc=0; proc<dims[0]; proc++)
 		for(unsigned jb=0; jb<dims[2]; jb++)
 			for(unsigned ib=0; ib<dims[3]; ib++){
@@ -258,9 +259,13 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 				assert(z[z_ind].T >= 0.0);
 				assert(z[z_ind].Ye    >= 0.0);
 				assert(z[z_ind].Ye    <= 1.0);
-				newtonian_eint_total += eint[proc][kb][jb][ib] * z[z_ind].rho * zone_lab_volume(z_ind);
+				newtonian_eint_total += eint[proc][kb][jb][ib]             * z[z_ind].rho * zone_lab_volume(z_ind);
+				net_HmC += (ncfn[proc][kb][jb][ib]-nprs[proc][kb][jb][ib]) * z[z_ind].rho * zone_comoving_volume(z_ind);
 	}
-	if(rank0) cout << "#   Newtonian total internal energy: " << newtonian_eint_total << " erg" << endl;
+	if(rank0){
+		cout << "#   Newtonian total internal energy: " << newtonian_eint_total << " erg" << endl;
+		cout << "#   H-C (neutrino only): " << net_HmC << " erg/s" << endl;
+	}
 
 
 	//================================//
