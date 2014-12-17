@@ -420,6 +420,18 @@ double nulib_eos_munue(const double rho /* g/ccm */, const double temp /* K */, 
 	return (mue-muhat)*pc::MeV_to_ergs;
 }
 
+double nulib_eos_mue(const double rho /* g/ccm */, const double temp /* K */, const double ye){ // erg
+	double eos_variables[nulib_total_eos_variables];
+	for(int i=0; i<nulib_total_eos_variables; i++) eos_variables[i] = 0;
+	eos_variables[0] = rho;
+	eos_variables[1] = temp * pc::k_MeV;
+	eos_variables[2] = ye;
+
+	set_eos_variables_(eos_variables);
+	double mue = eos_variables[10];
+	return mue*pc::MeV_to_ergs;
+}
+
 
 /****************************************/
 /* Pair production/annihilation kernels */
