@@ -33,7 +33,8 @@ public:
 	double e_emit;                        // radiation energy emission rate (erg/ccm/s)
 	double l_emit;						  // lepton number emission rate (cm^-3 s^-1)
 	vector<spectrum_array> distribution;  // radiation energy density for each species (erg/ccm. Integrated over bin frequency and direction)
-	double Q_annihil;
+	double Q_annihil;                     // annihilation energy deposition rate (erg/ccm/s)
+	double nu_avg;
 
 	// timescales (all in lab frame)
 	double t_eabs;    // heating timescale
