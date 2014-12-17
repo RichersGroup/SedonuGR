@@ -578,10 +578,11 @@ void transport::calculate_timescales() const{
 void transport::normalize_radiative_quantities(const double lab_dt){
 	if(verbose && rank0) cout << "# Normalizing Radiative Quantities" << endl;
 	double net_visc_heating = 0;
+	double net_neut_heating = 0;
 
 	// normalize zone quantities
 	double multiplier = (double)emissions_per_timestep;
-    #pragma omp parallel for reduction(+:net_visc_heating)
+    #pragma omp parallel for reduction(+:net_visc_heating,net_neut_heating)
 	for(unsigned z_ind=0;z_ind<grid->z.size();z_ind++)
 	{
 		zone *z = &(grid->z[z_ind]);
@@ -609,6 +610,8 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		// erg*dist --> erg/ccm, represents *one* species, not *all* of them
 		if(do_distribution) for(unsigned s=0; s<species_list.size(); s++)
 			z->distribution[s].rescale(1./(multiplier*four_vol*pc::c * species_list[s]->weight));
+
+		net_neut_heating += z->e_abs * grid->zone_comoving_volume(z_ind);
 	}
 
 	// normalize global quantities
@@ -626,6 +629,7 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		}
 		cout << "#   " << total_active << " total active particles" << endl;
 		if(do_visc) cout << "#   " << net_visc_heating << " erg/s Summed comoving-frame viscous heating: " << endl;
+		cout << "#  " << net_neut_heating << " erg/s Summed comoving-frame absorbed (non-annihil) heating" << endl;
 		cout << "#   " << L_net_lab << " erg/s Net lab-frame luminosity from (zones+core+re-emission): " << endl;
 		cout << "#   " << L_esc_lab << " erg/s Net lab-frame escape luminosity: " << endl;
 	}
