@@ -157,8 +157,8 @@ void transport::emit_zones(const int n_emit_zones_per_bin, const double lab_dt, 
 			}
 
 			// record emissivity
-			grid->z[z_ind].e_emit = com_emit_energy;
-			grid->z[z_ind].l_emit = zone_comoving_therm_emit_leptons(z_ind,lab_dt);
+			grid->z[z_ind].e_emit += com_emit_energy;
+			grid->z[z_ind].l_emit += zone_comoving_therm_emit_leptons(z_ind,lab_dt);
 		}// loop over zones
 	}// #pragma omp parallel
 }
