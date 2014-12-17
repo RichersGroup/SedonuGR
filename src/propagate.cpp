@@ -164,11 +164,14 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	zone = &(grid->z[z_ind]);
 	double to_add=0;
 
-	// tally in contribution to zone's radiation energy (lab frame)
+	// tally in contribution to zone's radiation energy and average neutrino frequency (lab frame)
 	to_add = com_e * com_d;
 	#pragma omp atomic
 	zone->e_rad += to_add;
 	assert(zone->e_rad >= 0);
+	#pragma omp atomic
+	zone->nu_avg += com_nu * to_add;
+	assert(zone->nu_avg >= 0);
 
 	// tally in contribution to zone's distribution function (lab frame)
 	// use rhat, thetahat, phihat as basis functions so rotational symmetries give accurate results

@@ -46,12 +46,6 @@ private:
 	void create_surface_particle(const double Ep, const double t, const int s=-1, const int g=-1);
 	void create_thermal_particle(const int zone_index, const double Ep, const double t, const int s=-1, const int g=-1);
 
-	// per-zone luminosity functions
-	double zone_comoving_visc_heat_rate(const int zone_index) const;
-	double zone_comoving_therm_emit_energy (const int zone_index, const double lab_dt) const;
-	double zone_comoving_therm_emit_leptons(const int zone_index, const double lab_dt) const;
-	double  bin_comoving_therm_emit_energy(const int z_ind, const int s, const int g, const double lab_dt) const;
-
 	// species sampling functions
 	int sample_core_species() const;
 	int sample_zone_species(int zone_index) const;
@@ -162,6 +156,7 @@ public:
 	double L_esc_lab;
 	vector<long> n_active;
 	vector<long> n_escape;
+	double annihil_rho_cutoff;
 
 
 	// reflect off the outer boundary?
@@ -183,6 +178,14 @@ public:
 	static double dot(const vector<double>& a, const vector<double>& b);
 	static void normalize(vector<double>& a);
 	static double mean_mass(const double Ye);
+
+	// per-zone luminosity functions
+	double zone_comoving_visc_heat_rate(const int zone_index) const;
+	double zone_comoving_therm_emit_energy (const int zone_index, const double lab_dt) const;
+	double zone_comoving_therm_emit_leptons(const int zone_index, const double lab_dt) const;
+	double  bin_comoving_therm_emit_energy(const int z_ind, const int s, const int g, const double lab_dt) const;
+
+
 };
 
 #endif

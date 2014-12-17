@@ -51,6 +51,7 @@ transport::transport(){
 	grid = NULL;
 	t_now = NaN;
 	r_core = NaN;
+	core_emit_method=-MAXLIM;
 	n_emit_core = -MAXLIM;
 	core_lum_multiplier = NaN;
 	do_visc = -MAXLIM;
@@ -67,6 +68,7 @@ transport::transport(){
 	write_rays_every = -MAXLIM;
 	write_spectra_every = -MAXLIM;
 	write_zones_every = -MAXLIM;
+	annihil_rho_cutoff = NaN;
 }
 
 
@@ -105,6 +107,7 @@ void transport::init(Lua* lua)
 	do_photons   = lua->scalar<int>("do_photons");
 	do_neutrinos = lua->scalar<int>("do_neutrinos");
 	do_distribution = lua->scalar<int>("do_distribution");
+	if(do_distribution) annihil_rho_cutoff = lua->scalar<int>("annihil_rho_cutoff");
 	radiative_eq = lua->scalar<int>("radiative_eq");
 	iterative = lua->scalar<int>("iterative");
 	solve_T       = lua->scalar<int>("solve_T");
@@ -122,6 +125,10 @@ void transport::init(Lua* lua)
 	write_zones_every   = lua->scalar<double>("write_zones_every");
 	write_rays_every    = lua->scalar<double>("write_rays_every");
 	write_spectra_every = lua->scalar<double>("write_spectra_every");
+
+	// eos
+	string eos_filename = lua->scalar<string>("nulib_eos_filename");
+	nulib_eos_read_table((char*)eos_filename.c_str());
 
 	//=================//
 	// SET UP THE GRID //
@@ -257,7 +264,7 @@ void transport::init(Lua* lua)
 	r_core = lua->scalar<double>("r_core");   // cm
 	if(n_emit_core>0){
 		core_emit_method = lua->scalar<int>("core_emit_method");
-		assert(core_emit_method==1 && core_emit_method==2);
+		assert(core_emit_method==1 || core_emit_method==2);
 		int iorder = lua->scalar<int>("cdf_interpolation_order");
 		core_species_luminosity.interpolation_order = iorder;
 		for(unsigned s=0; s<species_list.size(); s++) species_list[s]->core_emis.interpolation_order = iorder;
@@ -405,17 +412,17 @@ void transport::step(const double lab_dt)
 	}
 	if(MPI_nprocs>1) reduce_radiation();      // so each processor has necessary info to solve its zones
 	normalize_radiative_quantities(emission_time);
+	if(do_distribution && do_neutrinos) calculate_annihilation();
 
 	// solve for T_gas and Ye structure
 	if(solve_T || solve_Ye){
 		if(iterative) solve_eq_zone_values();  // solve T,Ye s.t. E_abs=E_emit and N_abs=N_emit
-		else update_zone_quantities();            // update T,Ye based on heat capacity and number of leptons
+		else update_zone_quantities();         // update T,Ye based on heat capacity and number of leptons
 	}
 	if(MPI_nprocs>1) synchronize_gas();       // each processor broadcasts its solved zones to the other processors
 
 	// post-processing
 	if(rank0) calculate_timescales();
-	if(do_distribution && do_neutrinos) calculate_annihilation();
 
 	// advance time step
 	if (!iterative) t_now += lab_dt;
@@ -480,6 +487,7 @@ void transport::reset_radiation(){
 			z->l_emit   = 0;
 			z->e_emit   = 0;
 			z->Q_annihil = 0;
+			z->nu_avg    = 0;
 
 			if(do_distribution) for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].wipe();
 		}
@@ -491,10 +499,18 @@ void transport::reset_radiation(){
 //-----------------------------
 void transport::calculate_annihilation() const{
 	if(rank0 && verbose) cout << "# Calculating annihilation rates...";
+
+	// remember what zones I'm responsible for
+	int start = ( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
+	int end = my_zone_end[MPI_myID];
+	assert(end >= start);
+	assert(start >= 0);
+	assert(end <= (int)grid->z.size());
+
 	double Q_annihil_net = 0;
 
-    #pragma omp parallel for reduction(+:Q_annihil_net)
-	for(unsigned z_ind=0; z_ind<grid->z.size(); z_ind++){
+    #pragma omp parallel for reduction(+:Q_annihil_net) schedule(guided)
+	for(int z_ind=start; z_ind<end; z_ind++){
 
 		// based on nulib's prescription for which species each distribution represents
 		unsigned s_nue    = 0;
@@ -535,7 +551,7 @@ void transport::calculate_annihilation() const{
 		// set the value in grid
 		assert(Q >= 0);
 		grid->z[z_ind].Q_annihil = Q;                      // erg/ccm/s
-		Q_annihil_net += Q * grid->zone_lab_volume(z_ind); // erg/s
+		if(grid->z[z_ind].rho > annihil_rho_cutoff) Q_annihil_net += Q * grid->zone_lab_volume(z_ind); // erg/s
 	}
 	if(rank0) cout << "finished." << endl;
 	if(rank0 && verbose) cout << "# Net neutrino annihilation rate: " << Q_annihil_net << " erg/s" << endl;
@@ -572,10 +588,7 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		double four_vol = grid->zone_lab_volume(z_ind) * lab_dt; // Lorentz invariant - same in lab and comoving frames
 
 		// add heat absorbed from viscosity to tally of e_abs
-		if(do_visc && grid->good_zone(z_ind)){
-			z->e_abs += zone_comoving_visc_heat_rate(z_ind) * comoving_dt(lab_dt,z_ind); // erg, comoving frame
-			net_visc_heating += zone_comoving_visc_heat_rate(z_ind);      // erg/s
-		}
+		if(do_visc && grid->good_zone(z_ind)) net_visc_heating += zone_comoving_visc_heat_rate(z_ind);      // erg/s
 
 		if(!grid->good_zone(z_ind)){
 			assert(z->e_abs == 0.0);
@@ -585,6 +598,7 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 			assert(z->l_emit == 0.0);
 		}
 
+		z->nu_avg   /= z->e_rad;                  // Hz*erg*dist --> Hz
 		z->e_rad    /= multiplier*four_vol*pc::c; // erg*dist --> erg/ccm
 		z->e_abs    /= multiplier*four_vol;       // erg      --> erg/ccm/s
 		z->e_emit   /= multiplier*four_vol;       // erg      --> erg/ccm/s
@@ -753,6 +767,11 @@ void transport::reduce_radiation()
 		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 		for(int i=my_begin; i<my_end; i++) grid->z[i].l_emit = receive[i-my_begin] / (double)MPI_nprocs;
 
+		// reduce nu_avg
+		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].nu_avg;
+		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		for(int i=my_begin; i<my_end; i++) grid->z[i].nu_avg = receive[i-my_begin] / (double)MPI_nprocs;
+
 		// format for single reduce
 		//my_begin = ( proc==0 ? 0 : my_zone_end[proc-1] );
 		//my_end = my_zone_end[proc];
@@ -794,6 +813,11 @@ void transport::synchronize_gas()
 			MPI_Bcast(&buffer.front(), size, MPI_DOUBLE, proc, MPI_COMM_WORLD);
 			if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->z[i].Ye = buffer[i-my_begin];
 		}
+
+		// broadcast Q_annihil
+		if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->z[i].Q_annihil;
+		MPI_Bcast(&buffer.front(), size, MPI_DOUBLE, proc, MPI_COMM_WORLD);
+		if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->z[i].Q_annihil = buffer[i-my_begin];
 	}
 }
 
