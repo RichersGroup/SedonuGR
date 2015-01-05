@@ -40,6 +40,10 @@ void grid_general::init(Lua* lua)
 	double total_rel_TE      = 0.0;
 	double total_nonrel_TE   = 0.0;
 	double total_hvis        = 0.0;
+	double nonrel_Tbar       = 0.0;
+	double rel_Tbar          = 0.0;
+	double nonrel_Yebar      = 0.0;
+	double rel_Yebar         = 0.0;
 	int do_visc = lua->scalar<int>("do_visc");
     #pragma omp parallel for reduction(+:total_nonrel_mass, total_rest_mass, total_rel_KE, total_nonrel_KE, total_rel_TE, total_nonrel_TE, total_hvis)
 	for(unsigned z_ind=0;z_ind<z.size();z_ind++){
@@ -53,6 +57,10 @@ void grid_general::init(Lua* lua)
 		//if(grid->z[z_ind].rho > 1.0e8){ // && r[1] > pc::pi/3.0 && r[1] < pc::pi/2.0){
 		total_rest_mass += rest_mass;
 		total_nonrel_mass += nonrel_mass;
+		nonrel_Tbar += z[z_ind].T * rest_mass;
+		rel_Tbar += z[z_ind].T * nonrel_mass;
+		nonrel_Yebar += z[z_ind].Ye * rest_mass;
+		rel_Yebar += z[z_ind].Ye * nonrel_mass;
 		total_rel_KE    += (rest_mass>0 ? (transport::lorentz_factor(z[z_ind].v) - 1.0) * rest_mass * pc::c*pc::c : 0);
 		total_nonrel_KE += 0.5 * nonrel_mass * zone_speed2(z_ind);
 		total_rel_TE    += (rest_mass>0 ? rest_mass   / pc::m_n * pc::k * z[z_ind].T : 0);
@@ -63,6 +71,8 @@ void grid_general::init(Lua* lua)
 	}
 	if (rank0){
 		cout << "#   mass = " << total_rest_mass << " g (nonrel: " << total_nonrel_mass << " g)" <<endl;
+		cout << "#   <T> = " << rel_Tbar/total_rest_mass*pc::k_MeV << " MeV (nonrel: " << nonrel_Tbar/total_nonrel_mass*pc::k_MeV << " MeV)" <<endl;
+		cout << "#   <Ye> = " << rel_Yebar/total_rest_mass << " (nonrel: " << nonrel_Yebar/total_nonrel_mass <<endl;
 		cout << "#   KE = " << total_rel_KE << " erg (nonrel: " << total_nonrel_KE << " erg)" << endl;
 		cout << "#   TE = " << total_rel_TE << " erg (nonrel: " << total_nonrel_TE << " erg)" << endl;
 		if(do_visc) cout << "#   hvis = " << total_hvis << " erg/s" << endl;
