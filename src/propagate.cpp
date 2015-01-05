@@ -24,6 +24,8 @@ void transport::propagate_particles(const double lab_dt)
 			L_net_esc[p->s] += p->e;
 			#pragma omp atomic
 			E_avg_esc[p->s] += p->nu * p->e;
+			#pragma omp atomic
+			N_net_esc[p->s] += p->e / (p->nu*pc::h) * species_list[p->s]->lepton_number;
 			species_list[p->s]->spectrum.count(p->D, p->nu, p->e);
 		}
 	} //#pragma omp parallel fpr

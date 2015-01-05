@@ -473,6 +473,8 @@ void transport::reset_radiation(){
 		L_net_esc[i] = 0;
 		E_avg_lab[i] = 0;
 		E_avg_esc[i] = 0;
+		N_net_lab[i] = 0;
+		N_net_esc[i] = 0;
 	}
 
 	#pragma omp parallel
@@ -638,6 +640,8 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		E_avg_esc[s] /= L_net_esc[s];
 		L_net_lab[s] /= multiplier*lab_dt;
 		L_net_esc[s] /= multiplier*lab_dt;
+		N_net_lab[s] /= multiplier*lab_dt;
+		N_net_esc[s] /= multiplier*lab_dt;
 	}
 
 	// output useful stuff
@@ -748,7 +752,23 @@ void transport::reduce_radiation()
 		sendscalar = L_net_lab[s];
 		MPI_Reduce(&sendscalar,&L_net_lab[s],1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
 		L_net_lab[s] /= (double)MPI_nprocs;
-	}
+
+		sendscalar = E_avg_lab[s];
+		MPI_Reduce(&sendscalar,&E_avg_lab[s],1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+		E_avg_lab[s] /= (double)MPI_nprocs;
+
+		sendscalar = E_avg_esc[s];
+		MPI_Reduce(&sendscalar,&E_avg_esc[s],1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+		E_avg_esc[s] /= (double)MPI_nprocs;
+
+		sendscalar = N_net_lab[s];
+		MPI_Reduce(&sendscalar,&N_net_lab[s],1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+		N_net_lab[s] /= (double)MPI_nprocs;
+
+		sendscalar = N_net_esc[s];
+		MPI_Reduce(&sendscalar,&N_net_esc[s],1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+		N_net_esc[s] /= (double)MPI_nprocs;
+}
 
 	// reduce the numbers of particles active/escaped
 	if(verbose && rank0) cout << "#   particle numbers" << endl;
