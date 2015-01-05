@@ -9,10 +9,9 @@
 void transport::propagate_particles(const double lab_dt)
 {
 	if(verbose && rank0) cout << "# Propagating particles...";
-	double e_esc_lab = 0;
 
 	//--- MOVE THE PARTICLES AROUND ---
-    #pragma omp parallel for schedule(guided) reduction(+:e_esc_lab)
+    #pragma omp parallel for schedule(guided)
 	for(unsigned i=0; i<particles.size(); i++){
 		particle* p = &particles[i];
         #pragma omp atomic
@@ -21,13 +20,13 @@ void transport::propagate_particles(const double lab_dt)
 		if(p->fate == escaped){
 			#pragma omp atomic
 			n_escape[p->s]++;
+			#pragma omp atomic
+			L_net_esc[p->s] += p->e;
+			#pragma omp atomic
+			E_avg_esc[p->s] += p->nu * p->e;
 			species_list[p->s]->spectrum.count(p->D, p->nu, p->e);
-			e_esc_lab += p->e;
 		}
 	} //#pragma omp parallel fpr
-
-	// store the escaped energy in the transport class
-	L_esc_lab += e_esc_lab; // to be normalized later
 
 	// remove the dead particles
 	remove_dead_particles();

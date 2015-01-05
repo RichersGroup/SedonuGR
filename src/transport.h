@@ -152,8 +152,10 @@ public:
 	double ratio_emit_by_bin;
 
 	// global radiation quantities
-	double L_net_lab;
-	double L_esc_lab;
+	vector<double> L_net_lab;
+	vector<double> L_net_esc;
+	vector<double> E_avg_lab;
+	vector<double> E_avg_esc;
 	vector<long> n_active;
 	vector<long> n_escape;
 	double annihil_rho_cutoff;

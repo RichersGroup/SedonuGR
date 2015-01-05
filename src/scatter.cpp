@@ -24,7 +24,7 @@ void transport::event_interact(particle* p, const int z_ind, const double abs_fr
 		transform_comoving_to_lab(p,z_ind);
 
 		// tally the re-emitted energy in the lab frame
-		if(do_absorb_reemit) L_net_lab += p->e;
+		if(do_absorb_reemit) L_net_lab[p->s] += p->e;
 
 		// sanity checks
 		assert(p->nu > 0);

@@ -57,8 +57,6 @@ transport::transport(){
 	do_visc = -MAXLIM;
 	n_emit_zones = -MAXLIM;
 	visc_specific_heat_rate = NaN;
-	L_net_lab = NaN;
-	L_esc_lab = NaN;
 	reflect_outer = -MAXLIM;
 	emissions_per_timestep = -MAXLIM;
 	n_initial = -MAXLIM;
@@ -295,6 +293,14 @@ void transport::init(Lua* lua)
 
 	// check the parameters
 	check_parameters();
+
+	// explicitly set global radiation quantities to 0
+	for(unsigned s=0; s<species_list.size(); s++){
+		L_net_lab[s] = 0;
+		L_net_esc[s] = 0;
+		E_avg_lab[s] = 0;
+		E_avg_esc[s] = 0;
+	}
 }
 
 //-----------------------------------
@@ -459,12 +465,14 @@ void transport::write(const int it) const{
 //------------------------------
 void transport::reset_radiation(){
 	// clear global radiation quantities
-	L_net_lab = 0;
-	L_esc_lab = 0;
 	for(unsigned i=0; i<species_list.size(); i++){
 		species_list[i]->spectrum.wipe();
 		n_active[i] = 0;
 		n_escape[i] = 0;
+		L_net_lab[i] = 0;
+		L_net_esc[i] = 0;
+		E_avg_lab[i] = 0;
+		E_avg_esc[i] = 0;
 	}
 
 	#pragma omp parallel
@@ -508,6 +516,7 @@ void transport::calculate_annihilation() const{
 	assert(end <= (int)grid->z.size());
 
 	double Q_annihil_net = 0;
+	vector<double> H_nunu_lab(species_list.size(),0);
 
     #pragma omp parallel for reduction(+:Q_annihil_net) schedule(guided)
 	for(int z_ind=start; z_ind<end; z_ind++){
@@ -515,33 +524,37 @@ void transport::calculate_annihilation() const{
 		// based on nulib's prescription for which species each distribution represents
 		unsigned s_nue    = 0;
 		unsigned s_nubare = 1;
-		double Q = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nue   ],
-												grid->z[z_ind].distribution[s_nubare],
-												true);
+		H_nunu_lab[0] += neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nue   ],
+													 grid->z[z_ind].distribution[s_nubare],
+													 true);
+		assert(H_nunu_lab[1]==0);
 		if(species_list.size()==3){
 			unsigned s_nux = 2;
-			Q += 2.0 * neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nux],
-													grid->z[z_ind].distribution[s_nux],
-													false);
+			H_nunu_lab[2] += 2.0 * neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nux],
+																grid->z[z_ind].distribution[s_nux],
+																false);
 		}
 		else if(species_list.size()==4){
 			unsigned s_nux = 2;
 			unsigned s_nubarx = 3;
-			Q += 2.0 * neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nux   ],
-					  	  	  	  	  	  	  	    grid->z[z_ind].distribution[s_nubarx],
-					  	  	  	  	  	  	  	    false);
+			H_nunu_lab[2] += 2.0 * neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nux   ],
+																grid->z[z_ind].distribution[s_nubarx],
+																false);
+			assert(H_nunu_lab[3]==0);
 		}
 		else if(species_list.size()==6){
 			unsigned s_numu = 2;
 			unsigned s_nubarmu = 3;
 			unsigned s_nutau = 4;
 			unsigned s_nubartau = 5;
-			Q += neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_numu   ],
-											  grid->z[z_ind].distribution[s_nubarmu],
-											  false);
-			Q += neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nutau   ],
-											  grid->z[z_ind].distribution[s_nubartau],
-											  false);
+			H_nunu_lab[2] += neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_numu   ],
+														  grid->z[z_ind].distribution[s_nubarmu],
+														  false);
+			assert(H_nunu_lab[3]==0);
+			H_nunu_lab[4] += neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nutau   ],
+														  grid->z[z_ind].distribution[s_nubartau],
+														  false);
+			assert(H_nunu_lab[5]==0);
 		}
 		else{
 			cout << "ERROR: wrong species list size in calculate_annihilation" << endl;
@@ -549,12 +562,16 @@ void transport::calculate_annihilation() const{
 		}
 
 		// set the value in grid
-		assert(Q >= 0);
-		grid->z[z_ind].Q_annihil = Q;                      // erg/ccm/s
-		if(grid->z[z_ind].rho > annihil_rho_cutoff) Q_annihil_net += Q * grid->zone_lab_volume(z_ind); // erg/s
+		for(unsigned s=0; s<species_list.size(); s++) grid->z[z_ind].Q_annihil += H_nunu_lab[s];       // erg/ccm/s
+		if(grid->z[z_ind].rho < annihil_rho_cutoff) Q_annihil_net += grid->z[z_ind].Q_annihil * grid->zone_lab_volume(z_ind); // erg/s
 	}
 	if(rank0) cout << "finished." << endl;
-	if(rank0 && verbose) cout << "# Net neutrino annihilation rate: " << Q_annihil_net << " erg/s" << endl;
+	if(rank0 && verbose){
+		cout << "# Net neutrino annihilation rate: " << Q_annihil_net << " erg/s";
+		cout << " { ";
+		for(unsigned s=0; s<species_list.size(); s++) cout << H_nunu_lab[s] << " ";
+		cout << "}" << endl;
+	}
 }
 
 //-----------------------------
@@ -615,9 +632,13 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 	}
 
 	// normalize global quantities
-	L_net_lab /= multiplier*lab_dt;
-	L_esc_lab /= multiplier*lab_dt;
-	for(unsigned s=0; s<species_list.size(); s++) species_list[s]->spectrum.rescale(1./(multiplier*lab_dt * species_list[s]->weight));
+	for(unsigned s=0; s<species_list.size(); s++){
+		species_list[s]->spectrum.rescale(1./(multiplier*lab_dt * species_list[s]->weight));
+		E_avg_lab[s] /= L_net_lab[s];
+		E_avg_esc[s] /= L_net_esc[s];
+		L_net_lab[s] /= multiplier*lab_dt;
+		L_net_esc[s] /= multiplier*lab_dt;
+	}
 
 	// output useful stuff
 	if(rank0 && verbose){
@@ -628,11 +649,25 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 			cout << "#   " << n_escape[i] << "/" << n_active[i] << " " << species_list[i]->name << " escaped. (" << per_esc << "%)" << endl;
 		}
 		cout << "#   " << total_active << " total active particles" << endl;
-		if(do_visc) cout << "#   " << net_visc_heating << " erg/s Summed comoving-frame viscous heating: " << endl;
-		cout << "#  " << net_neut_heating << " erg/s Summed comoving-frame absorbed (non-annihil) heating" << endl;
-		cout << "#   " << L_net_lab << " erg/s Net lab-frame luminosity from (zones+core+re-emission): " << endl;
-		cout << "#   " << L_esc_lab << " erg/s Net lab-frame escape luminosity: " << endl;
-	}
+		if(do_visc) cout << "#   " << net_visc_heating << " erg/s H_visc (comoving sum)" << endl;
+		cout << "#   " << net_neut_heating << " erg/s H_abs (comoving sum)" << endl;
+
+		cout << "#   { ";
+		for(unsigned s=0; s<L_net_lab.size(); s++) cout << L_net_lab[s] << " ";
+		cout << "} erg/s C (lab-frame sum, includes re-emission)" << endl;
+
+		cout << "#   { ";
+		for(unsigned s=0; s<E_avg_lab.size(); s++) cout << E_avg_lab[s] << " ";
+		cout << "} erg/s E_avg_lab (average lab-frame emitted energy)" << endl;
+
+		cout << "#   { ";
+		for(unsigned s=0; s<L_net_esc.size(); s++) cout << L_net_esc[s] << " ";
+		cout << "} erg/s L_esc" << endl;
+
+		cout << "#   { ";
+		for(unsigned s=0; s<E_avg_esc.size(); s++) cout << E_avg_esc[s] << " ";
+		cout << "} erg/s E_avg_esc" << endl;
+}
 
 	if(verbose && rank0 && n_emit_zones>0) cout << "#   Q_zones = " << Q_zones() << endl;
 }
@@ -705,12 +740,15 @@ void transport::reduce_radiation()
 	// reduce the global luminosity scalars
 	if(verbose && rank0) cout << "#   global scalars" << endl;
 	double sendscalar;
-	sendscalar = L_esc_lab;
-	MPI_Reduce(&sendscalar,&L_esc_lab,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-	L_esc_lab /= (double)MPI_nprocs;
-	sendscalar = L_net_lab;
-	MPI_Reduce(&sendscalar,&L_net_lab,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-	L_net_lab /= (double)MPI_nprocs;
+	for(unsigned s=0; s<species_list.size(); s++){
+		sendscalar = L_net_esc[s];
+		MPI_Reduce(&sendscalar,&L_net_esc[s],1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+		L_net_esc[s] /= (double)MPI_nprocs;
+
+		sendscalar = L_net_lab[s];
+		MPI_Reduce(&sendscalar,&L_net_lab[s],1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+		L_net_lab[s] /= (double)MPI_nprocs;
+	}
 
 	// reduce the numbers of particles active/escaped
 	if(verbose && rank0) cout << "#   particle numbers" << endl;
