@@ -217,6 +217,8 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	const int kb = 0;
 	double newtonian_eint_total = 0;
 	double net_HmC = 0;
+	const double gamma_max = 2.0;
+	const double speed_max = pc::c * sqrt(1.0 - 1.0/gamma_max);
     #pragma omp parallel for collapse(3) reduction(+:newtonian_eint_total,net_HmC)
 	for(unsigned proc=0; proc<dims[0]; proc++)
 		for(unsigned jb=0; jb<dims[2]; jb++)
@@ -242,19 +244,19 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 				double vr              = velx[proc][kb][jb][ib];
 				double vtheta          = vely[proc][kb][jb][ib];
 				double vphi            = angz[proc][kb][jb][ib]/r[0]/sin(r[1]);
-				//double speed2 = vr*vr + vtheta*vtheta + vphi*vphi;
-				//if(speed2 >= pc::c*pc::c){
-				//	vr     *= (1.0-tiny)* pc::c*pc::c/speed2;
-				//	vtheta *= (1.0-tiny)* pc::c*pc::c/speed2;
-				//	vphi   *= (1.0-tiny)* pc::c*pc::c/speed2;
-				//.}
-				//assert(fabs(vr) < pc::c);
-				//assert(fabs(vtheta) < pc::c);
-				//assert(vr*vr + vtheta*vtheta < pc::c*pc::c);
+				double speed = (vr*vr + vtheta*vtheta + vphi*vphi);
+				double gamma =sqrt( 1.0/sqrt(1.0 - speed*speed/(pc::c*pc::c)));
+				if(gamma > gamma_max){
+					vr     *= speed_max / speed;
+					vtheta *= speed_max / speed;
+					vphi   *= speed_max / speed;
+					if(rank0) cout << "WARNING: velocity of superluminal cell at {r,theta}={" << r[0] << "," << r[1] << "} set to gamma=" << gamma_max << endl;
+				}
 				assert((int)z[z_ind].v.size()==3);
 				z[z_ind].v[0] = vr;
 				z[z_ind].v[1] = vtheta;
 				z[z_ind].v[2] = vphi;
+				assert(zone_speed2(z_ind) < pc::c*pc::c);
 				assert(z[z_ind].rho   >= 0.0);
 				assert(z[z_ind].T >= 0.0);
 				assert(z[z_ind].Ye    >= 0.0);
