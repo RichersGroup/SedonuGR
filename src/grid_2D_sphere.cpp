@@ -244,9 +244,8 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 				double vr              = velx[proc][kb][jb][ib];
 				double vtheta          = vely[proc][kb][jb][ib];
 				double vphi            = angz[proc][kb][jb][ib]/r[0]/sin(r[1]);
-				double speed = (vr*vr + vtheta*vtheta + vphi*vphi);
-				double gamma =sqrt( 1.0/sqrt(1.0 - speed*speed/(pc::c*pc::c)));
-				if(gamma > gamma_max){
+				double speed = sqrt(vr*vr + vtheta*vtheta + vphi*vphi);
+				if(speed > speed_max){
 					vr     *= speed_max / speed;
 					vtheta *= speed_max / speed;
 					vphi   *= speed_max / speed;
