@@ -47,7 +47,7 @@ void grid_general::init(Lua* lua)
 	int do_visc = lua->scalar<int>("do_visc");
     #pragma omp parallel for reduction(+:total_nonrel_mass, total_rest_mass, total_rel_KE, total_nonrel_KE, total_rel_TE, total_nonrel_TE, total_hvis)
 	for(unsigned z_ind=0;z_ind<z.size();z_ind++){
-		double rest_mass   = z[z_ind].rho * zone_comoving_volume(z_ind);
+		double rest_mass   = zone_rest_mass(z_ind);
 		assert(rest_mass >= 0);
 		double nonrel_mass = z[z_ind].rho * zone_lab_volume(z_ind);
 		assert(nonrel_mass >= 0);
@@ -102,7 +102,7 @@ void grid_general::write_zones(const int iw) const
 }
 
 double grid_general::zone_rest_mass(const int z_ind) const{
-	return z[z_ind].rho*zone_lab_volume(z_ind)*transport::lorentz_factor(z[z_ind].v);
+	return z[z_ind].rho*zone_comoving_volume(z_ind);
 }
 
 double grid_general::zone_comoving_volume(const int z_ind) const{
@@ -209,4 +209,11 @@ double grid_general::zone_speed2(const int z_ind) const{
 	assert(z_ind < (int)z.size());
 	double speed2 = transport::dot(z[z_ind].v,z[z_ind].v);
 	return speed2;
+}
+
+double grid_general::total_rest_mass() const{
+	double mass = 0;
+	#pragma omp parallel for reduction(+:mass)
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) mass += zone_rest_mass(z_ind);
+	return mass;
 }

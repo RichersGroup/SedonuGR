@@ -270,11 +270,11 @@ void spectrum_array::MPI_average()
 	vector<double> receive;
 	receive.resize(n_elements);
 	MPI_Allreduce(&flux.front(), &receive.front(), n_elements, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-	flux.swap(receive);
+	for(unsigned i=0; i<flux.size(); i++) flux[i] = receive[i];//flux.swap(receive);
 
 	// only have the receiving ID do the division
 	int myID, mpi_procs;
 	MPI_Comm_size( MPI_COMM_WORLD, &mpi_procs );
 	MPI_Comm_rank( MPI_COMM_WORLD, &myID      );
-	if(myID == 0) rescale(1./(double)mpi_procs);
+	rescale(1./(double)mpi_procs);
 }

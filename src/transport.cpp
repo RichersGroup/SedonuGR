@@ -6,6 +6,7 @@
 #include <math.h>
 #include <string.h>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <string>
 #include "transport.h"
@@ -295,11 +296,19 @@ void transport::init(Lua* lua)
 	check_parameters();
 
 	// explicitly set global radiation quantities to 0
+	L_net_lab.resize(species_list.size());
+	L_net_esc.resize(species_list.size());
+	E_avg_lab.resize(species_list.size());
+	E_avg_esc.resize(species_list.size());
+	N_net_lab.resize(species_list.size());
+	N_net_esc.resize(species_list.size());
 	for(unsigned s=0; s<species_list.size(); s++){
 		L_net_lab[s] = 0;
 		L_net_esc[s] = 0;
 		E_avg_lab[s] = 0;
 		E_avg_esc[s] = 0;
+		N_net_lab[s] = 0;
+		N_net_esc[s] = 0;
 	}
 }
 
@@ -517,45 +526,76 @@ void transport::calculate_annihilation() const{
 	assert(start >= 0);
 	assert(end <= (int)grid->z.size());
 
-	double Q_annihil_net = 0;
 	vector<double> H_nunu_lab(species_list.size(),0);
 
-    #pragma omp parallel for reduction(+:Q_annihil_net) schedule(guided)
+    #pragma omp parallel for schedule(guided)
 	for(int z_ind=start; z_ind<end; z_ind++){
 
 		// based on nulib's prescription for which species each distribution represents
 		unsigned s_nue    = 0;
 		unsigned s_nubare = 1;
-		H_nunu_lab[0] += neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nue   ],
-													 grid->z[z_ind].distribution[s_nubare],
-													 true);
+		double Q_tmp = 0;
+		double vol = grid->zone_lab_volume(z_ind);
+		double zone_annihil_net = 0;
+		bool count_annihil = (grid->z[z_ind].rho < annihil_rho_cutoff) || (annihil_rho_cutoff < 0);
+		Q_tmp = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nue],
+				 grid->z[z_ind].distribution[s_nubare],
+				 true);
+		zone_annihil_net += Q_tmp;
+		if(count_annihil){
+			#pragma omp atomic
+			H_nunu_lab[0] += Q_tmp*vol;
+		}
 		assert(H_nunu_lab[1]==0);
+
 		if(species_list.size()==3){
 			unsigned s_nux = 2;
-			H_nunu_lab[2] += 2.0 * neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nux],
-																grid->z[z_ind].distribution[s_nux],
-																false);
+			Q_tmp = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nux],
+					grid->z[z_ind].distribution[s_nux],
+					false);
+			zone_annihil_net += 2.0 * Q_tmp;
+			if(count_annihil){
+				#pragma omp atomic
+				H_nunu_lab[2] += 2.0 * Q_tmp*vol;
+			}
 		}
+
 		else if(species_list.size()==4){
 			unsigned s_nux = 2;
 			unsigned s_nubarx = 3;
-			H_nunu_lab[2] += 2.0 * neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nux   ],
-																grid->z[z_ind].distribution[s_nubarx],
-																false);
+			Q_tmp = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nux   ],
+					grid->z[z_ind].distribution[s_nubarx],
+					false);
+			zone_annihil_net += 2.0 * Q_tmp;
+			if(count_annihil){
+				#pragma omp atomic
+				H_nunu_lab[2] += 2.0 * Q_tmp*vol;
+			}
 			assert(H_nunu_lab[3]==0);
 		}
+
 		else if(species_list.size()==6){
 			unsigned s_numu = 2;
 			unsigned s_nubarmu = 3;
 			unsigned s_nutau = 4;
 			unsigned s_nubartau = 5;
-			H_nunu_lab[2] += neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_numu   ],
-														  grid->z[z_ind].distribution[s_nubarmu],
-														  false);
+			Q_tmp = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_numu   ],
+					  grid->z[z_ind].distribution[s_nubarmu],
+					  false);
+			zone_annihil_net += Q_tmp;
+			if(count_annihil){
+				#pragma omp atomic
+				H_nunu_lab[2] += Q_tmp*vol;
+			}
 			assert(H_nunu_lab[3]==0);
-			H_nunu_lab[4] += neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nutau   ],
-														  grid->z[z_ind].distribution[s_nubartau],
-														  false);
+			Q_tmp = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nutau   ],
+					  grid->z[z_ind].distribution[s_nubartau],
+					  false);
+			zone_annihil_net += Q_tmp;
+			if(count_annihil){
+				#pragma omp atomic
+				H_nunu_lab[4] += Q_tmp*vol;
+			}
 			assert(H_nunu_lab[5]==0);
 		}
 		else{
@@ -564,15 +604,22 @@ void transport::calculate_annihilation() const{
 		}
 
 		// set the value in grid
-		for(unsigned s=0; s<species_list.size(); s++) grid->z[z_ind].Q_annihil += H_nunu_lab[s];       // erg/ccm/s
-		if(grid->z[z_ind].rho < annihil_rho_cutoff) Q_annihil_net += grid->z[z_ind].Q_annihil * grid->zone_lab_volume(z_ind); // erg/s
+		grid->z[z_ind].Q_annihil = zone_annihil_net;
 	}
+
+	// synchronize global quantities between processors
+	vector<double> send(species_list.size(),0);
+	vector<double> receive(species_list.size(),0);
+	for(unsigned s=0; s<species_list.size(); s++) send[s] = H_nunu_lab[s];
+	MPI_Allreduce(&send.front(), &receive.front(), species_list.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	for(unsigned s=0; s<species_list.size(); s++) H_nunu_lab[s] = receive[s];
+
+	// write to screen
 	if(rank0) cout << "finished." << endl;
-	if(rank0 && verbose){
-		cout << "# Net neutrino annihilation rate: " << Q_annihil_net << " erg/s";
-		cout << " { ";
+	if(rank0 && verbose) {
+		cout << "#   { ";
 		for(unsigned s=0; s<species_list.size(); s++) cout << H_nunu_lab[s] << " ";
-		cout << "}" << endl;
+		cout << " } erg/s H_annihil" << endl;
 	}
 }
 
@@ -657,20 +704,30 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		cout << "#   " << net_neut_heating << " erg/s H_abs (comoving sum)" << endl;
 
 		cout << "#   { ";
-		for(unsigned s=0; s<L_net_lab.size(); s++) cout << L_net_lab[s] << " ";
+		for(unsigned s=0; s<L_net_lab.size(); s++) cout << setw(12) << L_net_lab[s] << "  ";
 		cout << "} erg/s C (lab-frame sum, includes re-emission)" << endl;
 
 		cout << "#   { ";
-		for(unsigned s=0; s<E_avg_lab.size(); s++) cout << E_avg_lab[s] << " ";
-		cout << "} erg/s E_avg_lab (average lab-frame emitted energy)" << endl;
-
-		cout << "#   { ";
-		for(unsigned s=0; s<L_net_esc.size(); s++) cout << L_net_esc[s] << " ";
+		for(unsigned s=0; s<L_net_esc.size(); s++) cout << setw(12) << L_net_esc[s] << "  ";
 		cout << "} erg/s L_esc" << endl;
 
 		cout << "#   { ";
-		for(unsigned s=0; s<E_avg_esc.size(); s++) cout << E_avg_esc[s] << " ";
-		cout << "} erg/s E_avg_esc" << endl;
+		for(unsigned s=0; s<E_avg_lab.size(); s++) cout << setw(12) << E_avg_lab[s]*pc::h_MeV << "  ";
+		cout << "} MeV E_avg_lab (average lab-frame emitted energy)" << endl;
+
+		cout << "#   { ";
+		for(unsigned s=0; s<E_avg_esc.size(); s++) cout << setw(12) << E_avg_esc[s]*pc::h_MeV << "  ";
+		cout << "} MeV E_avg_esc" << endl;
+
+		cout << "#   { ";
+		for(unsigned s=0; s<N_net_lab.size(); s++) cout << setw(12) << N_net_lab[s] << "  ";
+		cout << "} 1/s N_lab" << endl;
+
+		cout << "#   { ";
+		for(unsigned s=0; s<N_net_esc.size(); s++) cout << setw(12) << N_net_esc[s] << "  ";
+		cout << "} 1/s N_esc" << endl;
+
+		cout << "#   " << -(N_net_esc[0]-N_net_esc[1]) / (grid->total_rest_mass()/pc::m_n) << " 1/s global dYe_dt" << endl;
 }
 
 	if(verbose && rank0 && n_emit_zones>0) cout << "#   Q_zones = " << Q_zones() << endl;
@@ -774,9 +831,11 @@ void transport::reduce_radiation()
 	if(verbose && rank0) cout << "#   particle numbers" << endl;
 	vector<long> sendint(species_list.size(),0);
 	vector<long> receiveint(species_list.size(),0);
+
 	for(unsigned i=0; i<species_list.size(); i++) sendint[i] = n_escape[i];
 	MPI_Allreduce(&sendint.front(), &receiveint.front(), n_escape.size(), MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
 	for(unsigned i=0; i<species_list.size(); i++) n_escape[i] = receiveint[i];
+
 	for(unsigned i=0; i<species_list.size(); i++) sendint[i] = n_active[i];
 	MPI_Allreduce(&sendint.front(), &receiveint.front(), n_active.size(), MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
 	for(unsigned i=0; i<species_list.size(); i++) n_active[i] = receiveint[i];
@@ -877,9 +936,11 @@ void transport::synchronize_gas()
 		}
 
 		// broadcast Q_annihil
-		if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->z[i].Q_annihil;
-		MPI_Bcast(&buffer.front(), size, MPI_DOUBLE, proc, MPI_COMM_WORLD);
-		if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->z[i].Q_annihil = buffer[i-my_begin];
+		if(do_neutrinos && do_distribution){
+			if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->z[i].Q_annihil;
+			MPI_Bcast(&buffer.front(), size, MPI_DOUBLE, proc, MPI_COMM_WORLD);
+			if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->z[i].Q_annihil = buffer[i-my_begin];
+		}
 	}
 }
 

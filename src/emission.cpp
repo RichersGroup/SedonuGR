@@ -270,7 +270,7 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	#pragma omp atomic
 	E_avg_lab[p.s] += p.nu * p.e;
 	#pragma omp atomic
-	N_net_lab[p.s] += p.e / (p.nu * pc::h) * species_list[p.s]->lepton_number;
+	N_net_lab[p.s] += p.e / (p.nu * pc::h);
 }
 
 
