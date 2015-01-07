@@ -654,9 +654,6 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		zone *z = &(grid->z[z_ind]);
 		double four_vol = grid->zone_lab_volume(z_ind) * lab_dt; // Lorentz invariant - same in lab and comoving frames
 
-		// add heat absorbed from viscosity to tally of e_abs
-		if(do_visc && grid->good_zone(z_ind)) net_visc_heating += zone_comoving_visc_heat_rate(z_ind);      // erg/s
-
 		if(!grid->good_zone(z_ind)){
 			assert(z->e_abs == 0.0);
 			assert(z->nue_abs == 0.0);
@@ -677,7 +674,11 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		if(do_distribution) for(unsigned s=0; s<species_list.size(); s++)
 			z->distribution[s].rescale(1./(multiplier*four_vol*pc::c * species_list[s]->weight));
 
-		net_neut_heating += z->e_abs * grid->zone_comoving_volume(z_ind);
+		// tally heat absorbed from viscosity and neutrinos
+		if(do_visc && grid->good_zone(z_ind)){
+			net_visc_heating += zone_comoving_visc_heat_rate(z_ind);      // erg/s
+			net_neut_heating += z->e_abs * grid->zone_comoving_volume(z_ind);
+		}
 	}
 
 	// normalize global quantities
@@ -702,6 +703,12 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		cout << "#   " << total_active << " total active particles" << endl;
 		if(do_visc) cout << "#   " << net_visc_heating << " erg/s H_visc (comoving sum)" << endl;
 		cout << "#   " << net_neut_heating << " erg/s H_abs (comoving sum)" << endl;
+
+		double CmL = 0;
+		for(unsigned s=0; s<species_list.size(); s++){
+			CmL += L_net_lab[s] - L_net_esc[s];
+		}
+		cout << "#   " << CmL << " erg/s L_emit-L_esc (should be same as H_abs w/o relativity)" << endl;
 
 		cout << "#   { ";
 		for(unsigned s=0; s<L_net_lab.size(); s++) cout << setw(12) << L_net_lab[s] << "  ";
