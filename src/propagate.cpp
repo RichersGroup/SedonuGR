@@ -28,7 +28,29 @@ void transport::propagate_particles(const double lab_dt)
 			N_net_esc[p->s] += p->e / (p->nu*pc::h);
 			species_list[p->s]->spectrum.count(p->D, p->nu, p->e);
 		}
-	} //#pragma omp parallel fpr
+	} //#pragma omp parallel for
+
+	if(rank0 && verbose){
+		double tmp_total_e=0;
+		#pragma omp parallel for reduction(+:tmp_total_e)
+		for(unsigned i=0; i<particles.size(); i++) tmp_total_e += particles[i].e;
+		cout << endl << "#   TOTAL PARTICLE ENERGY: " << tmp_total_e << endl;
+
+		tmp_total_e=0;
+		double core_e = 0;
+		#pragma omp parallel for reduction(+:tmp_total_e,core_e)
+		for(unsigned i=0; i<particles.size(); i++) if(particles[i].fate==absorbed){
+			if(grid->zone_index(particles[i].x)>=0 )tmp_total_e += particles[i].e;
+			else core_e += particles[i].e;
+		}
+		cout << "#   TOTAL ABSORBED (fluid) PARTICLE ENERGY: " << tmp_total_e << endl;
+		cout << "#   TOTAL ABSORBED (core)  PARTICLE ENERGY: " << core_e << endl;
+
+		tmp_total_e=0;
+		#pragma omp parallel for reduction(+:tmp_total_e)
+		for(unsigned i=0; i<particles.size(); i++) if(particles[i].fate==escaped) tmp_total_e += particles[i].e;
+		cout << "#   TOTAL ESCAPED PARTICLE ENERGY: " << tmp_total_e << endl;
+	}
 
 	// remove the dead particles
 	remove_dead_particles();
