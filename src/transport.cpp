@@ -712,7 +712,7 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 
 		cout << "#   { ";
 		for(unsigned s=0; s<L_net_lab.size(); s++) cout << setw(12) << L_net_lab[s] << "  ";
-		cout << "} erg/s C (lab-frame sum, includes re-emission)" << endl;
+		cout << "} erg/s L_emit (lab-frame sum, includes re-emission)" << endl;
 
 		cout << "#   { ";
 		for(unsigned s=0; s<L_net_esc.size(); s++) cout << setw(12) << L_net_esc[s] << "  ";
