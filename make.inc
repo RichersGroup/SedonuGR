@@ -30,7 +30,7 @@ HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5 -lhdf5_fortran -lhdf5_cpp -Wl,-rpath,$(HDF5_DI
 #NuLib
 NULIB_DIR=$(CURDIR)/external/NuLib/src
 NULIB_LIBS=$(NULIB_DIR)/nulib.a -lgfortran $(NULIB_DIR)/nuc_eos/nuc_eos.a $(NULIB_DIR)/other_eos/helmholtz/helmholtz.o
-HELMHOLTZ_EOS=0
+HELMHOLTZ_EOS=1
 MODINC="-I ./"
 
 #OTHER
