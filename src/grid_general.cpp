@@ -45,9 +45,8 @@ void grid_general::init(Lua* lua)
 	double nonrel_Yebar      = 0.0;
 	double rel_Yebar         = 0.0;
 	int do_visc = lua->scalar<int>("do_visc");
-    #pragma omp parallel for reduction(+:total_nonrel_mass, total_rest_mass, total_rel_KE, total_nonrel_KE, total_rel_TE, total_nonrel_TE, total_hvis)
+    #pragma omp parallel for reduction(+:total_nonrel_mass,total_rest_mass,total_rel_KE,total_nonrel_KE,total_rel_TE,total_nonrel_TE,total_hvis,nonrel_Tbar,rel_Tbar,nonrel_Yebar,rel_Yebar)
 	for(unsigned z_ind=0;z_ind<z.size();z_ind++){
-		if(!do_relativity) for(unsigned i=0; i<z[z_ind].v.size(); i++) z[z_ind].v[i] = 0;
 		double rest_mass   = zone_rest_mass(z_ind);
 		assert(rest_mass >= 0);
 		double nonrel_mass = z[z_ind].rho * zone_lab_volume(z_ind);
@@ -67,10 +66,11 @@ void grid_general::init(Lua* lua)
 		total_rel_TE    += (rest_mass>0 ? rest_mass   / pc::m_n * pc::k * z[z_ind].T : 0);
 		total_nonrel_TE += nonrel_mass / pc::m_n * pc::k * z[z_ind].T;
 		if(do_visc) total_hvis += z[z_ind].H_vis * z[z_ind].rho * zone_comoving_volume(z_ind);
+		if(!do_relativity) for(unsigned i=0; i<z[z_ind].v.size(); i++) z[z_ind].v[i] = 0;
 		//}
 	}
 	if (rank0){
-		cout << "#   mass = " << total_rest_mass << " g (nonrel: " << total_nonrel_mass << " g)" <<endl;
+		cout << "#   mass = " << total_rest_mass/pc::M_sun << " M_sun (nonrel: " << total_nonrel_mass/pc::M_sun << " M_sun)" << endl;
 		cout << "#   <T> = " << rel_Tbar/total_rest_mass*pc::k_MeV << " MeV (nonrel: " << nonrel_Tbar/total_nonrel_mass*pc::k_MeV << " MeV)" <<endl;
 		cout << "#   <Ye> = " << rel_Yebar/total_rest_mass << " (nonrel: " << nonrel_Yebar/total_nonrel_mass << ")" <<endl;
 		cout << "#   KE = " << total_rel_KE << " erg (nonrel: " << total_nonrel_KE << " erg)" << endl;
@@ -163,7 +163,7 @@ void grid_general::write_line(ofstream& outf, const int z_ind) const{
 	outf << H_abs << "\t";
 	outf << H_emit << "\t";
 
-	outf << zone_speed2(z_ind) << "\t";
+	outf << sqrt(zone_speed2(z_ind)) << "\t";
 
 	double n_baryons_per_ccm = z[z_ind].rho / transport::mean_mass(z[z_ind].Ye);
 	double dYe_dt_abs = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm;
