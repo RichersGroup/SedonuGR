@@ -68,6 +68,10 @@ transport::transport(){
 	write_spectra_every = -MAXLIM;
 	write_zones_every = -MAXLIM;
 	annihil_rho_cutoff = NaN;
+	particle_total_energy = NaN;
+	particle_core_abs_energy = NaN;
+	particle_fluid_abs_energy = NaN;
+	particle_escape_energy = NaN;
 }
 
 
@@ -310,6 +314,10 @@ void transport::init(Lua* lua)
 		N_net_lab[s] = 0;
 		N_net_esc[s] = 0;
 	}
+	particle_total_energy = 0;
+	particle_core_abs_energy = 0;
+	particle_fluid_abs_energy = 0;
+	particle_escape_energy = 0;
 }
 
 //-----------------------------------
@@ -691,6 +699,10 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		N_net_lab[s] /= multiplier*lab_dt;
 		N_net_esc[s] /= multiplier*lab_dt;
 	}
+	particle_total_energy /= multiplier;
+	particle_core_abs_energy /= multiplier;
+	particle_fluid_abs_energy /= multiplier;
+	particle_escape_energy /= multiplier;
 
 	// output useful stuff
 	if(rank0 && verbose){
@@ -700,7 +712,14 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 			total_active += n_active[i];
 			cout << "#   " << n_escape[i] << "/" << n_active[i] << " " << species_list[i]->name << " escaped. (" << per_esc << "%)" << endl;
 		}
+
+		// particle information (all lab-frame)
 		cout << "#   " << total_active << " total active particles" << endl;
+		cout << "#   " << particle_total_energy/lab_dt << " ERG/S TOTAL PARTICLE LUMINOSITY: " << endl;
+		cout << "#   " << particle_fluid_abs_energy/lab_dt << " ERG/S TOTAL ABSORBED (fluid) PARTICLE ENERGY: " << endl;
+		cout << "#   " << particle_core_abs_energy/lab_dt << " ERG/S TOTAL ABSORBED (core)  PARTICLE ENERGY: " << endl;
+		cout << "#   " << particle_escape_energy/lab_dt << " ERG/S TOTAL ESCAPED PARTICLE ENERGY: " << endl;
+
 		if(do_visc) cout << "#   " << net_visc_heating << " erg/s H_visc (comoving sum)" << endl;
 		cout << "#   " << net_neut_heating << " erg/s H_abs (comoving sum)" << endl;
 
@@ -805,34 +824,54 @@ void transport::reduce_radiation()
 	if(verbose && rank0) cout << "#   spectra" << endl;
 	for(unsigned i=0; i<species_list.size(); i++) species_list[i]->spectrum.MPI_average();
 
-	// reduce the global luminosity scalars
+	// reduce the global radiation scalars
+	double sendsingle = 0;
+
+	sendsingle = particle_total_energy;
+	MPI_Allreduce(&sendsingle,&particle_total_energy,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	particle_total_energy /= (double)MPI_nprocs;
+
+	sendsingle = particle_fluid_abs_energy;
+	MPI_Allreduce(&sendsingle,&particle_fluid_abs_energy,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	particle_fluid_abs_energy /= (double)MPI_nprocs;
+
+	sendsingle = particle_core_abs_energy;
+	MPI_Allreduce(&sendsingle,&particle_core_abs_energy,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	particle_core_abs_energy /= (double)MPI_nprocs;
+
+	sendsingle = particle_escape_energy;
+	MPI_Allreduce(&sendsingle,&particle_escape_energy,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	particle_escape_energy /= (double)MPI_nprocs;
+
+	// reduce the global radiation counters
 	if(verbose && rank0) cout << "#   global scalars" << endl;
-	double sendscalar;
-	for(unsigned s=0; s<species_list.size(); s++){
-		sendscalar = L_net_esc[s];
-		MPI_Reduce(&sendscalar,&L_net_esc[s],1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-		L_net_esc[s] /= (double)MPI_nprocs;
+	vector<double> send(species_list.size(),0);
+	vector<double> receive(species_list.size(),0);
 
-		sendscalar = L_net_lab[s];
-		MPI_Reduce(&sendscalar,&L_net_lab[s],1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-		L_net_lab[s] /= (double)MPI_nprocs;
+	for(unsigned i=0; i<species_list.size(); i++) send[i] = L_net_esc[i];
+	MPI_Allreduce(&send.front(),&receive.front(),L_net_esc.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	for(unsigned i=0; i<species_list.size(); i++) L_net_esc[i] = receive[i]/(double)MPI_nprocs;
 
-		sendscalar = E_avg_lab[s];
-		MPI_Reduce(&sendscalar,&E_avg_lab[s],1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-		E_avg_lab[s] /= (double)MPI_nprocs;
+	for(unsigned i=0; i<species_list.size(); i++) send[i] = L_net_lab[i];
+	MPI_Allreduce(&send.front(),&receive.front(),L_net_lab.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	for(unsigned i=0; i<species_list.size(); i++) L_net_lab[i] = receive[i]/(double)MPI_nprocs;
 
-		sendscalar = E_avg_esc[s];
-		MPI_Reduce(&sendscalar,&E_avg_esc[s],1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-		E_avg_esc[s] /= (double)MPI_nprocs;
+	for(unsigned i=0; i<species_list.size(); i++) send[i] = E_avg_esc[i];
+	MPI_Allreduce(&send.front(),&receive.front(),E_avg_esc.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	for(unsigned i=0; i<species_list.size(); i++) E_avg_esc[i] = receive[i]/(double)MPI_nprocs;
 
-		sendscalar = N_net_lab[s];
-		MPI_Reduce(&sendscalar,&N_net_lab[s],1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-		N_net_lab[s] /= (double)MPI_nprocs;
+	for(unsigned i=0; i<species_list.size(); i++) send[i] = E_avg_lab[i];
+	MPI_Allreduce(&send.front(),&receive.front(),E_avg_lab.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	for(unsigned i=0; i<species_list.size(); i++) E_avg_lab[i] = receive[i]/(double)MPI_nprocs;
 
-		sendscalar = N_net_esc[s];
-		MPI_Reduce(&sendscalar,&N_net_esc[s],1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-		N_net_esc[s] /= (double)MPI_nprocs;
-}
+	for(unsigned i=0; i<species_list.size(); i++) send[i] = N_net_esc[i];
+	MPI_Allreduce(&send.front(),&receive.front(),N_net_esc.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	for(unsigned i=0; i<species_list.size(); i++) N_net_esc[i] = receive[i]/(double)MPI_nprocs;
+
+	for(unsigned i=0; i<species_list.size(); i++) send[i] = N_net_lab[i];
+	MPI_Allreduce(&send.front(),&receive.front(),N_net_lab.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	for(unsigned i=0; i<species_list.size(); i++) N_net_lab[i] = receive[i]/(double)MPI_nprocs;
+
 
 	// reduce the numbers of particles active/escaped
 	if(verbose && rank0) cout << "#   particle numbers" << endl;
@@ -857,8 +896,8 @@ void transport::reduce_radiation()
 
 		// set the computation size and create the send/receive vectors
 		size = my_end - my_begin;
-		vector<double> send(size,0);
-		vector<double> receive(size,0);
+		send.resize(size);
+		receive.resize(size);
 
 		// reduce distribution
 		if(do_distribution)

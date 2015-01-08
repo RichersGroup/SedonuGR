@@ -101,6 +101,12 @@ private:
 	// current time in simulation
 	double t_now;
 
+	// global radiation quantities
+	double particle_total_energy;
+	double particle_fluid_abs_energy;
+	double particle_core_abs_energy;
+	double particle_escape_energy;
+
 	// check parameters
 	void check_parameters() const;
 

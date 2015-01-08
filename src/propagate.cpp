@@ -30,27 +30,20 @@ void transport::propagate_particles(const double lab_dt)
 		}
 	} //#pragma omp parallel for
 
-	if(rank0 && verbose){
-		double tmp_total_e=0;
-		#pragma omp parallel for reduction(+:tmp_total_e)
-		for(unsigned i=0; i<particles.size(); i++) tmp_total_e += particles[i].e;
-		cout << endl << "#   TOTAL PARTICLE ENERGY: " << tmp_total_e << endl;
-
-		tmp_total_e=0;
-		double core_e = 0;
-		#pragma omp parallel for reduction(+:tmp_total_e,core_e)
-		for(unsigned i=0; i<particles.size(); i++) if(particles[i].fate==absorbed){
-			if(grid->zone_index(particles[i].x)>=0 )tmp_total_e += particles[i].e;
-			else core_e += particles[i].e;
+	double tot=0,core=0,fluid=0,esc=0;
+	#pragma omp parallel for reduction(+:tot,core,fluid,esc)
+	for(unsigned i=0; i<particles.size(); i++){
+		tot += particles[i].e;
+		if(particles[i].fate==escaped) esc += particles[i].e;
+		if(particles[i].fate==absorbed){
+			if(grid->zone_index(particles[i].x)>=0 ) fluid += particles[i].e;
+			else core += particles[i].e;
 		}
-		cout << "#   TOTAL ABSORBED (fluid) PARTICLE ENERGY: " << tmp_total_e << endl;
-		cout << "#   TOTAL ABSORBED (core)  PARTICLE ENERGY: " << core_e << endl;
-
-		tmp_total_e=0;
-		#pragma omp parallel for reduction(+:tmp_total_e)
-		for(unsigned i=0; i<particles.size(); i++) if(particles[i].fate==escaped) tmp_total_e += particles[i].e;
-		cout << "#   TOTAL ESCAPED PARTICLE ENERGY: " << tmp_total_e << endl;
 	}
+	particle_total_energy += tot;
+	particle_core_abs_energy += core;
+	particle_fluid_abs_energy += fluid;
+	particle_escape_energy += esc;
 
 	// remove the dead particles
 	remove_dead_particles();
