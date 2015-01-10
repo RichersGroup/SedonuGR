@@ -723,11 +723,10 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		if(do_visc) cout << "#   " << net_visc_heating << " erg/s H_visc (comoving sum)" << endl;
 		cout << "#   " << net_neut_heating << " erg/s H_abs (comoving sum)" << endl;
 
-		double CmL = 0;
-		for(unsigned s=0; s<species_list.size(); s++){
-			CmL += L_net_lab[s] - L_net_esc[s];
-		}
-		cout << "#   " << CmL << " erg/s L_emit-L_esc (should be same as H_abs w/o relativity)" << endl;
+		double CmH = 0;
+		for(unsigned s=0; s<species_list.size(); s++) CmH += L_net_lab[s];
+		CmH -= particle_fluid_abs_energy/lab_dt;
+		cout << "#   " << CmH << " erg/s L_emit-L_abs (lab-frame)" << endl;
 
 		cout << "#   { ";
 		for(unsigned s=0; s<L_net_lab.size(); s++) cout << setw(12) << L_net_lab[s] << "  ";
@@ -753,8 +752,17 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		for(unsigned s=0; s<N_net_esc.size(); s++) cout << setw(12) << N_net_esc[s] << "  ";
 		cout << "} 1/s N_esc" << endl;
 
-		cout << "#   " << -(N_net_esc[0]-N_net_esc[1]) / (grid->total_rest_mass()/pc::m_n) << " 1/s global dYe_dt" << endl;
-}
+		double dyedt = -(N_net_esc[0]-N_net_esc[1]) / (grid->total_rest_mass()/pc::m_n);
+		cout << "#   " << dyedt << " 1/s global dYe_dt" << endl;
+
+		// just latex output to make plugging numbers into the paper easier
+		cout << CmH/1e51 << " & " << dyedt;
+		for(unsigned s=0; s<species_list.size(); s++) cout << " & " << L_net_lab[s];
+		for(unsigned s=0; s<species_list.size(); s++) cout << " & " << L_net_esc[s];
+		for(unsigned s=0; s<species_list.size(); s++) cout << " & " << E_avg_lab[s];
+		for(unsigned s=0; s<species_list.size(); s++) cout << " & " << E_avg_esc[s];
+		cout << endl;
+	}
 
 	if(verbose && rank0 && n_emit_zones>0) cout << "#   Q_zones = " << Q_zones() << endl;
 }
