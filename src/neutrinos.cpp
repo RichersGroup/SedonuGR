@@ -154,7 +154,8 @@ double cos_angle_between(const double mu1, const double mu2, const double phi1, 
 double neutrinos::annihilation_rate(
 		const spectrum_array& nu_dist,     // erg/ccm (integrated over angular bin and energy bin)
 		const spectrum_array& nubar_dist,  // erg/ccm (integrated over angular bin and energy bin)
-		const bool electron_type){         // is this an electron-type interaction?
+		const bool electron_type,		   // is this an electron-type interaction?
+		const int weight){         		   // weight of each species
 
 	assert(nu_dist.size() == nubar_dist.size());
 
@@ -177,14 +178,14 @@ double neutrinos::annihilation_rate(
 		double avg_e   = nu_dist.nu_center(i)*pc::h; // erg
 		double avg_mu  = nu_dist.mu_center(i);
 		double avg_phi = nu_dist.phi_center(i);
-		double nudist_edens = nu_dist.get(i); // erg/ccm
+		double nudist_edens = nu_dist.get(i) / (double)weight; // erg/ccm
 
 		for(unsigned j=0; j<nubar_dist.size(); j++){
 			double avg_ebar   = nubar_dist.nu_center(j)*pc::h; // erg
 			if(avg_e+avg_ebar > 2.0*pc::m_e*pc::c*pc::c){
 				double avg_mubar  = nubar_dist.mu_center(j);
 				double avg_phibar = nubar_dist.phi_center(j);
-				double nubardist_edens = nubar_dist.get(j); // erg/ccm
+				double nubardist_edens = nubar_dist.get(j) / (double)weight; // erg/ccm
 
 				double costheta = cos_angle_between(avg_mu,avg_mubar,avg_phi,avg_phibar);
 				Q += nudist_edens * nubardist_edens * (avg_e + avg_ebar - 2.0*pc::m_e*pc::c*pc::c) * (1.0-costheta) * (

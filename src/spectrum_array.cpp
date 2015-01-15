@@ -225,28 +225,27 @@ void spectrum_array::print(const int iw, const int species) const
 	unsigned n_nu  =  nu_grid.size();
 	unsigned n_mu  =  mu_grid.size();
 	unsigned n_phi = phi_grid.size();
+	double solid_angle = 4.0*pc::pi / (double)(n_mu*n_phi);
 
 	outf << "# " << "n_nu:" << n_nu << " " << "n_mu:" << n_mu << " " << "n_phi:" << n_phi << endl;
 	outf << "# ";
-	outf << (n_nu >1 ? "frequency(Hz) " : "");
+	outf << (n_nu >1 ? "frequency(Hz) delta(Hz)" : "");
 	outf << (n_mu >1 ? "mu "            : "");
 	outf << (n_phi>1 ? "phi "           : "");
-	outf << "integrated_flux(erg) counts" << endl;
+	outf << "integrated_flux(erg/s/Hz/sr)" << endl;
 
 	for (unsigned k=0;k<n_mu;k++)
 		for (unsigned m=0;m<n_phi;m++)
 			for (unsigned j=0;j<n_nu;j++)
 			{
 				int id = index(j,k,m);
-				if (n_nu > 1) outf <<  nu_grid.center(j) << " ";
+				if (n_nu > 1) outf <<  nu_grid.center(j) << " " << nu_grid.delta(j) << " ";
 				if (n_mu > 1) outf <<  mu_grid.center(k) << " ";
 				if (n_phi> 1) outf << phi_grid.center(m) << " ";
 
 				// the delta is infinity if the bin is a catch-all.
-				double wdel = nu_grid.delta(j);
-				double norm = n_mu*n_phi
-						* ( wdel < numeric_limits<double>::infinity() ? wdel : 1 );
-				outf << flux[id]/norm << endl;
+				double wdel = (nu_grid.delta(j)<numeric_limits<double>::infinity() ? nu_grid.delta(j) : 1);
+				outf << flux[id]/wdel/solid_angle << endl;
 			}
 	outf.close();
 }

@@ -542,13 +542,14 @@ void transport::calculate_annihilation() const{
 		// based on nulib's prescription for which species each distribution represents
 		unsigned s_nue    = 0;
 		unsigned s_nubare = 1;
+		assert(species_list[s_nue]->weight == species_list[s_nubare]->weight);
 		double Q_tmp = 0;
 		double vol = grid->zone_lab_volume(z_ind);
 		double zone_annihil_net = 0;
 		bool count_annihil = (grid->z[z_ind].rho < annihil_rho_cutoff) || (annihil_rho_cutoff < 0);
 		Q_tmp = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nue],
 				 grid->z[z_ind].distribution[s_nubare],
-				 true);
+				 true,species_list[s_nue]->weight);
 		zone_annihil_net += Q_tmp;
 		if(count_annihil){
 			#pragma omp atomic
@@ -560,7 +561,7 @@ void transport::calculate_annihilation() const{
 			unsigned s_nux = 2;
 			Q_tmp = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nux],
 					grid->z[z_ind].distribution[s_nux],
-					false);
+					false,species_list[s_nux]->weight);
 			zone_annihil_net += 2.0 * Q_tmp;
 			if(count_annihil){
 				#pragma omp atomic
@@ -571,9 +572,10 @@ void transport::calculate_annihilation() const{
 		else if(species_list.size()==4){
 			unsigned s_nux = 2;
 			unsigned s_nubarx = 3;
+			assert(species_list[s_nux]->weight == species_list[s_nubarx]->weight);
 			Q_tmp = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nux   ],
 					grid->z[z_ind].distribution[s_nubarx],
-					false);
+					false,species_list[s_nux]->weight);
 			zone_annihil_net += 2.0 * Q_tmp;
 			if(count_annihil){
 				#pragma omp atomic
@@ -587,9 +589,11 @@ void transport::calculate_annihilation() const{
 			unsigned s_nubarmu = 3;
 			unsigned s_nutau = 4;
 			unsigned s_nubartau = 5;
+			assert(species_list[s_numu]->weight == species_list[s_nubarmu]->weight);
+			assert(species_list[s_nutau]->weight == species_list[s_nubartau]->weight);
 			Q_tmp = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_numu   ],
 					  grid->z[z_ind].distribution[s_nubarmu],
-					  false);
+					  false,species_list[s_numu]->weight);
 			zone_annihil_net += Q_tmp;
 			if(count_annihil){
 				#pragma omp atomic
@@ -598,7 +602,7 @@ void transport::calculate_annihilation() const{
 			assert(H_nunu_lab[3]==0);
 			Q_tmp = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nutau   ],
 					  grid->z[z_ind].distribution[s_nubartau],
-					  false);
+					  false,species_list[s_nutau]->weight);
 			zone_annihil_net += Q_tmp;
 			if(count_annihil){
 				#pragma omp atomic
@@ -680,7 +684,7 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 
 		// erg*dist --> erg/ccm, represents *one* species, not *all* of them
 		if(do_distribution) for(unsigned s=0; s<species_list.size(); s++)
-			z->distribution[s].rescale(1./(multiplier*four_vol*pc::c * species_list[s]->weight));
+			z->distribution[s].rescale(1./(multiplier*four_vol*pc::c);
 
 		// tally heat absorbed from viscosity and neutrinos
 		if(do_visc && grid->good_zone(z_ind)){
@@ -691,7 +695,7 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 
 	// normalize global quantities
 	for(unsigned s=0; s<species_list.size(); s++){
-		species_list[s]->spectrum.rescale(1./(multiplier*lab_dt * species_list[s]->weight));
+		species_list[s]->spectrum.rescale(1./(multiplier*lab_dt)); // erg/s in each bin
 		E_avg_lab[s] /= L_net_lab[s];
 		E_avg_esc[s] /= L_net_esc[s];
 		L_net_lab[s] /= multiplier*lab_dt;
@@ -757,10 +761,10 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 
 		// just latex output to make plugging numbers into the paper easier
 		cout << CmH/1e51 << " & " << dyedt;
-		for(unsigned s=0; s<species_list.size(); s++) cout << " & " << L_net_lab[s];
-		for(unsigned s=0; s<species_list.size(); s++) cout << " & " << L_net_esc[s];
-		for(unsigned s=0; s<species_list.size(); s++) cout << " & " << E_avg_lab[s];
-		for(unsigned s=0; s<species_list.size(); s++) cout << " & " << E_avg_esc[s];
+		for(unsigned s=0; s<species_list.size(); s++) cout << " & " << L_net_lab[s]/1e51;
+		for(unsigned s=0; s<species_list.size(); s++) cout << " & " << L_net_esc[s]/1e51;
+		for(unsigned s=0; s<species_list.size(); s++) cout << " & " << E_avg_lab[s]*pc::h_MeV;
+		for(unsigned s=0; s<species_list.size(); s++) cout << " & " << E_avg_esc[s]*pc::h_MeV;
 		cout << endl;
 	}
 
