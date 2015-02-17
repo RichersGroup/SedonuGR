@@ -87,6 +87,7 @@ private:
 	// simulation parameters
 	double step_size;
 	int    do_distribution;
+	int    do_annihilation;
 	int    iterative;
 	int    radiative_eq;
 	int    rank0;

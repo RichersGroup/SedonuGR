@@ -43,6 +43,7 @@ transport::transport(){
 	max_particles = -MAXLIM;
 	step_size = NaN;
 	do_distribution = -MAXLIM;
+	do_annihilation = -MAXLIM;
 	iterative = -MAXLIM;
 	radiative_eq = -MAXLIM;
 	rank0 = -MAXLIM;
@@ -105,6 +106,7 @@ void transport::init(Lua* lua)
 	// read simulation parameters
 	verbose      = lua->scalar<int>("verbose");
 	do_distribution = lua->scalar<int>("do_distribution");
+	do_annihilation = lua->scalar<int>("do_annihilation");
 	if(do_distribution) annihil_rho_cutoff = lua->scalar<int>("annihil_rho_cutoff");
 	radiative_eq = lua->scalar<int>("radiative_eq");
 	iterative = lua->scalar<int>("iterative");
@@ -416,7 +418,7 @@ void transport::step(const double lab_dt)
 	}
 	if(MPI_nprocs>1) reduce_radiation();      // so each processor has necessary info to solve its zones
 	normalize_radiative_quantities(emission_time);
-	if(do_distribution) calculate_annihilation();
+	if(do_distribution && do_annihilation) calculate_annihilation();
 
 	// solve for T_gas and Ye structure
 	if(solve_T || solve_Ye){
