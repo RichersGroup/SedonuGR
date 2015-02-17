@@ -187,6 +187,21 @@ void spectrum_array::count(const vector<double>& D, const double nu, const doubl
 	flux[ind]  += E;
 }
 
+double spectrum_array::average_nu() const{
+	double integral1 = 0;
+	double integral2 = 0;
+	for(unsigned nu_bin=0; nu_bin<nu_grid.size(); nu_bin++){
+		for(unsigned mu_bin=0; mu_bin<mu_grid.size(); mu_bin++){
+			for(unsigned phi_bin=0; phi_bin<phi_grid.size(); phi_bin++){
+				int ind = index(nu_bin,mu_bin,phi_bin);
+				integral1 += flux[ind];
+				integral2 += flux[ind] * nu_grid.center(nu_bin);
+			}
+		}
+	}
+	return integral2 / integral1;
+}
+
 double spectrum_array::integrate() const{
 	double integral = 0;
 	for(unsigned nu_bin=0; nu_bin<nu_grid.size(); nu_bin++){

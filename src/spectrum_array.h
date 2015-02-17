@@ -50,6 +50,7 @@ public:
 	void wipe();
 
 	// integrate over nu,mu,phi
+	double average_nu() const;
 	double integrate() const;
 	void integrate_over_direction(vector<double>& edens) const;
 

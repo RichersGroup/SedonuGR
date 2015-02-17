@@ -141,6 +141,8 @@ void grid_general::write_header(ofstream& outf) const{
 //	}
 	outf << ++c << "-integrated_edens(erg/ccm)  ";
 	outf << ++c << "-avg_E(MeV)  ";
+	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << ++c << "-avg_E"<< s << "(MeV)";
+	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << ++c << "-e_rad"<< s << "(erg/ccm)";
 	outf << endl;
 }
 
@@ -185,6 +187,9 @@ void grid_general::write_line(ofstream& outf, const int z_ind) const{
 	outf << integrated_edens << "\t";
 
 	outf << z[z_ind].nu_avg * pc::h_MeV << "\t";
+
+	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << z[z_ind].distribution[s].average_nu() * pc::h_MeV << "\t";
+	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << z[z_ind].distribution[s].integrate() << "\t";
 
 	outf << endl;
 }
