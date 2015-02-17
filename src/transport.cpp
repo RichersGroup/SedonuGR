@@ -17,7 +17,6 @@
 #include "grid_2D_sphere.h"
 #include "grid_3D_cart.h"
 #include "species_general.h"
-#include "photons.h"
 #include "neutrinos.h"
 #include "cdf_array.h"
 #include "nulib_interface.h"
@@ -43,8 +42,6 @@ transport::transport(){
 	rho_max = NaN;
 	max_particles = -MAXLIM;
 	step_size = NaN;
-	do_photons = -MAXLIM;
-	do_neutrinos = -MAXLIM;
 	do_distribution = -MAXLIM;
 	iterative = -MAXLIM;
 	radiative_eq = -MAXLIM;
@@ -107,8 +104,6 @@ void transport::init(Lua* lua)
 
 	// read simulation parameters
 	verbose      = lua->scalar<int>("verbose");
-	do_photons   = lua->scalar<int>("do_photons");
-	do_neutrinos = lua->scalar<int>("do_neutrinos");
 	do_distribution = lua->scalar<int>("do_distribution");
 	if(do_distribution) annihil_rho_cutoff = lua->scalar<int>("annihil_rho_cutoff");
 	radiative_eq = lua->scalar<int>("radiative_eq");
@@ -184,42 +179,28 @@ void transport::init(Lua* lua)
 	// start at time 0
 	t_now = 0;
 
-	/**********************/
-	/**/ if(do_photons) /**/
-	/**********************/
-	{
-		photons* photons_tmp = new photons;
-		photons_tmp->init(lua, this);
-		species_list.push_back(photons_tmp);
+	double grey_opac = lua->scalar<double>("nut_grey_opacity");
+	int num_nut_species = 0;
+	if(grey_opac < 0){ // get everything from NuLib
+		// read the fortran module into memory
+		if(rank0) cout << "# Initializing NuLib...";
+		string nulib_table = lua->scalar<string>("nulib_table");
+		nulib_init(nulib_table);
+		if(rank0) cout << "finished." << endl;
+		num_nut_species = nulib_get_nspecies();
 	}
-	/************************/
-	/**/ if(do_neutrinos) /**/
-	/************************/
-	{
-		double grey_opac = lua->scalar<double>("nut_grey_opacity");
-		int num_nut_species = 0;
-		if(grey_opac < 0){ // get everything from NuLib
-			// read the fortran module into memory
-			if(rank0) cout << "# Initializing NuLib...";
-			string nulib_table = lua->scalar<string>("nulib_table");
-			nulib_init(nulib_table);
-			if(rank0) cout << "finished." << endl;
-			num_nut_species = nulib_get_nspecies();
-		}
-		else{
-			if(rank0) cout << "#   Using grey opacity for electron anti/neutrinos (0 chemical potential)" << endl;
-			num_nut_species = 2;
-		}
+	else{
+		if(rank0) cout << "#   Using grey opacity for electron anti/neutrinos (0 chemical potential)" << endl;
+		num_nut_species = 2;
+	}
 
-		// create the species arrays
-		for(int i=0; i<num_nut_species; i++){
-			neutrinos* neutrinos_tmp = new neutrinos;
-			neutrinos_tmp->nulibID = i;
-			neutrinos_tmp->num_nut_species = num_nut_species;
-			neutrinos_tmp->init(lua, this);
-			species_list.push_back(neutrinos_tmp);
-		}
-
+	// create the species arrays
+	for(int i=0; i<num_nut_species; i++){
+		neutrinos* neutrinos_tmp = new neutrinos;
+		neutrinos_tmp->nulibID = i;
+		neutrinos_tmp->num_nut_species = num_nut_species;
+		neutrinos_tmp->init(lua, this);
+		species_list.push_back(neutrinos_tmp);
 	}
 
 	// complain if we're not simulating anything
@@ -435,7 +416,7 @@ void transport::step(const double lab_dt)
 	}
 	if(MPI_nprocs>1) reduce_radiation();      // so each processor has necessary info to solve its zones
 	normalize_radiative_quantities(emission_time);
-	if(do_distribution && do_neutrinos) calculate_annihilation();
+	if(do_distribution) calculate_annihilation();
 
 	// solve for T_gas and Ye structure
 	if(solve_T || solve_Ye){
@@ -684,7 +665,7 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 
 		// erg*dist --> erg/ccm, represents *one* species, not *all* of them
 		if(do_distribution) for(unsigned s=0; s<species_list.size(); s++)
-			z->distribution[s].rescale(1./(multiplier*four_vol*pc::c);
+				      z->distribution[s].rescale(1./(multiplier*four_vol*pc::c));
 
 		// tally heat absorbed from viscosity and neutrinos
 		if(do_visc && grid->good_zone(z_ind)){
@@ -994,7 +975,7 @@ void transport::synchronize_gas()
 		}
 
 		// broadcast Q_annihil
-		if(do_neutrinos && do_distribution){
+		if(do_distribution){
 			if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->z[i].Q_annihil;
 			MPI_Bcast(&buffer.front(), size, MPI_DOUBLE, proc, MPI_COMM_WORLD);
 			if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->z[i].Q_annihil = buffer[i-my_begin];

@@ -86,8 +86,6 @@ private:
 
 	// simulation parameters
 	double step_size;
-	int    do_photons;
-	int    do_neutrinos;
 	int    do_distribution;
 	int    iterative;
 	int    radiative_eq;
