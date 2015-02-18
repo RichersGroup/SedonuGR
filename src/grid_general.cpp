@@ -122,27 +122,24 @@ void grid_general::write_header(ofstream& outf) const{
 	unsigned c=0;
 	for(unsigned i=0; i<r.size(); i++) outf << ++c << "-r[" << i << "]  ";
 	outf << ++c << "-comoving_volume(ccm)  ";
-	outf << ++c << "-rho(g/ccm)  ";
-	outf << ++c << "-T_gas(MeV)  ";
+	outf << ++c << "-rho(g/ccm,com)  ";
+	outf << ++c << "-T_gas(MeV,com)  ";
 	outf << ++c << "-Ye  ";
-	outf << ++c << "-mue(MeV)  ";
-	outf << ++c << "-e_rad(erg/ccm)  ";
-	outf << ++c << "-H_vis(erg/s/g)  ";
-	outf << ++c << "-H_abs(erg/g/s)  ";
-	outf << ++c << "-C_emit(erg/g/s)  ";
-	outf << ++c << "-|v|(cm/s)  ";
-	outf << ++c << "-dYe_dt_abs(1/s)  ";
-	outf << ++c << "-dYe_dt_emit(1/s)  ";
-	outf << ++c << "-annihilation_rate(erg/ccm/s)  ";
+	outf << ++c << "-mue(MeV,com)  ";
+	outf << ++c << "-H_vis(erg/s/g,com)  ";
+	outf << ++c << "-H_abs(erg/g/s,com)  ";
+	outf << ++c << "-C_emit(erg/g/s,com)  ";
+	outf << ++c << "-|v|(cm/s,lab)  ";
+	outf << ++c << "-dYe_dt_abs(1/s,lab)  ";
+	outf << ++c << "-dYe_dt_emit(1/s,lab)  ";
+	outf << ++c << "-annihilation_rate(erg/ccm/s,lab)  ";
 //	for(unsigned s=0; s<z[0].distribution.size(); s++){
 //		for(unsigned g=0; g<z[0].distribution[s].size(); g++){
 //			outf << ++c << "-s"<<s<<"g"<<g<<"edens(erg/ccm)  ";
 //		}
 //	}
-	outf << ++c << "-integrated_edens(erg/ccm)  ";
-	outf << ++c << "-avg_E(MeV)  ";
-	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << ++c << "-avg_E"<< s << "(MeV)";
-	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << ++c << "-e_rad"<< s << "(erg/ccm)";
+	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << ++c << "-e_rad"<< s << "(erg/ccm,lab) ";
+	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << ++c << "-avg_E"<< s << "(MeV,lab) ";
 	outf << endl;
 }
 
@@ -157,7 +154,6 @@ void grid_general::write_line(ofstream& outf, const int z_ind) const{
 	outf << z[z_ind].T*pc::k_MeV << "\t";
 	outf << z[z_ind].Ye    << "\t";
 	outf << nulib_eos_mue(z[z_ind].rho, z[z_ind].T, z[z_ind].Ye) * pc::ergs_to_MeV << "\t";
-	outf << z[z_ind].e_rad << "\t";
 	outf << z[z_ind].H_vis << "\t";
 
 	double H_abs  = z[z_ind].e_abs  / z[z_ind].rho;
@@ -168,28 +164,33 @@ void grid_general::write_line(ofstream& outf, const int z_ind) const{
 	outf << sqrt(zone_speed2(z_ind)) << "\t";
 
 	double n_baryons_per_ccm = z[z_ind].rho / transport::mean_mass(z[z_ind].Ye);
-	double dYe_dt_abs = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm;
-	double dYe_dt_emit = -z[z_ind].l_emit / n_baryons_per_ccm;
+	double dYe_dt_abs = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / transport::lorentz_factor(z[z_ind].v);
+	double dYe_dt_emit = -z[z_ind].l_emit / n_baryons_per_ccm / transport::lorentz_factor(z[z_ind].v);
 	outf << dYe_dt_abs << "\t";
 	outf << dYe_dt_emit << "\t";
 
 	outf << z[z_ind].Q_annihil << "\t";
 
-	double integrated_edens = 0;
-	for(unsigned s=0; s<z[z_ind].distribution.size(); s++){
-		vector<double> direction_integrated_edens;
-		z[z_ind].distribution[s].integrate_over_direction(direction_integrated_edens);
-		for(unsigned g=0; g<direction_integrated_edens.size(); g++){
-	//		outf << direction_integrated_edens[g] << "\t";
-			integrated_edens += direction_integrated_edens[g];
-		}
-	}
-	outf << integrated_edens << "\t";
+	// integrated energy density
+//	double integrated_edens = 0;
+//	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) integrated_edens += z[z_ind].distribution[s].integrate();
+//	for(unsigned s=0; s<z[z_ind].distribution.size(); s++){
+//		vector<double> direction_integrated_edens;
+//		z[z_ind].distribution[s].integrate_over_direction(direction_integrated_edens);
+//		for(unsigned g=0; g<direction_integrated_edens.size(); g++){
+//		outf << direction_integrated_edens[g] << "\t";
+//		}
+//	}
+//	outf << integrated_edens << "\t";
 
-	outf << z[z_ind].nu_avg * pc::h_MeV << "\t";
+	// average energy
+//	double weighted_integral = 0;
+//	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) weighted_integral += z[z_ind].distribution[s].average_nu() * pc::h_MeV * z[z_ind].distribution[s].integrate();
+//	outf << weighted_integral / integrated_edens << "\t";
 
-	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << z[z_ind].distribution[s].average_nu() * pc::h_MeV << "\t";
-	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << z[z_ind].distribution[s].integrate() << "\t";
+	// same as above, but species-wise
+	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) outf << z[z_ind].distribution[s].integrate() << "\t";
+	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) outf << z[z_ind].distribution[s].average_nu() * pc::h_MeV << "\t";
 
 	outf << endl;
 }

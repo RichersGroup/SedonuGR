@@ -199,7 +199,8 @@ double spectrum_array::average_nu() const{
 			}
 		}
 	}
-	return integral2 / integral1;
+	if(integral2/integral1 >= 0) return integral2 / integral1;
+	else return 0;
 }
 
 double spectrum_array::integrate() const{
@@ -215,14 +216,14 @@ double spectrum_array::integrate() const{
 	return integral;
 }
 
-// integrate over direction, but also divide by bin width
+// integrate over direction
 void spectrum_array::integrate_over_direction(vector<double>& integral) const{
 	integral = vector<double>(nu_grid.size(),0);
 	for(unsigned nu_bin=0; nu_bin<nu_grid.size(); nu_bin++){
 		for(unsigned mu_bin=0; mu_bin<mu_grid.size(); mu_bin++){
 			for(unsigned phi_bin=0; phi_bin<phi_grid.size(); phi_bin++){
 				int ind = index(nu_bin,mu_bin,phi_bin);
-				integral[nu_bin] += flux[ind]/(nu_grid.delta(nu_bin)*pc::h_MeV);
+				integral[nu_bin] += flux[ind];
 			}
 		}
 	}

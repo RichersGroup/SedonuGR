@@ -10,7 +10,6 @@ zone::zone(const int dimensionality){
 	T = NaN;
 	Ye = NaN;
 	H_vis = NaN;
-	e_rad = NaN;
 	e_abs = NaN;
 	nue_abs = NaN;
 	anue_abs = NaN;
@@ -21,5 +20,4 @@ zone::zone(const int dimensionality){
 	t_labs = NaN;
 	t_lemit = NaN;
 	Q_annihil = NaN;
-	nu_avg = NaN;
 }

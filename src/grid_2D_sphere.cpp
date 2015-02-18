@@ -447,7 +447,6 @@ void grid_2D_sphere::custom_model(Lua* lua)
 		infile >> z[base_ind].T;
 		infile >> z[base_ind].Ye;
 		z[base_ind].H_vis = 0;
-		z[base_ind].e_rad = 0;
 		assert(z[base_ind].v.size() == 3);
 		z[base_ind].v[0] = 0;
 		z[base_ind].v[1] = 0;

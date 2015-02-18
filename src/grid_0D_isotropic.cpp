@@ -17,7 +17,6 @@ void grid_0D_isotropic::read_model_file(Lua* lua)
 	z[0].T   = lua->scalar<double>("T")/pc::k_MeV;
 	z[0].Ye  = lua->scalar<double>("Ye");
 	z[0].H_vis = 0;
-	z[0].e_rad = 0;
 	z[0].v[0] = 0;
 	z[0].v[1] = 0;
 	z[0].v[2] = 0;

@@ -490,14 +490,12 @@ void transport::reset_radiation(){
 		for(unsigned z_ind=0;z_ind<grid->z.size();z_ind++)
 		{
 			zone* z = &(grid->z[z_ind]);
-			z->e_rad    = 0;
 			z->nue_abs  = 0;
 			z->anue_abs = 0;
 			z->e_abs    = 0;
 			z->l_emit   = 0;
 			z->e_emit   = 0;
 			z->Q_annihil = 0;
-			z->nu_avg    = 0;
 
 			if(do_distribution) for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].wipe();
 		}
@@ -657,8 +655,6 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 			assert(z->l_emit == 0.0);
 		}
 
-		z->nu_avg   /= z->e_rad;                  // Hz*erg*dist --> Hz
-		z->e_rad    /= multiplier*four_vol*pc::c; // erg*dist --> erg/ccm
 		z->e_abs    /= multiplier*four_vol;       // erg      --> erg/ccm/s
 		z->e_emit   /= multiplier*four_vol;       // erg      --> erg/ccm/s
 		z->nue_abs  /= multiplier*four_vol;       // num      --> num/ccm/s
@@ -899,11 +895,6 @@ void transport::reduce_radiation()
 			for(unsigned s=0; s<species_list.size(); s++)
 				for(int i=my_begin; i<my_end; i++) grid->z[i].distribution[s].MPI_average();
 
-		// reduce e_rad
-		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_rad;
-		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-		for(int i=my_begin; i<my_end; i++) grid->z[i].e_rad = receive[i-my_begin] / (double)MPI_nprocs;
-
 		// reduce e_abs
 		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_abs;
 		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -928,11 +919,6 @@ void transport::reduce_radiation()
 		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].l_emit;
 		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 		for(int i=my_begin; i<my_end; i++) grid->z[i].l_emit = receive[i-my_begin] / (double)MPI_nprocs;
-
-		// reduce nu_avg
-		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].nu_avg;
-		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-		for(int i=my_begin; i<my_end; i++) grid->z[i].nu_avg = receive[i-my_begin] / (double)MPI_nprocs;
 
 		// format for single reduce
 		//my_begin = ( proc==0 ? 0 : my_zone_end[proc-1] );

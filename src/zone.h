@@ -26,15 +26,13 @@ public:
 	double H_vis;               // specific heating rate (erg/s/g)
 
 	// radiation quantities (all in comoving frame) (dVdt and lepton number are relativistic invariants)
-	double e_rad;                         // radiation energy density  (ergs/cm^3) in lab frame
-	double e_abs;                         // radiation energy deposition density rate (ergs/cm^3/s)
-	double nue_abs;                       // electron neutrino number deposition density rate (cm^-3 s^-1)
-	double anue_abs;                      // electron anti-neutrino number deposition density rate (cm^-3 s^-1)
-	double e_emit;                        // radiation energy emission rate (erg/ccm/s)
-	double l_emit;						  // lepton number emission rate (cm^-3 s^-1)
-	vector<spectrum_array> distribution;  // radiation energy density for each species (erg/ccm. Integrated over bin frequency and direction)
-	double Q_annihil;                     // annihilation energy deposition rate (erg/ccm/s)
-	double nu_avg;
+	double e_abs;                         // radiation energy deposition density rate (ergs/cm^3/s) (comoving frame)
+	double nue_abs;                       // electron neutrino number deposition density rate (cm^-3 s^-1) (comoving frame)
+	double anue_abs;                      // electron anti-neutrino number deposition density rate (cm^-3 s^-1) (comoving frame)
+	double e_emit;                        // radiation energy emission rate (erg/ccm/s) (comoving frame)
+	double l_emit;						  // lepton number emission rate (cm^-3 s^-1) (comoving frame)
+	vector<spectrum_array> distribution;  // radiation energy density for each species in lab frame (erg/ccm. Integrated over bin frequency and direction)
+	double Q_annihil;                     // annihilation energy deposition rate (erg/ccm/s) (lab frame)
 
 	// timescales (all in lab frame)
 	double t_eabs;    // heating timescale

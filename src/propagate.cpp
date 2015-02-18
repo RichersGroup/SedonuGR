@@ -178,20 +178,12 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	// set pointer to the current zone
 	zone* zone;
 	zone = &(grid->z[z_ind]);
-	double to_add=0;
-
-	// tally in contribution to zone's radiation energy and average neutrino frequency (lab frame)
-	to_add = com_e * com_d;
-	#pragma omp atomic
-	zone->e_rad += to_add;
-	assert(zone->e_rad >= 0);
-	#pragma omp atomic
-	zone->nu_avg += com_nu * to_add;
-	assert(zone->nu_avg >= 0);
 
 	// tally in contribution to zone's distribution function (lab frame)
 	// use rhat, thetahat, phihat as basis functions so rotational symmetries give accurate results
+	double to_add = p->e * lab_d;
 	if(do_distribution){
+		to_add = p->e * lab_d;
 		double x=p->x[0], y=p->x[1], z=p->x[2];
 		double r = sqrt(dot(p->x,p->x));
 		double rp = sqrt(x*x + y*y);
