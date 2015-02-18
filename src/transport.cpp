@@ -42,7 +42,6 @@ transport::transport(){
 	rho_max = NaN;
 	max_particles = -MAXLIM;
 	step_size = NaN;
-	do_distribution = -MAXLIM;
 	do_annihilation = -MAXLIM;
 	iterative = -MAXLIM;
 	radiative_eq = -MAXLIM;
@@ -105,9 +104,8 @@ void transport::init(Lua* lua)
 
 	// read simulation parameters
 	verbose      = lua->scalar<int>("verbose");
-	do_distribution = lua->scalar<int>("do_distribution");
 	do_annihilation = lua->scalar<int>("do_annihilation");
-	if(do_distribution) annihil_rho_cutoff = lua->scalar<int>("annihil_rho_cutoff");
+	if(do_annihilation) annihil_rho_cutoff = lua->scalar<int>("annihil_rho_cutoff");
 	radiative_eq = lua->scalar<int>("radiative_eq");
 	iterative = lua->scalar<int>("iterative");
 	solve_T       = lua->scalar<int>("solve_T");
@@ -418,7 +416,7 @@ void transport::step(const double lab_dt)
 	}
 	if(MPI_nprocs>1) reduce_radiation();      // so each processor has necessary info to solve its zones
 	normalize_radiative_quantities(emission_time);
-	if(do_distribution && do_annihilation) calculate_annihilation();
+	if(do_annihilation) calculate_annihilation();
 
 	// solve for T_gas and Ye structure
 	if(solve_T || solve_Ye){
@@ -497,7 +495,7 @@ void transport::reset_radiation(){
 			z->e_emit   = 0;
 			z->Q_annihil = 0;
 
-			if(do_distribution) for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].wipe();
+			for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].wipe();
 		}
 	} // #pragma omp parallel
 }
@@ -662,8 +660,7 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		z->l_emit   /= multiplier*four_vol;       // num      --> num/ccm/s
 
 		// erg*dist --> erg/ccm, represents *one* species, not *all* of them
-		if(do_distribution) for(unsigned s=0; s<species_list.size(); s++)
-				      z->distribution[s].rescale(1./(multiplier*four_vol*pc::c));
+		for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].rescale(1./(multiplier*four_vol*pc::c));
 
 		// tally heat absorbed from viscosity and neutrinos
 		if(do_visc && grid->good_zone(z_ind)){
@@ -891,9 +888,8 @@ void transport::reduce_radiation()
 		receive.resize(size);
 
 		// reduce distribution
-		if(do_distribution)
-			for(unsigned s=0; s<species_list.size(); s++)
-				for(int i=my_begin; i<my_end; i++) grid->z[i].distribution[s].MPI_average();
+		for(unsigned s=0; s<species_list.size(); s++)
+			for(int i=my_begin; i<my_end; i++) grid->z[i].distribution[s].MPI_average();
 
 		// reduce e_abs
 		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_abs;
@@ -963,7 +959,7 @@ void transport::synchronize_gas()
 		}
 
 		// broadcast Q_annihil
-		if(do_distribution){
+		if(do_annihilation){
 			if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->z[i].Q_annihil;
 			MPI_Bcast(&buffer.front(), size, MPI_DOUBLE, proc, MPI_COMM_WORLD);
 			if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->z[i].Q_annihil = buffer[i-my_begin];

@@ -182,23 +182,20 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	// tally in contribution to zone's distribution function (lab frame)
 	// use rhat, thetahat, phihat as basis functions so rotational symmetries give accurate results
 	double to_add = p->e * lab_d;
-	if(do_distribution){
-		to_add = p->e * lab_d;
-		double x=p->x[0], y=p->x[1], z=p->x[2];
-		double r = sqrt(dot(p->x,p->x));
-		double rp = sqrt(x*x + y*y);
-		vector<double> rhat     = {x/r,   		y/r,	     z/r		   };
-		vector<double> thetahat = {z/r * x/rp,	z/r * y/rp,	 z/r * z/r - 1 };
-		vector<double> phihat   = {-y/rp,		x/rp,		 0			   };
-		if(rp==0){
-			if(r==0) rhat = {0,0,1};
-			thetahat = {0,1,0};
-			phihat   = {1,0,0};
-		}
-		vector<double> D_newbasis = {dot(p->D,phihat), dot(p->D,thetahat), dot(p->D,rhat)};
-		normalize(D_newbasis);
-		zone->distribution[p->s].count(D_newbasis, p->nu, to_add);
+	double x=p->x[0], y=p->x[1], z=p->x[2];
+	double r = sqrt(dot(p->x,p->x));
+	double rp = sqrt(x*x + y*y);
+	vector<double> rhat     = {x/r,   		y/r,	     z/r		   };
+	vector<double> thetahat = {z/r * x/rp,	z/r * y/rp,	 z/r * z/r - 1 };
+	vector<double> phihat   = {-y/rp,		x/rp,		 0			   };
+	if(rp==0){
+		if(r==0) rhat = {0,0,1};
+		thetahat = {0,1,0};
+		phihat   = {1,0,0};
 	}
+	vector<double> D_newbasis = {dot(p->D,phihat), dot(p->D,thetahat), dot(p->D,rhat)};
+	normalize(D_newbasis);
+	zone->distribution[p->s].count(D_newbasis, p->nu, to_add);
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
 	// Extra dshift definitely needed here (two total) to convert both p->e and this_d to the comoving frame

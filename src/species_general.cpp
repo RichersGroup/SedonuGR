@@ -47,20 +47,17 @@ void species_general::init(Lua* lua, transport* simulation)
 	}
 
     // set up the spectrum in each zone
-    bool do_distribution = lua->scalar<int>("do_distribution");
-    if(do_distribution){
-    	int n_mu = lua->scalar<int>("distribution_nmu");
-    	int n_phi = lua->scalar<int>("distribution_nphi");
-		#pragma omp parallel for
-    	for(unsigned z_ind=0; z_ind<sim->grid->z.size(); z_ind++){
-    		spectrum_array tmp_spectrum;
-    		locate_array tmp_mugrid, tmp_phigrid;
-    		tmp_mugrid.init( -1     , 1     , n_mu );
-    		tmp_phigrid.init(-pc::pi, pc::pi, n_phi);
-    		tmp_spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
-    		sim->grid->z[z_ind].distribution.push_back(tmp_spectrum);
-    	}
-    }
+	int n_mu = lua->scalar<int>("distribution_nmu");
+	int n_phi = lua->scalar<int>("distribution_nphi");
+	#pragma omp parallel for
+	for(unsigned z_ind=0; z_ind<sim->grid->z.size(); z_ind++){
+		spectrum_array tmp_spectrum;
+		locate_array tmp_mugrid, tmp_phigrid;
+		tmp_mugrid.init( -1     , 1     , n_mu );
+		tmp_phigrid.init(-pc::pi, pc::pi, n_phi);
+		tmp_spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
+		sim->grid->z[z_ind].distribution.push_back(tmp_spectrum);
+	}
 
 	// set nugrid interpolation method
 	int imeth  = lua->scalar<int>("opac_interp_method");
