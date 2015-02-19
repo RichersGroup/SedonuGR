@@ -156,6 +156,7 @@ public:
 	double ratio_emit_by_bin;
 
 	// global radiation quantities
+	vector<double> L_core_lab;
 	vector<double> L_net_lab;
 	vector<double> L_net_esc;
 	vector<double> E_avg_lab;

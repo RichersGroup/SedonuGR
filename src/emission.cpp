@@ -323,12 +323,9 @@ void transport::create_surface_particle(const double Ep, const double t, const i
 	assert(p.s < (int)species_list.size());
 	p.nu = species_list[p.s]->sample_core_nu(g);
 
-	// lorentz transform from the comoving to lab frame
-	transform_comoving_to_lab(&p);
-
 	// add to particle vector
     #pragma omp critical
 	particles.push_back(p);
-    //#pragma omp atomic
-	//L_net_lab[p.s] += p.e;
+    #pragma omp atomic
+	L_core_lab[p.s] += p.e;
 }

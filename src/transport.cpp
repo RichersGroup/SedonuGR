@@ -281,6 +281,7 @@ void transport::init(Lua* lua)
 	check_parameters();
 
 	// explicitly set global radiation quantities to 0
+	L_core_lab.resize(species_list.size());
 	L_net_lab.resize(species_list.size());
 	L_net_esc.resize(species_list.size());
 	E_avg_lab.resize(species_list.size());
@@ -288,6 +289,7 @@ void transport::init(Lua* lua)
 	N_net_lab.resize(species_list.size());
 	N_net_esc.resize(species_list.size());
 	for(unsigned s=0; s<species_list.size(); s++){
+		L_core_lab[s] = 0;
 		L_net_lab[s] = 0;
 		L_net_esc[s] = 0;
 		E_avg_lab[s] = 0;
@@ -467,6 +469,7 @@ void transport::reset_radiation(){
 		species_list[i]->spectrum.wipe();
 		n_active[i] = 0;
 		n_escape[i] = 0;
+		L_core_lab[i] = 0;
 		L_net_lab[i] = 0;
 		L_net_esc[i] = 0;
 		E_avg_lab[i] = 0;
@@ -505,7 +508,7 @@ void transport::reset_radiation(){
 //-----------------------------
 void transport::calculate_annihilation() const{
 	if(rank0 && verbose) cout << "# Calculating annihilation rates...";
-
+	cout << "ASDFASDF" << endl;
 	// remember what zones I'm responsible for
 	int start = ( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
 	int end = my_zone_end[MPI_myID];
@@ -674,6 +677,7 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		species_list[s]->spectrum.rescale(1./(multiplier*lab_dt)); // erg/s in each bin
 		E_avg_lab[s] /= L_net_lab[s];
 		E_avg_esc[s] /= L_net_esc[s];
+		L_core_lab[s] /= multiplier*lab_dt;
 		L_net_lab[s] /= multiplier*lab_dt;
 		L_net_esc[s] /= multiplier*lab_dt;
 		N_net_lab[s] /= multiplier*lab_dt;
@@ -703,10 +707,16 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		if(do_visc) cout << "#   " << net_visc_heating << " erg/s H_visc (comoving sum)" << endl;
 		cout << "#   " << net_neut_heating << " erg/s H_abs (comoving sum)" << endl;
 
+		cout << "#  SUM OF EMISSIONS: " << L_core_lab[0]+L_core_lab[1]+L_core_lab[2]+L_net_lab[0]+L_net_lab[1]+L_net_lab[2] << endl;
+
 		double CmH = 0;
 		for(unsigned s=0; s<species_list.size(); s++) CmH += L_net_lab[s];
 		CmH -= particle_fluid_abs_energy/lab_dt;
 		cout << "#   " << CmH << " erg/s L_emit-L_abs (lab-frame)" << endl;
+
+		cout << "#   { ";
+		for(unsigned s=0; s<L_core_lab.size(); s++) cout << setw(12) << L_core_lab[s] << "  ";
+		cout << "} erg/s L_core" << endl;
 
 		cout << "#   { ";
 		for(unsigned s=0; s<L_net_lab.size(); s++) cout << setw(12) << L_net_lab[s] << "  ";
@@ -839,6 +849,10 @@ void transport::reduce_radiation()
 	for(unsigned i=0; i<species_list.size(); i++) send[i] = L_net_esc[i];
 	MPI_Allreduce(&send.front(),&receive.front(),L_net_esc.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
 	for(unsigned i=0; i<species_list.size(); i++) L_net_esc[i] = receive[i]/(double)MPI_nprocs;
+
+	for(unsigned i=0; i<species_list.size(); i++) send[i] = L_core_lab[i];
+	MPI_Allreduce(&send.front(),&receive.front(),L_core_lab.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	for(unsigned i=0; i<species_list.size(); i++) L_core_lab[i] = receive[i]/(double)MPI_nprocs;
 
 	for(unsigned i=0; i<species_list.size(); i++) send[i] = L_net_lab[i];
 	MPI_Allreduce(&send.front(),&receive.front(),L_net_lab.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
