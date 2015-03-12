@@ -5,8 +5,8 @@ nx = 1
 r_in = 0
 
 R = 10*km
-rho = 0
-temp = 0
+rho = 10
+temp = 10
 
 
 print '1D_sphere', nx,r_in
