@@ -508,7 +508,7 @@ void transport::reset_radiation(){
 //-----------------------------
 void transport::calculate_annihilation() const{
 	if(rank0 && verbose) cout << "# Calculating annihilation rates...";
-	cout << "ASDFASDF" << endl;
+
 	// remember what zones I'm responsible for
 	int start = ( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
 	int end = my_zone_end[MPI_myID];
