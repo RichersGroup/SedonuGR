@@ -19,6 +19,7 @@ nulib_eos_filename = "/data/tables/EOS/HShen.h5"
 write_zones_every   = 1
 write_rays_every    = 1
 write_spectra_every = 1
+output_distribution = 0
 
 -- spectrum parameters
 
