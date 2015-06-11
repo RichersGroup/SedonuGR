@@ -153,9 +153,10 @@ void spectrum_array::count(const vector<double>& D, const double nu, const doubl
 {
 	assert(D.size()==3);
 	assert(E>=0);
+	const double tiny = 1e-8;
 	double mu  = D[2];           // component along z axis
-	mu = max(-1.0,mu);
-	mu = min( 1.0,mu);
+	mu = max(-1.0+tiny,mu);
+	mu = min( 1.0-tiny,mu);
 	double phi = atan2(D[1],D[0]);  // projection into x-y plane
 	if(phi< -pc::pi) phi += 2.0*pc::pi;
 	if(phi>  pc::pi) phi -= 2.0*pc::pi;
