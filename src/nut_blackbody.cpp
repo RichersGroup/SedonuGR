@@ -98,6 +98,7 @@ int main(int argc, char **argv)
 	ofstream outf;
 	if(rank0){
 		outf.open("results.dat");
+		outf << "# munue(MeV) ";
 		sim.grid->write_header(outf);
 	}
 
