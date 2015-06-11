@@ -1,7 +1,7 @@
 .PHONY: all clean
 
 all:
-	python empty_sphere.py > empty_sphere.mod
+	python empty_sphere.py > neutron_star.mod
 	./gomc
 	gnuplot compare_spectra.gnuplot
 
