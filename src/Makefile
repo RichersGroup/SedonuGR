@@ -25,8 +25,6 @@ tests: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o ../tests/nulib_plots/nulib_eas_single nulib_eas_single.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL)
 	$(CXX) $(CXXFLAGS) -o ../tests/nut_blackbody/nut_blackbody.exe nut_blackbody.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL)
 	$(CXX) $(CXXFLAGS) -o ../tests/nut_therm_shell/nut_therm_shell.exe nut_therm_shell.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL)
-	cp $(TARGET) ../tests/phot_spherical_emis
-	cp $(TARGET) ../tests/phot_visc_ball
 	cp $(TARGET) ../tests/nut_spherical_emis
 	cp $(TARGET) ../tests/nut_spherical_emis_2D
 	cp $(TARGET) ../tests/nut_visc_ball
@@ -35,8 +33,6 @@ tests: $(OBJECTS)
 	cp $(TARGET) ../tests/equilibrium_ye
 
 testsclean:
-	$(MAKE) -C ../tests/phot_spherical_emis clean
-	$(MAKE) -C ../tests/phot_visc_ball clean
 	$(MAKE) -C ../tests/nut_spherical_emis_2D clean
 	$(MAKE) -C ../tests/nut_spherical_emis clean
 	$(MAKE) -C ../tests/nut_visc_ball clean
