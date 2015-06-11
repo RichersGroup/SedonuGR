@@ -27,12 +27,6 @@ private:
 	// counting arrays
 	vector<double> flux;
 
-	// Indexing
-	unsigned index(const unsigned nu_bin,const unsigned mu_bin,const unsigned phi_bin) const;
-	unsigned  nu_bin(const unsigned index) const;
-	unsigned  mu_bin(const unsigned index) const;
-	unsigned phi_bin(const unsigned index) const;
-
 public:
 
 	// Initialize
@@ -63,6 +57,12 @@ public:
 
 	// Print out
 	void print(const int iw, const int species) const;
+
+	// Indexing
+	unsigned index(const unsigned nu_bin,const unsigned mu_bin,const unsigned phi_bin) const;
+	unsigned  nu_bin(const unsigned index) const;
+	unsigned  mu_bin(const unsigned index) const;
+	unsigned phi_bin(const unsigned index) const;
 };
 
 #endif
