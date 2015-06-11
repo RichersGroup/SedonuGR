@@ -8,7 +8,7 @@ MeV = 0.0000016021773
 
 r = 9.99999e5                             #cm
 T = 10*k_MeV                        #K
-mu = 0 #20*MeV
+mu = 20*MeV
 
 set xlabel "Neutrino Frequency (Hz) (2.5e20 Hz/MeV)"
 set ylabel "Energy Flux (erg/s/Hz/sr)"

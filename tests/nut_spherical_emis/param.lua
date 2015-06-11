@@ -53,7 +53,7 @@ step_size = 0.4
 core_emit_method = 1
 r_core = 9.99999e5
 T_core = 10
-core_nue_chem_pot = 0 --20
+core_nue_chem_pot = 20
 core_lum_multiplier = 1.0
 
 -- opacity parameters
