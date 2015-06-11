@@ -228,7 +228,6 @@ void nulib_init(string filename){
 	nulibtable_set_globals();
 }
 
-
 /**********************/
 /* get_nut_eas_arrays */
 /**********************/
@@ -398,6 +397,14 @@ double nulib_get_rhomin() {return pow(10,nulibtable_logrho_min);} // g/ccm
 double nulib_get_rhomax() {return pow(10,nulibtable_logrho_max);} // g/ccm
 double nulib_get_Yemin()  {return nulibtable_ye_min;}
 double nulib_get_Yemax()  {return nulibtable_ye_max;}
+bool nulib_in_range(double rho /* g/ccm */, double temp /* K */, double ye){
+	assert(rho>=0);
+	assert(temp>=0);
+	assert(ye>=0 && ye<=1);
+	return temp>=nulib_get_Tmin()   and temp<=nulib_get_Tmax() and
+		   rho >=nulib_get_rhomin() and rho <=nulib_get_rhomax() and
+		   ye  >=nulib_get_Yemin()  and ye  <=nulib_get_Yemax();
+}
 
 /*************/
 /* eos calls */
@@ -408,28 +415,35 @@ void nulib_eos_read_table(char* eos_filename){
 }
 
 double nulib_eos_munue(const double rho /* g/ccm */, const double temp /* K */, const double ye){ // erg
-	double eos_variables[nulib_total_eos_variables];
-	for(int i=0; i<nulib_total_eos_variables; i++) eos_variables[i] = 0;
-	eos_variables[0] = rho;
-	eos_variables[1] = temp * pc::k_MeV;
-	eos_variables[2] = ye;
+	if(!nulib_in_range(rho,temp,ye)) return 0.0;
+	else{
+		double eos_variables[nulib_total_eos_variables];
+		for(int i=0; i<nulib_total_eos_variables; i++) eos_variables[i] = 0;
+		eos_variables[0] = rho;
+		eos_variables[1] = temp * pc::k_MeV;
+		eos_variables[2] = ye;
 
-	set_eos_variables_(eos_variables);
-	double mue = eos_variables[10];
-	double muhat = eos_variables[13];
-	return (mue-muhat)*pc::MeV_to_ergs;
+		set_eos_variables_(eos_variables);
+		double mue = eos_variables[10];
+		double muhat = eos_variables[13];
+
+		return (mue-muhat)*pc::MeV_to_ergs;
+	}
 }
 
 double nulib_eos_mue(const double rho /* g/ccm */, const double temp /* K */, const double ye){ // erg
-	double eos_variables[nulib_total_eos_variables];
-	for(int i=0; i<nulib_total_eos_variables; i++) eos_variables[i] = 0;
-	eos_variables[0] = rho;
-	eos_variables[1] = temp * pc::k_MeV;
-	eos_variables[2] = ye;
+	if(!nulib_in_range(rho,temp,ye)) return 0.0;
+	else{
+		double eos_variables[nulib_total_eos_variables];
+		for(int i=0; i<nulib_total_eos_variables; i++) eos_variables[i] = 0;
+		eos_variables[0] = rho;
+		eos_variables[1] = temp * pc::k_MeV;
+		eos_variables[2] = ye;
 
-	set_eos_variables_(eos_variables);
-	double mue = eos_variables[10];
-	return mue*pc::MeV_to_ergs;
+		set_eos_variables_(eos_variables);
+		double mue = eos_variables[10];
+		return mue*pc::MeV_to_ergs;
+	}
 }
 
 

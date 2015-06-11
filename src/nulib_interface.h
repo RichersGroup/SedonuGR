@@ -25,6 +25,7 @@ double nulib_get_Yemin();
 double nulib_get_Yemax();
 double nulib_get_rhomin();
 double nulib_get_rhomax();
+bool nulib_in_range(double rho /* g/ccm */, double temp /* K */, double ye);
 
 void   nulib_eos_read_table(char* eos_filename);
 double nulib_eos_munue(const double rho, const double temp, const double ye);
