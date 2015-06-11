@@ -3,15 +3,19 @@
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_roots.h>
 #include "transport.h"
 #include "Lua.h"
 #include "grid_general.h"
 #include "species_general.h"
 
-double    temp_eq_function(int z_ind, double T,  transport* sim);
-double  Ye_nue_eq_function(int z_ind, double Ye, transport* sim);
-double Ye_anue_eq_function(int z_ind, double Ye, transport* sim);
-double      Ye_eq_function(int z_ind, double Ye, transport* sim);
+struct  eq_function_params{int z_ind; transport* sim;};
+double    temp_eq_function(double T , void* params);
+double  Ye_nue_eq_function(double Ye, void* params);
+double Ye_anue_eq_function(double Ye, void* params);
+double      Ye_eq_function(double Ye, void* params);
 
 
 //-------------------------------------------------------------
@@ -132,8 +136,13 @@ void transport::solve_eq_zone_values()
 // The Brent solver below to determine the temperature such
 // that RadEq holds
 //----------------------------------------------------------------------------
-double temp_eq_function(int z_ind, double T, transport* sim)
+double temp_eq_function(double T, void *params)
 {
+	// read the parameters
+	struct eq_function_params *p = (struct eq_function_params *) params;
+	const int z_ind = p->z_ind;
+	transport* sim = p->sim;
+
 	assert(z_ind >= 0);
 	assert(z_ind < (int)sim->grid->z.size());
 	assert(T >= 0);
@@ -178,8 +187,13 @@ double temp_eq_function(int z_ind, double T, transport* sim)
 // The Brent solver below to determine the temperature such
 // that RadEq holds
 //----------------------------------------------------------------------------
-double Ye_nue_eq_function(int z_ind, double Ye, transport* sim)
+double Ye_nue_eq_function(double Ye, void *params)
 {
+	// read the parameters
+	struct eq_function_params *p = (struct eq_function_params *) params;
+	const int z_ind = p->z_ind;
+	transport* sim = p->sim;
+
 	assert(z_ind >= 0);
 	assert(z_ind < (int)sim->grid->z.size());
 	assert(Ye >= 0);
@@ -213,8 +227,13 @@ double Ye_nue_eq_function(int z_ind, double Ye, transport* sim)
 	// return to Brent function to iterate this to zero
 	return (l_emitted - l_absorbed);
 }
-double Ye_anue_eq_function(int z_ind, double Ye, transport* sim)
+double Ye_anue_eq_function(double Ye, void *params)
 {
+	// read the parameters
+	struct eq_function_params *p = (struct eq_function_params *) params;
+	const int z_ind = p->z_ind;
+	transport* sim = p->sim;
+
 	assert(z_ind >= 0);
 	assert(z_ind < (int)sim->grid->z.size());
 	assert(Ye >= 0);
@@ -249,8 +268,13 @@ double Ye_anue_eq_function(int z_ind, double Ye, transport* sim)
 	// return to Brent function to iterate this to zero
 	return (l_emitted - l_absorbed);
 }
-double Ye_eq_function(int z_ind, double Ye, transport* sim)
+double Ye_eq_function(double Ye, void *params)
 {
+	// read the parameters
+	struct eq_function_params *p = (struct eq_function_params *) params;
+	const int z_ind = p->z_ind;
+	transport* sim = p->sim;
+
 	assert(z_ind >= 0);
 	assert(z_ind < (int)sim->grid->z.size());
 	assert(Ye >= 0);
@@ -290,82 +314,39 @@ double Ye_eq_function(int z_ind, double Ye, transport* sim)
 
 
 //-----------------------------------------------------------
-// Brents method (from Numerical Recipes) to solve 
+// Brents method to solve
 // non-linear equation for T in rad equillibrium
 //-----------------------------------------------------------
-// definitions used for temperature solver
+// definitions used for solver
 #define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
-double transport::brent_method(int z_ind, double (*eq_function)(int,double,transport*), double min, double max)
+double transport::brent_method(int z_ind, double (*eq_function)(double,void*), double min, double max)
 {
 	assert(z_ind >= 0);
 
-	double small = 3.0e-8;
-	int iter;
+	// allocate storage for the root solver
+	const gsl_root_fsolver_type *T = gsl_root_fsolver_bisection;
+	gsl_root_fsolver *s = gsl_root_fsolver_alloc(T);
 
-	// Initial guesses
-	double a=min;
-	double b=max;
-	double c=b;
-	double d,e,min1,min2;
-	double fa=(*eq_function)(z_ind,a,this);
-	double fb=(*eq_function)(z_ind,b,this);
-	double fc,p,q,r,s,tol1,xm;
-	e = INFINITY;
+	// initialize the solver
+	struct eq_function_params params = {z_ind,this};
+	gsl_function F;
+	F.function = eq_function;
+	F.params = &params;
+	gsl_root_fsolver_set(s,&F,min,max);
 
-	//if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0))
-	//  printf("Root must be bracketed in zbrent");
-	fc=fb;
-	for (iter=1;iter<=brent_itmax;iter++) {
-		if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0)) {
-			c=a;
-			fc=fa;
-			e=d=b-a;
-		}
-		if (fabs(fc) < fabs(fb)) {
-			a=b;
-			b=c;
-			c=a;
-			fa=fb;
-			fb=fc;
-			fc=fa;
-		}
-		tol1=2.0*small*fabs(b)+0.5*brent_solve_tolerance;
-		xm=0.5*(c-b);
-		if (fabs(xm) <= tol1 || fb == 0.0) return b;
-		if (fabs(e) >= tol1 && fabs(fa) > fabs(fb)) {
-			s=fb/fa;
-			if (a == c) {
-				p=2.0*xm*s;
-				q=1.0-s;
-			} else {
-				q=fa/fc;
-				r=fb/fc;
-				p=s*(2.0*xm*q*(q-r)-(b-a)*(r-1.0));
-				q=(q-1.0)*(r-1.0)*(s-1.0);
-			}
-			if (p > 0.0) q = -q;
-			p=fabs(p);
-			min1=3.0*xm*q-fabs(tol1*q);
-			min2=fabs(e*q);
-			if (2.0*p < (min1 < min2 ? min1 : min2)) {
-				e=d;
-				d=p/q;
-			} else {
-				d=xm;
-				e=d;
-			}
-		} else {
-			d=xm;
-			e=d;
-		}
-		a=b;
-		fa=fb;
-		if (fabs(d) > tol1)
-			b += d;
-		else
-			b += SIGN(tol1,xm);
-		fb=(*eq_function)(z_ind,b,this);
+	// do iterative solve
+	int status = GSL_CONTINUE;
+	int iter = 0;
+	while(status == GSL_CONTINUE and iter<brent_itmax){
+		status = gsl_root_fsolver_iterate (s);
+		double a = gsl_root_fsolver_x_lower(s);
+		double b = gsl_root_fsolver_x_upper(s);
+		status = gsl_root_test_interval(a,b,0,brent_solve_tolerance);
+		iter++;
 	}
-	printf("Maximum number of iterations exceeded in zbrent\n");
-	return 0.0;
+
+	// free the memory and return
+	double result = gsl_root_fsolver_root(s);
+	gsl_root_fsolver_free(s);
+	return result;
 }

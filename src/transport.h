@@ -76,7 +76,7 @@ private:
 	double brent_solve_tolerance;
 	void   solve_eq_zone_values();
 	void   normalize_radiative_quantities(const double dt);
-	double brent_method(const int zone_index, double (*eq_function)(int,double,transport*), const double min, const double max);
+	double brent_method(const int zone_index, double (*eq_function)(double, void*), const double min, const double max);
 
 	// update temperature and Ye (if !steady_state)
 	void update_zone_quantities();
