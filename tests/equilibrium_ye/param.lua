@@ -65,4 +65,4 @@ opac_interp_method = 0
 
 damping = 0.0
 brent_itmax = 100
-brent_tolerance = 0.01
+brent_tolerance = 1e-5
