@@ -1,5 +1,3 @@
 *.dat
 *.pdf
-plot_defaults.pyc
 compare.gnuplot
-param.lua

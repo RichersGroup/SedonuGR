@@ -4,4 +4,4 @@ all:
 	python run_many.py
 
 clean:
-	rm -f *.pdf compare.gnuplot results.dat predicted.dat param.lua
+	rm -f *.pdf compare.gnuplot results.dat predicted.dat
