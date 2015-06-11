@@ -11,6 +11,7 @@
 double    temp_eq_function(int z_ind, double T,  transport* sim);
 double  Ye_nue_eq_function(int z_ind, double Ye, transport* sim);
 double Ye_anue_eq_function(int z_ind, double Ye, transport* sim);
+double      Ye_eq_function(int z_ind, double Ye, transport* sim);
 
 
 //-------------------------------------------------------------
@@ -63,14 +64,18 @@ void transport::solve_eq_zone_values()
 			if(solve_Ye)
 			{
 				Ye_last_iter = grid->z[z_ind].Ye;
-				double nue_abs = grid->z[z_ind].nue_abs;
+				double nue_abs  = grid->z[z_ind].nue_abs;
 				double anue_abs = grid->z[z_ind].anue_abs;
-				double weight2 =  nue_abs / (nue_abs+anue_abs);
-				double weight1 = anue_abs / (nue_abs+anue_abs);
-				double Ye1 = brent_method(z_ind, Ye_nue_eq_function,   Ye_min, Ye_max);
-				double Ye2 = brent_method(z_ind, Ye_anue_eq_function,  Ye_min, Ye_max);
+				bool neutrinoless = (nue_abs + anue_abs == 0);
+				double weight1 = neutrinoless ? 1.0 : anue_abs / (nue_abs+anue_abs);
+				double weight2 = neutrinoless ? 0.0 : nue_abs  / (nue_abs+anue_abs);
+				double Ye1 = neutrinoless ?
+							 brent_method(z_ind, Ye_eq_function,   Ye_min, Ye_max) :
+							 brent_method(z_ind, Ye_nue_eq_function, Ye_min, Ye_max);
+				double Ye2 = neutrinoless ? 0 :
+						     brent_method(z_ind, Ye_anue_eq_function,  Ye_min, Ye_max);
 				grid->z[z_ind].Ye = weight1*Ye1 + weight2*Ye2;
-				Ye_error = fabs( (grid->z[z_ind].Ye    - Ye_last_iter) / (Ye_last_iter) );
+				Ye_error = fabs( (grid->z[z_ind].Ye - Ye_last_iter) / (Ye_last_iter) );
 			}
 			iter++;
 		}
@@ -244,7 +249,41 @@ double Ye_anue_eq_function(int z_ind, double Ye, transport* sim)
 	// return to Brent function to iterate this to zero
 	return (l_emitted - l_absorbed);
 }
+double Ye_eq_function(int z_ind, double Ye, transport* sim)
+{
+	assert(z_ind >= 0);
+	assert(z_ind < (int)sim->grid->z.size());
+	assert(Ye >= 0);
+	assert(Ye <= 1);
 
+	// total energy absorbed in zone
+	double l_absorbed = sim->grid->z[z_ind].nue_abs - sim->grid->z[z_ind].anue_abs;
+	// total energy emitted (to be calculated)
+	double l_emitted = 0.;
+
+	// set the zone temperature
+	sim->grid->z[z_ind].Ye = Ye;
+
+	// include the emission from all species
+	for(unsigned i=0; i<sim->species_list.size(); i++) if(sim->species_list[i]->lepton_number!=0)
+	{
+		// reset the eas variables in this zone
+		// OPTIMIZE - only set the emissivity variable
+		sim->species_list[i]->set_eas(z_ind);
+
+		// integrate emissison over frequency (angle
+		// integration gives the 4*PI) to get total
+		// radiation energy emitted. Opacities are
+		// held constant for this (assumed not to change
+		// much from the last time step).
+		// minus sign since integrate_zone_lepton_emis will return a negative number
+		l_emitted += 4.0*pc::pi * sim->species_list[i]->integrate_zone_lepton_emis(z_ind) * sim->species_list[i]->lepton_number;
+	}
+
+	// radiative equillibrium condition: "emission equals absorbtion"
+	// return to Brent function to iterate this to zero
+	return (l_emitted - l_absorbed);
+}
 
 
 

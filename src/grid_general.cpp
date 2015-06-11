@@ -159,7 +159,9 @@ void grid_general::write_line(ofstream& outf, const int z_ind) const{
 	outf << z[z_ind].rho   << "\t";
 	outf << z[z_ind].T*pc::k_MeV << "\t";
 	outf << z[z_ind].Ye    << "\t";
-	outf << nulib_eos_mue(z[z_ind].rho, z[z_ind].T, z[z_ind].Ye) * pc::ergs_to_MeV << "\t";
+	if(nulib_in_range(z[z_ind].rho, z[z_ind].T, z[z_ind].Ye))
+		outf << nulib_eos_mue(z[z_ind].rho, z[z_ind].T, z[z_ind].Ye) * pc::ergs_to_MeV << "\t";
+	else outf << "UNDEF\t";
 	outf << z[z_ind].H_vis << "\t";
 
 	double H_abs  = z[z_ind].e_abs  / z[z_ind].rho;

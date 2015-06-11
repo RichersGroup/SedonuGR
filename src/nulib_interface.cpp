@@ -398,9 +398,6 @@ double nulib_get_rhomax() {return pow(10,nulibtable_logrho_max);} // g/ccm
 double nulib_get_Yemin()  {return nulibtable_ye_min;}
 double nulib_get_Yemax()  {return nulibtable_ye_max;}
 bool nulib_in_range(double rho /* g/ccm */, double temp /* K */, double ye){
-	assert(rho>=0);
-	assert(temp>=0);
-	assert(ye>=0 && ye<=1);
 	return temp>=nulib_get_Tmin()   and temp<=nulib_get_Tmax() and
 		   rho >=nulib_get_rhomin() and rho <=nulib_get_rhomax() and
 		   ye  >=nulib_get_Yemin()  and ye  <=nulib_get_Yemax();
@@ -415,6 +412,9 @@ void nulib_eos_read_table(char* eos_filename){
 }
 
 double nulib_eos_munue(const double rho /* g/ccm */, const double temp /* K */, const double ye){ // erg
+	assert(rho>=0);
+	assert(temp>=0);
+	assert(ye>=0 && ye<=1);
 	if(!nulib_in_range(rho,temp,ye)) return 0.0;
 	else{
 		double eos_variables[nulib_total_eos_variables];
@@ -432,6 +432,9 @@ double nulib_eos_munue(const double rho /* g/ccm */, const double temp /* K */, 
 }
 
 double nulib_eos_mue(const double rho /* g/ccm */, const double temp /* K */, const double ye){ // erg
+	assert(rho>=0);
+	assert(temp>=0);
+	assert(ye>=0 && ye<=1);
 	if(!nulib_in_range(rho,temp,ye)) return 0.0;
 	else{
 		double eos_variables[nulib_total_eos_variables];
