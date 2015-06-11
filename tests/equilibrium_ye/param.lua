@@ -1,58 +1,68 @@
 -- what are we simulating?
 
 verbose      = 1
-do_photons   = 0                 -- simulate photons?
-do_neutrinos = 1                 -- simulate neutrinos?
-steady_state = 1                 -- iterative calculation (solve for steady-state configuration)? 
+iterative    = 1
 radiative_eq = 1
-solve_T      = 0                 -- (if iterative) solves each zone's temperature based on its absorbed energy
-solve_Ye     = 1                 -- (if iterative) solves each zone's Ye based on its absorbed lepton number
+solve_T      = 0
+solve_Ye     = 1
 do_visc      = 0
 reflect_outer= 1
+do_annihilation = 0
+do_relativity = 0
+
+-- distribution parameters
+
+distribution_nmu = 4
+distribution_nphi = 8
 
 -- input/output files
 
-grid_type = "grid_1D_sphere"       -- grid geometry. Must match grid geometry in model file if used  
-model_file  =  "neutron_star.mod"  -- model file. "custom" --> use hard coded model
-nulib_table = "../../external/tables/NuLib_LS220_rho150_temp90_ye60_ng24_ns3_Itemp10_Ieta10_version1.0_20140701.h5" -- NuLib opacity/emissivity table
+grid_type = "grid_1D_sphere"
+model_file  =  "neutron_star.mod"
+nulib_eos_filename = "/data/tables/EOS/HShen.h5"
+nulib_table = "/data/tables/NuLib/Shen_full/NuLib.h5"
 write_zones_every   = 1
 write_rays_every    = 1
 write_spectra_every = 1
+output_distribution = 0
 
 -- spectrum parameters
 
-nut_spec_time_grid  = {1,1,1}          -- spectrum time grid parameters {start,stop,delta} (start==stop --> single bin catch-all)
-nut_spec_nu_grid    = {0,1e22,1e20}    -- spectrum frequency grid parameters {start,stop,delta} (start==stop --> single bin catch-all)
-nut_spec_n_mu       = 1                -- number of cos(theta) bins in output spectrum 
-nut_spec_n_phi      = 1                -- number of phi bins in output spectrum
+nut_spec_n_mu = 1
+nut_spec_n_phi = 1
 
 -- particle creation parameters
 
-n_emit_core    = 0                 -- # particles to emit from core each timestep
-n_emit_therm   = 0                 -- # particles to emit from zones each timestep
-n_emit_decay   = 0                 -- # particles to emit from zones each timestep (from non-thermal processes)
-n_emit_visc    = 0                 -- # particles to emit from zones each timestep (due to viscosity)
+n_initial      = 0
+n_emit_core    = 0
+n_emit_therm   = 0
 max_particles  = 0
+emissions_per_timestep=1
+ratio_emit_by_bin = 0
 
 -- particle propagation parameters
 
 max_n_steps = 1
 dt = 1
-step_size = 0.4                    -- move at most step_size*min_grid_length at a time
+step_size = 0.4
 
 -- inner source
 
-r_core = 0                         -- core radius (cm)
-L_core = 0                         -- core luminosity (erg/s)
-T_core = 0                         -- core temperature (K)
+core_emit_method = 1
+r_core = 0
+L_core = 0
+T_core = 0
 
 -- opacity parameters
 
-nut_grey_opacity    =  -1          -- optical grey opacity (cm^2/g)
-nut_grey_abs_frac   =  -1          -- absorption fraction
+nut_grey_opacity    =  -1
+nut_grey_abs_frac   =  -1
+nut_cdf_cutoff = 0
+cdf_interpolation_order = 0
+opac_interp_method = 0
 
 -- equilibrium solver parameters
 
-damping = 0.0                      -- changes in values between iterations are decreased by this factor
+damping = 0.0
 brent_itmax = 100
 brent_tolerance = 0.01
