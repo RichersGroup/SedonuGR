@@ -42,6 +42,9 @@ protected:
 	// fill the grid with data hard coded here
 	virtual void custom_model(Lua* lua) = 0;
 
+	// output options
+	int output_distribution;
+
 public:
 
 	virtual ~grid_general() {}

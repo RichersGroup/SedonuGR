@@ -25,6 +25,7 @@ void grid_general::init(Lua* lua)
 	int do_relativity = lua->scalar<int>("do_relativity");
 	if(model_file == "custom") custom_model(lua);
 	else read_model_file(lua);
+	output_distribution = lua->scalar<int>("output_distribution");
 
 	// complain if the grid is obviously not right
 	if(z.size()==0){
@@ -133,13 +134,18 @@ void grid_general::write_header(ofstream& outf) const{
 	outf << ++c << "-dYe_dt_abs(1/s,lab)  ";
 	outf << ++c << "-dYe_dt_emit(1/s,lab)  ";
 	outf << ++c << "-annihilation_rate(erg/ccm/s,lab)  ";
-//	for(unsigned s=0; s<z[0].distribution.size(); s++){
-//		for(unsigned g=0; g<z[0].distribution[s].size(); g++){
-//			outf << ++c << "-s"<<s<<"g"<<g<<"edens(erg/ccm)  ";
-//		}
-//	}
 	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << ++c << "-e_rad"<< s << "(erg/ccm,lab) ";
 	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << ++c << "-avg_E"<< s << "(MeV,lab) ";
+	if(output_distribution){
+		for(unsigned s=0; s<z[0].distribution.size(); s++){
+			for(unsigned g=0; g<z[0].distribution[s].size(); g++){
+				int nu_bin = z[0].distribution[s].nu_bin(g);
+				int mu_bin = z[0].distribution[s].mu_bin(g);
+				int phi_bin = z[0].distribution[s].phi_bin(g);
+				outf << ++c << "-s"<<s<<"g"<<nu_bin<<"mu"<<mu_bin<<"phi"<<phi_bin<<"edens(erg/ccm)  ";
+			}
+		}
+	}
 	outf << endl;
 }
 
@@ -171,26 +177,28 @@ void grid_general::write_line(ofstream& outf, const int z_ind) const{
 
 	outf << z[z_ind].Q_annihil << "\t";
 
+	// integrated energy density and average energy for each species
+	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) outf << z[z_ind].distribution[s].integrate() << "\t";
+	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) outf << z[z_ind].distribution[s].average_nu() * pc::h_MeV << "\t";
+
 	// integrated energy density
-//	double integrated_edens = 0;
-//	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) integrated_edens += z[z_ind].distribution[s].integrate();
+	//double integrated_edens = 0;
+	//for(unsigned s=0; s<z[z_ind].distribution.size(); s++) integrated_edens += z[z_ind].distribution[s].integrate();
+	//utf << integrated_edens << "\t";
+	if(output_distribution){
+		for(unsigned s=0; s<z[0].distribution.size(); s++){
+			for(unsigned g=0; g<z[0].distribution[s].size(); g++){
+				outf << z[z_ind].distribution[s].get(g) << "\t";
+			}
+		}
+	}
 //	for(unsigned s=0; s<z[z_ind].distribution.size(); s++){
 //		vector<double> direction_integrated_edens;
 //		z[z_ind].distribution[s].integrate_over_direction(direction_integrated_edens);
 //		for(unsigned g=0; g<direction_integrated_edens.size(); g++){
-//		outf << direction_integrated_edens[g] << "\t";
+//			outf << direction_integrated_edens[g] << "\t";
 //		}
 //	}
-//	outf << integrated_edens << "\t";
-
-	// average energy
-//	double weighted_integral = 0;
-//	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) weighted_integral += z[z_ind].distribution[s].average_nu() * pc::h_MeV * z[z_ind].distribution[s].integrate();
-//	outf << weighted_integral / integrated_edens << "\t";
-
-	// same as above, but species-wise
-	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) outf << z[z_ind].distribution[s].integrate() << "\t";
-	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) outf << z[z_ind].distribution[s].average_nu() * pc::h_MeV << "\t";
 
 	outf << endl;
 }

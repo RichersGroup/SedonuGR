@@ -474,7 +474,7 @@ int grid_2D_sphere::zone_index(const vector<double>& x) const
 	double theta = atan2(sqrt(x[0]*x[0] + x[1]*x[1]), x[2]);
 	assert(r >= 0);
 	assert(theta >= 0);
-	if(fabs(theta-pc::pi)<tiny) theta = pc::pi;
+	if(fabs(theta-pc::pi)<tiny) theta = pc::pi-tiny;
 	assert(theta <= pc::pi);
 
 	// check if off the boundaries
