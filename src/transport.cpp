@@ -319,9 +319,6 @@ void transport::init_core(const double r_core /*cm*/, const vector<double>& T_co
 		core_species_luminosity.set_value(s,species_list[s]->integrate_core_emis());
 	}
 	core_species_luminosity.normalize();
-
-	// check emission quality from core
-	if(verbose && rank0) cout << "# Q_core = " << Q_core() << endl;
 }
 void transport::init_core(const double r_core /*cm*/, const double T_core /*K*/, const double munue_core /*erg*/){
 	assert(n_emit_core>0);
@@ -338,48 +335,8 @@ void transport::init_core(const double r_core /*cm*/, const double T_core /*K*/,
 		core_species_luminosity.set_value(s, species_list[s]->integrate_core_emis());
 	}
 	core_species_luminosity.normalize();
-
-	// check emission quality from core
-	if(verbose && rank0) cout << "# Q_core = " << Q_core() << endl;
 }
 
-
-// estimate the quality of the core emission (#emitted per bin)
-double transport::Q_core() const{
-	assert(n_emit_core>0);
-	assert(r_core>0);
-	assert(species_list.size()>0);
-
-	double min_emis = numeric_limits<double>::infinity();
-	double net_emis = 0;
-	for(unsigned s=0; s<species_list.size(); s++){
-		for(unsigned g=0; g<species_list[s]->core_emis.size(); g++){
-			double this_emis = species_list[s]->core_emis.get_value(g);
-			if(this_emis < min_emis) min_emis = this_emis;
-			net_emis += this_emis;
-		}
-	}
-	return min_emis/net_emis * (double)n_emit_core;
-}
-
-
-// estimate the quality of the zone emission (#emitted per bin)
-double transport::Q_zones() const{
-	assert(n_emit_zones>0);
-	assert(species_list.size()>0);
-	assert(grid->z.size()>0);
-
-	double min_emis = numeric_limits<double>::infinity();
-	double net_emis = 0;
-	for(unsigned s=0; s<species_list.size(); s++){
-		for(unsigned z_ind=0; z_ind<grid->z.size(); z_ind++){
-			double this_min_emis = species_list[s]->min_bin_emis(z_ind);
-			if(this_min_emis < min_emis) min_emis = this_min_emis;
-			net_emis += species_list[s]->integrate_zone_emis(z_ind);
-		}
-	}
-	return min_emis/net_emis * (double)n_emit_zones;
-}
 
 void transport::check_parameters() const{
 	if(n_emit_zones>0 && radiative_eq){
@@ -699,10 +656,10 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 
 		// particle information (all lab-frame)
 		cout << "#   " << total_active << " total active particles" << endl;
-		cout << "#   " << particle_total_energy/lab_dt << " ERG/S TOTAL PARTICLE LUMINOSITY: " << endl;
-		cout << "#   " << particle_fluid_abs_energy/lab_dt << " ERG/S TOTAL ABSORBED (fluid) PARTICLE ENERGY: " << endl;
-		cout << "#   " << particle_core_abs_energy/lab_dt << " ERG/S TOTAL ABSORBED (core)  PARTICLE ENERGY: " << endl;
-		cout << "#   " << particle_escape_energy/lab_dt << " ERG/S TOTAL ESCAPED PARTICLE ENERGY: " << endl;
+		cout << "#   " << particle_total_energy/lab_dt << " ERG/S TOTAL PARTICLE LUMINOSITY " << endl;
+		cout << "#   " << particle_fluid_abs_energy/lab_dt << " ERG/S TOTAL DESTROYED (fluid) PARTICLE ENERGY " << endl;
+		cout << "#   " << particle_core_abs_energy/lab_dt << " ERG/S TOTAL DESTROYED (core)  PARTICLE ENERGY " << endl;
+		cout << "#   " << particle_escape_energy/lab_dt << " ERG/S TOTAL ESCAPED PARTICLE ENERGY " << endl;
 
 		if(do_visc) cout << "#   " << net_visc_heating << " erg/s H_visc (comoving sum)" << endl;
 		cout << "#   " << net_neut_heating << " erg/s H_abs (comoving sum)" << endl;
@@ -746,15 +703,13 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 		cout << "#   " << dyedt << " 1/s global dYe_dt" << endl;
 
 		// just latex output to make plugging numbers into the paper easier
-		cout << CmH/1e51 << " & " << dyedt;
-		for(unsigned s=0; s<species_list.size(); s++) cout << " & " << L_net_lab[s]/1e51;
-		for(unsigned s=0; s<species_list.size(); s++) cout << " & " << L_net_esc[s]/1e51;
-		for(unsigned s=0; s<species_list.size(); s++) cout << " & " << E_avg_lab[s]*pc::h_MeV;
-		for(unsigned s=0; s<species_list.size(); s++) cout << " & " << E_avg_esc[s]*pc::h_MeV;
-		cout << endl;
+		//cout << CmH/1e51 << " & " << dyedt;
+		//for(unsigned s=0; s<species_list.size(); s++) cout << " & " << L_net_lab[s]/1e51;
+		//for(unsigned s=0; s<species_list.size(); s++) cout << " & " << L_net_esc[s]/1e51;
+		//for(unsigned s=0; s<species_list.size(); s++) cout << " & " << E_avg_lab[s]*pc::h_MeV;
+		//for(unsigned s=0; s<species_list.size(); s++) cout << " & " << E_avg_esc[s]*pc::h_MeV;
+		//cout << endl;
 	}
-
-	if(verbose && rank0 && n_emit_zones>0) cout << "#   Q_zones = " << Q_zones() << endl;
 }
 
 

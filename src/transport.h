@@ -109,8 +109,6 @@ private:
 	void check_parameters() const;
 
 	// check quality
-	double Q_zones() const;
-	double Q_core() const;
 	int number_of_bins() const;
 
 public:
