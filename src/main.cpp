@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 	sim.init(&lua);
 
 	// read in time stepping parameters
-	int max_n_steps  = lua.scalar<int>("max_n_steps");
+	int max_n_iter  = lua.scalar<int>("max_n_iter");
 	double dt        = lua.scalar<double>("dt");
 	lua.close();
 
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 	// TIME LOOP //
 	//===========//
 	if (rank0) printf("%12s %12s %12s %12s\n","iteration","t","dt","n_particles");
-	for(int it=1; it<=max_n_steps; it++)
+	for(int it=1; it<=max_n_iter; it++)
 	{
 		// do transport step
 		sim.step(dt);

@@ -110,7 +110,7 @@ int main(int argc, char **argv)
 
 	// read in time stepping parameters
 	double dt        = lua.scalar<double>("dt");
-	int max_n_steps  = lua.scalar<int>("max_n_steps");
+	int max_n_iter  = lua.scalar<int>("max_n_iter");
 	lua.close();
 
 	// check parameters
@@ -126,7 +126,7 @@ int main(int argc, char **argv)
 	double max_optical_depth = 0;
 	for(int i=0; i<n_T; i++){
 		double logT = min_logT + i*dlogT;
-		double optical_depth = run_test(max_n_steps, rank0, dt,rho0,pow(10,logT),ye0,sim,outf);
+		double optical_depth = run_test(max_n_iter, rank0, dt,rho0,pow(10,logT),ye0,sim,outf);
 		max_optical_depth = (optical_depth>max_optical_depth ? optical_depth : max_optical_depth);
 	}
 	//=========//
@@ -134,7 +134,7 @@ int main(int argc, char **argv)
 	//=========//
 	for(int i=0; i<n_ye; i++){
 		double ye = min_ye + i*dye;
-		double optical_depth = run_test(max_n_steps, rank0, dt,rho0,T0,ye,sim,outf);
+		double optical_depth = run_test(max_n_iter, rank0, dt,rho0,T0,ye,sim,outf);
 		max_optical_depth = (optical_depth>max_optical_depth ? optical_depth : max_optical_depth);
 	}
 	//==============//
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
 	//==============//
 	for(int i=0; i<n_rho; i++){
 		double logrho = min_logrho + i*dlogrho;
-		double optical_depth = run_test(max_n_steps, rank0, dt,pow(10,logrho),T0,ye0,sim,outf);
+		double optical_depth = run_test(max_n_iter, rank0, dt,pow(10,logrho),T0,ye0,sim,outf);
 		max_optical_depth = (optical_depth>max_optical_depth ? optical_depth : max_optical_depth);
 	}
 
