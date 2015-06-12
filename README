@@ -2,19 +2,25 @@ REREQUISITES
 ==============================
 To clone the repository, execute
 
-    git clone <username>@portal-auth.nersc.gov:/project/projectdirs/sedona/sedona_git
+    git clone  https://srichers@bitbucket.org/srichers/sedonu.git
 
-In the sedona directory, copy the make.inc.template file to make.inc (make.inc is used by the make system).
+In the sedona directory, copy the make.inc.template file to make.inc
+(make.inc is used by the make system).
 
     cp make.inc.template make.inc
 
-Open make.inc in your favorite text editor and make sure the compiler and compiler flags are set to the values you want to use. Your mpi compiler scripts should use the same compiler used to build NuLib and HDF5. To check the compiler a script uses and that hdf5 was compiled with, execute
+Open make.inc in your favorite text editor and make sure the compiler
+and compiler flags are set to the values you want to use. Your mpi
+compiler scripts should use the same compiler used to build NuLib and
+HDF5. To check the compiler a script uses and that hdf5 was compiled
+with, execute
 
     mpicc -v   #same for mpif90 and mpicxx
     grep 'Compiler' <hdf5_directory>/lib/libhdf5.settings
 
-Note that the only compilers we've tested are GNU, Intel, and (only on Hopper) PGI
-Intel 12 and below appear not to work. On Zwicky I use Intel 14 and gcc 4.8.1.
+Note that the only compilers we've tested are GNU, Intel, and (only on
+Hopper) PGI. Intel 12 and below appear not to work. On Zwicky I have
+used Intel 14 and gcc 4.8.1.
 
 
 ########
@@ -37,45 +43,81 @@ On Zwicky, I use the intel MPI implementation and the intel compilers.
 #######
 # GSL #
 #######
-GSL is used to generate random numbers in sedona. If you do not already have GSL installed, you may be able to install it using the following in Ubuntu. This is the recommended way to install GSL. In ubuntu you can check whether these are installed using "dpkg -l | grep 'gsl'" (without the quotes).
+GSL is used to generate random numbers in sedona. If you do not
+already have GSL installed, you may be able to install it using the
+following in Ubuntu. This is the recommended way to install GSL. In
+ubuntu you can check whether these are installed using "dpkg -l | grep
+'gsl'" (without the quotes).
 
     apt-get install gsl-bin libgsl0ldbl libgsl0-dev
 
-If you can't install software with a package manager on your machine (e.g. a cluster), then you will have to build it from scratch in your chosen directory. This almost never has to be done, so we won't include directions here. If directions would be helpful, let us know and we can add them. So far, the latest tested version of gsl is 1.15.
+If you can't install software with a package manager on your machine
+(e.g. a cluster), then you will have to build it from scratch in your
+chosen directory. This almost never has to be done, so we won't
+include directions here. If directions would be helpful, let us know
+and we can add them. So far, the latest tested version of gsl is 1.15.
 
 
 #######
 # LUA #
 #######
-Lua is a scripting language that is used to read the parameter files. If you do not already have Lua installed, you may be able to install it using the following in Ubuntu. However, you will have to change a flag in make.inc, as for some reason the Ubuntu package manager renames the libraries. Also, the library will be in the default search path, so remove the information that says where everything is. If it works, this is the recommended way to install lua. In ubuntu you can see if lua is installed using "dpkg -l | grep 'lua'" (without the quotes).
+Lua is a scripting language that is used to read the parameter
+files. If you do not already have Lua installed, you may be able to
+install it using the following in Ubuntu. However, you will have to
+change a flag in make.inc, as for some reason the Ubuntu package
+manager renames the libraries. Also, the library will be in the
+default search path, so remove the information that says where
+everything is. If it works, this is the recommended way to install
+lua. In ubuntu you can see if lua is installed using "dpkg -l | grep
+'lua'" (without the quotes).
 
     apt-get install lua5.2 lua5.2-dev
     (in make.inc) #LUA_BASE=external/lua-5.2.2/install #commented out b/c it's unused
     (in make.inc) -I/usr/include/lua5.2                #ubuntu puts lua in a non-standard directory
     (in make.inc) LUA_LIBS=-llua5.2                    #at least this is the name Ubuntu gives the library ("liblua5.2.so")
 
-If you can't install software with a package manager on your machine (e.g. a cluster), then you will have to build it from scratch in your chosen directory. We will install it into the "external" directory here. First, download and extract the source code (this version is the latest version tested with sedona).
+If you can't install software with a package manager on your machine
+(e.g. a cluster), then you will have to build it from scratch in your
+chosen directory. We will install it into the "external" directory
+here. First, download and extract the source code (this version is the
+latest version tested with sedona).
 
     wget http://www.lua.org/ftp/lua-5.2.3.tar.gz
     tar -xvf lua-5.2.3.tar.gz -C external
     rm lua-5.2.3.tar.gz
 
-Change into the lua directory to build it. If there are linking errors, you will need to add MYLIBS=-ltermcap to the make line. See Lua's readme for more detailed options. These work for me, however.
+Change into the lua directory to build it. If there are linking
+errors, you will need to add MYLIBS=-ltermcap to the make line. See
+Lua's readme for more detailed options. These work for me, however.
 
     cd external/lua-5.2.3
     make linux            # or "make macosx" or "make posix". See the lua readme for more information 
     make test             # success if you see the version string
     make local            # to choose installation directory, do "make install INSTALL_TOP=/path/to/directory"
 
-If you installed it locally ("make local") it will put everything in a subdirectory called "install". Everything actually needed for compiling, linking, and running the code is in the hdf5 subdirectory. The default LUA_BASE variable in make.inc should reflect the location of the install subdirectory.
+If you installed it locally ("make local") it will put everything in a
+subdirectory called "install". Everything actually needed for
+compiling, linking, and running the code is in the hdf5
+subdirectory. The default LUA_BASE variable in make.inc should reflect
+the location of the install subdirectory.
 
 
 ########
 # HDF5 #
 ########
-HDF5 is used by NuLib to create and read the opacity tables. IT MUST BE COMPILED BY THE SAME FORTRAN COMPILER COMPILING NULIB. If you can get away with a copy already installed by "apt-get install libhdf5-serial-dev" (check on ubuntu using "dpkg -l | grep 'hdf5'" without the quotes) or some other means that's fine, but chances are that it was compiled with a different compiler and you will have to recompile it yourself. You will also have to change the values of the hdf5 path in make.inc to reflect the system's location for the hdf5 files. Below are instructions for installing the latest version tested into the "external" directory.
+HDF5 is used by NuLib to create and read the opacity tables. IT MUST
+BE COMPILED BY THE SAME FORTRAN COMPILER COMPILING NULIB. If you can
+get away with a copy already installed by "apt-get install
+libhdf5-serial-dev" (check on ubuntu using "dpkg -l | grep 'hdf5'"
+without the quotes) or some other means that's fine, but chances are
+that it was compiled with a different compiler and you will have to
+recompile it yourself. You will also have to change the values of the
+hdf5 path in make.inc to reflect the system's location for the hdf5
+files. Below are instructions for installing the latest version tested
+into the "external" directory.
 
-If you need to compile your own copy of hdf5, download the tarball and extract the table:
+If you need to compile your own copy of hdf5, download the tarball and
+extract the table:
 
     wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.13.tar.gz
     tar -xvf hdf5-1.8.13.tar.gz -C external
@@ -85,7 +127,9 @@ Go into the directory
 
     cd external/hdf5-1.8.13
 
-Configure the make process. Some versions of gcc have a bug that causes hdf5 to fail tests if any optimization is enabled, so there are two examples below. The only tested compilers are intel and GNU.
+Configure the make process. Some versions of gcc have a bug that
+causes hdf5 to fail tests if any optimization is enabled, so there are
+two examples below. The only tested compilers are intel and GNU.
 
     FC=gfortran CC=gcc CXX=g++  CFLAGS=-O0 ./configure --enable-fortran --enable-cxx   #for GNU compilers
     FC=ifort    CC=icc CXX=icpc            ./configure --enable-fortran --enable-cxx   #for Intel compilers
@@ -96,23 +140,41 @@ Build and test the binaries. This takes quite a while.
     make test
     make install
 
-Everything actually needed for compiling, linking, and running the code is in the external/hdf5-1.8.13/hdf5 subdirectory. The default hdf5 path in make.inc.template points to this location. Make sure that the mpi compiler wrapper scripts (mpif90, etc) use the same compiler that you used to compile hdf5 (see the beginning of the prerequisites section).
+Everything actually needed for compiling, linking, and running the
+code is in the external/hdf5-1.8.13/hdf5 subdirectory. The default
+hdf5 path in make.inc.template points to this location. Make sure that
+the mpi compiler wrapper scripts (mpif90, etc) use the same compiler
+that you used to compile hdf5 (see the beginning of the prerequisites
+section).
 
 
 
 #########
 # NuLib #
 #########
-NuLib calculates the neutrino opacities based on a tabulated equation of state (EOS). It must be built to yeild the executable to generate the table and the libraries used by sedona to read the table. It must be run to generate the opacity table before running Sedona. This is all described below.
+NuLib calculates the neutrino opacities based on a tabulated equation
+of state (EOS). It must be built to yeild the executable to generate
+the table and the libraries used by sedona to read the table. It must
+be run to generate the opacity table before running Sedona. This is
+all described below.
 
 --Building------------
 
-NuLib is publicly available at <nulib.org>, but is also contained within Sedona as a git submodule. This makes it easy to pair a commit of sedona with a commit of nulib, so results are entirely reproducible. That is, each sedona commit knows which commit of NuLib to check out to make the both codes exactly as they were at the time of sedona's commit. To download NuLib, execute the following in the base directory. It will automatically download into the "external" directory.
+NuLib is publicly available at <nulib.org>, but is also contained
+within Sedona as a git submodule. This makes it easy to pair a commit
+of sedona with a commit of nulib, so results are entirely
+reproducible. That is, each sedona commit knows which commit of NuLib
+to check out to make the both codes exactly as they were at the time
+of sedona's commit. To download NuLib, execute the following in the
+base directory. It will automatically download into the "external"
+directory.
 
     git submodule init
     git submodule update
 
-Check that your parallel compiler wrapper script uses the same compiler that was used to build HDF5 (see the top of the prerequisites section). Then build NuLib
+Check that your parallel compiler wrapper script uses the same
+compiler that was used to build HDF5 (see the top of the prerequisites
+section). Then build NuLib
 
     make nulib
 
@@ -123,7 +185,12 @@ If you want to clean the nulib directory, execute
 
 --Generating the Opacity Table--------------
 
-Now NuLib is compiled and ready to be used by Sedona. However, if you wish to use neutrinos, you will have to generate an opacity table. This requires a tabulated equation of state (EOS). There are multiple EOS available at <stellarcollapse.org/equationofstate>. Here we will configure things with the LS220 EOS, though it should be generalizable to any EOS table that NuLib understands.
+Now NuLib is compiled and ready to be used by Sedona. However, if you
+wish to use neutrinos, you will have to generate an opacity
+table. This requires a tabulated equation of state (EOS). There are
+multiple EOS available at <stellarcollapse.org/equationofstate>. Here
+we will configure things with the LS220 EOS, though it should be
+generalizable to any EOS table that NuLib understands.
 
 (1) -- Download and extract the LS220 EOS table
 
@@ -135,7 +202,12 @@ Now NuLib is compiled and ready to be used by Sedona. However, if you wish to us
 
     emacs external/NuLib/src/requested_interactions.inc
 
-Inelastic electron scattering is not yet programmed in, so turn on (very approximate) elastic electron scattering, and turn off the inelastic scattering. Also, we need to turn off the emission processes from pair annihilation and from NN bremsstrahlung, since the inverse rates involve two neutrinos as input, and NuLib does not deal with the inverse processes correctly. Change the following parameters.
+Inelastic electron scattering is not yet programmed in, so turn on
+(very approximate) elastic electron scattering, and turn off the
+inelastic scattering. Also, we need to turn off the emission processes
+from pair annihilation and from NN bremsstrahlung, since the inverse
+rates involve two neutrinos as input, and NuLib does not deal with the
+inverse processes correctly. Change the following parameters.
 
     (in requested_interactions.inc)
     logical :: add_nue_scattering_electrons = .true.
@@ -166,19 +238,57 @@ Inelastic electron scattering is not yet programmed in, so turn on (very approxi
     logical :: add_nutau_emission_NNBrems = .false.
     logical :: add_anutau_emission_NNBrems = .false.
 
-(3) -- NuLib has an example program that generates a rather unresolved opacity table. This program serves as an example that is intended to be modified by the end user. You can feel free to modify it, but if you check the file out again it will be overwritten, so back it up or rename it if you want to prevent accidents. Here we will just change the file shipped with nulib so we don't have to mess with the makefiles, but if you want to create multiple custom table-generating programs you will have to do that. Anyway, we have to modify the fortran code to say how big we want our table to be and where the EOS table is. Open the source file in your favorite text editor.
+(3) -- NuLib has an example program that generates a rather unresolved
+opacity table. This program serves as an example that is intended to
+be modified by the end user. You can feel free to modify it, but if
+you check the file out again it will be overwritten, so back it up or
+rename it if you want to prevent accidents. Here we will just change
+the file shipped with nulib so we don't have to mess with the
+makefiles, but if you want to create multiple custom table-generating
+programs you will have to do that. Anyway, we have to modify the
+fortran code to say how big we want our table to be and where the EOS
+table is. Open the source file in your favorite text editor.
 
     emacs external/NuLib/src/make_table_example.F90
 
-A more detailed description of what everything means is in the NuLib README file (external/NuLib/README). First, notice the two variables "mytable_neutrino_scheme" and "mytable_number_species". Do NOT change mytable_number_species. If you want to change how neutrinos are represented in the table change "mytable_neutrino_scheme". Also notice that there is a variable "mytable_number_groups" that is set to 24. If you want finer resolution in neutrino energy, increase this number. However, for this example we will leave all three of these variables as they are. We must tell the program where to find the EOS table.
+A more detailed description of what everything means is in the NuLib
+README file (external/NuLib/README). First, notice the two variables
+"mytable_neutrino_scheme" and "mytable_number_species". Do NOT change
+mytable_number_species. If you want to change how neutrinos are
+represented in the table change "mytable_neutrino_scheme". Also notice
+that there is a variable "mytable_number_groups" that is set to 24. If
+you want finer resolution in neutrino energy, increase this
+number. However, for this example we will leave all three of these
+variables as they are. We must tell the program where to find the EOS
+table.
 
     (in make_table_example.F90:L28) character*200 :: eos_filename = "<path_to_sedona>/external/tables/LS220.h5"
 
-Each EOS table uses a 'reference mass' that is used to convert densities to number densities (e.g. the SL EOS's require a number density input in terms of fm^-3). The default is set for any of the LS tables. I don't know what reference mass would be required for the Shen EOS. You would have to email Evan O'Connor and ask. If you use a non-LS table you will have to change the line below to something else, but if you use a LS table, just leave it alone.
+Each EOS table uses a 'reference mass' that is used to convert
+densities to number densities (e.g. the SL EOS's require a number
+density input in terms of fm^-3). The default is set for any of the LS
+tables. I don't know what reference mass would be required for the
+Shen EOS. You would have to email Evan O'Connor and ask. If you use a
+non-LS table you will have to change the line below to something else,
+but if you use a LS table, just leave it alone.
 
     (in make_table_example.F90:L84) m_ref = m_n   !m_n is defined in constants.inc
 
-Finally, we have to change how big our table is going to be. As described in the NuLib README file, Evan recommends at least 10 points per decade in rho, 20 points per decade in temperature, and a point for every 0.01 or 0.02 in Ye. The LS220 table has the following lower and upper limits: T:{1e-2,1e2.4}MeV rho:{1e3,1e16}g/cm^3 Ye:{0.035,0.55}, and if calculating beta-equilibrium Lattimer and Swesty recommend staying at temperatures above 0.5MeV. Find the chunk of code commented "!set up table" and notice that the table boundaries (min_ye, etc) are within these recommendations, but the number of points (final_table_size_ye) is far too small. (final_Itable_* deals with the inelastic scattering table, which is not yet implemented so we won't worry about it). For this example we will leave the ranges as they are and adjust the number of points to get a decently-resolved table, but you are free to set whatever you want. Ye has a range of 0.515, so we need 26-52 points.
+Finally, we have to change how big our table is going to be. As
+described in the NuLib README file, Evan recommends at least 10 points
+per decade in rho, 20 points per decade in temperature, and a point
+for every 0.01 or 0.02 in Ye. The LS220 table has the following lower
+and upper limits: T:{1e-2,1e2.4}MeV rho:{1e3,1e16}g/cm^3
+Ye:{0.035,0.55}, and if calculating beta-equilibrium Lattimer and
+Swesty recommend staying at temperatures above 0.5MeV. Find the chunk
+of code commented "!set up table" and notice that the table boundaries
+(min_ye, etc) are within these recommendations, but the number of
+points (final_table_size_ye) is far too small. (final_Itable_* deals
+with the inelastic scattering table, which is not yet implemented so
+we won't worry about it). For this example we will leave the ranges as
+they are and adjust the number of points to get a decently-resolved
+table, but you are free to set whatever you want. Ye has a range of
+0.515, so we need 26-52 points.
 
     (in make_table_example.F90:L90) final_table_size_ye = 40
 
@@ -190,15 +300,24 @@ Temp goes over 3 decades, so we need about 60 points
 
     (in make_table_example.F90:L92) final_table_size_temp = 60
 
-You can change where the energy bins lie, but we will leave them as they are. If you want to make a custom table that deviates from this program, feel free. However, if you change the structure or what variables represent, you will also have to modify nulibtable_reader.F90 to read everything in correctly. Assuming you don't make any further changes, this should be ready to create a table.
+You can change where the energy bins lie, but we will leave them as
+they are. If you want to make a custom table that deviates from this
+program, feel free. However, if you change the structure or what
+variables represent, you will also have to modify
+nulibtable_reader.F90 to read everything in correctly. Assuming you
+don't make any further changes, this should be ready to create a
+table.
 
-(4) -- Save the file, exit the editor, rebuild the nulib directory, and execute the file.
+(4) -- Save the file, exit the editor, rebuild the nulib directory,
+and execute the file.
 
     make nulibclean
     make nulib
     external/NuLib/make_table_example
 
-This table took about 25 minutes to generate on my 2.4 GHz processor. Finally, move the final product into the external/tables directory (the filename will depend on the options you give it).
+This table took about 25 minutes to generate on my 2.4 GHz
+processor. Finally, move the final product into the external/tables
+directory (the filename will depend on the options you give it).
 
     mv NuLib_LS220_rho100_temp60_ye40_ng24_ns3_Itemp10_Ieta10_version1.0_20130915.h5 external/tables/NuLib.h5
 
@@ -227,23 +346,35 @@ This will use the settings in make.inc. To clean the src directory execute
 
 TESTING
 =====================================
-There are a couple of tests in the 'tests' directory. To get them ready, after building sedona (see COMPILING), simply execute
+There are a couple of tests in the 'tests' directory. To get them
+ready, after building sedona (see COMPILING), simply execute
 
     make tests
 
-To clean the test directories (including executables, data, and plots) execute
+To clean the test directories (including executables, data, and plots)
+execute
 
     make testsclean
 
-A breif list of the tests is included below. More information can be found in the tests's individual directory in its README file. To run each test, simply go into the test directory and execute "make".
+A brief list of the tests is included below. More information can be
+found in the tests's individual directory in its README file. To run
+each test, simply go into the test directory and execute "make".
 
- - phot_spherical_emis - emits photons isotropically from a central source and checks that the output spectrum is as expected.
- - nut_spherical_emis - emits neutrinos isotropically from a central source and checks that the output spectrum is as expected.
- - nulib_plots - generates lots of plots for easily examining the values of the nulib tables.
- - equilibrium_ye - sets up a spherical system where no neutrinos are emitted and only Ye is solved for. Tests that the Ye solver works properly with the nulib table.
- - nut_neutron_star - optically thick problem to test that the neutrinos propagate as expected and lead to a reasonable result
- - nut_emitting_ball - optically thin ball emitting neutrinos from parameterized viscous heating (no central source)
- - phot_emitting_ball - optically thing ball emitting photons from parameterized viscous heating (no central source)
+ - equilibrium_ye - sets up a spherical system where no neutrinos are
+   emitted and only Ye is solved for. Tests that the Ye solver works
+   properly with the nulib table.
+ - nulib_plots - generates lots of plots for easily examining the
+   values of the nulib tables.
+ - nut_blackbody - tests to see that a blackbody distribution is
+   actually built up in an optically thick medium
+ - nut_neutron_star - optically thick problem to test that the
+   neutrinos propagate as expected and lead to a reasonable result
+ - nut_spherical_emis - emits neutrinos isotropically from a central
+   source and checks that the output spectrum is as expected.
+ - nut_therm_shell - check that fluid relaxes to the proper {T,Ye}
+   when irradiated by neutrinos of a certain {T,chempot}
+ - nut_visc_ball - see what spectrum from a ball of gas, sourced by
+   "viscosity" (really just an arbitrary source term) looks like
 
 IF IT IS NOT IN THE TESTS FOLDER, IT IS PROBABLY NOT TESTED!
 
@@ -252,11 +383,20 @@ IF IT IS NOT IN THE TESTS FOLDER, IT IS PROBABLY NOT TESTED!
 
 RUNNING
 ===========================
-When sedona is built, it produces and executable called "gomc" in the base directory. Move this executable to the run directry (where all the data will be put). See test problems for example parameter files. Go to that directory and execute
+When sedona is built, it produces and executable called "gomc" in the
+base directory. Move this executable to the run directry (where all
+the data will be put). See test problems for example parameter
+files. Go to that directory and execute
 
     ./gomc parameter_file  
 
-The argument is optional. By default it will look for a parameter file called "param.lua" in the same directory. However, it is good practice to copy the parameter file into the run directory to have a record of the settings. The output will be spectrum files and "ray" files. The spectrum files contain data about the radiation that escapes the system. The ray files contain the system properties (e.g. temperature, Ye) along a ray from the center.
+The argument is optional. By default it will look for a parameter file
+called "param.lua" in the same directory. However, it is good practice
+to copy the parameter file into the run directory to have a record of
+the settings. The output will be spectrum files and "ray" files. The
+spectrum files contain data about the radiation that escapes the
+system. The ray files contain the system properties (e.g. temperature,
+Ye) along a ray from the center.
 
 
 
@@ -265,70 +405,141 @@ PARAMETERS
 -- [] indicates options
 
 -- What are we simulating? --
-   do_visc      = [0,1] -- add energy source to matter absorption representing viscous heating. Simply adds some amount of energy to each zone's e_abs immediately after particles are propagated. Only affects solving for temperature, does not directly affect neutrino emission rates.
-   visc_specific_heat_rate = [double>0] -- (if do_visc) viscous heating per unit mass (erg/g/s)
-   radiative_eq = [0,1] -- immediately re-emit particles that are absorbed, and allow particles to die on absorption. Otherwise, particles just die when they are absorbed.
-   iterative = [0,1] -- essentially time-independent. Really, my version of the code is only tested with this being true. All particles are allowed to propagate until escape or absorption during each iteration, and the fluid values that would cause the zones to emit everything they absorb is solved for. This activates the solve_* parameters.
-   solve_T      = [0,1] -- (if steady_state) solve for T such that each zone emits the energy it absorbs after each iteration
-   solve_Ye     = [0,1] -- (if steady_state) solve for Ye such that the zone emits the lepton number it absorbs after each iteration
-   reflect_outer = [0,1] -- reflect back in from the outer boundary condition? If (1) no particles escape through the outer BC. If no other way of killing particles, you will find yourself in an infinite loop.
-   do_annihilation = [0,1] -- compute annihilation rates based on integrating distribution functions over annihilation kernels.
-   do_relativity = [0,1] -- lorentz transform particles as they interact with the fluid. Lorentz contract fluid so the intrinsic fluid variables (e.g. rho,T) are given in the rest frame
+   do_visc = [0,1] -- add energy source to matter absorption
+        representing viscous heating. Simply adds some amount of
+        energy to each zone's e_abs immediately after particles are
+        propagated. Only affects solving for temperature, does not
+	directly affect neutrino emission rates.
+   visc_specific_heat_rate = [double>0] -- (if do_visc) viscous
+        heating per unit mass (erg/g/s)
+   radiative_eq = [0,1] -- immediately re-emit particles that are
+        absorbed, and allow particles to die on absorption. Otherwise,
+	particles just die when they are absorbed.
+   iterative = [0,1] -- essentially time-independent. Really, my
+        version of the code is only tested with this being true. All
+   	particles are allowed to propagate until escape or absorption
+	during each iteration, and the fluid values that would cause
+	the zones to emit everything they absorb is solved for. This
+	activates the solve_* parameters.
+   solve_T = [0,1] -- (if steady_state) solve for T such that each
+        zone emits the energy it absorbs after each iteration
+   solve_Ye = [0,1] -- (if steady_state) solve for Ye such that the
+        zone emits the lepton number it absorbs after each iteration
+   reflect_outer = [0,1] -- reflect back in from the outer boundary
+        condition? If (1) no particles escape through the outer BC. If
+	no other way of killing particles, you will find yourself in
+	an infinite loop.
+   do_annihilation = [0,1] -- compute annihilation rates based on
+        integrating distribution functions over annihilation kernels.
+   do_relativity = [0,1] -- lorentz transform particles as they
+        interact with the fluid. Lorentz contract fluid so the
+ 	intrinsic fluid variables (e.g. rho,T) are given in the rest
+ 	frame
 
 -- input/output files --
 
-   grid_type           = ["grid_0D_isotropic","grid_1D_sphere","grid_2D_sphere","grid_3D_cart"] -- which type of grid is the input data for? If grid_0D_isotropic, will need to also have parameters for {rho,T,Ye} of the fluid. (the error messages will tell you if you're missing them)
-   model_file          = ["filename","custom"] -- filename of the model containing the background fluid data. "custom" means activate the hard-coded function in the appropriate grid's source code to fill in the background.
-   nulib_table         = "filename" -- neutrino opacity table
-   nulib_eos_filename  = "filename" -- equation of state table - used in some of the tests and to print chemical potentials in the output.
-   write_zones_every   = [n]        -- write the fluid data every n iterations
-   write_rays_every    = [n]        -- write fluid data along prescribed ray paths ever n iterations
-   write_spectra_every = [n]        -- write spectra (integrated since last spectra output) every n iterations
+   grid_type =
+   ["grid_0D_isotropic","grid_1D_sphere","grid_2D_sphere","grid_3D_cart"]
+        -- which type of grid is the input data for? If
+	   grid_0D_isotropic, will need to also have parameters for
+	   {rho,T,Ye} of the fluid. (the error messages will tell you
+	   if you're missing them)
+   model_file = ["filename","custom"] -- filename of the model
+        containing the background fluid data. "custom" means activate
+	the hard-coded function in the appropriate grid's source code
+	to fill in the background.
+   nulib_table = "filename" -- neutrino opacity table
+   nulib_eos_filename = "filename" -- equation of state table - used
+        in some of the tests and to print chemical potentials in the
+	output.
+   write_zones_every = [n] -- write the fluid data every n iterations
+   write_rays_every = [n] -- write fluid data along prescribed ray
+        paths ever n iterations
+   write_spectra_every = [n] -- write spectra (integrated since last
+        spectra output) every n iterations
 
 -- spectrum parameters --
 
-   spec_n_mu      = [int>0] -- number of cos(theta) bins in the output spectrum
-   spec_n_phi     = [int>0] -- number of phi bins in the output spectrum
+   spec_n_mu = [int>0] -- number of cos(theta) bins in the output
+   spectrum spec_n_phi = [int>0] -- number of phi bins in the output
+        spectrum
 
 -- distribution parameters --
 
-   distribution_nmu = [int>0] -- number of cos(theta) bins in every grid zone's distribution function.
-   distribution_nphi = [int>0] -- number of phi bins in every grid zone's distribution function.
+   distribution_nmu = [int>0] -- number of cos(theta) bins in every
+        grid zone's distribution function.
+   distribution_nphi = [int>0] -- number of phi bins in every grid
+        zone's distribution function.
 
 -- particle creation parameters --
 
-   n_initial               = [int>0]    -- number of particles that start on the grid. Form a blackbody distribution according to each cell's {rho,T,Ye}
-   n_emit_core             = [int>0]    -- number of particles to emit from the inner core each timestep.
-   n_emit_therm            = [int>0]    -- number of particles emitted thermally within zones each timestep.
-   max_particles           = [int]      -- maximum number of particles allowed at any time ever (to prevent memory issues)
-   emissions_per_timestep = [int>0]     -- number of times to do emission step in each iteration. The purpose of this is to allow us to simulate more particles than can fit in memory by just emitting some, letting them propagate and die, emitting more, letting them die, etc. Using twice as many emissions per timestep means twice as many particles are simulated (i.e. better statistics) and it takes twice the time.
-   cdf_interpolation_order = [0,1,3]    -- order of interpolation of emissivity CDF. 0 is most self-consistent (completely self-consistent if no relativity). All are guaranteed to be monotonic.
-   nut_cdf_cutoff          = [0<real<1] -- change CDF values below this number to be 0. Used to fix machine-precision errors in some pathological cases.
-   ratio_emit_by_bin       = [0<real<1] -- 0 --> emit number of particles proportionally to the emissivity. 1--> emit number of particles evenly across all energy-direction bins. between--> do some particles each way. Just a simple means of redistributing computational resources if necessary. 0 is recommended for first try - emit some by bin only if the tails of the distribution are really important.
+   n_initial = [int>0]-- number of particles that start on the
+        grid. Form a blackbody distribution according to each cell's
+	{rho,T,Ye}
+   n_emit_core = [int>0] -- number of particles to emit from the inner
+        core each timestep.
+   n_emit_therm = [int>0] -- number of particles emitted thermally
+        within zones each timestep.
+   max_particles = [int] -- maximum number of particles allowed at any
+        time ever (to prevent memory issues)
+   emissions_per_timestep = [int>0] -- number of times to do emission
+        step in each iteration. The purpose of this is to allow us to
+ 	simulate more particles than can fit in memory by just
+	emitting some, letting them propagate and die, emitting more,
+	letting them die, etc. Using twice as many emissions per
+	timestep means twice as many particles are simulated
+	(i.e. better statistics) and it takes twice the time.
+   cdf_interpolation_order = [0,1,3] -- order of interpolation of
+        emissivity CDF. 0 is most self-consistent (completely
+	self-consistent if no relativity). All are guaranteed to be
+	monotonic.
+   nut_cdf_cutoff = [0<real<1] -- change CDF values below this number
+        to be 0. Used to fix machine-precision errors in some
+	pathological cases.
+   ratio_emit_by_bin = [0<real<1] -- 0 --> emit number of particles
+        proportionally to the emissivity. 1--> emit number of
+   	particles evenly across all energy-direction bins. between-->
+	do some particles each way. Just a simple means of
+	redistributing computational resources if necessary. 0 is
+	recommended for first try - emit some by bin only if the tails
+	of the distribution are really important.
 
 -- inner source parameters --
 
-   core_emit_method = [1,2] -- 1-->input {T,mu,multiplier} 2-->input {T,mu,L}
+   core_emit_method = [1,2] -- 1-->input {T,mu,multiplier} 2-->input
+        {T,mu,L}
    r_core = [float>0] -- radius of inner emitting core (cm)
    T_core = [float>0] -- temperature of the inner emitting core (K)
-   core_nue_chem_pot = [real] -- electron neutrino chemical potential of neutrinos emitted from core (MeV)
-   L_core = [float>0] -- (if core_emit_method==2) luminosity of inner emitting core (erg/s)
-   core_lum_multiplier = [real>0] -- (if core_emit_method==1) amplify the natural Stefan-Boltzmann blackbody core luminosity by this factor.
+   core_nue_chem_pot = [real] -- electron neutrino chemical potential
+        of neutrinos emitted from core (MeV)
+   L_core = [float>0] -- (if core_emit_method==2) luminosity of inner
+        emitting core (erg/s)
+   core_lum_multiplier = [real>0] -- (if core_emit_method==1) amplify
+        the natural Stefan-Boltzmann blackbody core luminosity by this
+	factor.
 
 -- particle propagation parameters --
 
-   max_n_iter  = [int>=0]    -- stop after this many iterations (1 iteration is a emit-propagate-solve cycle)
-   dt          = [float>0]   -- dt for time iteration. ignored if iterative
-   step_size   = [float>0] -- maximum fraction of a zone length a particle is allowed to travel before updating opacity information
+   max_n_iter = [int>=0] -- stop after this many iterations (1
+        iteration is a emit-propagate-solve cycle)
+   dt = [float>0] -- dt for time iteration. ignored if iterative
+   step_size = [float>0] -- maximum fraction of a zone length a
+        particle is allowed to travel before updating opacity information
 
 -- opacity parameters --
 
-   nut_grey_opacity  = [float>0] -- neutrino grey opacity (cm^2/g) (if nut_grey_opacity<=0 the grey opacity is disabled - use opacity table instead).
-   nut_grey_abs_frac = [0<float<1] -- probability of neutrino to be absorbed (rather than scattered)
-   opac_interp_method = [0,1,2,3] -- 0-->piecewise constant (most self-consistent). 1-->linear. 3-->logarithmic 4-->power
+   nut_grey_opacity = [float>0] -- neutrino grey opacity (cm^2/g) (if
+        nut_grey_opacity<=0 the grey opacity is disabled - use opacity
+	table instead).
+   nut_grey_abs_frac = [0<float<1] -- probability of neutrino to be
+        absorbed (rather than scattered)
+   opac_interp_method = [0,1,2,3] -- 0-->piecewise constant (most
+        self-consistent). 1-->linear. 3-->logarithmic 4-->power
 
 -- equilibrium solver parameters --
 
-   damping         = [0<float<1] -- changes in values between iterations are decreased by this factor
-   brent_itmax     = [int>0]   -- maximum number of iterations the brent solver can use
+   damping = [0<float<1] -- changes in values between iterations are
+        decreased by this factor
+   brent_itmax = [int>0] -- maximum number of iterations the brent
+        solver can use
    brent_tolerance = [float>0] -- brent solver tolerance
