@@ -63,6 +63,7 @@ void transport::solve_eq_zone_values()
 			{
 				T_last_iter  = grid->z[z_ind].T;
 				grid->z[z_ind].T = brent_method(z_ind, temp_eq_function, T_min,  T_max);
+				assert(grid->z[z_ind].T >= T_min and grid->z[z_ind].T <= T_max);
 				T_error  = fabs( (grid->z[z_ind].T - T_last_iter ) / (T_last_iter ) );
 			}
 			if(solve_Ye)
@@ -74,11 +75,12 @@ void transport::solve_eq_zone_values()
 				double weight1 = neutrinoless ? 1.0 : anue_abs / (nue_abs+anue_abs);
 				double weight2 = neutrinoless ? 0.0 : nue_abs  / (nue_abs+anue_abs);
 				double Ye1 = neutrinoless ?
-							 brent_method(z_ind, Ye_eq_function,   Ye_min, Ye_max) :
+							 brent_method(z_ind, Ye_eq_function,     Ye_min, Ye_max) :
 							 brent_method(z_ind, Ye_nue_eq_function, Ye_min, Ye_max);
-				double Ye2 = neutrinoless ? 0 :
+				double Ye2 = neutrinoless ? 0.0 :
 						     brent_method(z_ind, Ye_anue_eq_function,  Ye_min, Ye_max);
 				grid->z[z_ind].Ye = weight1*Ye1 + weight2*Ye2;
+				assert(grid->z[z_ind].Ye >= Ye_min and grid->z[z_ind].Ye <= Ye_max);
 				Ye_error = fabs( (grid->z[z_ind].Ye - Ye_last_iter) / (Ye_last_iter) );
 			}
 			iter++;
@@ -315,7 +317,7 @@ double Ye_eq_function(double Ye, void *params)
 
 //-----------------------------------------------------------
 // Brents method to solve
-// non-linear equation for T in rad equillibrium
+// non-linear equation for T,Ye in rad equillibrium
 //-----------------------------------------------------------
 // definitions used for solver
 #define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
@@ -323,12 +325,21 @@ double transport::brent_method(int z_ind, double (*eq_function)(double,void*), d
 {
 	assert(z_ind >= 0);
 
+	// check if the root is bracketed
+	struct eq_function_params params = {z_ind,this};
+	double fa = eq_function(min,&params);
+	double fb = eq_function(max,&params);
+	if(fa*fb > 0){
+		if(fabs(fa)<fabs(fb)) return min;
+		else return max;
+	}
+
+
 	// allocate storage for the root solver
 	const gsl_root_fsolver_type *T = gsl_root_fsolver_bisection;
 	gsl_root_fsolver *s = gsl_root_fsolver_alloc(T);
 
 	// initialize the solver
-	struct eq_function_params params = {z_ind,this};
 	gsl_function F;
 	F.function = eq_function;
 	F.params = &params;
@@ -347,6 +358,8 @@ double transport::brent_method(int z_ind, double (*eq_function)(double,void*), d
 
 	// free the memory and return
 	double result = gsl_root_fsolver_root(s);
+	assert(result >= min);
+	assert(result <= max);
 	gsl_root_fsolver_free(s);
 	return result;
 }
