@@ -19,6 +19,7 @@ nulib_eos_filename = ""
 write_zones_every   = 10
 write_rays_every    = 10
 write_spectra_every = 10
+output_distribution = 0
 
 -- spectrum parameters
 
@@ -65,6 +66,6 @@ opac_interp_method = 0
 
 -- equilibrium solver parameters
 
-damping = 0.0
+damping = 0.1
 brent_itmax = 100
-brent_tolerance = 0.01
+brent_tolerance = 1e-5
