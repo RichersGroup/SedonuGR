@@ -69,17 +69,7 @@ void transport::solve_eq_zone_values()
 			if(solve_Ye)
 			{
 				Ye_last_iter = grid->z[z_ind].Ye;
-				double nue_abs  = grid->z[z_ind].nue_abs;
-				double anue_abs = grid->z[z_ind].anue_abs;
-				bool neutrinoless = (nue_abs + anue_abs == 0);
-				double weight1 = neutrinoless ? 1.0 : anue_abs / (nue_abs+anue_abs);
-				double weight2 = neutrinoless ? 0.0 : nue_abs  / (nue_abs+anue_abs);
-				double Ye1 = neutrinoless ?
-							 brent_method(z_ind, Ye_eq_function,     Ye_min, Ye_max) :
-							 brent_method(z_ind, Ye_nue_eq_function, Ye_min, Ye_max);
-				double Ye2 = neutrinoless ? 0.0 :
-						     brent_method(z_ind, Ye_anue_eq_function,  Ye_min, Ye_max);
-				grid->z[z_ind].Ye = weight1*Ye1 + weight2*Ye2;
+				grid->z[z_ind].Ye = brent_method(z_ind, Ye_eq_function, Ye_min, Ye_max);
 				assert(grid->z[z_ind].Ye >= Ye_min and grid->z[z_ind].Ye <= Ye_max);
 				Ye_error = fabs( (grid->z[z_ind].Ye - Ye_last_iter) / (Ye_last_iter) );
 			}
@@ -189,87 +179,6 @@ double temp_eq_function(double T, void *params)
 // The Brent solver below to determine the temperature such
 // that RadEq holds
 //----------------------------------------------------------------------------
-double Ye_nue_eq_function(double Ye, void *params)
-{
-	// read the parameters
-	struct eq_function_params *p = (struct eq_function_params *) params;
-	const int z_ind = p->z_ind;
-	transport* sim = p->sim;
-
-	assert(z_ind >= 0);
-	assert(z_ind < (int)sim->grid->z.size());
-	assert(Ye >= 0);
-	assert(Ye <= 1);
-
-	// total energy absorbed in zone
-	double l_absorbed = sim->grid->z[z_ind].nue_abs;
-	// total energy emitted (to be calculated)
-	double l_emitted = 0.;
-
-	// set the zone temperature
-	sim->grid->z[z_ind].Ye = Ye;
-
-	// include the emission from all species
-	for(unsigned i=0; i<sim->species_list.size(); i++) if(sim->species_list[i]->lepton_number>0)
-	{
-		// reset the eas variables in this zone
-		// OPTIMIZE - only set the emissivity variable
-		sim->species_list[i]->set_eas(z_ind);
-
-		// integrate emissison over frequency (angle
-		// integration gives the 4*PI) to get total
-		// radiation energy emitted. Opacities are
-		// held constant for this (assumed not to change
-		// much from the last time step).
-		l_emitted += 4.0*pc::pi * sim->species_list[i]->integrate_zone_lepton_emis(z_ind);
-		assert(l_emitted>0);
-	}
-
-	// radiative equillibrium condition: "emission equals absorbtion"
-	// return to Brent function to iterate this to zero
-	return (l_emitted - l_absorbed);
-}
-double Ye_anue_eq_function(double Ye, void *params)
-{
-	// read the parameters
-	struct eq_function_params *p = (struct eq_function_params *) params;
-	const int z_ind = p->z_ind;
-	transport* sim = p->sim;
-
-	assert(z_ind >= 0);
-	assert(z_ind < (int)sim->grid->z.size());
-	assert(Ye >= 0);
-	assert(Ye <= 1);
-
-	// total energy absorbed in zone
-	double l_absorbed = sim->grid->z[z_ind].anue_abs;
-	// total energy emitted (to be calculated)
-	double l_emitted = 0.;
-
-	// set the zone temperature
-	sim->grid->z[z_ind].Ye = Ye;
-
-	// include the emission from all species
-	for(unsigned i=0; i<sim->species_list.size(); i++) if(sim->species_list[i]->lepton_number<0)
-	{
-		// reset the eas variables in this zone
-		// OPTIMIZE - only set the emissivity variable
-		sim->species_list[i]->set_eas(z_ind);
-
-		// integrate emissison over frequency (angle
-		// integration gives the 4*PI) to get total
-		// radiation energy emitted. Opacities are
-		// held constant for this (assumed not to change
-		// much from the last time step).
-		// minus sign since integrate_zone_lepton_emis will return a negative number
-		l_emitted -= 4.0*pc::pi * sim->species_list[i]->integrate_zone_lepton_emis(z_ind);
-		assert(l_emitted>0);
-	}
-
-	// radiative equillibrium condition: "emission equals absorbtion"
-	// return to Brent function to iterate this to zero
-	return (l_emitted - l_absorbed);
-}
 double Ye_eq_function(double Ye, void *params)
 {
 	// read the parameters
@@ -303,7 +212,7 @@ double Ye_eq_function(double Ye, void *params)
 		// held constant for this (assumed not to change
 		// much from the last time step).
 		// minus sign since integrate_zone_lepton_emis will return a negative number
-		l_emitted += 4.0*pc::pi * sim->species_list[i]->integrate_zone_lepton_emis(z_ind) * sim->species_list[i]->lepton_number;
+		l_emitted += 4.0*pc::pi * sim->species_list[i]->integrate_zone_lepton_emis(z_ind);
 	}
 
 	// radiative equillibrium condition: "emission equals absorbtion"
