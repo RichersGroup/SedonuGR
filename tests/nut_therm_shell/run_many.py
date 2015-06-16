@@ -9,17 +9,17 @@ eosfile   = "/data/tables/EOS/HShen.h5"
 
 min_logrho = 6  #g/ccm
 max_logrho = 15 #g/ccm
-n_rho = 10
+n_rho = 100
 center_logrho = 10
 
 min_logT = -1 #MeV
 max_logT = 2  #MeV
-n_T = 10
+n_T = 100
 center_logT = 1
 
 min_ye = 0.05
 max_ye = 0.55
-n_ye = 10
+n_ye = 100
 center_ye = 0.3
 
 def plot(rho0,T0,ye0):

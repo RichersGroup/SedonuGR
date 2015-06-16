@@ -44,7 +44,7 @@ ratio_emit_by_bin = 0
 
 -- particle propagation parameters
 
-max_n_steps = 20
+max_n_iter = 20
 dt = -1
 step_size = 0.4
 
