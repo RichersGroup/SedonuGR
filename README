@@ -1,3 +1,9 @@
+Sedonu is a time-independent implicit Monte Carlo neutrino transport
+code. Please read the copyright statement in LICENSE.txt and at the
+beginning of each file. If anyone would like to contribute to
+development of Sedonu, please let me know or send me a pull request on 
+BitBucket.
+
 REREQUISITES
 ==============================
 To clone the repository, execute
@@ -184,6 +190,10 @@ If you want to clean the nulib directory, execute
 
 
 --Generating the Opacity Table--------------
+
+You can choose to generate your own tables as described below or
+request the tables used in a publication from srichers@tapir.caltech.edu
+(they are about 1GB each and difficult to host online).
 
 Now NuLib is compiled and ready to be used by Sedona. However, if you
 wish to use neutrinos, you will have to generate an opacity
