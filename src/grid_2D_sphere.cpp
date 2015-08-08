@@ -777,7 +777,7 @@ void grid_2D_sphere::write_rays(int iw) const
 void grid_2D_sphere::reflect_outer(particle *p) const{
 	assert(r_out.size()>=1);
 	double r0 = (r_out.size()==1 ? r_out.min : r_out.size()-2);
-	double dr = r_out.size()-1 - r0;
+	double dr = r_out[r_out.size()-1] - r0;
 	assert( fabs(p->r() - r_out[r_out.size()-1]) < tiny*dr);  double velDotRhat = p->mu();
 
 	// invert the radial component of the velocity
