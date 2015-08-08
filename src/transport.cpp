@@ -42,6 +42,7 @@
 #include "grid_0D_isotropic.h"
 #include "grid_1D_sphere.h"
 #include "grid_2D_sphere.h"
+#include "grid_2D_cylinder.h"
 #include "grid_3D_cart.h"
 #include "species_general.h"
 #include "neutrinos.h"
@@ -165,6 +166,7 @@ void transport::init(Lua* lua)
 	if     (grid_type == "grid_0D_isotropic") grid = new grid_0D_isotropic;
 	else if(grid_type == "grid_1D_sphere"   ) grid = new grid_1D_sphere;
 	else if(grid_type == "grid_2D_sphere"   ) grid = new grid_2D_sphere;
+	else if(grid_type == "grid_2D_cylinder" ) grid = new grid_2D_cylinder;
 	else if(grid_type == "grid_3D_cart"     ) grid = new grid_3D_cart;
 	else{
 		if(rank0) std::cout << "# ERROR: the requested grid type is not implemented." << std::endl;
