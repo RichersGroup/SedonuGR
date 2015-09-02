@@ -71,6 +71,7 @@ protected:
 
 	// output options
 	int output_distribution;
+	int output_hdf5;
 
 public:
 

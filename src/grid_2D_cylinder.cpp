@@ -426,9 +426,11 @@ void grid_2D_cylinder::write_rays(int iw) const
 	ofstream outf;
 	unsigned i=0,j=0;
 	vector<double> r;
+	string filename = "";
 
 	// along equator
-	transport::open_file("ray_z.5",iw,outf);
+	filename = transport::filename("ray_z.5",iw,outf);
+	outf.open(filename.c_str());
 	write_header(outf);
 	j = zcyl_out.size()/2;
 	for(i=0; i<rcyl_out.size(); i++){
@@ -439,7 +441,8 @@ void grid_2D_cylinder::write_rays(int iw) const
 	outf.close();
 
 	// along z
-	transport::open_file("ray_r.5",iw,outf);
+	filename = transport::filename("ray_r.5",iw,outf);
+	outf.open(filename.c_str());
 	write_header(outf);
 	i = rcyl_out.size()/2;
 	for(j=0; j<zcyl_out.size(); j++){

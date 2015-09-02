@@ -263,8 +263,9 @@ void spectrum_array::integrate_over_direction(vector<double>& integral) const{
 void spectrum_array::print(const int iw, const int species) const
 {
 	ofstream outf;
-	string filename = "spectrum_species"+to_string(species);
-	transport::open_file(filename.c_str(),iw,outf);
+	string prefix = "spectrum_species"+to_string(species);
+	string filename = transport::filename(prefix.c_str(),iw,outf);
+	outf.open(filename.c_str());
 
 	unsigned n_nu  =  nu_grid.size();
 	unsigned n_mu  =  mu_grid.size();

@@ -1006,7 +1006,7 @@ void transport::update_zone_quantities(){
 	}
 }
 
-void transport::open_file(const char* filebase, const int iw, ofstream& outf){
+string transport::filename(const char* filebase, const int iw, ofstream& outf){
 	string number_string;
 	if     (iw < 10)    number_string = "0000" + to_string(iw);
 	else if(iw < 100)   number_string = "000"  + to_string(iw);
@@ -1015,8 +1015,7 @@ void transport::open_file(const char* filebase, const int iw, ofstream& outf){
 	else                number_string =          to_string(iw);
 
 	string filename = string(filebase) + "_" + number_string + ".dat";
-	outf.open(filename.c_str());
-
+	return filename;
 }
 
 double transport::mean_mass(const double Ye){

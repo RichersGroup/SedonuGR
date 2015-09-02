@@ -35,6 +35,7 @@
 #include "Lua.h"
 #include "nulib_interface.h"
 #include "global_options.h"
+#include "H5Cpp.h"
 
 //------------------------------------------------------------
 // initialize the grid
@@ -53,6 +54,7 @@ void grid_general::init(Lua* lua)
 	if(model_file == "custom") custom_model(lua);
 	else read_model_file(lua);
 	output_distribution = lua->scalar<int>("output_distribution");
+	output_hdf5 = lua->scalar<int>("output_hdf5");
 
 	// complain if the grid is obviously not right
 	if(z.size()==0){
@@ -115,18 +117,26 @@ void grid_general::write_zones(const int iw) const
 {
 	assert(z.size()>0);
 
-
-	ofstream outf;
-	transport::open_file("fluid",iw,outf);
-	write_header(outf);
-	vector<int> dir_ind;
-	for (unsigned z_ind=0; z_ind<z.size(); z_ind++)
-	{
-		zone_directional_indices(z_ind, dir_ind);
-		if(dir_ind.size()>0) if(dir_ind[dir_ind.size()-1]==0) outf << endl;
-		write_line(outf,z_ind);
+	// output all zone data in hdf5 format
+	if(output_hdf5){
+		H5::H5File file();
 	}
-	outf.close();
+
+	// output all zone data in text files
+	else{
+		ofstream outf;
+		string filename = transport::filename("fluid",iw,outf);
+		outf.open(filename.c_str());
+		write_header(outf);
+		vector<int> dir_ind;
+		for (unsigned z_ind=0; z_ind<z.size(); z_ind++)
+		{
+			zone_directional_indices(z_ind, dir_ind);
+			if(dir_ind.size()>0) if(dir_ind[dir_ind.size()-1]==0) outf << endl;
+			write_line(outf,z_ind);
+		}
+		outf.close();
+	}
 }
 
 double grid_general::zone_rest_mass(const int z_ind) const{

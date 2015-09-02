@@ -724,9 +724,11 @@ void grid_2D_sphere::write_rays(int iw) const
 	ofstream outf;
 	unsigned i=0,j=0;
 	vector<double> r;
+	string filename = "";
 
 	// along theta=0
-	transport::open_file("ray_t0",iw,outf);
+	filename = transport::filename("ray_t0",iw,outf);
+	outf.open(filename.c_str());
 	write_header(outf);
 	j = 0;
 	for(i=0; i<r_out.size(); i++){
@@ -737,7 +739,8 @@ void grid_2D_sphere::write_rays(int iw) const
 	outf.close();
 
 	// along theta=pi/2
-	transport::open_file("ray_t.5",iw,outf);
+	filename = transport::filename("ray_t.5",iw,outf);
+	outf.open(filename.c_str());
 	write_header(outf);
 	j = theta_out.size()/2;
 	for(i=0; i<r_out.size(); i++){
@@ -748,7 +751,8 @@ void grid_2D_sphere::write_rays(int iw) const
 	outf.close();
 
 	// along theta=pi
-	transport::open_file("ray_t1",iw,outf);
+	filename = transport::filename("ray_t1",iw,outf);
+	outf.open(filename.c_str());
 	write_header(outf);
 	j = theta_out.size()-1;
 	for(i=0; i<r_out.size(); i++){
@@ -759,7 +763,8 @@ void grid_2D_sphere::write_rays(int iw) const
 	outf.close();
 
 	// along theta
-	transport::open_file("ray_r.5",iw,outf);
+	filename = transport::filename("ray_r.5",iw,outf);
+	outf.open(filename.c_str());
 	write_header(outf);
 	i = r_out.size()/2;
 	for(j=0; j<theta_out.size(); j++){

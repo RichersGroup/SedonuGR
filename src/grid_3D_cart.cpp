@@ -382,11 +382,12 @@ void grid_3D_cart::write_rays(const int iw) const
 	int i,j,k;
 	int z_ind;
 	vector<double> r;
-
+	string filename = "";
 	ofstream outf;
 
 	// XY-slice
-	transport::open_file("slice_xy",iw,outf);
+	filename = transport::filename("slice_xy",iw,outf);
+	outf.open(filename.c_str());
 	write_header(outf);
 	k = nz/2;
 	for(i=0; i<nx; i++) for(j=0; j<ny; j++){
@@ -398,7 +399,8 @@ void grid_3D_cart::write_rays(const int iw) const
 	outf.close();
 
 	// XZ-slice
-	transport::open_file("slice_xz",iw,outf);
+	filename = transport::filename("slice_xz",iw,outf);
+	outf.open(filename.c_str());
 	write_header(outf);
 	j = ny/2;
 	for(i=0; i<nx; i++) for(k=0; k<nz; k++){
@@ -410,7 +412,8 @@ void grid_3D_cart::write_rays(const int iw) const
 	outf.close();
 
 	// YZ-slice
-	transport::open_file("slice_yz",iw,outf);
+	filename = transport::filename("slice_yz",iw,outf);
+	outf.open(filename.c_str());
 	write_header(outf);
 	i = nx/2;
 	for(j=0; j<ny; j++) for(k=0; k<nz; k++){
@@ -422,7 +425,8 @@ void grid_3D_cart::write_rays(const int iw) const
 	outf.close();
 
 	// X-direction
-	transport::open_file("ray_x",iw,outf);
+	filename = transport::filename("ray_x",iw,outf);
+	outf.open(filename.c_str());
 	write_header(outf);
 	j = ny/2;
 	k = nz/2;
@@ -434,7 +438,8 @@ void grid_3D_cart::write_rays(const int iw) const
 	outf.close();
 
 	// Y-direction
-	transport::open_file("ray_y",iw,outf);
+	filename = transport::filename("ray_y",iw,outf);
+	outf.open(filename.c_str());
 	write_header(outf);
 	i = nx/2;
 	k = nz/2;
@@ -446,7 +451,8 @@ void grid_3D_cart::write_rays(const int iw) const
 	outf.close();
 
 	// Z-direction
-	transport::open_file("ray_z",iw,outf);
+	filename = transport::filename("ray_z",iw,outf);
+	outf.open(filename.c_str());
 	write_header(outf);
 	i = nx/2;
 	j = ny/2;
