@@ -264,7 +264,7 @@ void spectrum_array::print(const int iw, const int species) const
 {
 	ofstream outf;
 	string prefix = "spectrum_species"+to_string(species);
-	string filename = transport::filename(prefix.c_str(),iw,outf);
+	string filename = transport::filename(prefix.c_str(),iw,".dat",outf);
 	outf.open(filename.c_str());
 
 	unsigned n_nu  =  nu_grid.size();

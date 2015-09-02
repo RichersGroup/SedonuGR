@@ -727,7 +727,7 @@ void grid_2D_sphere::write_rays(int iw) const
 	string filename = "";
 
 	// along theta=0
-	filename = transport::filename("ray_t0",iw,outf);
+	filename = transport::filename("ray_t0",iw,".dat",outf);
 	outf.open(filename.c_str());
 	write_header(outf);
 	j = 0;
@@ -739,7 +739,7 @@ void grid_2D_sphere::write_rays(int iw) const
 	outf.close();
 
 	// along theta=pi/2
-	filename = transport::filename("ray_t.5",iw,outf);
+	filename = transport::filename("ray_t.5",iw,".dat",outf);
 	outf.open(filename.c_str());
 	write_header(outf);
 	j = theta_out.size()/2;
@@ -751,7 +751,7 @@ void grid_2D_sphere::write_rays(int iw) const
 	outf.close();
 
 	// along theta=pi
-	filename = transport::filename("ray_t1",iw,outf);
+	filename = transport::filename("ray_t1",iw,".dat",outf);
 	outf.open(filename.c_str());
 	write_header(outf);
 	j = theta_out.size()-1;
@@ -763,7 +763,7 @@ void grid_2D_sphere::write_rays(int iw) const
 	outf.close();
 
 	// along theta
-	filename = transport::filename("ray_r.5",iw,outf);
+	filename = transport::filename("ray_r.5",iw,".dat",outf);
 	outf.open(filename.c_str());
 	write_header(outf);
 	i = r_out.size()/2;

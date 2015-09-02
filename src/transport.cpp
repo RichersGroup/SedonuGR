@@ -1006,7 +1006,7 @@ void transport::update_zone_quantities(){
 	}
 }
 
-string transport::filename(const char* filebase, const int iw, ofstream& outf){
+string transport::filename(const char* filebase, const int iw, const char* suffix, ofstream& outf){
 	string number_string;
 	if     (iw < 10)    number_string = "0000" + to_string(iw);
 	else if(iw < 100)   number_string = "000"  + to_string(iw);
@@ -1014,7 +1014,7 @@ string transport::filename(const char* filebase, const int iw, ofstream& outf){
 	else if(iw < 10000) number_string = "0"    + to_string(iw);
 	else                number_string =          to_string(iw);
 
-	string filename = string(filebase) + "_" + number_string + ".dat";
+	string filename = string(filebase) + "_" + number_string + suffix;
 	return filename;
 }
 

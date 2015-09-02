@@ -125,7 +125,7 @@ void grid_general::write_zones(const int iw) const
 	// output all zone data in text files
 	else{
 		ofstream outf;
-		string filename = transport::filename("fluid",iw,outf);
+		string filename = transport::filename("fluid",iw,".dat",outf);
 		outf.open(filename.c_str());
 		write_header(outf);
 		vector<int> dir_ind;

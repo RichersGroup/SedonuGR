@@ -207,7 +207,7 @@ public:
 	void write(const int it) const;
 	int  total_particles() const;
 	void write_rays(const int it);
-	static string filename(const char* filebase, const int iw, ofstream& outf);
+	static string filename(const char* filebase, const int iw, const char* suffix, ofstream& outf);
 	static double lorentz_factor(const vector<double>& v);
 	static double dot(const vector<double>& a, const vector<double>& b);
 	static void normalize(vector<double>& a);

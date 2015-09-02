@@ -429,7 +429,7 @@ void grid_2D_cylinder::write_rays(int iw) const
 	string filename = "";
 
 	// along equator
-	filename = transport::filename("ray_z.5",iw,outf);
+	filename = transport::filename("ray_z.5",iw,".dat",outf);
 	outf.open(filename.c_str());
 	write_header(outf);
 	j = zcyl_out.size()/2;
@@ -441,7 +441,7 @@ void grid_2D_cylinder::write_rays(int iw) const
 	outf.close();
 
 	// along z
-	filename = transport::filename("ray_r.5",iw,outf);
+	filename = transport::filename("ray_r.5",iw,".dat",outf);
 	outf.open(filename.c_str());
 	write_header(outf);
 	i = rcyl_out.size()/2;
