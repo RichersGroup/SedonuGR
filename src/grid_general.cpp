@@ -119,13 +119,14 @@ void grid_general::write_zones(const int iw) const
 
 	// output all zone data in hdf5 format
 	if(output_hdf5){
+		string filename = transport::filename("fluid",iw,".h5");
 		H5::H5File file();
 	}
 
 	// output all zone data in text files
 	else{
 		ofstream outf;
-		string filename = transport::filename("fluid",iw,".dat",outf);
+		string filename = transport::filename("fluid",iw,".dat");
 		outf.open(filename.c_str());
 		write_header(outf);
 		vector<int> dir_ind;
