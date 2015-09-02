@@ -72,6 +72,7 @@ protected:
 	// output options
 	int output_distribution;
 	int output_hdf5;
+	int do_annihilation;
 
 public:
 

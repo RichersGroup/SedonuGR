@@ -33,6 +33,8 @@
 #include "particle.h"
 #include "locate_array.h"
 #include "transport.h"
+#include "H5Cpp.h"
+
 
 using namespace std;
 
@@ -84,6 +86,7 @@ public:
 
 	// Print out
 	void print(const int iw, const int species) const;
+	void write_hdf5(H5::DataSet dataset, H5::DataSpace dataspace) const;
 
 	// Indexing
 	unsigned index(const unsigned nu_bin,const unsigned mu_bin,const unsigned phi_bin) const;

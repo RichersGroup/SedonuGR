@@ -322,3 +322,29 @@ void spectrum_array::MPI_average()
 	MPI_Comm_rank( MPI_COMM_WORLD, &myID      );
 	rescale(1./(double)mpi_procs);
 }
+
+//--------------------------------------------------------------
+// Write to specified location in an HDF5 file
+//--------------------------------------------------------------
+void spectrum_array::write_hdf5(H5::DataSet dataset, H5::DataSpace dataspace) const
+{
+	// some sanity checks
+	hsize_t dspace_dims[3];
+	unsigned ndims = dataspace.getSimpleExtentDims(dspace_dims);
+	assert(ndims == 3);
+	assert(dspace_dims[2] == flux.size());
+
+	// define the memory dataspace
+	hsize_t mdim[1];
+	mdim[0] = flux.size();
+	H5::DataSpace memspace(1,mdim,NULL);
+
+	// write the data (converting to single precision)
+	vector<float> tmp(flux.size(),-1.0);
+	int count = 0;
+	for(unsigned i=0; i<flux.size(); i++){
+		tmp[i] = flux[i];
+		if(tmp[i]>0) count++;
+	}
+	dataset.write(&tmp[0], H5::PredType::IEEE_F32LE, memspace, dataspace);
+}
