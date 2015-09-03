@@ -569,7 +569,7 @@ double grid_2D_cylinder::zone_radius(const int z_ind) const{
 //-----------------------------
 // Dimensions of the grid
 //-----------------------------
-void grid_2D_cylinder::dims(vector<int>& dims) const{
+void grid_2D_cylinder::dims(vector<hsize_t>& dims) const{
 	dims.resize(dimensionality);
 	dims[0] = rcyl_out.size();
 	dims[1] = zcyl_out.size();

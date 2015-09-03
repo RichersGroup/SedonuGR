@@ -173,7 +173,6 @@ double grid_0D_isotropic::zone_radius(const int z_ind) const{
 //-----------------------------
 // Dimensions of the grid
 //-----------------------------
-void grid_0D_isotropic::dims(vector<int>& dims) const{
-	dims.resize(1);
-	dims[0] = 1;
+void grid_0D_isotropic::dims(vector<hsize_t>& dims) const{
+	dims.resize(dimensionality);
 }
