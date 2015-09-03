@@ -40,9 +40,6 @@ class grid_1D_sphere: public grid_general
 {
 
 private:
-
-	static const int dimensionality = 1;
-
 	// store location of the outer edge of the zone.
 	locate_array r_out;
 
@@ -67,6 +64,7 @@ public:
 	double lab_dist_to_boundary       (const particle *p                                             ) const;
 	double zone_radius            (const int z_ind) const;
 	void dims(vector<hsize_t>& dims) const;
+	hsize_t dimensionality() const {return 1;};
 };
 
 

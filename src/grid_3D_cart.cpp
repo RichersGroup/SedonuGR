@@ -77,7 +77,7 @@ void grid_3D_cart::custom_model(Lua* lua)
 
 	// allocate zones
 	int n_zones = nx*ny*nz;
-	z.resize(n_zones,zone(dimensionality));
+	z.resize(n_zones,zone(dimensionality()));
 }
 
 //------------------------------------------------------------
@@ -142,7 +142,7 @@ void grid_3D_cart::read_model_file(Lua* lua)
 	// First loop - set indices and read zone values in file
 	// loop order is the file order
 	// index order matches that in get_zone
-	z.resize(n_zones,zone(dimensionality));
+	z.resize(n_zones,zone(dimensionality()));
 	int ind = 0;
 	bool rx,ry,rz;
 	for (int k=0;k<nz;k++)
@@ -272,7 +272,7 @@ void grid_3D_cart::zone_directional_indices(const int z_ind, vector<int>& dir_in
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
 
-	dir_ind.resize(dimensionality);
+	dir_ind.resize(dimensionality());
 	dir_ind[0] =  z_ind / (ny*nz);
 	dir_ind[1] = (z_ind % (ny*nz)) / nz;
 	dir_ind[2] =  z_ind % nz;
@@ -308,7 +308,7 @@ void grid_3D_cart::cartesian_sample_in_zone
 	x.resize(3);
 	vector<int> dir_ind;
 	zone_directional_indices(z_ind,dir_ind);
-	assert(dir_ind.size()==dimensionality);
+	assert(dir_ind.size()==dimensionality());
 	x[0] = x0 + ((double)dir_ind[0] + rand[0])*dx;
 	x[1] = y0 + ((double)dir_ind[1] + rand[1])*dy;
 	x[2] = z0 + ((double)dir_ind[2] + rand[2])*dz;
@@ -365,7 +365,7 @@ void grid_3D_cart::zone_coordinates(const int z_ind, vector<double>& r) const
 {
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
-	r.resize(dimensionality);
+	r.resize(dimensionality());
 	vector<int> dir_ind;
 	zone_directional_indices(z_ind,dir_ind);
 	r[0] = x0 + ((double)dir_ind[0]+0.5)*dx;
@@ -553,7 +553,7 @@ double grid_3D_cart::zone_radius(const int z_ind) const{
 // Dimensions of the grid
 //-----------------------------
 void grid_3D_cart::dims(vector<hsize_t>& dims) const{
-	dims.resize(dimensionality);
+	dims.resize(dimensionality());
 	dims[0] = nx;
 	dims[1] = ny;
 	dims[2] = nz;

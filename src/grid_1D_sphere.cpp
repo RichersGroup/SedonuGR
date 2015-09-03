@@ -63,7 +63,7 @@ void grid_1D_sphere::read_model_file(Lua* lua)
 	int n_zones;
 	infile >> n_zones;
 	assert(n_zones > 0);
-	z.resize(n_zones,zone(dimensionality));
+	z.resize(n_zones,zone(dimensionality()));
 	r_out.resize(n_zones);
 
 	// read zone properties
@@ -82,7 +82,7 @@ void grid_1D_sphere::read_model_file(Lua* lua)
 		assert(z[z_ind].T >= 0);
 		assert(z[z_ind].Ye >= 0);
 		assert(z[z_ind].Ye <= 1.0);
-		assert(z[z_ind].v.size() == dimensionality);
+		assert(z[z_ind].v.size() == dimensionality());
 	}
 
 	infile.close();
@@ -161,7 +161,7 @@ double  grid_1D_sphere::zone_min_length(const int z_ind) const
 void grid_1D_sphere::zone_coordinates(const int z_ind, vector<double>& r) const{
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
-	r.resize(dimensionality);
+	r.resize(dimensionality());
 	r[0] = 0.5*(r_out[z_ind]+r_out.bottom(z_ind));
 	assert(r[0] > 0);
 	assert(r[0] < r_out[r_out.size()-1]);
@@ -175,7 +175,7 @@ void grid_1D_sphere::zone_directional_indices(const int z_ind, vector<int>& dir_
 {
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
-	dir_ind.resize(dimensionality);
+	dir_ind.resize(dimensionality());
 	dir_ind[0] = z_ind;
 }
 
@@ -230,7 +230,7 @@ void grid_1D_sphere::cartesian_velocity_vector(const vector<double>& x, vector<d
 
 	// assuming radial velocity (may want to interpolate here)
 	// (the other two components are ignored and mean nothing)
-	assert(z[z_ind].v.size()==dimensionality);
+	assert(z[z_ind].v.size()==dimensionality());
 	v[0] = x[0]/r*z[z_ind].v[0];
 	v[1] = x[1]/r*z[z_ind].v[0];
 	v[2] = x[2]/r*z[z_ind].v[0];
@@ -335,6 +335,6 @@ double grid_1D_sphere::zone_radius(const int z_ind) const{
 // Dimensions of the grid
 //-----------------------------
 void grid_1D_sphere::dims(vector<hsize_t>& dims) const{
-	dims.resize(dimensionality);
+	dims.resize(dimensionality());
 	dims[0] = r_out.size();
 }

@@ -99,7 +99,7 @@ double  grid_0D_isotropic::zone_min_length(const int z_ind) const
 // ------------------------------------------------------------
 void grid_0D_isotropic::zone_coordinates(const int z_ind, vector<double>& r) const{
 	assert(z_ind == 0);
-	r.resize(dimensionality);
+	r.resize(dimensionality());
 }
 
 
@@ -109,7 +109,7 @@ void grid_0D_isotropic::zone_coordinates(const int z_ind, vector<double>& r) con
 void grid_0D_isotropic::zone_directional_indices(const int z_ind, vector<int>& dir_ind) const
 {
 	assert(z_ind == 0);
-	dir_ind.resize(dimensionality);
+	dir_ind.resize(dimensionality());
 }
 
 
@@ -174,5 +174,5 @@ double grid_0D_isotropic::zone_radius(const int z_ind) const{
 // Dimensions of the grid
 //-----------------------------
 void grid_0D_isotropic::dims(vector<hsize_t>& dims) const{
-	dims.resize(dimensionality);
+	dims.resize(dimensionality());
 }

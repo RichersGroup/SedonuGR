@@ -40,9 +40,6 @@ class grid_3D_cart: public grid_general
 {
 
 private:
-
-	static const int dimensionality = 3;
-
 	// specifics to this geometry
 
 	int    nx, ny, nz; // number of zones in each dimension
@@ -74,6 +71,7 @@ public:
 	double lab_dist_to_boundary         (const particle *p                                             ) const;
 	double zone_radius              (const int z_ind) const;
 	void dims(vector<hsize_t>& dims) const;
+	hsize_t dimensionality() const {return 3;};
 };
 
 
