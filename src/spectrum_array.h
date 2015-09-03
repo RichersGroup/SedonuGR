@@ -86,13 +86,17 @@ public:
 
 	// Print out
 	void print(const int iw, const int species) const;
-	void write_hdf5(H5::DataSet dataset, H5::DataSpace dataspace) const;
+	void write_hdf5_data(H5::DataSet dataset, H5::DataSpace dataspace) const;
+	void write_hdf5_coordinates(H5::H5File file) const;
 
 	// Indexing
 	unsigned index(const unsigned nu_bin,const unsigned mu_bin,const unsigned phi_bin) const;
 	unsigned  nu_bin(const unsigned index) const;
 	unsigned  mu_bin(const unsigned index) const;
 	unsigned phi_bin(const unsigned index) const;
+	unsigned  nu_dim() const {return  nu_grid.size();};
+	unsigned  mu_dim() const {return  mu_grid.size();};
+	unsigned phi_dim() const {return phi_grid.size();};
 };
 
 #endif

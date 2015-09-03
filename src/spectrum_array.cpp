@@ -324,27 +324,72 @@ void spectrum_array::MPI_average()
 }
 
 //--------------------------------------------------------------
-// Write to specified location in an HDF5 file
+// Write data to specified location in an HDF5 file
 //--------------------------------------------------------------
-void spectrum_array::write_hdf5(H5::DataSet dataset, H5::DataSpace dataspace) const
+void spectrum_array::write_hdf5_data(H5::DataSet dataset, H5::DataSpace dataspace) const
 {
 	// some sanity checks
-	hsize_t dspace_dims[3];
-	unsigned ndims = dataspace.getSimpleExtentDims(dspace_dims);
-	assert(ndims == 3);
-	assert(dspace_dims[2] == flux.size());
+	unsigned ndims = dataspace.getSimpleExtentNdims();
+	vector<hsize_t> dspace_dims(ndims,0.0);
+	dataspace.getSimpleExtentDims(&dspace_dims[0]);
+	assert(ndims >= 4);
+	assert(dspace_dims[ndims-4] <= 6);
+	assert(dspace_dims[ndims-3] ==  nu_grid.size());
+	assert(dspace_dims[ndims-2] ==  mu_grid.size());
+	assert(dspace_dims[ndims-1] == phi_grid.size());
 
 	// define the memory dataspace
-	hsize_t mdim[1];
-	mdim[0] = flux.size();
-	H5::DataSpace memspace(1,mdim,NULL);
+	hsize_t mdim[3];
+	mdim[0] =  nu_grid.size();
+	mdim[1] =  mu_grid.size();
+	mdim[2] = phi_grid.size();
+	H5::DataSpace memspace(3,mdim,NULL);
 
 	// write the data (converting to single precision)
+	// assumes phi increases fastest, then mu, then nu
 	vector<float> tmp(flux.size(),-1.0);
-	int count = 0;
-	for(unsigned i=0; i<flux.size(); i++){
-		tmp[i] = flux[i];
-		if(tmp[i]>0) count++;
-	}
+	for(unsigned i=0; i<flux.size(); i++) tmp[i] = flux[i];
 	dataset.write(&tmp[0], H5::PredType::IEEE_F32LE, memspace, dataspace);
+}
+
+//--------------------------------------------------------------
+// Write distribution function coordinates to an HDF5 file
+//--------------------------------------------------------------
+void spectrum_array::write_hdf5_coordinates(H5::H5File file) const
+{
+	// useful quantities
+	hsize_t dims[1];
+	H5::DataSpace dataspace;
+	H5::DataSet dataset;
+	vector<float> tmp;
+
+	// write nu_grid
+	tmp = vector<float>(nu_grid.size()+1,0.0);
+	dims[0] = nu_grid.size()+1;
+	dataspace = H5::DataSpace(1,dims);
+	dataset = file.createDataSet("distribution_frequency_grid(Hz,lab)",H5::PredType::IEEE_F32LE,dataspace);
+	tmp[0] = nu_grid.min;
+	for(unsigned i=1; i<nu_grid.size()+1; i++) tmp[i] = nu_grid[i-1];
+	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	dataset.close();
+
+	// write mu_grid
+	tmp = vector<float>(mu_grid.size()+1,0.0);
+	dims[0] = mu_grid.size()+1;
+	dataspace = H5::DataSpace(1,dims);
+	dataset = file.createDataSet("distribution_costheta_grid(lab)",H5::PredType::IEEE_F32LE,dataspace);
+	tmp[0] = mu_grid.min;
+	for(unsigned i=1; i<mu_grid.size()+1; i++) tmp[i] = mu_grid[i-1];
+	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	dataset.close();
+
+	// write phi_grid
+	tmp = vector<float>(phi_grid.size()+1,0.0);
+	dims[0] = phi_grid.size()+1;
+	dataspace = H5::DataSpace(1,dims);
+	dataset = file.createDataSet("distribution_phi_grid(radians,lab)",H5::PredType::IEEE_F32LE,dataspace);
+	tmp[0] = phi_grid.min;
+	for(unsigned i=1; i<phi_grid.size()+1; i++) tmp[i] = phi_grid[i-1];
+	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	dataset.close();
 }

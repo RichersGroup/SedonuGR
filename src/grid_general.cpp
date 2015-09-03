@@ -110,7 +110,6 @@ void grid_general::init(Lua* lua)
 	}
 }
 
-
 //------------------------------------------------------------
 // Write the grid information out to a file
 //------------------------------------------------------------
@@ -120,149 +119,15 @@ void grid_general::write_zones(const int iw) const
 
 	// output all zone data in hdf5 format
 	if(output_hdf5){
+		assert(dimensionality()>0);
 		string filename = transport::filename("fluid",iw,".h5");
 		H5::H5File file(filename, H5F_ACC_TRUNC);
 
 		// write coordinates to the hdf5 file (implemented in each grid type)
+		z[0].distribution[0].write_hdf5_coordinates(file);
 		//write_hdf5_coordinates(file);
-		//z[0].distribution_function.write_hdf5_coordinates(file);
+		write_hdf5_data(file);
 
-		// useful quantities
-		vector<float> tmp(z.size(),0.0);
-		hsize_t zdims[1];
-		zdims[0] = z.size();
-		H5::DataSpace dataspace(1,zdims);
-		H5::DataSet dataset;
-
-		// write comoving volume
-		dataset = file.createDataSet("comoving_volume(ccm)",H5::PredType::IEEE_F32LE,dataspace);
-		for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = zone_comoving_volume(z_ind);
-		dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-		dataset.close();
-
-		// write density
-		dataset = file.createDataSet("rho(g|ccm,com)",H5::PredType::IEEE_F32LE,dataspace);
-		for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].rho;
-		dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-		dataset.close();
-
-		// write T_gas
-		dataset = file.createDataSet("T_gas(MeV,com)",H5::PredType::IEEE_F32LE,dataspace);
-		for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].T*pc::k_MeV;
-		dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-		dataset.close();
-
-		// write Ye
-		dataset = file.createDataSet("Ye",H5::PredType::IEEE_F32LE,dataspace);
-		for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].Ye;
-		dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-		dataset.close();
-
-		// write mue
-		dataset = file.createDataSet("mue(MeV,com)",H5::PredType::IEEE_F32LE,dataspace);
-		for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = nulib_eos_mue(z[z_ind].rho, z[z_ind].T, z[z_ind].Ye) * pc::ergs_to_MeV;
-		dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-		dataset.close();
-
-		// write H_vis
-		dataset = file.createDataSet("H_vis(erg|s|g,com)",H5::PredType::IEEE_F32LE,dataspace);
-		for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].H_vis;
-		dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-		dataset.close();
-
-		// write H_abs
-		dataset = file.createDataSet("H_abs(erg|s|g,com)",H5::PredType::IEEE_F32LE,dataspace);
-		for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].e_abs  / z[z_ind].rho;
-		dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-		dataset.close();
-
-		// write C_emit
-		dataset = file.createDataSet("C_emit(erg|s|g,com)",H5::PredType::IEEE_F32LE,dataspace);
-		for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].e_emit / z[z_ind].rho;
-		dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-		dataset.close();
-
-		// write |v|
-		dataset = file.createDataSet("|v|(cm|s,lab)",H5::PredType::IEEE_F32LE,dataspace);
-		for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = sqrt(zone_speed2(z_ind));
-		dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-		dataset.close();
-
-		// write dYe_dt_abs
-		dataset = file.createDataSet("dYe_dt_abs(1|s,lab)",H5::PredType::IEEE_F32LE,dataspace);
-		for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
-			double n_baryons_per_ccm = z[z_ind].rho / transport::mean_mass(z[z_ind].Ye);
-			tmp[z_ind] = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / transport::lorentz_factor(z[z_ind].v);
-		}
-		dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-		dataset.close();
-
-		// write annihilation_rate
-		if(do_annihilation){
-			dataset = file.createDataSet("annihilation_rate(erg|ccm|s,lab)",H5::PredType::IEEE_F32LE,dataspace);
-			for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].Q_annihil;
-			dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-			dataset.close();
-		}
-
-		// moment useful quantities
-		hsize_t moment_dims[2];
-		moment_dims[0] = z.size(); // number of zones
-		moment_dims[1] = z[0].distribution.size(); // number of species
-		H5::DataSpace dataspace2(2,moment_dims);
-		tmp.resize(moment_dims[0]*moment_dims[1]);
-
-		// write neutrino energy density using contiguous temporary array
-		dataset = file.createDataSet("e_rad(erg|ccm,lab)",H5::PredType::IEEE_F32LE,dataspace2);
-		for(unsigned z_ind=0; z_ind<z.size(); z_ind++)
-			for(unsigned s=0; s<z[0].distribution.size(); s++){
-				unsigned ind = z_ind*z[0].distribution.size() + s;
-				tmp[ind] = z[z_ind].distribution[s].integrate();
-			}
-		dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-		dataset.close();
-
-		// write average neutrino energy using contiguous temporary array
-		dataset = file.createDataSet("avg_E(MeV,lab)",H5::PredType::IEEE_F32LE,dataspace2);
-		for(unsigned z_ind=0; z_ind<z.size(); z_ind++)
-			for(unsigned s=0; s<z[0].distribution.size(); s++){
-				unsigned ind = z_ind*z[0].distribution.size() + s;
-				tmp[ind] = z[z_ind].distribution[s].average_nu() * pc::h_MeV;
-			}
-		dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-		dataset.close();
-
-		// write distribution function
-		if(output_distribution){
-			// set up the dataset
-			hsize_t dfunc_dims[3];
-			dfunc_dims[0] = z.size();
-			dfunc_dims[1] = z[0].distribution.size();
-			dfunc_dims[2] = z[0].distribution[0].size();
-			H5::DataSpace dataspace3(3,dfunc_dims);
-			dataset = file.createDataSet("distribution(erg|ccm,lab)",H5::PredType::IEEE_F32LE,dataspace3);
-
-			// set up subspace properties
-			hsize_t spectrum_dims[3], offset[3], stride[3], block[3];
-			for(unsigned i=0; i<3; i++) stride[i] = 1;
-			for(unsigned i=0; i<3; i++)  block[i] = 1;
-			spectrum_dims[0] = 1;
-			spectrum_dims[1] = 1;
-			spectrum_dims[2] = z[0].distribution[0].size();
-
-			for(unsigned z_ind=0; z_ind<z.size(); z_ind++)
-				for(unsigned s=0; s<z[0].distribution.size(); s++){
-					// select the appropriate subspace
-					offset[0] = z_ind; // start at this zone index
-					offset[1] = s;     // start at this species
-					offset[2] = 0;     // start at beginning of spectrum array
-					dataspace3.selectHyperslab(H5S_SELECT_SET,spectrum_dims,offset,stride,block);
-
-					// write the data
-					z[z_ind].distribution[s].write_hdf5(dataset, dataspace3);
-				}
-			dataset.close();
-		}
 	}
 
 	// output all zone data in text files
@@ -327,6 +192,159 @@ void grid_general::write_header(ofstream& outf) const{
 		}
 	}
 	outf << endl;
+}
+
+void grid_general::write_hdf5_data(H5::H5File file) const{
+	// useful quantities
+	H5::DataSet dataset;
+	H5::DataSpace dataspace;
+	vector<float> tmp(z.size(),0.0);
+
+	// SET UP SCALAR DATABASE
+	vector<hsize_t> zdims;
+	dims(zdims);
+	assert(zdims.size()>0);
+	dataspace = H5::DataSpace(zdims.size(),&zdims[0]);
+
+	// write comoving volume, assumes last index varies fastest.
+	dataset = file.createDataSet("comoving_volume(ccm)",H5::PredType::IEEE_F32LE,dataspace);
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = zone_comoving_volume(z_ind);
+	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	dataset.close();
+
+	// write density
+	dataset = file.createDataSet("rho(g|ccm,com)",H5::PredType::IEEE_F32LE,dataspace);
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].rho;
+	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	dataset.close();
+
+	// write T_gas
+	dataset = file.createDataSet("T_gas(MeV,com)",H5::PredType::IEEE_F32LE,dataspace);
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].T*pc::k_MeV;
+	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	dataset.close();
+
+	// write Ye
+	dataset = file.createDataSet("Ye",H5::PredType::IEEE_F32LE,dataspace);
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].Ye;
+	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	dataset.close();
+
+	// write mue
+	dataset = file.createDataSet("mue(MeV,com)",H5::PredType::IEEE_F32LE,dataspace);
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = nulib_eos_mue(z[z_ind].rho, z[z_ind].T, z[z_ind].Ye) * pc::ergs_to_MeV;
+	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	dataset.close();
+
+	// write H_vis
+	dataset = file.createDataSet("H_vis(erg|s|g,com)",H5::PredType::IEEE_F32LE,dataspace);
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].H_vis;
+	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	dataset.close();
+
+	// write H_abs
+	dataset = file.createDataSet("H_abs(erg|s|g,com)",H5::PredType::IEEE_F32LE,dataspace);
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].e_abs  / z[z_ind].rho;
+	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	dataset.close();
+
+	// write C_emit
+	dataset = file.createDataSet("C_emit(erg|s|g,com)",H5::PredType::IEEE_F32LE,dataspace);
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].e_emit / z[z_ind].rho;
+	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	dataset.close();
+
+	// write |v|
+	dataset = file.createDataSet("|v|(cm|s,lab)",H5::PredType::IEEE_F32LE,dataspace);
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = sqrt(zone_speed2(z_ind));
+	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	dataset.close();
+
+	// write dYe_dt_abs
+	dataset = file.createDataSet("dYe_dt_abs(1|s,lab)",H5::PredType::IEEE_F32LE,dataspace);
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
+		double n_baryons_per_ccm = z[z_ind].rho / transport::mean_mass(z[z_ind].Ye);
+		tmp[z_ind] = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / transport::lorentz_factor(z[z_ind].v);
+	}
+	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	dataset.close();
+
+	// write annihilation_rate
+	if(do_annihilation){
+		dataset = file.createDataSet("annihilation_rate(erg|ccm|s,lab)",H5::PredType::IEEE_F32LE,dataspace);
+		for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].Q_annihil;
+		dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+		dataset.close();
+	}
+	dataspace.close();
+
+	// SET UP +1D DATASPACE
+	vector<hsize_t> dims_plus1(zdims.size()+1,0);
+	for(unsigned i=0; i<zdims.size(); i++) dims_plus1[i] = zdims[i];
+	dims_plus1[zdims.size()] = z[0].distribution.size();
+	dataspace = H5::DataSpace(zdims.size()+1,&dims_plus1[0]);
+	tmp.resize(z.size() * z[0].distribution.size());
+
+	// write neutrino energy density using contiguous temporary array
+	dataset = file.createDataSet("e_rad(erg|ccm,lab)",H5::PredType::IEEE_F32LE,dataspace);
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++)
+		for(unsigned s=0; s<z[0].distribution.size(); s++){
+			unsigned ind = z_ind*z[0].distribution.size() + s;
+			tmp[ind] = z[z_ind].distribution[s].integrate();
+		}
+	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	dataset.close();
+
+	// write average neutrino energy using contiguous temporary array
+	dataset = file.createDataSet("avg_E(MeV,lab)",H5::PredType::IEEE_F32LE,dataspace);
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++)
+		for(unsigned s=0; s<z[0].distribution.size(); s++){
+			unsigned ind = z_ind*z[0].distribution.size() + s;
+			tmp[ind] = z[z_ind].distribution[s].average_nu() * pc::h_MeV;
+		}
+	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	dataset.close();
+	dataspace.close();
+
+	// write distribution function
+	if(output_distribution){
+
+		// SET UP +4D DATASPACE
+		vector<hsize_t> dims_plus4(zdims.size()+4,0);
+		for(unsigned i=0; i<zdims.size(); i++) dims_plus4[i] = zdims[i];
+		dims_plus4[zdims.size()  ] = z[0].distribution.size();
+		dims_plus4[zdims.size()+1] = z[0].distribution[0].nu_dim();
+		dims_plus4[zdims.size()+2] = z[0].distribution[0].mu_dim();
+		dims_plus4[zdims.size()+3] =z[0].distribution[0].phi_dim();
+		dataspace = H5::DataSpace(zdims.size()+4,&dims_plus4[0]);
+		tmp.resize(z.size() * z[0].distribution.size() * z[0].distribution[0].nu_dim() * z[0].distribution[0].mu_dim() * z[0].distribution[0].phi_dim());
+		dataset = file.createDataSet("distribution(erg|ccm,lab)",H5::PredType::IEEE_F32LE,dataspace);
+
+		// set up subspace properties
+		vector<hsize_t> offset(dims_plus4.size(),0);
+		vector<hsize_t> stride(dims_plus4.size(),1);
+		vector<hsize_t>  block(dims_plus4.size(),1);
+		vector<hsize_t> spectrum_dims(dims_plus4);
+		for(unsigned i=0; i<zdims.size()+1; i++) spectrum_dims[i] = 1;
+
+		for(unsigned z_ind=0; z_ind<z.size(); z_ind++)
+			for(unsigned s=0; s<z[0].distribution.size(); s++){
+				// select the appropriate subspace
+				vector<int> dir_ind;
+				zone_directional_indices(z_ind,dir_ind);
+				for(unsigned i=0; i<zdims.size(); i++) offset[i] = dir_ind[i];
+				offset[zdims.size()  ] = s;
+				offset[zdims.size()+1] = 0;
+				offset[zdims.size()+2] = 0;
+				offset[zdims.size()+3] = 0;
+				dataspace.selectHyperslab(H5S_SELECT_SET,&spectrum_dims[0],&offset[0],&stride[0],&block[0]);
+
+				// write the data
+				z[z_ind].distribution[s].write_hdf5_data(dataset, dataspace);
+			}
+		dataset.close();
+	}
+	dataspace.close();
 }
 
 void grid_general::write_line(ofstream& outf, const int z_ind) const{

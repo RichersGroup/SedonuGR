@@ -91,6 +91,8 @@ public:
 	void write_header(ofstream& outf) const;
 	void write_line(ofstream& outf, const int z_ind) const;
 	virtual void write_rays(const int iw) const = 0;
+	void write_hdf5_data(H5::H5File file) const;
+//	virtual void write_hdf5_coordinates(H5::H5File file) const = 0;
 
 	//****** virtual functions (geometry specific)
 
