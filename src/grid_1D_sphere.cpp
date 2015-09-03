@@ -330,3 +330,11 @@ double grid_1D_sphere::zone_radius(const int z_ind) const{
 	assert(z_ind < (int)z.size());
 	return r_out[z_ind];
 }
+
+//-----------------------------
+// Dimensions of the grid
+//-----------------------------
+void grid_1D_sphere::dims(vector<int>& dims) const{
+	dims.resize(1);
+	dims[0] = r_out.size();
+}

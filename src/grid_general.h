@@ -98,6 +98,7 @@ public:
 
 	// get directional indices from the zone index
 	virtual void zone_directional_indices(const int z_ind, vector<int>& dir_ind) const = 0;
+	virtual void dims(vector<int>& dims) const = 0;
 
 	// get the velocity squared from the stored velocity vector
 	double zone_speed2(const int z_ind) const;

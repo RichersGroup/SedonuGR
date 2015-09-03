@@ -169,3 +169,10 @@ double grid_0D_isotropic::lab_dist_to_boundary(const particle *p) const{
 double grid_0D_isotropic::zone_radius(const int z_ind) const{
 	return 0;
 }
+
+//-----------------------------
+// Dimensions of the grid
+//-----------------------------
+void grid_0D_isotropic::dims(vector<int>& dims) const{
+	dims.resize(0);
+}

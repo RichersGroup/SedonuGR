@@ -607,8 +607,8 @@ void grid_2D_sphere::zone_directional_indices(const int z_ind, vector<int>& dir_
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
 	dir_ind.resize(2);
-	dir_ind[0] = z_ind / theta_out.size();
-	dir_ind[1] = z_ind % theta_out.size();
+	dir_ind[0] = z_ind / theta_out.size(); // r index
+	dir_ind[1] = z_ind % theta_out.size(); // theta index
 	assert(dir_ind[0] >= 0);
 	assert(dir_ind[1] >= 0);
 	assert(dir_ind[0] < (int)    r_out.size());
@@ -854,4 +854,13 @@ double grid_2D_sphere::zone_radius(const int z_ind) const{
 	int i = dir_ind[0];
 
 	return r_out[i];
+}
+
+//-----------------------------
+// Dimensions of the grid
+//-----------------------------
+void grid_2D_sphere::dims(vector<int>& dims) const{
+	dims.resize(2);
+	dims[0] = r_out.size();
+	dims[1] = theta_out.size();
 }

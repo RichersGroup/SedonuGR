@@ -319,8 +319,8 @@ void grid_2D_cylinder::zone_directional_indices(const int z_ind, vector<int>& di
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
 	dir_ind.resize(2);
-	dir_ind[0] = z_ind / zcyl_out.size();
-	dir_ind[1] = z_ind % zcyl_out.size();
+	dir_ind[0] = z_ind / zcyl_out.size(); // rcyl index
+	dir_ind[1] = z_ind % zcyl_out.size(); // zcyl index
 	assert(dir_ind[0] >= 0);
 	assert(dir_ind[1] >= 0);
 	assert(dir_ind[0] < (int)rcyl_out.size());
@@ -564,4 +564,13 @@ double grid_2D_cylinder::zone_radius(const int z_ind) const{
 	double zlow = ( j==0 ? zcyl_out.min : zcyl_out[j-1] );
 	double z = max(zhigh, -zlow);
 	return sqrt(r*r + z*z);
+}
+
+//-----------------------------
+// Dimensions of the grid
+//-----------------------------
+void grid_2D_cylinder::dims(vector<int>& dims) const{
+	dims.resize(2);
+	dims[0] = rcyl_out.size();
+	dims[1] = zcyl_out.size();
 }
