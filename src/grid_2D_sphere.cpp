@@ -860,7 +860,7 @@ double grid_2D_sphere::zone_radius(const int z_ind) const{
 // Dimensions of the grid
 //-----------------------------
 void grid_2D_sphere::dims(vector<int>& dims) const{
-	dims.resize(2);
+	dims.resize(dimensionality);
 	dims[0] = r_out.size();
 	dims[1] = theta_out.size();
 }

@@ -553,7 +553,7 @@ double grid_3D_cart::zone_radius(const int z_ind) const{
 // Dimensions of the grid
 //-----------------------------
 void grid_3D_cart::dims(vector<int>& dims) const{
-	dims.resize(3);
+	dims.resize(dimensionality);
 	dims[0] = nx;
 	dims[1] = ny;
 	dims[2] = nz;
