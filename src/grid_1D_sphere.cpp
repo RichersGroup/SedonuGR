@@ -338,3 +338,28 @@ void grid_1D_sphere::dims(vector<hsize_t>& dims) const{
 	dims.resize(dimensionality());
 	dims[0] = r_out.size();
 }
+
+//----------------------------------------------------
+// Write the coordinates of the grid points to the hdf5 file
+//----------------------------------------------------
+void grid_1D_sphere::write_hdf5_coordinates(H5::H5File file) const
+{
+	// useful quantities
+	H5::DataSet dataset;
+	H5::DataSpace dataspace;
+	vector<float> tmp;
+
+	// get dimensions
+	vector<hsize_t> coord_dims;
+	dims(coord_dims);
+	assert(coord_dims.size()==dimensionality());
+	for(unsigned i=0; i<coord_dims.size(); i++) coord_dims[i]++; //make room for min value
+
+	// write coordinates
+	dataspace = H5::DataSpace(1,&coord_dims[0]);
+	dataset = file.createDataSet("r(cm)",H5::PredType::IEEE_F32LE,dataspace);
+	tmp[0] = r_out.min;
+	for(unsigned i=1; i<r_out.size()+1; i++) tmp[i] = r_out[i-1];
+	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	dataset.close();
+}

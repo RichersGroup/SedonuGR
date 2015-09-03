@@ -67,6 +67,7 @@ public:
 	double zone_radius            (const int z_ind) const;
 	void dims(vector<hsize_t>& dims) const;
 	hsize_t dimensionality() const {return 2;};
+	void write_hdf5_coordinates(H5::H5File file) const;
 };
 
 

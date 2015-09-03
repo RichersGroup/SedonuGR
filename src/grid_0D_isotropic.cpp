@@ -176,3 +176,13 @@ double grid_0D_isotropic::zone_radius(const int z_ind) const{
 void grid_0D_isotropic::dims(vector<hsize_t>& dims) const{
 	dims.resize(dimensionality());
 }
+
+//----------------------------------------------------
+// Write the coordinates of the grid points to the hdf5 file
+//----------------------------------------------------
+void grid_0D_isotropic::write_hdf5_coordinates(H5::H5File file) const
+{
+	// it's stupid to output this in hdf5...
+	cout << "ERROR: write_hdf5_coordinates is not implemented for grid_0D_isotropic." << endl;
+	assert(0);
+}

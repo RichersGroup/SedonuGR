@@ -125,7 +125,7 @@ void grid_general::write_zones(const int iw) const
 
 		// write coordinates to the hdf5 file (implemented in each grid type)
 		z[0].distribution[0].write_hdf5_coordinates(file);
-		//write_hdf5_coordinates(file);
+		write_hdf5_coordinates(file);
 		write_hdf5_data(file);
 
 	}
@@ -200,7 +200,7 @@ void grid_general::write_hdf5_data(H5::H5File file) const{
 	H5::DataSpace dataspace;
 	vector<float> tmp(z.size(),0.0);
 
-	// SET UP SCALAR DATABASE
+	// SET UP SCALAR DATASPACE
 	vector<hsize_t> zdims;
 	dims(zdims);
 	assert(zdims.size()>0);
