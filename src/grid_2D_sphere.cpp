@@ -246,9 +246,10 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	double net_HmC = 0;
 	double net_dyedt = 0;
 	double newtonian_mass = 0;
+	double Mnu = 0;
 	const double gamma_max = 2.0;
 	const double speed_max = pc::c * sqrt(1.0 - 1.0/gamma_max);
-    #pragma omp parallel for collapse(3) reduction(+:newtonian_eint_total,net_HmC,net_dyedt,newtonian_mass)
+    #pragma omp parallel for collapse(3) reduction(+:newtonian_eint_total,net_HmC,net_dyedt,newtonian_mass,Mnu)
 	for(unsigned proc=0; proc<dims[0]; proc++)
 		for(unsigned jb=0; jb<dims[2]; jb++)
 			for(unsigned ib=0; ib<dims[3]; ib++){
@@ -290,14 +291,16 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 				assert(z[z_ind].Ye    >= 0.0);
 				assert(z[z_ind].Ye    <= 1.0);
 				newtonian_eint_total += eint[proc][kb][jb][ib]             * z[z_ind].rho * zone_lab_volume(z_ind);
-				net_HmC += (ncfn[proc][kb][jb][ib]-nprs[proc][kb][jb][ib]) * z[z_ind].rho * zone_comoving_volume(z_ind);
+				net_HmC += (ncfn[proc][kb][jb][ib]-nprs[proc][kb][jb][ib]) * z[z_ind].rho * zone_lab_volume(z_ind);
 				net_dyedt += gamn[proc][kb][jb][ib] * z[z_ind].rho * zone_lab_volume(z_ind);
 				newtonian_mass += z[z_ind].rho * zone_lab_volume(z_ind);
+				if(z[z_ind].H_vis < ncfn[proc][kb][jb][ib]) Mnu += z[z_ind].rho * zone_lab_volume(z_ind);
 	}
 	if(rank0){
 		cout << "#   Newtonian total internal energy: " << newtonian_eint_total << " erg" << endl;
-		cout << "#   H-C (neutrino only): " << net_HmC << " erg/s" << endl;
+		cout << "#   H-C (Newtonian, neutrino only): " << net_HmC << " erg/s" << endl;
 		cout << "#   dYe_dt (Newtonian): " << net_dyedt/newtonian_mass << " 1/s" << endl;
+		cout << "#   M_nu (Newtonian): " << Mnu/physical_constants::M_sun << " Msun" << endl;
 	}
 
 

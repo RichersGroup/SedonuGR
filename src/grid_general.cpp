@@ -88,15 +88,15 @@ void grid_general::init(Lua* lua)
 		//if(grid->z[z_ind].rho > 1.0e8){ // && r[1] > pc::pi/3.0 && r[1] < pc::pi/2.0){
 		total_rest_mass += rest_mass;
 		total_nonrel_mass += nonrel_mass;
-		nonrel_Tbar += z[z_ind].T * rest_mass;
-		rel_Tbar += z[z_ind].T * nonrel_mass;
-		nonrel_Yebar += z[z_ind].Ye * rest_mass;
-		rel_Yebar += z[z_ind].Ye * nonrel_mass;
+		rel_Tbar += z[z_ind].T * rest_mass;
+		nonrel_Tbar += z[z_ind].T * nonrel_mass;
+		rel_Yebar += z[z_ind].Ye * rest_mass;
+		nonrel_Yebar += z[z_ind].Ye * nonrel_mass;
 		total_rel_KE    += (rest_mass>0 ? (transport::lorentz_factor(z[z_ind].v) - 1.0) * rest_mass * pc::c*pc::c : 0);
 		total_nonrel_KE += 0.5 * nonrel_mass * zone_speed2(z_ind);
 		total_rel_TE    += (rest_mass>0 ? rest_mass   / pc::m_n * pc::k * z[z_ind].T : 0);
 		total_nonrel_TE += nonrel_mass / pc::m_n * pc::k * z[z_ind].T;
-		if(do_visc) total_hvis += z[z_ind].H_vis * z[z_ind].rho * zone_comoving_volume(z_ind);
+		if(do_visc) total_hvis += z[z_ind].H_vis * z[z_ind].rho * zone_lab_volume(z_ind);
 		if(!do_relativity) for(unsigned i=0; i<z[z_ind].v.size(); i++) z[z_ind].v[i] = 0;
 		//}
 	}
@@ -106,7 +106,7 @@ void grid_general::init(Lua* lua)
 		cout << "#   <Ye> = " << rel_Yebar/total_rest_mass << " (nonrel: " << nonrel_Yebar/total_nonrel_mass << ")" <<endl;
 		cout << "#   KE = " << total_rel_KE << " erg (nonrel: " << total_nonrel_KE << " erg)" << endl;
 		cout << "#   TE = " << total_rel_TE << " erg (nonrel: " << total_nonrel_TE << " erg)" << endl;
-		if(do_visc) cout << "#   hvis = " << total_hvis << " erg/s" << endl;
+		if(do_visc) cout << "#   hvis(nonrel) = " << total_hvis << " erg/s" << endl;
 	}
 }
 
