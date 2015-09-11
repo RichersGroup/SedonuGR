@@ -49,6 +49,11 @@ species_general::species_general(){
 
 void species_general::init(Lua* lua, transport* simulation)
 {
+	// initialize MPI parallelism
+	int my_rank;
+	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
+	const int rank0 = (my_rank == 0);
+
 	// set the pointer to see the simulation info
 	sim = simulation;
 	assert(sim->grid->z.size()>0);
@@ -57,6 +62,7 @@ void species_general::init(Lua* lua, transport* simulation)
 	myInit(lua);
 
 	// allocate space for the grid eas spectrum containers
+	if(rank0) cout << "#   Setting up the eas arrays...";
 	abs_opac.resize(sim->grid->z.size());
 	scat_opac.resize(sim->grid->z.size());
 	emis.resize(sim->grid->z.size());
@@ -72,8 +78,10 @@ void species_general::init(Lua* lua, transport* simulation)
 		emis[i].resize(nu_grid.size());
 		emis[i].interpolation_order = iorder;
 	}
+	if(rank0) cout << "finished." << endl;
 
     // set up the spectrum in each zone
+	if(rank0) cout << "#   Setting up the distribution function...";
 	int n_mu = lua->scalar<int>("distribution_nmu");
 	int n_phi = lua->scalar<int>("distribution_nphi");
 	#pragma omp parallel for
@@ -85,6 +93,7 @@ void species_general::init(Lua* lua, transport* simulation)
 		tmp_spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
 		sim->grid->z[z_ind].distribution.push_back(tmp_spectrum);
 	}
+	if(rank0) cout << "finished." << endl;
 
 	// set nugrid interpolation method
 	int imeth  = lua->scalar<int>("opac_interp_method");
