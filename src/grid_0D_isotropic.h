@@ -44,7 +44,6 @@ public:
 	virtual ~grid_0D_isotropic() {}
 
 	void read_model_file(Lua* lua);
-	void custom_model(Lua* lua);
 
 	// required functions
 	int  zone_index               (const vector<double>& x                                     ) const;

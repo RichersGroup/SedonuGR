@@ -64,9 +64,6 @@ protected:
 	// fill the grid with data from a model file
 	virtual void read_model_file(Lua* lua) = 0;
 
-	// fill the grid with data hard coded here
-	virtual void custom_model(Lua* lua) = 0;
-
 	// output options
 	int output_distribution;
 	int output_hdf5;
@@ -81,7 +78,7 @@ public:
 	// vector of zones
 	std::vector<zone> z;
 
-	static constexpr double tiny = 1e-3; // used to overshoot boundary to account for error in boundary distance calculation
+	static constexpr double tiny = 1e-5; // used to overshoot boundary to account for error in boundary distance calculation
 
 	// set everything up
 	void init(Lua* lua);

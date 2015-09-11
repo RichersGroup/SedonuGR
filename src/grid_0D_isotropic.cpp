@@ -56,16 +56,6 @@ void grid_0D_isotropic::read_model_file(Lua* lua)
 
 
 //------------------------------------------------------------
-// Write a custom model here if you like
-//------------------------------------------------------------
-void grid_0D_isotropic::custom_model(Lua* lua)
-{
-	cout << "Error: there is no custom model programmed for grid_0D_isotropic." << endl;
-	exit(11);
-}
-
-
-//------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
 int grid_0D_isotropic::zone_index(const vector<double>& x) const

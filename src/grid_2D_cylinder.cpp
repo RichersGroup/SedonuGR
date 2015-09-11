@@ -201,15 +201,6 @@ void grid_2D_cylinder::read_model_file(Lua* lua)
 }
 
 //------------------------------------------------------------
-// Write a custom model here if you like
-//------------------------------------------------------------
-void grid_2D_cylinder::custom_model(Lua* lua)
-{
-  cout << "ERROR: no custom model programmed for grid_2D_cylinder." << endl;
-  exit(1);
-}
-
-//------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
 int grid_2D_cylinder::zone_index(const vector<double>& x) const

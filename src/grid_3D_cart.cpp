@@ -31,6 +31,7 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 #include "global_options.h"
 #include "mpi.h"
 #include "Lua.h"
@@ -42,48 +43,254 @@ grid_3D_cart::grid_3D_cart(){
 	nx=-MAXLIM;ny=-MAXLIM;nz=-MAXLIM;
 	dx=NaN;dy=NaN;dz=NaN;
 	x0=NaN;y0=NaN;z0=NaN;
-	vol=NaN;
-	min_ds=NaN;
-	reflect_x=-MAXLIM;reflect_y=-MAXLIM;reflect_z=-MAXLIM;
-}
-
-//------------------------------------------------------------
-// initialize the zone geometry
-//------------------------------------------------------------
-void grid_3D_cart::custom_model(Lua* lua)
-{
-	vector<int>n0 = lua->vector<int>("n0");
-	vector<double>ds = lua->vector<double>("ds");
-	vector<double>s0 = lua->vector<double>("s0");
-
-	grid_type = "3D_cart";
-
-	nx = n0[0];
-	ny = n0[1];
-	nz = n0[2];
-
-	dx = ds[0];
-	dy = ds[1];
-	dz = ds[2];
-
-	x0 = s0[0];
-	y0 = s0[1];
-	z0 = s0[2];
-
-	vol = dx*dy*dz;
-	if      ((dx < dy)&&(dx < dz)) min_ds = dx;
-	else if ((dy < dx)&&(dy < dz)) min_ds = dx;
-	else min_ds = dz;
-
-	// allocate zones
-	int n_zones = nx*ny*nz;
-	z.resize(n_zones,zone(dimensionality()));
+	x1=NaN;y1=NaN;z1=NaN;
+	xmax=NaN;ymax=NaN;zmax=NaN;
+	reflect_x=0;reflect_y=0;reflect_z=0;
 }
 
 //------------------------------------------------------------
 // Read in a cartesian model file
 //------------------------------------------------------------
 void grid_3D_cart::read_model_file(Lua* lua)
+{
+	std::string model_type = lua->scalar<std::string>("model_type");
+	if(model_type == "SpEC") read_SpEC_file(lua);
+	else if(model_type == "David") read_David_file(lua);
+	else{
+		cout << "ERROR: model type unknown." << endl;
+		exit(8);
+	}
+}
+
+
+
+void grid_3D_cart::read_David_file(Lua* lua)
+{
+	// verbocity
+	int my_rank;
+	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
+	const int rank0 = (my_rank == 0);
+
+	// conversion factors
+	double convert_length = 147690.2071535873; // code --> cm
+	double convert_density = 6.173937319029555e+17; // code --> g/ccm
+	double convert_velocity = pc::c; // code --> cm/s
+	double convert_temperature = 1./pc::k_MeV; // code --> K
+
+	// generalHDF5 variables
+	H5::DataSet dataset;
+	H5::DataSpace space;
+	H5::CompType comptype;
+	H5::Attribute attr;
+	H5::Group group;
+
+	// open the model files
+	if(rank0) cout << "# Reading the model file..." << endl;
+	string model_filename   = lua->scalar<string>("model_file"  );
+	H5::H5File file(model_filename, H5F_ACC_RDONLY);
+
+	// get the refinement level
+	int reflevel = lua->scalar<int>("reflevel");
+	stringstream groupname;
+	groupname << "/reflevel=" << reflevel << "/";
+	group = file.openGroup(groupname.str());
+
+	// open Ye
+	dataset = file.openDataSet(groupname.str()+"Ye");
+	space = dataset.getSpace();
+	comptype = dataset.getCompType();
+
+	// get the dataset dimensions
+	const int dataset_rank = 3;
+	assert(space.getSimpleExtentNdims()==dataset_rank);                 // 3D array
+	hsize_t space_dims[dataset_rank];
+	space.getSimpleExtentDims(space_dims);
+	nx = space_dims[0];
+	ny = space_dims[1];
+	nz = space_dims[2];
+	int dataset_nzones = nx * ny * nz;
+
+	//======================//
+	// read the coordinates //
+	//======================//
+	// read in the deltas
+	double delta[3];
+	attr = group.openAttribute("delta");
+	attr.read(H5::PredType::IEEE_F64LE,delta);
+	for(int i=0; i<3; i++) delta[i] *= convert_length;
+	dx = delta[0];
+	dy = delta[1];
+	dz = delta[2];
+	assert(dx>0);
+	assert(dy>0);
+	assert(dz>0);
+
+	// read in the extent.
+	double extent[6];
+	attr = group.openAttribute("extent");
+	attr.read(H5::PredType::IEEE_F64LE,extent);
+	for(int i=0; i<6; i++) extent[i] *= convert_length;
+
+	// set the grid structure variables. half-cell offset since data is vertex-centered.
+	x0 = extent[0] - dx/2.0;
+	y0 = extent[2] - dy/2.0;
+	z0 = extent[4] - dz/2.0;
+	x1 = x0 + dx;
+	y1 = y0 + dy;
+	z1 = z0 + dz;
+	xmax = extent[1] + dx/2.0;
+	ymax = extent[3] + dy/2.0;
+	zmax = extent[5] + dz/2.0;
+	assert(xmax>x0);
+	assert(ymax>y0);
+	assert(zmax>z0);
+
+	// check that the number of data points is consistent with the range and delta
+	double ntmp;
+	ntmp = (xmax - x0)/dx;
+	assert(abs(nx-ntmp) < tiny);
+	ntmp = (ymax - y0)/dy;
+	assert(abs(ny-ntmp) < tiny);
+	ntmp = (zmax - z0)/dz;
+	assert(abs(nz-ntmp) < tiny);
+
+	// modify grid in event of symmetry
+	reflect_x = lua->scalar<int>("reflect_x");
+	reflect_y = lua->scalar<int>("reflect_y");
+	reflect_z = lua->scalar<int>("reflect_z");
+	if(reflect_x){
+		assert(xmax>0);
+		x0 = 0.0;
+		x1 = fmod(xmax,dx);
+		if(abs(x1-x0)/dx < tiny) x1 += dx; // don't let the leftmost grid cell be stupidly tiny.
+		assert(fmod(xmax-x1,dx) < tiny || fmod(xmax-x1,dx)-dx < tiny);
+		nx = (int)((xmax-x1)/dx + 0.5) +1; // 0.5 to deal with finite precision.
+	}
+	if(reflect_y){
+		assert(ymax>0);
+		y0 = 0.0;
+		y1 = fmod(ymax,dy);
+		if(abs(y1-y0)/dy < tiny) y1 += dy; // don't let the leftmost grid cell be stupidly tiny.
+		assert(fmod(ymax-y1,dy) < tiny || fmod(ymax-y1,dy)-dy < tiny);
+		ny = (int)((ymax-y1)/dy + 0.5) +1; // 0.5 to deal with finite precision.
+	}
+	if(reflect_z){
+		assert(zmax>0);
+		z0 = 0.0;
+		z1 = fmod(zmax,dz);
+		if(abs(z1-z0)/dz < tiny) z1 += dz; // don't let the leftmost grid cell be stupidly tiny.
+		assert(fmod(zmax-z1,dz) < tiny || fmod(zmax-z1,dz)-dz < tiny);
+		nz = (int)((zmax-z1)/dz + 0.5) +1; // 0.5 to deal with finite precision.
+	}
+
+	// set up the zone structure
+	int nzones = nx * ny * nz;
+	z.resize(nzones,zone(3));
+
+	// print out grid structure
+	if(rank0){
+		cout << "#   Using refinement level " << reflevel << endl;
+		cout << "#   Minima           : {" << x0 << "," << y0 << "," << z0 <<"} cm" << endl;
+		cout << "#   Next             : {" << x1 << "," << y1 << "," << z1 <<"} cm" << endl;
+		cout << "#   Maxima           : {" << xmax << "," << ymax << "," << zmax <<"} cm" << endl;
+		cout << "#   Deltas           : {" << dx << "," << dy << "," << dz <<"} cm" << endl;
+	}
+
+
+	//=========================//
+	// read in the actual data //
+	//=========================//
+	vector<double>   Ye(dataset_nzones,0.0);
+	vector<double>  rho(dataset_nzones,0.0);
+	vector<double> temp(dataset_nzones,0.0);
+	vector<double> velx(dataset_nzones,0.0);
+	vector<double> vely(dataset_nzones,0.0);
+	vector<double> velz(dataset_nzones,0.0);
+	vector<double>  vol(dataset_nzones,0.0);
+	dataset = file.openDataSet(groupname.str()+"Ye");
+	dataset.read(&Ye[0],H5::PredType::IEEE_F64LE);
+	dataset = file.openDataSet(groupname.str()+"rho");
+	dataset.read(&(rho[0]),H5::PredType::IEEE_F64LE);
+	dataset = file.openDataSet(groupname.str()+"temp");
+	dataset.read(&(temp[0]),H5::PredType::IEEE_F64LE);
+	dataset = file.openDataSet(groupname.str()+"velx");
+	dataset.read(&(velx[0]),H5::PredType::IEEE_F64LE);
+	dataset = file.openDataSet(groupname.str()+"vely");
+	dataset.read(&(vely[0]),H5::PredType::IEEE_F64LE);
+	dataset = file.openDataSet(groupname.str()+"velz");
+	dataset.read(&(velz[0]),H5::PredType::IEEE_F64LE);
+	dataset = file.openDataSet(groupname.str()+"vol");
+	dataset.read(&(vol[0]),H5::PredType::IEEE_F64LE);
+	for(int i=0; i<dataset_nzones; i++){
+		rho[i] *= convert_density;
+		temp[i] *= convert_temperature;
+		velx[i] *= convert_velocity;
+		vely[i] *= convert_velocity;
+		velz[i] *= convert_velocity;
+	}
+
+
+	//===============//
+	// fill the grid //
+	//===============//
+	double Nmass=0.0, Rmass=0.0;
+	double avgT=0, KE=0, totalVolume=0;
+    #pragma omp parallel for collapse(3)
+	for(unsigned i=0; i<space_dims[0]; i++)
+		for(unsigned j=0; j<space_dims[1]; j++)
+			for(unsigned k=0; k<space_dims[2]; k++){
+
+				// get location of cell-centered cell center, i.e. vertex-centered vertex location
+				vector<double> x(3,0.0);
+				x[0] = extent[0] + i*dx;
+				x[1] = extent[2] + j*dy;
+				x[2] = extent[4] + k*dz;
+
+				// get dataset and zone indices
+				const int dataset_ind = k + space_dims[2]*j + space_dims[1]*space_dims[2]*i;
+				const int z_ind = zone_index(x);
+				assert(dataset_ind < (int)(space_dims[0] * space_dims[1] * space_dims[2]));
+				assert(z_ind < (int)z.size());
+
+				// if the grid cell is in our post-reflection-modified domain, add it to the zone list.
+				if(z_ind >= 0){
+					z[z_ind].rho  =  rho[dataset_ind];
+					z[z_ind].T    = temp[dataset_ind];
+					z[z_ind].Ye   =   Ye[dataset_ind];
+					z[z_ind].v[0] = velx[dataset_ind];
+					z[z_ind].v[1] = vely[dataset_ind];
+					z[z_ind].v[2] = velz[dataset_ind];
+
+					assert(z[z_ind].rho >= 0.0);
+					assert(z[z_ind].T   >= 0.0);
+					assert(z[z_ind].Ye >= 0.0);
+					assert(z[z_ind].Ye <= 1.0);
+					if(zone_speed2(z_ind) > pc::c*pc::c) cout << z_ind << " " << zone_speed2(z_ind)/pc::c/pc::c << endl;
+					//assert(zone_speed2(z_ind) < pc::c*pc::c);
+				}
+			}
+
+	// get global quantities
+	#pragma omp parallel for reduction(+:Nmass,Rmass,avgT,KE,totalVolume)
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
+		Nmass += z[z_ind].rho * zone_lab_volume(z_ind);
+		Rmass += z[z_ind].rho * zone_comoving_volume(z_ind);
+
+		KE += 0.5 * z[z_ind].rho * zone_lab_volume(z_ind) * zone_speed2(z_ind);
+		totalVolume += zone_lab_volume(z_ind);
+		avgT += z[z_ind].T * zone_lab_volume(z_ind);
+	}
+
+	if(rank0){
+		cout << "#   Newtonian    mass: " << Nmass * 2.0 << endl;
+		cout << "#   Relativistic mass: " << Rmass * 2.0 << endl;
+		cout << "#   Newtonian KE     : " << KE * 2.0 << endl;
+		cout << "#   <T>              : " << avgT/totalVolume*pc::k_MeV << endl;
+	}
+	file.close();
+}
+
+void grid_3D_cart::read_SpEC_file(Lua* lua)
 {
 	// get mpi rank
 	int my_rank;
@@ -124,7 +331,6 @@ void grid_3D_cart::read_model_file(Lua* lua)
 	int n_zones = nx*ny*nz;
 
 	//set the zone sizes and volumes
-	double xmax, ymax, zmax;
 	infile >> x0;
 	infile >> xmax;
 	infile >> y0;
@@ -134,10 +340,9 @@ void grid_3D_cart::read_model_file(Lua* lua)
 	dx = (xmax-x0)/(double)nx; if(reflect_x) dx*=2;
 	dy = (ymax-y0)/(double)ny; if(reflect_y) dy*=2;
 	dz = (zmax-z0)/(double)nz; if(reflect_z) dz*=2;
-	if      ((dx < dy)&&(dx < dz)) min_ds = dx;
-	else if ((dy < dx)&&(dy < dz)) min_ds = dy;
-	else min_ds = dz;
-	vol = dx*dy*dz;
+	x1 = x0+dx;
+	y1 = y0+dy;
+	z1 = z0+dz;
 
 	// First loop - set indices and read zone values in file
 	// loop order is the file order
@@ -233,14 +438,22 @@ void grid_3D_cart::read_model_file(Lua* lua)
 int grid_3D_cart::zone_index(const vector<double>& x) const
 {
 	assert(x.size()==3);
-	int i = floor((x[0]-x0)/dx);
-	int j = floor((x[1]-y0)/dy);
-	int k = floor((x[2]-z0)/dz);
 
 	// check for off grid
-	if ((i < 0)||(i > nx-1)) return -2;
-	if ((j < 0)||(j > ny-1)) return -2;
-	if ((k < 0)||(k > nz-1)) return -2;
+	if (x[0]<x0 || x[0]>xmax) return -2;
+	if (x[1]<y0 || x[1]>ymax) return -2;
+	if (x[2]<z0 || x[2]>zmax) return -2;
+
+	// get directional indices
+	int i = (x[0]<=x1 ? 0 : floor((x[0]-x1)/dx)+1 );
+	int j = (x[1]<=y1 ? 0 : floor((x[1]-y1)/dy)+1 );
+	int k = (x[2]<=z1 ? 0 : floor((x[2]-z1)/dz)+1 );
+	assert(i >= 0);
+	assert(j >= 0);
+	assert(k >= 0);
+	assert(i < nx);
+	assert(j < ny);
+	assert(k < nz);
 
 	int z_ind = zone_index(i,j,k);
 	assert(z_ind >= 0);
@@ -293,7 +506,11 @@ double grid_3D_cart::zone_lab_volume(const int z_ind) const
 {
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
-	return vol;
+	vector<int> dir_ind;
+	zone_directional_indices(z_ind,dir_ind);
+	vector<double> delta;
+	get_deltas(z_ind,delta);
+	return delta[0] * delta[1] * delta[2];
 }
 
 
@@ -306,24 +523,34 @@ void grid_3D_cart::cartesian_sample_in_zone
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
 	x.resize(3);
+
+	// zone directional indices
 	vector<int> dir_ind;
 	zone_directional_indices(z_ind,dir_ind);
 	assert(dir_ind.size()==dimensionality());
-	x[0] = x0 + ((double)dir_ind[0] + rand[0])*dx;
-	x[1] = y0 + ((double)dir_ind[1] + rand[1])*dy;
-	x[2] = z0 + ((double)dir_ind[2] + rand[2])*dz;
-	assert(x[0] >= x0*(1.-tiny));
-	assert(x[1] >= y0*(1.-tiny));
-	assert(x[2] >= z0*(1.-tiny));
-	assert(x[0] >= (x0+(double)dir_ind[0]*dx)*(1.+tiny));
-	assert(x[1] >= (y0+(double)dir_ind[1]*dy)*(1.+tiny));
-	assert(x[2] >= (z0+(double)dir_ind[2]*dz)*(1.+tiny));
-	x[0] = max(x[0], x0);
-	x[1] = max(x[1], y0);
-	x[2] = max(x[2], z0);
-	x[0] = min(x[0], x0+(double)dir_ind[0]*dx);
-	x[1] = min(x[1], y0+(double)dir_ind[1]*dy);
-	x[2] = min(x[2], z0+(double)dir_ind[2]*dz);
+
+	// zone deltas in each of three directions
+	vector<double> delta;
+	get_deltas(z_ind,delta);
+
+	// set the random location
+	x[0] = zone_left_boundary(0,dir_ind[0]) + delta[0]*rand[0];
+	x[1] = zone_left_boundary(1,dir_ind[1]) + delta[1]*rand[1];
+	x[2] = zone_left_boundary(2,dir_ind[2]) + delta[2]*rand[2];
+
+	// make sure particle is in bounds
+	assert(x[0] > x0 - tiny*dx);
+	assert(x[1] > y0 - tiny*dy);
+	assert(x[2] > z0 - tiny*dz);
+	assert(x[0] < xmax + tiny*dx);
+	assert(x[1] < ymax + tiny*dy);
+	assert(x[2] < zmax + tiny*dz);
+
+	// return particles just outside cell boundaries to within cell boundaries
+	for(int i=0; i<3; i++){
+		x[i] = min(x[i], zone_right_boundary(i,dir_ind[i]));
+		x[i] = max(x[i],  zone_left_boundary(i,dir_ind[i]));
+	}
 }
 
 
@@ -334,6 +561,11 @@ double  grid_3D_cart::zone_min_length(const int z_ind) const
 {
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
+
+	vector<double> delta;
+	get_deltas(z_ind,delta);
+
+	double min_ds = min(delta[0], min(delta[1],delta[2]) );
 	return min_ds;
 }
 
@@ -350,7 +582,7 @@ void grid_3D_cart::cartesian_velocity_vector(const vector<double>& x, vector<dou
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
 
-	// may want to interpolate here
+	// may want to interpolate here?
 	v[0] = z[z_ind].v[0];
 	v[1] = z[z_ind].v[1];
 	v[2] = z[z_ind].v[2];
@@ -368,9 +600,9 @@ void grid_3D_cart::zone_coordinates(const int z_ind, vector<double>& r) const
 	r.resize(dimensionality());
 	vector<int> dir_ind;
 	zone_directional_indices(z_ind,dir_ind);
-	r[0] = x0 + ((double)dir_ind[0]+0.5)*dx;
-	r[1] = y0 + ((double)dir_ind[1]+0.5)*dy;
-	r[2] = z0 + ((double)dir_ind[2]+0.5)*dz;
+	r[0] = dir_ind[0]==0 ? 0.5*(x0+x1) : x1 + ((double)(dir_ind[0]-1) + 0.5) * dx;
+	r[1] = dir_ind[1]==0 ? 0.5*(y0+y1) : y1 + ((double)(dir_ind[1]-1) + 0.5) * dy;
+	r[2] = dir_ind[2]==0 ? 0.5*(z0+z1) : z1 + ((double)(dir_ind[2]-1) + 0.5) * dz;
 }
 
 
@@ -471,43 +703,46 @@ void grid_3D_cart::write_rays(const int iw) const
 //------------------------------------------------------------
 void grid_3D_cart::reflect_outer(particle *p) const{
 	// assumes particle is placed OUTSIDE of the zones
+	int z_ind = zone_index(p->x);
+	vector<double> delta;
+	get_deltas(z_ind,delta);
 
 	// invert the radial component of the velocity, put the particle just inside the boundary
 	if(p->x[0] < x0){
 		assert(p->D[0]<0);
 		p->D[0] = -p->D[0];
-		p->x[0] = x0 + tiny*dx;
+		p->x[0] = x0 + tiny*delta[0];
 	}
 	if(p->x[1] < y0){
 		assert(p->D[1]<0);
 		p->D[1] = -p->D[1];
-		p->x[2] = y0 + tiny*dy;
+		p->x[2] = y0 + tiny*delta[1];
 	}
 	if(p->x[2] < z0){
 		assert(p->D[0]<0);
 		p->D[0] = -p->D[0];
-		p->x[1] = z0 + tiny*dz;
+		p->x[1] = z0 + tiny*delta[2];
 	}
-	if(p->x[0] > x0+nx*dx){
+	if(p->x[0] > xmax){
 		assert(p->D[0]>0);
 		p->D[0] = -p->D[0];
-		p->x[0] = (x0+nx*dx) - tiny*dx;
+		p->x[0] = xmax - tiny*delta[0];
 	}
-	if(p->x[1] > y0+ny*dy){
+	if(p->x[1] > ymax){
 		assert(p->D[1]>0);
 		p->D[1] = -p->D[1];
-		p->x[1] = (y0+ny*dy) - tiny*dy;
+		p->x[1] = ymax - tiny*delta[1];
 	}
-	if(p->x[2] > z0+nz*dz){
+	if(p->x[2] > zmax){
 		assert(p->D[2]>0);
 		p->D[2] = -p->D[2];
-		p->x[2] = (z0+nz*dz) - tiny*dz;
+		p->x[2] = zmax - tiny*delta[2];
 	}
 
 	// double check that the particle is in the boundary
-	assert(p->x[0]>x0 && p->x[0]<x0+nx*dx);
-	assert(p->x[1]>y0 && p->x[1]<y0+ny*dy);
-	assert(p->x[2]>z0 && p->x[2]<z0+nz*dz);
+	assert(p->x[0]>x0 && p->x[0]<xmax);
+	assert(p->x[1]>y0 && p->x[1]<ymax);
+	assert(p->x[2]>z0 && p->x[2]<zmax);
 }
 
 
@@ -515,10 +750,6 @@ void grid_3D_cart::reflect_outer(particle *p) const{
 // Find distance to outer boundary
 //------------------------------------------------------------
 double grid_3D_cart::lab_dist_to_boundary(const particle *p) const{
-	double xmax = x0 + nx*dx;
-	double ymax = y0 + ny*dy;
-	double zmax = z0 + nz*dz;
-
 	bool inside = (p->x[0] >= x0) && (p->x[0] <= xmax) &&
 			(p->x[1] >= y0) && (p->x[1] <= ymax) &&
 			(p->x[2] >= z0) && (p->x[2] <= zmax);
@@ -579,7 +810,9 @@ void grid_3D_cart::write_hdf5_coordinates(H5::H5File file) const
 	dataspace = H5::DataSpace(1,&coord_dims[0]);
 	dataset = file.createDataSet("grid_x(cm)",H5::PredType::IEEE_F32LE,dataspace);
 	tmp.resize(coord_dims[0]);
-	for(int i=0; i<nx+1; i++) tmp[i] = x0 + i*dx;
+	tmp[0] = x0;
+	tmp[1] = x1;
+	if(nx>1) for(int i=2; i<nx+1; i++) tmp[i] = x1 + (i-1)*dx;
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 
@@ -587,7 +820,9 @@ void grid_3D_cart::write_hdf5_coordinates(H5::H5File file) const
 	dataspace = H5::DataSpace(1,&coord_dims[1]);
 	dataset = file.createDataSet("grid_y(cm)",H5::PredType::IEEE_F32LE,dataspace);
 	tmp.resize(coord_dims[1]);
-	for(int i=0; i<ny+1; i++) tmp[i] = y0 + i*dy;
+	tmp[0] = y0;
+	tmp[1] = y1;
+	if(ny>1) for(int i=2; i<ny+1; i++) tmp[i] = y1 + (i-1)*dy;
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 
@@ -595,7 +830,49 @@ void grid_3D_cart::write_hdf5_coordinates(H5::H5File file) const
 	dataspace = H5::DataSpace(1,&coord_dims[2]);
 	dataset = file.createDataSet("grid_z(cm)",H5::PredType::IEEE_F32LE,dataspace);
 	tmp.resize(coord_dims[2]);
-	for(int i=0; i<nz+1; i++) tmp[i] = z0 + i*dz;
+	tmp[0] = z0;
+	tmp[1] = z1;
+	if(nz>1) for(int i=2; i<nz+1; i++) tmp[i] = z1 + (i-1)*dz;
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
+}
+
+
+void grid_3D_cart::get_deltas(const int z_ind, vector<double>& delta) const
+{
+	assert(z_ind < (int)z.size());
+	delta.resize(dimensionality());
+
+	// get directional indices
+	vector<int> dir_ind;
+	zone_directional_indices(z_ind,dir_ind);
+
+	delta[0] = (dir_ind[0]==0 ? x1-x0 : dx);
+	delta[1] = (dir_ind[1]==0 ? y1-y0 : dy);
+	delta[2] = (dir_ind[2]==0 ? z1-z0 : dz);
+	for(int i=0; i<3; i++) assert(delta[i]>0);
+}
+
+
+double grid_3D_cart::zone_left_boundary(const unsigned dir, const unsigned dir_ind) const{
+	assert(dir>=0);
+	assert(dir<3);
+	assert(dir_ind>=0);
+
+	double boundary = 0;
+	if(dir==0)      boundary = ( dir_ind==0 ? x0 : x1 + (double)(dir_ind-1) * dx );
+	else if(dir==1) boundary = ( dir_ind==0 ? y0 : y1 + (double)(dir_ind-1) * dy );
+	else            boundary = ( dir_ind==0 ? z0 : z1 + (double)(dir_ind-1) * dz );
+
+	return boundary;
+}
+double grid_3D_cart::zone_right_boundary(const unsigned dir, const unsigned dir_ind) const{
+	assert(dir>=0);
+	assert(dir<3);
+	assert(dir_ind>=0);
+
+	if(dir==0)      return dir_ind==0 ? x1 : x1 + (double)dir_ind * dx;
+	else if(dir==1) return dir_ind==0 ? y1 : y1 + (double)dir_ind * dy;
+	else            return dir_ind==0 ? z1 : z1 + (double)dir_ind * dz;
+
 }

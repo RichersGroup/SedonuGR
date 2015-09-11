@@ -90,16 +90,6 @@ void grid_1D_sphere::read_model_file(Lua* lua)
 
 
 //------------------------------------------------------------
-// Write a custom model here if you like
-//------------------------------------------------------------
-void grid_1D_sphere::custom_model(Lua* lua)
-{
-	cout << "Error: there is no custom model programmed for grid_1D_sphere." << endl;
-	exit(11);
-}
-
-
-//------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
 int grid_1D_sphere::zone_index(const vector<double>& x) const

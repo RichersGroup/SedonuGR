@@ -42,6 +42,17 @@
 //------------------------------------------------------------
 void grid_2D_sphere::read_model_file(Lua* lua)
 {
+	std::string model_type = lua->scalar<std::string>("model_type");
+	if(model_type == "flash") read_flash_file(lua);
+	else if(model_type == "custom") custom_model(lua);
+	else{
+		cout << "ERROR: model type unknown." << endl;
+		exit(8);
+	}
+}
+
+void grid_2D_sphere::read_flash_file(Lua* lua)
+{
 	// verbocity
 	int my_rank;
 	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );

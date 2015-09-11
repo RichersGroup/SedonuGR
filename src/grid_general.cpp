@@ -50,9 +50,10 @@ void grid_general::init(Lua* lua)
 
 	// read the model file or fill in custom model
 	std::string model_file = lua->scalar<std::string>("model_file");
+	read_model_file(lua);
+
+	// read some parameters
 	int do_relativity = lua->scalar<int>("do_relativity");
-	if(model_file == "custom") custom_model(lua);
-	else read_model_file(lua);
 	output_distribution = lua->scalar<int>("output_distribution");
 	output_hdf5 = lua->scalar<int>("output_hdf5");
 	do_annihilation = lua->scalar<int>("do_annihilation");
@@ -85,7 +86,6 @@ void grid_general::init(Lua* lua)
 		vector<double> r;
 		zone_coordinates(z_ind,r);
 
-		//if(grid->z[z_ind].rho > 1.0e8){ // && r[1] > pc::pi/3.0 && r[1] < pc::pi/2.0){
 		total_rest_mass += rest_mass;
 		total_nonrel_mass += nonrel_mass;
 		rel_Tbar += z[z_ind].T * rest_mass;
@@ -98,8 +98,9 @@ void grid_general::init(Lua* lua)
 		total_nonrel_TE += nonrel_mass / pc::m_n * pc::k * z[z_ind].T;
 		if(do_visc) total_hvis += z[z_ind].H_vis * z[z_ind].rho * zone_lab_volume(z_ind);
 		if(!do_relativity) for(unsigned i=0; i<z[z_ind].v.size(); i++) z[z_ind].v[i] = 0;
-		//}
 	}
+
+	// write out useful info about the grid
 	if (rank0){
 		cout << "#   mass = " << total_rest_mass/pc::M_sun << " M_sun (nonrel: " << total_nonrel_mass/pc::M_sun << " M_sun)" << endl;
 		cout << "#   <T> = " << rel_Tbar/total_rest_mass*pc::k_MeV << " MeV (nonrel: " << nonrel_Tbar/total_nonrel_mass*pc::k_MeV << " MeV)" <<endl;

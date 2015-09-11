@@ -45,8 +45,8 @@ private:
 	int    nx, ny, nz; // number of zones in each dimension
 	double dx, dy, dz; // length of each zone in each dimension
 	double x0, y0, z0; // leftmost points
-	double vol;        // volume of each zone = dx*dy*dz
-	double min_ds;
+	double x1, y1, z1; // next-to leftmost points
+	double xmax, ymax, zmax;
 	int reflect_x, reflect_y, reflect_z;
 
 public:
@@ -54,8 +54,14 @@ public:
 	grid_3D_cart();
 	virtual ~grid_3D_cart() {}
 
+	void get_deltas(const int z_ind, vector<double>& delta) const;
+
 	void read_model_file(Lua* lua);
-	void custom_model(Lua* lua);
+	void read_SpEC_file(Lua* lua);
+	void read_David_file(Lua* lua);
+
+	double zone_left_boundary(const unsigned dir, const unsigned dir_ind) const;
+	double zone_right_boundary(const unsigned dir, const unsigned dir_ind) const;
 
 	// required functions
 	int    zone_index               (const vector<double>& x                                       ) const;
