@@ -40,12 +40,12 @@
 // constructor
 //------------
 grid_3D_cart::grid_3D_cart(){
-	nx=-MAXLIM;ny=-MAXLIM;nz=-MAXLIM;
-	dx=NaN;dy=NaN;dz=NaN;
-	x0=NaN;y0=NaN;z0=NaN;
-	x1=NaN;y1=NaN;z1=NaN;
-	xmax=NaN;ymax=NaN;zmax=NaN;
-	reflect_x=0;reflect_y=0;reflect_z=0;
+	reflect = vector<int>(3,0);
+	nx   = vector<int>(3,-1);
+	dx   = vector<double>(3,NaN);
+	x0   = vector<double>(3,NaN);
+	x1   = vector<double>(3,NaN);
+	xmax = vector<double>(3,NaN);
 }
 
 //------------------------------------------------------------
@@ -105,25 +105,19 @@ void grid_3D_cart::read_David_file(Lua* lua)
 	assert(space.getSimpleExtentNdims()==dataset_rank);                 // 3D array
 	hsize_t space_dims[dataset_rank];
 	space.getSimpleExtentDims(space_dims);
-	nx = space_dims[0];
-	ny = space_dims[1];
-	nz = space_dims[2];
-	int dataset_nzones = nx * ny * nz;
+	for(int i=0; i<3; i++) nx[i] = space_dims[i];
+	int dataset_nzones = nx[0] * nx[1] * nx[2];
 
 	//======================//
 	// read the coordinates //
 	//======================//
 	// read in the deltas
-	double delta[3];
 	attr = group.openAttribute("delta");
-	attr.read(H5::PredType::IEEE_F64LE,delta);
-	for(int i=0; i<3; i++) delta[i] *= convert_length;
-	dx = delta[0];
-	dy = delta[1];
-	dz = delta[2];
-	assert(dx>0);
-	assert(dy>0);
-	assert(dz>0);
+	attr.read(H5::PredType::IEEE_F64LE,&dx[0]);
+	for(int i=0; i<3; i++){
+		dx[i] *= convert_length;
+		assert(dx[i]>0);
+	}
 
 	// read in the extent.
 	double extent[6];
@@ -132,68 +126,43 @@ void grid_3D_cart::read_David_file(Lua* lua)
 	for(int i=0; i<6; i++) extent[i] *= convert_length;
 
 	// set the grid structure variables. half-cell offset since data is vertex-centered.
-	x0 = extent[0] - dx/2.0;
-	y0 = extent[2] - dy/2.0;
-	z0 = extent[4] - dz/2.0;
-	x1 = x0 + dx;
-	y1 = y0 + dy;
-	z1 = z0 + dz;
-	xmax = extent[1] + dx/2.0;
-	ymax = extent[3] + dy/2.0;
-	zmax = extent[5] + dz/2.0;
-	assert(xmax>x0);
-	assert(ymax>y0);
-	assert(zmax>z0);
+	for(int i=0; i<3; i++){
+		x0[i] = extent[2*i] - dx[i]/2.0;
+		x1[i] = x0[i] + dx[i];
+		xmax[i] = extent[2*i+1] + dx[i]/2.0;
+		assert(xmax[i]>x0[i]);
 
-	// check that the number of data points is consistent with the range and delta
-	double ntmp;
-	ntmp = (xmax - x0)/dx;
-	assert(abs(nx-ntmp) < tiny);
-	ntmp = (ymax - y0)/dy;
-	assert(abs(ny-ntmp) < tiny);
-	ntmp = (zmax - z0)/dz;
-	assert(abs(nz-ntmp) < tiny);
+		// check that the number of data points is consistent with the range and delta
+		double ntmp = (xmax[i] - x0[i])/dx[i];
+		assert(abs(nx[i]-ntmp) < tiny);
+	}
 
 	// modify grid in event of symmetry
-	reflect_x = lua->scalar<int>("reflect_x");
-	reflect_y = lua->scalar<int>("reflect_y");
-	reflect_z = lua->scalar<int>("reflect_z");
-	if(reflect_x){
-		assert(xmax>0);
-		x0 = 0.0;
-		x1 = fmod(xmax,dx);
-		if(abs(x1-x0)/dx < tiny) x1 += dx; // don't let the leftmost grid cell be stupidly tiny.
-		assert(fmod(xmax-x1,dx) < tiny || fmod(xmax-x1,dx)-dx < tiny);
-		nx = (int)((xmax-x1)/dx + 0.5) +1; // 0.5 to deal with finite precision.
-	}
-	if(reflect_y){
-		assert(ymax>0);
-		y0 = 0.0;
-		y1 = fmod(ymax,dy);
-		if(abs(y1-y0)/dy < tiny) y1 += dy; // don't let the leftmost grid cell be stupidly tiny.
-		assert(fmod(ymax-y1,dy) < tiny || fmod(ymax-y1,dy)-dy < tiny);
-		ny = (int)((ymax-y1)/dy + 0.5) +1; // 0.5 to deal with finite precision.
-	}
-	if(reflect_z){
-		assert(zmax>0);
-		z0 = 0.0;
-		z1 = fmod(zmax,dz);
-		if(abs(z1-z0)/dz < tiny) z1 += dz; // don't let the leftmost grid cell be stupidly tiny.
-		assert(fmod(zmax-z1,dz) < tiny || fmod(zmax-z1,dz)-dz < tiny);
-		nz = (int)((zmax-z1)/dz + 0.5) +1; // 0.5 to deal with finite precision.
+	reflect[0] = lua->scalar<int>("reflect_x");
+	reflect[1] = lua->scalar<int>("reflect_y");
+	reflect[2] = lua->scalar<int>("reflect_z");
+	for(int i=0; i<3; i++) if(reflect[i]){
+		assert(xmax[i]>0);
+		assert(x0[i]<=0);
+		x0[i] = 0.0;
+		x1[i] = fmod(xmax[i],dx[i]);
+		if(abs(x1[i]-x0[i])/dx[i] < tiny) x1[i] += dx[i]; // don't let the leftmost grid cell be stupidly tiny.
+		assert(fmod(xmax[i]-x1[i],dx[i]) < tiny || fmod(xmax[i]-x1[i],dx[i])-dx[i] < tiny); // make sure cells line up
+		nx[i] = (int)((xmax[i]-x1[i])/dx[i] + 0.5) +1; // 0.5 to deal with finite precision.
 	}
 
 	// set up the zone structure
-	int nzones = nx * ny * nz;
+	int nzones = nx[0] * nx[1] * nx[2];
 	z.resize(nzones,zone(3));
 
 	// print out grid structure
 	if(rank0){
 		cout << "#   Using refinement level " << reflevel << endl;
-		cout << "#   Minima           : {" << x0 << "," << y0 << "," << z0 <<"} cm" << endl;
-		cout << "#   Next             : {" << x1 << "," << y1 << "," << z1 <<"} cm" << endl;
-		cout << "#   Maxima           : {" << xmax << "," << ymax << "," << zmax <<"} cm" << endl;
-		cout << "#   Deltas           : {" << dx << "," << dy << "," << dz <<"} cm" << endl;
+		cout << "#   Minima : {" <<   x0[0] << "," <<   x0[1] << "," <<   x0[2] << "} cm" << endl;
+		cout << "#   Next   : {" <<   x1[0] << "," <<   x1[1] << "," <<   x1[2] << "} cm" << endl;
+		cout << "#   Maxima : {" << xmax[0] << "," << xmax[1] << "," << xmax[2] << "} cm" << endl;
+		cout << "#   Deltas : {" <<   dx[0] << "," <<   dx[1] << "," <<   dx[2] << "} cm" << endl;
+		cout << "#   Number : {" <<   nx[0] << "," <<   nx[1] << "," <<   nx[2] << "}"    << endl;
 	}
 
 
@@ -235,21 +204,21 @@ void grid_3D_cart::read_David_file(Lua* lua)
 	//===============//
 	double Nmass=0.0, Rmass=0.0;
 	double avgT=0, KE=0, totalVolume=0;
+
     #pragma omp parallel for collapse(3)
 	for(unsigned i=0; i<space_dims[0]; i++)
 		for(unsigned j=0; j<space_dims[1]; j++)
 			for(unsigned k=0; k<space_dims[2]; k++){
+				unsigned dir_ind[3] = {i,j,k};
 
 				// get location of cell-centered cell center, i.e. vertex-centered vertex location
 				vector<double> x(3,0.0);
-				x[0] = extent[0] + i*dx;
-				x[1] = extent[2] + j*dy;
-				x[2] = extent[4] + k*dz;
+				for(int dir=0; dir<3; dir++) x[dir] = extent[2*dir] + dir_ind[dir]*dx[dir];
 
 				// get dataset and zone indices
-				const int dataset_ind = k + space_dims[2]*j + space_dims[1]*space_dims[2]*i;
+				const int dataset_ind = dir_ind[2] + space_dims[2]*dir_ind[1] + space_dims[1]*space_dims[2]*dir_ind[0];
 				const int z_ind = zone_index(x);
-				assert(dataset_ind < (int)(space_dims[0] * space_dims[1] * space_dims[2]));
+				assert((int)dataset_ind < (int)(space_dims[0] * space_dims[1] * space_dims[2]));
 				assert(z_ind < (int)z.size());
 
 				// if the grid cell is in our post-reflection-modified domain, add it to the zone list.
@@ -318,31 +287,22 @@ void grid_3D_cart::read_SpEC_file(Lua* lua)
 	infile >> system;
 
 	// number of zones
-	infile >> nx;
-	infile >> ny;
-	infile >> nz;
+	for(int i=0; i<3; i++) infile >> nx[i];
 	// assume reflecting symmetry?
-	infile >> reflect_x;
-	infile >> reflect_y;
-	infile >> reflect_z;
-	if(reflect_x) nx*=2;
-	if(reflect_y) ny*=2;
-	if(reflect_z) nz*=2;
-	int n_zones = nx*ny*nz;
+	for(int i=0; i<3; i++){
+		infile >> reflect[i];
+		if(reflect[i]) nx[i]*=2;
+	}
+	int n_zones = nx[0]*nx[1]*nx[2];
 
 	//set the zone sizes and volumes
-	infile >> x0;
-	infile >> xmax;
-	infile >> y0;
-	infile >> ymax;
-	infile >> z0;
-	infile >> zmax;
-	dx = (xmax-x0)/(double)nx; if(reflect_x) dx*=2;
-	dy = (ymax-y0)/(double)ny; if(reflect_y) dy*=2;
-	dz = (zmax-z0)/(double)nz; if(reflect_z) dz*=2;
-	x1 = x0+dx;
-	y1 = y0+dy;
-	z1 = z0+dz;
+	for(int i=0; i<3; i++){
+		infile >> x0[i];
+		infile >> xmax[i];
+		dx[i] = (xmax[i]-x0[i])/(double)nx[i];
+		if(reflect[i]) dx[i]*=2;
+		x1[i] = x0[i]+dx[i];
+	}
 
 	// First loop - set indices and read zone values in file
 	// loop order is the file order
@@ -350,18 +310,18 @@ void grid_3D_cart::read_SpEC_file(Lua* lua)
 	z.resize(n_zones,zone(dimensionality()));
 	int ind = 0;
 	bool rx,ry,rz;
-	for (int k=0;k<nz;k++)
-		for (int j=0;j<ny;j++)
-			for (int i=0;i<nx;i++)
+	for (int k=0;k<nx[2];k++)
+		for (int j=0;j<nx[1];j++)
+			for (int i=0;i<nx[0];i++)
 			{
 				// set current index
 				ind = zone_index(i,j,k);
 
 				// create reverse map to x,y,z indices
 				rx=false; ry=false; rz=false;
-				if(reflect_x && i<nx/2) rx = true;
-				if(reflect_y && j<ny/2) ry = true;
-				if(reflect_z && k<nz/2) rz = true;
+				if(reflect[0] && i<nx[0]/2) rx = true;
+				if(reflect[0] && j<nx[1]/2) ry = true;
+				if(reflect[0] && k<nx[2]/2) rz = true;
 
 				// read in values if not in reflected zone
 				if(!rx && !ry && !rz)
@@ -386,23 +346,23 @@ void grid_3D_cart::read_SpEC_file(Lua* lua)
 	// Second loop - apply symmetries
 	ind=0;
 	int origin_ind, origin_i, origin_j, origin_k;
-	for (int k=0;k<nz;k++)
-		for (int j=0;j<ny;j++)
-			for (int i=0;i<nx;i++)
+	for (int k=0;k<nx[2];k++)
+		for (int j=0;j<nx[1];j++)
+			for (int i=0;i<nx[0];i++)
 			{
 				// set current index
 				ind = zone_index(i,j,k);
 
 				// are we in a reflection zone?
 				rx=false; ry=false; rz=false;
-				if(reflect_x && i<nx/2) rx = 1;
-				if(reflect_y && j<ny/2) ry = 1;
-				if(reflect_z && k<nz/2) rz = 1;
+				if(reflect[0] && i<nx[0]/2) rx = 1;
+				if(reflect[0] && j<nx[1]/2) ry = 1;
+				if(reflect[0] && k<nx[2]/2) rz = 1;
 
 				// copy appropriate values
-				if(rx) origin_i = (nx-1)-i; else origin_i = i;
-				if(ry) origin_j = (ny-1)-j; else origin_j = j;
-				if(rz) origin_k = (nz-1)-k; else origin_k = k;
+				if(rx) origin_i = (nx[0]-1)-i; else origin_i = i;
+				if(ry) origin_j = (nx[1]-1)-j; else origin_j = j;
+				if(rz) origin_k = (nx[2]-1)-k; else origin_k = k;
 				if(rx || ry || rz)
 				{
 					origin_ind = zone_index(origin_i,origin_j,origin_k);
@@ -416,18 +376,16 @@ void grid_3D_cart::read_SpEC_file(Lua* lua)
 			}
 
 	// adjust x0,y0,z0 to indicate new, reflected lower boundary
-	if(my_rank==0) cout << "# (zmin,zmax) before adjusting: (" << z0 << "," << zmax << ")" << endl;
-	if(reflect_x) x0 = x0 - (xmax-x0);
-	if(reflect_y) y0 = y0 - (ymax-y0);
-	if(reflect_z) z0 = z0 - (zmax-z0);
+	if(my_rank==0) cout << "# (zmin,zmax) before adjusting: (" << x0[2] << "," << xmax[2] << ")" << endl;
+	for(int i=0; i<3; i++) if(reflect[i]) x0[i] = x0[i] - (xmax[i]-x0[i]);
 
 	// debugging some output
 	if(my_rank==0){
-		cout << "# nx=" << nx << endl << "# ny=" << ny << endl << "# nz=" << nz << endl;
-		cout << "# number of zones:" << z.size() << endl;
-		cout << "# minima:{" << x0 << ", " << y0 << ", " << z0 << "}" << endl;
-		cout << "# maxima:{" << x0+(nx*dx) << ", " << y0+(ny*dy) << ", " << z0+(nz*dz) << "}" << endl;
-		cout << "# deltas:{" << dx << ", " << dy << ", " << dz << "}" << endl;
+		cout << "#   nx=" << nx[0] << endl << "# ny=" << nx[1] << endl << "# nz=" << nx[2] << endl;
+		cout << "#   number of zones:" << z.size() << endl;
+		cout << "#   minima:{" << x0[0] << ", " << x0[1] << ", " << x0[2] << "}" << endl;
+		cout << "#   maxima:{" << x0[0]+(nx[0]*dx[0]) << ", " << x0[1]+(nx[1]*dx[1]) << ", " << x0[2]+(nx[2]*dx[2]) << "}" << endl;
+		cout << "#   deltas:{" << dx[0] << ", " << dx[1] << ", " << dx[2] << "}" << endl;
 	}
 }
 
@@ -440,22 +398,17 @@ int grid_3D_cart::zone_index(const vector<double>& x) const
 	assert(x.size()==3);
 
 	// check for off grid
-	if (x[0]<x0 || x[0]>xmax) return -2;
-	if (x[1]<y0 || x[1]>ymax) return -2;
-	if (x[2]<z0 || x[2]>zmax) return -2;
+	for(int i=0; i<3; i++) if (x[i]<x0[i] || x[i]>xmax[i]) return -2;
 
 	// get directional indices
-	int i = (x[0]<=x1 ? 0 : floor((x[0]-x1)/dx)+1 );
-	int j = (x[1]<=y1 ? 0 : floor((x[1]-y1)/dy)+1 );
-	int k = (x[2]<=z1 ? 0 : floor((x[2]-z1)/dz)+1 );
-	assert(i >= 0);
-	assert(j >= 0);
-	assert(k >= 0);
-	assert(i < nx);
-	assert(j < ny);
-	assert(k < nz);
+	vector<int> dir_ind(3,0);
+	for(int i=0; i<3; i++){
+		dir_ind[i] = (x[i]<=x1[i] ? 0 : floor((x[i]-x1[i])/dx[i])+1 );
+		assert(dir_ind[i] >= 0);
+		assert(dir_ind[i] < nx[i]);
+	}
 
-	int z_ind = zone_index(i,j,k);
+	int z_ind = zone_index(dir_ind[0],dir_ind[1],dir_ind[2]);
 	assert(z_ind >= 0);
 	assert(z_ind < (int)z.size());
 	return z_ind;
@@ -469,10 +422,10 @@ int grid_3D_cart::zone_index(const int i, const int j, const int k) const{
 	assert(i >= 0);
 	assert(j >= 0);
 	assert(k >= 0);
-	assert(i < nx);
-	assert(j < ny);
-	assert(k < nz);
-	const int z_ind = i*ny*nz + j*nz + k;
+	assert(i < nx[0]);
+	assert(j < nx[1]);
+	assert(k < nx[2]);
+	const int z_ind = i*nx[1]*nx[2] + j*nx[2] + k;
 	assert(z_ind < (int)z.size());
 	return z_ind;
 }
@@ -486,16 +439,14 @@ void grid_3D_cart::zone_directional_indices(const int z_ind, vector<int>& dir_in
 	assert(z_ind < (int)z.size());
 
 	dir_ind.resize(dimensionality());
-	dir_ind[0] =  z_ind / (ny*nz);
-	dir_ind[1] = (z_ind % (ny*nz)) / nz;
-	dir_ind[2] =  z_ind % nz;
+	dir_ind[0] =  z_ind / (nx[1]*nx[2]);
+	dir_ind[1] = (z_ind % (nx[2]*nx[2])) / nx[2];
+	dir_ind[2] =  z_ind % nx[2];
 
-	assert(dir_ind[0] >= 0);
-	assert(dir_ind[0] < nx);
-	assert(dir_ind[1] >= 0);
-	assert(dir_ind[1] < ny);
-	assert(dir_ind[2] >= 0);
-	assert(dir_ind[2] < nz);
+	for(int i=0; i<3; i++){
+		assert(dir_ind[i] >= 0);
+		assert(dir_ind[i] < nx[i]);
+	}
 }
 
 
@@ -534,20 +485,14 @@ void grid_3D_cart::cartesian_sample_in_zone
 	get_deltas(z_ind,delta);
 
 	// set the random location
-	x[0] = zone_left_boundary(0,dir_ind[0]) + delta[0]*rand[0];
-	x[1] = zone_left_boundary(1,dir_ind[1]) + delta[1]*rand[1];
-	x[2] = zone_left_boundary(2,dir_ind[2]) + delta[2]*rand[2];
-
-	// make sure particle is in bounds
-	assert(x[0] > x0 - tiny*dx);
-	assert(x[1] > y0 - tiny*dy);
-	assert(x[2] > z0 - tiny*dz);
-	assert(x[0] < xmax + tiny*dx);
-	assert(x[1] < ymax + tiny*dy);
-	assert(x[2] < zmax + tiny*dz);
-
-	// return particles just outside cell boundaries to within cell boundaries
 	for(int i=0; i<3; i++){
+		x[i] = zone_left_boundary(i,dir_ind[i]) + delta[i]*rand[i];
+
+		// make sure the particle is in bounds
+		assert(x[i] > x0[i]   - tiny*dx[i]);
+		assert(x[0] < xmax[i] + tiny*dx[i]);
+
+		// return particles just outside cell boundaries to within cell boundaries
 		x[i] = min(x[i], zone_right_boundary(i,dir_ind[i]));
 		x[i] = max(x[i],  zone_left_boundary(i,dir_ind[i]));
 	}
@@ -583,9 +528,7 @@ void grid_3D_cart::cartesian_velocity_vector(const vector<double>& x, vector<dou
 	assert(z_ind < (int)z.size());
 
 	// may want to interpolate here?
-	v[0] = z[z_ind].v[0];
-	v[1] = z[z_ind].v[1];
-	v[2] = z[z_ind].v[2];
+	for(int i=0; i<3; i++) v[i] = z[z_ind].v[i];
 
 	assert(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] <= pc::c*pc::c);
 }
@@ -600,9 +543,9 @@ void grid_3D_cart::zone_coordinates(const int z_ind, vector<double>& r) const
 	r.resize(dimensionality());
 	vector<int> dir_ind;
 	zone_directional_indices(z_ind,dir_ind);
-	r[0] = dir_ind[0]==0 ? 0.5*(x0+x1) : x1 + ((double)(dir_ind[0]-1) + 0.5) * dx;
-	r[1] = dir_ind[1]==0 ? 0.5*(y0+y1) : y1 + ((double)(dir_ind[1]-1) + 0.5) * dy;
-	r[2] = dir_ind[2]==0 ? 0.5*(z0+z1) : z1 + ((double)(dir_ind[2]-1) + 0.5) * dz;
+
+	for(int i=0; i<3; i++)
+		r[i] = ( dir_ind[i]==0 ? 0.5*(x0[i]+x1[i]) : x1[i] + ((double)(dir_ind[i]-1) + 0.5) * dx[i] );
 }
 
 
@@ -621,8 +564,8 @@ void grid_3D_cart::write_rays(const int iw) const
 	filename = transport::filename("slice_xy",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
-	k = nz/2;
-	for(i=0; i<nx; i++) for(j=0; j<ny; j++){
+	k = nx[2]/2;
+	for(i=0; i<nx[0]; i++) for(j=0; j<nx[1]; j++){
 		if(j==0) outf << endl;
 		z_ind = zone_index(i,j,k);
 		zone_coordinates(z_ind,r);
@@ -634,8 +577,8 @@ void grid_3D_cart::write_rays(const int iw) const
 	filename = transport::filename("slice_xz",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
-	j = ny/2;
-	for(i=0; i<nx; i++) for(k=0; k<nz; k++){
+	j = nx[1]/2;
+	for(i=0; i<nx[0]; i++) for(k=0; k<nx[2]; k++){
 		if(k==0) outf << endl;
 		z_ind = zone_index(i,j,k);
 		zone_coordinates(z_ind,r);
@@ -647,8 +590,8 @@ void grid_3D_cart::write_rays(const int iw) const
 	filename = transport::filename("slice_yz",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
-	i = nx/2;
-	for(j=0; j<ny; j++) for(k=0; k<nz; k++){
+	i = nx[0]/2;
+	for(j=0; j<nx[1]; j++) for(k=0; k<nx[2]; k++){
 		if(k==0) outf << endl;
 		z_ind = zone_index(i,j,k);
 		zone_coordinates(z_ind,r);
@@ -660,9 +603,9 @@ void grid_3D_cart::write_rays(const int iw) const
 	filename = transport::filename("ray_x",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
-	j = ny/2;
-	k = nz/2;
-	for (i=0;i<nx;i++){
+	j = nx[1]/2;
+	k = nx[2]/2;
+	for (i=0;i<nx[0];i++){
 		z_ind = zone_index(i,j,k);
 		zone_coordinates(z_ind,r);
 		write_line(outf,z_ind);
@@ -673,9 +616,9 @@ void grid_3D_cart::write_rays(const int iw) const
 	filename = transport::filename("ray_y",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
-	i = nx/2;
-	k = nz/2;
-	for (j=0; j<ny; j++){
+	i = nx[0]/2;
+	k = nx[2]/2;
+	for (j=0; j<nx[1]; j++){
 		z_ind = zone_index(i,j,k);
 		zone_coordinates(z_ind,r);
 		write_line(outf,z_ind);
@@ -686,9 +629,9 @@ void grid_3D_cart::write_rays(const int iw) const
 	filename = transport::filename("ray_z",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
-	i = nx/2;
-	j = ny/2;
-	for (k=0; k<nz; k++)
+	i = nx[0]/2;
+	j = nx[1]/2;
+	for (k=0; k<nx[2]; k++)
 	{
 		z_ind = zone_index(i,j,k);
 		zone_coordinates(z_ind,r);
@@ -708,41 +651,24 @@ void grid_3D_cart::reflect_outer(particle *p) const{
 	get_deltas(z_ind,delta);
 
 	// invert the radial component of the velocity, put the particle just inside the boundary
-	if(p->x[0] < x0){
-		assert(p->D[0]<0);
-		p->D[0] = -p->D[0];
-		p->x[0] = x0 + tiny*delta[0];
-	}
-	if(p->x[1] < y0){
-		assert(p->D[1]<0);
-		p->D[1] = -p->D[1];
-		p->x[2] = y0 + tiny*delta[1];
-	}
-	if(p->x[2] < z0){
-		assert(p->D[0]<0);
-		p->D[0] = -p->D[0];
-		p->x[1] = z0 + tiny*delta[2];
-	}
-	if(p->x[0] > xmax){
-		assert(p->D[0]>0);
-		p->D[0] = -p->D[0];
-		p->x[0] = xmax - tiny*delta[0];
-	}
-	if(p->x[1] > ymax){
-		assert(p->D[1]>0);
-		p->D[1] = -p->D[1];
-		p->x[1] = ymax - tiny*delta[1];
-	}
-	if(p->x[2] > zmax){
-		assert(p->D[2]>0);
-		p->D[2] = -p->D[2];
-		p->x[2] = zmax - tiny*delta[2];
-	}
+	for(int i=0; i<3; i++){
+		// inner boundary
+		if(p->x[i] < x0[i]){
+			assert(p->D[i]<0);
+			p->D[i] = -p->D[i];
+			p->x[i] = x0[i] + tiny*delta[i];
+		}
 
-	// double check that the particle is in the boundary
-	assert(p->x[0]>x0 && p->x[0]<xmax);
-	assert(p->x[1]>y0 && p->x[1]<ymax);
-	assert(p->x[2]>z0 && p->x[2]<zmax);
+		// outer boundary
+		if(p->x[i] > xmax[i]){
+			assert(p->D[i]>0);
+			p->D[i] = -p->D[i];
+			p->x[i] = xmax[i] - tiny*delta[i];
+		}
+
+		// double check that the particle is in the boundary
+		assert(p->x[i]>x0[i] && p->x[i]<xmax[i]);
+	}
 }
 
 
@@ -750,21 +676,21 @@ void grid_3D_cart::reflect_outer(particle *p) const{
 // Find distance to outer boundary
 //------------------------------------------------------------
 double grid_3D_cart::lab_dist_to_boundary(const particle *p) const{
-	bool inside = (p->x[0] >= x0) && (p->x[0] <= xmax) &&
-			(p->x[1] >= y0) && (p->x[1] <= ymax) &&
-			(p->x[2] >= z0) && (p->x[2] <= zmax);
+	bool inside = true;
+	for(int i=0; i<3; i++) inside = inside && (p->x[i] >= x0[i]) && (p->x[i] <= xmax[i]);
 
 	// case: particle is inside the boundaries
 	if(inside){
-		double dist_x = (p->D[0]>0 ? xmax-p->x[0] : p->x[0]-x0);
-		double dist_y = (p->D[1]>0 ? ymax-p->x[1] : p->x[1]-y0);
-		double dist_z = (p->D[2]>0 ? zmax-p->x[2] : p->x[2]-z0);
-		dist_x /= fabs(p->D[0]); assert(dist_x>=0);
-		dist_y /= fabs(p->D[1]); assert(dist_y>=0);
-		dist_z /= fabs(p->D[2]); assert(dist_z>=0);
-		double dist = min(min(dist_x,dist_y),dist_z);
-		assert(dist <= sqrt((xmax-x0)*(xmax-x0) + (ymax-y0)*(ymax-y0) + (zmax-z0)*(zmax-z0)));
-		return dist;
+		vector<double> dist(3,-1);
+		for(int i=0; i<3; i++){
+			dist[i] = (p->D[i]>0 ? xmax[i]-p->x[i] : p->x[i]-x0[i]);
+			dist[i] /= fabs(p->D[i]);
+			assert(dist[i]>=0);
+		}
+
+		double final_dist = min(min(dist[0],dist[1]),dist[2]);
+		assert(final_dist <= sqrt((xmax[0]-x0[0])*(xmax[0]-x0[0]) + (xmax[1]-x0[1])*(xmax[1]-x0[1]) + (xmax[2]-x0[2])*(xmax[2]-x0[2])) );
+		return final_dist;
 	}
 
 	// case: particle is outside the boundaries.
@@ -785,9 +711,7 @@ double grid_3D_cart::zone_radius(const int z_ind) const{
 //-----------------------------
 void grid_3D_cart::dims(vector<hsize_t>& dims) const{
 	dims.resize(dimensionality());
-	dims[0] = nx;
-	dims[1] = ny;
-	dims[2] = nz;
+	for(int i=0; i<3; i++) dims[i] = nx[i];
 }
 
 //----------------------------------------------------
@@ -807,34 +731,16 @@ void grid_3D_cart::write_hdf5_coordinates(H5::H5File file) const
 	for(unsigned i=0; i<coord_dims.size(); i++) coord_dims[i]++; //make room for min value
 
 	// write x coordinates
-	dataspace = H5::DataSpace(1,&coord_dims[0]);
-	dataset = file.createDataSet("grid_x(cm)",H5::PredType::IEEE_F32LE,dataspace);
-	tmp.resize(coord_dims[0]);
-	tmp[0] = x0;
-	tmp[1] = x1;
-	if(nx>1) for(int i=2; i<nx+1; i++) tmp[i] = x1 + (i-1)*dx;
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-	dataset.close();
-
-	// write y coordinates
-	dataspace = H5::DataSpace(1,&coord_dims[1]);
-	dataset = file.createDataSet("grid_y(cm)",H5::PredType::IEEE_F32LE,dataspace);
-	tmp.resize(coord_dims[1]);
-	tmp[0] = y0;
-	tmp[1] = y1;
-	if(ny>1) for(int i=2; i<ny+1; i++) tmp[i] = y1 + (i-1)*dy;
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-	dataset.close();
-
-	// write z coordinates
-	dataspace = H5::DataSpace(1,&coord_dims[2]);
-	dataset = file.createDataSet("grid_z(cm)",H5::PredType::IEEE_F32LE,dataspace);
-	tmp.resize(coord_dims[2]);
-	tmp[0] = z0;
-	tmp[1] = z1;
-	if(nz>1) for(int i=2; i<nz+1; i++) tmp[i] = z1 + (i-1)*dz;
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-	dataset.close();
+	for(int dir=0; dir<3; dir++){
+		dataspace = H5::DataSpace(1,&coord_dims[dir]);
+		dataset = file.createDataSet("grid_"+to_string(dir)+"(cm)",H5::PredType::IEEE_F32LE,dataspace);
+		tmp.resize(coord_dims[dir]);
+		tmp[0] = x0[dir];
+		tmp[1] = x1[dir];
+		if(nx[dir]>1) for(int i=2; i<nx[dir]+1; i++) tmp[i] = x1[dir] + (i-1)*dx[dir];
+		dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+		dataset.close();
+	}
 }
 
 
@@ -847,10 +753,10 @@ void grid_3D_cart::get_deltas(const int z_ind, vector<double>& delta) const
 	vector<int> dir_ind;
 	zone_directional_indices(z_ind,dir_ind);
 
-	delta[0] = (dir_ind[0]==0 ? x1-x0 : dx);
-	delta[1] = (dir_ind[1]==0 ? y1-y0 : dy);
-	delta[2] = (dir_ind[2]==0 ? z1-z0 : dz);
-	for(int i=0; i<3; i++) assert(delta[i]>0);
+	for(int i=0; i<3; i++){
+		delta[i] = (dir_ind[i]==0 ? x1[i]-x0[i] : dx[i]);
+		assert(delta[i]>0);
+	}
 }
 
 
@@ -859,11 +765,9 @@ double grid_3D_cart::zone_left_boundary(const unsigned dir, const unsigned dir_i
 	assert(dir<3);
 	assert(dir_ind>=0);
 
-	double boundary = 0;
-	if(dir==0)      boundary = ( dir_ind==0 ? x0 : x1 + (double)(dir_ind-1) * dx );
-	else if(dir==1) boundary = ( dir_ind==0 ? y0 : y1 + (double)(dir_ind-1) * dy );
-	else            boundary = ( dir_ind==0 ? z0 : z1 + (double)(dir_ind-1) * dz );
-
+	double boundary = ( dir_ind==0 ? x0[dir] : x1[dir] + (double)(dir_ind-1) * dx[dir] );
+	assert(boundary <= xmax[dir]);
+	assert(boundary >=   x0[dir]);
 	return boundary;
 }
 double grid_3D_cart::zone_right_boundary(const unsigned dir, const unsigned dir_ind) const{
@@ -871,8 +775,8 @@ double grid_3D_cart::zone_right_boundary(const unsigned dir, const unsigned dir_
 	assert(dir<3);
 	assert(dir_ind>=0);
 
-	if(dir==0)      return dir_ind==0 ? x1 : x1 + (double)dir_ind * dx;
-	else if(dir==1) return dir_ind==0 ? y1 : y1 + (double)dir_ind * dy;
-	else            return dir_ind==0 ? z1 : z1 + (double)dir_ind * dz;
-
+	double boundary = ( dir_ind==0 ? x1[dir] : x1[dir] + (double)dir_ind * dx[dir] );
+	assert(boundary <= xmax[dir]);
+	assert(boundary >=   x0[dir]);
+	return boundary;
 }

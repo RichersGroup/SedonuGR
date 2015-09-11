@@ -42,12 +42,12 @@ class grid_3D_cart: public grid_general
 private:
 	// specifics to this geometry
 
-	int    nx, ny, nz; // number of zones in each dimension
-	double dx, dy, dz; // length of each zone in each dimension
-	double x0, y0, z0; // leftmost points
-	double x1, y1, z1; // next-to leftmost points
-	double xmax, ymax, zmax;
-	int reflect_x, reflect_y, reflect_z;
+	vector<int>    nx; // number of zones in each dimension
+	vector<double> dx; // length of each zone in each dimension
+	vector<double> x0; // leftmost points
+	vector<double> x1; // next-to leftmost points
+	vector<double> xmax;
+	vector<int> reflect;
 
 public:
 
