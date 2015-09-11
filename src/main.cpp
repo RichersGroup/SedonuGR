@@ -73,11 +73,7 @@ int main(int argc, char **argv)
 	lua.close();
 
 	// initial output
-	if(rank0){
-		sim.grid->write_zones(0);
-		sim.grid->write_rays(0);
-	}
-
+	sim.write(0);
 
 	//===========//
 	// TIME LOOP //
