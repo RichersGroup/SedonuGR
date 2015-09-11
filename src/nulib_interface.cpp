@@ -253,6 +253,20 @@ void nulib_init(string filename){
 	int include_epannihil_kernels = 0;//false;
 	nulibtable_reader_((char*)filename.c_str(), &include_Ielectron, &include_epannihil_kernels, filename.length());
 	nulibtable_set_globals();
+
+	// output some facts about the table
+	int my_rank=-1;
+	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
+	if(my_rank==0){
+		cout << "#   rho range: {" << nulib_get_rhomin() << "," << nulib_get_rhomax() << "} g/ccm" << endl;
+		cout << "#   T   range: {" << nulib_get_Tmin()*pc::k_MeV << "," << nulib_get_Tmax()*pc::k_MeV << "} MeV" << endl;
+		cout << "#   Ye  range: {" << nulib_get_Yemin() << "," << nulib_get_Yemax() << "}" << endl;
+		cout << "#   E   range: {" << nulibtable_ebottom[0] << "," << nulibtable_etop[nulibtable_number_groups-1] << "} MeV" << endl;
+		cout << "#   n_rho = " << nulibtable_nrho << endl;
+		cout << "#   n_T   = " << nulibtable_ntemp << endl;
+		cout << "#   n_Ye  = " << nulibtable_nye << endl;
+		cout << "#   n_E   = " << nulibtable_number_groups << endl;
+	}
 }
 
 /**********************/
@@ -297,8 +311,12 @@ void nulib_get_eas_arrays(
 	double temp_MeV = temp * pc::k_MeV; // MeV
 	int lns = nulibID+1;                // fortran array indices start with 1
 
-	// If the density is too low, just set everything to zero
-	if(log10(rho) < nulibtable_logrho_min)
+	// keep ye in bounds
+	ye = min(nulibtable_ye_max,ye);
+	ye = max(nulibtable_ye_min,ye);
+
+	// If the density or temperature are too low, just set everything to zero
+	if(log10(rho) < nulibtable_logrho_min || log10(temp_MeV) < nulibtable_logtemp_min)
 		for(int j=0; j<ngroups; j++){
 			nut_emiss.set_value(j, 0);
 			nut_absopac [j] =      0;
@@ -363,8 +381,8 @@ void nulib_get_pure_emis(
 	double temp_MeV = temp * pc::k_MeV; // MeV
 	int lns = nulibID+1;                // fortran array indices start with 1
 
-	// If the density is too low, just set everything to zero
-	if(log10(rho) < nulibtable_logrho_min)
+	// If the density or temperature are too low, just set everything to zero
+	if(log10(rho) < nulibtable_logrho_min || log10(temp) < nulibtable_logtemp_min)
 		for(int j=0; j<ngroups; j++) nut_emiss[j] = 0;
 
 	// Otherwise, fill with the appropriate values
