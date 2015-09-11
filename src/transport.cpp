@@ -212,10 +212,9 @@ void transport::init(Lua* lua)
 	int num_nut_species = 0;
 	if(grey_opac < 0){ // get everything from NuLib
 		// read the fortran module into memory
-		if(rank0) cout << "# Initializing NuLib...";
+		if(rank0) cout << "# Initializing NuLib..." << endl;
 		string nulib_table = lua->scalar<string>("nulib_table");
 		nulib_init(nulib_table);
-		if(rank0) cout << "finished." << endl;
 		num_nut_species = nulib_get_nspecies();
 	}
 	else{
@@ -224,6 +223,7 @@ void transport::init(Lua* lua)
 	}
 
 	// create the species arrays
+	if(rank0) cout << "# Setting up misc. transport tools..." << endl;
 	for(int i=0; i<num_nut_species; i++){
 		neutrinos* neutrinos_tmp = new neutrinos;
 		neutrinos_tmp->nulibID = i;
@@ -274,6 +274,7 @@ void transport::init(Lua* lua)
 	//=================//
 	// SET UP THE CORE //
 	//=================//
+	if(rank0) cout << "# Initializing the core...";
 	r_core = lua->scalar<double>("r_core");   // cm
 	if(n_emit_core>0){
 		core_emit_method = lua->scalar<int>("core_emit_method");
@@ -305,9 +306,12 @@ void transport::init(Lua* lua)
 			init_core(r_core,T_core,mu_core,L_core);
 		}
 	}
+	if(rank0) cout << "finished." << endl;
 
 	// check the parameters
+	if(rank0) cout << "# Checking parameters...";
 	check_parameters();
+	if(rank0) cout << "finished." << endl;
 
 	// explicitly set global radiation quantities to 0
 	L_core_lab.resize(species_list.size());
