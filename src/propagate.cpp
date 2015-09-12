@@ -161,14 +161,21 @@ void transport::event_boundary(particle* p, const int z_ind) const{
 
 	// if outside the domain
 	if(z_ind == -2){
+		int new_ind = z_ind;
 		if(reflect_outer){
 			grid->reflect_outer(p);
 			assert(p->fate == moving);
-			assert(grid->zone_index(p->x) >= 0);
-			assert(grid->zone_index(p->x) < (int)grid->z.size());
+			new_ind = grid->zone_index(p->x);
+			assert(new_ind >= 0);
+			assert(new_ind < (int)grid->z.size());
 			assert(p->nu > 0);
 		}
-		else p->fate = escaped;
+		else{
+			grid->reflect_symmetry(p);
+			new_ind = grid->zone_index(p->x);
+		}
+
+		if(new_ind < 0) p->fate = escaped;
 	}
 
 	// if inside the inner boundary

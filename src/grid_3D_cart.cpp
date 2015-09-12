@@ -138,9 +138,9 @@ void grid_3D_cart::read_David_file(Lua* lua)
 	}
 
 	// modify grid in event of symmetry
-	reflect[0] = lua->scalar<int>("reflect_x");
-	reflect[1] = lua->scalar<int>("reflect_y");
-	reflect[2] = lua->scalar<int>("reflect_z");
+	reflect[0] = lua->scalar<int>("grid3Dcart_reflect_x");
+	reflect[1] = lua->scalar<int>("grid3Dcart_reflect_y");
+	reflect[2] = lua->scalar<int>("grid3Dcart_reflect_z");
 	for(int i=0; i<3; i++) if(reflect[i]){
 		assert(xmax[i]>0);
 		assert(x0[i]<=0);
@@ -779,4 +779,25 @@ double grid_3D_cart::zone_right_boundary(const unsigned dir, const unsigned dir_
 	assert(boundary <= xmax[dir]);
 	assert(boundary >=   x0[dir]);
 	return boundary;
+}
+
+
+//------------------------------------------------------------
+// Reflect off the outer boundary
+//------------------------------------------------------------
+void grid_3D_cart::reflect_symmetry(particle *p) const{
+	// invert the radial component of the velocity, put the particle just inside the boundary
+	for(int i=0; i<3; i++){
+		if(reflect[i] && p->x[i] < x0[i]){
+			assert(x0[i]-p->x[i] < tiny*dx[i]);
+			assert(x0[i] == 0);
+			assert(p->D[i]<0);
+			p->D[i] = -p->D[i];
+			p->x[i] = x0[i] + tiny*(x1[i]-x0[i]);
+
+			// double check that the particle is in the boundary
+			assert(p->x[i]>=x0[i]);
+			assert(p->x[i]<=xmax[i]);
+		}
+	}
 }

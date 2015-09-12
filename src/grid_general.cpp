@@ -432,3 +432,4 @@ double grid_general::total_rest_mass() const{
 	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) mass += zone_rest_mass(z_ind);
 	return mass;
 }
+

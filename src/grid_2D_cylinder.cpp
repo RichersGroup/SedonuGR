@@ -487,6 +487,12 @@ void grid_2D_cylinder::reflect_outer(particle *p) const{
 	// assert(zone_index(p->x) >= 0);
 }
 
+//------------------------------------------------------------
+// Reflect off the outer boundary
+//------------------------------------------------------------
+void grid_2D_cylinder::reflect_symmetry(particle *p) const{
+// does nothing - not implemented
+}
 
 //------------------------------------------------------------
 // Find distance to outer boundary

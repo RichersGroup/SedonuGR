@@ -275,6 +275,13 @@ void grid_1D_sphere::reflect_outer(particle *p) const{
 }
 
 //------------------------------------------------------------
+// Reflect off symmetry axis
+//------------------------------------------------------------
+void grid_1D_sphere::reflect_symmetry(particle *p) const{
+// not implemented - does nothing
+}
+
+//------------------------------------------------------------
 // Find distance to outer boundary (less a tiny bit)
 // negative distance means inner boundary
 //------------------------------------------------------------

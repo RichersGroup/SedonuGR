@@ -129,6 +129,7 @@ public:
 	// boundary conditions
 	virtual void reflect_outer(particle *p) const = 0;
 	virtual double lab_dist_to_boundary(const particle *p) const = 0;
+	virtual void reflect_symmetry(particle* p) const = 0;
 };
 
 

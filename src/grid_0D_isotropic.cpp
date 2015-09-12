@@ -149,6 +149,13 @@ void grid_0D_isotropic::reflect_outer(particle *p) const{
 }
 
 //------------------------------------------------------------
+// Reflect off symmetry plane
+//------------------------------------------------------------
+void grid_0D_isotropic::reflect_symmetry(particle *p) const{
+	// does nothing - no boundary
+}
+
+//------------------------------------------------------------
 // Find distance to outer boundary (less a tiny bit)
 // negative distance means inner boundary
 //------------------------------------------------------------
@@ -176,3 +183,4 @@ void grid_0D_isotropic::write_hdf5_coordinates(H5::H5File file) const
 	cout << "ERROR: write_hdf5_coordinates is not implemented for grid_0D_isotropic." << endl;
 	assert(0);
 }
+

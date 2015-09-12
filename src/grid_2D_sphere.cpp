@@ -811,6 +811,12 @@ void grid_2D_sphere::reflect_outer(particle *p) const{
 	assert(zone_index(p->x) >= 0);
 }
 
+//------------------------------------------------------------
+// Reflect off the symmetry boundaries
+//------------------------------------------------------------
+void grid_2D_sphere::reflect_symmetry(particle *p) const{
+// not implemented - does nothing
+}
 
 //------------------------------------------------------------
 // Find distance to outer boundary
