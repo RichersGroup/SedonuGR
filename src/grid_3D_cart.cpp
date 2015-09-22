@@ -403,7 +403,9 @@ int grid_3D_cart::zone_index(const vector<double>& x) const
 	// get directional indices
 	vector<int> dir_ind(3,0);
 	for(int i=0; i<3; i++){
-		dir_ind[i] = (x[i]<=x1[i] ? 0 : floor((x[i]-x1[i])/dx[i])+1 );
+		if(x[i]<=x1[i]) dir_ind[i] = 0;
+		else if(x[i] > xmax[i]-dx[i]) dir_ind[i] = nx[i]-1; //need this to prevent issues when particle is ON boundary
+		else dir_ind[i] = (x[i]-x1[i]) / dx[i] + 1.0;
 		assert(dir_ind[i] >= 0);
 		assert(dir_ind[i] < nx[i]);
 	}
@@ -440,7 +442,7 @@ void grid_3D_cart::zone_directional_indices(const int z_ind, vector<int>& dir_in
 
 	dir_ind.resize(dimensionality());
 	dir_ind[0] =  z_ind / (nx[1]*nx[2]);
-	dir_ind[1] = (z_ind % (nx[2]*nx[2])) / nx[2];
+	dir_ind[1] = (z_ind % (nx[1]*nx[2])) / nx[2];
 	dir_ind[2] =  z_ind % nx[2];
 
 	for(int i=0; i<3; i++){
