@@ -154,7 +154,7 @@ void transport::emit_zones(const int n_emit_zones_per_bin, const double lab_dt, 
 
 		// actually emit the particles in each zone
         //#pragma omp for schedule(guided)
-		for (unsigned z_ind=0; z_ind<gridsize; z_ind++)
+		for (unsigned z_ind=0; z_ind<gridsize; z_ind++) if(grid->zone_radius(z_ind) > r_core)
 		{
 			double com_emit_energy = zone_comoving_therm_emit_energy(z_ind,lab_dt);
 
