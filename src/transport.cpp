@@ -146,7 +146,6 @@ void transport::init(Lua* lua)
 		}
 	}
 	step_size     = lua->scalar<double>("step_size");
-	min_packet_energy = lua->scalar<double>("min_packet_energy");
 
 	// output parameters
 	write_zones_every   = lua->scalar<double>("write_zones_every");

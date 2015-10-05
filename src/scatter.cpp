@@ -37,49 +37,28 @@
 void transport::event_interact(particle* p, const int z_ind, const double abs_frac){
 	assert(z_ind >= 0);
 	assert(z_ind < (int)grid->z.size());
-	assert(abs_frac >= 0.0);
-	assert(abs_frac <= 1.0);
-	assert(p->e > 0);
+	const double rand = rangen.uniform();
+	int do_absorb_kill     = (rand<abs_frac) && (!radiative_eq);
+	int do_absorb_reemit   = (rand<abs_frac) && ( radiative_eq);
+	int do_elastic_scatter = (rand>abs_frac);
 
-	int do_absorb_partial  = !radiative_eq;
-	int do_absorb_reemit   =  radiative_eq;
+	// transform into the comoving frame
+	if(do_absorb_kill) p->fate = absorbed;
+	else{
+		transform_lab_to_comoving(p,z_ind);
+		if(do_elastic_scatter) isotropic_scatter(p);
+		if(do_absorb_reemit)   re_emit(p,z_ind);
+		transform_comoving_to_lab(p,z_ind);
 
-	// particle is transformed to the comoving frame
-	transform_lab_to_comoving(p,z_ind);
+		// tally the re-emitted energy in the lab frame
+		if(do_absorb_reemit) L_net_lab[p->s] += p->e;
 
-	// absorb part of the packet
-	// for now, just hope the particle weight doesn't get too low.
-	if(do_absorb_partial){
-		if(abs_frac < 1.0 && p->e>min_packet_energy){
-			p->e *= (1.0 - abs_frac);
-			isotropic_scatter(p);
-		}
-		else roulette(p);
-		assert(p->e > 0.0);
+		// sanity checks
+		assert(p->nu > 0);
+		assert(p->e > 0);
 	}
 
-	// absorb the particle and let the fluid re-emit another particle
-	else if(do_absorb_reemit){
-		re_emit(p,z_ind);
-		L_net_lab[p->s] += p->e;
-		assert(p->e > 0.0);
-	}
-
-	// particle is transformed back to the lab frame
-	assert(p->e > 0);
-	transform_comoving_to_lab(p,z_ind);
-
-	// sanity checks
-	assert(p->nu > 0);
-	assert(p->e > 0);
 }
-
-// decide whether to kill a particle
-void transport::roulette(particle* p) const{
-	if(rangen.uniform() < 0.5) p->fate = absorbed;
-	else p->e *= 2.0;
-}
-
 
 // re-emission, done in COMOVING frame
 void transport::re_emit(particle* p, const int z_ind) const{

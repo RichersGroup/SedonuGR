@@ -96,7 +96,6 @@ private:
 	void isotropic_scatter(particle* p) const;
 	void re_emit(particle* p, const int z_ind) const;
 	void remove_dead_particles();
-	void roulette(particle* p) const;
 
 	// solve for temperature and Ye (if steady_state)
 	double damping;
@@ -111,9 +110,6 @@ private:
 
 	// stored minimum and maximum values to assure safety
 	int max_particles;
-
-	// minimum neutrino packet energy
-	double min_packet_energy;
 
 	// simulation parameters
 	double step_size;
