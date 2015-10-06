@@ -223,10 +223,10 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	vector<double> thetahat(3,0);
 	vector<double> phihat(3,0);
 	if(rp==0){
-	    if(r==0){
-	      rhat[0] = 0;
-	      rhat[1] = 0;
-	      rhat[2] = 1;
+		if(r==0){
+			rhat[0] = 0;
+			rhat[1] = 0;
+			rhat[2] = 1;
 	    }
 	    thetahat[0] = 0;
 	    thetahat[1] = 1;
@@ -236,15 +236,15 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	    phihat[2] = 0;
 	}
 	else{
-	  rhat[0] = x/r;
-	  rhat[1] = y/r;
-	  rhat[2] = z/r;
-	  thetahat[0] = z/r * x/rp;
-	  thetahat[1] = z/r * y/rp;
-	  thetahat[2] = z/r * z/r - 1;
-	  phihat[0] = -y/rp;
-	  phihat[1] =  x/rp;
-	  phihat[2] = 0;
+		rhat[0] = x/r;
+		rhat[1] = y/r;
+		rhat[2] = z/r;
+		thetahat[0] = z/r * x/rp;
+		thetahat[1] = z/r * y/rp;
+		thetahat[2] = z/r * z/r - 1;
+		phihat[0] = -y/rp;
+		phihat[1] =  x/rp;
+		phihat[2] = 0;
 	}
 	vector<double> D_newbasis(3,0);
 	D_newbasis[0] = dot(p->D,phihat);
