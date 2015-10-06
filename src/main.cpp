@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <iomanip>
 #include <math.h>
-#include <string.h>
+#include <string>
 #include <iostream>
 #include <fstream>
 #include "Lua.h"

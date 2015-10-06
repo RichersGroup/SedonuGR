@@ -29,10 +29,11 @@
 #include <omp.h>
 #include <mpi.h>
 #include <iostream>
+#include <sstream>
 #include <math.h>
-#include <string.h>
 #include <vector>
 #include <fstream>
+#include <string>
 #include "global_options.h"
 #include "spectrum_array.h"
 
@@ -263,7 +264,9 @@ void spectrum_array::integrate_over_direction(vector<double>& integral) const{
 void spectrum_array::print(const int iw, const int species) const
 {
 	ofstream outf;
-	string prefix = "spectrum_species"+to_string(species);
+	stringstream speciesstream;
+	speciesstream << species;
+	string prefix = "spectrum_species"+speciesstream.str();
 	string filename = transport::filename(prefix.c_str(),iw,".dat");
 	outf.open(filename.c_str());
 

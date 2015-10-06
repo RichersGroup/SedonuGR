@@ -219,15 +219,37 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	double x=p->x[0], y=p->x[1], z=p->x[2];
 	double r = sqrt(dot(p->x,p->x));
 	double rp = sqrt(x*x + y*y);
-	vector<double> rhat     = {x/r,   		y/r,	     z/r		   };
-	vector<double> thetahat = {z/r * x/rp,	z/r * y/rp,	 z/r * z/r - 1 };
-	vector<double> phihat   = {-y/rp,		x/rp,		 0			   };
+	vector<double> rhat(3,0);
+	vector<double> thetahat(3,0);
+	vector<double> phihat(3,0);
 	if(rp==0){
-		if(r==0) rhat = {0,0,1};
-		thetahat = {0,1,0};
-		phihat   = {1,0,0};
+	    if(r==0){
+	      rhat[0] = 0;
+	      rhat[1] = 0;
+	      rhat[2] = 1;
+	    }
+	    thetahat[0] = 0;
+	    thetahat[1] = 1;
+	    thetahat[2] = 0;
+	    phihat[0] = 1;
+	    phihat[1] = 0;
+	    phihat[2] = 0;
 	}
-	vector<double> D_newbasis = {dot(p->D,phihat), dot(p->D,thetahat), dot(p->D,rhat)};
+	else{
+	  rhat[0] = x/r;
+	  rhat[1] = y/r;
+	  rhat[2] = z/r;
+	  thetahat[0] = z/r * x/rp;
+	  thetahat[1] = z/r * y/rp;
+	  thetahat[2] = z/r * z/r - 1;
+	  phihat[0] = -y/rp;
+	  phihat[1] =  x/rp;
+	  phihat[2] = 0;
+	}
+	vector<double> D_newbasis(3,0);
+	D_newbasis[0] = dot(p->D,phihat);
+	D_newbasis[1] = dot(p->D,thetahat);
+	D_newbasis[2] = dot(p->D,rhat);
 	normalize(D_newbasis);
 	zone->distribution[p->s].count(D_newbasis, p->nu, to_add);
 

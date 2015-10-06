@@ -31,8 +31,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <string.h>
 #include <iostream>
+#include <sstream>
 #include <iomanip>
 #include <fstream>
 #include <string>
@@ -1012,11 +1012,13 @@ void transport::update_zone_quantities(){
 
 string transport::filename(const char* filebase, const int iw, const char* suffix){
 	string number_string;
-	if     (iw < 10)    number_string = "0000" + to_string(iw);
-	else if(iw < 100)   number_string = "000"  + to_string(iw);
-	else if(iw < 1000)  number_string = "00"   + to_string(iw);
-	else if(iw < 10000) number_string = "0"    + to_string(iw);
-	else                number_string =          to_string(iw);
+	stringstream iwstream;
+	iwstream << iw;
+	if     (iw < 10)    number_string = "0000" + iwstream.str();
+	else if(iw < 100)   number_string = "000"  + iwstream.str();
+	else if(iw < 1000)  number_string = "00"   + iwstream.str();
+	else if(iw < 10000) number_string = "0"    + iwstream.str();
+	else                number_string =          iwstream.str();
 
 	string filename = string(filebase) + "_" + number_string + suffix;
 	return filename;

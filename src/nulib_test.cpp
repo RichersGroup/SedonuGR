@@ -31,7 +31,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 #include <cmath>
 #include "zone.h"
 #include "nulib_interface.h"

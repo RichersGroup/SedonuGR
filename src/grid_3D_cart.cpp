@@ -32,6 +32,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <string>
 #include "global_options.h"
 #include "mpi.h"
 #include "Lua.h"
@@ -735,7 +736,9 @@ void grid_3D_cart::write_hdf5_coordinates(H5::H5File file) const
 	// write x coordinates
 	for(int dir=0; dir<3; dir++){
 		dataspace = H5::DataSpace(1,&coord_dims[dir]);
-		dataset = file.createDataSet("grid_"+to_string(dir)+"(cm)",H5::PredType::IEEE_F32LE,dataspace);
+		stringstream dirstream;
+		dirstream << dir;
+		dataset = file.createDataSet("grid_"+dirstream.str()+"(cm)",H5::PredType::IEEE_F32LE,dataspace);
 		tmp.resize(coord_dims[dir]);
 		tmp[0] = x0[dir];
 		tmp[1] = x1[dir];
