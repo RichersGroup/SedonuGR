@@ -114,11 +114,11 @@ void transport::which_event(const particle *p, const int z_ind, const double dt,
 		assert(d_zone > 0);
 
 		// FIND D_INTERACT =================================================================
-		// random optical depth to next interaction
-		tau_r = -1.0*log(1.0 - rangen.uniform());
-		// step size to next interaction event
-		d_interact  = tau_r/lab_opac;
 		if (lab_opac == 0) d_interact = numeric_limits<double>::infinity();
+		else{ // random optical depth to next interaction
+			tau_r = -1.0*log(1.0 - rangen.uniform());
+			d_interact = tau_r/lab_opac;
+		}
 		assert(d_interact>=0);
 	}
 

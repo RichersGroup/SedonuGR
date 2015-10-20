@@ -298,6 +298,9 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	E_avg_lab[p.s] += p.nu * p.e;
 	#pragma omp atomic
 	N_net_lab[p.s] += p.e / (p.nu * pc::h);
+
+	if(p.e<min_packet_energy) cout << "Warning: packet created with e<min_packet_energy." << endl;
+	roulette(&p);
 }
 
 
@@ -355,4 +358,7 @@ void transport::create_surface_particle(const double Ep, const double t, const i
 	particles.push_back(p);
     #pragma omp atomic
 	L_core_lab[p.s] += p.e;
+
+	if(p.e<min_packet_energy) cout << "Warning: packet created with e<min_packet_energy." << endl;
+	roulette(&p);
 }
