@@ -216,6 +216,7 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	// tally in contribution to zone's distribution function (lab frame)
 	// use rhat, thetahat, phihat as basis functions so rotational symmetries give accurate results
 	double to_add = p->e * lab_d;
+	assert(to_add<INFINITY);
 	double x=p->x[0], y=p->x[1], z=p->x[2];
 	double r = sqrt(dot(p->x,p->x));
 	double rp = sqrt(x*x + y*y);

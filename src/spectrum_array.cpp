@@ -214,6 +214,9 @@ void spectrum_array::count(const vector<double>& D, const double nu, const doubl
 
     #pragma omp atomic
 	flux[ind]  += E;
+	assert(flux[ind]>=0);
+	assert(E<INFINITY);
+	assert(flux[ind]<INFINITY);
 }
 
 double spectrum_array::average_nu() const{
