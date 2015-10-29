@@ -87,9 +87,6 @@ transport::transport(){
 	visc_specific_heat_rate = NaN;
 	reflect_outer = -MAXLIM;
 	emissions_per_timestep = -MAXLIM;
-	n_initial = -MAXLIM;
-	initial_BB_T = NaN;
-	initial_BB_munue = NaN;
 	ratio_emit_by_bin = NAN;
 	write_rays_every = -MAXLIM;
 	write_spectra_every = -MAXLIM;
@@ -267,13 +264,6 @@ void transport::init(Lua* lua)
 	assert(Ye_min >= 0);
 	assert(Ye_max > Ye_min);
 	assert(Ye_max <= 1.0);
-
-	// set up initial particle creation
-	n_initial = lua->scalar<int>("n_initial");
-	if(n_initial>0){
-		initial_BB_T     = lua->scalar<double>("initial_BB_T")/pc::k_MeV; // K
-		initial_BB_munue = lua->scalar<double>("initial_BB_munue")*pc::MeV_to_ergs; // erg
-	}
 
 	//=================//
 	// SET UP THE CORE //

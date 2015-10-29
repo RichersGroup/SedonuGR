@@ -173,11 +173,6 @@ public:
 	int n_emit_zones;
 	double visc_specific_heat_rate;
 
-	// initial particle creation
-	int n_initial;
-	double initial_BB_T;
-	double initial_BB_munue;
-
 	// how many times do we emit+propagate each timestep?
 	int emissions_per_timestep;
 	double ratio_emit_by_bin;
