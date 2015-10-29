@@ -34,7 +34,7 @@
 //------------------------------------------------------------
 // physics of absorption/scattering
 //------------------------------------------------------------
-void transport::event_interact(particle* p, const int z_ind, const double abs_frac){
+void transport::event_interact(particle* p, const int z_ind, const double abs_frac, const double lab_opac){
 	assert(z_ind >= 0);
 	assert(z_ind < (int)grid->z.size());
 	assert(abs_frac >= 0.0);
@@ -53,7 +53,7 @@ void transport::event_interact(particle* p, const int z_ind, const double abs_fr
 			p->e *= (1.0 - abs_frac);
 			isotropic_scatter(p);
 		}
-		if(p->e<min_packet_energy) roulette(p);
+		if(p->e<min_packet_energy) window(p);
 		assert(p->e > 0.0);
 	}
 
@@ -68,16 +68,26 @@ void transport::event_interact(particle* p, const int z_ind, const double abs_fr
 	assert(p->e > 0);
 	transform_comoving_to_lab(p,z_ind);
 
+	// resample the path length
+	sample_tau(p,z_ind,lab_opac);
+
 	// sanity checks
 	assert(p->nu > 0);
 	assert(p->e > 0);
 }
 
+
 // decide whether to kill a particle
-void transport::roulette(particle* p) const{
+void transport::window(particle* p){
 	while(p->e<min_packet_energy && p->fate!=absorbed){
 		if(rangen.uniform() < 0.5) p->fate = absorbed;
 		else p->e *= 2.0;
+	}
+	while(p->e>max_packet_energy){
+		p->e /= split_factor;
+		particle *pnew = p;
+		if(particles.size()<max_particles) particles.push_back(*pnew);
+		else cout << "WARNING: max_particles is too small to allow splitting." << endl;
 	}
 }
 
@@ -111,6 +121,16 @@ void transport::isotropic_scatter(particle* p) const
 	p->D[1] = smu*sin(phi);
 	p->D[2] = mu;
 	normalize(p->D);
+}
+
+//---------------------------------------------------------------------
+// Randomly select an optical depth through which a particle will move.
+//---------------------------------------------------------------------
+void transport::sample_tau(particle *p, const int z_ind, const double lab_opac) const{
+	assert(opt_depth_bias>=0);
+	double taubar = lab_opac * grid->zone_min_length(z_ind);
+	double tau_r = opt_depth_bias * taubar * -1.0*log(1.0 - rangen.uniform());
+	p->e *= exp(tau_r * (1./(opt_depth_bias*taubar) - 1.0));
 }
 
 

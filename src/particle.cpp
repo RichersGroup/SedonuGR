@@ -34,6 +34,7 @@ particle::particle(){
 	t = NaN;
 	e = NaN;
 	nu = NaN;
+	tau = NaN;
 	s = -1;
 	fate = stopped;
 }

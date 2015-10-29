@@ -90,13 +90,14 @@ private:
 	void move(particle* p, const double lab_d);
 	void tally_radiation(const particle* p, const int z_ind, const double dshift_l2c, const double lab_d, const double lab_opac, const double abs_frac) const;
 	void reset_radiation();
-	void which_event(const particle* p,const int z_ind, const double dt, const double lab_opac, double* d_smallest, ParticleEvent *event) const;
+	void which_event(particle* p,const int z_ind, const double dt, const double lab_opac, double* d_smallest, ParticleEvent *event) const;
 	void event_boundary(particle* p, const int z_ind) const;
-	void event_interact(particle* p, const int z_ind, const double abs_frac);
+	void event_interact(particle* p, const int z_ind, const double abs_frac,const double lab_opac);
 	void isotropic_scatter(particle* p) const;
 	void re_emit(particle* p, const int z_ind) const;
 	void remove_dead_particles();
-	void roulette(particle* p) const;
+	void window(particle* p);
+	void sample_tau(particle* p, const int z_ind, const double lab_opac) const;
 
 	// solve for temperature and Ye (if steady_state)
 	double damping;
@@ -114,6 +115,7 @@ private:
 
 	// minimum neutrino packet energy
 	double min_packet_energy;
+	double max_packet_energy;
 
 	// simulation parameters
 	double step_size;
@@ -121,6 +123,8 @@ private:
 	int    iterative;
 	int    radiative_eq;
 	int    rank0;
+	double opt_depth_bias;
+	int    split_factor;
 
 	// output parameters
 	int write_zones_every;

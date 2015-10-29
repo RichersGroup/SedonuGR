@@ -61,6 +61,7 @@ transport::transport(){
 	solve_Ye = -MAXLIM;
 	damping = NaN;
 	brent_itmax = -MAXLIM;
+	split_factor = -MAXLIM;
 	brent_solve_tolerance = NaN;
 	T_min = NaN;
 	T_max = NaN;
@@ -71,6 +72,7 @@ transport::transport(){
 	max_particles = -MAXLIM;
 	step_size = NaN;
 	min_packet_energy = NaN;
+	max_packet_energy = NaN;
 	do_annihilation = -MAXLIM;
 	iterative = -MAXLIM;
 	radiative_eq = -MAXLIM;
@@ -98,6 +100,7 @@ transport::transport(){
 	particle_core_abs_energy = NaN;
 	particle_fluid_abs_energy = NaN;
 	particle_escape_energy = NaN;
+	opt_depth_bias = NaN;
 }
 
 
@@ -147,7 +150,10 @@ void transport::init(Lua* lua)
 		}
 	}
 	step_size     = lua->scalar<double>("step_size");
+	opt_depth_bias = lua->scalar<double>("opt_depth_bias");
+	split_factor = lua->scalar<int>("split_factor");
 	min_packet_energy = lua->scalar<double>("min_packet_energy");
+	max_packet_energy = lua->scalar<double>("max_packet_energy");
 
 	// output parameters
 	write_zones_every   = lua->scalar<double>("write_zones_every");

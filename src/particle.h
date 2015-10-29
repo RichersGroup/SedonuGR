@@ -47,6 +47,7 @@ public:
 	double       t;         // current time
 	double       e;         // total energy in ergs of packet
 	double      nu;         // frequency (Hz)
+	double     tau;         // remaining optical depth
 	int          s;         // species number
 	ParticleFate fate;
 

@@ -92,11 +92,10 @@ void transport::remove_dead_particles(){
 	}
 }
 
-
 //--------------------------------------------------------
 // Decide what happens to the particle
 //--------------------------------------------------------
-void transport::which_event(const particle *p, const int z_ind, const double dt, const double lab_opac,
+void transport::which_event(particle *p, const int z_ind, const double dt, const double lab_opac,
 		double *d_smallest, ParticleEvent *event) const{
 	assert(lab_opac >= 0);
 
@@ -115,10 +114,7 @@ void transport::which_event(const particle *p, const int z_ind, const double dt,
 
 		// FIND D_INTERACT =================================================================
 		if (lab_opac == 0) d_interact = numeric_limits<double>::infinity();
-		else{ // random optical depth to next interaction
-			tau_r = -1.0*log(1.0 - rangen.uniform());
-			d_interact = tau_r/lab_opac;
-		}
+		else               d_interact = p->tau / lab_opac;
 		assert(d_interact>=0);
 	}
 
@@ -152,7 +148,7 @@ void transport::which_event(const particle *p, const int z_ind, const double dt,
 		if(z_ind >= 0) *d_smallest *= (1.0 + grid_general::tiny); // bump just over the boundary if in simulation domain
 		else           *d_smallest *= (1.0 - grid_general::tiny); // don't overshoot outward through the inner boundary
 	}
-	assert(*d_smallest >= 0);
+	assert(*d_smallest * lab_opac >= p->tau);
 }
 
 
@@ -336,15 +332,18 @@ void transport::propagate(particle* p, const double lab_dt)
 		// move particle the distance
 		move(p,lab_d);
 		z_ind = grid->zone_index(p->x);
+		p->tau -= lab_d * lab_opac;
+		assert(p->tau/(lab_d*lab_opac) >= 0-grid->tiny);
 
 		// do the selected event
 		// now the exciting bit!
 		switch(event){
 		    // ---------------------------------
-		    // Do if interact
+		    // Do if interacting with the fluid
 		    // ---------------------------------
 		case interact:
-			event_interact(p,z_ind,abs_frac);
+			assert(lab_d * lab_opac >= p->tau);
+			event_interact(p,z_ind,abs_frac,lab_opac);
 			assert(p->nu > 0);
 			assert(p->e > 0);
 			break;
