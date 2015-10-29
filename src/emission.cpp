@@ -68,24 +68,6 @@ void transport::emit_particles()
 }
 
 //------------------------------------------------------------
-// begin with a blackbody distribution of particles
-//------------------------------------------------------------
-void transport::initialize_blackbody(double T, double munue){
-	// remove existing particles
-	particles.resize(0);
-
-	for(unsigned z_ind=0; z_ind<grid->z.size(); z_ind++){
-		// prep the emissivities
-		for(unsigned s=0; s<species_list.size(); s++)
-			species_list[s]->set_emis_to_BB_edens(T,munue*(double)species_list[s]->lepton_number);
-
-		emit_zones(n_initial); // this is a hack - 1.0 causes perfect BB energy density
-		grid->z[z_ind].e_emit = 0;
-		grid->z[z_ind].l_emit = 0;
-	}
-}
-
-//------------------------------------------------------------
 // inject particles from a central luminous source
 // Currently written to emit photons with 
 // blackblody spectrum based on T_core and L_core

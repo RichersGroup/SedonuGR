@@ -64,8 +64,6 @@ private:
 	void emit_particles();
 
 	// emit from where?
-	//void initialize_particles(int init_particles);
-	void initialize_blackbody(const double T, const double munue);
 	void emit_inner_source(const int n_emit_per_bin);
 	void emit_zones(const int n_emit_per_bin);
 

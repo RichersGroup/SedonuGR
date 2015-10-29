@@ -392,10 +392,6 @@ void transport::step()
 	// assume 1.0 s. of particles were emitted if steady_state
 	if(iterative) assert(particles.empty());
 
-	// distribute initial particles in the simulation area
-	// don't initialize them if iterative calculation. They all come from the core.
-	if(n_initial>0) initialize_blackbody(initial_BB_T,initial_BB_munue);
-
 	// reset radiation quantities
 	reset_radiation();
 
