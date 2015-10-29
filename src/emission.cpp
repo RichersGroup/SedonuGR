@@ -36,10 +36,8 @@
 //------------------------------------------------------------
 // emit new particles
 //------------------------------------------------------------
-void transport::emit_particles(const double lab_dt)
+void transport::emit_particles()
 {
-	assert(lab_dt > 0);
-
 	// complain if we're out of room for particles
 	assert(n_emit_core  >= 0 || n_emit_zones >= 0);
 	int n_emit = n_emit_core + n_emit_zones;
@@ -64,8 +62,8 @@ void transport::emit_particles(const double lab_dt)
 
 	// emit from the core and/or the zones
 	if(verbose && rank0) cout << "# Emitting particles...";
-	if(n_emit_core >0) emit_inner_source(n_emit_core_per_bin, lab_dt);
-	if(n_emit_zones>0) emit_zones(n_emit_zones_per_bin, lab_dt);
+	if(n_emit_core >0) emit_inner_source(n_emit_core_per_bin);
+	if(n_emit_zones>0) emit_zones(n_emit_zones_per_bin);
 	if(verbose && rank0) cout << "finished." << endl;
 }
 
@@ -81,7 +79,7 @@ void transport::initialize_blackbody(double T, double munue){
 		for(unsigned s=0; s<species_list.size(); s++)
 			species_list[s]->set_emis_to_BB_edens(T,munue*(double)species_list[s]->lepton_number);
 
-		emit_zones(n_initial,1.0,t_now); // this is a hack - 1.0 causes perfect BB energy density
+		emit_zones(n_initial); // this is a hack - 1.0 causes perfect BB energy density
 		grid->z[z_ind].e_emit = 0;
 		grid->z[z_ind].l_emit = 0;
 	}
@@ -92,24 +90,20 @@ void transport::initialize_blackbody(double T, double munue){
 // Currently written to emit photons with 
 // blackblody spectrum based on T_core and L_core
 //------------------------------------------------------------
-void transport::emit_inner_source(const int n_emit_core_per_bin, const double lab_dt, double t)
+void transport::emit_inner_source(const int n_emit_core_per_bin)
 {
-	assert(lab_dt > 0);
 	assert(core_species_luminosity.N > 0);
 	int n_emit_core_binwise = n_emit_core_per_bin*number_of_bins();
 	int n_emit_core_regular = n_emit_core - n_emit_core_binwise;
 	assert(n_emit_core_regular>=0);
 
 	if(n_emit_core_regular>0 && ratio_emit_by_bin<1.0){
-		const double Ep  = core_species_luminosity.N * lab_dt/n_emit_core_regular * (1.0 - ratio_emit_by_bin);
+		const double Ep  = core_species_luminosity.N /n_emit_core_regular * (1.0 - ratio_emit_by_bin); // assume lab_dt = 1.0
 		assert(Ep > 0);
 		assert(r_core>0);
 
         #pragma omp parallel for
-		for (int i=0; i<n_emit_core_regular; i++){
-			if(t<0) t = t_now + lab_dt*rangen.uniform();
-			create_surface_particle(Ep,t);
-		}
+		for (int i=0; i<n_emit_core_regular; i++) create_surface_particle(Ep);
 	}
 
 	if(n_emit_core_per_bin > 0){
@@ -117,11 +111,8 @@ void transport::emit_inner_source(const int n_emit_core_per_bin, const double la
 		for(unsigned s=0; s<species_list.size(); s++){
 			for(unsigned g=0; g<species_list[s]->core_emis.size(); g++){
 				double emis = species_list[s]->core_emis.get_value(g)*species_list[s]->core_emis.N;
-				double bin_Ep = emis*lab_dt/n_emit_core_per_bin * ratio_emit_by_bin;
-				if(bin_Ep>0) for(int k=0; k<n_emit_core_per_bin; k++){
-					if(t<0) t = t_now + lab_dt*rangen.uniform();
-					create_surface_particle(bin_Ep,t,s,g);
-				}
+				double bin_Ep = emis/n_emit_core_per_bin * ratio_emit_by_bin; // assume lab_dt = 1.0
+				if(bin_Ep>0) for(int k=0; k<n_emit_core_per_bin; k++) create_surface_particle(bin_Ep,s,g);
 			}
 		}
 	}
@@ -131,9 +122,7 @@ void transport::emit_inner_source(const int n_emit_core_per_bin, const double la
 //--------------------------------------------------------------------------
 // emit particles due to viscous heating
 //--------------------------------------------------------------------------
-void transport::emit_zones(const int n_emit_zones_per_bin, const double lab_dt, double t){
-	assert(lab_dt > 0);
-
+void transport::emit_zones(const int n_emit_zones_per_bin){
 	unsigned gridsize = grid->z.size();
 	double tmp_net_energy = 0;
 	int n_emit_zones_regular = n_emit_zones - n_emit_zones_per_bin*grid->z.size()*number_of_bins();
@@ -147,7 +136,7 @@ void transport::emit_zones(const int n_emit_zones_per_bin, const double lab_dt, 
 		// proper normalization due to frames not physical - just for distributing particles somewhat reasonably
 	    #pragma omp parallel for reduction(+:tmp_net_energy)
 		for(unsigned z_ind=0; z_ind<gridsize; z_ind++){
-			double com_emit_energy = zone_comoving_therm_emit_energy(z_ind,lab_dt);
+			double com_emit_energy = zone_comoving_therm_emit_energy(z_ind);
 			tmp_net_energy += com_emit_energy;
 		}
 		assert(tmp_net_energy>0);
@@ -156,17 +145,14 @@ void transport::emit_zones(const int n_emit_zones_per_bin, const double lab_dt, 
         //#pragma omp for schedule(guided)
 		for (unsigned z_ind=0; z_ind<gridsize; z_ind++) if(grid->zone_radius(z_ind) > r_core)
 		{
-			double com_emit_energy = zone_comoving_therm_emit_energy(z_ind,lab_dt);
+			double com_emit_energy = zone_comoving_therm_emit_energy(z_ind);
 
 			if(n_emit_zones_regular>0 && ratio_emit_by_bin<1.0){
 				// how much this zone emits. Always emits correct energy even if number of particles doesn't add up.
 				unsigned this_n_emit = (double)n_emit_zones_regular * (com_emit_energy / tmp_net_energy) + 0.5;
 				if(com_emit_energy>0 && this_n_emit==0) this_n_emit = 1;
 				double Ep = com_emit_energy / (double)this_n_emit * (1.0 - ratio_emit_by_bin);
-				for (unsigned k=0; k<this_n_emit; k++){
-					if(t<0) t = t_now + lab_dt*rangen.uniform();
-					create_thermal_particle(z_ind,Ep,t);
-				}
+				for (unsigned k=0; k<this_n_emit; k++) create_thermal_particle(z_ind,Ep);
 			}
 
 
@@ -174,18 +160,15 @@ void transport::emit_zones(const int n_emit_zones_per_bin, const double lab_dt, 
 			if(n_emit_zones_per_bin > 0){
 				for(unsigned s=0; s<species_list.size(); s++){
 					for(unsigned g=0; g<species_list[s]->number_of_bins(); g++){
-						double bin_Ep = bin_comoving_therm_emit_energy(z_ind, s, g, lab_dt)/n_emit_zones_per_bin * ratio_emit_by_bin;
-						if(bin_Ep>0) for(int k=0; k<n_emit_zones_per_bin; k++){
-							if(t<0) t = t_now + lab_dt*rangen.uniform();
-							create_thermal_particle(z_ind,bin_Ep,t,s,g);
-						}
+						double bin_Ep = bin_comoving_therm_emit_energy(z_ind, s, g)/n_emit_zones_per_bin * ratio_emit_by_bin;
+						if(bin_Ep>0) for(int k=0; k<n_emit_zones_per_bin; k++) create_thermal_particle(z_ind,bin_Ep,s,g);
 					}
 				}
 			}
 
 			// record emissivity
 			grid->z[z_ind].e_emit += com_emit_energy;
-			grid->z[z_ind].l_emit += zone_comoving_therm_emit_leptons(z_ind,lab_dt);
+			grid->z[z_ind].l_emit += zone_comoving_therm_emit_leptons(z_ind);
 		}// loop over zones
 	}// #pragma omp parallel
 }
@@ -197,12 +180,12 @@ void transport::emit_zones(const int n_emit_zones_per_bin, const double lab_dt, 
 //----------------------------------------------------------------------------------------
 
 // return the cell's luminosity from thermal emission (erg/s, comoving frame)
-double transport::zone_comoving_therm_emit_energy(const int z_ind, const double lab_dt) const{
+double transport::zone_comoving_therm_emit_energy(const int z_ind) const{
 	if(!grid->good_zone(z_ind)) return 0;                 // don't emit from superluminal zones
 	else if(grid->zone_radius(z_ind) < r_core) return 0; // don't emit within core
 	else{
 		double H=0;
-		double four_vol = grid->zone_lab_volume(z_ind) * lab_dt; //relativistic invariant - same in comoving frame.
+		double four_vol = grid->zone_lab_volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
 		for(unsigned i=0; i<species_list.size(); i++){
 			double species_lum = species_list[i]->integrate_zone_emis(z_ind) * 4*pc::pi * four_vol;
 			assert(species_lum >= 0);
@@ -213,11 +196,11 @@ double transport::zone_comoving_therm_emit_energy(const int z_ind, const double 
 	}
 }
 
-double transport::bin_comoving_therm_emit_energy(const int z_ind, const int s, const int g, const double lab_dt) const{
+double transport::bin_comoving_therm_emit_energy(const int z_ind, const int s, const int g) const{
 	if(!grid->good_zone(z_ind)) return 0;                 // don't emit from superluminal zones
 	else if(grid->zone_radius(z_ind) < r_core) return 0; // don't emit within core
 	else{
-		double four_vol = grid->zone_lab_volume(z_ind) * lab_dt; //relativistic invariant - same in comoving frame.
+		double four_vol = grid->zone_lab_volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
 		double H = species_list[s]->bin_emis(z_ind,g) * 4*pc::pi * four_vol;
 		assert(H>=0);
 		return H;
@@ -226,11 +209,11 @@ double transport::bin_comoving_therm_emit_energy(const int z_ind, const int s, c
 }
 
 // return the cell's luminosity from thermal emission (erg/s, comoving frame)
-double transport::zone_comoving_therm_emit_leptons(const int z_ind, const double lab_dt) const{
+double transport::zone_comoving_therm_emit_leptons(const int z_ind) const{
 	if(!grid->good_zone(z_ind)) return 0; //don't emit from superluminal zones
 	else{
 		double L=0;
-		double four_vol = grid->zone_lab_volume(z_ind) * lab_dt; //relativistic invariant - same in comoving frame.
+		double four_vol = grid->zone_lab_volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
 		for(unsigned i=0; i<species_list.size(); i++){
 			double species_lum = species_list[i]->integrate_zone_lepton_emis(z_ind) * 4*pc::pi * four_vol;
 			L += species_lum;
@@ -245,7 +228,7 @@ double transport::zone_comoving_therm_emit_leptons(const int z_ind, const double
 // Useful for thermal radiation emitted all througout
 // the grid
 //------------------------------------------------------------
-void transport::create_thermal_particle(const int z_ind, const double Ep, const double t, const int s, const int g)
+void transport::create_thermal_particle(const int z_ind, const double Ep, const int s, const int g)
 {
 	assert(Ep > 0);
 	assert(z_ind >= 0);
@@ -254,7 +237,6 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	// basic particle properties
 	particle p;
 	p.e  = Ep;
-	p.t  = t;
 
 	// random sample position in zone
 	vector<double> rand(3,0);
@@ -308,14 +290,13 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 // General function to create a particle on the surface
 // emitted isotropically outward in the comoving frame. 
 //------------------------------------------------------------
-void transport::create_surface_particle(const double Ep, const double t, const int s, const int g)
+void transport::create_surface_particle(const double Ep, const int s, const int g)
 {
 	assert(Ep > 0);
 
 	// set basic properties
 	particle p;
 	p.e = Ep;
-	p.t = t;
 
 	// pick initial position on photosphere
 	double phi_core   = 2*pc::pi*rangen.uniform();

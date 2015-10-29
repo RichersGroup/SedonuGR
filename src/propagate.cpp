@@ -33,7 +33,7 @@
 #include "transport.h"
 #include "species_general.h"
 
-void transport::propagate_particles(const double lab_dt)
+void transport::propagate_particles()
 {
 	if(verbose && rank0) cout << "# Propagating particles...";
 
@@ -43,7 +43,7 @@ void transport::propagate_particles(const double lab_dt)
 		particle* p = &particles[i];
         #pragma omp atomic
 		n_active[p->s]++;
-		propagate(p,lab_dt);
+		propagate(p);
 		if(p->fate == escaped){
 			#pragma omp atomic
 			n_escape[p->s]++;
@@ -95,7 +95,7 @@ void transport::remove_dead_particles(){
 //--------------------------------------------------------
 // Decide what happens to the particle
 //--------------------------------------------------------
-void transport::which_event(particle *p, const int z_ind, const double dt, const double lab_opac,
+void transport::which_event(particle *p, const int z_ind, const double lab_opac,
 		double *d_smallest, ParticleEvent *event) const{
 	assert(lab_opac >= 0);
 
@@ -118,14 +118,6 @@ void transport::which_event(particle *p, const int z_ind, const double dt, const
 		assert(d_interact>=0);
 	}
 
-	// FIND D_TIME ====================================================================
-	// find distance to end of time step
-	if(dt>0){
-		double tstop = t_now + dt;
-		d_time = (tstop - p->t)*pc::c;
-		assert(d_time > 0);
-	}
-
 	// FIND D_BOUNDARY ================================================================
 	d_boundary = grid->lab_dist_to_boundary(p);
 	assert(d_boundary > 0);
@@ -137,10 +129,6 @@ void transport::which_event(particle *p, const int z_ind, const double dt, const
 	if( d_zone <= *d_smallest ){
 		*event  = zoneEdge;
 		*d_smallest = d_zone;
-	}
-	if( d_time <= *d_smallest ){
-		*event  = timeStep;
-		*d_smallest = d_time;
 	}
 	if( d_boundary <= *d_smallest ){
 		*event = boundary;
@@ -278,14 +266,13 @@ void transport::move(particle* p, double lab_d){
 	p->x[0] += lab_d*p->D[0];
 	p->x[1] += lab_d*p->D[1];
 	p->x[2] += lab_d*p->D[2];
-	p->t = p->t + lab_d/pc::c;
 }
 
 //--------------------------------------------------------
 // Propagate a single monte carlo particle until
 // it  escapes, is absorbed, or the time step ends
 //--------------------------------------------------------
-void transport::propagate(particle* p, const double lab_dt)
+void transport::propagate(particle* p)
 {
 
 	ParticleEvent event;
@@ -323,7 +310,7 @@ void transport::propagate(particle* p, const double lab_dt)
 		}
 
 		// decide which event happens
-		which_event(p,z_ind,lab_dt,lab_opac,&lab_d,&event);
+		which_event(p,z_ind,lab_opac,&lab_d,&event);
 		assert(lab_d >= 0);
 
 		// accumulate counts of radiation energy, absorption, etc
@@ -346,14 +333,6 @@ void transport::propagate(particle* p, const double lab_dt)
 			event_interact(p,z_ind,abs_frac,lab_opac);
 			assert(p->nu > 0);
 			assert(p->e > 0);
-			break;
-
-			// ---------------------------------
-			// do if time step end
-			// ---------------------------------
-		case timeStep:
-			assert(z_ind >= 0);
-			p->fate = stopped;
 			break;
 
 			// ---------------------------------

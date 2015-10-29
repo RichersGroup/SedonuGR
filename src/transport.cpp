@@ -78,7 +78,6 @@ transport::transport(){
 	radiative_eq = -MAXLIM;
 	rank0 = -MAXLIM;
 	grid = NULL;
-	t_now = NaN;
 	r_core = NaN;
 	core_emit_method=-MAXLIM;
 	n_emit_core = -MAXLIM;
@@ -213,9 +212,6 @@ void transport::init(Lua* lua)
 	//==================//
 	// SET UP TRANSPORT //
 	//==================//
-	// start at time 0
-	t_now = 0;
-
 	double grey_opac = lua->scalar<double>("nut_grey_opacity");
 	int num_nut_species = 0;
 	if(grey_opac < 0){ // get everything from NuLib
@@ -388,17 +384,12 @@ void transport::check_parameters() const{
 	assert(ratio_emit_by_bin <= 1.0);
 }
 
-double transport::current_time(){
-	return t_now;
-}
-
 //------------------------------------------------------------
 // take a transport time step 
 //------------------------------------------------------------
-void transport::step(const double lab_dt)
+void transport::step()
 {
 	// assume 1.0 s. of particles were emitted if steady_state
-	double emission_time = (lab_dt<0 ? 1.0 : lab_dt);
 	if(iterative) assert(particles.empty());
 
 	// distribute initial particles in the simulation area
@@ -411,11 +402,11 @@ void transport::step(const double lab_dt)
 	// emit, propagate, and normalize. steady_state means no propagation time limit.
 	for(int i=0; i<emissions_per_timestep; i++){
 	  if(rank0 && verbose) cout << "#   subcycle " << i+1 << "/" << emissions_per_timestep << endl;
-		emit_particles(emission_time);
-		propagate_particles(lab_dt);
+		emit_particles();
+		propagate_particles();
 	}
 	if(MPI_nprocs>1) reduce_radiation();      // so each processor has necessary info to solve its zones
-	normalize_radiative_quantities(emission_time);
+	normalize_radiative_quantities();
 	if(do_annihilation) calculate_annihilation();
 
 	// solve for T_gas and Ye structure
@@ -427,9 +418,6 @@ void transport::step(const double lab_dt)
 
 	// post-processing
 	if(rank0) calculate_timescales();
-
-	// advance time step
-	if (!iterative) t_now += lab_dt;
 }
 
 
@@ -634,7 +622,7 @@ void transport::calculate_timescales() const{
 //----------------------------------------------------------------------------
 // normalize the radiative quantities
 //----------------------------------------------------------------------------
-void transport::normalize_radiative_quantities(const double lab_dt){
+void transport::normalize_radiative_quantities(){
 	if(verbose && rank0) cout << "# Normalizing Radiative Quantities" << endl;
 	double net_visc_heating = 0;
 	double net_neut_heating = 0;
@@ -645,7 +633,7 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 	for(unsigned z_ind=0;z_ind<grid->z.size();z_ind++)
 	{
 		zone *z = &(grid->z[z_ind]);
-		double four_vol = grid->zone_lab_volume(z_ind) * lab_dt; // Lorentz invariant - same in lab and comoving frames
+		double four_vol = grid->zone_lab_volume(z_ind); // Lorentz invariant - same in lab and comoving frames. Assume lab_dt=1.0
 
 		if(!grid->good_zone(z_ind)){
 			assert(z->e_abs == 0.0);
@@ -673,14 +661,14 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 
 	// normalize global quantities
 	for(unsigned s=0; s<species_list.size(); s++){
-		species_list[s]->spectrum.rescale(1./(multiplier*lab_dt)); // erg/s in each bin
+		species_list[s]->spectrum.rescale(1./multiplier); // erg/s in each bin. Assume lab_dt=1.0
 		E_avg_lab[s] /= L_net_lab[s];
 		E_avg_esc[s] /= L_net_esc[s];
-		L_core_lab[s] /= multiplier*lab_dt;
-		L_net_lab[s] /= multiplier*lab_dt;
-		L_net_esc[s] /= multiplier*lab_dt;
-		N_net_lab[s] /= multiplier*lab_dt;
-		N_net_esc[s] /= multiplier*lab_dt;
+		L_core_lab[s] /= multiplier; // assume lab_dt=1.0
+		L_net_lab[s] /= multiplier; // assume lab_dt=1.0
+		L_net_esc[s] /= multiplier; // assume lab_dt=1.0
+		N_net_lab[s] /= multiplier; // assume lab_dt=1.0
+		N_net_esc[s] /= multiplier; // assume lab_dt=1.0
 	}
 	particle_total_energy /= multiplier;
 	particle_core_abs_energy /= multiplier;
@@ -698,10 +686,10 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 
 		// particle information (all lab-frame)
 		cout << "#   " << total_active << " total active particles" << endl;
-		cout << "#   " << particle_total_energy/lab_dt << " ERG/S TOTAL PARTICLE LUMINOSITY " << endl;
-		cout << "#   " << particle_fluid_abs_energy/lab_dt << " ERG/S TOTAL DESTROYED (fluid) PARTICLE ENERGY " << endl;
-		cout << "#   " << particle_core_abs_energy/lab_dt << " ERG/S TOTAL DESTROYED (core)  PARTICLE ENERGY " << endl;
-		cout << "#   " << particle_escape_energy/lab_dt << " ERG/S TOTAL ESCAPED PARTICLE ENERGY " << endl;
+		cout << "#   " << particle_total_energy << " ERG/S TOTAL PARTICLE LUMINOSITY " << endl; // assume lab_dt=1.0
+		cout << "#   " << particle_fluid_abs_energy << " ERG/S TOTAL DESTROYED (fluid) PARTICLE ENERGY " << endl; // assume lab_dt=1.0
+		cout << "#   " << particle_core_abs_energy << " ERG/S TOTAL DESTROYED (core)  PARTICLE ENERGY " << endl; // assume lab_dt=1.0
+		cout << "#   " << particle_escape_energy << " ERG/S TOTAL ESCAPED PARTICLE ENERGY " << endl; // assume lab_dt=1.0
 
 		if(do_visc) cout << "#   " << net_visc_heating << " erg/s H_visc (comoving sum)" << endl;
 		cout << "#   " << net_neut_heating << " erg/s H_abs (comoving sum)" << endl;
@@ -710,7 +698,7 @@ void transport::normalize_radiative_quantities(const double lab_dt){
 
 		double CmH = 0;
 		for(unsigned s=0; s<species_list.size(); s++) CmH += L_net_lab[s];
-		CmH -= particle_fluid_abs_energy/lab_dt;
+		CmH -= particle_fluid_abs_energy; // assume lab+dt=1.0
 		cout << "#   " << CmH << " erg/s L_emit-L_abs (lab-frame)" << endl;
 
 		cout << "#   { ";

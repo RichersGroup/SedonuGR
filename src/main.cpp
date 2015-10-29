@@ -69,7 +69,6 @@ int main(int argc, char **argv)
 
 	// read in time stepping parameters
 	int max_n_iter  = lua.scalar<int>("max_n_iter");
-	double dt        = lua.scalar<double>("dt");
 	lua.close();
 
 	// initial output
@@ -82,11 +81,11 @@ int main(int argc, char **argv)
 	for(int it=1; it<=max_n_iter; it++)
 	{
 		// do transport step
-		sim.step(dt);
+		sim.step();
 
 		// printout time step
 		sim.write(it);
-		if(rank0) printf("%12d %12.4e %12.4e %12d\n",it,sim.current_time(),dt, sim.total_particles());
+		if(rank0) printf("%12d %12d\n",it,sim.total_particles());
 	}
 
 	//===================//

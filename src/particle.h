@@ -44,7 +44,6 @@ public:
 
 	vector<double> x;         // x,y,z position (cm)
 	vector<double> D;         // direction vector, Dx,Dy,Dz (normalized to unit magnitude)
-	double       t;         // current time
 	double       e;         // total energy in ergs of packet
 	double      nu;         // frequency (Hz)
 	double     tau;         // remaining optical depth
@@ -77,8 +76,8 @@ public:
 
 	void print() const
 	{
-		printf("%10.e | %10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e | %10.3e %10.3e\n",
-				t,x[0],x[1],x[2],D[0],D[1],D[2],e,nu);
+		printf("%10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e | %10.3e %10.3e\n",
+				x[0],x[1],x[2],D[0],D[1],D[2],e,nu);
 	}
 
 };

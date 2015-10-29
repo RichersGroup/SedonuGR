@@ -167,9 +167,8 @@ void transport::transform_lab_to_comoving(particle* p, const int z_ind) const
 	lorentz_transform(p,v);
 }
 
-double transport::comoving_dt(const double lab_dt, const int z_ind) const{
-	assert(lab_dt>0);
+double transport::comoving_dt(const int z_ind) const{
 	assert(z_ind >= 0);
 	assert(z_ind < (int)grid->z.size());
-	return lab_dt / lorentz_factor(grid->z[z_ind].v);
+	return 1.0 / lorentz_factor(grid->z[z_ind].v); // assume lab_dt=1.0
 }

@@ -31,7 +31,6 @@
 particle::particle(){
 	x.resize(3,NaN);
 	D.resize(3,NaN);
-	t = NaN;
 	e = NaN;
 	nu = NaN;
 	tau = NaN;
