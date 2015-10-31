@@ -64,8 +64,10 @@ private:
 	void emit_particles();
 
 	// emit from where?
-	void emit_inner_source(const int n_emit_per_bin);
-	void emit_zones(const int n_emit_per_bin);
+	void emit_inner_source();
+	void emit_zones();
+	void emit_inner_source_by_bin();
+	void emit_zones_by_bin();
 
 	// what kind of particle to create?
 	void create_surface_particle(const double Ep, const int s=-1, const int g=-1);
@@ -162,6 +164,7 @@ public:
 	// items for core emission
 	double r_core;
 	int n_emit_core;
+	int n_emit_core_per_bin;
 	double core_lum_multiplier;
 	int core_emit_method;
 	cdf_array core_species_luminosity;
@@ -171,11 +174,12 @@ public:
 	// items for zone emission
 	int do_visc;
 	int n_emit_zones;
+	int n_emit_zones_per_bin;
 	double visc_specific_heat_rate;
 
 	// how many times do we emit+propagate each timestep?
 	int emissions_per_timestep;
-	double ratio_emit_by_bin;
+	int do_emit_by_bin;
 
 	// global radiation quantities
 	vector<double> L_core_lab;

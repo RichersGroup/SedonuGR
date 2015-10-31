@@ -51,19 +51,17 @@ void transport::emit_particles()
 		exit(10);
 	}
 
-	// set how many partices are going to bin-wise emission
-	int n_emit_core_per_bin  = ratio_emit_by_bin * n_emit_core  / (number_of_bins()               );
-	int n_emit_zones_per_bin = ratio_emit_by_bin * n_emit_zones / (number_of_bins()*grid->z.size());
-	if(verbose && rank0 && ratio_emit_by_bin>0){
-		cout << "#   " << n_emit_core_per_bin  << " particles per core bin" << endl;
-		cout << "#   " << n_emit_zones_per_bin << " particles per zone bin" << endl;
-	}
-
 
 	// emit from the core and/or the zones
 	if(verbose && rank0) cout << "# Emitting particles...";
-	if(n_emit_core >0) emit_inner_source(n_emit_core_per_bin);
-	if(n_emit_zones>0) emit_zones(n_emit_zones_per_bin);
+	if(do_emit_by_bin){
+		emit_inner_source_by_bin();
+		emit_zones_by_bin();
+	}
+	else{
+		emit_inner_source();
+		emit_zones();
+	}
 	if(verbose && rank0) cout << "finished." << endl;
 }
 
@@ -72,87 +70,78 @@ void transport::emit_particles()
 // Currently written to emit photons with 
 // blackblody spectrum based on T_core and L_core
 //------------------------------------------------------------
-void transport::emit_inner_source(const int n_emit_core_per_bin)
-{
-	assert(core_species_luminosity.N > 0);
-	int n_emit_core_binwise = n_emit_core_per_bin*number_of_bins();
-	int n_emit_core_regular = n_emit_core - n_emit_core_binwise;
-	assert(n_emit_core_regular>=0);
-
-	if(n_emit_core_regular>0 && ratio_emit_by_bin<1.0){
-		const double Ep  = core_species_luminosity.N /n_emit_core_regular * (1.0 - ratio_emit_by_bin); // assume lab_dt = 1.0
-		assert(Ep > 0);
-		assert(r_core>0);
-
-        #pragma omp parallel for
-		for (int i=0; i<n_emit_core_regular; i++) create_surface_particle(Ep);
-	}
-
-	if(n_emit_core_per_bin > 0){
-        #pragma omp parallel for
-		for(unsigned s=0; s<species_list.size(); s++){
-			for(unsigned g=0; g<species_list[s]->core_emis.size(); g++){
-				double emis = species_list[s]->core_emis.get_value(g)*species_list[s]->core_emis.N;
-				double bin_Ep = emis/n_emit_core_per_bin * ratio_emit_by_bin; // assume lab_dt = 1.0
-				if(bin_Ep>0) for(int k=0; k<n_emit_core_per_bin; k++) create_surface_particle(bin_Ep,s,g);
-			}
+void transport::emit_inner_source_by_bin(){
+	#pragma omp parallel for
+	for(unsigned s=0; s<species_list.size(); s++){
+		for(unsigned g=0; g<species_list[s]->core_emis.size(); g++){
+			double emis = species_list[s]->core_emis.get_value(g)*species_list[s]->core_emis.N;
+			double bin_Ep = emis/n_emit_core_per_bin * do_emit_by_bin; // assume lab_dt = 1.0
+			if(bin_Ep>0) for(int k=0; k<n_emit_core_per_bin; k++) create_surface_particle(bin_Ep,s,g);
 		}
 	}
+}
+void transport::emit_inner_source()
+{
+	assert(core_species_luminosity.N > 0);
+
+	const double Ep  = core_species_luminosity.N / (double)n_emit_core; // assume lab_dt = 1.0
+	assert(Ep > 0);
+	assert(r_core>0);
+
+	#pragma omp parallel for
+	for (int i=0; i<n_emit_core; i++) create_surface_particle(Ep);
 }
 
 
 //--------------------------------------------------------------------------
 // emit particles due to viscous heating
 //--------------------------------------------------------------------------
-void transport::emit_zones(const int n_emit_zones_per_bin){
-	unsigned gridsize = grid->z.size();
-	double tmp_net_energy = 0;
-	int n_emit_zones_regular = n_emit_zones - n_emit_zones_per_bin*grid->z.size()*number_of_bins();
-	assert(n_emit_zones_regular>=0);
+void transport::emit_zones_by_bin(){
+	for (unsigned z_ind=0; z_ind<grid->z.size(); z_ind++) if(grid->zone_radius(z_ind) > r_core){
 
+		double com_emit_energy = zone_comoving_therm_emit_energy(z_ind);
 
-	// at this point therm means either viscous heating or regular emission, according to the logic above
-    //#pragma omp parallel
-	{
-		// determine the net luminosity of each emission type over the whole grid
-		// proper normalization due to frames not physical - just for distributing particles somewhat reasonably
-	    #pragma omp parallel for reduction(+:tmp_net_energy)
-		for(unsigned z_ind=0; z_ind<gridsize; z_ind++){
-			double com_emit_energy = zone_comoving_therm_emit_energy(z_ind);
-			tmp_net_energy += com_emit_energy;
+		for(unsigned s=0; s<species_list.size(); s++){
+			for(unsigned g=0; g<species_list[s]->number_of_bins(); g++){
+				double bin_Ep = bin_comoving_therm_emit_energy(z_ind, s, g)/n_emit_zones_per_bin;
+				if(bin_Ep>0) for(int k=0; k<n_emit_zones_per_bin; k++) create_thermal_particle(z_ind,bin_Ep,s,g);
+			}
 		}
-		assert(tmp_net_energy>0);
 
-		// actually emit the particles in each zone
-        //#pragma omp for schedule(guided)
-		for (unsigned z_ind=0; z_ind<gridsize; z_ind++) if(grid->zone_radius(z_ind) > r_core)
-		{
-			double com_emit_energy = zone_comoving_therm_emit_energy(z_ind);
+		// record emissivity
+		grid->z[z_ind].e_emit += com_emit_energy;
+		grid->z[z_ind].l_emit += zone_comoving_therm_emit_leptons(z_ind);
+	}
+}
+void transport::emit_zones(){
+	double tmp_net_energy = 0;
 
-			if(n_emit_zones_regular>0 && ratio_emit_by_bin<1.0){
-				// how much this zone emits. Always emits correct energy even if number of particles doesn't add up.
-				unsigned this_n_emit = (double)n_emit_zones_regular * (com_emit_energy / tmp_net_energy) + 0.5;
-				if(com_emit_energy>0 && this_n_emit==0) this_n_emit = 1;
-				double Ep = com_emit_energy / (double)this_n_emit * (1.0 - ratio_emit_by_bin);
-				for (unsigned k=0; k<this_n_emit; k++) create_thermal_particle(z_ind,Ep);
-			}
+	// determine the net luminosity of each emission type over the whole grid
+	// proper normalization due to frames not physical - just for distributing particles somewhat reasonably
+	#pragma omp parallel for reduction(+:tmp_net_energy)
+	for(unsigned z_ind=0; z_ind<grid->z.size(); z_ind++){
+		double com_emit_energy = zone_comoving_therm_emit_energy(z_ind);
+		tmp_net_energy += com_emit_energy;
+	}
+	assert(tmp_net_energy>0);
+
+	// actually emit the particles in each zone
+	//#pragma omp for schedule(guided)
+	for (unsigned z_ind=0; z_ind<grid->z.size(); z_ind++) if(grid->zone_radius(z_ind) > r_core)
+	{
+		double com_emit_energy = zone_comoving_therm_emit_energy(z_ind);
+
+		// how much this zone emits. Always emits correct energy even if number of particles doesn't add up.
+		unsigned this_n_emit = (double)n_emit_zones * (com_emit_energy / tmp_net_energy) + 0.5;
+		if(com_emit_energy>0 && this_n_emit==0) this_n_emit = 1;
+		double Ep = com_emit_energy / (double)this_n_emit;
+		for (unsigned k=0; k<this_n_emit; k++) create_thermal_particle(z_ind,Ep);
 
 
-			// create particles in all bins
-			if(n_emit_zones_per_bin > 0){
-				for(unsigned s=0; s<species_list.size(); s++){
-					for(unsigned g=0; g<species_list[s]->number_of_bins(); g++){
-						double bin_Ep = bin_comoving_therm_emit_energy(z_ind, s, g)/n_emit_zones_per_bin * ratio_emit_by_bin;
-						if(bin_Ep>0) for(int k=0; k<n_emit_zones_per_bin; k++) create_thermal_particle(z_ind,bin_Ep,s,g);
-					}
-				}
-			}
-
-			// record emissivity
-			grid->z[z_ind].e_emit += com_emit_energy;
-			grid->z[z_ind].l_emit += zone_comoving_therm_emit_leptons(z_ind);
-		}// loop over zones
-	}// #pragma omp parallel
+		// record emissivity
+		grid->z[z_ind].e_emit += com_emit_energy;
+		grid->z[z_ind].l_emit += zone_comoving_therm_emit_leptons(z_ind);
+	}// loop over zones
 }
 
 

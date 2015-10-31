@@ -81,13 +81,15 @@ transport::transport(){
 	r_core = NaN;
 	core_emit_method=-MAXLIM;
 	n_emit_core = -MAXLIM;
+	n_emit_core_per_bin = -MAXLIM;
 	core_lum_multiplier = NaN;
 	do_visc = -MAXLIM;
 	n_emit_zones = -MAXLIM;
+	n_emit_zones_per_bin = -MAXLIM;
 	visc_specific_heat_rate = NaN;
 	reflect_outer = -MAXLIM;
 	emissions_per_timestep = -MAXLIM;
-	ratio_emit_by_bin = NAN;
+	do_emit_by_bin = -MAXLIM;
 	write_rays_every = -MAXLIM;
 	write_spectra_every = -MAXLIM;
 	write_zones_every = -MAXLIM;
@@ -125,10 +127,16 @@ void transport::init(Lua* lua)
 	do_visc      = lua->scalar<int>("do_visc");
 	if(do_visc) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");
 	reflect_outer = lua->scalar<int>("reflect_outer");
-	n_emit_zones = lua->scalar<int>("n_emit_therm");
-	n_emit_core  = lua->scalar<int>("n_emit_core");
 	emissions_per_timestep = lua->scalar<int>("emissions_per_timestep");
-	ratio_emit_by_bin = lua->scalar<double>("ratio_emit_by_bin");
+	do_emit_by_bin = lua->scalar<int>("ratio_emit_by_bin");
+	if(do_emit_by_bin){
+		n_emit_zones_per_bin = lua->scalar<int>("n_emit_therm_per_bin");
+		n_emit_core_per_bin  = lua->scalar<int>("n_emit_core_per_bin");
+	}
+	else{
+		n_emit_zones = lua->scalar<int>("n_emit_therm");
+		n_emit_core  = lua->scalar<int>("n_emit_core");
+	}
 
 	// read simulation parameters
 	verbose      = lua->scalar<int>("verbose");
@@ -370,8 +378,6 @@ void transport::check_parameters() const{
 		cout << "ERROR: Emitting particles at beginning of timestep AND re-emitting them is inconsistent." << endl;
 		exit(10);
 	}
-	assert(ratio_emit_by_bin >= 0.0);
-	assert(ratio_emit_by_bin <= 1.0);
 }
 
 //------------------------------------------------------------
