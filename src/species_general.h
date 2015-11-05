@@ -106,13 +106,11 @@ public:
 
 	// set the emissivity, absorption opacity, and scattering opacity
 	virtual void set_eas(const int zone_index) = 0;
-	void set_emis_to_BB_edens(const double T, const double chempot);
 	void get_opacity(const double com_nu, const int z_ind, double* opac, double* abs_frac) const;
 	double sum_opacity(const int z_ind, const int group) const;
 
 	// minimum zone emissivity
 	double bin_emis(const int zone_index, const int g) const;
-	double min_bin_emis(const int zone_index) const;
 	unsigned number_of_bins();
 
 	// min and max values for the Brent solver

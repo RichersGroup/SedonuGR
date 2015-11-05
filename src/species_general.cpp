@@ -121,16 +121,6 @@ void species_general::set_cdf_to_BB(const double T, const double chempot, cdf_ar
 }
 
 
-void species_general::set_emis_to_BB_edens(const double T, const double chempot){
-	// This sort of abuses the original meaning of the emissivity arrays for initial particle creation.
-	// usage here: units of emis.N are erg/ccm
-	// original usage: units of emis.N are erg/s
-	for(unsigned z_ind=0; z_ind<emis.size(); z_ind++){
-		set_cdf_to_BB(T,chempot,emis[z_ind]);
-		emis[z_ind].N *= 4.0*pc::pi/pc::c;
-	}
-}
-
 //----------------------------------------------------------------
 // return a randomly sampled frequency
 // for a particle emitted from the core
@@ -207,15 +197,6 @@ double species_general::integrate_zone_lepton_emis(const int zone_index) const
 		l_emis += lepton_number * emis[zone_index].get_value(i) / (pc::h*nu_grid.x[i]);
 	}
 	return l_emis * emis[zone_index].N;
-}
-
-double species_general::min_bin_emis(const int z_ind) const{
-	double min_emis = numeric_limits<double>::infinity();
-	for(unsigned g=0; g<emis[z_ind].size(); g++){
-		double this_emis = emis[z_ind].get_value(g);
-		if(this_emis<min_emis && this_emis>0) min_emis = this_emis;
-	}
-	return min_emis;
 }
 
 double species_general::bin_emis(const int z_ind, const int g) const{
