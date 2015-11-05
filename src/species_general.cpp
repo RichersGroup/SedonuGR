@@ -148,9 +148,11 @@ double species_general::sample_core_nu(const int g) const
 // return a randomly sampled frequency
 // for a particle emitted from a zone
 //----------------------------------------------------------------
-double species_general::sample_zone_nu(const int zone_index, const int g) const
+double species_general::sample_zone_nu(const int zone_index, const int g, const cdf_array *input_emis) const
 {
-  assert(nu_grid.min >= 0);
+	assert(nu_grid.min >= 0);
+
+	const cdf_array *tmp_emis = input_emis==NULL ? &emis[zone_index] : input_emis;
 
 	// randomly pick a frequency
 	double rand = sim->rangen.uniform();
@@ -160,9 +162,9 @@ double species_general::sample_zone_nu(const int zone_index, const int g) const
 
 	double result = 0;
 	assert(core_emis.interpolation_order==1 || core_emis.interpolation_order==3 || core_emis.interpolation_order==0);
-	if     (core_emis.interpolation_order==0) result = emis[zone_index].invert_piecewise(rand,&nu_grid,g);
-	else if(core_emis.interpolation_order==1) result = emis[zone_index].invert_linear(rand,&nu_grid,g);
-	else if(core_emis.interpolation_order==3) result = emis[zone_index].invert_cubic(rand,&nu_grid,g);
+	if     (core_emis.interpolation_order==0) result = tmp_emis->invert_piecewise(rand,&nu_grid,g);
+	else if(core_emis.interpolation_order==1) result = tmp_emis->invert_linear(rand,&nu_grid,g);
+	else if(core_emis.interpolation_order==3) result = tmp_emis->invert_cubic(rand,&nu_grid,g);
 	assert(result>0);
 	return result;
 }

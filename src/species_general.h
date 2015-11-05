@@ -102,7 +102,7 @@ public:
 	double sample_core_nu(const int g=-1) const;
 
 	// return the frequency of a particle emitted from a zone (Hz)
-	double sample_zone_nu(const int zone_index, const int g=-1) const;
+	double sample_zone_nu(const int zone_index, const int g=-1, const cdf_array *input_emis=NULL) const;
 
 	// set the emissivity, absorption opacity, and scattering opacity
 	virtual void set_eas(const int zone_index) = 0;
