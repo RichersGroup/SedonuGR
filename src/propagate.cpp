@@ -38,24 +38,37 @@ void transport::propagate_particles()
 	if(verbose && rank0) cout << "# Propagating particles...";
 
 	//--- MOVE THE PARTICLES AROUND ---
-    #pragma omp parallel for schedule(guided)
-	for(unsigned i=0; i<particles.size(); i++){
-		particle* p = &particles[i];
-        #pragma omp atomic
-		n_active[p->s]++;
-		propagate(p);
-		if(p->fate == escaped){
-			#pragma omp atomic
-			n_escape[p->s]++;
-			#pragma omp atomic
-			L_net_esc[p->s] += p->e;
-			#pragma omp atomic
-			E_avg_esc[p->s] += p->nu * p->e;
-			#pragma omp atomic
-			N_net_esc[p->s] += p->e / (p->nu*pc::h);
-			species_list[p->s]->spectrum.count(p->D, p->nu, p->e);
+	// particle list is changing size, so must go through repeatedly
+	unsigned start=0, last_start=0;
+	unsigned end=particles.size();
+	#pragma omp parallel
+	do{
+		#pragma omp critical
+		{
+			last_start = start;
+			start = end;
+			end = particles.size();
 		}
-	} //#pragma omp parallel for
+
+		#pragma omp for schedule(guided)
+		for(unsigned i=start; i<end; i++){
+			particle* p = &particles[i];
+        	#pragma omp atomic
+			n_active[p->s]++;
+			propagate(p);
+			if(p->fate == escaped){
+				#pragma omp atomic
+				n_escape[p->s]++;
+				#pragma omp atomic
+				L_net_esc[p->s] += p->e;
+				#pragma omp atomic
+				E_avg_esc[p->s] += p->nu * p->e;
+				#pragma omp atomic
+				N_net_esc[p->s] += p->e / (p->nu*pc::h);
+				species_list[p->s]->spectrum.count(p->D, p->nu, p->e);
+			}
+		} //#pragma omp parallel for
+	} while(particles.size()>end);
 
 	double tot=0,core=0,fluid=0,esc=0;
 	#pragma omp parallel for reduction(+:tot,core,fluid,esc)

@@ -131,7 +131,11 @@ void neutrinos::set_eas(int zone_index)
 	if(grey_opac < 0){ // get opacities and emissivity from NuLib
 		nulib_get_eas_arrays(z->rho, z->T, z->Ye, nulibID,
 				emis[zone_index], abs_opac[zone_index], scat_opac[zone_index]);
-		emis[zone_index].normalize(cutoff/ngroups);
+
+		// set the biased emissivity
+		for(int g=0; g<nu_grid.size(); g++)
+			biased_emis[zone_index].set_value(g, emis[zone_index].get(g)
+				* sim->importance(abs_opac[zone_index][g], scat_opac[zone_index][g], sim->grid->zone_min_length(zone_index)));
 	}
 
 	else{ // get emissivity from blackbody and the grey opacity
@@ -148,9 +152,15 @@ void neutrinos::set_eas(int zone_index)
 			emis[zone_index].set_value(j,a*bb); // (erg/s/cm^3/ster)
 			abs_opac[zone_index][j] = a;        // (1/cm)
 			scat_opac[zone_index][j] = s;       // (1/cm)
+
+			// set the biased emissivity
+			biased_emis[zone_index].set_value(j, emis[zone_index].get(j)
+					* sim->importance(a, s, sim->grid->zone_min_length(zone_index)));
 		}
-		emis[zone_index].normalize(cutoff/ngroups);
 	}
+
+	emis[zone_index].normalize(cutoff/(double)ngroups);
+	biased_emis[zone_index].normalize(cutoff/(double)ngroups);
 }
 
 

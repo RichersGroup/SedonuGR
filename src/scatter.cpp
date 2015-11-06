@@ -53,7 +53,7 @@ void transport::event_interact(particle* p, const int z_ind, const double abs_fr
 			p->e *= (1.0 - abs_frac);
 			isotropic_scatter(p);
 		}
-		if(p->e<min_packet_energy) window(p);
+		if(p->e<min_packet_energy) window(p,z_ind);
 		assert(p->e > 0.0);
 	}
 
@@ -78,17 +78,22 @@ void transport::event_interact(particle* p, const int z_ind, const double abs_fr
 
 
 // decide whether to kill a particle
-void transport::window(particle* p){
+void transport::window(particle* p, const int z_ind){
+	// Roulette if too low energy
 	while(p->e<min_packet_energy && p->fate!=absorbed){
 		if(rangen.uniform() < 0.5) p->fate = absorbed;
 		else p->e *= 2.0;
 	}
-	while(p->e>max_packet_energy){
-		p->e /= split_factor;
-		particle *pnew = p;
-		if(particles.size()<max_particles) particles.push_back(*pnew);
-		else cout << "WARNING: max_particles is too small to allow splitting." << endl;
+	// split if too high energy, if enoug space, and if in important region
+	while(p->e>max_packet_energy && particles.size()<max_particles && species_list[p->s]->importance(p->nu,z_ind)>=1.0){
+		p->e /= 2.0;
+		particle pnew = *p;
+		#pragma omp critical
+		particles.push_back(pnew);
 	}
+
+	if(!particles.size()<max_particles && verbose && rank0)
+		cout << "WARNING: max_particles is too small to allow splitting." << endl;
 }
 
 // re-emission, done in COMOVING frame
@@ -99,7 +104,7 @@ void transport::re_emit(particle* p, const int z_ind) const{
 	// reset the particle properties
 	isotropic_scatter(p);
 	p->s = sample_zone_species(z_ind);
-	p->nu = species_list[p->s]->sample_zone_nu(z_ind);
+	species_list[p->s]->sample_zone_nu(*p,z_ind);
 
 	// tally into zone's emitted energy
 	grid->z[z_ind].e_emit += p->e;

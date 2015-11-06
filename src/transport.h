@@ -96,7 +96,7 @@ private:
 	void isotropic_scatter(particle* p) const;
 	void re_emit(particle* p, const int z_ind) const;
 	void remove_dead_particles();
-	void window(particle* p);
+	void window(particle* p, const int z_ind);
 	void sample_tau(particle* p, const int z_ind, const double lab_opac) const;
 
 	// solve for temperature and Ye (if steady_state)
@@ -124,7 +124,6 @@ private:
 	int    radiative_eq;
 	int    rank0;
 	double opt_depth_bias;
-	int    split_factor;
 
 	// output parameters
 	int write_zones_every;
@@ -213,6 +212,8 @@ public:
 	static double dot(const vector<double>& a, const vector<double>& b);
 	static void normalize(vector<double>& a);
 	static double mean_mass(const double Ye);
+	double importance(const double abs_opac, const double scat_opac, const double dx) const;
+
 
 	// per-zone luminosity functions
 	double zone_comoving_visc_heat_rate(const int zone_index) const;

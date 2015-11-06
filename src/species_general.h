@@ -49,6 +49,7 @@ protected:
 
 	// the zone eas variables
 	vector< cdf_array      > emis;
+	vector< cdf_array      > biased_emis;
 	vector< vector<double> > abs_opac;  // 1/cm
 	vector< vector<double> > scat_opac; // 1/cm
 
@@ -97,17 +98,18 @@ public:
 	// return the emissivity integrated over frequency at a zone
 	double integrate_zone_emis(const int zone_index) const;        //(erg/s/cm^3/ster)
 	double integrate_zone_lepton_emis(const int zone_index) const; //unitless
+	double integrate_zone_biased_emis(const int zone_index) const; //(erg/s/cm^3/ster)
 
-	// return the frequency of a particle emitted from the core (Hz)
+	// return the frequency of a particle emitted from the core or a zone (Hz)
 	double sample_core_nu(const int g=-1) const;
-
-	// return the frequency of a particle emitted from a zone (Hz)
-	double sample_zone_nu(const int zone_index, const int g=-1, const cdf_array *input_emis=NULL) const;
+	double sample_nu(const cdf_array& input_emis, const int g=-1) const;
+	void sample_zone_nu(particle& p, const int zone_index, const int g=-1) const;
 
 	// set the emissivity, absorption opacity, and scattering opacity
 	virtual void set_eas(const int zone_index) = 0;
 	void get_opacity(const double com_nu, const int z_ind, double* opac, double* abs_frac) const;
 	double sum_opacity(const int z_ind, const int group) const;
+	double importance(const double nu, const int z_ind) const;
 
 	// minimum zone emissivity
 	double bin_emis(const int zone_index, const int g) const;

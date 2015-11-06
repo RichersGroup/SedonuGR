@@ -61,7 +61,6 @@ transport::transport(){
 	solve_Ye = -MAXLIM;
 	damping = NaN;
 	brent_itmax = -MAXLIM;
-	split_factor = -MAXLIM;
 	brent_solve_tolerance = NaN;
 	T_min = NaN;
 	T_max = NaN;
@@ -155,7 +154,6 @@ void transport::init(Lua* lua)
 	}
 	step_size     = lua->scalar<double>("step_size");
 	opt_depth_bias = lua->scalar<double>("opt_depth_bias");
-	split_factor = lua->scalar<int>("split_factor");
 	min_packet_energy = lua->scalar<double>("min_packet_energy");
 	max_packet_energy = lua->scalar<double>("max_packet_energy");
 
@@ -1021,4 +1019,9 @@ int transport::number_of_bins() const{
 	int number_energy_bins = 0;
 	for(unsigned s = 0; s<species_list.size(); s++) number_energy_bins += species_list[s]->number_of_bins();
 	return number_energy_bins;
+}
+
+double transport::importance(const double abs_opac, const double scat_opac, const double dx) const{
+	double taubar = (abs_opac + scat_opac) * dx * opt_depth_bias;
+	return (opt_depth_bias*taubar<=1.0 ? 1.0 : exp(1.0 - opt_depth_bias * taubar));
 }

@@ -233,7 +233,7 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	p.s = (s>=0 ? s : sample_zone_species(z_ind) );
 	assert(p.s >= 0);
 	assert(p.s < (int)species_list.size());
-	p.nu = species_list[p.s]->sample_zone_nu(z_ind,g);
+	species_list[p.s]->sample_zone_nu(p,z_ind,g);
 	assert(p.nu > 0);
 
 	// lorentz transform from the comoving to lab frame
@@ -252,8 +252,7 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	#pragma omp atomic
 	N_net_lab[p.s] += p.e / (p.nu * pc::h);
 
-	if(p.e<min_packet_energy) cout << "Warning: packet created with e<min_packet_energy." << endl;
-	window(&p);
+	window(&p,z_ind);
 }
 
 
@@ -297,7 +296,8 @@ void transport::create_surface_particle(const double Ep, const int s, const int 
 	normalize(p.D);
 
 	// get index of current zone
-	assert(grid->zone_index(p.x) >= 0);
+	const int z_ind = grid->zone_index(p.x);
+	assert(z_ind >= 0);
 
 	// sample the species and frequency
 	p.s = (s>=0 ? s : sample_core_species());
@@ -311,6 +311,5 @@ void transport::create_surface_particle(const double Ep, const int s, const int 
     #pragma omp atomic
 	L_core_lab[p.s] += p.e;
 
-	if(p.e<min_packet_energy) cout << "Warning: packet created with e<min_packet_energy." << endl;
-	window(&p);
+	window(&p,z_ind);
 }

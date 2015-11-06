@@ -66,6 +66,7 @@ void species_general::init(Lua* lua, transport* simulation)
 	abs_opac.resize(sim->grid->z.size());
 	scat_opac.resize(sim->grid->z.size());
 	emis.resize(sim->grid->z.size());
+	biased_emis.resize(sim->grid->z.size());
 
 	// allocate space for each eas spectrum
 	assert(nu_grid.size()>0);
@@ -77,6 +78,8 @@ void species_general::init(Lua* lua, transport* simulation)
 		scat_opac[i].resize(nu_grid.size());
 		emis[i].resize(nu_grid.size());
 		emis[i].interpolation_order = iorder;
+		biased_emis[i].resize(nu_grid.size());
+		biased_emis[i].interpolation_order = iorder;
 	}
 	if(rank0) cout << "finished." << endl;
 
@@ -123,52 +126,37 @@ void species_general::set_cdf_to_BB(const double T, const double chempot, cdf_ar
 
 //----------------------------------------------------------------
 // return a randomly sampled frequency
-// for a particle emitted from the core
+// for a particle emitted from the core or zone
 //----------------------------------------------------------------
+double species_general::importance(double nu, const int z_ind) const{
+	assert(z_ind >= 0);
+	assert(z_ind < emis.size());
+	assert(nu>=nu_grid.min);
+	assert(nu<=nu_grid[nu_grid.size()-1]);
+
+	return biased_emis[z_ind].interpolate(nu,&nu_grid) / emis[z_ind].interpolate(nu,&nu_grid);
+}
 double species_general::sample_core_nu(const int g) const
 {
-  assert(nu_grid.min >= 0);
-
-	// randomly pick a frequency
-	double rand = sim->rangen.uniform();
-
-	// make sure we don't get a zero frequency
-	if(rand==0 && nu_grid.min==0) while(rand==0) rand = sim->rangen.uniform();
-
-	double result = 0;
-	assert(core_emis.interpolation_order==1 || core_emis.interpolation_order==3 || core_emis.interpolation_order==0);
-	if     (core_emis.interpolation_order==0) result = core_emis.invert_piecewise(rand,&nu_grid,g);
-	else if(core_emis.interpolation_order==1) result = core_emis.invert_linear(rand,&nu_grid,g);
-	else if(core_emis.interpolation_order==3) result = core_emis.invert_cubic(rand,&nu_grid,g);
-	assert(result>0);
-	return result;
+	assert(nu_grid.min >= 0);
+	return sample_nu(core_emis);
 }
-
-//----------------------------------------------------------------
-// return a randomly sampled frequency
-// for a particle emitted from a zone
-//----------------------------------------------------------------
-double species_general::sample_zone_nu(const int zone_index, const int g, const cdf_array *input_emis) const
+void species_general::sample_zone_nu(particle& p, const int zone_index, const int g) const
 {
 	assert(nu_grid.min >= 0);
-
-	const cdf_array *tmp_emis = input_emis==NULL ? &emis[zone_index] : input_emis;
-
+	p.nu = sample_nu(biased_emis[zone_index]);
+	double importance = biased_emis[zone_index].interpolate(p.nu,&nu_grid) / emis[zone_index].interpolate(p.nu,&nu_grid);
+	p.e /= importance;
+}
+double species_general::sample_nu(const cdf_array& input_emis, const int g) const{
 	// randomly pick a frequency
 	double rand = sim->rangen.uniform();
 
 	// make sure we don't get a zero frequency
 	if(rand==0 && nu_grid.min==0) while(rand==0) rand = sim->rangen.uniform();
 
-	double result = 0;
-	assert(core_emis.interpolation_order==1 || core_emis.interpolation_order==3 || core_emis.interpolation_order==0);
-	if     (core_emis.interpolation_order==0) result = tmp_emis->invert_piecewise(rand,&nu_grid,g);
-	else if(core_emis.interpolation_order==1) result = tmp_emis->invert_linear(rand,&nu_grid,g);
-	else if(core_emis.interpolation_order==3) result = tmp_emis->invert_cubic(rand,&nu_grid,g);
-	assert(result>0);
-	return result;
+	return input_emis.invert(rand,&nu_grid,g);
 }
-
 
 //----------------------------------------------------------------
 // return the emissivity integrated over nu for the core (erg/s)
@@ -184,6 +172,9 @@ double species_general::integrate_core_emis() const
 double species_general::integrate_zone_emis(const int zone_index) const
 {
 	return emis[zone_index].N;
+}
+double species_general::integrate_zone_biased_emis(const int zone_index) const{
+	return biased_emis[zone_index].N;
 }
 
 
