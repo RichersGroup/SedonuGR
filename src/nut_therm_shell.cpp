@@ -40,7 +40,7 @@
 #include "grid_general.h"
 #include "nulib_interface.h"
 
-double run_test(const int nsteps, const bool rank0, const double dt, const double rho, const double T_MeV, const double target_ye, transport& sim, ofstream& outf){
+double run_test(const int nsteps, const bool rank0, const double rho, const double T_MeV, const double target_ye, transport& sim, ofstream& outf){
 	if(rank0) cout << "Currently running: rho=" << rho << "g/ccm T_core=" << T_MeV << "MeV Ye=" << target_ye << endl;
 
 	// set the fluid properties
@@ -74,7 +74,7 @@ double run_test(const int nsteps, const bool rank0, const double dt, const doubl
 	if(rank0) cout << " Optical Depth: " << optical_depth << endl;
 
 	// do the transport step
-	for(int i=0; i<nsteps; i++) sim.step(dt);
+	for(int i=0; i<nsteps; i++) sim.step();
 
 	// write the data out to file
 	outf << rho << "\t" << T_MeV << "\t" << target_ye << "\t" << munue*pc::ergs_to_MeV << "\t";
@@ -153,7 +153,7 @@ int main(int argc, char **argv)
 	double max_optical_depth = 0;
 	for(int i=0; i<n_T; i++){
 		double logT = min_logT + i*dlogT;
-		double optical_depth = run_test(max_n_iter, rank0, dt,rho0,pow(10,logT),ye0,sim,outf);
+		double optical_depth = run_test(max_n_iter, rank0, rho0,pow(10,logT),ye0,sim,outf);
 		max_optical_depth = (optical_depth>max_optical_depth ? optical_depth : max_optical_depth);
 	}
 	//=========//
@@ -161,7 +161,7 @@ int main(int argc, char **argv)
 	//=========//
 	for(int i=0; i<n_ye; i++){
 		double ye = min_ye + i*dye;
-		double optical_depth = run_test(max_n_iter, rank0, dt,rho0,T0,ye,sim,outf);
+		double optical_depth = run_test(max_n_iter, rank0,rho0,T0,ye,sim,outf);
 		max_optical_depth = (optical_depth>max_optical_depth ? optical_depth : max_optical_depth);
 	}
 	//==============//
@@ -169,7 +169,7 @@ int main(int argc, char **argv)
 	//==============//
 	for(int i=0; i<n_rho; i++){
 		double logrho = min_logrho + i*dlogrho;
-		double optical_depth = run_test(max_n_iter, rank0, dt,pow(10,logrho),T0,ye0,sim,outf);
+		double optical_depth = run_test(max_n_iter, rank0,pow(10,logrho),T0,ye0,sim,outf);
 		max_optical_depth = (optical_depth>max_optical_depth ? optical_depth : max_optical_depth);
 	}
 

@@ -41,7 +41,7 @@
 #include "global_options.h"
 
 
-void run_test(const bool rank0, const double dt, const double rho, const double T, const double ye, transport& sim, ofstream& outf){
+void run_test(const bool rank0, const double rho, const double T, const double ye, transport& sim, ofstream& outf){
 	if(rank0) cout << "Currently running: rho=" << rho << "g/ccm T=" << T << "MeV Ye=" << ye << endl;
 
 	// set the fluid properties
@@ -50,7 +50,7 @@ void run_test(const bool rank0, const double dt, const double rho, const double 
 	sim.grid->z[0].Ye  = ye;
 
 	// do the transport step
-	sim.step(dt);
+	sim.step();
 
 	// get the chemical potential
 	double munue = nulib_eos_munue(rho,T/pc::k_MeV,ye);
@@ -112,13 +112,9 @@ int main(int argc, char **argv)
 	// set up the transport module (includes the grid)
 	transport sim;
 	sim.init(&lua);
-
-	// read in time stepping parameters
-	double dt        = lua.scalar<double>("dt");
 	lua.close();
 
 	// check parameters
-	assert(dt==-1);
 	assert(sim.r_core==0);
 
 	// open the output file
@@ -134,21 +130,21 @@ int main(int argc, char **argv)
 	//==============//
 	for(int i=0; i<n_rho; i++){
 		double logrho = min_logrho + i*dlogrho;
-		run_test(rank0, dt,pow(10,logrho),T0,ye0,sim,outf);
+		run_test(rank0,pow(10,logrho),T0,ye0,sim,outf);
 	}
 	//==================//
 	// TEMPERATURE LOOP //
 	//==================//
 	for(int i=0; i<n_T; i++){
 		double logT = min_logT + i*dlogT;
-		run_test(rank0, dt,rho0,pow(10,logT),ye0,sim,outf);
+		run_test(rank0,rho0,pow(10,logT),ye0,sim,outf);
 	}
 	//=========//
 	// YE LOOP //
 	//=========//
 	for(int i=0; i<n_ye; i++){
 		double ye = min_ye + i*dye;
-		run_test(rank0, dt,rho0,T0,ye,sim,outf);
+		run_test(rank0,rho0,T0,ye,sim,outf);
 	}
 
 	//===================//

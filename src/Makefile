@@ -21,10 +21,10 @@ realclean: clean
 	rm -f $(TARGET)
 
 tests: $(OBJECTS)
-	$(CXX) $(CXXFLAGS) -o ../tests/nulib_plots/nulib_test.exe nulib_test.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL)
-	$(CXX) $(CXXFLAGS) -o ../tests/nulib_plots/nulib_eas_single nulib_eas_single.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL)
-	$(CXX) $(CXXFLAGS) -o ../tests/nut_blackbody/nut_blackbody.exe nut_blackbody.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL)
-	$(CXX) $(CXXFLAGS) -o ../tests/nut_therm_shell/nut_therm_shell.exe nut_therm_shell.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL)
+	$(CXX) $(CXXFLAGS) -o ../tests/nulib_plots/nulib_test.exe nulib_test.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL) $(HDF5INCS)
+	$(CXX) $(CXXFLAGS) -o ../tests/nulib_plots/nulib_eas_single nulib_eas_single.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL) $(HDF5INCS)
+	$(CXX) $(CXXFLAGS) -o ../tests/nut_blackbody/nut_blackbody.exe nut_blackbody.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL) $(HDF5INCS)
+	$(CXX) $(CXXFLAGS) -o ../tests/nut_therm_shell/nut_therm_shell.exe nut_therm_shell.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL) $(HDF5INCS)
 	cp $(TARGET) ../tests/nut_spherical_emis
 	cp $(TARGET) ../tests/nut_spherical_emis_2D
 	cp $(TARGET) ../tests/nut_visc_ball
