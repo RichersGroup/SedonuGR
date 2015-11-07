@@ -81,7 +81,7 @@ void transport::event_interact(particle* p, const int z_ind, const double abs_fr
 void transport::window(particle* p, const int z_ind){
 	// Roulette if too low energy
 	while(p->e<min_packet_energy && p->fate!=absorbed){
-		if(rangen.uniform() < 0.5) p->fate = absorbed;
+		if(rangen.uniform() < 0.5) p->fate = rouletted;
 		else p->e *= 2.0;
 	}
 	// split if too high energy, if enoug space, and if in important region

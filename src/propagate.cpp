@@ -74,7 +74,8 @@ void transport::propagate_particles()
 	double tot=0,core=0,fluid=0,esc=0;
 	#pragma omp parallel for reduction(+:tot,core,fluid,esc)
 	for(unsigned i=0; i<particles.size(); i++){
-		tot += particles[i].e;
+		assert(particles[i].fate!=moving);
+		if(particles[i].fate!=rouletted) tot += particles[i].e;
 		if(particles[i].fate==escaped) esc += particles[i].e;
 		if(particles[i].fate==absorbed){
 			if(grid->zone_index(particles[i].x)>=0 ) fluid += particles[i].e;
@@ -87,21 +88,7 @@ void transport::propagate_particles()
 	particle_escape_energy += esc;
 
 	// remove the dead particles
-	remove_dead_particles();
-}
-
-void transport::remove_dead_particles(){
-	if(iterative) particles.resize(0);
-	else{
-		vector<particle>::iterator pIter = particles.begin();
-		while(pIter != particles.end()){
-			if(pIter->fate==absorbed || pIter->fate==escaped){
-				*pIter = particles[particles.size()-1];
-				particles.pop_back();
-			}
-			else pIter++;
-		}
-	}
+	particles.resize(0);
 }
 
 //--------------------------------------------------------

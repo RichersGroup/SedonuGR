@@ -73,7 +73,6 @@ transport::transport(){
 	min_packet_energy = NaN;
 	max_packet_energy = NaN;
 	do_annihilation = -MAXLIM;
-	iterative = -MAXLIM;
 	radiative_eq = -MAXLIM;
 	rank0 = -MAXLIM;
 	grid = NULL;
@@ -142,15 +141,12 @@ void transport::init(Lua* lua)
 	do_annihilation = lua->scalar<int>("do_annihilation");
 	if(do_annihilation) annihil_rho_cutoff = lua->scalar<int>("annihil_rho_cutoff");
 	radiative_eq = lua->scalar<int>("radiative_eq");
-	iterative = lua->scalar<int>("iterative");
 	solve_T       = lua->scalar<int>("solve_T");
 	solve_Ye      = lua->scalar<int>("solve_Ye");
-	if(iterative){
-		if(solve_T || solve_Ye){
-			damping               = lua->scalar<double>("damping");
-			brent_itmax           = lua->scalar<int>("brent_itmax");
-			brent_solve_tolerance = lua->scalar<double>("brent_tolerance");
-		}
+	if(solve_T || solve_Ye){
+		damping               = lua->scalar<double>("damping");
+		brent_itmax           = lua->scalar<int>("brent_itmax");
+		brent_solve_tolerance = lua->scalar<double>("brent_tolerance");
 	}
 	step_size     = lua->scalar<double>("step_size");
 	opt_depth_bias = lua->scalar<double>("opt_depth_bias");
@@ -383,8 +379,7 @@ void transport::check_parameters() const{
 //------------------------------------------------------------
 void transport::step()
 {
-	// assume 1.0 s. of particles were emitted if steady_state
-	if(iterative) assert(particles.empty());
+	assert(particles.empty());
 
 	// reset radiation quantities
 	reset_radiation();
@@ -401,7 +396,7 @@ void transport::step()
 
 	// solve for T_gas and Ye structure
 	if(solve_T || solve_Ye){
-		if(iterative) solve_eq_zone_values();  // solve T,Ye s.t. E_abs=E_emit and N_abs=N_emit
+		if(solve_T || solve_Ye) solve_eq_zone_values();  // solve T,Ye s.t. E_abs=E_emit and N_abs=N_emit
 		else update_zone_quantities();         // update T,Ye based on heat capacity and number of leptons
 	}
 	if(MPI_nprocs>1) synchronize_gas();       // each processor broadcasts its solved zones to the other processors

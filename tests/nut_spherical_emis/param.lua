@@ -2,7 +2,6 @@
 
 verbose       = 1
 radiative_eq  = 0
-iterative     = 1
 solve_T       = 0
 solve_Ye      = 0
 do_visc       = 0
@@ -38,19 +37,16 @@ distribution_nphi = 2
 
 -- particle creation parameters
 
-n_initial      = 0
 n_emit_core_per_bin    = 1000
 n_emit_therm_per_bin   = 0
 max_particles  = 2e7
 emissions_per_timestep = 1
-cdf_interpolation_order = 3
+cdf_interpolation_order = 0
 nut_cdf_cutoff    = 0
 do_emit_by_bin = 1
 
 -- particle propagation parameters
 
-max_n_steps = 1
-dt = -1
 step_size = 0.4
 
 -- inner source

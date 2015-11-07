@@ -32,7 +32,7 @@
 #include <vector>
 #include "global_options.h"
 
-enum ParticleFate  {moving, escaped, absorbed};
+enum ParticleFate  {moving, escaped, absorbed, rouletted};
 
 // particle class
 class particle
