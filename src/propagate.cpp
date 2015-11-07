@@ -35,12 +35,11 @@
 
 void transport::propagate_particles()
 {
-	if(verbose && rank0) cout << "# Propagating particles...";
+	if(verbose && rank0) cout << "# Propagating particles..." << endl;
 
 	//--- MOVE THE PARTICLES AROUND ---
 	// particle list is changing size, so must go through repeatedly
-	unsigned start=0, last_start=0;
-	unsigned end=particles.size();
+	unsigned start=0, last_start=0, end=0;
 	#pragma omp parallel
 	do{
 		#pragma omp critical
@@ -53,9 +52,11 @@ void transport::propagate_particles()
 		#pragma omp for schedule(guided)
 		for(unsigned i=start; i<end; i++){
 			particle* p = &particles[i];
-        	#pragma omp atomic
+			#pragma omp atomic
 			n_active[p->s]++;
-			propagate(p);
+			if(p->fate == moving){
+				propagate(p);
+			}
 			if(p->fate == escaped){
 				#pragma omp atomic
 				n_escape[p->s]++;
@@ -87,8 +88,6 @@ void transport::propagate_particles()
 
 	// remove the dead particles
 	remove_dead_particles();
-
-	if(verbose && rank0) cout << "finished." << endl;
 }
 
 void transport::remove_dead_particles(){
@@ -149,7 +148,7 @@ void transport::which_event(particle *p, const int z_ind, const double lab_opac,
 		if(z_ind >= 0) *d_smallest *= (1.0 + grid_general::tiny); // bump just over the boundary if in simulation domain
 		else           *d_smallest *= (1.0 - grid_general::tiny); // don't overshoot outward through the inner boundary
 	}
-	assert(*d_smallest * lab_opac >= p->tau);
+	if(lab_opac>0) assert(*d_smallest * lab_opac >= p->tau);
 }
 
 
@@ -280,7 +279,24 @@ void transport::move(particle* p, double lab_d){
 	p->x[1] += lab_d*p->D[1];
 	p->x[2] += lab_d*p->D[2];
 }
+void transport::lab_opacity(const particle *p, const int z_ind, double *lab_opac, double *abs_frac, double *dshift_l2c) const{
+	if(grid->good_zone(z_ind) && z_ind>=0){ // avoid handling fluff zones if unnecessary
+		// doppler shift from comoving to lab (nu0/nu)
+		*dshift_l2c = dshift_lab_to_comoving(p,z_ind);
+		assert(*dshift_l2c > 0);
 
+		// get local opacity and absorption fraction
+		double com_opac = 0;
+		double com_nu = p->nu * (*dshift_l2c);
+		species_list[p->s]->get_opacity(com_nu,z_ind,&com_opac,abs_frac);
+		*lab_opac = com_opac * (*dshift_l2c);
+	}
+	else{
+		*lab_opac = 0;
+		*dshift_l2c = NaN;
+		*abs_frac = -1;
+	}
+}
 //--------------------------------------------------------
 // Propagate a single monte carlo particle until
 // it  escapes, is absorbed, or the time step ends
@@ -290,13 +306,12 @@ void transport::propagate(particle* p)
 
 	ParticleEvent event;
 
-	p->fate = moving;
+	assert(p->fate == moving);
 
 	// local variables
 	double lab_d = NaN;                            // distance to particle's next event
 	double lab_opac = NaN, com_opac = NaN, abs_frac = NaN;                 // opacity variables
 	double dshift_l2c = NaN;
-	double com_nu = NaN;
 
 	// propagate until this flag is set
 	while (p->fate == moving)
@@ -307,20 +322,7 @@ void transport::propagate(particle* p)
 		assert(z_ind >= -1);
 		assert(z_ind < (int)grid->z.size());
 
-		if(grid->good_zone(z_ind) && z_ind>=0){ // avoid handling fluff zones if unnecessary
-			// doppler shift from comoving to lab (nu0/nu)
-			dshift_l2c = dshift_lab_to_comoving(p,z_ind);
-			assert(dshift_l2c > 0);
-
-			// get local opacity and absorption fraction
-			com_nu = p->nu * dshift_l2c;
-			species_list[p->s]->get_opacity(com_nu,z_ind,&com_opac,&abs_frac);
-			lab_opac = com_opac * dshift_l2c;
-		}
-		else{
-			lab_opac = 0;
-			dshift_l2c = NaN;
-		}
+		lab_opacity(p,z_ind,&lab_opac,&abs_frac,&dshift_l2c);
 
 		// decide which event happens
 		which_event(p,z_ind,lab_opac,&lab_d,&event);
@@ -331,9 +333,9 @@ void transport::propagate(particle* p)
 
 		// move particle the distance
 		move(p,lab_d);
-		z_ind = grid->zone_index(p->x);
 		p->tau -= lab_d * lab_opac;
 		assert(p->tau/(lab_d*lab_opac) >= 0-grid->tiny);
+		z_ind = grid->zone_index(p->x);
 
 		// do the selected event
 		// now the exciting bit!

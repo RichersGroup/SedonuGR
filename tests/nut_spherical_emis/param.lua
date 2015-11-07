@@ -9,12 +9,17 @@ do_visc       = 0
 do_annihilation = 0
 do_relativity = 0
 reflect_outer = 0
+opt_depth_bias = 0
+min_packet_energy = 0
+max_packet_energy = 1e100
+output_hdf5 = 0
+max_n_iter = 1
 
 -- input/output files
 
 grid_type = "grid_1D_sphere"
 model_file  =  "empty_sphere.mod"
-nulib_table = "/data/tables/NuLib/Shen_full/NuLib.h5"
+nulib_table = "/data/tables/NuLib/MCNuTrans/LS220_full/NuLib.h5"
 nulib_eos_filename = "/data/tables/EOS/HShen.h5"
 write_zones_every   = 1
 write_rays_every    = 1
@@ -34,13 +39,13 @@ distribution_nphi = 2
 -- particle creation parameters
 
 n_initial      = 0
-n_emit_core    = 1e6
-n_emit_therm   = 0
-max_particles  = 1e6
+n_emit_core_per_bin    = 1000
+n_emit_therm_per_bin   = 0
+max_particles  = 2e7
 emissions_per_timestep = 1
-cdf_interpolation_order = 1
+cdf_interpolation_order = 3
 nut_cdf_cutoff    = 0
-ratio_emit_by_bin = 0
+do_emit_by_bin = 1
 
 -- particle propagation parameters
 

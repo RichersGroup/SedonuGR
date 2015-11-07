@@ -83,6 +83,7 @@ private:
 	double dshift_lab_to_comoving   (const particle* p, const int z_ind=-1) const;
 	void   transform_comoving_to_lab(particle* p, const int z_ind=-1) const;
 	void   transform_lab_to_comoving(particle* p, const int z_ind=-1) const;
+	void lab_opacity(const particle *p, const int z_ind, double *lab_opac, double *abs_frac, double *dshift_l2c) const;
 
 	// propagate the particles
 	void propagate_particles();
@@ -219,7 +220,8 @@ public:
 	double zone_comoving_visc_heat_rate(const int zone_index) const;
 	double zone_comoving_therm_emit_energy (const int zone_index) const;
 	double zone_comoving_therm_emit_leptons(const int zone_index) const;
-	double  bin_comoving_therm_emit_energy(const int z_ind, const int s, const int g) const;
+	double zone_comoving_biased_therm_emit_energy(const int z_ind) const;
+	double bin_comoving_therm_emit_energy(const int z_ind, const int s, const int g) const;
 
 
 };

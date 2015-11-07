@@ -88,12 +88,16 @@ void transport::window(particle* p, const int z_ind){
 	while(p->e>max_packet_energy && particles.size()<max_particles && species_list[p->s]->importance(p->nu,z_ind)>=1.0){
 		p->e /= 2.0;
 		particle pnew = *p;
+		window(&pnew,z_ind);
 		#pragma omp critical
 		particles.push_back(pnew);
 	}
 
-	if(!particles.size()<max_particles && verbose && rank0)
+	if(particles.size()>=max_particles && verbose && rank0){
+		cout << "max_particles: " << max_particles << endl;
+		cout << "particles.size(): " << particles.size() << endl;
 		cout << "WARNING: max_particles is too small to allow splitting." << endl;
+	}
 }
 
 // re-emission, done in COMOVING frame
@@ -133,9 +137,11 @@ void transport::isotropic_scatter(particle* p) const
 //---------------------------------------------------------------------
 void transport::sample_tau(particle *p, const int z_ind, const double lab_opac) const{
 	assert(opt_depth_bias>=0);
-	double taubar = lab_opac * grid->zone_min_length(z_ind);
-	double tau_r = opt_depth_bias * taubar * -1.0*log(1.0 - rangen.uniform());
-	p->e *= exp(tau_r * (1./(opt_depth_bias*taubar) - 1.0));
+	double taubar = opt_depth_bias * lab_opac * grid->zone_min_length(z_ind);
+	p->tau = (taubar==0 ? 1.0 : taubar) * -1.0*log(1.0 - rangen.uniform());
+	p->e *= taubar==0 ? 1.0 : exp(p->tau * (1./taubar - 1.0));
+	assert(p->tau >= 0);
+	assert(p->e >= 0);
 }
 
 

@@ -35,5 +35,5 @@ particle::particle(){
 	nu = NaN;
 	tau = NaN;
 	s = -1;
-	fate = stopped;
+	fate = moving;
 }

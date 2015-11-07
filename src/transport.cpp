@@ -127,7 +127,7 @@ void transport::init(Lua* lua)
 	if(do_visc) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");
 	reflect_outer = lua->scalar<int>("reflect_outer");
 	emissions_per_timestep = lua->scalar<int>("emissions_per_timestep");
-	do_emit_by_bin = lua->scalar<int>("ratio_emit_by_bin");
+	do_emit_by_bin = lua->scalar<int>("do_emit_by_bin");
 	if(do_emit_by_bin){
 		n_emit_zones_per_bin = lua->scalar<int>("n_emit_therm_per_bin");
 		n_emit_core_per_bin  = lua->scalar<int>("n_emit_core_per_bin");
@@ -276,7 +276,7 @@ void transport::init(Lua* lua)
 	//=================//
 	if(rank0) cout << "# Initializing the core...";
 	r_core = lua->scalar<double>("r_core");   // cm
-	if(n_emit_core>0){
+	if(n_emit_core>0 || n_emit_core_per_bin>0){
 		core_emit_method = lua->scalar<int>("core_emit_method");
 		assert(core_emit_method==1 || core_emit_method==2);
 		int iorder = lua->scalar<int>("cdf_interpolation_order");
@@ -340,7 +340,7 @@ void transport::init(Lua* lua)
 // set up core (without reading lua)
 //-----------------------------------
 void transport::init_core(const double r_core /*cm*/, const vector<double>& T_core /*K*/, const vector<double>& mu_core /*erg*/, const vector<double>& L_core /*erg/s*/){
-	assert(n_emit_core>0);
+	assert(n_emit_core>0 || n_emit_core_per_bin>0);
 	assert(r_core>0);
 	assert(species_list.size()>0);
 
@@ -354,7 +354,7 @@ void transport::init_core(const double r_core /*cm*/, const vector<double>& T_co
 	core_species_luminosity.normalize();
 }
 void transport::init_core(const double r_core /*cm*/, const double T_core /*K*/, const double munue_core /*erg*/){
-	assert(n_emit_core>0);
+	assert(n_emit_core>0 || n_emit_core_per_bin>0);
 	assert(r_core>0);
 	assert(T_core>0);
 	assert(species_list.size()>0);
