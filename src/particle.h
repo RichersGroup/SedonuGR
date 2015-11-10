@@ -76,8 +76,8 @@ public:
 
 	void print() const
 	{
-		printf("%10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e | %10.3e %10.3e\n",
-				x[0],x[1],x[2],D[0],D[1],D[2],e,nu);
+		printf("%10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e %i %i\n",
+				x[0],x[1],x[2],D[0],D[1],D[2],e,nu,tau,s,fate);
 	}
 
 };
