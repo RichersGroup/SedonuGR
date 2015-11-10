@@ -80,7 +80,7 @@ void transport::event_interact(particle* p, const int z_ind, const double abs_fr
 // decide whether to kill a particle
 void transport::window(particle* p, const int z_ind){
 	// Roulette if too low energy
-	while(p->e<min_packet_energy && p->fate!=absorbed){
+	while(p->e<min_packet_energy && p->fate==moving){
 		if(rangen.uniform() < 0.5) p->fate = rouletted;
 		else p->e *= 2.0;
 	}
@@ -92,7 +92,8 @@ void transport::window(particle* p, const int z_ind){
 		#pragma omp critical
 		particles.push_back(pnew);
 	}
-
+	assert(p->e < INFINITY);
+	assert(p->e > 0);
 	if(particles.size()>=max_particles && verbose && rank0){
 		cout << "max_particles: " << max_particles << endl;
 		cout << "particles.size(): " << particles.size() << endl;
@@ -138,8 +139,8 @@ void transport::isotropic_scatter(particle* p) const
 void transport::sample_tau(particle *p, const int z_ind, const double lab_opac) const{
 	assert(opt_depth_bias>=0);
 	double taubar = opt_depth_bias * lab_opac * grid->zone_min_length(z_ind);
-	p->tau = (taubar==0 ? 1.0 : taubar) * -1.0*log(1.0 - rangen.uniform());
-	p->e *= taubar==0 ? 1.0 : exp(p->tau * (1./taubar - 1.0));
+	p->tau = (taubar<1 ? 1.0 : taubar) * -1.0*log(1.0 - rangen.uniform());
+	p->e *= taubar<1 ? 1.0 : taubar * exp(p->tau * (1./taubar - 1.0));
 	assert(p->tau >= 0);
 	assert(p->e >= 0);
 }
