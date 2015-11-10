@@ -40,8 +40,6 @@
 
 struct  eq_function_params{int z_ind; transport* sim;};
 double    temp_eq_function(double T , void* params);
-double  Ye_nue_eq_function(double Ye, void* params);
-double Ye_anue_eq_function(double Ye, void* params);
 double      Ye_eq_function(double Ye, void* params);
 
 
