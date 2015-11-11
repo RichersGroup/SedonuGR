@@ -758,7 +758,7 @@ int transport::sample_core_species() const
 // note: could store a zone_species_cdf structure in transport,
 // but this would use more memory. Here, trading CPU cycles for 
 // memory. If we are CPU limited, we could change this
-int transport::sample_zone_species(const int zone_index) const
+void transport::sample_zone_species(particle *p, const int zone_index) const
 {
 	cdf_array species_cdf;
 	double integrated_emis;
@@ -767,14 +767,17 @@ int transport::sample_zone_species(const int zone_index) const
 	// set values and normalize
 	for(unsigned i=0; i<species_list.size(); i++)
 	{
-		integrated_emis = species_list[i]->integrate_zone_emis(zone_index);
+		integrated_emis = species_list[i]->integrate_zone_biased_emis(zone_index);
 		species_cdf.set_value(i,integrated_emis);
 	}
 	species_cdf.normalize();
 
 	// randomly sample the species
 	double z = rangen.uniform();
-	return species_cdf.get_index(z);
+	p->s = species_cdf.get_index(z);
+	p->e *= species_list[p->s]->integrate_zone_emis(zone_index) / species_list[p->s]->integrate_zone_biased_emis(zone_index);
+	assert(p->e>0);
+	assert(p->e<INFINITY);
 }
 
 
@@ -1018,5 +1021,8 @@ int transport::number_of_bins() const{
 
 double transport::importance(const double abs_opac, const double scat_opac, const double dx) const{
 	double taubar = (abs_opac + scat_opac) * dx * opt_depth_bias;
-	return (opt_depth_bias*taubar<=1.0 ? 1.0 : exp(1.0 - opt_depth_bias * taubar));
+	double result = (opt_depth_bias*taubar<=1.0 ? 1.0 : exp(1.0 - opt_depth_bias * taubar));
+	assert(result>=0);
+	if(result<1e-5) result = 1e-5;
+	return 1.0; //result;
 }

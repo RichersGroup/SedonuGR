@@ -109,7 +109,7 @@ public:
 	virtual void set_eas(const int zone_index) = 0;
 	void get_opacity(const double com_nu, const int z_ind, double* opac, double* abs_frac) const;
 	double sum_opacity(const int z_ind, const int group) const;
-	double importance(const double nu, const int z_ind) const;
+	double interpolate_importance(const double nu, const int z_ind) const;
 
 	// minimum zone emissivity
 	double bin_emis(const int zone_index, const int g) const;

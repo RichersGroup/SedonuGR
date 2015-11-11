@@ -128,13 +128,14 @@ void species_general::set_cdf_to_BB(const double T, const double chempot, cdf_ar
 // return a randomly sampled frequency
 // for a particle emitted from the core or zone
 //----------------------------------------------------------------
-double species_general::importance(double nu, const int z_ind) const{
+double species_general::interpolate_importance(double nu, const int z_ind) const{
 	assert(z_ind >= 0);
 	assert(z_ind < emis.size());
 	assert(nu>=nu_grid.min);
 	assert(nu<=nu_grid[nu_grid.size()-1]);
 
-	return biased_emis[z_ind].interpolate(nu,&nu_grid) / emis[z_ind].interpolate(nu,&nu_grid);
+	double result = biased_emis[z_ind].interpolate_pdf(nu,&nu_grid)/**biased_emis[z_ind].N*/ / (emis[z_ind].interpolate_pdf(nu,&nu_grid)/**emis[z_ind].N*/);
+	return result;
 }
 double species_general::sample_core_nu(const int g) const
 {
@@ -145,8 +146,9 @@ void species_general::sample_zone_nu(particle& p, const int zone_index, const in
 {
 	assert(nu_grid.min >= 0);
 	p.nu = sample_nu(biased_emis[zone_index]);
-	double importance = biased_emis[zone_index].interpolate(p.nu,&nu_grid) / emis[zone_index].interpolate(p.nu,&nu_grid);
-	p.e /= importance;
+	double imp = interpolate_importance(p.nu,zone_index);
+	assert(imp>0);
+	p.e /= imp;
 }
 double species_general::sample_nu(const cdf_array& input_emis, const int g) const{
 	// randomly pick a frequency

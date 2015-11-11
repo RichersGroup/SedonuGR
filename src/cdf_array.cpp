@@ -27,8 +27,9 @@
 
 #include "global_options.h"
 #include <algorithm>
-#include <stdio.h>
+#include <cstdio>
 #include <cmath>
+#include <iostream>
 #include "cdf_array.h"
 #include "locate_array.h"
 
@@ -196,6 +197,22 @@ double h11(const double t){
 	assert(0.0<=t && t<=1.0);
 	return t*t*(t-1.0);
 }
+double h00p(const double t){
+	assert(0.0<=t && t<=1.0);
+	return 6.0 * t * (t-1.0);
+}
+double h10p(const double t){
+	assert(0<=t && t<=1.0);
+	return (1.0-t)*(3.0-t);
+}
+double h01p(const double t){
+	assert(0.0<=t && t<=1.0);
+	return 6.0*t*(t-1.0);
+}
+double h11p(const double t){
+	assert(0.0<=t && t<=1.0);
+	return t*(3.0*t-2.0);
+}
 double cdf_array::invert(const double rand, const locate_array* xgrid, const int i_in) const{
 	double result = 0;
 	assert(interpolation_order==1 || interpolation_order==3 || interpolation_order==0);
@@ -205,14 +222,14 @@ double cdf_array::invert(const double rand, const locate_array* xgrid, const int
 	assert(result>0);
 	return result;
 }
-double cdf_array::interpolate(const double x, const locate_array* xgrid) const
+double cdf_array::interpolate_pdf(const double x, const locate_array* xgrid) const
 {
 	double result = 0;
 	assert(interpolation_order==1 || interpolation_order==3 || interpolation_order==0);
-	if     (interpolation_order==0) result = interpolate_piecewise(x,xgrid);
-	else if(interpolation_order==1) result = interpolate_linear(x,xgrid);
-	else if(interpolation_order==3) result = interpolate_cubic(x,xgrid);
-	assert(result>0);
+	if     (interpolation_order==0) result = interpolate_pdf_piecewise(x,xgrid);
+	else if(interpolation_order==1) result = interpolate_pdf_linear(x,xgrid);
+	else if(interpolation_order==3) result = interpolate_pdf_cubic(x,xgrid);
+	assert(result>=0);
 	return result;
 }
 double cdf_array::invert_cubic(const double rand, const locate_array* xgrid, const int i_in) const
@@ -263,8 +280,11 @@ double cdf_array::invert_cubic(const double rand, const locate_array* xgrid, con
 	assert(xRight>=result);
 	return result;
 }
-double cdf_array::interpolate_cubic(const double x, const locate_array* xgrid) const
+double cdf_array::interpolate_pdf_cubic(const double x, const locate_array* xgrid) const
 {
+	assert(x>=xgrid->min);
+	assert(x<=xgrid->x[xgrid->size()-1]);
+
 	// get the upper index
 	int i = xgrid->locate(x);
 	assert(i<(int)size());
@@ -299,21 +319,26 @@ double cdf_array::interpolate_cubic(const double x, const locate_array* xgrid) c
 	// return interpolated function
 	double h = xRight-xLeft;
 	double t = (x-xLeft)/h;
+	double dtdx = h;
 	assert(t>=0 && t<=1);
-	double result = yLeft*h00(t) + h*mLeft*h10(t) + yRight*h01(t) + h*mRight*h11(t);
-	result = max(yLeft,result);
-	result = min(yRight,result);
-	assert(yLeft<=result);
-	assert(yRight>=result);
+	//double result = yLeft*h00(t) + h*mLeft*h10(t) + yRight*h01(t) + h*mRight*h11(t);
+	double result = dtdx * (yLeft*h00p(t) + h*mLeft*h10p(t) + yRight*h01p(t) + h*mRight*h11p(t));
+	//result = max(yLeft,result);
+	//result = min(yRight,result);
+	//assert(yLeft<=result);
+	//assert(yRight>=result);
 	return result;
 }
-double cdf_array::interpolate_linear(const double x, const locate_array* xgrid) const
+double cdf_array::interpolate_pdf_linear(const double x, const locate_array* xgrid) const
 {
+	assert(x>=xgrid->min);
+	assert(x<=xgrid->x[xgrid->size()-1]);
+
 	// get the upper/lower indices
 	int upper = xgrid->locate(x);
 	assert(upper>=0);
 	int lower = upper-1;
-	assert(lower<xgrid->size());
+	assert(lower<(int)xgrid->size());
 
 	// get the x and y values of the left and right sides
 	double x1,x2,y1,y2;
@@ -331,9 +356,9 @@ double cdf_array::interpolate_linear(const double x, const locate_array* xgrid) 
 	}
 
 	double slope = (y2-y1)/(x2-x1);
-	double result = y1 + slope*(x-x1);
-	assert(result <= (*xgrid)[xgrid->size()-1]);
-	assert(result >= xgrid->min);
+	double result = slope; //y1 + slope*(x-x1);
+	//assert(result <= (*xgrid)[xgrid->size()-1]);
+	//assert(result >= xgrid->min);
 	return result;
 }
 double cdf_array::invert_linear(const double rand, const locate_array* xgrid, const int i_in) const
@@ -371,16 +396,19 @@ double cdf_array::invert_piecewise(const double rand, const locate_array* xgrid,
 
 	return xgrid->center(i);
 }
-double cdf_array::interpolate_piecewise(const double x, const locate_array* xgrid) const
+double cdf_array::interpolate_pdf_piecewise(const double x, const locate_array* xgrid) const
 {
-	if(x<(*xgrid)[0]) return 0.0;
+	assert(x>=xgrid->min);
+	assert(x<=xgrid->x[xgrid->size()-1]);
+
+	//if(x<(*xgrid)[0]) return 0.0;
 
 	int upper = xgrid->locate(x);
 	assert(upper>=0);
 	int lower = upper-1;
-	assert(lower<xgrid->size());
+	assert(lower<(int)xgrid->size());
 
-	return y[lower];
+	return get_value(upper); //y[lower];
 }
 
 //------------------------------------------------------

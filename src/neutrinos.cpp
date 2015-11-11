@@ -134,7 +134,7 @@ void neutrinos::set_eas(int zone_index)
 
 		// set the biased emissivity
 		for(int g=0; g<nu_grid.size(); g++)
-			biased_emis[zone_index].set_value(g, emis[zone_index].get(g)
+			biased_emis[zone_index].set_value(g, emis[zone_index].get_value(g)
 				* sim->importance(abs_opac[zone_index][g], scat_opac[zone_index][g], sim->grid->zone_min_length(zone_index)));
 	}
 
@@ -154,7 +154,7 @@ void neutrinos::set_eas(int zone_index)
 			scat_opac[zone_index][j] = s;       // (1/cm)
 
 			// set the biased emissivity
-			biased_emis[zone_index].set_value(j, emis[zone_index].get(j)
+			biased_emis[zone_index].set_value(j, emis[zone_index].get_value(j)
 					* sim->importance(a, s, sim->grid->zone_min_length(zone_index)));
 		}
 	}

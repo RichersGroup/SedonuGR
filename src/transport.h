@@ -75,7 +75,7 @@ private:
 
 	// species sampling functions
 	int sample_core_species() const;
-	int sample_zone_species(int zone_index) const;
+	void sample_zone_species(particle *p, int zone_index) const;
 
 	// transformation functions
 	double comoving_dt(const int z_ind) const;
@@ -97,7 +97,7 @@ private:
 	void isotropic_scatter(particle* p) const;
 	void re_emit(particle* p, const int z_ind) const;
 	void window(particle* p, const int z_ind);
-	void sample_tau(particle* p, const int z_ind, const double lab_opac) const;
+	void sample_tau(particle* p, const int z_ind, const double lab_opac, const double abs_frac);
 
 	// solve for temperature and Ye (if steady_state)
 	double damping;
