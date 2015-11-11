@@ -42,7 +42,7 @@ void transport::propagate_particles()
 	unsigned start=0, last_start=0, end=0;
 	#pragma omp parallel
 	do{
-		#pragma omp critical
+		#pragma omp single
 		{
 			last_start = start;
 			start = end;
@@ -54,9 +54,7 @@ void transport::propagate_particles()
 			particle* p = &particles[i];
 			#pragma omp atomic
 			n_active[p->s]++;
-			if(p->fate == moving){
-				propagate(p);
-			}
+			if(p->fate == moving) propagate(p);
 			if(p->fate == escaped){
 				#pragma omp atomic
 				n_escape[p->s]++;
@@ -68,13 +66,18 @@ void transport::propagate_particles()
 				N_net_esc[p->s] += p->e / (p->nu*pc::h);
 				species_list[p->s]->spectrum.count(p->D, p->nu, p->e);
 			}
+			assert(p->fate != moving);
 		} //#pragma omp parallel for
 	} while(particles.size()>end);
 
 	double tot=0,core=0,fluid=0,esc=0;
 	#pragma omp parallel for reduction(+:tot,core,fluid,esc)
 	for(unsigned i=0; i<particles.size(); i++){
-		assert(particles[i].fate!=moving);
+		if(particles[i].fate == moving){
+			if(rank0) cout << particles[i].fate << endl;
+			if(rank0) cout << i << endl;
+			assert(particles[i].fate!=moving);
+		}
 		if(particles[i].fate!=rouletted) tot += particles[i].e;
 		if(particles[i].fate==escaped) esc += particles[i].e;
 		if(particles[i].fate==absorbed){
@@ -97,6 +100,8 @@ void transport::propagate_particles()
 void transport::which_event(particle *p, const int z_ind, const double lab_opac,
 		double *d_smallest, ParticleEvent *event) const{
 	assert(lab_opac >= 0);
+	assert(p->e > 0);
+	assert(p->nu > 0);
 
 	double d_zone     = numeric_limits<double>::infinity();
 	double d_time     = numeric_limits<double>::infinity();
@@ -135,7 +140,6 @@ void transport::which_event(particle *p, const int z_ind, const double lab_opac,
 		if(z_ind >= 0) *d_smallest *= (1.0 + grid_general::tiny); // bump just over the boundary if in simulation domain
 		else           *d_smallest *= (1.0 - grid_general::tiny); // don't overshoot outward through the inner boundary
 	}
-	if(lab_opac>0) assert(*d_smallest * lab_opac >= p->tau);
 }
 
 
@@ -333,8 +337,11 @@ void transport::propagate(particle* p)
 		case interact:
 			assert(lab_d * lab_opac >= p->tau);
 			event_interact(p,z_ind,abs_frac,lab_opac);
-			assert(p->nu > 0);
-			assert(p->e > 0);
+			if(p->fate==moving){
+				assert(p->nu > 0);
+				assert(p->e > 0);
+			}
+			else assert(p->fate==rouletted || p->fate==absorbed);
 			break;
 
 			// ---------------------------------
@@ -366,4 +373,5 @@ void transport::propagate(particle* p)
 		// check for core absorption
 		if(p->r() < r_core) p->fate = absorbed;
 	}
+	assert(p->fate != moving);
 }
