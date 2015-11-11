@@ -39,7 +39,7 @@
 void transport::emit_particles()
 {
 	// complain if we're out of room for particles
-	assert(n_emit_core  >= 0 || n_emit_zones >= 0 || n_emit_core_per_bin>0 || n_emit_zones_per_bin==0);
+	assert(n_emit_core  >= 0 || n_emit_zones >= 0 || n_emit_core_per_bin>0 || n_emit_zones_per_bin>=0);
 	int n_emit = n_emit_core + n_emit_zones + (n_emit_core_per_bin + n_emit_zones_per_bin*grid->z.size())*species_list.size()*number_of_bins();
 	if (total_particles() + n_emit > max_particles){
 		if(rank0){
@@ -152,8 +152,8 @@ void transport::emit_zones(){
 	// proper normalization due to frames not physical - just for distributing particles somewhat reasonably
 	#pragma omp parallel for reduction(+:tmp_net_energy)
 	for(unsigned z_ind=0; z_ind<grid->z.size(); z_ind++){
-		double com_emit_energy = zone_comoving_biased_therm_emit_energy(z_ind);
-		tmp_net_energy += com_emit_energy;
+		double com_biased_emit_energy = zone_comoving_biased_therm_emit_energy(z_ind);
+		tmp_net_energy += com_biased_emit_energy;
 	}
 	assert(tmp_net_energy>0);
 
@@ -161,18 +161,19 @@ void transport::emit_zones(){
 	#pragma omp parallel for schedule(guided) reduction(+:avgEp)
 	for (unsigned z_ind=0; z_ind<grid->z.size(); z_ind++) if(grid->zone_radius(z_ind) > r_core)
 	{
+		double com_biased_emit_energy = zone_comoving_biased_therm_emit_energy(z_ind);
 		double com_emit_energy = zone_comoving_biased_therm_emit_energy(z_ind);
 
 		// how much this zone emits. Always emits correct energy even if number of particles doesn't add up.
-		unsigned this_n_emit = (double)n_emit_zones * (com_emit_energy / tmp_net_energy) + 0.5;
-		if(com_emit_energy>0 && this_n_emit==0) this_n_emit = 1;
+		unsigned this_n_emit = (double)n_emit_zones * (com_biased_emit_energy / tmp_net_energy) + 0.5;
+		if(com_biased_emit_energy>0 && this_n_emit==0) this_n_emit = 1;
 		double Ep = com_emit_energy / (double)this_n_emit;
 		for (unsigned k=0; k<this_n_emit; k++) create_thermal_particle(z_ind,Ep);
 		avgEp += (double)this_n_emit * Ep;
 
 		// record emissivity
 		#pragma omp atomic
-		grid->z[z_ind].e_emit += com_emit_energy;
+		grid->z[z_ind].e_emit += com_biased_emit_energy;
 		#pragma omp atomic
 		grid->z[z_ind].l_emit += zone_comoving_therm_emit_leptons(z_ind);
 	}// loop over zones
@@ -262,58 +263,57 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	particle p;
 	p.fate = moving;
 	p.e  = Ep;
+
+	// random sample position in zone
+	vector<double> rand(3,0);
+	rand[0] = rangen.uniform();
+	rand[1] = rangen.uniform();
+	rand[2] = rangen.uniform();
+	vector<double> r;
+	grid->cartesian_sample_in_zone(z_ind,rand,r);
+	p.x[0] = r[0];
+	p.x[1] = r[1];
+	p.x[2] = r[2];
+
+	// emit isotropically in comoving frame
+	double mu  = 1 - 2.0*rangen.uniform();
+	double phi = 2.0*pc::pi*rangen.uniform();
+	double smu = sqrt(1 - mu*mu);
+	p.D[0] = smu*cos(phi);
+	p.D[1] = smu*sin(phi);
+	p.D[2] = mu;
+	normalize(p.D);
+
+	// sample the species and frequency
+	if(s>=0) p.s = s;
+	else sample_zone_species(&p,z_ind);
+	assert(p.s >= 0);
+	assert(p.s < (int)species_list.size());
+	species_list[p.s]->sample_zone_nu(p,z_ind,g);
+	assert(p.nu > 0);
+
+	// lorentz transform from the comoving to lab frame
+	transform_comoving_to_lab(&p,z_ind);
+
+	// sample tau
+	double lab_opac=0, abs_frac=0, dshift_l2c=0;
+	lab_opacity(&p,z_ind,&lab_opac,&abs_frac,&dshift_l2c);
+	sample_tau(&p,z_ind,lab_opac,abs_frac);
+
+	// add to particle vector
+	assert(particles.size() < particles.capacity());
+	#pragma omp critical
+	particles.push_back(p);
+
+	// count up the emitted energy in each zone
+	#pragma omp atomic
+	L_net_lab[p.s] += p.e;
+	#pragma omp atomic
+	E_avg_lab[p.s] += p.nu * p.e;
+	#pragma omp atomic
+	N_net_lab[p.s] += p.e / (p.nu * pc::h);
+
 	window(&p,z_ind);
-
-	if(p.fate == moving){
-
-		// random sample position in zone
-		vector<double> rand(3,0);
-		rand[0] = rangen.uniform();
-		rand[1] = rangen.uniform();
-		rand[2] = rangen.uniform();
-		vector<double> r;
-		grid->cartesian_sample_in_zone(z_ind,rand,r);
-		p.x[0] = r[0];
-		p.x[1] = r[1];
-		p.x[2] = r[2];
-
-		// emit isotropically in comoving frame
-		double mu  = 1 - 2.0*rangen.uniform();
-		double phi = 2.0*pc::pi*rangen.uniform();
-		double smu = sqrt(1 - mu*mu);
-		p.D[0] = smu*cos(phi);
-		p.D[1] = smu*sin(phi);
-		p.D[2] = mu;
-		normalize(p.D);
-
-		// sample the species and frequency
-		p.s = (s>=0 ? s : sample_zone_species(z_ind) );
-		assert(p.s >= 0);
-		assert(p.s < (int)species_list.size());
-		species_list[p.s]->sample_zone_nu(p,z_ind,g);
-		assert(p.nu > 0);
-
-		// lorentz transform from the comoving to lab frame
-		transform_comoving_to_lab(&p,z_ind);
-
-		// sample tau
-		double lab_opac=0, abs_frac=0, dshift_l2c=0;
-		lab_opacity(&p,z_ind,&lab_opac,&abs_frac,&dshift_l2c);
-		sample_tau(&p,z_ind,lab_opac);
-
-		// add to particle vector
-		assert(particles.size() < particles.capacity());
-		//#pragma omp critical
-		particles.push_back(p);
-
-		// count up the emitted energy in each zone
-		#pragma omp atomic
-		L_net_lab[p.s] += p.e;
-		#pragma omp atomic
-		E_avg_lab[p.s] += p.nu * p.e;
-		#pragma omp atomic
-		N_net_lab[p.s] += p.e / (p.nu * pc::h);
-	}
 }
 
 
@@ -371,7 +371,7 @@ void transport::create_surface_particle(const double Ep, const int s, const int 
 	// sample tau
 	double lab_opac=0, abs_frac=0, dshift_l2c=0;
 	lab_opacity(&p,z_ind,&lab_opac,&abs_frac,&dshift_l2c);
-	sample_tau(&p,z_ind,lab_opac);
+	sample_tau(&p,z_ind,lab_opac,abs_frac);
 
 	// add to particle vector
 	window(&p,z_ind);
