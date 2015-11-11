@@ -1022,7 +1022,5 @@ int transport::number_of_bins() const{
 double transport::importance(const double abs_opac, const double scat_opac, const double dx) const{
 	double taubar = (abs_opac + scat_opac) * dx * opt_depth_bias;
 	double result = (opt_depth_bias*taubar<=1.0 ? 1.0 : exp(1.0 - opt_depth_bias * taubar));
-	assert(result>=0);
-	if(result<1e-5) result = 1e-5;
-	return 1.0; //result;
+	return result;
 }
