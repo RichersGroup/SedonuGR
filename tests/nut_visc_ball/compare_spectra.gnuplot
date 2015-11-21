@@ -8,33 +8,34 @@ visc_specific_heat_rate = 1e22
 
 r = 1e5                            #cm
 T = 5e+10                         #K
-rho = 1e10                         #g/cm^3
+rho = 1e11                         #g/cm^3
 Lvisc = 4./3.*pi*r*r*r*rho * visc_specific_heat_rate #erg/s
 print "Lvisc=",Lvisc
 Lfermi = 6.*pi*7./8.*sigma*T*T*T*T         #erg/s/cm^2
 print "Lfermi=",Lfermi
-N=Lvisc/Lfermi
+N=Lvisc/Lfermi*0
 
 set xlabel "Neutrino Frequency (Hz) (2.5e20 Hz/MeV)"
 set ylabel "Energy Flux (erg/s/Hz/sr)"
+set grid
 
-set xrange [0:2e22]
+set xrange [0:5e22]
 set term pdf
 set output "compare_spectrum_0.pdf"
 set title "Electron Neutrinos"
-plot N*x*x*x*h/c/c/(exp(h*x/(k_b*T))+1.), './spectrum_species0_00010.dat' using 1:3
+plot N*x*x*x*h/c/c/(exp(h*x/(k_b*T))+1.), './spectrum_species0_00001.dat' using 1:3, '0.dat' u 1:3 w l
 set output
 
 set term pdf
 set output "compare_spectrum_1.pdf"
 set title "Electron Anti-Neutrinos"
-plot N*x*x*x*h/c/c/(exp(h*x/(k_b*T))+1.), './spectrum_species1_00010.dat' using 1:3
+plot N*x*x*x*h/c/c/(exp(h*x/(k_b*T))+1.), './spectrum_species1_00001.dat' using 1:3, '1.dat' u 1:3 w l
 set output
 
 set term pdf
 set output "compare_spectrum_2.pdf"
 set title "Mu/Tau Anti/Neutrinos"
-plot N*x*x*x*h/c/c/(exp(h*x/(k_b*T))+1.)*4., './spectrum_species2_00010.dat' using 1:3
+plot N*x*x*x*h/c/c/(exp(h*x/(k_b*T))+1.)*4., './spectrum_species2_00001.dat' using 1:3, '2.dat' u 1:3 w l
 set output
 
 # planck function has units of erg/s/cm^2/Hz/ster
