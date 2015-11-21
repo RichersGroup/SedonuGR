@@ -96,7 +96,10 @@ transport::transport(){
 	particle_core_abs_energy = NaN;
 	particle_fluid_abs_energy = NaN;
 	particle_escape_energy = NaN;
-	opt_depth_bias = NaN;
+	importance_bias = NaN;
+	min_importance = NaN;
+	path_length_bias = NaN;
+	max_path_length_boost = NaN;
 }
 
 
@@ -149,7 +152,10 @@ void transport::init(Lua* lua)
 		brent_solve_tolerance = lua->scalar<double>("brent_tolerance");
 	}
 	step_size     = lua->scalar<double>("step_size");
-	opt_depth_bias = lua->scalar<double>("opt_depth_bias");
+	importance_bias = lua->scalar<double>("importance_bias");
+	if(importance_bias>0) min_importance = lua->scalar<double>("min_importance");
+	path_length_bias = lua->scalar<double>("path_length_bias");
+	if(path_length_bias>0) max_path_length_boost = lua->scalar<double>("max_path_length_boost");
 	min_packet_energy = lua->scalar<double>("min_packet_energy");
 	max_packet_energy = lua->scalar<double>("max_packet_energy");
 
@@ -1020,7 +1026,8 @@ int transport::number_of_bins() const{
 }
 
 double transport::importance(const double abs_opac, const double scat_opac, const double dx) const{
-	double taubar = (abs_opac + scat_opac) * dx * opt_depth_bias;
-	double result = (opt_depth_bias*taubar<=1.0 ? 1.0 : exp(1.0 - opt_depth_bias * taubar));
-	return result;
+	if(importance_bias<=0) return 1.0;
+	double taubar = (abs_opac + scat_opac) * dx * importance_bias;
+	double result = (importance_bias*taubar<=1.0 ? 1.0 : exp(1.0 - importance_bias * taubar));
+	return max(result,min_importance);
 }

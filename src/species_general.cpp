@@ -134,6 +134,8 @@ double species_general::interpolate_importance(double nu, const int z_ind) const
 	assert(nu>=nu_grid.min);
 	assert(nu<=nu_grid[nu_grid.size()-1]);
 
+	// frequency-integrated biasing already taken care of in emit_zones by changing average particle
+	// energy depending on the luminosity of the zone and the number of particles emitted from it.
 	double result = biased_emis[z_ind].interpolate_pdf(nu,&nu_grid)/**biased_emis[z_ind].N*/ / (emis[z_ind].interpolate_pdf(nu,&nu_grid)/**emis[z_ind].N*/);
 	return result;
 }

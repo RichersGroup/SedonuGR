@@ -122,7 +122,10 @@ private:
 	int    do_annihilation;
 	int    radiative_eq;
 	int    rank0;
-	double opt_depth_bias;
+	double importance_bias;
+	double min_importance;
+	double path_length_bias;
+	double max_path_length_boost;
 
 	// output parameters
 	int write_zones_every;

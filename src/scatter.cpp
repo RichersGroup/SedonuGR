@@ -143,15 +143,16 @@ void transport::isotropic_scatter(particle* p) const
 // Randomly select an optical depth through which a particle will move.
 //---------------------------------------------------------------------
 void transport::sample_tau(particle *p, const int z_ind, const double lab_opac, const double abs_frac){
-	assert(opt_depth_bias>=0);
+	assert(path_length_bias>=0);
 	assert(p->fate == moving);
 
 	double eff_opac = lab_opac;// * sqrt(abs_frac * (1.0-abs_frac));
-	double taubar = opt_depth_bias * lab_opac * grid->zone_min_length(z_ind);
+	double taubar = path_length_bias * lab_opac * grid->zone_min_length(z_ind);
 	p->tau = -1.0*log(1.0 - rangen.uniform());
 
 	// only change the path length if the cell/bin is optically deep
 	if(taubar>1.0){
+		taubar = min(taubar,max_path_length_boost);
 		p->tau *= taubar;
 		p->e   *= taubar * exp(-p->tau + p->tau/taubar);
 	}
