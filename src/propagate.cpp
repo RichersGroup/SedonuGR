@@ -118,7 +118,7 @@ void transport::which_event(particle *p, const int z_ind, const double lab_opac,
 
 		// FIND D_INTERACT =================================================================
 		if (lab_opac == 0) d_interact = numeric_limits<double>::infinity();
-		else               d_interact = p->tau / lab_opac;
+		else               d_interact = static_cast<double>(p->tau / lab_opac);
 		assert(d_interact>=0);
 	}
 
@@ -317,6 +317,7 @@ void transport::propagate(particle* p)
 
 		// decide which event happens
 		which_event(p,z_ind,lab_opac,&lab_d,&event);
+		if(event==interact) assert(lab_d == static_cast<double>(p->tau/lab_opac));
 		assert(lab_d >= 0);
 
 		// accumulate counts of radiation energy, absorption, etc
@@ -324,8 +325,8 @@ void transport::propagate(particle* p)
 
 		// move particle the distance
 		move(p,lab_d);
-		p->tau -= lab_d * lab_opac;
-		assert(p->tau/(lab_d*lab_opac) >= 0-grid->tiny);
+		p->tau = (static_cast<double>(p->tau/lab_opac) - lab_d) * lab_opac; // done like this to be >0 to numerical precision...maybe
+		if(event != boundary) assert(p->tau/(lab_d*lab_opac) >= 0);
 		z_ind = grid->zone_index(p->x);
 
 		// do the selected event
