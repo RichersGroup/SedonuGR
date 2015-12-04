@@ -116,7 +116,7 @@ void transport::emit_zones_by_bin(){
 	int size_before = particles.size();
 
 	#pragma omp parallel for reduction(+:avgEp)
-	for (unsigned z_ind=0; z_ind<grid->z.size(); z_ind++) if(grid->zone_radius(z_ind) > r_core){
+	for (unsigned z_ind=0; z_ind<grid->z.size(); z_ind++) if(grid->zone_radius(z_ind) >= r_core){
 
 		double com_emit_energy = zone_comoving_therm_emit_energy(z_ind);
 
@@ -159,7 +159,7 @@ void transport::emit_zones(){
 
 	// actually emit the particles in each zone
 	#pragma omp parallel for schedule(guided) reduction(+:avgEp)
-	for (unsigned z_ind=0; z_ind<grid->z.size(); z_ind++) if(grid->zone_radius(z_ind) > r_core)
+	for (unsigned z_ind=0; z_ind<grid->z.size(); z_ind++) if(grid->zone_radius(z_ind) >= r_core)
 	{
 		double com_biased_emit_energy = zone_comoving_biased_therm_emit_energy(z_ind);
 		double com_emit_energy = zone_comoving_biased_therm_emit_energy(z_ind);
