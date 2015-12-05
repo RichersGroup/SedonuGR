@@ -685,7 +685,7 @@ void transport::normalize_radiative_quantities(){
 		if(do_visc) cout << "#   " << net_visc_heating << " erg/s H_visc (comoving sum)" << endl;
 		cout << "#   " << net_neut_heating << " erg/s H_abs (comoving sum)" << endl;
 
-		cout << "#  SUM OF EMISSIONS: " << L_core_lab[0]+L_core_lab[1]+L_core_lab[2]+L_net_lab[0]+L_net_lab[1]+L_net_lab[2] << endl;
+		cout << "#   SUM OF EMISSIONS: " << L_core_lab[0]+L_core_lab[1]+L_core_lab[2]+L_net_lab[0]+L_net_lab[1]+L_net_lab[2] << endl;
 
 		double CmH = 0;
 		for(unsigned s=0; s<species_list.size(); s++) CmH += L_net_lab[s];

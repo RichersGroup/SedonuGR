@@ -41,7 +41,7 @@
 #include "nulib_interface.h"
 
 double run_test(const int nsteps, const bool rank0, const double rho, const double T_MeV, const double target_ye, transport& sim, ofstream& outf){
-	if(rank0) cout << "Currently running: rho=" << rho << "g/ccm T_core=" << T_MeV << "MeV Ye=" << target_ye << endl;
+	if(rank0) cout << endl << "Currently running: rho=" << rho << "g/ccm T_core=" << T_MeV << "MeV Ye=" << target_ye << endl;
 
 	// set the fluid properties
 	sim.grid->z[0].rho = rho;
