@@ -49,6 +49,12 @@ namespace pc = physical_constants;
 
 string trim(const string s);
 
+#define PRINT_ASSERT(a,op,b)                         \
+do {                                                 \
+	if(!(a op b)) cout << (a) << " " << (b) << endl; \
+	assert(a op b);                                  \
+} while (0)
+
 #endif
 
 // NOTE: lots of things require double precision in random places because we're using

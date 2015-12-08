@@ -66,7 +66,7 @@ void transport::propagate_particles()
 				N_net_esc[p->s] += p->e / (p->nu*pc::h);
 				species_list[p->s]->spectrum.count(p->D, p->nu, p->e);
 			}
-			assert(p->fate != moving);
+			PRINT_ASSERT(p->fate, !=, moving);
 		} //#pragma omp parallel for
 	} while(particles.size()>end);
 
@@ -76,7 +76,7 @@ void transport::propagate_particles()
 		if(particles[i].fate == moving){
 			if(rank0) cout << particles[i].fate << endl;
 			if(rank0) cout << i << endl;
-			assert(particles[i].fate!=moving);
+			PRINT_ASSERT(particles[i].fate,!=,moving);
 		}
 		if(particles[i].fate!=rouletted) tot += particles[i].e;
 		if(particles[i].fate==escaped) esc += particles[i].e;
@@ -99,32 +99,32 @@ void transport::propagate_particles()
 //--------------------------------------------------------
 void transport::which_event(particle *p, const int z_ind, const double lab_opac,
 		double *d_smallest, ParticleEvent *event) const{
-	assert(lab_opac >= 0);
-	assert(p->e > 0);
-	assert(p->nu > 0);
+	PRINT_ASSERT(lab_opac, >=, 0);
+	PRINT_ASSERT(p->e, >, 0);
+	PRINT_ASSERT(p->nu, >, 0);
 
 	double d_zone     = numeric_limits<double>::infinity();
 	double d_time     = numeric_limits<double>::infinity();
 	double d_interact = numeric_limits<double>::infinity();
 	double d_boundary = numeric_limits<double>::infinity();
 	double tau_r = NaN;                               // random optical depth
-	assert(z_ind >= -1);
+	PRINT_ASSERT(z_ind, >=, -1);
 
 	if(z_ind >= 0){ //i.e. within the simulation region
 		// FIND D_ZONE= ====================================================================
 		// maximum step size inside zone
 		d_zone = step_size * grid->zone_min_length(z_ind);
-		assert(d_zone > 0);
+		PRINT_ASSERT(d_zone, >, 0);
 
 		// FIND D_INTERACT =================================================================
 		if (lab_opac == 0) d_interact = numeric_limits<double>::infinity();
 		else               d_interact = static_cast<double>(p->tau / lab_opac);
-		assert(d_interact>=0);
+		PRINT_ASSERT(d_interact,>=,0);
 	}
 
 	// FIND D_BOUNDARY ================================================================
 	d_boundary = grid->lab_dist_to_boundary(p);
-	assert(d_boundary > 0);
+	PRINT_ASSERT(d_boundary, >, 0);
 
 	// find out what event happens (shortest distance) =====================================
 	*d_smallest = numeric_limits<double>::infinity();
@@ -144,18 +144,18 @@ void transport::which_event(particle *p, const int z_ind, const double lab_opac,
 
 
 void transport::event_boundary(particle* p, const int z_ind) const{
-	assert(z_ind==-1 || z_ind==-2);
+	PRINT_ASSERT(z_ind==-1, ||, z_ind==-2);
 
 	// if outside the domain
 	if(z_ind == -2){
 		int new_ind = z_ind;
 		if(reflect_outer){
 			grid->reflect_outer(p);
-			assert(p->fate == moving);
+			PRINT_ASSERT(p->fate, ==, moving);
 			new_ind = grid->zone_index(p->x);
-			assert(new_ind >= 0);
-			assert(new_ind < (int)grid->z.size());
-			assert(p->nu > 0);
+			PRINT_ASSERT(new_ind, >=, 0);
+			PRINT_ASSERT(new_ind, <, (int)grid->z.size());
+			PRINT_ASSERT(p->nu, >, 0);
 		}
 		else{
 			grid->reflect_symmetry(p);
@@ -173,28 +173,28 @@ void transport::event_boundary(particle* p, const int z_ind) const{
 			cout << "ERROR: have not yet implemented passing out through the inner boundary without overshooting" << endl;
 			exit(5);
 		}
-		else assert(p->fate == moving); // the particle just went into the inner boundary
+		else PRINT_ASSERT(p->fate, ==, moving); // the particle just went into the inner boundary
 	}
 }
 
 void transport::tally_radiation(const particle* p, const int z_ind, const double dshift_l2c, const double lab_d, const double lab_opac, const double abs_frac) const{
-	assert(z_ind >= 0);
-	assert(z_ind < (int)grid->z.size());
-	assert(dshift_l2c > 0);
-	assert(lab_d >= 0);
-	assert(lab_opac >= 0);
-	assert(abs_frac >= 0);
-	assert(abs_frac <= 1);
+	PRINT_ASSERT(z_ind, >=, 0);
+	PRINT_ASSERT(z_ind, <, (int)grid->z.size());
+	PRINT_ASSERT(dshift_l2c, >, 0);
+	PRINT_ASSERT(lab_d, >=, 0);
+	PRINT_ASSERT(lab_opac, >=, 0);
+	PRINT_ASSERT(abs_frac, >=, 0);
+	PRINT_ASSERT(abs_frac, <=, 1);
 
 	// get comoving values
 	double com_e = p->e * dshift_l2c;
 	double com_nu = p->nu * dshift_l2c;
 	double com_d  = lab_d / dshift_l2c;
 	double com_opac = lab_opac / dshift_l2c;
-	assert(com_e > 0);
-	assert(com_nu > 0);
-	assert(com_d >= 0);
-	assert(com_opac >= 0);
+	PRINT_ASSERT(com_e, >, 0);
+	PRINT_ASSERT(com_nu, >, 0);
+	PRINT_ASSERT(com_d, >=, 0);
+	PRINT_ASSERT(com_opac, >=, 0);
 
 	// set pointer to the current zone
 	zone* zone;
@@ -203,7 +203,7 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	// tally in contribution to zone's distribution function (lab frame)
 	// use rhat, thetahat, phihat as basis functions so rotational symmetries give accurate results
 	double to_add = p->e * lab_d;
-	assert(to_add<INFINITY);
+	PRINT_ASSERT(to_add,<,INFINITY);
 	double x=p->x[0], y=p->x[1], z=p->x[2];
 	double r = sqrt(dot(p->x,p->x));
 	double rp = sqrt(x*x + y*y);
@@ -246,7 +246,7 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	to_add = com_e * com_d * (com_opac*abs_frac);
 	#pragma omp atomic
 	zone->e_abs += to_add;
-	assert(zone->e_abs >= 0);
+	PRINT_ASSERT(zone->e_abs, >=, 0);
 
 	// store absorbed lepton number (same in both frames, except for the
 	// factor of this_d which is divided out later
@@ -274,7 +274,7 @@ void transport::lab_opacity(const particle *p, const int z_ind, double *lab_opac
 	if(grid->good_zone(z_ind) && z_ind>=0){ // avoid handling fluff zones if unnecessary
 		// doppler shift from comoving to lab (nu0/nu)
 		*dshift_l2c = dshift_lab_to_comoving(p,z_ind);
-		assert(*dshift_l2c > 0);
+		PRINT_ASSERT(*dshift_l2c, >, 0);
 
 		// get local opacity and absorption fraction
 		double com_opac = 0;
@@ -297,28 +297,27 @@ void transport::propagate(particle* p)
 
 	ParticleEvent event;
 
-	assert(p->fate == moving);
+	PRINT_ASSERT(p->fate, ==, moving);
 
 	// local variables
 	double lab_d = NaN;                            // distance to particle's next event
 	double lab_opac = NaN, com_opac = NaN, abs_frac = NaN;                 // opacity variables
 	double dshift_l2c = NaN;
 
-	// propagate until this flag is set
 	while (p->fate == moving)
 	{
-		assert(p->nu > 0);
+		PRINT_ASSERT(p->nu, >, 0);
 
 		int z_ind = grid->zone_index(p->x);
-		assert(z_ind >= -1);
-		assert(z_ind < (int)grid->z.size());
+		PRINT_ASSERT(z_ind, >=, -1);
+		PRINT_ASSERT(z_ind, <, (int)grid->z.size());
 
 		lab_opacity(p,z_ind,&lab_opac,&abs_frac,&dshift_l2c);
 
 		// decide which event happens
 		which_event(p,z_ind,lab_opac,&lab_d,&event);
-		if(event==interact) assert(lab_d == static_cast<double>(p->tau/lab_opac));
-		assert(lab_d >= 0);
+		if(event==interact) PRINT_ASSERT(lab_d, ==, static_cast<double>(p->tau/lab_opac));
+		PRINT_ASSERT(lab_d, >=, 0);
 
 		// accumulate counts of radiation energy, absorption, etc
 		if(grid->good_zone(z_ind) && z_ind>=0) tally_radiation(p,z_ind,dshift_l2c,lab_d,lab_opac,abs_frac);
@@ -326,7 +325,7 @@ void transport::propagate(particle* p)
 		// move particle the distance
 		move(p,lab_d);
 		p->tau = (static_cast<double>(p->tau/lab_opac) - lab_d) * lab_opac; // done like this to be >0 to numerical precision...maybe
-		if(event != boundary) assert(p->tau/(lab_d*lab_opac) >= 0);
+		if(event != boundary) PRINT_ASSERT(p->tau/(lab_d*lab_opac), >=, -grid->tiny);
 		z_ind = grid->zone_index(p->x);
 
 		// do the selected event
@@ -336,13 +335,13 @@ void transport::propagate(particle* p)
 		    // Do if interacting with the fluid
 		    // ---------------------------------
 		case interact:
-			assert(lab_d * lab_opac >= p->tau);
+			PRINT_ASSERT(lab_d * lab_opac, >=, p->tau);
 			event_interact(p,z_ind,abs_frac,lab_opac);
 			if(p->fate==moving){
-				assert(p->nu > 0);
-				assert(p->e > 0);
+				PRINT_ASSERT(p->nu, >, 0);
+				PRINT_ASSERT(p->e, >, 0);
 			}
-			else assert(p->fate==rouletted || p->fate==absorbed);
+			else PRINT_ASSERT(p->fate==rouletted, ||, p->fate==absorbed);
 			break;
 
 			// ---------------------------------
@@ -367,12 +366,12 @@ void transport::propagate(particle* p)
 			// nothing special happens at the zone edge
 			//-----------------------
 		default:
-			assert(event == zoneEdge);
-			assert(z_ind >= 0);
+			PRINT_ASSERT(event, ==, zoneEdge);
+			PRINT_ASSERT(z_ind, >=, 0);
 		}
 
 		// check for core absorption
 		if(p->r() < r_core) p->fate = absorbed;
 	}
-	assert(p->fate != moving);
+	PRINT_ASSERT(p->fate, !=, moving);
 }
