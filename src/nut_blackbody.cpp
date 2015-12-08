@@ -42,7 +42,7 @@
 
 
 void run_test(const bool rank0, const double rho, const double T, const double ye, transport& sim, ofstream& outf){
-	if(rank0) cout << "Currently running: rho=" << rho << "g/ccm T=" << T << "MeV Ye=" << ye << endl;
+	if(rank0) cout << endl << "Currently running: rho=" << rho << "g/ccm T=" << T << "MeV Ye=" << ye << endl;
 
 	// set the fluid properties
 	sim.grid->z[0].rho = rho;
