@@ -302,7 +302,7 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	window(&p,z_ind);
 
 	// add to particle vector
-	if(p->fate == moving){
+	if(p.fate == moving){
 		assert(particles.size() < particles.capacity());
 		#pragma omp critical
 		particles.push_back(p);
@@ -376,8 +376,11 @@ void transport::create_surface_particle(const double Ep, const int s, const int 
 	window(&p,z_ind);
 
 	// add to particle vector
-    #pragma omp critical
-	particles.push_back(p);
-    #pragma omp atomic
-	L_core_lab[p.s] += p.e;
+	if(p.fate == moving){
+		assert(particles.size() < particles.capacity());
+	    #pragma omp critical
+		particles.push_back(p);
+	    #pragma omp atomic
+		L_core_lab[p.s] += p.e;
+	}
 }
