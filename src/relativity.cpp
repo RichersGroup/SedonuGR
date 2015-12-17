@@ -106,6 +106,8 @@ void lorentz_transform(particle* p, const vector<double> v){
 //------------------------------------------------------------
 double transport::dshift_comoving_to_lab(const particle* p, const int z_ind) const
 {
+	if(!do_relativity) return 1.0;
+
 	vector<double> v;
 	grid->cartesian_velocity_vector(p->x,v,z_ind); // v_comoving - v_lab
 
@@ -124,6 +126,8 @@ double transport::dshift_comoving_to_lab(const particle* p, const int z_ind) con
 
 double transport::dshift_lab_to_comoving(const particle* p, const int z_ind) const
 {
+	if(!do_relativity) return 1.0;
+
 	vector<double> v;
 	grid->cartesian_velocity_vector(p->x,v,z_ind); // v_comoving - v_lab
 
@@ -144,6 +148,8 @@ double transport::dshift_lab_to_comoving(const particle* p, const int z_ind) con
 //------------------------------------------------------------
 void transport::transform_comoving_to_lab(particle* p, const int z_ind) const
 {
+	if(!do_relativity) return;
+
 	vector<double> v;
 	grid->cartesian_velocity_vector(p->x,v,z_ind); // v_comoving - v_lab
 
@@ -158,6 +164,8 @@ void transport::transform_comoving_to_lab(particle* p, const int z_ind) const
 
 void transport::transform_lab_to_comoving(particle* p, const int z_ind) const
 {
+	if(!do_relativity) return;
+
 	vector<double> v;
 	grid->cartesian_velocity_vector(p->x,v,z_ind); // v_comoving - v_lab
 
@@ -168,6 +176,8 @@ void transport::transform_lab_to_comoving(particle* p, const int z_ind) const
 }
 
 double transport::comoving_dt(const int z_ind) const{
+	if(!do_relativity) return 1.0;
+
 	assert(z_ind >= 0);
 	assert(z_ind < (int)grid->z.size());
 	return 1.0 / lorentz_factor(grid->z[z_ind].v); // assume lab_dt=1.0
