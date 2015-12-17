@@ -52,7 +52,6 @@ void transport::event_interact(particle* p, const int z_ind, const double abs_fr
 		if(abs_frac < 1.0){
 			p->e *= (1.0 - abs_frac);
 			isotropic_scatter(p);
-			window(p,z_ind);
 		}
 		else p->fate = absorbed;
 
@@ -75,9 +74,12 @@ void transport::event_interact(particle* p, const int z_ind, const double abs_fr
 		sample_tau(p,z_ind,lab_opac,abs_frac);
 
 		// sanity checks
-		assert(p->nu > 0);
-		assert(p->e > 0);
+		if(p->fate==moving){
+			assert(p->nu > 0);
+			assert(p->e > 0);
+		}
 	}
+	window(p,z_ind);
 }
 
 
@@ -146,19 +148,20 @@ void transport::sample_tau(particle *p, const int z_ind, const double lab_opac, 
 	assert(path_length_bias>=0);
 	assert(p->fate == moving);
 
+	// determine the reference optical depth
 	double eff_opac = lab_opac;// * sqrt(abs_frac * (1.0-abs_frac));
 	double taubar = path_length_bias * lab_opac * grid->zone_min_length(z_ind);
-	p->tau = -1.0*log(1.0 - rangen.uniform());
 
-	// only change the path length if the cell/bin is optically deep
-	if(taubar>1.0){
-		taubar = min(taubar,max_path_length_boost);
-		p->tau *= taubar;
-		p->e   *= taubar * exp(-p->tau + p->tau/taubar);
-	}
+	// don't let the path length increase go crazy
+	taubar = min(taubar,max_path_length_boost);
 
-	// kill the particle if the energy gets impossibly small
-	if(p->e==0) window(p,z_ind);
+	// modify the optical depth only if the cell is optically deep
+	taubar = max(taubar,1.0);
+
+	// sample the distribution and modify the energy
+	p->tau = -taubar*log(rangen.uniform());
+	p->e *= taubar * exp(-p->tau * (1.0 - 1.0/taubar));
+	PRINT_ASSERT(p->e,>=,0);
 
 	// make sure nothing crazy happened
 	if(p->fate==moving){
