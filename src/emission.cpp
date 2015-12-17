@@ -299,21 +299,22 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	double lab_opac=0, abs_frac=0, dshift_l2c=0;
 	lab_opacity(&p,z_ind,&lab_opac,&abs_frac,&dshift_l2c);
 	sample_tau(&p,z_ind,lab_opac,abs_frac);
+	window(&p,z_ind);
 
 	// add to particle vector
-	assert(particles.size() < particles.capacity());
-	#pragma omp critical
-	particles.push_back(p);
+	if(p->fate == moving){
+		assert(particles.size() < particles.capacity());
+		#pragma omp critical
+		particles.push_back(p);
 
-	// count up the emitted energy in each zone
-	#pragma omp atomic
-	L_net_lab[p.s] += p.e;
-	#pragma omp atomic
-	E_avg_lab[p.s] += p.nu * p.e;
-	#pragma omp atomic
-	N_net_lab[p.s] += p.e / (p.nu * pc::h);
-
-	window(&p,z_ind);
+		// count up the emitted energy in each zone
+		#pragma omp atomic
+		L_net_lab[p.s] += p.e;
+		#pragma omp atomic
+		E_avg_lab[p.s] += p.nu * p.e;
+		#pragma omp atomic
+		N_net_lab[p.s] += p.e / (p.nu * pc::h);
+	}
 }
 
 
@@ -372,9 +373,9 @@ void transport::create_surface_particle(const double Ep, const int s, const int 
 	double lab_opac=0, abs_frac=0, dshift_l2c=0;
 	lab_opacity(&p,z_ind,&lab_opac,&abs_frac,&dshift_l2c);
 	sample_tau(&p,z_ind,lab_opac,abs_frac);
+	window(&p,z_ind);
 
 	// add to particle vector
-	window(&p,z_ind);
     #pragma omp critical
 	particles.push_back(p);
     #pragma omp atomic
