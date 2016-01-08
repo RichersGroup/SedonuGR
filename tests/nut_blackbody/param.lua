@@ -9,6 +9,7 @@ do_visc       = 0
 do_annihilation = 0
 do_relativity = 0
 reflect_outer = 0
+output_hdf5 = 0
 
 -- input/output files
 
@@ -17,12 +18,20 @@ model_file = ""
 rho = 0
 T   = 0
 Ye  = 0
-nulib_table = "/data/tables/NuLib/Helmholtz_noscat/NuLib.h5"
+nulib_table = "/data/tables/NuLib/MCNuTrans/Shen_full/NuLib.h5" --"/home/srichers/software/NuLib/NuLib.h5" --Helmholtz_noscat/NuLib.h5"
 nulib_eos_filename = "/data/tables/EOS/HShen.h5"
 write_zones_every   = 1
 write_rays_every    = 1
 write_spectra_every = 1
 output_distribution = 0
+
+-- biasing
+importance_bias = 1
+bias_path_length = 1
+min_packet_energy = 1e24
+max_packet_energy = 1e99
+max_path_length_boost = 1e100
+min_importance = 1e-10
 
 -- spectrum parameters
 
@@ -37,13 +46,13 @@ distribution_nphi = 2
 -- particle creation parameters
 
 n_initial      = 0
-n_emit_core    = 0
-n_emit_therm   = 1e6
-max_particles  = 1e6
-emissions_per_timestep = 1
+n_emit_core_per_bin    = 0
+n_emit_therm_per_bin   = 10
+max_particles  = 2e6
+emissions_per_timestep = 10
 cdf_interpolation_order = 1
 nut_cdf_cutoff    = 0
-ratio_emit_by_bin = 0
+do_emit_by_bin = 1
 
 -- particle propagation parameters
 
