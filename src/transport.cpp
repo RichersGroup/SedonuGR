@@ -99,7 +99,7 @@ transport::transport(){
 	particle_escape_energy = NaN;
 	importance_bias = NaN;
 	min_importance = NaN;
-	path_length_bias = NaN;
+	bias_path_length = -MAXLIM;
 	max_path_length_boost = NaN;
 }
 
@@ -156,8 +156,8 @@ void transport::init(Lua* lua)
 	step_size     = lua->scalar<double>("step_size");
 	importance_bias = lua->scalar<double>("importance_bias");
 	if(importance_bias>0) min_importance = lua->scalar<double>("min_importance");
-	path_length_bias = lua->scalar<double>("path_length_bias");
-	if(path_length_bias>0) max_path_length_boost = lua->scalar<double>("max_path_length_boost");
+	bias_path_length = lua->scalar<int>("bias_path_length");
+	if(bias_path_length) max_path_length_boost = lua->scalar<double>("max_path_length_boost");
 	min_packet_energy = lua->scalar<double>("min_packet_energy");
 	max_packet_energy = lua->scalar<double>("max_packet_energy");
 

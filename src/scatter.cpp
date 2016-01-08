@@ -71,7 +71,7 @@ void transport::event_interact(particle* p, const int z_ind, const double abs_fr
 		transform_comoving_to_lab(p,z_ind);
 
 		// resample the path length
-		sample_tau(p,z_ind,lab_opac,abs_frac);
+		sample_tau(p,lab_opac,abs_frac);
 
 		// sanity checks
 		if(p->fate==moving){
@@ -85,11 +85,14 @@ void transport::event_interact(particle* p, const int z_ind, const double abs_fr
 
 // decide whether to kill a particle
 void transport::window(particle* p, const int z_ind){
+	assert(p->fate != rouletted);
+
 	// Roulette if too low energy
 	while(p->e<=min_packet_energy && p->fate==moving){
 		if(rangen.uniform() < 0.5) p->fate = rouletted;
 		else p->e *= 2.0;
 	}
+	if(p->fate==moving) assert(p->e >= min_packet_energy);
 	// split if too high energy, if enough space, and if in important region
 	while(p->e>max_packet_energy && particles.size()<max_particles && species_list[p->s]->interpolate_importance(p->nu,z_ind)>=1.0){
 		p->e /= 2.0;
@@ -144,23 +147,24 @@ void transport::isotropic_scatter(particle* p) const
 //---------------------------------------------------------------------
 // Randomly select an optical depth through which a particle will move.
 //---------------------------------------------------------------------
-void transport::sample_tau(particle *p, const int z_ind, const double lab_opac, const double abs_frac){
-	assert(path_length_bias>=0);
+void transport::sample_tau(particle *p, const double lab_opac, const double abs_frac){
+	assert(bias_path_length>=0);
 	assert(p->fate == moving);
 
-	// determine the reference optical depth
-	double eff_opac = lab_opac;// * sqrt(abs_frac * (1.0-abs_frac));
-	double taubar = path_length_bias * lab_opac * grid->zone_min_length(z_ind);
-
-	// don't let the path length increase go crazy
-	taubar = min(taubar,max_path_length_boost);
-
-	// modify the optical depth only if the cell is optically deep
-	taubar = max(taubar,1.0);
+	// tweak distribution if biasing path length
+	// this is probably computed more times than necessary. OPTIMIZE
+	double taubar = 1.0;
+	if(bias_path_length && abs_frac<1.0){
+		taubar = 1.0/(1.0-abs_frac);
+		taubar = min(taubar,max_path_length_boost);
+	}
 
 	// sample the distribution and modify the energy
-	p->tau = -taubar*log(rangen.uniform());
-	p->e *= taubar * exp(-p->tau * (1.0 - 1.0/taubar));
+	do{ // don't allow tau to be infinity
+		p->tau = -taubar*log(rangen.uniform());
+	} while(p->tau >= INFINITY);
+	if(taubar != 1.0) p->e *= taubar * exp(-p->tau * (1.0 - 1.0/taubar));
+	if(p->e==0) p->fate = rouletted;
 	PRINT_ASSERT(p->e,>=,0);
 
 	// make sure nothing crazy happened

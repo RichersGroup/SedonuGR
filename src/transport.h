@@ -97,7 +97,6 @@ private:
 	void isotropic_scatter(particle* p) const;
 	void re_emit(particle* p, const int z_ind) const;
 	void window(particle* p, const int z_ind);
-	void sample_tau(particle* p, const int z_ind, const double lab_opac, const double abs_frac);
 
 	// solve for temperature and Ye (if steady_state)
 	double damping;
@@ -113,19 +112,11 @@ private:
 	// stored minimum and maximum values to assure safety
 	int max_particles;
 
-	// minimum neutrino packet energy
-	double min_packet_energy;
-	double max_packet_energy;
-
 	// simulation parameters
 	double step_size;
 	int    do_annihilation;
 	int    radiative_eq;
 	int    rank0;
-	double importance_bias;
-	double min_importance;
-	double path_length_bias;
-	double max_path_length_boost;
 
 	// output parameters
 	int write_zones_every;
@@ -161,6 +152,16 @@ public:
 
 	// pointer to grid
 	grid_general *grid;
+
+	// biasing
+	// minimum neutrino packet energy
+	double min_packet_energy;
+	double max_packet_energy;
+	double importance_bias;
+	double min_importance;
+	int bias_path_length;
+	double max_path_length_boost;
+	void sample_tau(particle* p, const double lab_opac, const double abs_frac);
 
 	// items for core emission
 	double r_core;

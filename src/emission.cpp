@@ -298,7 +298,7 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	// sample tau
 	double lab_opac=0, abs_frac=0, dshift_l2c=0;
 	lab_opacity(&p,z_ind,&lab_opac,&abs_frac,&dshift_l2c);
-	sample_tau(&p,z_ind,lab_opac,abs_frac);
+	sample_tau(&p,lab_opac,abs_frac);
 	window(&p,z_ind);
 
 	// add to particle vector
@@ -372,7 +372,7 @@ void transport::create_surface_particle(const double Ep, const int s, const int 
 	// sample tau
 	double lab_opac=0, abs_frac=0, dshift_l2c=0;
 	lab_opacity(&p,z_ind,&lab_opac,&abs_frac,&dshift_l2c);
-	sample_tau(&p,z_ind,lab_opac,abs_frac);
+	sample_tau(&p,lab_opac,abs_frac);
 	window(&p,z_ind);
 
 	// add to particle vector
