@@ -18,7 +18,7 @@ model_file = ""
 rho = 0
 T   = 0
 Ye  = 0
-nulib_table = "/data/tables/NuLib/MCNuTrans/Shen_full/NuLib.h5" --"/home/srichers/software/NuLib/NuLib.h5" --Helmholtz_noscat/NuLib.h5"
+nulib_table = "/data/tables/NuLib/MCNuTrans/Helmholtz_noscat/NuLib.h5"
 nulib_eos_filename = "/data/tables/EOS/HShen.h5"
 write_zones_every   = 1
 write_rays_every    = 1
@@ -30,8 +30,8 @@ importance_bias = 1
 bias_path_length = 1
 min_packet_energy = 1e24
 max_packet_energy = 1e99
-max_path_length_boost = 1e100
-min_importance = 1e-10
+max_path_length_boost = 2
+min_importance = 1e-4
 
 -- spectrum parameters
 
@@ -47,7 +47,7 @@ distribution_nphi = 2
 
 n_initial      = 0
 n_emit_core_per_bin    = 0
-n_emit_therm_per_bin   = 10
+n_emit_therm_per_bin   = 100
 max_particles  = 2e6
 emissions_per_timestep = 10
 cdf_interpolation_order = 1
