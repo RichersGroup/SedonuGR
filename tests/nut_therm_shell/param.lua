@@ -9,6 +9,15 @@ do_visc      = 0
 do_relativity = 0
 reflect_outer= 1
 do_annihilation = 0
+output_hdf5 = 0
+
+-- biasing
+importance_bias = 1
+min_importance = 1e-4
+bias_path_length = 1
+max_path_length_boost = 2
+min_packet_energy = 0
+max_packet_energy = 1e99
 
 -- distribution parameters
 
@@ -19,7 +28,7 @@ distribution_nphi = 8
 
 grid_type = "grid_1D_sphere"
 model_file  =  "shell.mod"
-nulib_table = "/data/tables/NuLib/Helmholtz_full/NuLib.h5"
+nulib_table = "/data/tables/NuLib/MCNuTrans/Helmholtz_full/NuLib.h5"
 nulib_eos_filename = ""
 write_zones_every   = 5
 write_rays_every    = -1
@@ -36,15 +45,15 @@ nut_spec_n_phi      = 1
 n_initial      = 0
 n_emit_core    = 2e5
 n_emit_therm   = 0
-max_particles  = 2e5
+max_particles  = 3e5
 emissions_per_timestep = 1
 cdf_interpolation_order = 0
 nut_cdf_cutoff = 0
-ratio_emit_by_bin = 0
+do_emit_by_bin = 0
 
 -- particle propagation parameters
 
-max_n_iter = 20
+max_n_iter = 10
 dt = -1
 step_size = 0.4
 
