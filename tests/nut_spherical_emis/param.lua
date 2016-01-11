@@ -8,11 +8,15 @@ do_visc       = 0
 do_annihilation = 0
 do_relativity = 0
 reflect_outer = 0
-opt_depth_bias = 0
-min_packet_energy = 0
-max_packet_energy = 1e100
 output_hdf5 = 0
 max_n_iter = 1
+
+-- biasing
+importance_bias = 0
+bias_path_length = 1
+max_path_length_boost = 10
+min_packet_energy = 0
+max_packet_energy = 1e100
 
 -- input/output files
 

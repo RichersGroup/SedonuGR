@@ -7,7 +7,7 @@ R_max = 1*km
 R_min = 0*km
 dx = (R_max-R_min)/nx
 
-rho = 3e12
+rho = 3e9
 temp = 5*MeV
 ye = 0.3
 

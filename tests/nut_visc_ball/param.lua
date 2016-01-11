@@ -13,8 +13,8 @@ max_n_iter = 1
 
 importance_bias = 1
 min_importance = 1e-4
-path_length_bias = 1
-max_path_length_boost = 10
+bias_path_length = 1
+max_path_length_boost = 2
 min_packet_energy = 10
 max_packet_energy = 1e500
 

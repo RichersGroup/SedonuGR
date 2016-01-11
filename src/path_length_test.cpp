@@ -48,18 +48,19 @@ int main(int argc, char **argv)
 
 	// set up the transport module (includes the grid)
 	int nbins = 0, nsamples = 0,niter = 0;
-	double max_tau_bin = 0;
+	double max_tau_bin = 0, abs_frac=0;
 	transport sim;
 
 	// setup and seed random number generator(s)
 	sim.rangen.init();
 
 	// read in parameters from the command line
-	sscanf(argv[1 ], "%d",  &sim.bias_path_length);
-	sscanf(argv[2 ], "%d",  &nbins);
-	sscanf(argv[3 ], "%lf", &max_tau_bin);
-	sscanf(argv[4 ], "%d",  &nsamples);
-	sscanf(argv[5 ], "%d",  &niter);
+	sscanf(argv[1], "%lf",  &abs_frac);
+	sscanf(argv[2], "%d",  &nbins);
+	sscanf(argv[3], "%lf", &max_tau_bin);
+	sscanf(argv[4], "%d",  &nsamples);
+	sscanf(argv[5], "%d",  &niter);
+	sim.bias_path_length=1;
 	sim.max_path_length_boost = INFINITY;
 	sim.min_packet_energy = 1e-6;
 
@@ -69,10 +70,11 @@ int main(int argc, char **argv)
 	vector<double> expected_energy  = vector<double>(nbins,0);
 	vector<int>    packets          = vector<int>(nbins,0);
 	vector<double> expected_packets = vector<double>(nbins,0);
+	double alpha = 1./(1.0-abs_frac);
 	for(int i=0; i<grid.size(); i++){
 		grid[i] = (i+1)*max_tau_bin / (double)nbins;
-		expected_energy[i]  = ( i==0 ? 1 : exp(-grid[i-1]                     ) ) - exp(-grid[i]                     );
-		expected_packets[i] = ( i==0 ? 1 : exp(-grid[i-1]/sim.bias_path_length) ) - exp(-grid[i]/sim.bias_path_length);
+		expected_energy[i]  = ( i==0 ? 1 : exp(-grid[i-1])       ) - exp(-grid[i]      );
+		expected_packets[i] = ( i==0 ? 1 : exp(-grid[i-1]/alpha) ) - exp(-grid[i]/alpha);
 	}
 
 	// set up the particle
@@ -90,7 +92,7 @@ int main(int argc, char **argv)
 		p.fate = moving;
 		double opacity = 1.0;//sim.rangen.uniform();
 		for(int j=0; j<niter; j++) if(p.fate==moving){
-			sim.sample_tau(&p,opacity,0.5);
+			sim.sample_tau(&p,opacity,abs_frac);
 			while(p.e<=sim.min_packet_energy && p.fate==moving){
 				if(sim.rangen.uniform() < 0.5) p.fate = rouletted;
 				else p.e *= 2.0;
