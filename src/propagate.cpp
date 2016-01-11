@@ -265,10 +265,13 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	}
 }
 
-void transport::move(particle* p, double lab_d){
+void transport::move(particle* p, const double lab_d, const double lab_opac){
+	PRINT_ASSERT(p->tau,>=,0);
 	p->x[0] += lab_d*p->D[0];
 	p->x[1] += lab_d*p->D[1];
 	p->x[2] += lab_d*p->D[2];
+	p->tau = (static_cast<double>(p->tau/lab_opac) - lab_d) * lab_opac; // done like this to be >0 to numerical precision...maybe
+	PRINT_ASSERT(p->tau,>=,0);
 }
 void transport::lab_opacity(const particle *p, const int z_ind, double *lab_opac, double *abs_frac, double *dshift_l2c) const{
 	if(grid->good_zone(z_ind) && z_ind>=0){ // avoid handling fluff zones if unnecessary
@@ -323,8 +326,7 @@ void transport::propagate(particle* p)
 		if(grid->good_zone(z_ind) && z_ind>=0) tally_radiation(p,z_ind,dshift_l2c,lab_d,lab_opac,abs_frac);
 
 		// move particle the distance
-		move(p,lab_d);
-		p->tau = (static_cast<double>(p->tau/lab_opac) - lab_d) * lab_opac; // done like this to be >0 to numerical precision...maybe
+		move(p,lab_d,lab_opac);
 		if(event != boundary) PRINT_ASSERT(p->tau/(lab_d*lab_opac), >=, -grid->tiny);
 		z_ind = grid->zone_index(p->x);
 
@@ -353,7 +355,7 @@ void transport::propagate(particle* p)
 			{
 				int i=1;
 				while(z_ind>=0){
-					move(p,pow(2.0,i)*lab_d);
+					move(p,pow(2.0,i)*lab_d,lab_opac);
 					z_ind = grid->zone_index(p->x);
 					i++;
 				}

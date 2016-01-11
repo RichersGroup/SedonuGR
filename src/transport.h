@@ -88,7 +88,7 @@ private:
 	// propagate the particles
 	void propagate_particles();
 	void propagate(particle* p);
-	void move(particle* p, const double lab_d);
+	void move(particle* p, const double lab_d, const double lab_opac);
 	void tally_radiation(const particle* p, const int z_ind, const double dshift_l2c, const double lab_d, const double lab_opac, const double abs_frac) const;
 	void reset_radiation();
 	void which_event(particle* p,const int z_ind, const double lab_opac, double* d_smallest, ParticleEvent *event) const;
