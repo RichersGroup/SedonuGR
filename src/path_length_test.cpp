@@ -130,6 +130,7 @@ int main(int argc, char **argv)
 	cout << "average e = " << avg_e/(double)nsamples << endl;
 	cout << "n_zero = " << (double)n_zero/(double)nsamples << endl;
 	cout << "n_dead = " << (double)n_dead/(double)nsamples << endl;
+	cout << "1-tau\t2-Ebar\t3-Nbar\t4-expected_energy\t5-expected_packets" << endl;
 	for(int i=0; i<grid.size(); i++){
 		cout << grid[i] << '\t';
 		cout << energy[i]          / (double)nsamples << '\t';
