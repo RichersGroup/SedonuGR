@@ -93,6 +93,7 @@ void transport::window(particle* p, const int z_ind){
 		else p->e *= 2.0;
 	}
 	if(p->fate==moving) assert(p->e >= min_packet_energy);
+
 	// split if too high energy, if enough space, and if in important region
 	while(p->e>max_packet_energy && particles.size()<max_particles && species_list[p->s]->interpolate_importance(p->nu,z_ind)>=1.0){
 		p->e /= 2.0;
@@ -108,6 +109,8 @@ void transport::window(particle* p, const int z_ind){
 	if(particles.size()>=max_particles && verbose && rank0){
 		cout << "max_particles: " << max_particles << endl;
 		cout << "particles.size(): " << particles.size() << endl;
+		cout << "particle energy: " << p->e << endl;
+		cout << "max energy: " << max_packet_energy << endl;
 		cout << "WARNING: max_particles is too small to allow splitting." << endl;
 	}
 }
