@@ -40,7 +40,9 @@ void transport::emit_particles()
 {
 	// complain if we're out of room for particles
 	assert(n_emit_core  >= 0 || n_emit_zones >= 0 || n_emit_core_per_bin>0 || n_emit_zones_per_bin>=0);
-	int n_emit = n_emit_core + n_emit_zones + (n_emit_core_per_bin + n_emit_zones_per_bin*grid->z.size())*species_list.size()*number_of_bins();
+	int n_emit = do_emit_by_bin ?
+			(n_emit_core_per_bin + n_emit_zones_per_bin*grid->z.size()) * species_list.size()*number_of_bins() :
+			n_emit_core + n_emit_zones;
 	if (total_particles() + n_emit > max_particles){
 		if(rank0){
 			cout << "Total particles: " << total_particles() << endl;
