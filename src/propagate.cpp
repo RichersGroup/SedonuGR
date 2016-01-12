@@ -267,6 +267,8 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 
 void transport::move(particle* p, const double lab_d, const double lab_opac){
 	PRINT_ASSERT(p->tau,>=,0);
+	PRINT_ASSERT(lab_d,>,0);
+	PRINT_ASSERT(lab_opac,>=,0);
 	p->x[0] += lab_d*p->D[0];
 	p->x[1] += lab_d*p->D[1];
 	p->x[2] += lab_d*p->D[2];

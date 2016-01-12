@@ -109,8 +109,6 @@ void transport::window(particle* p, const int z_ind){
 	if(particles.size()>=max_particles && verbose && rank0){
 		cout << "max_particles: " << max_particles << endl;
 		cout << "particles.size(): " << particles.size() << endl;
-		cout << "particle energy: " << p->e << endl;
-		cout << "max energy: " << max_packet_energy << endl;
 		cout << "WARNING: max_particles is too small to allow splitting." << endl;
 	}
 }
