@@ -49,13 +49,12 @@ void transport::event_interact(particle* p, const int z_ind, const double abs_fr
 
 	// absorb part of the packet
 	if(do_absorb_partial){
-		if(abs_frac < 1.0){
-			p->e *= (1.0 - abs_frac);
+		p->e *= (1.0 - abs_frac);
+		window(p,z_ind);
+		if(p->fate==moving){
 			isotropic_scatter(p);
+			PRINT_ASSERT(p->e,>,0.0);
 		}
-		else p->fate = absorbed;
-
-		if(p->fate==moving) PRINT_ASSERT(p->e,>,0.0);
 	}
 
 	// absorb the particle and let the fluid re-emit another particle
