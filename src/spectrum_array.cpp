@@ -112,13 +112,13 @@ unsigned spectrum_array::index(const unsigned nu_bin, const unsigned mu_bin, con
 	unsigned n_phi = phi_grid.size();
 	unsigned n_nu  =  nu_grid.size();
 	unsigned n_mu  =  mu_grid.size();
-	assert(nu_bin < n_nu);
-	assert(mu_bin < n_mu);
-	assert(phi_bin < n_phi);
+	PRINT_ASSERT(nu_bin,<,n_nu);
+	PRINT_ASSERT(mu_bin,<,n_mu);
+	PRINT_ASSERT(phi_bin,<,n_phi);
 	int a3 = n_phi;
 	int a2 = n_mu*a3;
 	const unsigned ind = nu_bin*a2 + mu_bin*a3 + phi_bin;
-	assert(ind < n_phi*n_nu*n_mu);
+	PRINT_ASSERT(ind,<,n_phi*n_nu*n_mu);
 	return ind;
 }
 
@@ -126,21 +126,21 @@ unsigned spectrum_array::index(const unsigned nu_bin, const unsigned mu_bin, con
 // get bin indices
 //----------------
 unsigned spectrum_array::nu_bin(const unsigned index) const{
-	assert(index<flux.size());
+	PRINT_ASSERT(index,<,flux.size());
 	unsigned result = index / (phi_grid.size()*mu_grid.size());
-	assert(result<nu_grid.size());
+	PRINT_ASSERT(result,<,nu_grid.size());
 	return result;
 }
 unsigned spectrum_array::mu_bin(const unsigned index) const{
-	assert(index<flux.size());
+	PRINT_ASSERT(index,<,flux.size());
 	double result =  (index%(phi_grid.size()*mu_grid.size())) / phi_grid.size();
-	assert(result<mu_grid.size());
+	PRINT_ASSERT(result,<,mu_grid.size());
 	return result;
 }
 unsigned spectrum_array::phi_bin(const unsigned index) const{
-	assert(index<flux.size());
+	PRINT_ASSERT(index,<,flux.size());
 	double result = index % phi_grid.size();
-	assert(result<phi_grid.size());
+	PRINT_ASSERT(result,<,phi_grid.size());
 	return result;
 }
 
@@ -148,15 +148,15 @@ unsigned spectrum_array::phi_bin(const unsigned index) const{
 // get centers of bins
 //--------------------
 double spectrum_array::nu_center(const unsigned index) const{
-	assert(index<flux.size());
+	PRINT_ASSERT(index,<,flux.size());
 	return nu_grid.center(nu_bin(index));
 }
 double spectrum_array::mu_center(const unsigned index) const{
-	assert(index<flux.size());
+	PRINT_ASSERT(index,<,flux.size());
 	return mu_grid.center(mu_bin(index));
 }
 double spectrum_array::phi_center(const unsigned index) const{
-	assert(index<flux.size());
+	PRINT_ASSERT(index,<,flux.size());
 	return phi_grid.center(phi_bin(index));
 }
 
@@ -179,8 +179,8 @@ unsigned spectrum_array::size() const{
 ////--------------------------------------------------------------
 void spectrum_array::count(const vector<double>& D, const double nu, const double E)
 {
-	assert(D.size()==3);
-	assert(E>=0);
+	PRINT_ASSERT(D.size(),==,3);
+	PRINT_ASSERT(E,>=,0);
 	const double tiny = 1e-8;
 	double mu  = D[2];           // component along z axis
 	mu = max(-1.0+tiny,mu);
@@ -214,9 +214,9 @@ void spectrum_array::count(const vector<double>& D, const double nu, const doubl
 
     #pragma omp atomic
 	flux[ind]  += E;
-	assert(flux[ind]>=0);
-	assert(E<INFINITY);
-	assert(flux[ind]<INFINITY);
+	PRINT_ASSERT(flux[ind],>=,0);
+	PRINT_ASSERT(E,<,INFINITY);
+	PRINT_ASSERT(flux[ind],<,INFINITY);
 }
 
 double spectrum_array::average_nu() const{
@@ -338,11 +338,11 @@ void spectrum_array::write_hdf5_data(H5::DataSet dataset, H5::DataSpace dataspac
 	unsigned ndims = dataspace.getSimpleExtentNdims();
 	vector<hsize_t> dspace_dims(ndims,0.0);
 	dataspace.getSimpleExtentDims(&dspace_dims[0]);
-	assert(ndims >= 4);
-	assert(dspace_dims[ndims-4] <= 6);
-	assert(dspace_dims[ndims-3] ==  nu_grid.size());
-	assert(dspace_dims[ndims-2] ==  mu_grid.size());
-	assert(dspace_dims[ndims-1] == phi_grid.size());
+	PRINT_ASSERT(ndims,>=,4);
+	PRINT_ASSERT(dspace_dims[ndims-4],<=,6);
+	PRINT_ASSERT(dspace_dims[ndims-3],==,nu_grid.size());
+	PRINT_ASSERT(dspace_dims[ndims-2],==,mu_grid.size());
+	PRINT_ASSERT(dspace_dims[ndims-1],==,phi_grid.size());
 
 	// define the memory dataspace
 	hsize_t mdim[3];

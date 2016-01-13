@@ -58,7 +58,7 @@ double run_test(const int nsteps, const bool rank0, const double rho, const doub
 	// reconfigure the core
 	double munue = nulib_eos_munue(rho,T_core,target_ye);
 	sim.init_core(sim.r_core,T_core,munue);
-	assert(sim.core_species_luminosity.N>0);
+	PRINT_ASSERT(sim.core_species_luminosity.N,>,0);
 
 	// check max optical depth
 	double max_opac = 0;
@@ -103,7 +103,7 @@ int main(int argc, char **argv)
 	double max_logT  , min_logT  , T0;
 	double max_ye    , min_ye    , ye0;
 	int n_rho, n_T, n_ye;
-	assert(argc==15);
+	PRINT_ASSERT(argc,==,15);
 	sscanf(argv[2 ], "%lf", &min_logrho);
 	sscanf(argv[3 ], "%lf", &max_logrho);
 	sscanf(argv[4 ], "%lf", &rho0);
@@ -141,7 +141,7 @@ int main(int argc, char **argv)
 	lua.close();
 
 	// check parameters
-	assert(dt==-1);
+	PRINT_ASSERT(dt,==,-1);
 
 	// open the output file
 	ofstream outf;

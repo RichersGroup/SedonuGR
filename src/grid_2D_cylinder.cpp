@@ -69,8 +69,8 @@ void grid_2D_cylinder::read_model_file(Lua* lua)
     	space.getSimpleExtentDims(dims);
 	const int nr = dims[0];
 	const int nz = dims[1];
-    	assert(dataset.getTypeClass() == H5T_FLOAT);
-    	assert(space.getSimpleExtentNdims()==dataset_rank);
+    	PRINT_ASSERT(dataset.getTypeClass(),==,H5T_FLOAT);
+    	PRINT_ASSERT(space.getSimpleExtentNdims(),==,dataset_rank);
 
     	// read the data
     	float    Ye[nr][nz]; //
@@ -130,7 +130,7 @@ void grid_2D_cylinder::read_model_file(Lua* lua)
     	for(int i=0; i<nr; i++){
  	        if(i==nr-1) rcyl_out[i] = rcyl_out[i-1] + (rcyl_out[i-1] - rcyl_out[i-2]);
 		else        rcyl_out[i] = 0.5 * (rcyl[i][0] + rcyl[i+1][0]);
-		assert(rcyl_out[i] > (i==0 ? rcyl_out.min : rcyl_out[i-1]) );
+		PRINT_ASSERT(rcyl_out[i],>,(i==0 ? rcyl_out.min : rcyl_out[i-1]) );
     	}
 
     	// read z coordinates
@@ -139,7 +139,7 @@ void grid_2D_cylinder::read_model_file(Lua* lua)
     	for(int i=0; i<nz; i++){
  	        if(i==nz-1) zcyl_out[i] = zcyl_out[i-1] + (zcyl_out[i-1] - zcyl_out[i-2]);
 		else        zcyl_out[i] = 0.5 * (zcyl[0][i] + zcyl[0][i+1]);
-		assert(zcyl_out[i] > (i==0 ? zcyl_out.min : zcyl_out[i-1]) );
+		PRINT_ASSERT(zcyl_out[i],>,(i==0 ? zcyl_out.min : zcyl_out[i-1]) );
     	}
 
     	//===============//
@@ -158,12 +158,12 @@ void grid_2D_cylinder::read_model_file(Lua* lua)
 
 	    // indices. moving by one proc in the x direction increases proc by 1
 	    const int z_ind = zone_index(i,j);
-	    assert(z_ind < n_zones);
+	    PRINT_ASSERT(z_ind,<,n_zones);
 	    
 	    // zone position
 	    vector<double> r;
 	    zone_coordinates(z_ind,r);
-	    assert(r.size()==2);
+	    PRINT_ASSERT(r.size(),==,2);
 	    
 	    // zone values
 	    z[z_ind].rho =   rho[i][j];
@@ -179,15 +179,15 @@ void grid_2D_cylinder::read_model_file(Lua* lua)
 	      vz_tmp   *= speed_max / speed;
 	      if(rank0) cout << "WARNING: velocity of superluminal cell at {r,z}={" << rcyl_out[i] << "," << zcyl_out[j] << "} set to gamma=" << gamma_max << endl;
 	    }
-	    assert((int)z[z_ind].v.size()==3);
+	    PRINT_ASSERT((int)z[z_ind].v.size(),==,3);
 	    z[z_ind].v[0] = vr_tmp;
 	    z[z_ind].v[1] = vz_tmp;
 	    z[z_ind].v[2] = vphi_tmp;
-	    assert(zone_speed2(z_ind) < pc::c*pc::c);
-	    assert(z[z_ind].rho   >= 0.0);
-	    assert(z[z_ind].T >= 0.0);
-	    assert(z[z_ind].Ye    >= 0.0);
-	    assert(z[z_ind].Ye    <= 1.0);
+	    PRINT_ASSERT(zone_speed2(z_ind),<,pc::c*pc::c);
+	    PRINT_ASSERT(z[z_ind].rho,>=,0.0);
+	    PRINT_ASSERT(z[z_ind].T,>=,0.0);
+	    PRINT_ASSERT(z[z_ind].Ye,>=,0.0);
+	    PRINT_ASSERT(z[z_ind].Ye,<=,1.0);
 	    newtonian_eint_total += eps[i][j] * z[z_ind].rho * zone_lab_volume(z_ind);
 	    newtonian_mass += z[z_ind].rho * zone_lab_volume(z_ind);
 	  }
@@ -205,10 +205,10 @@ void grid_2D_cylinder::read_model_file(Lua* lua)
 //------------------------------------------------------------
 int grid_2D_cylinder::zone_index(const vector<double>& x) const
 {
-	assert(x.size()==3);
+	PRINT_ASSERT(x.size(),==,3);
 	double rcyl = sqrt(x[0]*x[0] + x[1]*x[1]);
 	double zcyl = x[2];
-	assert(rcyl >= 0);
+	PRINT_ASSERT(rcyl,>=,0);
 
 	// check if off the boundaries
 	if(rcyl <  rcyl_out.min               ) return -1;
@@ -220,8 +220,8 @@ int grid_2D_cylinder::zone_index(const vector<double>& x) const
 	const int i = rcyl_out.locate(rcyl);
 	const int j = zcyl_out.locate(zcyl);
 	const int z_ind = zone_index(i,j);
-	assert(z_ind >= 0);
-	assert(z_ind < (int)z.size());
+	PRINT_ASSERT(z_ind,>=,0);
+	PRINT_ASSERT(z_ind,<,(int)z.size());
 	return z_ind;
 }
 
@@ -230,12 +230,12 @@ int grid_2D_cylinder::zone_index(const vector<double>& x) const
 //----------------------------------------------------------------
 int grid_2D_cylinder::zone_index(const int i, const int j) const
 {
-	assert(i >= 0);
-	assert(j >= 0);
-	assert(i < (int)rcyl_out.size());
-	assert(j < (int)zcyl_out.size());
+	PRINT_ASSERT(i,>=,0);
+	PRINT_ASSERT(j,>=,0);
+	PRINT_ASSERT(i,<,(int)rcyl_out.size());
+	PRINT_ASSERT(j,<,(int)zcyl_out.size());
 	const int z_ind = i*zcyl_out.size() + j;
-	assert(z_ind < (int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)z.size());
 	return z_ind;
 }
 
@@ -245,11 +245,11 @@ int grid_2D_cylinder::zone_index(const int i, const int j) const
 //------------------------------------------------------------
 double grid_2D_cylinder::zone_lab_volume(const int z_ind) const
 {
-	assert(z_ind >= 0);
-	assert(z_ind < (int)z.size());
+	PRINT_ASSERT(z_ind,>=,0);
+	PRINT_ASSERT(z_ind,<,(int)z.size());
 	vector<int> dir_ind;
 	zone_directional_indices(z_ind,dir_ind);
-	assert(dir_ind.size()==2);
+	PRINT_ASSERT(dir_ind.size(),==,2);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 	const double rcyl0 = rcyl_out.bottom(i);
@@ -257,7 +257,7 @@ double grid_2D_cylinder::zone_lab_volume(const int z_ind) const
 	const double rcyl1 = rcyl_out[i];
 	const double zcyl1 = zcyl_out[j];
 	const double vol = pc::pi * (rcyl1*rcyl1 - rcyl0*rcyl0) * (zcyl1 - zcyl0);
-	assert(vol >= 0);
+	PRINT_ASSERT(vol,>=,0);
 	return vol;
 }
 
@@ -269,7 +269,7 @@ double grid_2D_cylinder::zone_min_length(const int z_ind) const
 {
 	vector<int> dir_ind;
 	zone_directional_indices(z_ind,dir_ind);
-	assert((int)dir_ind.size()==2);
+	PRINT_ASSERT((int)dir_ind.size(),==,2);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 
@@ -285,13 +285,13 @@ double grid_2D_cylinder::zone_min_length(const int z_ind) const
 //------------------------------------------------------------
 void grid_2D_cylinder::zone_coordinates(const int z_ind, vector<double>& r) const
 {
-	assert(z_ind >= 0);
-	assert(z_ind < (int)(rcyl_out.size()*zcyl_out.size()));
+	PRINT_ASSERT(z_ind,>=,0);
+	PRINT_ASSERT(z_ind,<,(int)(rcyl_out.size()*zcyl_out.size()));
 	r.resize(2);
 
 	vector<int> dir_ind(2,0);
 	zone_directional_indices(z_ind, dir_ind);
-	assert(dir_ind.size() == 2);
+	PRINT_ASSERT(dir_ind.size(),==,2);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 
@@ -307,15 +307,15 @@ void grid_2D_cylinder::zone_coordinates(const int z_ind, vector<double>& r) cons
 //-------------------------------------------
 void grid_2D_cylinder::zone_directional_indices(const int z_ind, vector<int>& dir_ind) const
 {
-	assert(z_ind >= 0);
-	assert(z_ind < (int)z.size());
+	PRINT_ASSERT(z_ind,>=,0);
+	PRINT_ASSERT(z_ind,<,(int)z.size());
 	dir_ind.resize(2);
 	dir_ind[0] = z_ind / zcyl_out.size(); // rcyl index
 	dir_ind[1] = z_ind % zcyl_out.size(); // zcyl index
-	assert(dir_ind[0] >= 0);
-	assert(dir_ind[1] >= 0);
-	assert(dir_ind[0] < (int)rcyl_out.size());
-	assert(dir_ind[1] < (int)zcyl_out.size());
+	PRINT_ASSERT(dir_ind[0],>=,0);
+	PRINT_ASSERT(dir_ind[1],>=,0);
+	PRINT_ASSERT(dir_ind[0],<,(int)rcyl_out.size());
+	PRINT_ASSERT(dir_ind[1],<,(int)zcyl_out.size());
 }
 
 
@@ -324,9 +324,9 @@ void grid_2D_cylinder::zone_directional_indices(const int z_ind, vector<int>& di
 //------------------------------------------------------------
 void grid_2D_cylinder::cartesian_sample_in_zone(const int z_ind, const vector<double>& rand, vector<double>& x) const
 {
-	assert(z_ind >= 0);
-	assert(z_ind < (int)z.size());
-	assert(rand.size()==3);
+	PRINT_ASSERT(z_ind,>=,0);
+	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(rand.size(),==,3);
 	x.resize(3);
 
 	// radius and theta indices
@@ -343,8 +343,8 @@ void grid_2D_cylinder::cartesian_sample_in_zone(const int z_ind, const vector<do
 
 	// sample radial position in shell using a probability integral transform
 	double radius = pow( rand[0]*(rcyl1*rcyl1 - rcyl0*rcyl0) + rcyl0*rcyl0, 1./2.);
-	assert(radius >= rcyl0*(1.-tiny));
-	assert(radius <= rcyl1*(1.+tiny));
+	PRINT_ASSERT(radius,>=,rcyl0*(1.-tiny));
+	PRINT_ASSERT(radius,<=,rcyl1*(1.+tiny));
 	radius = max(rcyl0,radius);
 	radius = min(rcyl1,radius);
 
@@ -368,10 +368,10 @@ void grid_2D_cylinder::cartesian_sample_in_zone(const int z_ind, const vector<do
 //------------------------------------------------------------
 void grid_2D_cylinder::cartesian_velocity_vector(const vector<double>& x, vector<double>& v, int z_ind) const
 {
-	assert(x.size()==3);
+	PRINT_ASSERT(x.size(),==,3);
 	v.resize(3,0);
 	if(z_ind < 0) z_ind = zone_index(x);
-	assert(z_ind >= -1);
+	PRINT_ASSERT(z_ind,>=,-1);
 
 	// if within inner sphere, z_ind=-1. Leave velocity at 0.
 	if(z_ind >= 0){
@@ -382,7 +382,7 @@ void grid_2D_cylinder::cartesian_velocity_vector(const vector<double>& x, vector
 		int along_axis = (rcyl/r < tiny);
 
 		// Based on position, calculate what the 3-velocity is
-		assert(z[z_ind].v.size()==3);
+		PRINT_ASSERT(z[z_ind].v.size(),==,3);
 		double vrcyl = z[z_ind].v[0];
 		double vphi  = z[z_ind].v[1];
 		double vz    = z[z_ind].v[2];
@@ -413,7 +413,7 @@ void grid_2D_cylinder::cartesian_velocity_vector(const vector<double>& x, vector
 //------------------------------------------------------------
 void grid_2D_cylinder::write_rays(int iw) const
 {
-	assert(iw >= 0);
+	PRINT_ASSERT(iw,>=,0);
 	ofstream outf;
 	unsigned i=0,j=0;
 	vector<double> r;
@@ -451,13 +451,13 @@ void grid_2D_cylinder::write_rays(int iw) const
 void grid_2D_cylinder::reflect_outer(particle *p) const{
   cout << "Error: cylindrical reflect_outer is not implemented or tested." << endl;
   exit(1);
-	// assert(r_out.size()>=1);
+	// PRINT_ASSERT(r_out.size(),>=,1);
 
 	// double rcyl0 = (rcyl_out.size()==1 ? rcyl_out.min : rcyl_out.size()-2);
 	// double z0    = (   z_out.size()==1 ?    z_out.min :    z_out.size()-2);
 	// double drcyl = rcyl_out[rcyl_out.size()-1] - rcyl0;
 	// double dz    =    z_out[   z_out.size()-1] -    z0;
-	// assert( fabs(prcyl - rcyl_out[rcyl_out.size()-1]) < tiny*dr);
+	// PRINT_ASSERT( fabs(prcyl - rcyl_out[rcyl_out.size()-1]),<,tiny*dr);
 
 	// // invert the radial component of the velocity
 	// if(p->rcyl > rcyl_out[rcyl_out.size()-1]){
@@ -469,13 +469,13 @@ void grid_2D_cylinder::reflect_outer(particle *p) const{
 
 	// // invert the z component of the velocity (bottom)
 	// if(p->x[2]<z_out.min){
-	//   assert(p->D[2]<0);
+	//   PRINT_ASSERT(p->D[2],<,0);
 	//   p->D[2] *= -1;
 	//   p->x[2] = z_out.min + tiny*dz;
 	// }
 
 	// if(p->x[2] > z_out[z_out.size()-1]){
-	//   assert(p->D[2]>0);
+	//   PRINT_ASSERT(p->D[2],>,0);
 	//   p->D[2] *= -1;
 	//   p->x[2] = z_out[z_out.size()-1] - tiny*dz;
 	// }
@@ -484,7 +484,7 @@ void grid_2D_cylinder::reflect_outer(particle *p) const{
 	// transport::normalize(p->D);
 
 	// // must be inside the boundary, or will get flagged as escaped
-	// assert(zone_index(p->x) >= 0);
+	// PRINT_ASSERT(zone_index(p->x),>=,0);
 }
 
 //------------------------------------------------------------
@@ -506,31 +506,31 @@ double grid_2D_cylinder::lab_dist_to_boundary(const particle *p) const{
 	double costheta = sqrt(p->D[0]*p->D[0] + p->D[1]*p->D[1]);
 	double d_outer_boundary = numeric_limits<double>::infinity();
 	double d_inner_boundary = numeric_limits<double>::infinity();
-	assert(rcyl<Rout);
-	assert(zone_index(p->x) >= -1);
+	PRINT_ASSERT(rcyl,<,Rout);
+	PRINT_ASSERT(zone_index(p->x),>=,-1);
 
 	// distance to inner boundary
 	double radical = rcyl*rcyl*(mucyl*mucyl-1.0) + Rin*Rin;
 	if(rcyl >= Rin){
 		if(Rin>0 && mucyl<0 && radical>=0){
 			double dcyl = -rcyl*mucyl - sqrt(radical);
-			assert(dcyl <= sqrt(Rout*Rout-Rin*Rin)*(1.0+tiny));
+			PRINT_ASSERT(dcyl,<=,sqrt(Rout*Rout-Rin*Rin)*(1.0+tiny));
 			d_inner_boundary = dcyl / costheta;
 		}
 	}
 	else{
 	        double dcyl = -rcyl*mucyl + sqrt(radical);
-		assert(dcyl <= 2.*Rin);
+		PRINT_ASSERT(dcyl,<=,2.*Rin);
 		d_inner_boundary = dcyl / costheta;
 	}
 	if(d_inner_boundary<0 && fabs(d_inner_boundary/Rin)<tiny*(rcyl_out[0]-Rin)) d_inner_boundary = tiny*(rcyl_out[0]-Rin);
-	assert(d_inner_boundary >= 0);
+	PRINT_ASSERT(d_inner_boundary,>=,0);
 
 	// distance to outer boundary
 	double dcyl = -rcyl*mucyl + sqrt(rcyl*rcyl*(mucyl*mucyl-1.0) + Rout*Rout);
 	if(dcyl<=0 && fabs(dcyl/Rin)<tiny*(Rout-rcyl_out[rcyl_out.size()-2])) dcyl = tiny*(Rout-rcyl_out[rcyl_out.size()-2]);
-	assert(dcyl > 0);
-	assert(dcyl <= 2.*Rout);
+	PRINT_ASSERT(dcyl,>,0);
+	PRINT_ASSERT(dcyl,<=,2.*Rout);
 	d_outer_boundary = dcyl / costheta;
 
 	// distances to the z boundaries
@@ -538,7 +538,7 @@ double grid_2D_cylinder::lab_dist_to_boundary(const particle *p) const{
 	double z_dist = INFINITY;
 	if(sintheta>0)      z_dist = (zcyl_out[zcyl_out.size()-1] - p->x[2]) / sintheta;
 	else if(sintheta<0) z_dist = (p->x[2] - zcyl_out.min               ) / sintheta;
-	assert(z_dist > 0);
+	PRINT_ASSERT(z_dist,>,0);
 
 	// make sure the particle ends up in a reasonable place
 	const double r_dist = min(d_inner_boundary, d_outer_boundary);
@@ -547,8 +547,8 @@ double grid_2D_cylinder::lab_dist_to_boundary(const particle *p) const{
 
 
 double grid_2D_cylinder::zone_radius(const int z_ind) const{
-	assert(z_ind >= 0);
-	assert(z_ind < (int)z.size());
+	PRINT_ASSERT(z_ind,>=,0);
+	PRINT_ASSERT(z_ind,<,(int)z.size());
 
 	// radius and theta indices
 	vector<int> dir_ind;
@@ -585,7 +585,7 @@ void grid_2D_cylinder::write_hdf5_coordinates(H5::H5File file) const
 	// get dimensions
 	vector<hsize_t> coord_dims;
 	dims(coord_dims);
-	assert(coord_dims.size()==dimensionality());
+	PRINT_ASSERT(coord_dims.size(),==,dimensionality());
 	for(unsigned i=0; i<coord_dims.size(); i++) coord_dims[i]++; //make room for min value
 
 	// write r coordinates

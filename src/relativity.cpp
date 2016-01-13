@@ -25,7 +25,6 @@
 //
 */
 
-#include <cassert>
 #include "transport.h"
 #include "particle.h"
 #include "grid_general.h"
@@ -34,11 +33,11 @@
 // lorentz factor ("gamma")
 // v_rel = v_newframe - v_oldframe
 double transport::lorentz_factor(const vector<double>& v){
-	assert(v.size()<=3);
-	assert(dot(v,v) < pc::c*pc::c);
+	PRINT_ASSERT(v.size(),<=,3);
+	PRINT_ASSERT(dot(v,v),<,pc::c*pc::c);
 	double beta2 = dot(v,v) / (pc::c*pc::c);
 	double lfac = 1.0 / sqrt(1.0 - beta2);
-	assert(lfac>=1.0);
+	PRINT_ASSERT(lfac,>=,1.0);
 	return lfac;
 }
 
@@ -46,9 +45,9 @@ double transport::lorentz_factor(const vector<double>& v){
 // v_rel = v_newframe - v_oldframe
 // D = direction vector of relativistic particle in old frame
 double transport::dot(const vector<double>& a, const vector<double>& b){
-	assert(a.size()>0);
-	assert(b.size()>0);
-	assert(a.size()==b.size());
+	PRINT_ASSERT(a.size(),>,0);
+	PRINT_ASSERT(b.size(),>,0);
+	PRINT_ASSERT(a.size(),==,b.size());
 	double product = 0;
 	for(unsigned i=0; i<a.size(); i++) product += a[i]*b[i];
 	return product;
@@ -56,16 +55,16 @@ double transport::dot(const vector<double>& a, const vector<double>& b){
 
 // normalize a vector
 void transport::normalize(vector<double>& a){
-	assert(a.size()>0);
+	PRINT_ASSERT(a.size(),>,0);
 	double magnitude = sqrt(dot(a,a));
 	for(unsigned i=0; i<a.size(); i++) a[i] /= magnitude;
 }
 
 // v_dot_d is the dot product of the relative velocity and the relativistic particle's direction
 double doppler_shift(const double gamma, const double vdd){
-	assert(gamma > 0);
+	PRINT_ASSERT(gamma,>,0);
 	double dshift = gamma * (1.0 - vdd/pc::c);
-	assert(dshift>0);
+	PRINT_ASSERT(dshift,>,0);
 	return dshift;
 }
 
@@ -73,9 +72,9 @@ double doppler_shift(const double gamma, const double vdd){
 // v = v_newframe - v_oldframe
 void lorentz_transform(particle* p, const vector<double> v){
 	// check input
-	assert(v.size()==3);
-	assert(p->nu > 0);
-	assert(p->e > 0);
+	PRINT_ASSERT(v.size(),==,3);
+	PRINT_ASSERT(p->nu,>,0);
+	PRINT_ASSERT(p->e,>,0);
 
 	// calculate the doppler shift, v dot D, and lorentz factors
 	double gamma = transport::lorentz_factor(v);
@@ -94,9 +93,9 @@ void lorentz_transform(particle* p, const vector<double> v){
 	transport::normalize(p->D);
 
 	// sanity checks
-	assert(p->e > 0);
-	assert(p->nu > 0);
-	assert(dshift > 0);
+	PRINT_ASSERT(p->e,>,0);
+	PRINT_ASSERT(p->nu,>,0);
+	PRINT_ASSERT(dshift,>,0);
 }
 
 
@@ -120,7 +119,7 @@ double transport::dshift_comoving_to_lab(const particle* p, const int z_ind) con
 	double gamma = lorentz_factor(v);
 	double vdd = dot(v, p->D);
 	double dshift = doppler_shift(gamma,vdd);
-	assert(dshift>0);
+	PRINT_ASSERT(dshift,>,0);
 	return dshift;
 }
 
@@ -137,7 +136,7 @@ double transport::dshift_lab_to_comoving(const particle* p, const int z_ind) con
 	double gamma = lorentz_factor(v);
 	double vdd = dot(v, p->D);
 	double dshift = doppler_shift(gamma,vdd);
-	assert(dshift>0);
+	PRINT_ASSERT(dshift,>,0);
 	return dshift;
 }
 
@@ -178,7 +177,7 @@ void transport::transform_lab_to_comoving(particle* p, const int z_ind) const
 double transport::comoving_dt(const int z_ind) const{
 	if(!do_relativity) return 1.0;
 
-	assert(z_ind >= 0);
-	assert(z_ind < (int)grid->z.size());
+	PRINT_ASSERT(z_ind,>=,0);
+	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
 	return 1.0 / lorentz_factor(grid->z[z_ind].v); // assume lab_dt=1.0
 }

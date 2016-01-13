@@ -37,7 +37,7 @@
 // safe constructor
 cdf_array::cdf_array(const int iorder){
 	N = NaN;
-	assert(iorder==1 || iorder==3);
+	PRINT_ASSERT(iorder==1,||,iorder==3);
 	interpolation_order = iorder;
 }
 
@@ -46,8 +46,8 @@ cdf_array::cdf_array(const int iorder){
 //------------------------------------------------------
 double cdf_array::get_value(const int i) const
 {
-	assert(i >= 0);
-	assert(i < (int)size());
+	PRINT_ASSERT(i,>=,0);
+	PRINT_ASSERT(i,<,(int)size());
 	if (i==0) return y[0];
 	else return (y[i] - y[i-1]);
 }
@@ -62,8 +62,8 @@ double cdf_array::get_value(const int i) const
 //------------------------------------------------------
 void cdf_array::set_value(const int i, const double f)
 {
-	assert(i >= 0);
-	assert(i < (int)size());
+	PRINT_ASSERT(i,>=,0);
+	PRINT_ASSERT(i,<,(int)size());
 	y[i] = ( i==0 ? f : y[i-1]+f );
 }
 
@@ -80,7 +80,7 @@ void cdf_array::normalize(double cutoff)
 	// normalize to end = 1.0
 	else{
 		N = y.back();
-		assert(N > 0);
+		PRINT_ASSERT(N,>,0);
 		for(unsigned i=0;i<y.size();i++)   y[i] /= ( N>0 ? N : 1 );
 	}
 
@@ -105,11 +105,11 @@ void cdf_array::normalize(double cutoff)
 //---------------------------------------------------------
 int cdf_array::get_index(const double yval) const
 {
-	assert(yval >= 0);
-	assert(yval <= 1.0);
+	PRINT_ASSERT(yval,>=,0);
+	PRINT_ASSERT(yval,<=,1.0);
 	int i = upper_bound(y.begin(), y.end(), yval) - y.begin();
-	assert(i >= 0);
-	assert(i < (int)size());
+	PRINT_ASSERT(i,>=,0);
+	PRINT_ASSERT(i,<,(int)size());
 	return i;
 }
 
@@ -120,14 +120,14 @@ int cdf_array::get_index(const double yval) const
 //-----------------------------------------------------
 double cdf_array::inverse_tangent(const int i, const locate_array* xgrid) const{
 	int N = size();
-	assert(i>=-1);
-	assert(i<=(int)size()-1);
+	PRINT_ASSERT(i,>=,-1);
+	PRINT_ASSERT(i,<=,(int)size()-1);
 
 	// two-point stencil on boundary, 3-point stencil elsewhere. Keep out infinities.
 	double result = 0.0;
 	double left_secant  = (i==-1  ? numeric_limits<double>::infinity() : inverse_secant(i-1,i,xgrid));
 	double right_secant = (i==N-1 ? numeric_limits<double>::infinity() : inverse_secant(i,i+1,xgrid));
-	assert(!isinf<bool>(left_secant) || !isinf<bool>(right_secant));
+	PRINT_ASSERT(!isinf<bool>(left_secant),||,!isinf<bool>(right_secant));
 	if     (i==-1 ) result = right_secant;
 	else if(i==N-1) result = left_secant;
 	else{
@@ -139,14 +139,14 @@ double cdf_array::inverse_tangent(const int i, const locate_array* xgrid) const{
 }
 double cdf_array::tangent(const int i, const locate_array* xgrid) const{
 	int N = size();
-	assert(i>=-1);
-	assert(i<=(int)size()-1);
+	PRINT_ASSERT(i,>=,-1);
+	PRINT_ASSERT(i,<=,(int)size()-1);
 
 	// two-point stencil on boundary, 3-point stencil elsewhere. Keep out infinities.
 	double result = 0.0;
 	double left_secant  = (i==-1  ? numeric_limits<double>::infinity() : secant(i-1,i,xgrid));
 	double right_secant = (i==N-1 ? numeric_limits<double>::infinity() : secant(i,i+1,xgrid));
-	assert(!isinf<bool>(left_secant) || !isinf<bool>(right_secant));
+	PRINT_ASSERT(!isinf<bool>(left_secant),||,!isinf<bool>(right_secant));
 	if     (i==-1 ) result = right_secant;
 	else if(i==N-1) result = left_secant;
 	else{
@@ -164,9 +164,9 @@ double cdf_array::inverse_secant(const int i, const int j, const locate_array* x
 	return 1.0 / secant(i,j,xgrid);
 }
 double cdf_array::secant(const int i, const int j, const locate_array* xgrid) const{
-	assert(i>=-1 && i<(int)size()-1);
-	assert(j>=0  && j<(int)size()  );
-	assert(j>i);
+	PRINT_ASSERT(i>=-1,&&,i<(int)size()-1);
+	PRINT_ASSERT(j>=0, &&,j<(int)size()  );
+	PRINT_ASSERT(j,>,i);
 
 	double result = 0.0;
 	if(i==-1) result = (y[j]-0.0 ) / ((*xgrid)[j]-xgrid->min );
@@ -182,35 +182,43 @@ double cdf_array::secant(const int i, const int j, const locate_array* xgrid) co
 //---------------------------------------------------------
 // first, the cubic hermit spline functions
 double h00(const double t){
-	assert(0.0<=t && t<=1.0);
+	PRINT_ASSERT(0.0,<=,t);
+	PRINT_ASSERT(t,<=,1.0);
 	return (1.0+2.0*t)*(1.0-t)*(1.0-t);
 }
 double h10(const double t){
-	assert(0<=t && t<=1.0);
+	PRINT_ASSERT(0,<=,t);
+	PRINT_ASSERT(t,<=,1.0);
 	return t*(1.0-t)*(1.0-t);
 }
 double h01(const double t){
-	assert(0.0<=t && t<=1.0);
+	PRINT_ASSERT(0.0,<=,t);
+	PRINT_ASSERT(t,<=,1.0);
 	return t*t*(3.0-2.0*t);
 }
 double h11(const double t){
-	assert(0.0<=t && t<=1.0);
+	PRINT_ASSERT(0.0,<=,t);
+	PRINT_ASSERT(t,<=,1.0);
 	return t*t*(t-1.0);
 }
 double h00p(const double t){
-	assert(0.0<=t && t<=1.0);
+	PRINT_ASSERT(0.0,<=,t);
+	PRINT_ASSERT(t,<=,1.0);
 	return 6.0 * t * (t-1.0);
 }
 double h10p(const double t){
-	assert(0<=t && t<=1.0);
+	PRINT_ASSERT(0,<=,t);
+	PRINT_ASSERT(t,<=,1.0);
 	return (1.0-t)*(3.0-t);
 }
 double h01p(const double t){
-	assert(0.0<=t && t<=1.0);
+	PRINT_ASSERT(0.0,<=,t);
+	PRINT_ASSERT(t,<=,1.0);
 	return 6.0*t*(t-1.0);
 }
 double h11p(const double t){
-	assert(0.0<=t && t<=1.0);
+	PRINT_ASSERT(0.0,<=,t);
+	PRINT_ASSERT(t,<=,1.0);
 	return t*(3.0*t-2.0);
 }
 double cdf_array::invert(const double rand, const locate_array* xgrid, const int i_in) const{
@@ -219,7 +227,7 @@ double cdf_array::invert(const double rand, const locate_array* xgrid, const int
 	if     (interpolation_order==0) result = invert_piecewise(rand,xgrid,i_in);
 	else if(interpolation_order==1) result = invert_linear(rand,xgrid,i_in);
 	else if(interpolation_order==3) result = invert_cubic(rand,xgrid,i_in);
-	assert(result>0);
+	PRINT_ASSERT(result,>,0);
 	return result;
 }
 double cdf_array::interpolate_pdf(const double x, const locate_array* xgrid) const
@@ -229,17 +237,18 @@ double cdf_array::interpolate_pdf(const double x, const locate_array* xgrid) con
 	if     (interpolation_order==0) result = interpolate_pdf_piecewise(x,xgrid);
 	else if(interpolation_order==1) result = interpolate_pdf_linear(x,xgrid);
 	else if(interpolation_order==3) result = interpolate_pdf_cubic(x,xgrid);
-	assert(result>=0);
+	PRINT_ASSERT(result,>=,0);
 	return result;
 }
 double cdf_array::invert_cubic(const double rand, const locate_array* xgrid, const int i_in) const
 // INCONSISTENCY - the emissivity is integrated assuming piecewise constant.
 // This is inconsistent with cubic interpolation.
 {
-	assert(rand>=0 && rand<=1);
+	PRINT_ASSERT(rand,>=,0);
+	PRINT_ASSERT(rand,<=,1);
 	int i = (i_in<0 ? get_index(rand) : i_in);
-	assert(i<(int)size());
-	assert(i>=0);
+	PRINT_ASSERT(i,<,(int)size());
+	PRINT_ASSERT(i,>=,0);
 
 	// check for degenerate case (left and right values are equal)
 	double yRight = y[i];
@@ -259,8 +268,8 @@ double cdf_array::invert_cubic(const double rand, const locate_array* xgrid, con
 	double limiter = 3.0;
 	double alpha = mLeft/slope;
 	double beta = mRight/slope;
-	assert(alpha>0);
-	assert(beta>0);
+	PRINT_ASSERT(alpha,>,0);
+	PRINT_ASSERT(beta,>,0);
 	if(alpha*alpha + beta*beta > limiter*limiter){
 		double tau = limiter/sqrt(alpha*alpha+beta*beta);
 		mLeft = tau*alpha*slope;
@@ -272,23 +281,24 @@ double cdf_array::invert_cubic(const double rand, const locate_array* xgrid, con
 	double t = 0;
 	if(i_in<0) t = (rand-yLeft)/h;
 	else t = rand*(yRight-yLeft)/h;
-	assert(t>=0 && t<=1);
+	PRINT_ASSERT(t,>=,0);
+	PRINT_ASSERT(t,<=,1);
 	double result = xLeft*h00(t) + h*mLeft*h10(t) + xRight*h01(t) + h*mRight*h11(t);
 	result = max(xLeft,result);
 	result = min(xRight,result);
-	assert(xLeft<=result);
-	assert(xRight>=result);
+	PRINT_ASSERT(xLeft,<=,result);
+	PRINT_ASSERT(xRight,>=,result);
 	return result;
 }
 double cdf_array::interpolate_pdf_cubic(const double x, const locate_array* xgrid) const
 {
-	assert(x>=xgrid->min);
-	assert(x<=xgrid->x[xgrid->size()-1]);
+	PRINT_ASSERT(x,>=,xgrid->min);
+	PRINT_ASSERT(x,<=,xgrid->x[xgrid->size()-1]);
 
 	// get the upper index
 	int i = xgrid->locate(x);
-	assert(i<(int)size());
-	assert(i>=0);
+	PRINT_ASSERT(i,<,(int)size());
+	PRINT_ASSERT(i,>=,0);
 
 	// check for degenerate case (left and right values are equal)
 	double yRight = y[i];
@@ -308,8 +318,8 @@ double cdf_array::interpolate_pdf_cubic(const double x, const locate_array* xgri
 	double limiter = 3.0;
 	double alpha = mLeft/slope;
 	double beta = mRight/slope;
-	assert(alpha>0);
-	assert(beta>0);
+	PRINT_ASSERT(alpha,>,0);
+	PRINT_ASSERT(beta,>,0);
 	if(alpha*alpha + beta*beta > limiter*limiter){
 		double tau = limiter/sqrt(alpha*alpha+beta*beta);
 		mLeft = tau*alpha*slope;
@@ -320,25 +330,26 @@ double cdf_array::interpolate_pdf_cubic(const double x, const locate_array* xgri
 	double h = xRight-xLeft;
 	double t = (x-xLeft)/h;
 	double dtdx = h;
-	assert(t>=0 && t<=1);
+	PRINT_ASSERT(t,>=,0);
+	PRINT_ASSERT(t,<=,1);
 	//double result = yLeft*h00(t) + h*mLeft*h10(t) + yRight*h01(t) + h*mRight*h11(t);
 	double result = dtdx * (yLeft*h00p(t) + h*mLeft*h10p(t) + yRight*h01p(t) + h*mRight*h11p(t));
 	//result = max(yLeft,result);
 	//result = min(yRight,result);
-	//assert(yLeft<=result);
-	//assert(yRight>=result);
+	//PRINT_ASSERT(yLeft<=result);
+	//PRINT_ASSERT(yRight>=result);
 	return result;
 }
 double cdf_array::interpolate_pdf_linear(const double x, const locate_array* xgrid) const
 {
-	assert(x>=xgrid->min);
-	assert(x<=xgrid->x[xgrid->size()-1]);
+	PRINT_ASSERT(x,>=,xgrid->min);
+	PRINT_ASSERT(x,<=,xgrid->x[xgrid->size()-1]);
 
 	// get the upper/lower indices
 	int upper = xgrid->locate(x);
-	assert(upper>=0);
+	PRINT_ASSERT(upper,>=,0);
 	int lower = upper-1;
-	assert(lower<(int)xgrid->size());
+	PRINT_ASSERT(lower,<,(int)xgrid->size());
 
 	// get the x and y values of the left and right sides
 	double x1,x2,y1,y2;
@@ -357,16 +368,17 @@ double cdf_array::interpolate_pdf_linear(const double x, const locate_array* xgr
 
 	double slope = (y2-y1)/(x2-x1);
 	double result = slope; //y1 + slope*(x-x1);
-	//assert(result <= (*xgrid)[xgrid->size()-1]);
-	//assert(result >= xgrid->min);
+	//PRINT_ASSERT(result <= (*xgrid)[xgrid->size()-1]);
+	//PRINT_ASSERT(result >= xgrid->min);
 	return result;
 }
 double cdf_array::invert_linear(const double rand, const locate_array* xgrid, const int i_in) const
 {
-	assert(rand>=0 && rand<=1);
+	PRINT_ASSERT(rand,>=,0);
+	PRINT_ASSERT(rand,<=,1);
 	int i = (i_in<0 ? get_index(rand) : i_in);
-	assert(i<(int)size());
-	assert(i>=0);
+	PRINT_ASSERT(i,<,(int)size());
+	PRINT_ASSERT(i,>=,0);
 
 	// check for degenerate case (left and right values are equal)
 	double xLeft = (i>0 ? (*xgrid)[i-1] : xgrid->min);
@@ -383,30 +395,31 @@ double cdf_array::invert_linear(const double rand, const locate_array* xgrid, co
 	double result = 0;
 	if(i_in<0) result = xLeft + slope*(rand-yLeft);
 	else result = xLeft + rand*slope*(yRight-yLeft);
-	assert(xLeft<=result);
-	assert(xRight>=result);
+	PRINT_ASSERT(xLeft,<=,result);
+	PRINT_ASSERT(xRight,>=,result);
 	return result;
 }
 double cdf_array::invert_piecewise(const double rand, const locate_array* xgrid, const int i_in) const
 {
-	assert(rand>=0 && rand<=1);
+	PRINT_ASSERT(rand,>=,0);
+	PRINT_ASSERT(rand,<=,1);
 	int i = (i_in<0 ? get_index(rand) : i_in);
-	assert(i<(int)size());
-	assert(i>=0);
+	PRINT_ASSERT(i,<,(int)size());
+	PRINT_ASSERT(i,>=,0);
 
 	return xgrid->center(i);
 }
 double cdf_array::interpolate_pdf_piecewise(const double x, const locate_array* xgrid) const
 {
-	assert(x>=xgrid->min);
-	assert(x<=xgrid->x[xgrid->size()-1]);
+	PRINT_ASSERT(x,>=,xgrid->min);
+	PRINT_ASSERT(x,<=,xgrid->x[xgrid->size()-1]);
 
 	//if(x<(*xgrid)[0]) return 0.0;
 
 	int upper = xgrid->locate(x);
-	assert(upper>=0);
+	PRINT_ASSERT(upper,>=,0);
 	int lower = upper-1;
-	assert(lower<(int)xgrid->size());
+	PRINT_ASSERT(lower,<,(int)xgrid->size());
 
 	return get_value(upper); //y[lower];
 }

@@ -65,7 +65,7 @@ void neutrinos::myInit(Lua* lua)
 	else{
 		double nu_start = lua->scalar<double>("nut_nugrid_start");
 		double nu_stop  = lua->scalar<double>("nut_nugrid_stop");
-		assert(nu_stop > nu_start);
+		PRINT_ASSERT(nu_stop,>,nu_start);
 		int      n_nu   = lua->scalar<int>("nut_nugrid_n");
 		nu_grid.init(nu_start,nu_stop,n_nu);
 
@@ -79,7 +79,7 @@ void neutrinos::myInit(Lua* lua)
 	}
 
 	// intialize output spectrum
-	assert(nu_grid.size()>0);
+	PRINT_ASSERT(nu_grid.size(),>,0);
 	int nmu  = lua->scalar<int>("nut_spec_n_mu");
 	int nphi = lua->scalar<int>("nut_spec_n_phi");
 	spectrum_array tmp_spectrum;
@@ -139,7 +139,8 @@ void neutrinos::set_eas(int zone_index)
 	}
 
 	else{ // get emissivity from blackbody and the grey opacity
-		assert(grey_abs_frac>=0 && grey_abs_frac<=1.0);
+		PRINT_ASSERT(grey_abs_frac,>=,0);
+		PRINT_ASSERT(grey_abs_frac,<=,1.0);
 		for(unsigned j=0;j<nu_grid.size();j++)
 		{
 			double nu  = nu_grid.center(j);        // (Hz)
@@ -171,7 +172,7 @@ double neutrinos::blackbody(const double T /*K*/, const double chem_pot /*erg*/,
 {
 	double zeta = (pc::h*nu - chem_pot)/pc::k/T;
 	double bb = (pc::h*nu) * (nu/pc::c) * (nu/pc::c) / (exp(zeta) + 1.0);
-	assert(bb >= 0);
+	PRINT_ASSERT(bb,>=,0);
 	return bb;
 }
 
@@ -179,8 +180,10 @@ double neutrinos::blackbody(const double T /*K*/, const double chem_pot /*erg*/,
 // Calculate the neutrino anti-neutrino annihilation rate (erg/ccm/s) from the distribution functions (erg/ccm)
 //-------------------------------------------------------------------------------------------------------------
 double cos_angle_between(const double mu1, const double mu2, const double phi1, const double phi2){
-	assert(mu1<=1.0 && mu1>=-1.0);
-	assert(mu2<=1.0 && mu2>=-1.0);
+	PRINT_ASSERT(mu1,<=,1.0);
+	PRINT_ASSERT(mu1,>=,-1.0);
+	PRINT_ASSERT(mu2,<=,1.0);
+	PRINT_ASSERT(mu2,>=,-1.0);
 	double result = mu1*mu2 + sqrt((1.0-mu1*mu1)*(1.0-mu2*mu2))*cos(phi2-phi1); // Bruenn 1985 eq. A7
 
 	// make sure numerical error doesn't push it beyond {-1,1}
@@ -194,7 +197,7 @@ double neutrinos::annihilation_rate(
 		const bool electron_type,		   // is this an electron-type interaction?
 		const int weight){         		   // weight of each species
 
-	assert(nu_dist.size() == nubar_dist.size());
+	PRINT_ASSERT(nu_dist.size(),==,nubar_dist.size());
 
 	// constants
 	using namespace pc;
@@ -232,7 +235,7 @@ double neutrinos::annihilation_rate(
 	}
 
 	Q *= pc::sigma0*pc::c / (4.*mec2*mec2); // erg/ccm/s
-	assert(Q >= 0);
+	PRINT_ASSERT(Q,>=,0);
 
 	return Q;
 }

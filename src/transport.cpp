@@ -269,11 +269,11 @@ void transport::init(Lua* lua)
 		if(species_list[i]->rho_max > rho_max) rho_max = species_list[i]->rho_max;
 	}
 
-	assert(T_min >= 0);
-	assert(T_max > T_min);
-	assert(Ye_min >= 0);
-	assert(Ye_max > Ye_min);
-	assert(Ye_max <= 1.0);
+	PRINT_ASSERT(T_min,>=,0);
+	PRINT_ASSERT(T_max,>,T_min);
+	PRINT_ASSERT(Ye_min,>=,0);
+	PRINT_ASSERT(Ye_max,>,Ye_min);
+	PRINT_ASSERT(Ye_max,<=,1.0);
 
 	//=================//
 	// SET UP THE CORE //
@@ -282,7 +282,7 @@ void transport::init(Lua* lua)
 	r_core = lua->scalar<double>("r_core");   // cm
 	if(n_emit_core>0 || n_emit_core_per_bin>0){
 		core_emit_method = lua->scalar<int>("core_emit_method");
-		assert(core_emit_method==1 || core_emit_method==2);
+		PRINT_ASSERT(core_emit_method==1,||,core_emit_method==2);
 		int iorder = lua->scalar<int>("cdf_interpolation_order");
 		core_species_luminosity.interpolation_order = iorder;
 		for(unsigned s=0; s<species_list.size(); s++) species_list[s]->core_emis.interpolation_order = iorder;
@@ -294,7 +294,7 @@ void transport::init(Lua* lua)
 			init_core(r_core, T_core, munue_core);
 		}
 		if(core_emit_method==2){ // give temperature, mu, luminosity
-			assert(species_list.size()==3);
+			PRINT_ASSERT(species_list.size(),==,3);
 			vector<double> T_core(species_list.size(),0);
 			T_core[0] = lua->scalar<double>("T0_core") / pc::k_MeV; //K
 			T_core[1] = lua->scalar<double>("T1_core") / pc::k_MeV; //K
@@ -344,9 +344,9 @@ void transport::init(Lua* lua)
 // set up core (without reading lua)
 //-----------------------------------
 void transport::init_core(const double r_core /*cm*/, const vector<double>& T_core /*K*/, const vector<double>& mu_core /*erg*/, const vector<double>& L_core /*erg/s*/){
-	assert(n_emit_core>0 || n_emit_core_per_bin>0);
-	assert(r_core>0);
-	assert(species_list.size()>0);
+	PRINT_ASSERT(n_emit_core>0,||,n_emit_core_per_bin>0);
+	PRINT_ASSERT(r_core,>,0);
+	PRINT_ASSERT(species_list.size(),>,0);
 
 	// set up core emission spectrum function (erg/s)
 	core_species_luminosity.resize(species_list.size());
@@ -358,10 +358,10 @@ void transport::init_core(const double r_core /*cm*/, const vector<double>& T_co
 	core_species_luminosity.normalize();
 }
 void transport::init_core(const double r_core /*cm*/, const double T_core /*K*/, const double munue_core /*erg*/){
-	assert(n_emit_core>0 || n_emit_core_per_bin>0);
-	assert(r_core>0);
-	assert(T_core>0);
-	assert(species_list.size()>0);
+	PRINT_ASSERT(n_emit_core>0,||,n_emit_core_per_bin>0);
+	PRINT_ASSERT(r_core,>,0);
+	PRINT_ASSERT(T_core,>,0);
+	PRINT_ASSERT(species_list.size(),>,0);
 
 	// set up core emission spectrum function (erg/s)
 	core_species_luminosity.resize(species_list.size());
@@ -492,9 +492,9 @@ void transport::calculate_annihilation() const{
 	// remember what zones I'm responsible for
 	int start = ( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
 	int end = my_zone_end[MPI_myID];
-	assert(end >= start);
-	assert(start >= 0);
-	assert(end <= (int)grid->z.size());
+	PRINT_ASSERT(end,>=,start);
+	PRINT_ASSERT(start,>=,0);
+	PRINT_ASSERT(end,<=,(int)grid->z.size());
 
 	vector<double> H_nunu_lab(species_list.size(),0);
 
@@ -504,7 +504,7 @@ void transport::calculate_annihilation() const{
 		// based on nulib's prescription for which species each distribution represents
 		unsigned s_nue    = 0;
 		unsigned s_nubare = 1;
-		assert(species_list[s_nue]->weight == species_list[s_nubare]->weight);
+		PRINT_ASSERT(species_list[s_nue]->weight,==,species_list[s_nubare]->weight);
 		double Q_tmp = 0;
 		double vol = grid->zone_lab_volume(z_ind);
 		double zone_annihil_net = 0;
@@ -517,7 +517,7 @@ void transport::calculate_annihilation() const{
 			#pragma omp atomic
 			H_nunu_lab[0] += Q_tmp*vol;
 		}
-		assert(H_nunu_lab[1]==0);
+		PRINT_ASSERT(H_nunu_lab[1],==,0);
 
 		if(species_list.size()==3){
 			unsigned s_nux = 2;
@@ -534,7 +534,7 @@ void transport::calculate_annihilation() const{
 		else if(species_list.size()==4){
 			unsigned s_nux = 2;
 			unsigned s_nubarx = 3;
-			assert(species_list[s_nux]->weight == species_list[s_nubarx]->weight);
+			PRINT_ASSERT(species_list[s_nux]->weight,==,species_list[s_nubarx]->weight);
 			Q_tmp = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nux   ],
 					grid->z[z_ind].distribution[s_nubarx],
 					false,species_list[s_nux]->weight);
@@ -543,7 +543,7 @@ void transport::calculate_annihilation() const{
 				#pragma omp atomic
 				H_nunu_lab[2] += 2.0 * Q_tmp*vol;
 			}
-			assert(H_nunu_lab[3]==0);
+			PRINT_ASSERT(H_nunu_lab[3],==,0);
 		}
 
 		else if(species_list.size()==6){
@@ -551,8 +551,8 @@ void transport::calculate_annihilation() const{
 			unsigned s_nubarmu = 3;
 			unsigned s_nutau = 4;
 			unsigned s_nubartau = 5;
-			assert(species_list[s_numu]->weight == species_list[s_nubarmu]->weight);
-			assert(species_list[s_nutau]->weight == species_list[s_nubartau]->weight);
+			PRINT_ASSERT(species_list[s_numu]->weight,==,species_list[s_nubarmu]->weight);
+			PRINT_ASSERT(species_list[s_nutau]->weight,==,species_list[s_nubartau]->weight);
 			Q_tmp = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_numu   ],
 					  grid->z[z_ind].distribution[s_nubarmu],
 					  false,species_list[s_numu]->weight);
@@ -561,7 +561,7 @@ void transport::calculate_annihilation() const{
 				#pragma omp atomic
 				H_nunu_lab[2] += Q_tmp*vol;
 			}
-			assert(H_nunu_lab[3]==0);
+			PRINT_ASSERT(H_nunu_lab[3],==,0);
 			Q_tmp = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nutau   ],
 					  grid->z[z_ind].distribution[s_nubartau],
 					  false,species_list[s_nutau]->weight);
@@ -570,7 +570,7 @@ void transport::calculate_annihilation() const{
 				#pragma omp atomic
 				H_nunu_lab[4] += Q_tmp*vol;
 			}
-			assert(H_nunu_lab[5]==0);
+			PRINT_ASSERT(H_nunu_lab[5],==,0);
 		}
 		else{
 			cout << "ERROR: wrong species list size in calculate_annihilation" << endl;
@@ -629,11 +629,11 @@ void transport::normalize_radiative_quantities(){
 		double four_vol = grid->zone_lab_volume(z_ind); // Lorentz invariant - same in lab and comoving frames. Assume lab_dt=1.0
 
 		if(!grid->good_zone(z_ind)){
-			assert(z->e_abs == 0.0);
-			assert(z->nue_abs == 0.0);
-			assert(z->anue_abs == 0.0);
-			assert(z->e_emit == 0.0);
-			assert(z->l_emit == 0.0);
+			PRINT_ASSERT(z->e_abs,==,0.0);
+			PRINT_ASSERT(z->nue_abs,==,0.0);
+			PRINT_ASSERT(z->anue_abs,==,0.0);
+			PRINT_ASSERT(z->e_emit,==,0.0);
+			PRINT_ASSERT(z->l_emit,==,0.0);
 		}
 
 		z->e_abs    /= multiplier*four_vol;       // erg      --> erg/ccm/s
@@ -784,8 +784,8 @@ void transport::sample_zone_species(particle *p, const int zone_index) const
 	double z = rangen.uniform();
 	p->s = species_cdf.get_index(z);
 	p->e *= species_list[p->s]->integrate_zone_emis(zone_index) / species_list[p->s]->integrate_zone_biased_emis(zone_index);
-	assert(p->e>0);
-	assert(p->e<INFINITY);
+	PRINT_ASSERT(p->e,>,0);
+	PRINT_ASSERT(p->e,<,INFINITY);
 }
 
 
@@ -986,19 +986,19 @@ void transport::update_zone_quantities(){
 
 		// adjust the temperature based on the heat capacity (erg/K)
 		if(solve_T){
-			// assert(z.heat_cap > 0);
+			// PRINT_ASSERT(z.heat_cap,>,0);
 			// z.T_gas += (z->e_abs-z->e_emit) / z->heat_cap;
-			// assert(z->T_gas >= T_min);
-			// assert(z->T_gas <= T_max);
+			// PRINT_ASSERT(z->T_gas,>=,T_min);
+			// PRINT_ASSERT(z->T_gas,<=,T_max);
 		}
 
 		// adjust the Ye based on the lepton capacity (number of leptons)
 		if(solve_Ye){
 			double Nbary = grid->zone_rest_mass(i) / mean_mass(i);
-			assert(Nbary > 0);
+			PRINT_ASSERT(Nbary,>,0);
 			z->Ye += (z->nue_abs-z->anue_abs - z->l_emit) / Nbary;
-			assert(z->Ye >= Ye_min);
-			assert(z->Ye <= Ye_max);
+			PRINT_ASSERT(z->Ye,>=,Ye_min);
+			PRINT_ASSERT(z->Ye,<=,Ye_max);
 		}
 	}
 }

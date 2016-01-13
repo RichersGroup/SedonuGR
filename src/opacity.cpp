@@ -35,8 +35,8 @@
 //-----------------------------------------------------------------
 void species_general::get_opacity(const double com_nu, const int z_ind, double* opac, double* abs_frac) const
 {
-	assert(z_ind >= -1);
-	assert(com_nu > 0);
+	PRINT_ASSERT(z_ind,>=,-1);
+	PRINT_ASSERT(com_nu,>,0);
 
 	if(z_ind == -1){ // particle is within inner boundary
 		*opac = 0;
@@ -50,11 +50,12 @@ void species_general::get_opacity(const double com_nu, const int z_ind, double* 
 
 		// output - net opacity
 		*opac = a+s;
-		assert(*opac>=0);
+		PRINT_ASSERT(*opac,>=,0);
 
 		// output - absorption fraction
 		*abs_frac = (a+s>0 ? a/(a+s) : 0);
-		assert(0<=*abs_frac && *abs_frac<=1.0);
+		PRINT_ASSERT(0,<=,*abs_frac);
+		PRINT_ASSERT(*abs_frac,<=,1.0);
 	}
 }
 

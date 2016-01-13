@@ -47,11 +47,11 @@ void grid_0D_isotropic::read_model_file(Lua* lua)
 	z[0].v[0] = 0;
 	z[0].v[1] = 0;
 	z[0].v[2] = 0;
-	assert(z[0].rho >= 0);
-	assert(z[0].T >= 0);
-	assert(z[0].Ye >= 0);
-	assert(z[0].Ye <= 1.0);
-	assert(z[0].v.size() == 3);
+	PRINT_ASSERT(z[0].rho,>=,0);
+	PRINT_ASSERT(z[0].T,>=,0);
+	PRINT_ASSERT(z[0].Ye,>=,0);
+	PRINT_ASSERT(z[0].Ye,<=,1.0);
+	PRINT_ASSERT(z[0].v.size(),==,3);
 }
 
 
@@ -69,7 +69,7 @@ int grid_0D_isotropic::zone_index(const vector<double>& x) const
 //------------------------------------------------------------
 double  grid_0D_isotropic::zone_lab_volume(const int z_ind) const
 {
-	assert(z_ind == 0);
+	PRINT_ASSERT(z_ind,==,0);
 	return 1.0;
 }
 
@@ -79,7 +79,7 @@ double  grid_0D_isotropic::zone_lab_volume(const int z_ind) const
 //------------------------------------------------------------
 double  grid_0D_isotropic::zone_min_length(const int z_ind) const
 {
-	assert(z_ind == 0);
+	PRINT_ASSERT(z_ind,==,0);
 	return INFINITY;
 }
 
@@ -88,7 +88,7 @@ double  grid_0D_isotropic::zone_min_length(const int z_ind) const
 // find the coordinates of the zone in geometrical coordinates
 // ------------------------------------------------------------
 void grid_0D_isotropic::zone_coordinates(const int z_ind, vector<double>& r) const{
-	assert(z_ind == 0);
+	PRINT_ASSERT(z_ind,==,0);
 	r.resize(dimensionality());
 }
 
@@ -98,7 +98,7 @@ void grid_0D_isotropic::zone_coordinates(const int z_ind, vector<double>& r) con
 //-------------------------------------------
 void grid_0D_isotropic::zone_directional_indices(const int z_ind, vector<int>& dir_ind) const
 {
-	assert(z_ind == 0);
+	PRINT_ASSERT(z_ind,==,0);
 	dir_ind.resize(dimensionality());
 }
 
@@ -109,7 +109,7 @@ void grid_0D_isotropic::zone_directional_indices(const int z_ind, vector<int>& d
 void grid_0D_isotropic::cartesian_sample_in_zone
 (const int z_ind, const vector<double>& rand, vector<double>& x) const
 {
-	assert(z_ind == 0);
+	PRINT_ASSERT(z_ind,==,0);
 	x.resize(3);
 
 	// set the double 3-d coordinates
@@ -124,10 +124,10 @@ void grid_0D_isotropic::cartesian_sample_in_zone
 //------------------------------------------------------------
 void grid_0D_isotropic::cartesian_velocity_vector(const vector<double>& x, vector<double>& v, int z_ind) const
 {
-	assert(x.size()==3);
+	PRINT_ASSERT(x.size(),==,3);
 	v.resize(3);
 	v.assign(z[0].v.begin(),z[0].v.end());
-	assert(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] <= pc::c*pc::c);
+	PRINT_ASSERT(v[0]*v[0] + v[1]*v[1] + v[2]*v[2],<=,pc::c*pc::c);
 }
 
 

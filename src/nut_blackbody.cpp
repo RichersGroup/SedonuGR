@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 	double max_logT  , min_logT  , T0;
 	double max_ye    , min_ye    , ye0;
 	int n_rho, n_T, n_ye;
-	assert(argc==15);
+	PRINT_ASSERT(argc,==,15);
 	sscanf(argv[2 ], "%lf", &min_logrho);
 	sscanf(argv[3 ], "%lf", &max_logrho);
 	sscanf(argv[4 ], "%lf", &rho0);
@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 	lua.close();
 
 	// check parameters
-	assert(sim.r_core==0);
+	PRINT_ASSERT(sim.r_core,==,0);
 
 	// open the output file
 	ofstream outf;

@@ -50,8 +50,8 @@ locate_array::locate_array(const int n){
 //---------------------------------------------------------
 void locate_array::init(const double start, const double stop, const double del, const InterpolationMethod imeth)
 {
-	assert(stop >= start);
-	assert(del > 0);
+	PRINT_ASSERT(stop,>=,start);
+	PRINT_ASSERT(del,>,0);
 	if(start==stop){
 		x.resize(1);
 		min = -numeric_limits<double>::infinity();
@@ -68,10 +68,10 @@ void locate_array::init(const double start, const double stop, const double del,
         #pragma omp parallel for
 		for(int i=0; i<n-1; i++){
 			x[i] = start + (double)(i+1)*del;
-			if(i>0) assert(x[i] > x[i-1]);
+			if(i>0) PRINT_ASSERT(x[i],>,x[i-1]);
 		}
 		x[n-1] = stop;
-		assert(x[n-1] > x[n-2]);
+		PRINT_ASSERT(x[n-1],>,x[n-2]);
 	}
 }
 
@@ -82,8 +82,8 @@ void locate_array::init(const double start, const double stop, const double del,
 //---------------------------------------------------------
 void locate_array::init(const double start, const double stop, const int n, const InterpolationMethod imeth)
 {
-	assert(stop >= start);
-	assert(n >= 0);
+	PRINT_ASSERT(stop,>=,start);
+	PRINT_ASSERT(n,>=,0);
 	if(start==stop || n==0){
 		x.resize(1);
 		min = -numeric_limits<double>::infinity();
@@ -99,7 +99,7 @@ void locate_array::init(const double start, const double stop, const int n, cons
         #pragma omp parallel for
 		for(int i=0; i<n-1; i++) x[i] = start + (i+1)*del;
 		x[n-1] = stop;
-		assert(x[n-1] > x[n-2]);
+		PRINT_ASSERT(x[n-1],>,x[n-2]);
 	}
 }
 
@@ -123,8 +123,8 @@ int locate_array::locate(const double xval) const
 	// upper_bound returns first element greater than xval
 	// values mark bin tops, so this is what we want
 	int ind = upper_bound(x.begin(), x.end(), xval) - x.begin();
-	assert(ind >= 0);
-	assert(ind <= (int)x.size());
+	PRINT_ASSERT(ind,>=,0);
+	PRINT_ASSERT(ind,<=,(int)x.size());
 	return ind;
 } 
 
@@ -147,17 +147,17 @@ void locate_array::print() const
 // assumes y array values are stored at center of locate_array bins
 //---------------------------------------------------------
 double lin_interpolate_between(const double xval, const double xleft, const double xright, const double yleft, const double yright){
-	assert(xleft<xright);
+	PRINT_ASSERT(xleft,<,xright);
 	double slope = (yright-yleft) / (xright-xleft);
 	double yval = yleft + slope*(xval - xleft);
 	return yval;
 }
 double log_interpolate_between(const double xval, const double xleft, const double xright, const double yleft, const double yright){
-	assert(xleft<xright);
-	assert(xleft  > 0);
-	assert(xright > 0);
-	assert(yleft  > 0);
-	assert(yright > 0);
+	PRINT_ASSERT(xleft,<,xright);
+	PRINT_ASSERT(xleft,>,0);
+	PRINT_ASSERT(xright,>,0);
+	PRINT_ASSERT(yleft,>,0);
+	PRINT_ASSERT(yright,>,0);
 
 	// safeguard against equal opacities
 	if(yleft==yright) return yleft;
@@ -168,9 +168,9 @@ double log_interpolate_between(const double xval, const double xleft, const doub
 	return exp(logyval);
 }
 double pow_interpolate_between(const double xval, const double xleft, const double xright, const double yleft, const double yright){
-	assert(xleft<xright);
-	assert(xleft  > 0);
-	assert(xright > 0);
+	PRINT_ASSERT(xleft,<,xright);
+	PRINT_ASSERT(xleft,>,0);
+	PRINT_ASSERT(xright,>,0);
 
 	// safeguard against equal opacities
 	if(yleft==yright) return yleft;
@@ -182,8 +182,8 @@ double pow_interpolate_between(const double xval, const double xleft, const doub
 }
 double locate_array::value_at(const double xval, const vector<double>& y) const{
 	int ind = locate(xval);
-	assert(ind >= 0);
-	assert(ind <= (int)x.size());
+	PRINT_ASSERT(ind,>=,0);
+	PRINT_ASSERT(ind,<=,(int)x.size());
 
 	if(interpolation_method == constant) return y[ind];
 	else{
@@ -214,7 +214,7 @@ double locate_array::value_at(const double xval, const vector<double>& y) const{
 
 		if     (interpolation_method == linear     ) return lin_interpolate_between(xval,xleft,xright,yleft,yright);
 		else if(interpolation_method == logarithmic) return log_interpolate_between(xval,xleft,xright,yleft,yright);
-		else{ assert(interpolation_method == power );return pow_interpolate_between(xval,xleft,xright,yleft,yright);}
+		else{ PRINT_ASSERT(interpolation_method,==,power );return pow_interpolate_between(xval,xleft,xright,yleft,yright);}
 	}
 }
 

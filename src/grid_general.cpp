@@ -80,9 +80,9 @@ void grid_general::init(Lua* lua)
     #pragma omp parallel for reduction(+:total_nonrel_mass,total_rest_mass,total_rel_KE,total_nonrel_KE,total_rel_TE,total_nonrel_TE,total_hvis,nonrel_Tbar,rel_Tbar,nonrel_Yebar,rel_Yebar)
 	for(unsigned z_ind=0;z_ind<z.size();z_ind++){
 		double rest_mass   = zone_rest_mass(z_ind);
-		assert(rest_mass >= 0);
+		PRINT_ASSERT(rest_mass,>=,0);
 		double nonrel_mass = z[z_ind].rho * zone_lab_volume(z_ind);
-		assert(nonrel_mass >= 0);
+		PRINT_ASSERT(nonrel_mass,>=,0);
 		vector<double> r;
 		zone_coordinates(z_ind,r);
 
@@ -116,11 +116,11 @@ void grid_general::init(Lua* lua)
 //------------------------------------------------------------
 void grid_general::write_zones(const int iw) const
 {
-	assert(z.size()>0);
+	PRINT_ASSERT(z.size(),>,0);
 
 	// output all zone data in hdf5 format
 	if(output_hdf5){
-		assert(dimensionality()>0);
+		PRINT_ASSERT(dimensionality(),>,0);
 		string filename = transport::filename("fluid",iw,".h5");
 		H5::H5File file(filename, H5F_ACC_TRUNC);
 
@@ -204,7 +204,7 @@ void grid_general::write_hdf5_data(H5::H5File file) const{
 	// SET UP SCALAR DATASPACE
 	vector<hsize_t> zdims;
 	dims(zdims);
-	assert(zdims.size()>0);
+	PRINT_ASSERT(zdims.size(),>,0);
 	dataspace = H5::DataSpace(zdims.size(),&zdims[0]);
 
 	// write comoving volume, assumes last index varies fastest.
@@ -420,8 +420,8 @@ bool grid_general::good_zone(const int z_ind) const{
 // get the velocity squared of a zone
 //------------------------------------
 double grid_general::zone_speed2(const int z_ind) const{
-	assert(z_ind >= 0);
-	assert(z_ind < (int)z.size());
+	PRINT_ASSERT(z_ind,>=,0);
+	PRINT_ASSERT(z_ind,<,(int)z.size());
 	double speed2 = transport::dot(z[z_ind].v,z[z_ind].v);
 	return speed2;
 }

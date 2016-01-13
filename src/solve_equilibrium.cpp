@@ -49,14 +49,14 @@ double      Ye_eq_function(double Ye, void* params);
 void transport::solve_eq_zone_values()
 {
 	if(verbose && rank0) cout << "# Solving for equilibrium values" << endl;
-	assert(brent_solve_tolerance > 0);
+	PRINT_ASSERT(brent_solve_tolerance,>,0);
 
 	// remember what zones I'm responsible for
 	int start = ( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
 	int end = my_zone_end[MPI_myID];
-	assert(end >= start);
-	assert(start >= 0);
-	assert(end <= (int)grid->z.size());
+	PRINT_ASSERT(end,>=,start);
+	PRINT_ASSERT(start,>=,0);
+	PRINT_ASSERT(end,<=,(int)grid->z.size());
 
 	// solve radiative equilibrium temperature and Ye (but only in the zones I'm responsible for)
 	// don't solve if out of density bounds
@@ -88,14 +88,16 @@ void transport::solve_eq_zone_values()
 			{
 				T_last_iter  = grid->z[z_ind].T;
 				grid->z[z_ind].T = brent_method(z_ind, temp_eq_function, T_min,  T_max);
-				assert(grid->z[z_ind].T >= T_min and grid->z[z_ind].T <= T_max);
+				PRINT_ASSERT(grid->z[z_ind].T,>=,T_min);
+				PRINT_ASSERT(grid->z[z_ind].T,<=,T_max);
 				T_error  = fabs( (grid->z[z_ind].T - T_last_iter ) / (T_last_iter ) );
 			}
 			if(solve_Ye)
 			{
 				Ye_last_iter = grid->z[z_ind].Ye;
 				grid->z[z_ind].Ye = brent_method(z_ind, Ye_eq_function, Ye_min, Ye_max);
-				assert(grid->z[z_ind].Ye >= Ye_min and grid->z[z_ind].Ye <= Ye_max);
+				PRINT_ASSERT(grid->z[z_ind].Ye,>=,Ye_min);
+				PRINT_ASSERT(grid->z[z_ind].Ye,<=,Ye_max);
 				Ye_error = fabs( (grid->z[z_ind].Ye - Ye_last_iter) / (Ye_last_iter) );
 			}
 			iter++;
@@ -160,10 +162,10 @@ double temp_eq_function(double T, void *params)
 	const int z_ind = p->z_ind;
 	transport* sim = p->sim;
 
-	assert(z_ind >= 0);
-	assert(z_ind < (int)sim->grid->z.size());
-	assert(T >= 0);
-	assert(sim->grid->z[z_ind].e_abs >= 0);
+	PRINT_ASSERT(z_ind,>=,0);
+	PRINT_ASSERT(z_ind,<,(int)sim->grid->z.size());
+	PRINT_ASSERT(T,>=,0);
+	PRINT_ASSERT(sim->grid->z[z_ind].e_abs,>=,0);
 
 	// total energy absorbed in zone
 	double E_absorbed = sim->grid->z[z_ind].e_abs; // + sim->grid->z[z_ind].Q_annihil;
@@ -192,8 +194,8 @@ double temp_eq_function(double T, void *params)
 
 	// radiative equillibrium condition: "emission equals absorbtion"
 	// return to Brent function to iterate this to zero
-	assert(E_emitted >= 0);
-	assert(E_absorbed >= 0);
+	PRINT_ASSERT(E_emitted,>=,0);
+	PRINT_ASSERT(E_absorbed,>=,0);
 	return (E_emitted - E_absorbed);
 }
 
@@ -211,10 +213,10 @@ double Ye_eq_function(double Ye, void *params)
 	const int z_ind = p->z_ind;
 	transport* sim = p->sim;
 
-	assert(z_ind >= 0);
-	assert(z_ind < (int)sim->grid->z.size());
-	assert(Ye >= 0);
-	assert(Ye <= 1);
+	PRINT_ASSERT(z_ind,>=,0);
+	PRINT_ASSERT(z_ind,<,(int)sim->grid->z.size());
+	PRINT_ASSERT(Ye,>=,0);
+	PRINT_ASSERT(Ye,<=,1);
 
 	// total energy absorbed in zone
 	double l_absorbed = sim->grid->z[z_ind].nue_abs - sim->grid->z[z_ind].anue_abs;
@@ -257,7 +259,7 @@ double Ye_eq_function(double Ye, void *params)
 #define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
 double transport::brent_method(int z_ind, double (*eq_function)(double,void*), double min, double max)
 {
-	assert(z_ind >= 0);
+	PRINT_ASSERT(z_ind,>=,0);
 
 	// check if the root is bracketed
 	struct eq_function_params params = {z_ind,this};
@@ -292,8 +294,8 @@ double transport::brent_method(int z_ind, double (*eq_function)(double,void*), d
 
 	// free the memory and return
 	double result = gsl_root_fsolver_root(s);
-	assert(result >= min);
-	assert(result <= max);
+	PRINT_ASSERT(result,>=,min);
+	PRINT_ASSERT(result,<=,max);
 	gsl_root_fsolver_free(s);
 	return result;
 }

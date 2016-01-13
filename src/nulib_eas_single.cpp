@@ -65,10 +65,10 @@ int main(int argc, char* argv[]){
 	nulib_get_Ye_array(ye_grid);
 	nulib_get_T_array(T_grid);
 	nulib_get_rho_array(rho_grid);
-	assert( nu_grid.size() > 0);
-	assert( ye_grid.size() > 0);
-	assert(  T_grid.size() > 0);
-	assert(rho_grid.size() > 0);
+	PRINT_ASSERT( nu_grid.size(),>,0);
+	PRINT_ASSERT( ye_grid.size(),>,0);
+	PRINT_ASSERT(  T_grid.size(),>,0);
+	PRINT_ASSERT(rho_grid.size(),>,0);
 
 	// read in the number of species and groups in the table
 	cout << "# of species: "    << nulib_get_nspecies() << endl;
@@ -79,7 +79,7 @@ int main(int argc, char* argv[]){
 
 	//make vectors of appropriate sizes
 	int n_groups = nu_grid.size();
-	assert(n_groups > 0);
+	PRINT_ASSERT(n_groups,>,0);
 	vector<double> absopac  (n_groups,0); // cm^-1
 	vector<double> scatopac (n_groups,0); // cm^-1
 	vector<double> pure_emis(n_groups,0); // erg/cm^3/s/ster/Hz

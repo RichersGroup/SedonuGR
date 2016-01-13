@@ -89,18 +89,18 @@ void transport::emit_inner_source_by_bin(){
 	int n_created = particles.size()-size_before;
 	avgEp /= (double)n_created;
 
-	assert(n_created == particles.size()-size_before);
+	PRINT_ASSERT(n_created,==,particles.size()-size_before);
 	if(verbose && rank0) cout << "#   <E_p> (emit_inner_source_by_bin) = " << avgEp << " erg ("
 			<< n_created << " particles)" << endl;
 }
 void transport::emit_inner_source()
 {
-	assert(core_species_luminosity.N > 0);
+	PRINT_ASSERT(core_species_luminosity.N,>,0);
 	int size_before = particles.size();
 
 	const double Ep  = core_species_luminosity.N / (double)n_emit_core; // assume lab_dt = 1.0
-	assert(Ep > 0);
-	assert(r_core>0);
+	PRINT_ASSERT(Ep,>,0);
+	PRINT_ASSERT(r_core,>,0);
 
 	#pragma omp parallel for
 	for (int i=0; i<n_emit_core; i++) create_surface_particle(Ep);
@@ -157,7 +157,7 @@ void transport::emit_zones(){
 		double com_biased_emit_energy = zone_comoving_biased_therm_emit_energy(z_ind);
 		tmp_net_energy += com_biased_emit_energy;
 	}
-	assert(tmp_net_energy>0);
+	PRINT_ASSERT(tmp_net_energy,>,0);
 
 	// actually emit the particles in each zone
 	#pragma omp parallel for schedule(guided) reduction(+:avgEp)
@@ -201,10 +201,10 @@ double transport::zone_comoving_therm_emit_energy(const int z_ind) const{
 		double four_vol = grid->zone_lab_volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
 		for(unsigned i=0; i<species_list.size(); i++){
 			double species_lum = species_list[i]->integrate_zone_emis(z_ind) * 4*pc::pi * four_vol;
-			assert(species_lum >= 0);
+			PRINT_ASSERT(species_lum,>=,0);
 			H += species_lum;
 		}
-		assert(H>=0);
+		PRINT_ASSERT(H,>=,0);
 		return H;
 	}
 }
@@ -216,10 +216,10 @@ double transport::zone_comoving_biased_therm_emit_energy(const int z_ind) const{
 		double four_vol = grid->zone_lab_volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
 		for(unsigned i=0; i<species_list.size(); i++){
 			double species_lum = species_list[i]->integrate_zone_biased_emis(z_ind) * 4*pc::pi * four_vol;
-			assert(species_lum >= 0);
+			PRINT_ASSERT(species_lum,>=,0);
 			H += species_lum;
 		}
-		assert(H>=0);
+		PRINT_ASSERT(H,>=,0);
 		return H;
 	}
 }
@@ -229,7 +229,7 @@ double transport::bin_comoving_therm_emit_energy(const int z_ind, const int s, c
 	else{
 		double four_vol = grid->zone_lab_volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
 		double H = species_list[s]->bin_emis(z_ind,g) * 4*pc::pi * four_vol;
-		assert(H>=0);
+		PRINT_ASSERT(H,>=,0);
 		return H;
 	}
 
@@ -257,9 +257,9 @@ double transport::zone_comoving_therm_emit_leptons(const int z_ind) const{
 //------------------------------------------------------------
 void transport::create_thermal_particle(const int z_ind, const double Ep, const int s, const int g)
 {
-	assert(Ep > 0);
-	assert(z_ind >= 0);
-	assert(z_ind < (int)grid->z.size());
+	PRINT_ASSERT(Ep,>,0);
+	PRINT_ASSERT(z_ind,>=,0);
+	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
 
 	// basic particle properties
 	particle p;
@@ -289,10 +289,10 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	// sample the species and frequency
 	if(s>=0) p.s = s;
 	else sample_zone_species(&p,z_ind);
-	assert(p.s >= 0);
-	assert(p.s < (int)species_list.size());
+	PRINT_ASSERT(p.s,>=,0);
+	PRINT_ASSERT(p.s,<,(int)species_list.size());
 	species_list[p.s]->sample_zone_nu(p,z_ind,g);
-	assert(p.nu > 0);
+	PRINT_ASSERT(p.nu,>,0);
 
 	// lorentz transform from the comoving to lab frame
 	transform_comoving_to_lab(&p,z_ind);
@@ -305,7 +305,7 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 
 	// add to particle vector
 	if(p.fate == moving){
-		assert(particles.size() < particles.capacity());
+		PRINT_ASSERT(particles.size(),<,particles.capacity());
 		#pragma omp critical
 		particles.push_back(p);
 
@@ -326,7 +326,7 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 //------------------------------------------------------------
 void transport::create_surface_particle(const double Ep, const int s, const int g)
 {
-	assert(Ep > 0);
+	PRINT_ASSERT(Ep,>,0);
 
 	// set basic properties
 	particle p;
@@ -347,7 +347,7 @@ void transport::create_surface_particle(const double Ep, const int s, const int 
 
 	// get index of current zone
 	const int z_ind = grid->zone_index(p.x);
-	assert(z_ind >= 0);
+	PRINT_ASSERT(z_ind,>=,0);
 
 	// pick photon propagation direction wtr to local normal
 	double phi_loc = 2*pc::pi*rangen.uniform();
@@ -367,8 +367,8 @@ void transport::create_surface_particle(const double Ep, const int s, const int 
 
 	// sample the species and frequency
 	p.s = (s>=0 ? s : sample_core_species());
-	assert(p.s >= 0);
-	assert(p.s < (int)species_list.size());
+	PRINT_ASSERT(p.s,>=,0);
+	PRINT_ASSERT(p.s,<,(int)species_list.size());
 	p.nu = species_list[p.s]->sample_core_nu(g);
 
 	// sample tau
@@ -379,7 +379,7 @@ void transport::create_surface_particle(const double Ep, const int s, const int 
 
 	// add to particle vector
 	if(p.fate == moving){
-		assert(particles.size() < particles.capacity());
+		PRINT_ASSERT(particles.size(),<,particles.capacity());
 	    #pragma omp critical
 		particles.push_back(p);
 	    #pragma omp atomic

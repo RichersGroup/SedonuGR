@@ -241,7 +241,7 @@ void nulib_set_globals(){
 /* nulib_get_nspecies */
 /**********************/
 int nulib_get_nspecies(){
-	assert(nulibtable_number_species > 0);
+	PRINT_ASSERT(nulibtable_number_species,>,0);
 	return nulibtable_number_species;
 }
 
@@ -281,16 +281,16 @@ void nulib_get_eas_arrays(
 		vector<double>& nut_absopac,    // cm^-1
 		vector<double>& nut_scatopac){  // cm^-1
 
-	assert(rho >= 0);
-	assert(temp >= 0);
-	assert(ye >= 0);
-	assert(ye <= 1.0);
-	assert(nulibID >= 0);
+	PRINT_ASSERT(rho,>=,0);
+	PRINT_ASSERT(temp,>=,0);
+	PRINT_ASSERT(ye,>=,0);
+	PRINT_ASSERT(ye,<=,1.0);
+	PRINT_ASSERT(nulibID,>=,0);
 
 	int nvars    = nulibtable_number_easvariables;
 	int ngroups  = nulibtable_number_groups;
-	assert(nvars > 0);
-	assert(ngroups > 0);
+	PRINT_ASSERT(nvars,>,0);
+	PRINT_ASSERT(ngroups,>,0);
 
 	// apparently it's valid to declare array sizes at runtime like this... if it breaks, use malloc
 	double eas_energy[nvars][ngroups]; //[0][*] = energy-bin-integrated emissivity (erg/cm^3/s/ster).
@@ -348,19 +348,19 @@ void nulib_get_pure_emis(
 		double ye, int nulibID,
 		vector<double>& nut_emiss){   // erg/cm^3/s/ster/Hz
 
-	assert(rho >= 0);
-	assert(temp >= 0);
-	assert(ye >= 0);
-	assert(ye <= 1);
-	assert(nulibID >= 0);
+	PRINT_ASSERT(rho,>=,0);
+	PRINT_ASSERT(temp,>=,0);
+	PRINT_ASSERT(ye,>=,0);
+	PRINT_ASSERT(ye,<=,1);
+	PRINT_ASSERT(nulibID,>=,0);
 
 	vector<double> widths;
 	widths.assign(nulibtable_ewidths, nulibtable_ewidths + nulibtable_number_groups);
 
 	int nvars    = nulibtable_number_easvariables;
 	int ngroups  = nulibtable_number_groups;
-	assert(nvars > 0);
-	assert(ngroups > 0);
+	PRINT_ASSERT(nvars,>,0);
+	PRINT_ASSERT(ngroups,>,0);
 
 	// apparently it's valid to declare array sizes at runtime like this... if it breaks, use malloc
 	double eas_energy[nvars][ngroups]; //[0][*] = energy-bin-integrated emissivity (erg/cm^3/s/ster).
@@ -457,9 +457,10 @@ void nulib_eos_read_table(char* eos_filename){
 }
 
 double nulib_eos_munue(const double rho /* g/ccm */, const double temp /* K */, const double ye){ // erg
-	assert(rho>=0);
-	assert(temp>=0);
-	assert(ye>=0 && ye<=1);
+	PRINT_ASSERT(rho,>=,0);
+	PRINT_ASSERT(temp,>=,0);
+	PRINT_ASSERT(ye,>=,0);
+	PRINT_ASSERT(ye,<=,1);
 	if(!nulib_in_range(rho,temp,ye)) return 0.0;
 	else{
 		double eos_variables[nulib_total_eos_variables];
@@ -477,9 +478,10 @@ double nulib_eos_munue(const double rho /* g/ccm */, const double temp /* K */, 
 }
 
 double nulib_eos_mue(const double rho /* g/ccm */, const double temp /* K */, const double ye){ // erg
-	assert(rho>=0);
-	assert(temp>=0);
-	assert(ye>=0 && ye<=1);
+	PRINT_ASSERT(rho,>=,0);
+	PRINT_ASSERT(temp,>=,0);
+	PRINT_ASSERT(ye,>=,0);
+	PRINT_ASSERT(ye,<=,1);
 	if(!nulib_in_range(rho,temp,ye)) return 0.0;
 	else{
 		double eos_variables[nulib_total_eos_variables];
@@ -504,9 +506,9 @@ void nulib_get_epannihil_kernels(const double rho,                    /* g/ccm *
 								 vector< vector< vector<double> > >& phi_production,	 /* ccm/s */ // phi[legendre_index][this_group][anti-group]
 								 vector< vector< vector<double> > >& phi_annihilation){  /* ccm/s */ // phi[legendre_index][this_group][anti-group]
 
-	assert(temp <= pow(10.0,nulibtable_logItemp_max));
-	assert(temp >= pow(10.0,nulibtable_logItemp_min));
-	assert(nulibID >= 0);
+	PRINT_ASSERT(temp,<=,pow(10.0,nulibtable_logItemp_max));
+	PRINT_ASSERT(temp,>=,pow(10.0,nulibtable_logItemp_min));
+	PRINT_ASSERT(nulibID,>=,0);
 
 	// fetch the relevant table from nulib. NuLib only accepts doubles.
 	double temp_MeV = temp * pc::k_MeV; // MeV
@@ -515,8 +517,8 @@ void nulib_get_epannihil_kernels(const double rho,                    /* g/ccm *
 	// get the chemical potential
 	double munue = nulib_eos_munue(rho,temp,ye); // MeV
 	double eta = munue/temp_MeV;
-	assert(eta >= pow(10.0,nulibtable_logIeta_min));
-	assert(eta <= pow(10.0,nulibtable_logIeta_max));
+	PRINT_ASSERT(eta,>=,pow(10.0,nulibtable_logIeta_min));
+	PRINT_ASSERT(eta,<=,pow(10.0,nulibtable_logIeta_max));
 
 	// apparently it's valid to declare array sizes at runtime like this... if it breaks, use malloc
 	int ngroups = nulibtable_number_groups;

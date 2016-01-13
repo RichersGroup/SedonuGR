@@ -56,7 +56,7 @@ void species_general::init(Lua* lua, transport* simulation)
 
 	// set the pointer to see the simulation info
 	sim = simulation;
-	assert(sim->grid->z.size()>0);
+	PRINT_ASSERT(sim->grid->z.size(),>,0);
 
 	// call child's init function
 	myInit(lua);
@@ -69,7 +69,7 @@ void species_general::init(Lua* lua, transport* simulation)
 	biased_emis.resize(sim->grid->z.size());
 
 	// allocate space for each eas spectrum
-	assert(nu_grid.size()>0);
+	PRINT_ASSERT(nu_grid.size(),>,0);
 	if(sim->n_emit_core>0 || sim->n_emit_core_per_bin>0) core_emis.resize(nu_grid.size());
 	int iorder = lua->scalar<int>("cdf_interpolation_order");
     #pragma omp parallel for
@@ -129,10 +129,10 @@ void species_general::set_cdf_to_BB(const double T, const double chempot, cdf_ar
 // for a particle emitted from the core or zone
 //----------------------------------------------------------------
 double species_general::interpolate_importance(double nu, const int z_ind) const{
-	assert(z_ind >= 0);
-	assert(z_ind < emis.size());
-	assert(nu>=nu_grid.min);
-	assert(nu<=nu_grid[nu_grid.size()-1]);
+	PRINT_ASSERT(z_ind,>=,0);
+	PRINT_ASSERT(z_ind,<,emis.size());
+	PRINT_ASSERT(nu,>=,nu_grid.min);
+	PRINT_ASSERT(nu,<=,nu_grid[nu_grid.size()-1]);
 
 	// frequency-integrated biasing already taken care of in emit_zones by changing average particle
 	// energy depending on the luminosity of the zone and the number of particles emitted from it.
@@ -141,15 +141,15 @@ double species_general::interpolate_importance(double nu, const int z_ind) const
 }
 double species_general::sample_core_nu(const int g) const
 {
-	assert(nu_grid.min >= 0);
+	PRINT_ASSERT(nu_grid.min,>=,0);
 	return sample_nu(core_emis);
 }
 void species_general::sample_zone_nu(particle& p, const int zone_index, const int g) const
 {
-	assert(nu_grid.min >= 0);
+	PRINT_ASSERT(nu_grid.min,>=,0);
 	p.nu = sample_nu(biased_emis[zone_index]);
 	double imp = interpolate_importance(p.nu,zone_index);
-	assert(imp>0);
+	PRINT_ASSERT(imp,>,0);
 	p.e /= imp;
 }
 double species_general::sample_nu(const cdf_array& input_emis, const int g) const{
