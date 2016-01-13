@@ -272,8 +272,9 @@ void transport::move(particle* p, const double lab_d, const double lab_opac){
 	p->x[0] += lab_d*p->D[0];
 	p->x[1] += lab_d*p->D[1];
 	p->x[2] += lab_d*p->D[2];
-	p->tau = (static_cast<double>(p->tau/lab_opac) - lab_d) * lab_opac; // done like this to be >0 to numerical precision...maybe
-	PRINT_ASSERT(p->tau,>=,0);
+	double old_tau = p->tau;
+	p->tau -= lab_opac*lab_d; // done like this to be >0 to numerical precision...maybe
+	PRINT_ASSERT(p->tau/old_tau,>=,-grid->tiny);
 }
 void transport::lab_opacity(const particle *p, const int z_ind, double *lab_opac, double *abs_frac, double *dshift_l2c) const{
 	if(grid->good_zone(z_ind) && z_ind>=0){ // avoid handling fluff zones if unnecessary
