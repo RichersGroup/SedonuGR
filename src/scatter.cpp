@@ -71,6 +71,7 @@ void transport::event_interact(particle* p, const int z_ind, const double abs_fr
 
 		// resample the path length
 		sample_tau(p,lab_opac,abs_frac);
+		if(p->fate==moving) window(p,z_ind);
 
 		// sanity checks
 		if(p->fate==moving){
@@ -78,7 +79,6 @@ void transport::event_interact(particle* p, const int z_ind, const double abs_fr
 			PRINT_ASSERT(p->e,>,0);
 		}
 	}
-	window(p,z_ind);
 }
 
 
