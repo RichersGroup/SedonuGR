@@ -167,11 +167,13 @@ void transport::emit_zones(){
 		double com_emit_energy = zone_comoving_biased_therm_emit_energy(z_ind);
 
 		// how much this zone emits. Always emits correct energy even if number of particles doesn't add up.
-		unsigned this_n_emit = (double)n_emit_zones * (com_biased_emit_energy / tmp_net_energy) + 0.5;
-		if(com_biased_emit_energy>0 && this_n_emit==0) this_n_emit = 1;
-		double Ep = com_emit_energy / (double)this_n_emit;
-		for (unsigned k=0; k<this_n_emit; k++) create_thermal_particle(z_ind,Ep);
-		avgEp += (double)this_n_emit * Ep;
+		if(com_biased_emit_energy>0){
+                      unsigned this_n_emit = (double)n_emit_zones * (com_biased_emit_energy / tmp_net_energy) + 0.5;
+                      if(this_n_emit==0) this_n_emit = 1;
+                      double Ep = com_emit_energy / (double)this_n_emit;
+		      avgEp += com_emit_energy;
+		      for (unsigned k=0; k<this_n_emit; k++) create_thermal_particle(z_ind,Ep);
+                }
 
 		// record emissivity
 		#pragma omp atomic
@@ -183,7 +185,7 @@ void transport::emit_zones(){
 	int n_created = particles.size() - size_before;
 	avgEp /= (double)n_created;
 	if(verbose && rank0) cout << "#   <E_p> (emit_zones) = " << avgEp << " erg ("
-			<< particles.size()-size_before << " particles)" << endl;
+			<< n_created << " particles)" << endl;
 }
 
 
@@ -306,6 +308,8 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	// add to particle vector
 	if(p.fate == moving){
 		PRINT_ASSERT(particles.size(),<,particles.capacity());
+		PRINT_ASSERT(p.e,>,0);
+		PRINT_ASSERT(p.tau,>,0);
 		#pragma omp critical
 		particles.push_back(p);
 
