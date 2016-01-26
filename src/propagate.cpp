@@ -158,7 +158,7 @@ void transport::event_boundary(particle* p, const int z_ind) const{
 			PRINT_ASSERT(p->nu, >, 0);
 		}
 		else{
-			grid->reflect_symmetry(p);
+			grid->symmetry_boundaries(p);
 			new_ind = grid->zone_index(p->x);
 		}
 
@@ -267,14 +267,14 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 
 void transport::move(particle* p, const double lab_d, const double lab_opac){
 	PRINT_ASSERT(p->tau,>=,0);
-	PRINT_ASSERT(lab_d,>,0);
+	PRINT_ASSERT(lab_d,>=,0);
 	PRINT_ASSERT(lab_opac,>=,0);
 	p->x[0] += lab_d*p->D[0];
 	p->x[1] += lab_d*p->D[1];
 	p->x[2] += lab_d*p->D[2];
 	double old_tau = p->tau;
 	p->tau -= lab_opac*lab_d; // done like this to be >0 to numerical precision...maybe
-	PRINT_ASSERT(p->tau/old_tau,>=,-grid->tiny);
+	PRINT_ASSERT(p->tau,>=,-grid->tiny*old_tau);
 	if(p->tau<0) p->tau = 0;
 }
 void transport::lab_opacity(const particle *p, const int z_ind, double *lab_opac, double *abs_frac, double *dshift_l2c) const{
@@ -331,7 +331,7 @@ void transport::propagate(particle* p)
 
 		// move particle the distance
 		move(p,lab_d,lab_opac);
-		if(event != boundary) PRINT_ASSERT(p->tau/(lab_d*lab_opac), >=, -grid->tiny);
+		if(event != boundary) PRINT_ASSERT(p->tau, >=, -grid->tiny*(lab_d*lab_opac));
 		z_ind = grid->zone_index(p->x);
 
 		// do the selected event
