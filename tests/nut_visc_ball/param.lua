@@ -14,8 +14,8 @@ reflect_outer= 0
 
 grid_type = "grid_1D_sphere"
 model_file  =  "neutron_star.mod"
-nulib_table = "/data/tables/NuLib/Helmholtz_full/NuLib.h5"
-nulib_eos_filename = ""
+nulib_table = "/data/tables/NuLib/MCNuTrans/Helmholtz_full/NuLib.h5"
+nulib_eos_filename = "/data/tables/EOS/HShen.h5"
 write_zones_every   = 10
 write_rays_every    = 10
 write_spectra_every = 10
@@ -46,7 +46,7 @@ ratio_emit_by_zone = 0
 
 -- particle propagation parameters
 
-max_n_steps = 10
+max_n_iter = 10
 dt = -1
 step_size = 0.4
 

@@ -34,7 +34,7 @@ max_particles  = 1e7
 
 -- particle propagation parameters
 
-max_n_steps = 20
+max_n_iter = 20
 dt = -1
 step_size = 0.4                    -- move at most step_size*min_grid_length at a time
 

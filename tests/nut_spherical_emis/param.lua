@@ -14,7 +14,7 @@ reflect_outer = 0
 
 grid_type = "grid_1D_sphere"
 model_file  =  "empty_sphere.mod"
-nulib_table = "/data/tables/NuLib/Shen_full/NuLib.h5"
+nulib_table = "/data/tables/NuLib/MCNuTrans/Shen_full/NuLib.h5"
 nulib_eos_filename = "/data/tables/EOS/HShen.h5"
 write_zones_every   = 1
 write_rays_every    = 1
@@ -44,7 +44,7 @@ ratio_emit_by_bin = 0
 
 -- particle propagation parameters
 
-max_n_steps = 1
+max_n_iter = 1
 dt = -1
 step_size = 0.4
 

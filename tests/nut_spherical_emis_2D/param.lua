@@ -46,7 +46,7 @@ core_emit_method = 1
 
 -- particle propagation parameters
 
-max_n_steps = 1
+max_n_iter = 1
 dt = -1
 step_size = 0.4
 
