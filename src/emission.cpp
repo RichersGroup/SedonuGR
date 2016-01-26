@@ -167,9 +167,15 @@ void transport::emit_zones(){
 		double com_emit_energy = zone_comoving_biased_therm_emit_energy(z_ind);
 
 		// how much this zone emits. Always emits correct energy even if number of particles doesn't add up.
+		// randomly emit additional particle based on remainder of allocation after emitting an integer number of packets
 		if(com_biased_emit_energy>0){
-			unsigned this_n_emit = (double)n_emit_zones * (com_biased_emit_energy / tmp_net_energy) + 0.5;
-			if(this_n_emit==0) this_n_emit = 1;
+			double this_zones_share = (double)n_emit_zones * (com_biased_emit_energy / tmp_net_energy);
+			unsigned this_n_emit = (unsigned)this_zones_share;
+			double remainder = this_zones_share - (double)this_n_emit;
+			PRINT_ASSERT(remainder,<,1.0);
+			PRINT_ASSERT(remainder,>=,0.0);
+			if(rangen.uniform()<remainder) this_n_emit += 1;
+
 			double Ep = com_emit_energy / (double)this_n_emit;
 			avgEp += com_emit_energy;
 			for (unsigned k=0; k<this_n_emit; k++) create_thermal_particle(z_ind,Ep);
