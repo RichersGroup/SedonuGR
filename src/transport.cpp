@@ -465,7 +465,7 @@ void transport::reset_radiation(){
 	#pragma omp parallel
 	{
 		// calculate the zone eas variables
-        #pragma omp for collapse(2)
+	//#pragma omp for collapse(2)
 		for(unsigned i=0; i<species_list.size(); i++)
 			for(unsigned j=0; j<grid->z.size(); j++)
 				species_list[i]->set_eas(j);
