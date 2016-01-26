@@ -151,7 +151,7 @@ void grid_0D_isotropic::reflect_outer(particle *p) const{
 //------------------------------------------------------------
 // Reflect off symmetry plane
 //------------------------------------------------------------
-void grid_0D_isotropic::reflect_symmetry(particle *p) const{
+void grid_0D_isotropic::symmetry_boundaries(particle *p) const{
 	// does nothing - no boundary
 }
 

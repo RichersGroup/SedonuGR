@@ -490,7 +490,7 @@ void grid_2D_cylinder::reflect_outer(particle *p) const{
 //------------------------------------------------------------
 // Reflect off the outer boundary
 //------------------------------------------------------------
-void grid_2D_cylinder::reflect_symmetry(particle *p) const{
+void grid_2D_cylinder::symmetry_boundaries(particle *p) const{
 // does nothing - not implemented
 }
 

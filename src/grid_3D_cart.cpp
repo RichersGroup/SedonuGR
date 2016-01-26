@@ -42,6 +42,8 @@
 //------------
 grid_3D_cart::grid_3D_cart(){
 	reflect = vector<int>(3,0);
+	rotate_hemisphere = vector<int>(2,0);
+	rotate_quadrant = 0;
 	nx   = vector<int>(3,-1);
 	dx   = vector<double>(3,NaN);
 	x0   = vector<double>(3,NaN);
@@ -142,7 +144,30 @@ void grid_3D_cart::read_David_file(Lua* lua)
 	reflect[0] = lua->scalar<int>("grid3Dcart_reflect_x");
 	reflect[1] = lua->scalar<int>("grid3Dcart_reflect_y");
 	reflect[2] = lua->scalar<int>("grid3Dcart_reflect_z");
-	for(int i=0; i<3; i++) if(reflect[i]){
+	rotate_hemisphere[0] = lua->scalar<int>("grid3Dcart_rotate_hemisphere_x"); // rotate around z
+	rotate_hemisphere[1] = lua->scalar<int>("grid3Dcart_rotate_hemisphere_y"); // rotate around z
+	rotate_quadrant = lua->scalar<int>("grid3Dcart_rotate_quadrant"); // rotate around z, x and y both positive
+
+	// check parameters
+	if(reflect[0] || reflect[1]){
+                assert(!rotate_quadrant);
+		assert(!rotate_hemisphere[0]);
+		assert(!rotate_hemisphere[1]);
+	}
+	if(rotate_quadrant){
+	        assert(!rotate_hemisphere[0]);
+		assert(!rotate_hemisphere[1]);
+	}
+	assert(!( rotate_hemisphere[0] && rotate_hemisphere[1] ));
+
+	// decide which axes to truncate
+	vector<bool> truncate = vector<bool>(3,false);
+	truncate[0] = reflect[0] || rotate_hemisphere[0] || rotate_quadrant;
+	truncate[1] = reflect[1] || rotate_hemisphere[1] || rotate_quadrant;
+	truncate[2] = reflect[2];
+
+	// truncate the grid to create appropriate boundaries
+	for(int i=0; i<3; i++) if(truncate[i]){
 		PRINT_ASSERT(xmax[i],>,0);
 		PRINT_ASSERT(x0[i],<=,0);
 		x0[i] = 0.0;
@@ -222,7 +247,7 @@ void grid_3D_cart::read_David_file(Lua* lua)
 				PRINT_ASSERT((int)dataset_ind,<,(int)(space_dims[0] * space_dims[1] * space_dims[2]));
 				PRINT_ASSERT(z_ind,<,(int)z.size());
 
-				// if the grid cell is in our post-reflection-modified domain, add it to the zone list.
+				// if the grid cell is in our post-truncation-modified domain, add it to the zone list.
 				if(z_ind >= 0){
 					z[z_ind].rho  =  rho[dataset_ind];
 					z[z_ind].T    = temp[dataset_ind];
@@ -266,6 +291,12 @@ void grid_3D_cart::read_SpEC_file(Lua* lua)
 	int my_rank;
 	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank  );
 
+	// remember which axes were truncated
+	vector<bool> truncate = vector<bool>(3,false);
+	truncate[0] = reflect[0] || rotate_hemisphere[0] || rotate_quadrant;
+	truncate[1] = reflect[1] || rotate_hemisphere[1] || rotate_quadrant;
+	truncate[2] = reflect[2];
+
 	// open up the model file, complaining if it fails to open
 	string model_file = lua->scalar<string>("model_file");
 	ifstream infile;
@@ -293,6 +324,8 @@ void grid_3D_cart::read_SpEC_file(Lua* lua)
 	for(int i=0; i<3; i++){
 		infile >> reflect[i];
 		if(reflect[i]) nx[i]*=2;
+		else if(i<2 && rotate_hemisphere[i]) nx[i]*=2;
+		else if(i<2 && rotate_quadrant) nx[i]*=4;
 	}
 	int n_zones = nx[0]*nx[1]*nx[2];
 
@@ -302,6 +335,8 @@ void grid_3D_cart::read_SpEC_file(Lua* lua)
 		infile >> xmax[i];
 		dx[i] = (xmax[i]-x0[i])/(double)nx[i];
 		if(reflect[i]) dx[i]*=2;
+		else if(i<2 && rotate_hemisphere[i]) dx[i]*=2;
+		else if(i<2 && rotate_quadrant) dx[i]*=4;
 		x1[i] = x0[i]+dx[i];
 	}
 
@@ -320,11 +355,11 @@ void grid_3D_cart::read_SpEC_file(Lua* lua)
 
 				// create reverse map to x,y,z indices
 				rx=false; ry=false; rz=false;
-				if(reflect[0] && i<nx[0]/2) rx = true;
-				if(reflect[0] && j<nx[1]/2) ry = true;
-				if(reflect[0] && k<nx[2]/2) rz = true;
+				if(truncate[0] && i<nx[0]/2) rx = true;
+				if(truncate[1] && j<nx[1]/2) ry = true;
+				if(truncate[2] && k<nx[2]/2) rz = true;
 
-				// read in values if not in reflected zone
+				// read in values if not in reflected/rotated zone
 				if(!rx && !ry && !rz)
 				{
 					infile >> z[ind].rho;
@@ -354,11 +389,11 @@ void grid_3D_cart::read_SpEC_file(Lua* lua)
 				// set current index
 				ind = zone_index(i,j,k);
 
-				// are we in a reflection zone?
+				// are we in a reflection/rotation zone?
 				rx=false; ry=false; rz=false;
-				if(reflect[0] && i<nx[0]/2) rx = 1;
-				if(reflect[0] && j<nx[1]/2) ry = 1;
-				if(reflect[0] && k<nx[2]/2) rz = 1;
+				if(truncate[0] && i<nx[0]/2) rx = 1;
+				if(truncate[1] && j<nx[1]/2) ry = 1;
+				if(truncate[2] && k<nx[2]/2) rz = 1;
 
 				// copy appropriate values
 				if(rx) origin_i = (nx[0]-1)-i; else origin_i = i;
@@ -378,7 +413,7 @@ void grid_3D_cart::read_SpEC_file(Lua* lua)
 
 	// adjust x0,y0,z0 to indicate new, reflected lower boundary
 	if(my_rank==0) cout << "# (zmin,zmax) before adjusting: (" << x0[2] << "," << xmax[2] << ")" << endl;
-	for(int i=0; i<3; i++) if(reflect[i]) x0[i] = x0[i] - (xmax[i]-x0[i]);
+	for(int i=0; i<3; i++) if(truncate[i]) x0[i] = x0[i] - (xmax[i]-x0[i]);
 
 	// debugging some output
 	if(my_rank==0){
@@ -789,12 +824,12 @@ double grid_3D_cart::zone_right_boundary(const unsigned dir, const unsigned dir_
 
 
 //------------------------------------------------------------
-// Reflect off the outer boundary
+// Reflect off revlecting boundary condition
 //------------------------------------------------------------
-void grid_3D_cart::reflect_symmetry(particle *p) const{
+void grid_3D_cart::symmetry_boundaries(particle *p) const{
 	// invert the radial component of the velocity, put the particle just inside the boundary
 	for(int i=0; i<3; i++){
-		if(reflect[i] && p->x[i] < x0[i]){
+		if(p->x[i] < x0[i] && reflect[i]){
 			PRINT_ASSERT(x0[i]-p->x[i],<,tiny*dx[i]);
 			PRINT_ASSERT(x0[i],==,0);
 			PRINT_ASSERT(p->D[i],<,0);
@@ -804,6 +839,37 @@ void grid_3D_cart::reflect_symmetry(particle *p) const{
 			// double check that the particle is in the boundary
 			PRINT_ASSERT(p->x[i],>=,x0[i]);
 			PRINT_ASSERT(p->x[i],<=,xmax[i]);
+		}
+	}
+
+	// rotating boundary conditions
+	for(int i=0; i<2; i++){
+                if(p->x[i] < x0[i] && (rotate_hemisphere[i] || rotate_quadrant)){
+                        PRINT_ASSERT(x0[i]-p->x[i],<,tiny*dx[i]);
+			PRINT_ASSERT(x0[i],==,0);
+			PRINT_ASSERT(p->D[i],<,0);
+			int other = (i+1)%2;
+			
+		        if(rotate_hemisphere[i]){
+				for(int j=0; j<2; j++) p->D[j] = -p->D[j];
+				p->x[i    ] = x0[i] + tiny*(x1[i]-x0[i]);
+				p->x[other] = -p->x[other];
+                        }
+			else if(rotate_quadrant){
+                                double tmp = p->D[i];
+                                p->D[i] = -p->D[other];
+				p->D[other] = tmp;
+				p->x[i] = x0[i] + tiny*(x1[i]-x0[i]); // move within boundary first
+				tmp = p->x[i];
+				p->x[i    ] = p->x[other];
+				p->x[other] = tmp;
+                        }
+
+			// double check that the particle is in the boundary
+			for(int i=0; i<3; i++){
+                               PRINT_ASSERT(p->x[i],>=,x0[i]);
+			       PRINT_ASSERT(p->x[i],<=,xmax[i]);
+                        }
 		}
 	}
 }

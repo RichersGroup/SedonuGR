@@ -62,7 +62,7 @@ public:
 	void cartesian_velocity_vector(const vector<double>& x, vector<double>& v, int z_ind         ) const;
 	void write_rays               (const int iw                                                  ) const;
 	void reflect_outer            (particle *p                                                   ) const;
-	void reflect_symmetry         (particle *p                                                   ) const;
+	void symmetry_boundaries      (particle *p                                                   ) const;
 	double lab_dist_to_boundary   (const particle *p                                             ) const;
 	double zone_radius            (const int z_ind) const;
 	void dims(vector<hsize_t>& dims) const;

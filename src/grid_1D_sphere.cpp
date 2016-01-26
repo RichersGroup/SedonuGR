@@ -277,7 +277,7 @@ void grid_1D_sphere::reflect_outer(particle *p) const{
 //------------------------------------------------------------
 // Reflect off symmetry axis
 //------------------------------------------------------------
-void grid_1D_sphere::reflect_symmetry(particle *p) const{
+void grid_1D_sphere::symmetry_boundaries(particle *p) const{
 // not implemented - does nothing
 }
 
