@@ -109,7 +109,7 @@ int cdf_array::get_index(const double yval) const
 	PRINT_ASSERT(yval,<=,1.0);
 	int i = upper_bound(y.begin(), y.end(), yval) - y.begin();
 	PRINT_ASSERT(i,>=,0);
-	PRINT_ASSERT(i,<,(int)size());
+	PRINT_ASSERT(i,<=,(int)size());
 	return i;
 }
 
