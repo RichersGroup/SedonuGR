@@ -211,17 +211,9 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	vector<double> thetahat(3,0);
 	vector<double> phihat(3,0);
 	if(rp==0){
-		if(r==0){
-			rhat[0] = 0;
-			rhat[1] = 0;
-			rhat[2] = 1;
-	    }
-	    thetahat[0] = 0;
+		rhat[2] = z>0 ? -1.0 : 1.0;
 	    thetahat[1] = 1;
-	    thetahat[2] = 0;
 	    phihat[0] = 1;
-	    phihat[1] = 0;
-	    phihat[2] = 0;
 	}
 	else{
 		rhat[0] = x/r;
@@ -229,7 +221,7 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 		rhat[2] = z/r;
 		thetahat[0] = z/r * x/rp;
 		thetahat[1] = z/r * y/rp;
-		thetahat[2] = z/r * z/r - 1;
+		thetahat[2] = -rp / r;
 		phihat[0] = -y/rp;
 		phihat[1] =  x/rp;
 		phihat[2] = 0;
@@ -242,7 +234,6 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	zone->distribution[p->s].count(D_newbasis, p->nu, to_add);
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
-	// Extra dshift definitely needed here (two total) to convert both p->e and this_d to the comoving frame
 	to_add = com_e * com_d * (com_opac*abs_frac);
 	#pragma omp atomic
 	zone->e_abs += to_add;
