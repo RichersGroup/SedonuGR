@@ -457,30 +457,23 @@ void transport::reset_radiation(){
 		N_net_esc[i] = 0;
 	}
 
-	#pragma omp parallel
+	#pragma omp parallel for schedule(guided)
+	// prepare zone quantities for another round of transport
+	for(unsigned z_ind=0;z_ind<grid->z.size();z_ind++)
 	{
-		// calculate the zone eas variables
-        //#pragma omp for collapse(2)
-		for(unsigned i=0; i<species_list.size(); i++)
-			#pragma omp for
-			for(unsigned j=0; j<grid->z.size(); j++)
-				species_list[i]->set_eas(j);
+		zone* z = &(grid->z[z_ind]);
+		z->nue_abs  = 0;
+		z->anue_abs = 0;
+		z->e_abs    = 0;
+		z->l_emit   = 0;
+		z->e_emit   = 0;
+		z->Q_annihil = 0;
 
-		// prepare zone quantities for another round of transport
-        #pragma omp for
-		for(unsigned z_ind=0;z_ind<grid->z.size();z_ind++)
-		{
-			zone* z = &(grid->z[z_ind]);
-			z->nue_abs  = 0;
-			z->anue_abs = 0;
-			z->e_abs    = 0;
-			z->l_emit   = 0;
-			z->e_emit   = 0;
-			z->Q_annihil = 0;
-
-			for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].wipe();
+		for(unsigned s=0; s<species_list.size(); s++){
+			z->distribution[s].wipe();
+			species_list[s]->set_eas(z_ind);
 		}
-	} // #pragma omp parallel
+	}
 }
 
 //-----------------------------
@@ -642,7 +635,7 @@ void transport::normalize_radiative_quantities(){
 		z->anue_abs /= multiplier*four_vol;       // num      --> num/ccm/s
 		z->l_emit   /= multiplier*four_vol;       // num      --> num/ccm/s
 
-		// erg*dist --> erg/ccm, represents *one* species, not *all* of them
+		// erg*dist --> erg/ccm, represents *all* species if nux
 		for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].rescale(1./(multiplier*four_vol*pc::c));
 
 		// tally heat absorbed from viscosity and neutrinos
