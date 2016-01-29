@@ -296,13 +296,7 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	p.x[2] = r[2];
 
 	// emit isotropically in comoving frame
-	double mu  = 1 - 2.0*rangen.uniform();
-	double phi = 2.0*pc::pi*rangen.uniform();
-	double smu = sqrt(1 - mu*mu);
-	p.D[0] = smu*cos(phi);
-	p.D[1] = smu*sin(phi);
-	p.D[2] = mu;
-	normalize(p.D);
+	isotropic_scatter(&p);
 
 	// sample the species and frequency
 	if(s>=0) p.s = s;
