@@ -213,7 +213,7 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	double r = sqrt(dot(p->x,p->x));
 	double rp = sqrt(x*x + y*y);
 	vector<double> rhat     = {x/r,   		y/r,	     z/r		   };
-	vector<double> thetahat = {z/r * x/rp,	z/r * y/rp,	 z/r * z/r - 1 };
+	vector<double> thetahat = {z/r * x/rp,	z/r * y/rp,	 -rp/r };
 	vector<double> phihat   = {-y/rp,		x/rp,		 0			   };
 	if(rp==0){
 		if(r==0) rhat = {0,0,1};
