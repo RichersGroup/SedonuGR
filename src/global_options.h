@@ -49,11 +49,15 @@ namespace pc = physical_constants;
 
 string trim(const string s);
 
+#ifndef DEBUG
 #define PRINT_ASSERT(a,op,b)                         \
 do {                                                 \
 	if(!(a op b)) cout << (a) << " " << (b) << endl; \
 	assert(a op b);                                  \
 } while (0)
+#else
+#define PRINT_ASSERT(a,op,b) do {} while 0
+#endif
 
 #endif
 
