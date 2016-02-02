@@ -87,13 +87,16 @@ void species_general::init(Lua* lua, transport* simulation)
 	if(rank0) cout << "#   Setting up the distribution function...";
 	int n_mu = lua->scalar<int>("distribution_nmu");
 	int n_phi = lua->scalar<int>("distribution_nphi");
+
+	// temporary spectrum to be used for distribution function initialization
+	locate_array tmp_mugrid, tmp_phigrid;
+	tmp_mugrid.init( -1     , 1     , n_mu );
+	tmp_phigrid.init(-pc::pi, pc::pi, n_phi);
+	spectrum_array tmp_spectrum;
+	tmp_spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
+
 	#pragma omp parallel for
 	for(unsigned z_ind=0; z_ind<sim->grid->z.size(); z_ind++){
-		spectrum_array tmp_spectrum;
-		locate_array tmp_mugrid, tmp_phigrid;
-		tmp_mugrid.init( -1     , 1     , n_mu );
-		tmp_phigrid.init(-pc::pi, pc::pi, n_phi);
-		tmp_spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
 		sim->grid->z[z_ind].distribution.push_back(tmp_spectrum);
 	}
 	if(rank0) cout << "finished." << endl;
