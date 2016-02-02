@@ -79,6 +79,8 @@ void grid_general::init(Lua* lua)
 	int do_visc = lua->scalar<int>("do_visc");
     #pragma omp parallel for reduction(+:total_nonrel_mass,total_rest_mass,total_rel_KE,total_nonrel_KE,total_rel_TE,total_nonrel_TE,total_hvis,nonrel_Tbar,rel_Tbar,nonrel_Yebar,rel_Yebar)
 	for(unsigned z_ind=0;z_ind<z.size();z_ind++){
+		PRINT_ASSERT(z[z_ind].rho,>=,0.0);
+		PRINT_ASSERT(zone_comoving_volume(z_ind),>=,0.0);
 		double rest_mass   = zone_rest_mass(z_ind);
 		PRINT_ASSERT(rest_mass,>=,0);
 		double nonrel_mass = z[z_ind].rho * zone_lab_volume(z_ind);

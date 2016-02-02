@@ -183,7 +183,7 @@ void transport::emit_zones(){
 
 				// keep emitted energy statistically constant
 				if(this_zones_share<1){
-					PRINT_ASSERT(this_n_emit==1);
+					PRINT_ASSERT(this_n_emit,==,1);
 					Ep /= this_zones_share;
 				}
 			}
