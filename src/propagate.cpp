@@ -207,9 +207,9 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	double x=p->x[0], y=p->x[1], z=p->x[2];
 	double r = sqrt(dot(p->x,p->x));
 	double rp = sqrt(x*x + y*y);
-	vector<double> rhat(3,0);
-	vector<double> thetahat(3,0);
-	vector<double> phihat(3,0);
+	double rhat[3]     = {0,0,0};
+	double thetahat[3] = {0,0,0};
+	double phihat[3]   = {0,0,0};
 	if(rp==0){
 		rhat[2] = z>0 ? -1.0 : 1.0;
 	    thetahat[1] = 1;
@@ -226,10 +226,10 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 		phihat[1] =  x/rp;
 		phihat[2] = 0;
 	}
-	vector<double> D_newbasis(3,0);
-	D_newbasis[0] = dot(p->D,phihat);
-	D_newbasis[1] = dot(p->D,thetahat);
-	D_newbasis[2] = dot(p->D,rhat);
+	vector<double> D_newbasis(3,0);//	double D_newbasis[3] = {0,0,0};
+	D_newbasis[0] = dot(p->D,phihat,3);
+	D_newbasis[1] = dot(p->D,thetahat,3);
+	D_newbasis[2] = dot(p->D,rhat,3);
 	normalize(D_newbasis);
 	zone->distribution[p->s].count(D_newbasis, p->nu, to_add);
 

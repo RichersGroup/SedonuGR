@@ -52,12 +52,31 @@ double transport::dot(const vector<double>& a, const vector<double>& b){
 	for(unsigned i=0; i<a.size(); i++) product += a[i]*b[i];
 	return product;
 }
+double transport::dot(const vector<double>& a, const double* b, const int size){
+	PRINT_ASSERT(a.size(),>,0);
+	PRINT_ASSERT(size,>,0);
+	PRINT_ASSERT(a.size(),==,size);
+	double product = 0;
+	for(unsigned i=0; i<a.size(); i++) product += a[i]*b[i];
+	return product;
+}
+double transport::dot(const double* a, const double* b, const int size){
+	PRINT_ASSERT(size,>,0);
+	double product = 0;
+	for(unsigned i=0; i<size; i++) product += a[i]*b[i];
+	return product;
+}
 
 // normalize a vector
 void transport::normalize(vector<double>& a){
 	PRINT_ASSERT(a.size(),>,0);
 	double magnitude = sqrt(dot(a,a));
 	for(unsigned i=0; i<a.size(); i++) a[i] /= magnitude;
+}
+void transport::normalize(double* a,const int size){
+	PRINT_ASSERT(size,>,0);
+	double magnitude = sqrt(dot(a,a,size));
+	for(unsigned i=0; i<sizeof(a)/sizeof(a[0]); i++) a[i] /= magnitude;
 }
 
 // v_dot_d is the dot product of the relative velocity and the relativistic particle's direction

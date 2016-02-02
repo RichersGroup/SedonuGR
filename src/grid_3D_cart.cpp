@@ -161,7 +161,7 @@ void grid_3D_cart::read_David_file(Lua* lua)
 	assert(!( rotate_hemisphere[0] && rotate_hemisphere[1] ));
 
 	// decide which axes to truncate
-	vector<bool> truncate = vector<bool>(3,false);
+	bool truncate[3] = {false,false,false};
 	truncate[0] = reflect[0] || rotate_hemisphere[0] || rotate_quadrant;
 	truncate[1] = reflect[1] || rotate_hemisphere[1] || rotate_quadrant;
 	truncate[2] = reflect[2];
@@ -436,7 +436,7 @@ int grid_3D_cart::zone_index(const vector<double>& x) const
 	for(int i=0; i<3; i++) if (x[i]<x0[i] || x[i]>xmax[i]) return -2;
 
 	// get directional indices
-	vector<int> dir_ind(3,0);
+	int dir_ind[3] = {-1,-1,-1};
 	for(int i=0; i<3; i++){
 		if(x[i]<=x1[i]) dir_ind[i] = 0;
 		else if(x[i] > xmax[i]-dx[i]) dir_ind[i] = nx[i]-1; //need this to prevent issues when particle is ON boundary
@@ -719,7 +719,7 @@ double grid_3D_cart::lab_dist_to_boundary(const particle *p) const{
 
 	// case: particle is inside the boundaries
 	if(inside){
-		vector<double> dist(3,-1);
+		double dist[3] = {-1,-1,-1};
 		for(int i=0; i<3; i++){
 			dist[i] = (p->D[i]>0 ? xmax[i]-p->x[i] : p->x[i]-x0[i]);
 			dist[i] /= fabs(p->D[i]);
@@ -828,7 +828,7 @@ double grid_3D_cart::zone_right_boundary(const unsigned dir, const unsigned dir_
 void grid_3D_cart::symmetry_boundaries(particle *p) const{
 	// invert the radial component of the velocity, put the particle just inside the boundary
 	for(int i=0; i<3; i++){
-		if(p->x[i] < x0[i] && reflect[i]){
+		if(reflect[i] && p->x[i] < x0[i]){
 			PRINT_ASSERT(x0[i]-p->x[i],<,tiny*dx[i]);
 			PRINT_ASSERT(x0[i],==,0);
 			PRINT_ASSERT(p->D[i],<,0);
