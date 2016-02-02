@@ -54,7 +54,8 @@ void grid_general::init(Lua* lua)
 
 	// read some parameters
 	int do_relativity = lua->scalar<int>("do_relativity");
-	output_distribution = lua->scalar<int>("output_distribution");
+	output_zones_distribution = lua->scalar<int>("output_zones_distribution");
+	output_zones = lua->scalar<int>("output_zones");
 	output_hdf5 = lua->scalar<int>("output_hdf5");
 	do_annihilation = lua->scalar<int>("do_annihilation");
 
@@ -118,35 +119,36 @@ void grid_general::init(Lua* lua)
 //------------------------------------------------------------
 void grid_general::write_zones(const int iw) const
 {
-	PRINT_ASSERT(z.size(),>,0);
+	if(output_zones){
+		PRINT_ASSERT(z.size(),>,0);
 
-	// output all zone data in hdf5 format
-	if(output_hdf5){
-		PRINT_ASSERT(dimensionality(),>,0);
-		string filename = transport::filename("fluid",iw,".h5");
-		H5::H5File file(filename, H5F_ACC_TRUNC);
+		// output all zone data in hdf5 format
+		if(output_hdf5){
+			PRINT_ASSERT(dimensionality(),>,0);
+			string filename = transport::filename("fluid",iw,".h5");
+			H5::H5File file(filename, H5F_ACC_TRUNC);
 
-		// write coordinates to the hdf5 file (implemented in each grid type)
-		z[0].distribution[0].write_hdf5_coordinates(file);
-		write_hdf5_coordinates(file);
-		write_hdf5_data(file);
-
-	}
-
-	// output all zone data in text files
-	else{
-		ofstream outf;
-		string filename = transport::filename("fluid",iw,".dat");
-		outf.open(filename.c_str());
-		write_header(outf);
-		vector<int> dir_ind;
-		for (unsigned z_ind=0; z_ind<z.size(); z_ind++)
-		{
-			zone_directional_indices(z_ind, dir_ind);
-			if(dir_ind.size()>0) if(dir_ind[dir_ind.size()-1]==0) outf << endl;
-			write_line(outf,z_ind);
+			// write coordinates to the hdf5 file (implemented in each grid type)
+			z[0].distribution[0].write_hdf5_coordinates(file);
+			write_hdf5_coordinates(file);
+			write_hdf5_data(file);
 		}
-		outf.close();
+
+		// output all zone data in text files
+		else{
+			ofstream outf;
+			string filename = transport::filename("fluid",iw,".dat");
+			outf.open(filename.c_str());
+			write_header(outf);
+			vector<int> dir_ind;
+			for (unsigned z_ind=0; z_ind<z.size(); z_ind++)
+			{
+				zone_directional_indices(z_ind, dir_ind);
+				if(dir_ind.size()>0) if(dir_ind[dir_ind.size()-1]==0) outf << endl;
+				write_line(outf,z_ind);
+			}
+			outf.close();
+		}
 	}
 }
 
@@ -184,7 +186,7 @@ void grid_general::write_header(ofstream& outf) const{
 	if(do_annihilation) outf << ++c << "-annihilation_rate(erg/ccm/s,lab)  ";
 	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << ++c << "-e_rad"<< s << "(erg/ccm,lab) ";
 	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << ++c << "-avg_E"<< s << "(MeV,lab) ";
-	if(output_distribution){
+	if(output_zones_distribution){
 		for(unsigned s=0; s<z[0].distribution.size(); s++){
 			for(unsigned g=0; g<z[0].distribution[s].size(); g++){
 				int nu_bin = z[0].distribution[s].nu_bin(g);
@@ -310,7 +312,7 @@ void grid_general::write_hdf5_data(H5::H5File file) const{
 	dataspace.close();
 
 	// write distribution function
-	if(output_distribution){
+	if(output_zones_distribution){
 
 		// SET UP +4D DATASPACE
 		vector<hsize_t> dims_plus4(zdims.size()+4,0);
@@ -388,7 +390,7 @@ void grid_general::write_line(ofstream& outf, const int z_ind) const{
 	//double integrated_edens = 0;
 	//for(unsigned s=0; s<z[z_ind].distribution.size(); s++) integrated_edens += z[z_ind].distribution[s].integrate();
 	//utf << integrated_edens << "\t";
-	if(output_distribution){
+	if(output_zones_distribution){
 		for(unsigned s=0; s<z[0].distribution.size(); s++){
 			for(unsigned g=0; g<z[0].distribution[s].size(); g++){
 				outf << z[z_ind].distribution[s].get(g) << "\t";

@@ -65,7 +65,8 @@ protected:
 	virtual void read_model_file(Lua* lua) = 0;
 
 	// output options
-	int output_distribution;
+	int output_zones_distribution;
+	int output_zones;
 	int output_hdf5;
 	int do_annihilation;
 
