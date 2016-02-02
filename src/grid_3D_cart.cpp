@@ -106,9 +106,9 @@ void grid_3D_cart::read_David_file(Lua* lua)
 	// get the dataset dimensions
 	const int dataset_rank = 3;
 	PRINT_ASSERT(space.getSimpleExtentNdims(),==,dataset_rank);                 // 3D array
-	hsize_t space_dims[dataset_rank];
-	space.getSimpleExtentDims(space_dims);
-	for(int i=0; i<3; i++) nx[i] = space_dims[i];
+	hsize_t hdf5_dims[dataset_rank];
+	space.getSimpleExtentDims(hdf5_dims);
+	for(int i=0; i<3; i++) nx[i] = hdf5_dims[i];
 	int dataset_nzones = nx[0] * nx[1] * nx[2];
 
 	//======================//
@@ -150,12 +150,12 @@ void grid_3D_cart::read_David_file(Lua* lua)
 
 	// check parameters
 	if(reflect[0] || reflect[1]){
-                assert(!rotate_quadrant);
+		assert(!rotate_quadrant);
 		assert(!rotate_hemisphere[0]);
 		assert(!rotate_hemisphere[1]);
 	}
 	if(rotate_quadrant){
-	        assert(!rotate_hemisphere[0]);
+		assert(!rotate_hemisphere[0]);
 		assert(!rotate_hemisphere[1]);
 	}
 	assert(!( rotate_hemisphere[0] && rotate_hemisphere[1] ));
@@ -216,6 +216,7 @@ void grid_3D_cart::read_David_file(Lua* lua)
 	dataset.read(&(velz[0]),H5::PredType::IEEE_F64LE);
 	dataset = file.openDataSet(groupname.str()+"vol");
 	dataset.read(&(vol[0]),H5::PredType::IEEE_F64LE);
+	#pragma omp parallel for
 	for(int i=0; i<dataset_nzones; i++){
 		rho[i] *= convert_density;
 		temp[i] *= convert_temperature;
@@ -231,43 +232,41 @@ void grid_3D_cart::read_David_file(Lua* lua)
 	double Nmass=0.0, Rmass=0.0;
 	double avgT=0, KE=0, totalVolume=0;
 
-    #pragma omp parallel for collapse(3)
-	for(unsigned i=0; i<space_dims[0]; i++)
-		for(unsigned j=0; j<space_dims[1]; j++)
-			for(unsigned k=0; k<space_dims[2]; k++){
-				unsigned dir_ind[3] = {i,j,k};
+    #pragma omp parallel for reduction(+:Nmass,Rmass,avgT,KE,totalVolume)
+	for(int z_ind=0; z_ind<z.size(); z_ind++){
 
-				// get location of cell-centered cell center, i.e. vertex-centered vertex location
-				vector<double> x(3,0.0);
-				for(int dir=0; dir<3; dir++) x[dir] = extent[2*dir] + dir_ind[dir]*dx[dir];
+		// directional indices in Sedonu grid
+		vector<int> dir_ind = vector<int>(3,0);
+		zone_directional_indices(z_ind,dir_ind);
 
-				// get dataset and zone indices
-				const int dataset_ind = dir_ind[2] + space_dims[2]*dir_ind[1] + space_dims[1]*space_dims[2]*dir_ind[0];
-				const int z_ind = zone_index(x);
-				PRINT_ASSERT((int)dataset_ind,<,(int)(space_dims[0] * space_dims[1] * space_dims[2]));
-				PRINT_ASSERT(z_ind,<,(int)z.size());
+		// directional indices in hdf5 data
+		unsigned hdf5_dir_ind[3];
+		for(int d=0; d<3; d++){
+			hdf5_dir_ind[d] = hdf5_dims[d] - nx[d] + dir_ind[d];
+			PRINT_ASSERT(hdf5_dir_ind[d],>=,0);
+		}
 
-				// if the grid cell is in our post-truncation-modified domain, add it to the zone list.
-				if(z_ind >= 0){
-					z[z_ind].rho  =  rho[dataset_ind];
-					z[z_ind].T    = temp[dataset_ind];
-					z[z_ind].Ye   =   Ye[dataset_ind];
-					z[z_ind].v[0] = velx[dataset_ind];
-					z[z_ind].v[1] = vely[dataset_ind];
-					z[z_ind].v[2] = velz[dataset_ind];
+		// global hdf5 index
+		const int dataset_ind = hdf5_dir_ind[2] + hdf5_dims[2]*hdf5_dir_ind[1] + hdf5_dims[1]*hdf5_dims[2]*hdf5_dir_ind[0];
+		PRINT_ASSERT((int)dataset_ind,<,(int)(hdf5_dims[0] * hdf5_dims[1] * hdf5_dims[2]));
+		PRINT_ASSERT((int)dataset_ind,>=,0);
 
-					PRINT_ASSERT(z[z_ind].rho,>=,0.0);
-					PRINT_ASSERT(z[z_ind].T,>=,0.0);
-					PRINT_ASSERT(z[z_ind].Ye,>=,0.0);
-					PRINT_ASSERT(z[z_ind].Ye,<=,1.0);
-					if(zone_speed2(z_ind) > pc::c*pc::c) cout << z_ind << " " << zone_speed2(z_ind)/pc::c/pc::c << endl;
-					//PRINT_ASSERT(zone_speed2(z_ind) < pc::c*pc::c);
-				}
-			}
+		// fill the zone
+		z[z_ind].rho  =  rho[dataset_ind];
+		z[z_ind].T    = temp[dataset_ind];
+		z[z_ind].Ye   =   Ye[dataset_ind];
+		z[z_ind].v[0] = velx[dataset_ind];
+		z[z_ind].v[1] = vely[dataset_ind];
+		z[z_ind].v[2] = velz[dataset_ind];
 
-	// get global quantities
-	#pragma omp parallel for reduction(+:Nmass,Rmass,avgT,KE,totalVolume)
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
+		PRINT_ASSERT(z[z_ind].rho,>=,0.0);
+		PRINT_ASSERT(z[z_ind].T,>=,0.0);
+		PRINT_ASSERT(z[z_ind].Ye,>=,0.0);
+		PRINT_ASSERT(z[z_ind].Ye,<=,1.0);
+		PRINT_ASSERT(zone_speed2(z_ind),<,pc::c*pc::c);
+		PRINT_ASSERT(zone_speed2(z_ind),>=,0.0);
+
+		// get global quantities
 		Nmass += z[z_ind].rho * zone_lab_volume(z_ind);
 		Rmass += z[z_ind].rho * zone_comoving_volume(z_ind);
 
