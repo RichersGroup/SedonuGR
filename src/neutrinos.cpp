@@ -171,7 +171,8 @@ void neutrinos::set_eas(int zone_index)
 double neutrinos::blackbody(const double T /*K*/, const double chem_pot /*erg*/, const double nu /*Hz*/) const
 {
 	double zeta = (pc::h*nu - chem_pot)/pc::k/T;
-	double bb = (pc::h*nu) * (nu/pc::c) * (nu/pc::c) / (exp(zeta) + 1.0);
+	double nu_c = nu*pc::inv_c;
+	double bb = (pc::h*nu) * nu_c * nu_c / (exp(zeta) + 1.0);
 	PRINT_ASSERT(bb,>=,0);
 	return bb;
 }
@@ -213,7 +214,7 @@ double neutrinos::annihilation_rate(
 	}
 
 	// calculate angle between distribution function angles beforehand
-	double costheta [nu_dist.mu_dim()] [nu_dist.phi_dim()] [nubar_dist.mu_dim()] [nubar_dist.phi_dim()];
+	double onemcostheta [nu_dist.mu_dim()] [nu_dist.phi_dim()] [nubar_dist.mu_dim()] [nubar_dist.phi_dim()];
 	for(unsigned mu=0; mu<nu_dist.mu_dim(); mu++){
 		for(unsigned phi=0; phi<nu_dist.phi_dim(); phi++){
 
@@ -228,11 +229,18 @@ double neutrinos::annihilation_rate(
 					double avg_mubar  = nubar_dist.mu_center(indexbar);
 					double avg_phibar = nubar_dist.phi_center(indexbar);
 
-					costheta[mu][phi][mubar][phibar] = cos_angle_between(avg_mu,avg_mubar,avg_phi,avg_phibar);
+					onemcostheta[mu][phi][mubar][phibar] = 1.0-cos_angle_between(avg_mu,avg_mubar,avg_phi,avg_phibar);
 				}
 			}
 		}
 	}
+
+	// some useful constants
+	double twomec2 = 2.0*pc::m_e*pc::c*pc::c;
+	double C3mec4 = C3*mec2*mec2;
+	double C1pC2_3 = C1pC2/3.0;
+	double mec22 = pc::m_e*pc::m_e * pc::c*pc::c*pc::c*pc::c;
+	double inv_weight = 1./(double)weight;
 
 	// integrate over all bins
 	double Q = 0;
@@ -241,7 +249,11 @@ double neutrinos::annihilation_rate(
 		double avg_e = nu_dist.nu_bin_center(inu)*pc::h; // erg
 		for(unsigned inubar=0; inubar<nubar_dist.nu_dim(); inubar++){
 			double avg_ebar = nubar_dist.nu_bin_center(inubar)*pc::h; // erg
-			if(avg_e*avg_ebar > (pc::m_e*pc::m_e * pc::c*pc::c*pc::c*pc::c)){
+
+			double C3mec4_eebar = C3mec4/(avg_e*avg_ebar);
+			double sume_m_twomec2 = avg_e + avg_ebar - twomec2;
+			double eebar = avg_e * avg_ebar;
+			if(avg_e*avg_ebar > mec22){
 
 				// neutrino direction loops
 				for(unsigned imu=0; imu<nu_dist.mu_dim(); imu++){
@@ -253,15 +265,13 @@ double neutrinos::annihilation_rate(
 							for(unsigned iphibar=0; iphibar<nubar_dist.phi_dim(); iphibar++){
 								unsigned indexbar = nubar_dist.index(inubar,imubar,iphibar);
 
-								double cost = costheta[imu][iphi][imubar][iphibar];
-								if(avg_e*avg_ebar*(1.0-cost) > (pc::m_e*pc::m_e * pc::c*pc::c*pc::c*pc::c)){
-									double nudist_edens       = nu_dist.get(index)    / (double)weight; // erg/ccm
-									double nubardist_edens = nubar_dist.get(indexbar) / (double)weight; // erg/ccm
+								double onemcost = onemcostheta[imu][iphi][imubar][iphibar];
+								if(eebar*onemcost > mec22){
+									double nudist_edens    =    nu_dist.get(index)    * inv_weight; // erg/ccm
+									double nubardist_edens = nubar_dist.get(indexbar) * inv_weight; // erg/ccm
 
-									Q += nudist_edens * nubardist_edens * (avg_e + avg_ebar - 2.0*pc::m_e*pc::c*pc::c) * (1.0-cost) * (
-											C1pC2/3.0 * (1.0-cost) +
-											C3 * mec2*mec2 / (avg_e*avg_ebar)
-									); // Q
+									Q += nudist_edens * nubardist_edens * sume_m_twomec2 * onemcost *
+											(C1pC2_3 * onemcost + C3mec4_eebar);
 								} // if
 							} // phibar
 						} // mubar
