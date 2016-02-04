@@ -390,6 +390,7 @@ void transport::step()
 	assert(particles.empty());
 
 	// reset radiation quantities
+	if(rank0 && verbose) cout << "# Clearing radiation..." << endl;
 	reset_radiation();
 
 	// emit, propagate, and normalize. steady_state means no propagation time limit.
