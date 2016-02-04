@@ -35,7 +35,7 @@
 double transport::lorentz_factor(const double v[3], const int vsize){
 	PRINT_ASSERT(vsize,<=,3);
 	PRINT_ASSERT(dot(v,v,vsize),<,pc::c*pc::c);
-	double beta2 = dot(v,v,vsize) / (pc::c*pc::c);
+	double beta2 = dot(v,v,vsize) * pc::inv_c * pc::inv_c;
 	double lfac = 1.0 / sqrt(1.0 - beta2);
 	PRINT_ASSERT(lfac,>=,1.0);
 	return lfac;
@@ -70,19 +70,19 @@ double transport::dot(const double a[], const double b[], const int size){
 // normalize a vector
 void transport::normalize(vector<double>& a){
 	PRINT_ASSERT(a.size(),>,0);
-	double magnitude = sqrt(dot(a,a));
-	for(unsigned i=0; i<a.size(); i++) a[i] /= magnitude;
+	double inv_magnitude = 1./sqrt(dot(a,a));
+	for(unsigned i=0; i<a.size(); i++) a[i] *= inv_magnitude;
 }
 void transport::normalize(double a[],const int size){
 	PRINT_ASSERT(size,>,0);
-	double magnitude = sqrt(dot(a,a,size));
-	for(unsigned i=0; i<sizeof(a)/sizeof(a[0]); i++) a[i] /= magnitude;
+	double inv_magnitude = 1./sqrt(dot(a,a,size));
+	for(unsigned i=0; i<sizeof(a)/sizeof(a[0]); i++) a[i] *= inv_magnitude;
 }
 
 // v_dot_d is the dot product of the relative velocity and the relativistic particle's direction
 double doppler_shift(const double gamma, const double vdd){
 	PRINT_ASSERT(gamma,>,0);
-	double dshift = gamma * (1.0 - vdd/pc::c);
+	double dshift = gamma * (1.0 - vdd*pc::inv_c);
 	PRINT_ASSERT(dshift,>,0);
 	return dshift;
 }
@@ -106,9 +106,10 @@ void lorentz_transform(particle* p, const double v[3], const int vsize){
 
 	// transform the 1-3 components (direction)
 	// See Mihalas & Mihalas eq 89.8
-	p->D[0] = 1.0/dshift * (p->D[0] - gamma*v[0]/pc::c * (1 - gamma*vdd/pc::c/(gamma+1)) );
-	p->D[1] = 1.0/dshift * (p->D[1] - gamma*v[1]/pc::c * (1 - gamma*vdd/pc::c/(gamma+1)) );
-	p->D[2] = 1.0/dshift * (p->D[2] - gamma*v[2]/pc::c * (1 - gamma*vdd/pc::c/(gamma+1)) );
+	double tmp = gamma/pc::c * (1 - gamma*vdd/(pc::c*(gamma+1)));
+	p->D[0] = 1.0/dshift * (p->D[0] - v[0]*tmp);
+	p->D[1] = 1.0/dshift * (p->D[1] - v[1]*tmp);
+	p->D[2] = 1.0/dshift * (p->D[2] - v[2]*tmp);
 	transport::normalize(p->D,3);
 
 	// sanity checks

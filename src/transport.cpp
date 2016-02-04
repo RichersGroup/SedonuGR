@@ -616,11 +616,12 @@ void transport::normalize_radiative_quantities(){
 
 	// normalize zone quantities
 	double multiplier = (double)emissions_per_timestep;
+	double inv_multiplier = 1.0/multiplier;
     #pragma omp parallel for reduction(+:net_visc_heating,net_neut_heating)
 	for(unsigned z_ind=0;z_ind<grid->z.size();z_ind++)
 	{
 		zone *z = &(grid->z[z_ind]);
-		double four_vol = grid->zone_lab_volume(z_ind); // Lorentz invariant - same in lab and comoving frames. Assume lab_dt=1.0
+		double inv_mult_four_vol = 1.0/(multiplier * grid->zone_lab_volume(z_ind)); // Lorentz invariant - same in lab and comoving frames. Assume lab_dt=1.0
 
 		if(!grid->good_zone(z_ind)){
 			PRINT_ASSERT(z->e_abs,==,0.0);
@@ -630,14 +631,14 @@ void transport::normalize_radiative_quantities(){
 			PRINT_ASSERT(z->l_emit,==,0.0);
 		}
 
-		z->e_abs    /= multiplier*four_vol;       // erg      --> erg/ccm/s
-		z->e_emit   /= multiplier*four_vol;       // erg      --> erg/ccm/s
-		z->nue_abs  /= multiplier*four_vol;       // num      --> num/ccm/s
-		z->anue_abs /= multiplier*four_vol;       // num      --> num/ccm/s
-		z->l_emit   /= multiplier*four_vol;       // num      --> num/ccm/s
+		z->e_abs    *= inv_mult_four_vol;       // erg      --> erg/ccm/s
+		z->e_emit   *= inv_mult_four_vol;       // erg      --> erg/ccm/s
+		z->nue_abs  *= inv_mult_four_vol;       // num      --> num/ccm/s
+		z->anue_abs *= inv_mult_four_vol;       // num      --> num/ccm/s
+		z->l_emit   *= inv_mult_four_vol;       // num      --> num/ccm/s
 
 		// erg*dist --> erg/ccm, represents *all* species if nux
-		for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].rescale(1./(multiplier*four_vol*pc::c));
+		for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].rescale(inv_mult_four_vol * pc::inv_c);
 
 		// tally heat absorbed from viscosity and neutrinos
 		if(do_visc && grid->good_zone(z_ind)){
@@ -648,19 +649,19 @@ void transport::normalize_radiative_quantities(){
 
 	// normalize global quantities
 	for(unsigned s=0; s<species_list.size(); s++){
-		species_list[s]->spectrum.rescale(1./multiplier); // erg/s in each bin. Assume lab_dt=1.0
+		species_list[s]->spectrum.rescale(inv_multiplier); // erg/s in each bin. Assume lab_dt=1.0
 		E_avg_lab[s] /= L_net_lab[s];
 		E_avg_esc[s] /= L_net_esc[s];
-		L_core_lab[s] /= multiplier; // assume lab_dt=1.0
-		L_net_lab[s] /= multiplier; // assume lab_dt=1.0
-		L_net_esc[s] /= multiplier; // assume lab_dt=1.0
-		N_net_lab[s] /= multiplier; // assume lab_dt=1.0
-		N_net_esc[s] /= multiplier; // assume lab_dt=1.0
+		L_core_lab[s] *= inv_multiplier; // assume lab_dt=1.0
+		L_net_lab[s] *= inv_multiplier; // assume lab_dt=1.0
+		L_net_esc[s] *= inv_multiplier; // assume lab_dt=1.0
+		N_net_lab[s] *= inv_multiplier; // assume lab_dt=1.0
+		N_net_esc[s] *= inv_multiplier; // assume lab_dt=1.0
 	}
-	particle_total_energy /= multiplier;
-	particle_core_abs_energy /= multiplier;
-	particle_fluid_abs_energy /= multiplier;
-	particle_escape_energy /= multiplier;
+	particle_total_energy *= inv_multiplier;
+	particle_core_abs_energy *= inv_multiplier;
+	particle_fluid_abs_energy *= inv_multiplier;
+	particle_escape_energy *= inv_multiplier;
 
 	// output useful stuff
 	if(rank0 && verbose){

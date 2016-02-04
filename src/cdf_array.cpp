@@ -81,7 +81,8 @@ void cdf_array::normalize(double cutoff)
 	else{
 		N = y.back();
 		PRINT_ASSERT(N,>,0);
-		for(unsigned i=0;i<y.size();i++)   y[i] /= ( N>0 ? N : 1 );
+		double N_inv = 1.0/N;
+		for(unsigned i=0;i<y.size();i++)   y[i] *= N_inv;
 	}
 
 	// set values below cutoff to 0
@@ -265,10 +266,11 @@ double cdf_array::invert_cubic(const double rand, const locate_array* xgrid, con
 	assert(!isinf<bool>(mRight));
 
 	// prevent overshoot, ensure monotonicity
-	double slope = inverse_secant(i-1,i,xgrid);
+	double slope_inv = secant(i-1,i,xgrid);
+	double slope = 1.0/slope_inv;
 	double limiter = 3.0;
-	double alpha = mLeft/slope;
-	double beta = mRight/slope;
+	double alpha = mLeft*slope_inv;
+	double beta = mRight*slope_inv;
 	PRINT_ASSERT(alpha,>,0);
 	PRINT_ASSERT(beta,>,0);
 	if(alpha*alpha + beta*beta > limiter*limiter){
@@ -279,9 +281,10 @@ double cdf_array::invert_cubic(const double rand, const locate_array* xgrid, con
 
 	// return interpolated function
 	double h = yRight-yLeft;
+	double h_inv = 1.0/h;
 	double t = 0;
-	if(i_in<0) t = (rand-yLeft)/h;
-	else t = rand*(yRight-yLeft)/h;
+	if(i_in<0) t = (rand-yLeft)*h_inv;
+	else t = rand*(yRight-yLeft)*h_inv;
 	PRINT_ASSERT(t,>=,0);
 	PRINT_ASSERT(t,<=,1);
 	double result = xLeft*h00(t) + h*mLeft*h10(t) + xRight*h01(t) + h*mRight*h11(t);
@@ -315,10 +318,11 @@ double cdf_array::interpolate_pdf_cubic(const double x, const locate_array* xgri
 	assert(!isinf<bool>(mRight));
 
 	// prevent overshoot, ensure monotonicity
-	double slope = inverse_secant(i-1,i,xgrid);
+	double slope_inv = secant(i-1,i,xgrid);
+	double slope = 1.0/slope_inv;
 	double limiter = 3.0;
-	double alpha = mLeft/slope;
-	double beta = mRight/slope;
+	double alpha = mLeft*slope_inv;
+	double beta = mRight*slope_inv;
 	PRINT_ASSERT(alpha,>,0);
 	PRINT_ASSERT(beta,>,0);
 	if(alpha*alpha + beta*beta > limiter*limiter){

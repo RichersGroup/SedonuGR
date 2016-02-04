@@ -150,10 +150,8 @@ double grid_general::zone_rest_mass(const int z_ind) const{
 
 double grid_general::zone_comoving_volume(const int z_ind) const{
 	// assumes v is orthonormal in cm/s
-	double v_tmp[3];
-	for(unsigned i=0; i<3; i++) v_tmp[i] = z[z_ind].u[i];
 	if(!good_zone(z_ind)) return 0;
-	else return zone_lab_volume(z_ind) * transport::lorentz_factor(v_tmp,3);
+	else return zone_lab_volume(z_ind) * transport::lorentz_factor(z[z_ind].u,3);
 }
 
 void grid_general::write_header(ofstream& outf) const{
