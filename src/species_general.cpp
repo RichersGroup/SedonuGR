@@ -72,7 +72,7 @@ void species_general::init(Lua* lua, transport* simulation)
 	PRINT_ASSERT(nu_grid.size(),>,0);
 	if(sim->n_emit_core>0 || sim->n_emit_core_per_bin>0) core_emis.resize(nu_grid.size());
 	int iorder = lua->scalar<int>("cdf_interpolation_order");
-    #pragma omp parallel for
+    //#pragma omp parallel for
 	for(unsigned i=0; i<abs_opac.size();  i++){
 		abs_opac[i].resize(nu_grid.size());
 		scat_opac[i].resize(nu_grid.size());
@@ -95,7 +95,7 @@ void species_general::init(Lua* lua, transport* simulation)
 	spectrum_array tmp_spectrum;
 	tmp_spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
 
-	#pragma omp parallel for
+	//#pragma omp parallel for
 	for(unsigned z_ind=0; z_ind<sim->grid->z.size(); z_ind++){
 		sim->grid->z[z_ind].distribution.push_back(tmp_spectrum);
 	}
