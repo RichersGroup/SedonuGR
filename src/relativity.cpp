@@ -32,10 +32,10 @@
 
 // lorentz factor ("gamma")
 // v_rel = v_newframe - v_oldframe
-double transport::lorentz_factor(const vector<double>& v){
-	PRINT_ASSERT(v.size(),<=,3);
-	PRINT_ASSERT(dot(v,v),<,pc::c*pc::c);
-	double beta2 = dot(v,v) / (pc::c*pc::c);
+double transport::lorentz_factor(const double v[3], const int vsize){
+	PRINT_ASSERT(vsize,<=,3);
+	PRINT_ASSERT(dot(v,v,vsize),<,pc::c*pc::c);
+	double beta2 = dot(v,v,vsize) / (pc::c*pc::c);
 	double lfac = 1.0 / sqrt(1.0 - beta2);
 	PRINT_ASSERT(lfac,>=,1.0);
 	return lfac;
@@ -52,7 +52,7 @@ double transport::dot(const vector<double>& a, const vector<double>& b){
 	for(unsigned i=0; i<a.size(); i++) product += a[i]*b[i];
 	return product;
 }
-double transport::dot(const vector<double>& a, const double* b, const int size){
+double transport::dot(const vector<double>& a, const double b[], const int size){
 	PRINT_ASSERT(a.size(),>,0);
 	PRINT_ASSERT(size,>,0);
 	PRINT_ASSERT(a.size(),==,size);
@@ -60,7 +60,7 @@ double transport::dot(const vector<double>& a, const double* b, const int size){
 	for(unsigned i=0; i<a.size(); i++) product += a[i]*b[i];
 	return product;
 }
-double transport::dot(const double* a, const double* b, const int size){
+double transport::dot(const double a[], const double b[], const int size){
 	PRINT_ASSERT(size,>,0);
 	double product = 0;
 	for(unsigned i=0; i<size; i++) product += a[i]*b[i];
@@ -73,7 +73,7 @@ void transport::normalize(vector<double>& a){
 	double magnitude = sqrt(dot(a,a));
 	for(unsigned i=0; i<a.size(); i++) a[i] /= magnitude;
 }
-void transport::normalize(double* a,const int size){
+void transport::normalize(double a[],const int size){
 	PRINT_ASSERT(size,>,0);
 	double magnitude = sqrt(dot(a,a,size));
 	for(unsigned i=0; i<sizeof(a)/sizeof(a[0]); i++) a[i] /= magnitude;
@@ -89,15 +89,15 @@ double doppler_shift(const double gamma, const double vdd){
 
 // apply a lorentz transform to the particle
 // v = v_newframe - v_oldframe
-void lorentz_transform(particle* p, const vector<double> v){
+void lorentz_transform(particle* p, const double v[3], const int vsize){
 	// check input
-	PRINT_ASSERT(v.size(),==,3);
+	PRINT_ASSERT(vsize,==,3);
 	PRINT_ASSERT(p->nu,>,0);
 	PRINT_ASSERT(p->e,>,0);
 
 	// calculate the doppler shift, v dot D, and lorentz factors
-	double gamma = transport::lorentz_factor(v);
-	double vdd = transport::dot(v, p->D);
+	double gamma = transport::lorentz_factor(v,vsize);
+	double vdd = transport::dot(p->D, v, vsize);
 	double dshift = doppler_shift(gamma, vdd);
 
 	// transform the 0th component (energy and frequency)
@@ -109,7 +109,7 @@ void lorentz_transform(particle* p, const vector<double> v){
 	p->D[0] = 1.0/dshift * (p->D[0] - gamma*v[0]/pc::c * (1 - gamma*vdd/pc::c/(gamma+1)) );
 	p->D[1] = 1.0/dshift * (p->D[1] - gamma*v[1]/pc::c * (1 - gamma*vdd/pc::c/(gamma+1)) );
 	p->D[2] = 1.0/dshift * (p->D[2] - gamma*v[2]/pc::c * (1 - gamma*vdd/pc::c/(gamma+1)) );
-	transport::normalize(p->D);
+	transport::normalize(p->D,3);
 
 	// sanity checks
 	PRINT_ASSERT(p->e,>,0);
@@ -126,8 +126,8 @@ double transport::dshift_comoving_to_lab(const particle* p, const int z_ind) con
 {
 	if(!do_relativity) return 1.0;
 
-	vector<double> v;
-	grid->cartesian_velocity_vector(p->x,v,z_ind); // v_comoving - v_lab
+	double v[3];
+	grid->cartesian_velocity_vector(p->x,3,v,3,z_ind); // v_comoving - v_lab
 
 	// new frame is lab frame. old frame is comoving frame.
 	// v_rel = v_lab - v_comoving  --> v must flip sign.
@@ -135,8 +135,8 @@ double transport::dshift_comoving_to_lab(const particle* p, const int z_ind) con
 	v[1] *= -1;
 	v[2] *= -1;
 
-	double gamma = lorentz_factor(v);
-	double vdd = dot(v, p->D);
+	double gamma = lorentz_factor(v,3);
+	double vdd = dot(v, p->D,3);
 	double dshift = doppler_shift(gamma,vdd);
 	PRINT_ASSERT(dshift,>,0);
 	return dshift;
@@ -146,14 +146,14 @@ double transport::dshift_lab_to_comoving(const particle* p, const int z_ind) con
 {
 	if(!do_relativity) return 1.0;
 
-	vector<double> v;
-	grid->cartesian_velocity_vector(p->x,v,z_ind); // v_comoving - v_lab
+	double v[3];
+	grid->cartesian_velocity_vector(p->x,3,v,3,z_ind); // v_comoving - v_lab
 
 	// new frame is comoving frame. old frame is lab frame.
 	// v_rel = v_comoving - v_lab  -->  v keeps its sign
 
-	double gamma = lorentz_factor(v);
-	double vdd = dot(v, p->D);
+	double gamma = lorentz_factor(v,3);
+	double vdd = dot(v, p->D,3);
 	double dshift = doppler_shift(gamma,vdd);
 	PRINT_ASSERT(dshift,>,0);
 	return dshift;
@@ -168,8 +168,8 @@ void transport::transform_comoving_to_lab(particle* p, const int z_ind) const
 {
 	if(!do_relativity) return;
 
-	vector<double> v;
-	grid->cartesian_velocity_vector(p->x,v,z_ind); // v_comoving - v_lab
+	double v[3];
+	grid->cartesian_velocity_vector(p->x,3,v,3,z_ind); // v_comoving - v_lab
 
 	// new frame is lab frame. old frame is comoving frame.
 	// v_rel = v_lab - v_comoving  --> v must flip sign.
@@ -177,20 +177,20 @@ void transport::transform_comoving_to_lab(particle* p, const int z_ind) const
 	v[1] *= -1;
 	v[2] *= -1;
 
-	lorentz_transform(p,v);
+	lorentz_transform(p,v,3);
 }
 
 void transport::transform_lab_to_comoving(particle* p, const int z_ind) const
 {
 	if(!do_relativity) return;
 
-	vector<double> v;
-	grid->cartesian_velocity_vector(p->x,v,z_ind); // v_comoving - v_lab
+	double v[3];
+	grid->cartesian_velocity_vector(p->x,3,v,3,z_ind); // v_comoving - v_lab
 
 	// new frame is lab frame. old frame is comoving frame.
 	// v_rel = v_comoving - v_lab  --> v keeps its sign.
 
-	lorentz_transform(p,v);
+	lorentz_transform(p,v,3);
 }
 
 double transport::comoving_dt(const int z_ind) const{
@@ -198,5 +198,6 @@ double transport::comoving_dt(const int z_ind) const{
 
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
-	return 1.0 / lorentz_factor(grid->z[z_ind].v); // assume lab_dt=1.0
+	PRINT_ASSERT(ARRSIZE(grid->z[z_ind].u),==,grid->dimensionality());
+	return 1.0 / lorentz_factor(grid->z[z_ind].u,grid->dimensionality()); // assume lab_dt=1.0
 }

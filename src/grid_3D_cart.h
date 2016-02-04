@@ -56,7 +56,7 @@ public:
 	grid_3D_cart();
 	virtual ~grid_3D_cart() {}
 
-	void get_deltas(const int z_ind, vector<double>& delta) const;
+	void get_deltas(const int z_ind, double delta[3], const int size) const;
 
 	void read_model_file(Lua* lua);
 	void read_SpEC_file(Lua* lua);
@@ -66,20 +66,20 @@ public:
 	double zone_right_boundary(const unsigned dir, const unsigned dir_ind) const;
 
 	// required functions
-	int    zone_index               (const vector<double>& x                                       ) const;
+	int    zone_index               (const double x[3], const int xsize                            ) const;
 	int    zone_index               (const int i, const int j, const int k                         ) const;
-	double zone_lab_volume              (const int z_ind                                               ) const;
+	double zone_lab_volume          (const int z_ind                                               ) const;
 	double zone_min_length          (const int z_ind                                               ) const;
-	void   zone_coordinates         (const int z_ind, vector<double>& r                            ) const;
-	void   zone_directional_indices (const int z_ind, vector<int>& dir_ind                         ) const;
-	void   cartesian_sample_in_zone (const int z_ind, const vector<double>& rand, vector<double>& x) const;
-	void   cartesian_velocity_vector(const vector<double>& x, vector<double>& v, int z_ind      ) const;
+	void   zone_coordinates         (const int z_ind, double r[3], const int rsize                 ) const;
+	void   zone_directional_indices (const int z_ind, int dir_ind[3], const int size               ) const;
+	void   cartesian_sample_in_zone (const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const;
+	void   cartesian_velocity_vector(const double x[3], const int sxize, double v[3], const int vsize, int z_ind) const;
 	void   write_rays               (const int iw                                                  ) const;
 	void   reflect_outer            (particle *p                                                   ) const;
 	void   symmetry_boundaries      (particle *p                                                   ) const;
-	double lab_dist_to_boundary         (const particle *p                                             ) const;
+	double lab_dist_to_boundary     (const particle *p                                             ) const;
 	double zone_radius              (const int z_ind) const;
-	void dims(vector<hsize_t>& dims) const;
+	void dims                       (hsize_t dims[3], const int size) const;
 	hsize_t dimensionality() const {return 3;};
 	void write_hdf5_coordinates(H5::H5File file) const;
 };

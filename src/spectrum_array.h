@@ -66,7 +66,7 @@ public:
 	void MPI_average();
 
 	// Count a packets
-	void count(const vector<double>& D, const double nu, const double E);
+	void count(const double D[3], const int Dsize, const double nu, const double E);
 
 	//  void normalize();
 	void rescale(const double);
@@ -83,6 +83,9 @@ public:
 	double  nu_center(const unsigned index) const;
 	double  mu_center(const unsigned index) const;
 	double phi_center(const unsigned index) const;
+	double  nu_bin_center(const unsigned index) const;
+	double  mu_bin_center(const unsigned index) const;
+	double phi_bin_center(const unsigned index) const;
 
 	// Print out
 	void print(const int iw, const int species) const;

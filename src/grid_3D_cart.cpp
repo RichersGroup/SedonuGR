@@ -179,7 +179,7 @@ void grid_3D_cart::read_David_file(Lua* lua)
 
 	// set up the zone structure
 	int nzones = nx[0] * nx[1] * nx[2];
-	z.resize(nzones,zone(3));
+	z.resize(nzones);
 
 	// print out grid structure
 	if(rank0){
@@ -236,8 +236,8 @@ void grid_3D_cart::read_David_file(Lua* lua)
 	for(int z_ind=0; z_ind<z.size(); z_ind++){
 
 		// directional indices in Sedonu grid
-		vector<int> dir_ind = vector<int>(3,0);
-		zone_directional_indices(z_ind,dir_ind);
+		int dir_ind[3];
+		zone_directional_indices(z_ind,dir_ind,3);
 
 		// directional indices in hdf5 data
 		unsigned hdf5_dir_ind[3];
@@ -255,9 +255,9 @@ void grid_3D_cart::read_David_file(Lua* lua)
 		z[z_ind].rho  =  rho[dataset_ind];
 		z[z_ind].T    = temp[dataset_ind];
 		z[z_ind].Ye   =   Ye[dataset_ind];
-		z[z_ind].v[0] = velx[dataset_ind];
-		z[z_ind].v[1] = vely[dataset_ind];
-		z[z_ind].v[2] = velz[dataset_ind];
+		z[z_ind].u[0] = velx[dataset_ind];
+		z[z_ind].u[1] = vely[dataset_ind];
+		z[z_ind].u[2] = velz[dataset_ind];
 
 		PRINT_ASSERT(z[z_ind].rho,>=,0.0);
 		PRINT_ASSERT(z[z_ind].T,>=,0.0);
@@ -342,7 +342,7 @@ void grid_3D_cart::read_SpEC_file(Lua* lua)
 	// First loop - set indices and read zone values in file
 	// loop order is the file order
 	// index order matches that in get_zone
-	z.resize(n_zones,zone(dimensionality()));
+	z.resize(n_zones);
 	int ind = 0;
 	bool rx,ry,rz;
 	for (int k=0;k<nx[2];k++)
@@ -364,17 +364,17 @@ void grid_3D_cart::read_SpEC_file(Lua* lua)
 					infile >> z[ind].rho;
 					infile >> z[ind].T;
 					infile >> z[ind].Ye;
-					infile >> z[ind].v[0];
-					infile >> z[ind].v[1];
-					infile >> z[ind].v[2];
+					infile >> z[ind].u[0];
+					infile >> z[ind].u[1];
+					infile >> z[ind].u[2];
 				}
 				else{ //poison values
 					z[ind].rho   = NaN;
 					z[ind].T     = NaN;
 					z[ind].Ye    = NaN;
-					z[ind].v[0]  = NaN;
-					z[ind].v[1]  = NaN;
-					z[ind].v[2]  = NaN;
+					z[ind].u[0]  = NaN;
+					z[ind].u[1]  = NaN;
+					z[ind].u[2]  = NaN;
 				}
 			}
 
@@ -404,9 +404,9 @@ void grid_3D_cart::read_SpEC_file(Lua* lua)
 					z[ind].rho   = z[origin_ind].rho;
 					z[ind].T = z[origin_ind].T;
 					z[ind].Ye    = z[origin_ind].Ye;
-					z[ind].v[0]  = z[origin_ind].v[0];
-					z[ind].v[1]  = z[origin_ind].v[1];
-					z[ind].v[2]  = z[origin_ind].v[2];
+					z[ind].u[0]  = z[origin_ind].u[0];
+					z[ind].u[1]  = z[origin_ind].u[1];
+					z[ind].u[2]  = z[origin_ind].u[2];
 				}
 			}
 
@@ -428,9 +428,9 @@ void grid_3D_cart::read_SpEC_file(Lua* lua)
 //------------------------------------------------------------
 // Overly simple search to find zone
 //------------------------------------------------------------
-int grid_3D_cart::zone_index(const vector<double>& x) const
+int grid_3D_cart::zone_index(const double x[3], const int xsize) const
 {
-	PRINT_ASSERT(x.size(),==,3);
+	PRINT_ASSERT(xsize,==,3);
 
 	// check for off grid
 	for(int i=0; i<3; i++) if (x[i]<x0[i] || x[i]>xmax[i]) return -2;
@@ -470,12 +470,12 @@ int grid_3D_cart::zone_index(const int i, const int j, const int k) const{
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-void grid_3D_cart::zone_directional_indices(const int z_ind, vector<int>& dir_ind) const
+void grid_3D_cart::zone_directional_indices(const int z_ind, int dir_ind[3], const int size) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(size,==,dimensionality());
 
-	dir_ind.resize(dimensionality());
 	dir_ind[0] =  z_ind / (nx[1]*nx[2]);
 	dir_ind[1] = (z_ind % (nx[1]*nx[2])) / nx[2];
 	dir_ind[2] =  z_ind % nx[2];
@@ -494,10 +494,10 @@ double grid_3D_cart::zone_lab_volume(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	vector<int> dir_ind;
-	zone_directional_indices(z_ind,dir_ind);
-	vector<double> delta;
-	get_deltas(z_ind,delta);
+	int dir_ind[3];
+	zone_directional_indices(z_ind,dir_ind,3);
+	double delta[3];
+	get_deltas(z_ind,delta,3);
 	return delta[0] * delta[1] * delta[2];
 }
 
@@ -506,20 +506,19 @@ double grid_3D_cart::zone_lab_volume(const int z_ind) const
 // sample a random position within the cubical cell
 //------------------------------------------------------------
 void grid_3D_cart::cartesian_sample_in_zone
-(const int z_ind, const vector<double>& rand, vector<double>& x) const
+(const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	x.resize(3);
+	PRINT_ASSERT(xsize,==,3);
 
 	// zone directional indices
-	vector<int> dir_ind;
-	zone_directional_indices(z_ind,dir_ind);
-	PRINT_ASSERT(dir_ind.size(),==,dimensionality());
+	int dir_ind[3];
+	zone_directional_indices(z_ind,dir_ind,3);
 
 	// zone deltas in each of three directions
-	vector<double> delta;
-	get_deltas(z_ind,delta);
+	double delta[3];
+	get_deltas(z_ind,delta,3);
 
 	// set the random location
 	for(int i=0; i<3; i++){
@@ -544,8 +543,8 @@ double  grid_3D_cart::zone_min_length(const int z_ind) const
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 
-	vector<double> delta;
-	get_deltas(z_ind,delta);
+	double delta[3];
+	get_deltas(z_ind,delta,3);
 
 	double min_ds = min(delta[0], min(delta[1],delta[2]) );
 	return min_ds;
@@ -556,16 +555,16 @@ double  grid_3D_cart::zone_min_length(const int z_ind) const
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void grid_3D_cart::cartesian_velocity_vector(const vector<double>& x, vector<double>& v, int z_ind) const
+void grid_3D_cart::cartesian_velocity_vector(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
 {
-	PRINT_ASSERT(x.size(),==,3);
-	v.resize(3);
-	if(z_ind<0) z_ind = zone_index(x);
+	PRINT_ASSERT(xsize,==,3);
+	PRINT_ASSERT(vsize,==,3);
+	if(z_ind<0) z_ind = zone_index(x,xsize);
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 
 	// may want to interpolate here?
-	for(int i=0; i<3; i++) v[i] = z[z_ind].v[i];
+	for(int i=0; i<vsize; i++) v[i] = z[z_ind].u[i];
 
 	PRINT_ASSERT(v[0]*v[0] + v[1]*v[1] + v[2]*v[2],<=,pc::c*pc::c);
 }
@@ -573,13 +572,13 @@ void grid_3D_cart::cartesian_velocity_vector(const vector<double>& x, vector<dou
 //------------------------------------------------------------
 // cell-centered coordinates of zone i
 //------------------------------------------------------------
-void grid_3D_cart::zone_coordinates(const int z_ind, vector<double>& r) const
+void grid_3D_cart::zone_coordinates(const int z_ind, double r[3], const int rsize) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	r.resize(dimensionality());
-	vector<int> dir_ind;
-	zone_directional_indices(z_ind,dir_ind);
+	PRINT_ASSERT(rsize,==,dimensionality());
+	int dir_ind[3];
+	zone_directional_indices(z_ind,dir_ind,3);
 
 	for(int i=0; i<3; i++)
 		r[i] = ( dir_ind[i]==0 ? 0.5*(x0[i]+x1[i]) : x1[i] + ((double)(dir_ind[i]-1) + 0.5) * dx[i] );
@@ -593,7 +592,7 @@ void grid_3D_cart::write_rays(const int iw) const
 {
 	int i,j,k;
 	int z_ind;
-	vector<double> r;
+	double r[3];
 	string filename = "";
 	ofstream outf;
 
@@ -605,7 +604,7 @@ void grid_3D_cart::write_rays(const int iw) const
 	for(i=0; i<nx[0]; i++) for(j=0; j<nx[1]; j++){
 		if(j==0) outf << endl;
 		z_ind = zone_index(i,j,k);
-		zone_coordinates(z_ind,r);
+		zone_coordinates(z_ind,r,3);
 		write_line(outf,z_ind);
 	}
 	outf.close();
@@ -618,7 +617,7 @@ void grid_3D_cart::write_rays(const int iw) const
 	for(i=0; i<nx[0]; i++) for(k=0; k<nx[2]; k++){
 		if(k==0) outf << endl;
 		z_ind = zone_index(i,j,k);
-		zone_coordinates(z_ind,r);
+		zone_coordinates(z_ind,r,3);
 		write_line(outf,z_ind);
 	}
 	outf.close();
@@ -631,7 +630,7 @@ void grid_3D_cart::write_rays(const int iw) const
 	for(j=0; j<nx[1]; j++) for(k=0; k<nx[2]; k++){
 		if(k==0) outf << endl;
 		z_ind = zone_index(i,j,k);
-		zone_coordinates(z_ind,r);
+		zone_coordinates(z_ind,r,3);
 		write_line(outf,z_ind);
 	}
 	outf.close();
@@ -644,7 +643,7 @@ void grid_3D_cart::write_rays(const int iw) const
 	k = nx[2]/2;
 	for (i=0;i<nx[0];i++){
 		z_ind = zone_index(i,j,k);
-		zone_coordinates(z_ind,r);
+		zone_coordinates(z_ind,r,3);
 		write_line(outf,z_ind);
 	}
 	outf.close();
@@ -657,7 +656,7 @@ void grid_3D_cart::write_rays(const int iw) const
 	k = nx[2]/2;
 	for (j=0; j<nx[1]; j++){
 		z_ind = zone_index(i,j,k);
-		zone_coordinates(z_ind,r);
+		zone_coordinates(z_ind,r,3);
 		write_line(outf,z_ind);
 	}
 	outf.close();
@@ -671,7 +670,7 @@ void grid_3D_cart::write_rays(const int iw) const
 	for (k=0; k<nx[2]; k++)
 	{
 		z_ind = zone_index(i,j,k);
-		zone_coordinates(z_ind,r);
+		zone_coordinates(z_ind,r,3);
 		write_line(outf,z_ind);
 	}
 	outf.close();
@@ -683,9 +682,9 @@ void grid_3D_cart::write_rays(const int iw) const
 //------------------------------------------------------------
 void grid_3D_cart::reflect_outer(particle *p) const{
 	// assumes particle is placed OUTSIDE of the zones
-	int z_ind = zone_index(p->x);
-	vector<double> delta;
-	get_deltas(z_ind,delta);
+	int z_ind = zone_index(p->x,3);
+	double delta[3];
+	get_deltas(z_ind,delta,3);
 
 	// invert the radial component of the velocity, put the particle just inside the boundary
 	for(int i=0; i<3; i++){
@@ -739,16 +738,16 @@ double grid_3D_cart::lab_dist_to_boundary(const particle *p) const{
 double grid_3D_cart::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	vector<double> r;
-	zone_coordinates(z_ind,r);
-	return sqrt(transport::dot(r,r));
+	double r[3];
+	zone_coordinates(z_ind,r,3);
+	return sqrt(transport::dot(r,r,3));
 }
 
 //-----------------------------
 // Dimensions of the grid
 //-----------------------------
-void grid_3D_cart::dims(vector<hsize_t>& dims) const{
-	dims.resize(dimensionality());
+void grid_3D_cart::dims(hsize_t dims[3], const int size) const{
+	PRINT_ASSERT(size,==,dimensionality());
 	for(int i=0; i<3; i++) dims[i] = nx[i];
 }
 
@@ -763,10 +762,9 @@ void grid_3D_cart::write_hdf5_coordinates(H5::H5File file) const
 	vector<float> tmp;
 
 	// get dimensions
-	vector<hsize_t> coord_dims;
-	dims(coord_dims);
-	PRINT_ASSERT(coord_dims.size(),==,dimensionality());
-	for(unsigned i=0; i<coord_dims.size(); i++) coord_dims[i]++; //make room for min value
+	hsize_t coord_dims[3];
+	dims(coord_dims,3);
+	for(unsigned i=0; i<3; i++) coord_dims[i]++; //make room for min value
 
 	// write x coordinates
 	for(int dir=0; dir<3; dir++){
@@ -784,14 +782,14 @@ void grid_3D_cart::write_hdf5_coordinates(H5::H5File file) const
 }
 
 
-void grid_3D_cart::get_deltas(const int z_ind, vector<double>& delta) const
+void grid_3D_cart::get_deltas(const int z_ind, double delta[3], const int size) const
 {
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	delta.resize(dimensionality());
+	PRINT_ASSERT(size,==,3);
 
 	// get directional indices
-	vector<int> dir_ind;
-	zone_directional_indices(z_ind,dir_ind);
+	int dir_ind[3];
+	zone_directional_indices(z_ind,dir_ind,3);
 
 	for(int i=0; i<3; i++){
 		delta[i] = (dir_ind[i]==0 ? x1[i]-x0[i] : dx[i]);
@@ -816,7 +814,7 @@ double grid_3D_cart::zone_right_boundary(const unsigned dir, const unsigned dir_
 	PRINT_ASSERT(dir_ind,>=,0);
 
 	double boundary = ( dir_ind==0 ? x1[dir] : x1[dir] + (double)dir_ind * dx[dir] );
-	PRINT_ASSERT(boundary,<=,xmax[dir]);
+	PRINT_ASSERT(boundary,<=,xmax[dir]*(1.0+tiny));
 	PRINT_ASSERT(boundary,>=,x0[dir]);
 	return boundary;
 }

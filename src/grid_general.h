@@ -99,15 +99,15 @@ public:
 	//****** virtual functions (geometry specific)
 
 	// get directional indices from the zone index
-	virtual void zone_directional_indices(const int z_ind, vector<int>& dir_ind) const = 0;
-	virtual void dims(vector<hsize_t>& dims) const = 0;
+	virtual void zone_directional_indices(const int z_ind, int dir_ind[], const int size) const = 0;
+	virtual void dims(hsize_t dims[], const int size) const = 0;
 	virtual hsize_t dimensionality() const = 0;
 
 	// get the velocity squared from the stored velocity vector
 	double zone_speed2(const int z_ind) const;
 
 	// get zone index from x,y,z position
-	virtual int zone_index(const vector<double>& x) const   = 0;
+	virtual int zone_index(const double x[3], const int size) const   = 0;
 
 	// return volume of zone z_ind
 	virtual double zone_lab_volume(const int z_ind) const         = 0;
@@ -122,13 +122,13 @@ public:
 	virtual double zone_min_length(const int z_ind) const     = 0;
 
 	// randomly sample a position within the zone z_ind
-	virtual void cartesian_sample_in_zone(const int z_ind,const vector<double>& rand, vector<double>& x) const = 0;
+	virtual void cartesian_sample_in_zone(const int z_ind,const double rand[], const int randsize, double x[3], const int xsize) const = 0;
 
 	// give the velocity vector at this point
-	virtual void cartesian_velocity_vector(const vector<double>& x, vector<double>& v, int z_ind=-1) const = 0;
+	virtual void cartesian_velocity_vector(const double x[3], const int xsize, double v[], const int vsize, int z_ind=-1) const = 0;
 
 	// get the coordinates at the center of the zone z_ind
-	virtual void zone_coordinates(const int z_ind, vector<double>& r) const = 0;
+	virtual void zone_coordinates(const int z_ind, double r[], const int rsize) const = 0;
 	virtual double zone_radius(const int z_ind) const = 0;
 
 	// boundary conditions

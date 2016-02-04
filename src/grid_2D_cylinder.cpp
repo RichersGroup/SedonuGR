@@ -67,8 +67,8 @@ void grid_2D_cylinder::read_model_file(Lua* lua)
     	dataset = file.openDataSet("/rho");
     	space = dataset.getSpace();
     	space.getSimpleExtentDims(dims);
-	const int nr = dims[0];
-	const int nz = dims[1];
+    	const int nr = dims[0];
+    	const int nz = dims[1];
     	PRINT_ASSERT(dataset.getTypeClass(),==,H5T_FLOAT);
     	PRINT_ASSERT(space.getSimpleExtentNdims(),==,dataset_rank);
 
@@ -146,7 +146,7 @@ void grid_2D_cylinder::read_model_file(Lua* lua)
     	// fill the grid //
     	//===============//
 	const int n_zones = nr*nz;
-	z.resize(n_zones, zone(3));
+	z.resize(n_zones);
 
     	double newtonian_eint_total = 0;
     	double newtonian_mass = 0;
@@ -161,9 +161,8 @@ void grid_2D_cylinder::read_model_file(Lua* lua)
 	    PRINT_ASSERT(z_ind,<,n_zones);
 	    
 	    // zone position
-	    vector<double> r;
-	    zone_coordinates(z_ind,r);
-	    PRINT_ASSERT(r.size(),==,2);
+	    double r[2];
+	    zone_coordinates(z_ind,r,2);
 	    
 	    // zone values
 	    z[z_ind].rho =   rho[i][j];
@@ -179,10 +178,10 @@ void grid_2D_cylinder::read_model_file(Lua* lua)
 	      vz_tmp   *= speed_max / speed;
 	      if(rank0) cout << "WARNING: velocity of superluminal cell at {r,z}={" << rcyl_out[i] << "," << zcyl_out[j] << "} set to gamma=" << gamma_max << endl;
 	    }
-	    PRINT_ASSERT((int)z[z_ind].v.size(),==,3);
-	    z[z_ind].v[0] = vr_tmp;
-	    z[z_ind].v[1] = vz_tmp;
-	    z[z_ind].v[2] = vphi_tmp;
+	    PRINT_ASSERT(ARRSIZE(z[z_ind].u),==,3);
+	    z[z_ind].u[0] = vr_tmp;
+	    z[z_ind].u[1] = vz_tmp;
+	    z[z_ind].u[2] = vphi_tmp;
 	    PRINT_ASSERT(zone_speed2(z_ind),<,pc::c*pc::c);
 	    PRINT_ASSERT(z[z_ind].rho,>=,0.0);
 	    PRINT_ASSERT(z[z_ind].T,>=,0.0);
@@ -203,9 +202,9 @@ void grid_2D_cylinder::read_model_file(Lua* lua)
 //------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
-int grid_2D_cylinder::zone_index(const vector<double>& x) const
+int grid_2D_cylinder::zone_index(const double x[3], const int xsize) const
 {
-	PRINT_ASSERT(x.size(),==,3);
+	PRINT_ASSERT(xsize,==,3);
 	double rcyl = sqrt(x[0]*x[0] + x[1]*x[1]);
 	double zcyl = x[2];
 	PRINT_ASSERT(rcyl,>=,0);
@@ -247,9 +246,8 @@ double grid_2D_cylinder::zone_lab_volume(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	vector<int> dir_ind;
-	zone_directional_indices(z_ind,dir_ind);
-	PRINT_ASSERT(dir_ind.size(),==,2);
+	int dir_ind[2];
+	zone_directional_indices(z_ind,dir_ind,2);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 	const double rcyl0 = rcyl_out.bottom(i);
@@ -267,9 +265,8 @@ double grid_2D_cylinder::zone_lab_volume(const int z_ind) const
 //------------------------------------------------------------
 double grid_2D_cylinder::zone_min_length(const int z_ind) const
 {
-	vector<int> dir_ind;
-	zone_directional_indices(z_ind,dir_ind);
-	PRINT_ASSERT((int)dir_ind.size(),==,2);
+	int dir_ind[2];
+	zone_directional_indices(z_ind,dir_ind,2);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 
@@ -283,15 +280,14 @@ double grid_2D_cylinder::zone_min_length(const int z_ind) const
 //------------------------------------------------------------
 // Return the cell-center spherical coordinates of the cell
 //------------------------------------------------------------
-void grid_2D_cylinder::zone_coordinates(const int z_ind, vector<double>& r) const
+void grid_2D_cylinder::zone_coordinates(const int z_ind, double r[2], const int rsize) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)(rcyl_out.size()*zcyl_out.size()));
-	r.resize(2);
+	PRINT_ASSERT(rsize,==,2);
 
-	vector<int> dir_ind(2,0);
-	zone_directional_indices(z_ind, dir_ind);
-	PRINT_ASSERT(dir_ind.size(),==,2);
+	int dir_ind[2];
+	zone_directional_indices(z_ind, dir_ind,2);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 
@@ -305,11 +301,11 @@ void grid_2D_cylinder::zone_coordinates(const int z_ind, vector<double>& r) cons
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-void grid_2D_cylinder::zone_directional_indices(const int z_ind, vector<int>& dir_ind) const
+void grid_2D_cylinder::zone_directional_indices(const int z_ind, int dir_ind[2], const int size) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	dir_ind.resize(2);
+	PRINT_ASSERT(size,==,2);
 	dir_ind[0] = z_ind / zcyl_out.size(); // rcyl index
 	dir_ind[1] = z_ind % zcyl_out.size(); // zcyl index
 	PRINT_ASSERT(dir_ind[0],>=,0);
@@ -322,16 +318,16 @@ void grid_2D_cylinder::zone_directional_indices(const int z_ind, vector<int>& di
 //------------------------------------------------------------
 // sample a random cartesian position within the spherical shell
 //------------------------------------------------------------
-void grid_2D_cylinder::cartesian_sample_in_zone(const int z_ind, const vector<double>& rand, vector<double>& x) const
+void grid_2D_cylinder::cartesian_sample_in_zone(const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	PRINT_ASSERT(rand.size(),==,3);
-	x.resize(3);
+	PRINT_ASSERT(randsize,==,3);
+	PRINT_ASSERT(xsize,==,3);
 
 	// radius and theta indices
-	vector<int> dir_ind;
-	zone_directional_indices(z_ind,dir_ind);
+	int dir_ind[3];
+	zone_directional_indices(z_ind,dir_ind,2);
 	int i = dir_ind[0];
 	int j = dir_ind[1];
 
@@ -366,11 +362,11 @@ void grid_2D_cylinder::cartesian_sample_in_zone(const int z_ind, const vector<do
 //------------------------------------------------------------
 // get the cartesian velocity vector (cm/s)
 //------------------------------------------------------------
-void grid_2D_cylinder::cartesian_velocity_vector(const vector<double>& x, vector<double>& v, int z_ind) const
+void grid_2D_cylinder::cartesian_velocity_vector(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
 {
-	PRINT_ASSERT(x.size(),==,3);
-	v.resize(3,0);
-	if(z_ind < 0) z_ind = zone_index(x);
+	PRINT_ASSERT(xsize,==,3);
+	PRINT_ASSERT(vsize,==,3);
+	if(z_ind < 0) z_ind = zone_index(x,xsize);
 	PRINT_ASSERT(z_ind,>=,-1);
 
 	// if within inner sphere, z_ind=-1. Leave velocity at 0.
@@ -382,22 +378,22 @@ void grid_2D_cylinder::cartesian_velocity_vector(const vector<double>& x, vector
 		int along_axis = (rcyl/r < tiny);
 
 		// Based on position, calculate what the 3-velocity is
-		PRINT_ASSERT(z[z_ind].v.size(),==,3);
-		double vrcyl = z[z_ind].v[0];
-		double vphi  = z[z_ind].v[1];
-		double vz    = z[z_ind].v[2];
+		PRINT_ASSERT(ARRSIZE(z[z_ind].u),==,3);
+		double vrcyl = z[z_ind].u[0];
+		double vphi  = z[z_ind].u[1];
+		double vz    = z[z_ind].u[2];
 
-		vector<double> vrcyl_cart(3,0);
+		double vrcyl_cart[3];
 		vrcyl_cart[0] = vrcyl * x[0]/rcyl;
 		vrcyl_cart[1] = vrcyl * x[1]/rcyl;
 		vrcyl_cart[2] = 0;
 
-		vector<double> vphi_cart(3,0);
+		double vphi_cart[3];
 		vphi_cart[0] = (along_axis ? 0 : -vphi * x[1]/rcyl );
 		vphi_cart[1] = (along_axis ? 0 :  vphi * x[0]/rcyl );
 		vphi_cart[2] = 0;
 
-		vector<double> vz_cart(3,0);
+		double vz_cart[3];
 		vz_cart[0] = 0;
 		vz_cart[1] = 0;
 		vz_cart[2] = vz;
@@ -416,7 +412,7 @@ void grid_2D_cylinder::write_rays(int iw) const
 	PRINT_ASSERT(iw,>=,0);
 	ofstream outf;
 	unsigned i=0,j=0;
-	vector<double> r;
+	double r[3];
 	string filename = "";
 
 	// along equator
@@ -426,7 +422,7 @@ void grid_2D_cylinder::write_rays(int iw) const
 	j = zcyl_out.size()/2;
 	for(i=0; i<rcyl_out.size(); i++){
 		int z_ind = zone_index(i,j);
-		zone_coordinates(z_ind,r);
+		zone_coordinates(z_ind,r,2);
 		write_line(outf,z_ind);
 	}
 	outf.close();
@@ -438,7 +434,7 @@ void grid_2D_cylinder::write_rays(int iw) const
 	i = rcyl_out.size()/2;
 	for(j=0; j<zcyl_out.size(); j++){
 		int z_ind = zone_index(i,j);
-		zone_coordinates(z_ind,r);
+		zone_coordinates(z_ind,r,2);
 		write_line(outf,z_ind);
 	}
 	outf.close();
@@ -507,7 +503,7 @@ double grid_2D_cylinder::lab_dist_to_boundary(const particle *p) const{
 	double d_outer_boundary = numeric_limits<double>::infinity();
 	double d_inner_boundary = numeric_limits<double>::infinity();
 	PRINT_ASSERT(rcyl,<,Rout);
-	PRINT_ASSERT(zone_index(p->x),>=,-1);
+	PRINT_ASSERT(zone_index(p->x,3),>=,-1);
 
 	// distance to inner boundary
 	double radical = rcyl*rcyl*(mucyl*mucyl-1.0) + Rin*Rin;
@@ -551,8 +547,8 @@ double grid_2D_cylinder::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 
 	// radius and theta indices
-	vector<int> dir_ind;
-	zone_directional_indices(z_ind,dir_ind);
+	int dir_ind[2];
+	zone_directional_indices(z_ind,dir_ind,2);
 	int i = dir_ind[0];
 	int j = dir_ind[1];
 
@@ -566,8 +562,8 @@ double grid_2D_cylinder::zone_radius(const int z_ind) const{
 //-----------------------------
 // Dimensions of the grid
 //-----------------------------
-void grid_2D_cylinder::dims(vector<hsize_t>& dims) const{
-	dims.resize(dimensionality());
+void grid_2D_cylinder::dims(hsize_t dims[2], const int size) const{
+	PRINT_ASSERT(size,==,dimensionality());
 	dims[0] = rcyl_out.size();
 	dims[1] = zcyl_out.size();
 }
@@ -580,29 +576,27 @@ void grid_2D_cylinder::write_hdf5_coordinates(H5::H5File file) const
 	// useful quantities
 	H5::DataSet dataset;
 	H5::DataSpace dataspace;
-	vector<float> tmp;
 
 	// get dimensions
-	vector<hsize_t> coord_dims;
-	dims(coord_dims);
-	PRINT_ASSERT(coord_dims.size(),==,dimensionality());
-	for(unsigned i=0; i<coord_dims.size(); i++) coord_dims[i]++; //make room for min value
+	hsize_t coord_dims[2];
+	dims(coord_dims,2);
+	for(unsigned i=0; i<2; i++) coord_dims[i]++; //make room for min value
 
 	// write r coordinates
+	float tmp0[coord_dims[0]];
 	dataspace = H5::DataSpace(1,&coord_dims[0]);
 	dataset = file.createDataSet("grid_rcyl(cm)",H5::PredType::IEEE_F32LE,dataspace);
-	tmp.resize(coord_dims[0]);
-	tmp[0] = rcyl_out.min;
-	for(unsigned i=1; i<rcyl_out.size()+1; i++) tmp[i] = rcyl_out[i-1];
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	tmp0[0] = rcyl_out.min;
+	for(unsigned i=1; i<rcyl_out.size()+1; i++) tmp0[i] = rcyl_out[i-1];
+	dataset.write(&tmp0[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 
 	// write theta coordinates
+	float tmp1[coord_dims[1]];
 	dataspace = H5::DataSpace(1,&coord_dims[1]);
 	dataset = file.createDataSet("grid_zcyl(cm)",H5::PredType::IEEE_F32LE,dataspace);
-	tmp.resize(coord_dims[0]);
-	tmp[0] = zcyl_out.min;
-	for(unsigned i=1; i<zcyl_out.size()+1; i++) tmp[i] = zcyl_out[i-1];
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	tmp1[0] = zcyl_out.min;
+	for(unsigned i=1; i<zcyl_out.size()+1; i++) tmp1[i] = zcyl_out[i-1];
+	dataset.write(&tmp1[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 }

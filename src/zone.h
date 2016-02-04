@@ -41,10 +41,10 @@ class zone
 public:
 
 	// constructors
-	zone(const int dimensionality=0);
+	zone();
 
 	// fluid properties (rho,T are in comoving frame. Ye is invariant.)
-	vector<double> v;       // velocity vector (cm/s)
+	double u[3];            // velocity vector (cm/s)
 	double rho;             // density (g/cm^3)
 	double T;               // gas temperature (K)
 	double Ye;              // electron fraction

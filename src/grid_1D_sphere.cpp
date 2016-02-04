@@ -63,7 +63,7 @@ void grid_1D_sphere::read_model_file(Lua* lua)
 	int n_zones;
 	infile >> n_zones;
 	PRINT_ASSERT(n_zones,>,0);
-	z.resize(n_zones,zone(dimensionality()));
+	z.resize(n_zones);
 	r_out.resize(n_zones);
 
 	// read zone properties
@@ -76,13 +76,15 @@ void grid_1D_sphere::read_model_file(Lua* lua)
 		infile >> z[z_ind].T;
 		infile >> z[z_ind].Ye;
 		z[z_ind].H_vis = 0;
-		z[z_ind].v[0] = 0;
+		z[z_ind].u[0] = 0;
+		z[z_ind].u[1] = 0;
+		z[z_ind].u[2] = 0;
 		PRINT_ASSERT(r_out[z_ind],>,(z_ind==0 ? r_out.min : r_out[z_ind-1]));
 		PRINT_ASSERT(z[z_ind].rho,>=,0);
 		PRINT_ASSERT(z[z_ind].T,>=,0);
 		PRINT_ASSERT(z[z_ind].Ye,>=,0);
 		PRINT_ASSERT(z[z_ind].Ye,<=,1.0);
-		PRINT_ASSERT(z[z_ind].v.size(),==,dimensionality());
+		PRINT_ASSERT(ARRSIZE(z[z_ind].u),==,3);
 	}
 
 	infile.close();
@@ -92,10 +94,10 @@ void grid_1D_sphere::read_model_file(Lua* lua)
 //------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
-int grid_1D_sphere::zone_index(const vector<double>& x) const
+int grid_1D_sphere::zone_index(const double x[3], const int xsize) const
 {
 	PRINT_ASSERT(z.size(),>,0);
-	PRINT_ASSERT(x.size(),==,3);
+	PRINT_ASSERT(xsize,==,3);
 	double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 	PRINT_ASSERT(r,>,0);
 
@@ -148,10 +150,10 @@ double  grid_1D_sphere::zone_min_length(const int z_ind) const
 // ------------------------------------------------------------
 // find the coordinates of the zone in geometrical coordinates
 // ------------------------------------------------------------
-void grid_1D_sphere::zone_coordinates(const int z_ind, vector<double>& r) const{
+void grid_1D_sphere::zone_coordinates(const int z_ind, double r[1], const int rsize) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	r.resize(dimensionality());
+	PRINT_ASSERT(rsize,==,dimensionality());
 	r[0] = 0.5*(r_out[z_ind]+r_out.bottom(z_ind));
 	PRINT_ASSERT(r[0],>,0);
 	PRINT_ASSERT(r[0],<,r_out[r_out.size()-1]);
@@ -161,11 +163,11 @@ void grid_1D_sphere::zone_coordinates(const int z_ind, vector<double>& r) const{
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-void grid_1D_sphere::zone_directional_indices(const int z_ind, vector<int>& dir_ind) const
+void grid_1D_sphere::zone_directional_indices(const int z_ind, int dir_ind[1], const int size) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	dir_ind.resize(dimensionality());
+	PRINT_ASSERT(size,==,dimensionality());
 	dir_ind[0] = z_ind;
 }
 
@@ -174,12 +176,12 @@ void grid_1D_sphere::zone_directional_indices(const int z_ind, vector<int>& dir_
 // sample a random position within the spherical shell
 //------------------------------------------------------------
 void grid_1D_sphere::cartesian_sample_in_zone
-(const int z_ind, const vector<double>& rand, vector<double>& x) const
+(const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	PRINT_ASSERT(rand.size(),==,3);
-	x.resize(3);
+	PRINT_ASSERT(randsize,==,3);
+	PRINT_ASSERT(xsize,==,3);
 
 	// inner and outer radii of shell
 	double r0 = (z_ind==0 ? r_out.min : r_out[z_ind-1]);
@@ -207,23 +209,23 @@ void grid_1D_sphere::cartesian_sample_in_zone
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void grid_1D_sphere::cartesian_velocity_vector(const vector<double>& x, vector<double>& v, int z_ind) const
+void grid_1D_sphere::cartesian_velocity_vector(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
 {
-	PRINT_ASSERT(x.size(),==,3);
-	v.resize(3);
-	if(z_ind < 0) z_ind = zone_index(x);
+	PRINT_ASSERT(xsize,==,3);
+	PRINT_ASSERT(vsize,==,3);
+	if(z_ind < 0) z_ind = zone_index(x,xsize);
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 
 	// radius in zone
-	double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+	double r = sqrt(transport::dot(x,x,xsize));
 
 	// assuming radial velocity (may want to interpolate here)
 	// (the other two components are ignored and mean nothing)
-	PRINT_ASSERT(z[z_ind].v.size(),==,dimensionality());
-	v[0] = x[0]/r*z[z_ind].v[0];
-	v[1] = x[1]/r*z[z_ind].v[0];
-	v[2] = x[2]/r*z[z_ind].v[0];
+	PRINT_ASSERT(ARRSIZE(z[z_ind].u),==,3);
+	v[0] = x[0]/r*z[z_ind].u[0];
+	v[1] = x[1]/r*z[z_ind].u[0];
+	v[2] = x[2]/r*z[z_ind].u[0];
 
 	// check for pathological case
 	if (r == 0)
@@ -233,7 +235,7 @@ void grid_1D_sphere::cartesian_velocity_vector(const vector<double>& x, vector<d
 		v[2] = 0;
 	}
 
-	PRINT_ASSERT(v[0]*v[0] + v[1]*v[1] + v[2]*v[2],<=,pc::c*pc::c);
+	PRINT_ASSERT(transport::dot(v,v,vsize),<=,pc::c*pc::c);
 }
 
 
@@ -262,7 +264,7 @@ void grid_1D_sphere::reflect_outer(particle *p) const{
 	p->D[0] -= 2.*velDotRhat * p->x[0]/R;
 	p->D[1] -= 2.*velDotRhat * p->x[1]/R;
 	p->D[2] -= 2.*velDotRhat * p->x[2]/R;
-	transport::normalize(p->D);
+	transport::normalize(p->D,3);
 
 	// put the particle just inside the boundary
 	double newR = rmax - tiny*dr;
@@ -271,7 +273,7 @@ void grid_1D_sphere::reflect_outer(particle *p) const{
 	p->x[2] = p->x[2]/R*newR;
 
 	// must be inside the boundary, or will get flagged as escaped
-	PRINT_ASSERT(zone_index(p->x),>=,0);
+	PRINT_ASSERT(zone_index(p->x,3),>=,0);
 }
 
 //------------------------------------------------------------
@@ -295,7 +297,7 @@ double grid_1D_sphere::lab_dist_to_boundary(const particle *p) const{
 	double d_outer_boundary = numeric_limits<double>::infinity();
 	double d_inner_boundary = numeric_limits<double>::infinity();
 	PRINT_ASSERT(r,<,Rout);
-	PRINT_ASSERT(zone_index(p->x),>=,-1);
+	PRINT_ASSERT(zone_index(p->x,3),>=,-1);
 
 	// distance to inner boundary
 	if(r >= Rin){
@@ -331,8 +333,8 @@ double grid_1D_sphere::zone_radius(const int z_ind) const{
 //-----------------------------
 // Dimensions of the grid
 //-----------------------------
-void grid_1D_sphere::dims(vector<hsize_t>& dims) const{
-	dims.resize(dimensionality());
+void grid_1D_sphere::dims(hsize_t dims[1], const int size) const{
+	PRINT_ASSERT(size,==,dimensionality());
 	dims[0] = r_out.size();
 }
 
@@ -344,13 +346,12 @@ void grid_1D_sphere::write_hdf5_coordinates(H5::H5File file) const
 	// useful quantities
 	H5::DataSet dataset;
 	H5::DataSpace dataspace;
-	vector<float> tmp;
+	float tmp[r_out.size()+1];
 
 	// get dimensions
-	vector<hsize_t> coord_dims;
-	dims(coord_dims);
-	PRINT_ASSERT(coord_dims.size(),==,dimensionality());
-	for(unsigned i=0; i<coord_dims.size(); i++) coord_dims[i]++; //make room for min value
+	hsize_t coord_dims[1];
+	dims(coord_dims,1);
+	for(unsigned i=0; i<1; i++) coord_dims[i]++; //make room for min value
 
 	// write coordinates
 	dataspace = H5::DataSpace(1,&coord_dims[0]);

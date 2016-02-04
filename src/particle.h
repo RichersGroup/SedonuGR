@@ -42,8 +42,8 @@ public:
 
 	particle();
 
-	vector<double> x;         // x,y,z position (cm)
-	vector<double> D;         // direction vector, Dx,Dy,Dz (normalized to unit magnitude)
+	double x[3];            // x,y,z position (cm)
+	double D[3];            // direction vector, Dx,Dy,Dz (normalized to unit magnitude)
 	double       e;         // total energy in ergs of packet
 	double      nu;         // frequency (Hz)
 	double     tau;         // remaining optical depth

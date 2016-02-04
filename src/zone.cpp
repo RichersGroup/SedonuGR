@@ -31,8 +31,10 @@
 #include <fstream>
 #include "global_options.h"
 
-zone::zone(const int dimensionality){
-	v.resize(dimensionality);
+zone::zone(){
+	u[0] = NaN;
+	u[1] = NaN;
+	u[2] = NaN;
 	rho = NaN;
 	T = NaN;
 	Ye = NaN;

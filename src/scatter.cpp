@@ -141,7 +141,7 @@ void transport::isotropic_scatter(particle* p) const
 	p->D[0] = smu*cos(phi);
 	p->D[1] = smu*sin(phi);
 	p->D[2] = mu;
-	normalize(p->D);
+	normalize(p->D,3);
 }
 
 //---------------------------------------------------------------------

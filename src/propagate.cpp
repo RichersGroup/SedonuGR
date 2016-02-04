@@ -64,7 +64,7 @@ void transport::propagate_particles()
 				E_avg_esc[p->s] += p->nu * p->e;
 				#pragma omp atomic
 				N_net_esc[p->s] += p->e / (p->nu*pc::h);
-				species_list[p->s]->spectrum.count(p->D, p->nu, p->e);
+				species_list[p->s]->spectrum.count(p->D,3, p->nu, p->e);
 			}
 			PRINT_ASSERT(p->fate, !=, moving);
 		} //#pragma omp parallel for
@@ -81,7 +81,7 @@ void transport::propagate_particles()
 		if(particles[i].fate!=rouletted) tot += particles[i].e;
 		if(particles[i].fate==escaped) esc += particles[i].e;
 		if(particles[i].fate==absorbed){
-			if(grid->zone_index(particles[i].x)>=0 ) fluid += particles[i].e;
+			if(grid->zone_index(particles[i].x,3)>=0 ) fluid += particles[i].e;
 			else core += particles[i].e;
 		}
 	}
@@ -152,14 +152,14 @@ void transport::event_boundary(particle* p, const int z_ind) const{
 		if(reflect_outer){
 			grid->reflect_outer(p);
 			PRINT_ASSERT(p->fate, ==, moving);
-			new_ind = grid->zone_index(p->x);
+			new_ind = grid->zone_index(p->x,3);
 			PRINT_ASSERT(new_ind, >=, 0);
 			PRINT_ASSERT(new_ind, <, (int)grid->z.size());
 			PRINT_ASSERT(p->nu, >, 0);
 		}
 		else{
 			grid->symmetry_boundaries(p);
-			new_ind = grid->zone_index(p->x);
+			new_ind = grid->zone_index(p->x,3);
 		}
 
 		if(new_ind < 0) p->fate = escaped;
@@ -205,7 +205,7 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	double to_add = p->e * lab_d;
 	PRINT_ASSERT(to_add,<,INFINITY);
 	double x=p->x[0], y=p->x[1], z=p->x[2];
-	double r = sqrt(dot(p->x,p->x));
+	double r = sqrt(dot(p->x,p->x,3));
 	double rp = sqrt(x*x + y*y);
 	double rhat[3]     = {0,0,0};
 	double thetahat[3] = {0,0,0};
@@ -226,12 +226,12 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 		phihat[1] =  x/rp;
 		phihat[2] = 0;
 	}
-	vector<double> D_newbasis(3,0);//	double D_newbasis[3] = {0,0,0};
+	double D_newbasis[3] = {0,0,0};
 	D_newbasis[0] = dot(p->D,phihat,3);
 	D_newbasis[1] = dot(p->D,thetahat,3);
 	D_newbasis[2] = dot(p->D,rhat,3);
-	normalize(D_newbasis);
-	zone->distribution[p->s].count(D_newbasis, p->nu, to_add);
+	normalize(D_newbasis,3);
+	zone->distribution[p->s].count(D_newbasis, 3, p->nu, to_add);
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
 	to_add = com_e * com_d * (com_opac*abs_frac);
@@ -306,7 +306,7 @@ void transport::propagate(particle* p)
 	{
 		PRINT_ASSERT(p->nu, >, 0);
 
-		int z_ind = grid->zone_index(p->x);
+		int z_ind = grid->zone_index(p->x,3);
 		PRINT_ASSERT(z_ind, >=, -1);
 		PRINT_ASSERT(z_ind, <, (int)grid->z.size());
 
@@ -323,7 +323,7 @@ void transport::propagate(particle* p)
 		// move particle the distance
 		move(p,lab_d,lab_opac);
 		if(event != boundary) PRINT_ASSERT(p->tau, >=, -grid->tiny*(lab_d*lab_opac));
-		z_ind = grid->zone_index(p->x);
+		z_ind = grid->zone_index(p->x,3);
 
 		// do the selected event
 		// now the exciting bit!
@@ -351,7 +351,7 @@ void transport::propagate(particle* p)
 				int i=1;
 				while(z_ind>=0){
 					move(p,pow(2.0,i)*lab_d,lab_opac);
-					z_ind = grid->zone_index(p->x);
+					z_ind = grid->zone_index(p->x,3);
 					i++;
 				}
 			}

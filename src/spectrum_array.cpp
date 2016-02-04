@@ -159,6 +159,18 @@ double spectrum_array::phi_center(const unsigned index) const{
 	PRINT_ASSERT(index,<,flux.size());
 	return phi_grid.center(phi_bin(index));
 }
+double spectrum_array::nu_bin_center(const unsigned index) const{
+	PRINT_ASSERT(index,<,nu_grid.size());
+	return nu_grid.center(index);
+}
+double spectrum_array::mu_bin_center(const unsigned index) const{
+	PRINT_ASSERT(index,<,mu_grid.size());
+	return mu_grid.center(index);
+}
+double spectrum_array::phi_bin_center(const unsigned index) const{
+	PRINT_ASSERT(index,<,phi_grid.size());
+	return phi_grid.center(index);
+}
 
 //-------
 // getter
@@ -177,9 +189,9 @@ unsigned spectrum_array::size() const{
 //--------------------------------------------------------------
 // count a particle
 ////--------------------------------------------------------------
-void spectrum_array::count(const vector<double>& D, const double nu, const double E)
+void spectrum_array::count(const double D[3], const int Dsize, const double nu, const double E)
 {
-	PRINT_ASSERT(D.size(),==,3);
+	PRINT_ASSERT(Dsize,==,3);
 	PRINT_ASSERT(E,>=,0);
 	const double tiny = 1e-8;
 	double mu  = D[2];           // component along z axis
@@ -196,9 +208,9 @@ void spectrum_array::count(const vector<double>& D, const double nu, const doubl
 	}
 
 	// locate bin number in all dimensions.
-	unsigned nu_bin  = nu_grid.locate(nu);
-	unsigned mu_bin  =   mu_grid.locate(mu);
-	unsigned phi_bin =  phi_grid.locate(phi);
+	unsigned nu_bin  =  nu_grid.locate(nu);
+	unsigned mu_bin  =  mu_grid.locate(mu);
+	unsigned phi_bin = phi_grid.locate(phi);
 
 	// if off the RIGHT of mu/phi grids, just return without counting
 	if((mu_bin ==   mu_grid.size()) || (phi_bin ==  phi_grid.size())){

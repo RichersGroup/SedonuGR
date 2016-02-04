@@ -285,12 +285,12 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	p.e  = Ep;
 
 	// random sample position in zone
-	vector<double> rand(3,0);
+	double rand[3];
 	rand[0] = rangen.uniform();
 	rand[1] = rangen.uniform();
 	rand[2] = rangen.uniform();
-	vector<double> r;
-	grid->cartesian_sample_in_zone(z_ind,rand,r);
+	double r[3];
+	grid->cartesian_sample_in_zone(z_ind,rand,3,r,3);
 	p.x[0] = r[0];
 	p.x[1] = r[1];
 	p.x[2] = r[2];
@@ -360,7 +360,7 @@ void transport::create_surface_particle(const double Ep, const int s, const int 
 	p.x[2] = a_phot*cost_core;
 
 	// get index of current zone
-	const int z_ind = grid->zone_index(p.x);
+	const int z_ind = grid->zone_index(p.x,3);
 	PRINT_ASSERT(z_ind,>=,0);
 
 	// pick photon propagation direction wtr to local normal
@@ -376,7 +376,7 @@ void transport::create_surface_particle(const double Ep, const int s, const int 
 	p.D[0] = cost_core*cosp_core*D_xl-sinp_core*D_yl+sint_core*cosp_core*D_zl;
 	p.D[1] = cost_core*sinp_core*D_xl+cosp_core*D_yl+sint_core*sinp_core*D_zl;
 	p.D[2] = -sint_core*D_xl+cost_core*D_zl;
-	normalize(p.D);
+	normalize(p.D,3);
 
 
 	// sample the species and frequency

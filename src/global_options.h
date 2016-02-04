@@ -59,6 +59,9 @@ do {                                                 \
 #define PRINT_ASSERT(a,op,b) do {} while 0
 #endif
 
+//WARNING - UNSAFE IF ARRAY IS A FUNCTION ARGUMENT
+#define ARRSIZE(a) (sizeof(a)/sizeof(a[0]))
+
 #endif
 
 // NOTE: lots of things require double precision in random places because we're using

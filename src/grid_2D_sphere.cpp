@@ -137,7 +137,7 @@ void grid_2D_sphere::read_flash_file(Lua* lua)
 	const int nr     = nxb*iprocs;
 	const int ntheta = nyb*jprocs;
 	const int n_zones = nr*ntheta;
-	z.resize(n_zones, zone(3));
+	z.resize(n_zones);
 
 
 	//=========================//
@@ -273,9 +273,8 @@ void grid_2D_sphere::read_flash_file(Lua* lua)
 				PRINT_ASSERT(z_ind,<,n_zones);
 
 				// zone position
-				vector<double> r;
-				zone_coordinates(z_ind,r);
-				PRINT_ASSERT(r.size(),==,2);
+				double r[2];
+				zone_coordinates(z_ind,r,2);
 
 				// zone values
 				z[z_ind].rho               = dens[proc][kb][jb][ib];
@@ -292,10 +291,10 @@ void grid_2D_sphere::read_flash_file(Lua* lua)
 					vphi   *= speed_max / speed;
 					if(rank0) cout << "WARNING: velocity of superluminal cell at {r,theta}={" << r[0] << "," << r[1] << "} set to gamma=" << gamma_max << endl;
 				}
-				PRINT_ASSERT((int)z[z_ind].v.size(),==,3);
-				z[z_ind].v[0] = vr;
-				z[z_ind].v[1] = vtheta;
-				z[z_ind].v[2] = vphi;
+				PRINT_ASSERT(ARRSIZE(z[z_ind].u),==,3);
+				z[z_ind].u[0] = vr;
+				z[z_ind].u[1] = vtheta;
+				z[z_ind].u[2] = vphi;
 				PRINT_ASSERT(zone_speed2(z_ind),<,pc::c*pc::c);
 				PRINT_ASSERT(z[z_ind].rho,>=,0.0);
 				PRINT_ASSERT(z[z_ind].T,>=,0.0);
@@ -354,9 +353,8 @@ void grid_2D_sphere::read_flash_file(Lua* lua)
 		outf << setw(width) << endl;
 		for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
 			// zone position
-			vector<double> r;
-			zone_coordinates(z_ind,r);
-			PRINT_ASSERT(r.size(),==,2);
+			double r[2];
+			zone_coordinates(z_ind,r,2);
 
 			//double gamma = transport::lorentz_factor(z[z_ind].v);
 			//double m_zone = z[z_ind].rho * zone_lab_volume(z_ind)*gamma;
@@ -412,9 +410,8 @@ void grid_2D_sphere::read_flash_file(Lua* lua)
 		outf << endl;
 		for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
 			// zone position
-			vector<double> r;
-			zone_coordinates(z_ind,r);
-			PRINT_ASSERT(r.size(),==,2);
+			double r[2];
+			zone_coordinates(z_ind,r,2);
 
 			// calculate electron fraction
 			double abar = 1.0 / (z_prot[z_ind] + z_neut[z_ind] + z_alfa[z_ind]/4.0);
@@ -469,7 +466,7 @@ void grid_2D_sphere::custom_model(Lua* lua)
 	theta_zones = 4;
 	infile >> r_zones;
 	PRINT_ASSERT(r_zones,>,0);
-	z.resize(r_zones*theta_zones,zone(3));
+	z.resize(r_zones*theta_zones);
 	r_out.resize(r_zones);
 	theta_out.resize(theta_zones);
 
@@ -488,9 +485,10 @@ void grid_2D_sphere::custom_model(Lua* lua)
 		infile >> z[base_ind].T;
 		infile >> z[base_ind].Ye;
 		z[base_ind].H_vis = 0;
-		PRINT_ASSERT(z[base_ind].v.size(),==,3);
-		z[base_ind].v[0] = 0;
-		z[base_ind].v[1] = 0;
+		PRINT_ASSERT(ARRSIZE(z[base_ind].u),==,3);
+		z[base_ind].u[0] = 0;
+		z[base_ind].u[1] = 0;
+		z[base_ind].u[2] = 0;
 		PRINT_ASSERT(z[base_ind].rho,>=,0);
 		PRINT_ASSERT(z[base_ind].T,>=,0);
 		PRINT_ASSERT(z[base_ind].Ye,>=,0);
@@ -508,9 +506,9 @@ void grid_2D_sphere::custom_model(Lua* lua)
 //------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
-int grid_2D_sphere::zone_index(const vector<double>& x) const
+int grid_2D_sphere::zone_index(const double x[3], const int xsize) const
 {
-	PRINT_ASSERT(x.size(),==,3);
+	PRINT_ASSERT(xsize,==,3);
 	double r  = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 	double theta = atan2(sqrt(x[0]*x[0] + x[1]*x[1]), x[2]);
 	PRINT_ASSERT(r,>=,0);
@@ -555,9 +553,8 @@ double grid_2D_sphere::zone_lab_volume(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	vector<int> dir_ind;
-	zone_directional_indices(z_ind,dir_ind);
-	PRINT_ASSERT(dir_ind.size(),==,2);
+	int dir_ind[2];
+	zone_directional_indices(z_ind,dir_ind,2);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 	const double r0     =     r_out.bottom(i);
@@ -575,9 +572,8 @@ double grid_2D_sphere::zone_lab_volume(const int z_ind) const
 //------------------------------------------------------------
 double grid_2D_sphere::zone_min_length(const int z_ind) const
 {
-	vector<int> dir_ind;
-	zone_directional_indices(z_ind,dir_ind);
-	PRINT_ASSERT((int)dir_ind.size(),==,2);
+	int dir_ind[2];
+	zone_directional_indices(z_ind,dir_ind,2);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 
@@ -594,15 +590,14 @@ double grid_2D_sphere::zone_min_length(const int z_ind) const
 //------------------------------------------------------------
 // Return the cell-center spherical coordinates of the cell
 //------------------------------------------------------------
-void grid_2D_sphere::zone_coordinates(const int z_ind, vector<double>& r) const
+void grid_2D_sphere::zone_coordinates(const int z_ind, double r[2], const int rsize) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)(r_out.size()*theta_out.size()));
-	r.resize(2);
+	PRINT_ASSERT(rsize,==,2);
 
-	vector<int> dir_ind(2,0);
-	zone_directional_indices(z_ind, dir_ind);
-	PRINT_ASSERT(dir_ind.size(),==,2);
+	int dir_ind[2];
+	zone_directional_indices(z_ind, dir_ind, 2);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 
@@ -616,11 +611,11 @@ void grid_2D_sphere::zone_coordinates(const int z_ind, vector<double>& r) const
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-void grid_2D_sphere::zone_directional_indices(const int z_ind, vector<int>& dir_ind) const
+void grid_2D_sphere::zone_directional_indices(const int z_ind, int dir_ind[2], const int size) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	dir_ind.resize(2);
+	PRINT_ASSERT(size,==,2);
 	dir_ind[0] = z_ind / theta_out.size(); // r index
 	dir_ind[1] = z_ind % theta_out.size(); // theta index
 	PRINT_ASSERT(dir_ind[0],>=,0);
@@ -633,16 +628,16 @@ void grid_2D_sphere::zone_directional_indices(const int z_ind, vector<int>& dir_
 //------------------------------------------------------------
 // sample a random cartesian position within the spherical shell
 //------------------------------------------------------------
-void grid_2D_sphere::cartesian_sample_in_zone(const int z_ind, const vector<double>& rand, vector<double>& x) const
+void grid_2D_sphere::cartesian_sample_in_zone(const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	PRINT_ASSERT(rand.size(),==,3);
-	x.resize(3);
+	PRINT_ASSERT(randsize,==,3);
+	PRINT_ASSERT(xsize,==,3);
 
 	// radius and theta indices
-	vector<int> dir_ind;
-	zone_directional_indices(z_ind,dir_ind);
+	int dir_ind[2];
+	zone_directional_indices(z_ind,dir_ind,2);
 	int i = dir_ind[0];
 	int j = dir_ind[1];
 
@@ -680,11 +675,11 @@ void grid_2D_sphere::cartesian_sample_in_zone(const int z_ind, const vector<doub
 //------------------------------------------------------------
 // get the cartesian velocity vector (cm/s)
 //------------------------------------------------------------
-void grid_2D_sphere::cartesian_velocity_vector(const vector<double>& x, vector<double>& v, int z_ind) const
+void grid_2D_sphere::cartesian_velocity_vector(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
 {
-	PRINT_ASSERT(x.size(),==,3);
-	v.resize(3,0);
-	if(z_ind < 0) z_ind = zone_index(x);
+	PRINT_ASSERT(xsize,==,3);
+	PRINT_ASSERT(vsize,==,3);
+	if(z_ind < 0) z_ind = zone_index(x,xsize);
 	PRINT_ASSERT(z_ind,>=,-1);
 
 	// if within inner sphere, z_ind=-1. Leave velocity at 0.
@@ -696,22 +691,22 @@ void grid_2D_sphere::cartesian_velocity_vector(const vector<double>& x, vector<d
 		int along_axis = (rhat/r < tiny);
 
 		// Based on position, calculate what the 3-velocity is
-		PRINT_ASSERT(z[z_ind].v.size(),==,3);
-		double vr     = z[z_ind].v[0];
-		double vtheta = z[z_ind].v[1];
-		double vphi   = z[z_ind].v[2];
+		PRINT_ASSERT(ARRSIZE(z[z_ind].u),==,3);
+		double vr     = z[z_ind].u[0];
+		double vtheta = z[z_ind].u[1];
+		double vphi   = z[z_ind].u[2];
 
-		vector<double> vr_cart(3,0);
+		double vr_cart[3];
 		vr_cart[0] = vr * x[0]/r;
 		vr_cart[1] = vr * x[1]/r;
 		vr_cart[2] = vr * x[2]/r;
 
-		vector<double> vtheta_cart(3,0);
+		double vtheta_cart[3];
 		vtheta_cart[0] =  (along_axis ? 0 : vtheta * x[2]/r * x[0]/rhat );
 		vtheta_cart[1] =  (along_axis ? 0 : vtheta * x[2]/r * x[1]/rhat );
 		vtheta_cart[2] = -vtheta * rhat/r;
 
-		vector<double> vphi_cart(3,0);
+		double vphi_cart[3];
 		vphi_cart[0] = (along_axis ? 0 : -vphi * x[1]/rhat );
 		vphi_cart[1] = (along_axis ? 0 :  vphi * x[0]/rhat );
 		vphi_cart[2] = 0;
@@ -737,7 +732,7 @@ void grid_2D_sphere::write_rays(int iw) const
 	PRINT_ASSERT(iw,>=,0);
 	ofstream outf;
 	unsigned i=0,j=0;
-	vector<double> r;
+	double r[2];
 	string filename = "";
 
 	// along theta=0
@@ -747,7 +742,7 @@ void grid_2D_sphere::write_rays(int iw) const
 	j = 0;
 	for(i=0; i<r_out.size(); i++){
 		int z_ind = zone_index(i,j);
-		zone_coordinates(z_ind,r);
+		zone_coordinates(z_ind,r,2);
 		write_line(outf,z_ind);
 	}
 	outf.close();
@@ -759,7 +754,7 @@ void grid_2D_sphere::write_rays(int iw) const
 	j = theta_out.size()/2;
 	for(i=0; i<r_out.size(); i++){
 		int z_ind = zone_index(i,j);
-		zone_coordinates(z_ind,r);
+		zone_coordinates(z_ind,r,2);
 		write_line(outf,z_ind);
 	}
 	outf.close();
@@ -771,7 +766,7 @@ void grid_2D_sphere::write_rays(int iw) const
 	j = theta_out.size()-1;
 	for(i=0; i<r_out.size(); i++){
 		int z_ind = zone_index(i,j);
-		zone_coordinates(z_ind,r);
+		zone_coordinates(z_ind,r,2);
 		write_line(outf,z_ind);
 	}
 	outf.close();
@@ -783,7 +778,7 @@ void grid_2D_sphere::write_rays(int iw) const
 	i = r_out.size()/2;
 	for(j=0; j<theta_out.size(); j++){
 		int z_ind = zone_index(i,j);
-		zone_coordinates(z_ind,r);
+		zone_coordinates(z_ind,r,2);
 		write_line(outf,z_ind);
 	}
 	outf.close();
@@ -802,14 +797,14 @@ void grid_2D_sphere::reflect_outer(particle *p) const{
 
 	// invert the radial component of the velocity
 	for(int i=0; i<3; i++) p->D[i] -= 2.*velDotRhat * p->x[i]/p->r();
-	transport::normalize(p->D);
+	transport::normalize(p->D,3);
 
 	// put the particle just inside the boundary
 	double newR = r_out[r_out.size()-1] - tiny*dr;
 	for(int i=0; i<3; i++) p->x[i] = p->x[i]/p->r()*newR;
 
 	// must be inside the boundary, or will get flagged as escaped
-	PRINT_ASSERT(zone_index(p->x),>=,0);
+	PRINT_ASSERT(zone_index(p->x,3),>=,0);
 }
 
 //------------------------------------------------------------
@@ -832,7 +827,7 @@ double grid_2D_sphere::lab_dist_to_boundary(const particle *p) const{
 	double d_outer_boundary = numeric_limits<double>::infinity();
 	double d_inner_boundary = numeric_limits<double>::infinity();
 	PRINT_ASSERT(r,<,Rout);
-	PRINT_ASSERT(zone_index(p->x),>=,-1);
+	PRINT_ASSERT(zone_index(p->x,3),>=,-1);
 
 	// distance to inner boundary
 	if(r >= Rin){
@@ -870,8 +865,8 @@ double grid_2D_sphere::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 
 	// radius and theta indices
-	vector<int> dir_ind;
-	zone_directional_indices(z_ind,dir_ind);
+	int dir_ind[2];
+	zone_directional_indices(z_ind,dir_ind,2);
 	int i = dir_ind[0];
 
 	return r_out[i];
@@ -880,8 +875,8 @@ double grid_2D_sphere::zone_radius(const int z_ind) const{
 //-----------------------------
 // Dimensions of the grid
 //-----------------------------
-void grid_2D_sphere::dims(vector<hsize_t>& dims) const{
-	dims.resize(dimensionality());
+void grid_2D_sphere::dims(hsize_t dims[2], const int size) const{
+	PRINT_ASSERT(size,==,dimensionality());
 	dims[0] = r_out.size();
 	dims[1] = theta_out.size();
 }
@@ -894,29 +889,27 @@ void grid_2D_sphere::write_hdf5_coordinates(H5::H5File file) const
 	// useful quantities
 	H5::DataSet dataset;
 	H5::DataSpace dataspace;
-	vector<float> tmp;
 
 	// get dimensions
-	vector<hsize_t> coord_dims;
-	dims(coord_dims);
-	PRINT_ASSERT(coord_dims.size(),==,dimensionality());
-	for(unsigned i=0; i<coord_dims.size(); i++) coord_dims[i]++; //make room for min value
+	hsize_t coord_dims[2];
+	dims(coord_dims,2);
+	for(unsigned i=0; i<2; i++) coord_dims[i]++; //make room for min value
 
 	// write r coordinates
+	float tmp0[coord_dims[0]];
 	dataspace = H5::DataSpace(1,&coord_dims[0]);
 	dataset = file.createDataSet("grid_r(cm)",H5::PredType::IEEE_F32LE,dataspace);
-	tmp.resize(coord_dims[0]);
-	tmp[0] = r_out.min;
-	for(unsigned i=1; i<r_out.size()+1; i++) tmp[i] = r_out[i-1];
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	tmp0[0] = r_out.min;
+	for(unsigned i=1; i<r_out.size()+1; i++) tmp0[i] = r_out[i-1];
+	dataset.write(&tmp0[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 
 	// write theta coordinates
+	float tmp1[coord_dims[1]];
 	dataspace = H5::DataSpace(1,&coord_dims[1]);
 	dataset = file.createDataSet("grid_theta(radians)",H5::PredType::IEEE_F32LE,dataspace);
-	tmp.resize(coord_dims[0]);
-	tmp[0] = theta_out.min;
-	for(unsigned i=1; i<theta_out.size()+1; i++) tmp[i] = theta_out[i-1];
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
+	tmp1[0] = theta_out.min;
+	for(unsigned i=1; i<theta_out.size()+1; i++) tmp1[i] = theta_out[i-1];
+	dataset.write(&tmp1[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 }

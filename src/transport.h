@@ -212,12 +212,12 @@ public:
 	int  total_particles() const;
 	void write_rays(const int it);
 	static string filename(const char* filebase, const int iw, const char* suffix);
-	static double lorentz_factor(const vector<double>& v);
+	static double lorentz_factor(const double v[3], const int vsize);
 	static double dot(const vector<double>& a, const vector<double>& b);
-	static double dot(const vector<double>& a, const double* b, const int size);
-	static double dot(const double* a, const double* b, const int size);
+	static double dot(const vector<double>& a, const double b[], const int size);
+	static double dot(const double a[], const double b[], const int size);
 	static void normalize(vector<double>& a);
-	static void normalize(double* a, const int size);
+	static void normalize(double a[], const int size);
 	static double mean_mass(const double Ye);
 	double importance(const double abs_opac, const double scat_opac, const double dx) const;
 

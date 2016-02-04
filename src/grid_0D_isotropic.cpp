@@ -39,26 +39,26 @@
 void grid_0D_isotropic::read_model_file(Lua* lua)
 {
 	// number of zones
-	z.resize(1,zone(3));
+	z.resize(1);
 	z[0].rho = lua->scalar<double>("rho");
 	z[0].T   = lua->scalar<double>("T")/pc::k_MeV;
 	z[0].Ye  = lua->scalar<double>("Ye");
 	z[0].H_vis = 0;
-	z[0].v[0] = 0;
-	z[0].v[1] = 0;
-	z[0].v[2] = 0;
+	z[0].u[0] = 0;
+	z[0].u[1] = 0;
+	z[0].u[2] = 0;
 	PRINT_ASSERT(z[0].rho,>=,0);
 	PRINT_ASSERT(z[0].T,>=,0);
 	PRINT_ASSERT(z[0].Ye,>=,0);
 	PRINT_ASSERT(z[0].Ye,<=,1.0);
-	PRINT_ASSERT(z[0].v.size(),==,3);
+	PRINT_ASSERT(ARRSIZE(z[0].u),==,3);
 }
 
 
 //------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
-int grid_0D_isotropic::zone_index(const vector<double>& x) const
+int grid_0D_isotropic::zone_index(const double x[3], const int xsize) const
 {
 	return 0;
 }
@@ -87,19 +87,19 @@ double  grid_0D_isotropic::zone_min_length(const int z_ind) const
 // ------------------------------------------------------------
 // find the coordinates of the zone in geometrical coordinates
 // ------------------------------------------------------------
-void grid_0D_isotropic::zone_coordinates(const int z_ind, vector<double>& r) const{
+void grid_0D_isotropic::zone_coordinates(const int z_ind, double r[0], const int rsize) const{
 	PRINT_ASSERT(z_ind,==,0);
-	r.resize(dimensionality());
+	PRINT_ASSERT(rsize,==,0);
 }
 
 
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-void grid_0D_isotropic::zone_directional_indices(const int z_ind, vector<int>& dir_ind) const
+void grid_0D_isotropic::zone_directional_indices(const int z_ind, int dir_ind[0], const int size) const
 {
 	PRINT_ASSERT(z_ind,==,0);
-	dir_ind.resize(dimensionality());
+	PRINT_ASSERT(size,==,0);
 }
 
 
@@ -107,10 +107,10 @@ void grid_0D_isotropic::zone_directional_indices(const int z_ind, vector<int>& d
 // sample a random position within the spherical shell
 //------------------------------------------------------------
 void grid_0D_isotropic::cartesian_sample_in_zone
-(const int z_ind, const vector<double>& rand, vector<double>& x) const
+(const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const
 {
 	PRINT_ASSERT(z_ind,==,0);
-	x.resize(3);
+	PRINT_ASSERT(xsize,==,3);
 
 	// set the double 3-d coordinates
 	x[0] = 0;
@@ -122,12 +122,13 @@ void grid_0D_isotropic::cartesian_sample_in_zone
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void grid_0D_isotropic::cartesian_velocity_vector(const vector<double>& x, vector<double>& v, int z_ind) const
+void grid_0D_isotropic::cartesian_velocity_vector(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
 {
-	PRINT_ASSERT(x.size(),==,3);
-	v.resize(3);
-	v.assign(z[0].v.begin(),z[0].v.end());
-	PRINT_ASSERT(v[0]*v[0] + v[1]*v[1] + v[2]*v[2],<=,pc::c*pc::c);
+	PRINT_ASSERT(z_ind,==,0);
+	PRINT_ASSERT(xsize,==,3);
+	PRINT_ASSERT(vsize,==,3);
+	for(int i=0; i<vsize; i++) v[i] = z[z_ind].u[i];
+	PRINT_ASSERT(transport::dot(v,v,vsize),<=,pc::c*pc::c);
 }
 
 
@@ -170,8 +171,8 @@ double grid_0D_isotropic::zone_radius(const int z_ind) const{
 //-----------------------------
 // Dimensions of the grid
 //-----------------------------
-void grid_0D_isotropic::dims(vector<hsize_t>& dims) const{
-	dims.resize(dimensionality());
+void grid_0D_isotropic::dims(hsize_t dims[0], const int size) const{
+	PRINT_ASSERT(size,==,dimensionality());
 }
 
 //----------------------------------------------------

@@ -86,8 +86,6 @@ void grid_general::init(Lua* lua)
 		PRINT_ASSERT(rest_mass,>=,0);
 		double nonrel_mass = z[z_ind].rho * zone_lab_volume(z_ind);
 		PRINT_ASSERT(nonrel_mass,>=,0);
-		vector<double> r;
-		zone_coordinates(z_ind,r);
 
 		total_rest_mass += rest_mass;
 		total_nonrel_mass += nonrel_mass;
@@ -95,12 +93,12 @@ void grid_general::init(Lua* lua)
 		nonrel_Tbar += z[z_ind].T * nonrel_mass;
 		rel_Yebar += z[z_ind].Ye * rest_mass;
 		nonrel_Yebar += z[z_ind].Ye * nonrel_mass;
-		total_rel_KE    += (rest_mass>0 ? (transport::lorentz_factor(z[z_ind].v) - 1.0) * rest_mass * pc::c*pc::c : 0);
+		total_rel_KE    += (rest_mass>0 ? (transport::lorentz_factor(z[z_ind].u,ARRSIZE(z[z_ind].u)) - 1.0) * rest_mass * pc::c*pc::c : 0);
 		total_nonrel_KE += 0.5 * nonrel_mass * zone_speed2(z_ind);
 		total_rel_TE    += (rest_mass>0 ? rest_mass   / pc::m_n * pc::k * z[z_ind].T : 0);
 		total_nonrel_TE += nonrel_mass / pc::m_n * pc::k * z[z_ind].T;
 		if(do_visc) total_hvis += z[z_ind].H_vis * z[z_ind].rho * zone_lab_volume(z_ind);
-		if(!do_relativity) for(unsigned i=0; i<z[z_ind].v.size(); i++) z[z_ind].v[i] = 0;
+		if(!do_relativity) for(unsigned i=0; i<ARRSIZE(z[z_ind].u); i++) z[z_ind].u[i] = 0;
 	}
 
 	// write out useful info about the grid
@@ -140,13 +138,7 @@ void grid_general::write_zones(const int iw) const
 			string filename = transport::filename("fluid",iw,".dat");
 			outf.open(filename.c_str());
 			write_header(outf);
-			vector<int> dir_ind;
-			for (unsigned z_ind=0; z_ind<z.size(); z_ind++)
-			{
-				zone_directional_indices(z_ind, dir_ind);
-				if(dir_ind.size()>0) if(dir_ind[dir_ind.size()-1]==0) outf << endl;
-				write_line(outf,z_ind);
-			}
+			for (unsigned z_ind=0; z_ind<z.size(); z_ind++) write_line(outf,z_ind);
 			outf.close();
 		}
 	}
@@ -158,20 +150,20 @@ double grid_general::zone_rest_mass(const int z_ind) const{
 
 double grid_general::zone_comoving_volume(const int z_ind) const{
 	// assumes v is orthonormal in cm/s
-	vector<double> v_tmp(3,0);
-	for(unsigned i=0; i<z[z_ind].v.size(); i++) v_tmp[i] = z[z_ind].v[i];
+	double v_tmp[3];
+	for(unsigned i=0; i<3; i++) v_tmp[i] = z[z_ind].u[i];
 	if(!good_zone(z_ind)) return 0;
-	else return zone_lab_volume(z_ind) * transport::lorentz_factor(v_tmp);
+	else return zone_lab_volume(z_ind) * transport::lorentz_factor(v_tmp,3);
 }
 
 void grid_general::write_header(ofstream& outf) const{
 	outf << setprecision(4);
 	outf << scientific;
 	outf << "# ";
-	vector<double> r;
-	zone_coordinates(0,r);
+	double r[dimensionality()];
+	zone_coordinates(0,r,dimensionality());
 	unsigned c=0;
-	for(unsigned i=0; i<r.size(); i++) outf << ++c << "-r[" << i << "]  ";
+	for(unsigned i=0; i<dimensionality(); i++) outf << ++c << "-r[" << i << "]  ";
 	outf << ++c << "-comoving_volume(ccm)  ";
 	outf << ++c << "-rho(g/ccm,com)  ";
 	outf << ++c << "-T_gas(MeV,com)  ";
@@ -206,10 +198,9 @@ void grid_general::write_hdf5_data(H5::H5File file) const{
 	vector<float> tmp(z.size(),0.0);
 
 	// SET UP SCALAR DATASPACE
-	vector<hsize_t> zdims;
-	dims(zdims);
-	PRINT_ASSERT(zdims.size(),>,0);
-	dataspace = H5::DataSpace(zdims.size(),&zdims[0]);
+	hsize_t zdims[dimensionality()];
+	dims(zdims,dimensionality());
+	dataspace = H5::DataSpace(dimensionality(),&zdims[0]);
 
 	// write comoving volume, assumes last index varies fastest.
 	dataset = file.createDataSet("comoving_volume(ccm)",H5::PredType::IEEE_F32LE,dataspace);
@@ -269,7 +260,7 @@ void grid_general::write_hdf5_data(H5::H5File file) const{
 	dataset = file.createDataSet("dYe_dt_abs(1|s,lab)",H5::PredType::IEEE_F32LE,dataspace);
 	for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
 		double n_baryons_per_ccm = z[z_ind].rho / transport::mean_mass(z[z_ind].Ye);
-		tmp[z_ind] = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / transport::lorentz_factor(z[z_ind].v);
+		tmp[z_ind] = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / transport::lorentz_factor(z[z_ind].u,ARRSIZE(z[z_ind].u));
 	}
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
@@ -284,10 +275,10 @@ void grid_general::write_hdf5_data(H5::H5File file) const{
 	dataspace.close();
 
 	// SET UP +1D DATASPACE
-	vector<hsize_t> dims_plus1(zdims.size()+1,0);
-	for(unsigned i=0; i<zdims.size(); i++) dims_plus1[i] = zdims[i];
-	dims_plus1[zdims.size()] = z[0].distribution.size();
-	dataspace = H5::DataSpace(zdims.size()+1,&dims_plus1[0]);
+	hsize_t dims_plus1[dimensionality()+1];
+	for(unsigned i=0; i<dimensionality(); i++) dims_plus1[i] = zdims[i];
+	dims_plus1[dimensionality()] = z[0].distribution.size();
+	dataspace = H5::DataSpace(dimensionality()+1,&dims_plus1[0]);
 	tmp.resize(z.size() * z[0].distribution.size());
 
 	// write neutrino energy density using contiguous temporary array
@@ -315,13 +306,13 @@ void grid_general::write_hdf5_data(H5::H5File file) const{
 	if(output_zones_distribution){
 
 		// SET UP +4D DATASPACE
-		vector<hsize_t> dims_plus4(zdims.size()+4,0);
-		for(unsigned i=0; i<zdims.size(); i++) dims_plus4[i] = zdims[i];
-		dims_plus4[zdims.size()  ] = z[0].distribution.size();
-		dims_plus4[zdims.size()+1] = z[0].distribution[0].nu_dim();
-		dims_plus4[zdims.size()+2] = z[0].distribution[0].mu_dim();
-		dims_plus4[zdims.size()+3] =z[0].distribution[0].phi_dim();
-		dataspace = H5::DataSpace(zdims.size()+4,&dims_plus4[0]);
+		vector<hsize_t> dims_plus4(dimensionality()+4,0);
+		for(unsigned i=0; i<dimensionality(); i++) dims_plus4[i] = zdims[i];
+		dims_plus4[dimensionality()  ] = z[0].distribution.size();
+		dims_plus4[dimensionality()+1] = z[0].distribution[0].nu_dim();
+		dims_plus4[dimensionality()+2] = z[0].distribution[0].mu_dim();
+		dims_plus4[dimensionality()+3] =z[0].distribution[0].phi_dim();
+		dataspace = H5::DataSpace(dimensionality()+4,&dims_plus4[0]);
 		tmp.resize(z.size() * z[0].distribution.size() * z[0].distribution[0].nu_dim() * z[0].distribution[0].mu_dim() * z[0].distribution[0].phi_dim());
 		dataset = file.createDataSet("distribution(erg|ccm,lab)",H5::PredType::IEEE_F32LE,dataspace);
 
@@ -330,18 +321,18 @@ void grid_general::write_hdf5_data(H5::H5File file) const{
 		vector<hsize_t> stride(dims_plus4.size(),1);
 		vector<hsize_t>  block(dims_plus4.size(),1);
 		vector<hsize_t> spectrum_dims(dims_plus4);
-		for(unsigned i=0; i<zdims.size()+1; i++) spectrum_dims[i] = 1;
+		for(unsigned i=0; i<dimensionality()+1; i++) spectrum_dims[i] = 1;
 
 		for(unsigned z_ind=0; z_ind<z.size(); z_ind++)
 			for(unsigned s=0; s<z[0].distribution.size(); s++){
 				// select the appropriate subspace
-				vector<int> dir_ind;
-				zone_directional_indices(z_ind,dir_ind);
-				for(unsigned i=0; i<zdims.size(); i++) offset[i] = dir_ind[i];
-				offset[zdims.size()  ] = s;
-				offset[zdims.size()+1] = 0;
-				offset[zdims.size()+2] = 0;
-				offset[zdims.size()+3] = 0;
+				int dir_ind[dimensionality()];
+				zone_directional_indices(z_ind,dir_ind,dimensionality());
+				for(unsigned i=0; i<dimensionality(); i++) offset[i] = dir_ind[i];
+				offset[dimensionality()  ] = s;
+				offset[dimensionality()+1] = 0;
+				offset[dimensionality()+2] = 0;
+				offset[dimensionality()+3] = 0;
 				dataspace.selectHyperslab(H5S_SELECT_SET,&spectrum_dims[0],&offset[0],&stride[0],&block[0]);
 
 				// write the data
@@ -353,10 +344,14 @@ void grid_general::write_hdf5_data(H5::H5File file) const{
 }
 
 void grid_general::write_line(ofstream& outf, const int z_ind) const{
-	vector<double> r;
-	zone_coordinates(z_ind,r);
+	int dir_ind[dimensionality()];
+	zone_directional_indices(z_ind, dir_ind, dimensionality());
+	if(dimensionality()>0) if(dir_ind[dimensionality()-1]==0) outf << endl;
 
-	for(unsigned i=0; i<r.size(); i++) outf << r[i] << " ";
+	double r[dimensionality()];
+	zone_coordinates(z_ind,r,dimensionality());
+
+	for(unsigned i=0; i<dimensionality(); i++) outf << r[i] << " ";
 
 	outf << zone_comoving_volume(z_ind) << "\t";
 	outf << z[z_ind].rho   << "\t";
@@ -375,8 +370,8 @@ void grid_general::write_line(ofstream& outf, const int z_ind) const{
 	outf << sqrt(zone_speed2(z_ind)) << "\t";
 
 	double n_baryons_per_ccm = z[z_ind].rho / transport::mean_mass(z[z_ind].Ye);
-	double dYe_dt_abs = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / transport::lorentz_factor(z[z_ind].v);
-	double dYe_dt_emit = -z[z_ind].l_emit / n_baryons_per_ccm / transport::lorentz_factor(z[z_ind].v);
+	double dYe_dt_abs = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / transport::lorentz_factor(z[z_ind].u,ARRSIZE(z[z_ind].u));
+	double dYe_dt_emit = -z[z_ind].l_emit / n_baryons_per_ccm / transport::lorentz_factor(z[z_ind].u,ARRSIZE(z[z_ind].u));
 	outf << dYe_dt_abs << "\t";
 	outf << dYe_dt_emit << "\t";
 
@@ -426,7 +421,7 @@ bool grid_general::good_zone(const int z_ind) const{
 double grid_general::zone_speed2(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	double speed2 = transport::dot(z[z_ind].v,z[z_ind].v);
+	double speed2 = transport::dot(z[z_ind].u,z[z_ind].u,ARRSIZE(z[z_ind].u));
 	return speed2;
 }
 
