@@ -842,10 +842,10 @@ void grid_3D_cart::symmetry_boundaries(particle *p) const{
 	// rotating boundary conditions
 	for(int i=0; i<2; i++){
 		if(p->x[i] < x0[i] && (rotate_hemisphere[i] || rotate_quadrant)){
-			PRINT_ASSERT(x0[i]-p->x[i],<,tiny*dx[i]);
+			PRINT_ASSERT(x0[i]-p->x[i],<,tiny*(x1[i]-x0[i]));
 			PRINT_ASSERT(x0[i],==,0);
 			PRINT_ASSERT(p->D[i],<,0);
-			int other = (i+1)%2;
+			int other = i==0 ? 1 : 0;
 			
 			if(rotate_hemisphere[i]){
 				for(int j=0; j<2; j++) p->D[j] = -p->D[j];
@@ -854,12 +854,10 @@ void grid_3D_cart::symmetry_boundaries(particle *p) const{
 			}
 			else if(rotate_quadrant){
 				double tmp = p->D[i];
-				p->D[i] = -p->D[other];
-				p->D[other] = tmp;
-				p->x[i] = x0[i] + tiny*(x1[i]-x0[i]); // move within boundary first
-				tmp = p->x[i];
-				p->x[i    ] = p->x[other];
-				p->x[other] = tmp;
+				p->D[i] = p->D[other];
+				p->D[other] = -tmp;
+				p->x[i] = p->x[other];
+				p->x[other] = x0[other] + tiny*(x1[other]-x0[other]);
 			}
 
 			// double check that the particle is in the boundary
