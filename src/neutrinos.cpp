@@ -241,13 +241,15 @@ double neutrinos::annihilation_rate(
 	double C1pC2_3 = C1pC2/3.0;
 	double mec22 = pc::m_e*pc::m_e * pc::c*pc::c*pc::c*pc::c;
 	double inv_weight = 1./(double)weight;
+	unsigned nnu=nu_dist.nu_dim(), nmu=nu_dist.mu_dim(), nphi=nu_dist.phi_dim();
+	unsigned nnubar=nubar_dist.nu_dim(), nmubar=nubar_dist.mu_dim(), nphibar=nubar_dist.phi_dim();
 
 	// integrate over all bins
 	double Q = 0;
 	// energy loops
-	for(unsigned inu=0; inu<nu_dist.nu_dim(); inu++){
+	for(unsigned inu=0; inu<nnu; inu++){
 		double avg_e = nu_dist.nu_bin_center(inu)*pc::h; // erg
-		for(unsigned inubar=0; inubar<nubar_dist.nu_dim(); inubar++){
+		for(unsigned inubar=0; inubar<nnubar; inubar++){
 			double avg_ebar = nubar_dist.nu_bin_center(inubar)*pc::h; // erg
 
 			double C3mec4_eebar = C3mec4/(avg_e*avg_ebar);
@@ -256,13 +258,13 @@ double neutrinos::annihilation_rate(
 			if(avg_e*avg_ebar > mec22){
 
 				// neutrino direction loops
-				for(unsigned imu=0; imu<nu_dist.mu_dim(); imu++){
-					for(unsigned iphi=0; iphi<nu_dist.phi_dim(); iphi++){
+				for(unsigned imu=0; imu<nmu; imu++){
+					for(unsigned iphi=0; iphi<nphi; iphi++){
 						unsigned index = nu_dist.index(inu,imu,iphi);
 
 						// antineutrino direction loops
-						for(unsigned imubar=0; imubar<nubar_dist.mu_dim(); imubar++){
-							for(unsigned iphibar=0; iphibar<nubar_dist.phi_dim(); iphibar++){
+						for(unsigned imubar=0; imubar<nmubar; imubar++){
+							for(unsigned iphibar=0; iphibar<nphibar; iphibar++){
 								unsigned indexbar = nubar_dist.index(inubar,imubar,iphibar);
 
 								double onemcost = onemcostheta[imu][iphi][imubar][iphibar];
