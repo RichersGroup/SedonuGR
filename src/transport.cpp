@@ -189,7 +189,7 @@ void transport::init(Lua* lua)
 
 	// Reserve all the memory we might need right now. Speeds up particle additions.
 	max_particles = lua->scalar<int>("max_particles");
-	particles.reserve(max_particles + 2*grid->z.size()); // to allow for at most 1 additional particle in each cell
+	particles.reserve(max_particles);
 
 	//===============//
 	// GENERAL SETUP //
