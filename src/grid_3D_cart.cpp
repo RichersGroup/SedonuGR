@@ -41,14 +41,17 @@
 // constructor
 //------------
 grid_3D_cart::grid_3D_cart(){
-	reflect = vector<int>(3,0);
-	rotate_hemisphere = vector<int>(2,0);
+	for(int i=0; i<3; i++){
+		nx[i]      = -1;
+		dx[i]      = NaN;
+		x0[i]      = NaN;
+		x1[i]      = NaN;
+		xmax[i]    = NaN;
+		reflect[i] = 0;
+	}
+	rotate_hemisphere[0] = 0;
+	rotate_hemisphere[1] = 0;
 	rotate_quadrant = 0;
-	nx   = vector<int>(3,-1);
-	dx   = vector<double>(3,NaN);
-	x0   = vector<double>(3,NaN);
-	x1   = vector<double>(3,NaN);
-	xmax = vector<double>(3,NaN);
 }
 
 //------------------------------------------------------------

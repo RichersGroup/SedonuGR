@@ -42,14 +42,14 @@ class grid_3D_cart: public grid_general
 private:
 	// specifics to this geometry
 
-	vector<int>    nx; // number of zones in each dimension
-	vector<double> dx; // length of each zone in each dimension
-	vector<double> x0; // leftmost points
-	vector<double> x1; // next-to leftmost points
-	vector<double> xmax;
-	vector<int> reflect;
-	vector<int> rotate_hemisphere;
-	int rotate_quadrant;
+	int    nx[3]; // number of zones in each dimension
+	double dx[3]; // length of each zone in each dimension
+	double x0[3]; // leftmost points
+	double x1[3]; // next-to leftmost points
+	double xmax[3];
+	int    reflect[3];
+	int    rotate_hemisphere[2];
+	int    rotate_quadrant;
 
 public:
 
