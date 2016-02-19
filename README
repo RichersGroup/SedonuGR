@@ -88,15 +88,15 @@ chosen directory. We will install it into the "external" directory
 here. First, download and extract the source code (this version is the
 latest version tested with sedona).
 
-    wget http://www.lua.org/ftp/lua-5.2.3.tar.gz
-    tar -xvf lua-5.2.3.tar.gz -C external
-    rm lua-5.2.3.tar.gz
+    wget http://www.lua.org/ftp/lua-5.3.2.tar.gz
+    tar -xvf lua-5.3.2.tar.gz -C external
+    rm lua-5.3.2.tar.gz
 
 Change into the lua directory to build it. If there are linking
 errors, you will need to add MYLIBS=-ltermcap to the make line. See
 Lua's readme for more detailed options. These work for me, however.
 
-    cd external/lua-5.2.3
+    cd external/lua-5.3.2
     make linux            # or "make macosx" or "make posix". See the lua readme for more information 
     make test             # success if you see the version string
     make local            # to choose installation directory, do "make install INSTALL_TOP=/path/to/directory"
@@ -126,12 +126,12 @@ If you need to compile your own copy of hdf5, download the tarball and
 extract the table:
 
     wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.13.tar.gz
-    tar -xvf hdf5-1.8.13.tar.gz -C external
-    rm hdf5-1.8.13.tar.gz
+    tar -xvf hdf5-1.8.16.tar.gz -C external
+    rm hdf5-1.8.16.tar.gz
 
 Go into the directory
 
-    cd external/hdf5-1.8.13
+    cd external/hdf5-1.8.16
 
 Configure the make process. Some versions of gcc have a bug that
 causes hdf5 to fail tests if any optimization is enabled, so there are
@@ -335,7 +335,19 @@ NuLib is now ready to use!
 
 
 
+###########
+# DOXYGEN # (optional)
+###########
 
+Doxygen will generate useful documentation to show the structure of files and classes in Sedonu. You can in stall it on Ubuntu using
+
+    apt-get install doxygen doxygen-gui graphviz
+
+Then, to build the documentation, from the Sedonu base directory, execute
+
+    doxygen Doxyfile
+
+To see the documentation, in a browser open sedonu/html/index.html
 
 
 COMPILING
