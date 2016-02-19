@@ -27,9 +27,9 @@
 
 #ifndef _THREAD_RNG_H
 #define _THREAD_RNG_H
+
 #include <gsl/gsl_rng.h>
 #include <vector>
-#include "global_options.h"
 
 class thread_RNG
 {

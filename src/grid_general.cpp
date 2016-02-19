@@ -26,16 +26,17 @@
 */
 
 #include <mpi.h>
-#include <math.h>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-#include <stdlib.h>
 #include "grid_general.h"
 #include "Lua.h"
 #include "nulib_interface.h"
 #include "global_options.h"
-#include "H5Cpp.h"
+#include "transport.h"
+
+using namespace std;
+namespace pc = physical_constants;
 
 //------------------------------------------------------------
 // initialize the grid

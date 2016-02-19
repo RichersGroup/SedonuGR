@@ -25,14 +25,12 @@
 //
 */
 
-#include "global_options.h"
-#include <algorithm>
-#include <cstdio>
 #include <cmath>
-#include <iostream>
+#include <algorithm>
+#include "global_options.h"
 #include "cdf_array.h"
-#include "locate_array.h"
 
+using namespace std;
 
 // safe constructor
 cdf_array::cdf_array(const int iorder){

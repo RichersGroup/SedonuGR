@@ -26,12 +26,12 @@
 */
 
 #include "global_options.h"
-#include <algorithm>
-#include <math.h>
-#include <stdlib.h>
-#include <fstream>
-#include <iostream>
 #include "grid_0D_isotropic.h"
+#include "Lua.h"
+#include "transport.h"
+
+using namespace std;
+namespace pc = physical_constants;
 
 //------------------------------------------------------------
 // initialize the zone geometry from model file

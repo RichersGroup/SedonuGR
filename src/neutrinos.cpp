@@ -26,12 +26,13 @@
 */
 
 #include "global_options.h"
-#include <vector>
 #include "neutrinos.h"
 #include "transport.h"
-#include "Lua.h"
+#include "grid_general.h"
 #include "nulib_interface.h"
-#include <cmath>
+
+using namespace std;
+namespace pc = physical_constants;
 
 // constructor
 neutrinos::neutrinos(){

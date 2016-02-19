@@ -26,12 +26,13 @@
 */
 
 #include "global_options.h"
-#include <algorithm>
-#include <math.h>
-#include <stdlib.h>
+#include <mpi.h>
 #include <fstream>
-#include <iostream>
+#include "transport.h"
 #include "grid_1D_sphere.h"
+
+using namespace std;
+namespace pc = physical_constants;
 
 //------------------------------------------------------------
 // initialize the zone geometry from model file

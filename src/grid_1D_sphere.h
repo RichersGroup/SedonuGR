@@ -28,10 +28,7 @@
 #ifndef _GRID_1D_SPHERE_H
 #define _GRID_1D_SPHERE_H 1
 
-#include "global_options.h"
 #include "grid_general.h"
-#include "locate_array.h"
-#include <vector>
 
 //*******************************************
 // 1-Dimensional Spherical geometry

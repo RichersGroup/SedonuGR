@@ -28,13 +28,10 @@
 #ifndef _SPECIES_H
 #define _SPECIES_H
 
-#include "global_options.h"
-#include <list>
 #include "particle.h"
+#include <vector>
 #include "spectrum_array.h"
 #include "Lua.h"
-#include "grid_general.h"
-#include "locate_array.h"
 #include "cdf_array.h"
 
 class transport;
@@ -48,10 +45,10 @@ protected:
 	locate_array nu_grid;
 
 	// the zone eas variables
-	vector< cdf_array      > emis;
-	vector< cdf_array      > biased_emis;
-	vector< vector<double> > abs_opac;  // 1/cm
-	vector< vector<double> > scat_opac; // 1/cm
+	std::vector< cdf_array      > emis;
+	std::vector< cdf_array      > biased_emis;
+	std::vector< std::vector<double> > abs_opac;  // 1/cm
+	std::vector< std::vector<double> > scat_opac; // 1/cm
 
 	// grey opacity and absorption fraction
 	double grey_opac; //(cm^2/g)
@@ -69,7 +66,7 @@ public:
 	virtual ~species_general() {}
 
 	// name
-	string name;
+	std::string name;
 
 	// lepton number (the particle property, {-1,0,1})
 	int lepton_number;

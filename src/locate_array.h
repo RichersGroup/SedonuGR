@@ -29,7 +29,8 @@
 #define _LOCATE_ARRAY_H 
 
 #include <vector>
-#include "global_options.h"
+
+enum InterpolationMethod {constant, linear, logarithmic, power};
 
 class locate_array {
 

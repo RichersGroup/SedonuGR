@@ -25,17 +25,15 @@
 //
 */
 
-#include <limits>
-#include <omp.h>
 #include <mpi.h>
-#include <iostream>
 #include <sstream>
-#include <math.h>
-#include <vector>
 #include <fstream>
-#include <string>
 #include "global_options.h"
 #include "spectrum_array.h"
+#include "transport.h"
+
+using namespace std;
+namespace pc = physical_constants;
 
 //--------------------------------------------------------------
 // Initialization and Allocation

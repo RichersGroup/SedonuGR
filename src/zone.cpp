@@ -26,9 +26,6 @@
 */
 
 #include "zone.h"
-#include <iomanip>
-#include <cmath>
-#include <fstream>
 #include "global_options.h"
 
 zone::zone(){

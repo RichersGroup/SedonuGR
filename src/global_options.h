@@ -32,22 +32,18 @@
 #pragma warning disable 161
 #endif
 
-#include <mpi.h>
 #include <limits>
 #include <cassert>
 #include <string>
+#include <iostream>
+#include "physical_constants.h"
+
 //using real = float; // or float
 //const MPI_Datatype MPI_real = ( sizeof(real)==4 ? MPI_FLOAT : MPI_DOUBLE );
 #define NaN std::numeric_limits<double>::quiet_NaN()
 #define MAXLIM std::numeric_limits<int>::max()
-enum InterpolationMethod {constant, linear, logarithmic, power};
 
-using namespace std;
-
-#include "physical_constants.h"
-namespace pc = physical_constants;
-
-string trim(const string s);
+std::string trim(const std::string s);
 
 #ifndef DEBUG
 #define PRINT_ASSERT(a,op,b)                         \

@@ -25,19 +25,13 @@
 //
 */
 
-#include "global_options.h"
 #include <omp.h>
 #include <mpi.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
 #include <iostream>
 #include <sstream>
 #include <iomanip>
-#include <fstream>
-#include <string>
+#include "physical_constants.h"
 #include "transport.h"
-#include "Lua.h"
 #include "grid_general.h"
 #include "grid_0D_isotropic.h"
 #include "grid_1D_sphere.h"
@@ -46,10 +40,10 @@
 #include "grid_3D_cart.h"
 #include "species_general.h"
 #include "neutrinos.h"
-#include "cdf_array.h"
 #include "nulib_interface.h"
+#include "global_options.h"
 
-
+using namespace std;
 namespace pc = physical_constants;
 
 // constructor

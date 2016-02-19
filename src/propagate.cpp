@@ -26,12 +26,12 @@
 */
 
 #include "global_options.h"
-#include <omp.h>
-#include <stdio.h>
-#include <math.h>
-#include <iostream>
 #include "transport.h"
 #include "species_general.h"
+#include "grid_general.h"
+
+using namespace std;
+namespace pc = physical_constants;
 
 void transport::propagate_particles()
 {

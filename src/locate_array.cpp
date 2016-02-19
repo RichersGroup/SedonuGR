@@ -25,15 +25,12 @@
 //
 */
 
-#include "global_options.h"
-#include <vector>
 #include <algorithm>
-#include <iostream>
-#include <stdlib.h>
-#include <math.h>
-#include <stdio.h>
+#include <cmath>
 #include "locate_array.h"
+#include "global_options.h"
 
+using namespace std;
 
 //-----------------------------
 // safe nan-filled constructor

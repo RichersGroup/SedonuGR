@@ -26,18 +26,11 @@
 */
 
 #include <mpi.h>
-#include <time.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <iomanip>
-#include <math.h>
 #include <string>
-#include <iostream>
-#include <fstream>
 #include "Lua.h"
 #include "transport.h"
-#include "species_general.h"
-#include "global_options.h"
+
+using namespace std;
 
 //--------------------------------------------------------
 // The main code

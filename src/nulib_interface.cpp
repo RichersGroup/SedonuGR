@@ -25,13 +25,15 @@
 //
 */
 
-#include "global_options.h"
-#include <vector>
-#include <iostream>
-#include <cstdlib>
+#include <mpi.h>
 #include <cmath>
-#include "zone.h"
+#include <string>
 #include "nulib_interface.h"
+#include "global_options.h"
+
+using namespace std;
+namespace pc = physical_constants;
+
 
 // These are fortran functions and module variables in nulib.a
 extern "C"{

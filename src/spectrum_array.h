@@ -28,15 +28,8 @@
 #ifndef _SPECTRUM_ARRAY_H
 #define _SPECTRUM_ARRAY_H 1
 
-#include <string>
-#include "global_options.h"
-#include "particle.h"
 #include "locate_array.h"
-#include "transport.h"
 #include "H5Cpp.h"
-
-
-using namespace std;
 
 // default values
 #define DEFAULT_NAME "spectrum_array"
@@ -54,7 +47,7 @@ private:
 	locate_array phi_grid;
 
 	// counting arrays
-	vector<double> flux;
+	std::vector<double> flux;
 
 public:
 
@@ -75,7 +68,7 @@ public:
 	// integrate over nu,mu,phi
 	double average_nu() const;
 	double integrate() const;
-	void integrate_over_direction(vector<double>& edens) const;
+	void integrate_over_direction(std::vector<double>& edens) const;
 
 	// get bin centers and indices
 	unsigned size() const;

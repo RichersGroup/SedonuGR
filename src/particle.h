@@ -27,10 +27,9 @@
 
 #ifndef _PARTICLE_H
 #define _PARTICLE_H
-#include <math.h>
-#include <stdio.h>
-#include <vector>
-#include "global_options.h"
+
+#include <cmath>
+#include <cstdio>
 
 enum ParticleFate  {moving, escaped, absorbed, rouletted};
 

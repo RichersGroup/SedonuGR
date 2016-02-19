@@ -26,12 +26,7 @@
 */
 
 #include <mpi.h>
-#include <ctime>
-#include <cstdlib>
-#include <cstdio>
-#include <iomanip>
 #include <cmath>
-#include <cstring>
 #include <iostream>
 #include <fstream>
 #include "Lua.h"
@@ -39,6 +34,10 @@
 #include "species_general.h"
 #include "grid_general.h"
 #include "nulib_interface.h"
+#include "global_options.h"
+
+using namespace std;
+namespace pc = physical_constants;
 
 double run_test(const int nsteps, const bool rank0, const double rho, const double T_MeV, const double target_ye, transport& sim, ofstream& outf){
 	if(rank0) cout << endl << "Currently running: rho=" << rho << "g/ccm T_core=" << T_MeV << "MeV Ye=" << target_ye << endl;

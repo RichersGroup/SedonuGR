@@ -26,15 +26,9 @@
 */
 
 #include "global_options.h"
-#include <iomanip>
-#include <vector>
-#include <iostream>
-#include <fstream>
-#include <stdlib.h>
-#include <string>
-#include <cmath>
-#include "zone.h"
 #include "nulib_interface.h"
+
+namespace pc = physical_constants;
 
 int main(int argc, char* argv[]){
 	using namespace std;

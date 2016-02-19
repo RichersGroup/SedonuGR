@@ -24,18 +24,13 @@
 //  along with Sedonu.  If not, see <http://www.gnu.org/licenses/>.
 //
 */
+
 #include <mpi.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <iomanip>
-#include <math.h>
-#include <string>
-#include <iostream>
-#include <fstream>
 #include <algorithm>
 #include "transport.h"
-#include "species_general.h"
 #include "global_options.h"
+
+using namespace std;
 
 int main(int argc, char **argv)
 {

@@ -29,8 +29,6 @@
 #define _NEUTRINOS_H
 
 #include "species_general.h"
-#include "Lua.h"
-#include "global_options.h"
 
 class neutrinos: public species_general
 {

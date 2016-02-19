@@ -26,9 +26,11 @@
 */
 
 #include "transport.h"
-#include "particle.h"
 #include "grid_general.h"
 #include "global_options.h"
+
+using namespace std;
+namespace pc = physical_constants;
 
 // lorentz factor ("gamma")
 // v_rel = v_newframe - v_oldframe

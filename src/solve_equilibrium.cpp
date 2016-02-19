@@ -25,18 +25,14 @@
 //
 */
 
-#include "global_options.h"
-#include <omp.h>
-#include <stdio.h>
-#include <math.h>
-#include <iostream>
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_math.h>
 #include <gsl/gsl_roots.h>
 #include "transport.h"
-#include "Lua.h"
 #include "grid_general.h"
 #include "species_general.h"
+#include "global_options.h"
+
+using namespace std;
+namespace pc = physical_constants;
 
 struct  eq_function_params{int z_ind; transport* sim;};
 double    temp_eq_function(double T , void* params);

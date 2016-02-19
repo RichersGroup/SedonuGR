@@ -45,16 +45,12 @@
 
 #ifndef _GRID_GENERAL_H
 #define _GRID_GENERAL_H 1
-#include "global_options.h"
-#include <iostream>
+
 #include "zone.h"
 #include "Lua.h"
 #include "particle.h"
-#include "transport.h"
 
 class transport;
-
-using namespace std;
 
 class grid_general
 {
@@ -74,7 +70,7 @@ public:
 
 	virtual ~grid_general() {}
 
-	string grid_type;
+	std::string grid_type;
 
 	// vector of zones
 	std::vector<zone> z;
@@ -90,8 +86,8 @@ public:
 
 	// write out zone information
 	void write_zones(const int iw) const;
-	void write_header(ofstream& outf) const;
-	void write_line(ofstream& outf, const int z_ind) const;
+	void write_header(std::ofstream& outf) const;
+	void write_line(std::ofstream& outf, const int z_ind) const;
 	virtual void write_rays(const int iw) const = 0;
 	void write_hdf5_data(H5::H5File file) const;
 	virtual void write_hdf5_coordinates(H5::H5File file) const = 0;

@@ -25,17 +25,15 @@
 //
 */
 
-#include "global_options.h"
-#include <algorithm>
 #include <mpi.h>
-#include <math.h>
-#include <stdlib.h>
 #include <fstream>
-#include <iostream>
 #include <iomanip>
-#include <cstdio>
-#include "H5Cpp.h"
+#include "global_options.h"
 #include "grid_2D_sphere.h"
+#include "transport.h"
+
+using namespace std;
+namespace pc = physical_constants;
 
 //------------------------------------------------------------
 // initialize the zone geometry from model file

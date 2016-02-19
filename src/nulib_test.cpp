@@ -25,16 +25,12 @@
 //
 */
 
-#include "global_options.h"
 #include <iomanip>
-#include <vector>
 #include <iostream>
 #include <fstream>
-#include <stdlib.h>
-#include <string>
 #include <cmath>
-#include "zone.h"
 #include "nulib_interface.h"
+#include "physical_constants.h"
 
 namespace pc = physical_constants;
 using namespace std;

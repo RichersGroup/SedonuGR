@@ -25,13 +25,15 @@
 //
 */
 
+#include <mpi.h>
 #include "global_options.h"
+#include "physical_constants.h"
 #include "species_general.h"
-#include <gsl/gsl_rng.h>
-#include <math.h>
 #include "transport.h"
-#include "Lua.h"
-#include <list>
+#include "grid_general.h"
+
+using namespace std;
+namespace pc = physical_constants;
 
 species_general::species_general(){
 	weight = NaN;

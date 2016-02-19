@@ -25,17 +25,15 @@
 //
 */
 
-#include "grid_3D_cart.h"
-#include <cmath>
-#include <cstdlib>
+#include <mpi.h>
 #include <fstream>
-#include <iostream>
-#include <iomanip>
 #include <sstream>
-#include <string>
+#include "grid_3D_cart.h"
 #include "global_options.h"
-#include "mpi.h"
-#include "Lua.h"
+#include "transport.h"
+
+using namespace std;
+namespace pc = physical_constants;
 
 //------------
 // constructor

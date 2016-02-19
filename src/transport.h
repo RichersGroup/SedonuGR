@@ -27,14 +27,11 @@
 
 #ifndef _TRANSPORT_H
 #define _TRANSPORT_H
-#include <mpi.h>
 #include <vector>
 #include "particle.h"
 #include "Lua.h"
-#include "locate_array.h"
 #include "cdf_array.h"
 #include "thread_RNG.h"
-#include "global_options.h"
 
 class species_general;
 class grid_general;
@@ -54,7 +51,7 @@ private:
 	int MPI_myID;
 	void reduce_radiation();
 	void synchronize_gas();
-	vector<unsigned> my_zone_end;
+	std::vector<unsigned> my_zone_end;
 
 	// subroutine for calculating timescales
 	void calculate_timescales() const;
@@ -148,7 +145,7 @@ public:
 	double rho_min, rho_max;
 
 	// arrays of species
-	vector<species_general*> species_list;
+	std::vector<species_general*> species_list;
 
 	// pointer to grid
 	grid_general *grid;
@@ -171,7 +168,7 @@ public:
 	int core_emit_method;
 	cdf_array core_species_luminosity;
 	void init_core(const double r_core, const double T_core, const double munue_core);
-	void init_core(const double r_core, const vector<double>& T_core, const vector<double>& mu_core, const vector<double>& L_core);
+	void init_core(const double r_core, const std::vector<double>& T_core, const std::vector<double>& mu_core, const std::vector<double>& L_core);
 
 	// items for zone emission
 	int do_visc;
@@ -185,15 +182,15 @@ public:
 	int do_emit_by_bin;
 
 	// global radiation quantities
-	vector<double> L_core_lab;
-	vector<double> L_net_lab;
-	vector<double> L_net_esc;
-	vector<double> E_avg_lab;
-	vector<double> E_avg_esc;
-	vector<double> N_net_lab;
-	vector<double> N_net_esc;
-	vector<long> n_active;
-	vector<long> n_escape;
+	std::vector<double> L_core_lab;
+	std::vector<double> L_net_lab;
+	std::vector<double> L_net_esc;
+	std::vector<double> E_avg_lab;
+	std::vector<double> E_avg_esc;
+	std::vector<double> N_net_lab;
+	std::vector<double> N_net_esc;
+	std::vector<long> n_active;
+	std::vector<long> n_escape;
 	double annihil_rho_cutoff;
 
 
@@ -211,12 +208,12 @@ public:
 	void write(const int it) const;
 	int  total_particles() const;
 	void write_rays(const int it);
-	static string filename(const char* filebase, const int iw, const char* suffix);
+	static std::string filename(const char* filebase, const int iw, const char* suffix);
 	static double lorentz_factor(const double v[3], const int vsize);
-	static double dot(const vector<double>& a, const vector<double>& b);
-	static double dot(const vector<double>& a, const double b[], const int size);
+	static double dot(const std::vector<double>& a, const std::vector<double>& b);
+	static double dot(const std::vector<double>& a, const double b[], const int size);
 	static double dot(const double a[], const double b[], const int size);
-	static void normalize(vector<double>& a);
+	static void normalize(std::vector<double>& a);
 	static void normalize(double a[], const int size);
 	static double mean_mass(const double Ye);
 	double importance(const double abs_opac, const double scat_opac, const double dx) const;

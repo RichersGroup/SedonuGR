@@ -28,10 +28,7 @@
 #ifndef _GRID_3D_CART_H
 #define _GRID_3D_CART_H 1
 
-#include "global_options.h"
 #include "grid_general.h"
-#include <vector>
-#include "Lua.h"
 
 //*******************************************
 // 1-Dimensional Spherical geometry
