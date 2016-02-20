@@ -30,12 +30,3 @@ nulib:
 
 nulibclean:
 	$(MAKE) -C external nulibclean
-
-############
-# EOSSuper #
-############
-eos:
-	$(MAKE) -C external EOSsuper
-
-eosclean:
-	$(MAKE) -C external EOSsuperclean
