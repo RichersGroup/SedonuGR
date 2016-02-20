@@ -2,7 +2,7 @@
 
 all:
 	python neutron_star.py > neutron_star.mod
-	./gomc
+	../../sedonu
 	gnuplot nut_neutron_star.gnuplot
 
 clean:

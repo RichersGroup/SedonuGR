@@ -2,7 +2,7 @@
 
 all:
 	python empty_sphere.py > empty_sphere.mod
-	./gomc
+	../../sedonu
 	gnuplot compare_spectra.gnuplot
 
 clean:

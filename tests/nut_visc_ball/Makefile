@@ -2,7 +2,7 @@
 
 all:
 	python neutron_star.py > neutron_star.mod
-	mpirun -np 1 ./gomc
+	mpirun -np 1 ../../sedonu
 	gnuplot compare_spectra.gnuplot
 
 clean:

@@ -2,7 +2,7 @@
 
 all:
 	python neutron_star.py > neutron_star.mod
-	./gomc
+	../../sedonu
 #	../../external/EOSsuper/driver neutron_star.mod > eos.dat
 #	cat eos.dat | tail -n +5 eos.dat > tmp.dat && mv tmp.dat eos.dat
 	gnuplot equilibrium_ye.gnuplot

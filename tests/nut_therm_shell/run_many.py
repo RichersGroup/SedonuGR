@@ -42,7 +42,7 @@ dlogT   = (max_logT   - min_logT  ) / (n_T   - 1.0)
 dye     = (max_ye     - min_ye    ) / (n_ye  - 1.0)
 
 os.system("python shell.py > shell.mod")
-string = "mpirun -np 2 -env OMP_NUM_THREADS 2 ./nut_therm_shell.exe param.lua " + \
+string = "mpirun -np 2 -env OMP_NUM_THREADS 2 ../../exe/nut_therm_shell param.lua " + \
          str(min_logrho) + " " + str(max_logrho) + " " + str(rho0) + " " + str(n_rho) + " " + \
          str(min_logT  ) + " " + str(max_logT  ) + " " + str(T0  ) + " " + str(n_T  ) + " " + \
          str(min_ye    ) + " " + str(max_ye    ) + " " + str(ye0 ) + " " + str(n_ye ) + " " + \
