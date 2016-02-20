@@ -348,7 +348,7 @@ Then, to build the documentation, from the Sedonu base directory, execute
     cd doc
     doxygen Doxyfile
 
-To see the documentation, in a browser open sedonu/html/index.html
+To see the documentation, in a browser open sedonu/doc/html/index.html
 
 
 COMPILING
@@ -369,16 +369,7 @@ This will use the settings in make.inc. To clean the src directory execute
 
 TESTING
 =====================================
-There are a couple of tests in the 'tests' directory. To get them
-ready, after building sedona (see COMPILING), simply execute
-
-    make tests
-
-To clean the test directories (including executables, data, and plots)
-execute
-
-    make testsclean
-
+There are a couple of tests in the 'tests' directory.
 A brief list of the tests is included below. More information can be
 found in the tests's individual directory in its README file. To run
 each test, simply go into the test directory and execute "make".
@@ -406,12 +397,12 @@ IF IT IS NOT IN THE TESTS FOLDER, IT IS PROBABLY NOT TESTED!
 
 RUNNING
 ===========================
-When sedona is built, it produces and executable called "gomc" in the
+When sedonu is built, it produces and executable called "sedonu" in the
 base directory. Move this executable to the run directry (where all
 the data will be put). See test problems for example parameter
 files. Go to that directory and execute
 
-    ./gomc parameter_file  
+    ./sedonu [parameter_file]
 
 The argument is optional. By default it will look for a parameter file
 called "param.lua" in the same directory. However, it is good practice
