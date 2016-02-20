@@ -25,11 +25,11 @@
 //
 */
 
-#include "global_options.h"
 #include <mpi.h>
 #include <fstream>
 #include "transport.h"
 #include "grid_1D_sphere.h"
+#include "global_options.h"
 
 using namespace std;
 namespace pc = physical_constants;

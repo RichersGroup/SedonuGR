@@ -1,26 +1,16 @@
 include make.inc
-.PHONY: all clean realclean tests testsclean hdf5 eos
+.PHONY: sedonu clean nulib nulibclean realclean
 
-all: 
+sedonu: nulib
+	mkdir -p exe
 	$(MAKE) -C src
+	ln -sf exe/sedonu
 
 clean: 
 	$(MAKE) -C src clean
 
-realclean: clean testsclean nulibclean eosclean
-	$(MAKE) -C src realclean
-
-
-#########
-# TESTS #
-#########
-
-tests: all eos
-	$(MAKE) tests -C src
-
-testsclean:
-	$(MAKE) testsclean -C src
-
+realclean: clean nulibclean
+	rm -rf exe
 
 #########
 # NuLib #

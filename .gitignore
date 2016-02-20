@@ -6,13 +6,9 @@
 *ray_*
 *fluid_*
 *.exe
-*gomc
-run
+sedonu
 .project
 .cproject
-time_stats_log
-lockfile
-gui_rpc_auth.cfg
-client_state.xml
 .settings
 make.inc
+exe

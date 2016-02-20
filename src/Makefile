@@ -1,47 +1,51 @@
-TARGET = ../gomc
+# list of subdirectories
+OBJDIR=.obj
+SUBDIRS=$(shell find . -not -path '*/\.*' -type d)
+$(shell mkdir -p $(SUBDIRS:%=$(OBJDIR)/%) >/dev/null)
 
-OBJECTS = main.o Lua.o grid_general.o grid_0D_isotropic.o grid_1D_sphere.o grid_2D_sphere.o grid_2D_cylinder.o grid_3D_cart.o emission.o scatter.o opacity.o locate_array.o cdf_array.o spectrum_array.o nulib_interface.o species_general.o transport.o neutrinos.o thread_RNG.o solve_equilibrium.o propagate.o relativity.o zone.o particle.o tools.o
-TEST_OBJECTS = Lua.o grid_general.o grid_0D_isotropic.o grid_1D_sphere.o grid_2D_sphere.o grid_2D_cylinder.o grid_3D_cart.o transport.o emission.o scatter.o opacity.o locate_array.o cdf_array.o spectrum_array.o nulib_interface.o species_general.o neutrinos.o thread_RNG.o solve_equilibrium.o propagate.o relativity.o zone.o particle.o tools.o
+# group together the external libraries that will be linked in
+ALL_LIBS = $(GSL_LIBS) $(LUA_LDFLAGS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS)
+ALL_INCS = $(GSL_INCL) $(LUA_INCL) $(OTHER_INCL) $(HDF5INCS) $(SUBDIRS:%=-I%)
 
-.PHONY: clean realclean
+# list all the executables
+EXE_DIR=../exe
+EXE_SRC_DIR=executables
+EXE_SOURCES=$(shell find $(EXE_SRC_DIR)/*)
+EXE_OBJECTS=$(EXE_SOURCES:%.cpp=$(OBJDIR)/%.o)
+EXECUTABLES=$(EXE_SOURCES:$(EXE_SRC_DIR)/%.cpp=$(EXE_DIR)/%)
 
-$(TARGET): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS) $(GSL_LIBS) $(LUA_LDFLAGS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS)
+# all objects, excluding those with main definitions
+OTHER_SOURCES = $(shell find . -type f -name '*.cpp' ! -path './$(EXE_SRC_DIR)/*')
+OTHER_OBJECTS = $(OTHER_SOURCES:./%.cpp=$(OBJDIR)/%.o)
 
-$(OBJECTS): %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<  $(GSL_INCL) $(LUA_INCL) $(OTHER_INCL) $(HDF5INCS)
+# list of dependencies
+DEPS = $(OTHER_OBJECTS:.o=.d) $(EXE_OBJECTS:.o=.d)
+DEPFLAGS = -MMD -MP -MF $(OBJDIR)/$*.Td
 
-# pull in dependency info for *existing* .o files so objects get rebuilt if header changes
--include $(OBJECTS:.o=.d)
+#============================================#
 
+.PHONY: all clean
+
+# link the executables
+all: $(EXECUTABLES)
+$(EXE_DIR)/%: $(OBJDIR)/$(EXE_SRC_DIR)/%.o $(OTHER_OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(ALL_LIBS)
+
+# compile all the required objects and their dependencies
+# creating temporary file so no corrupted dependencies on failed make
+$(OBJDIR)/%.o: %.cpp
+$(OBJDIR)/%.o: %.cpp $(OBJDIR)/%.d
+	$(CXX) $(CXXFLAGS) $(DEPFLAGS) -c $< $(ALL_INCS) -IINCLUDES -o $@ 
+	mv -f $(OBJDIR)/$*.Td $(OBJDIR)/$*.d
+
+# include dependency files so recompile if header updates
+$(OBJDIR)/%.d: ;
+.PRECIOUS: $(OBJDIR)/%.d
+-include $(DEPS)
+
+# remove all compiled files
 clean:
-	rm -f $(OBJECTS) test.exe *.d
-
-realclean: clean
+	rm -rf $(OBJDIR)
 	rm -f $(TARGET)
+	rm -f $(TESTS)
 
-tests: $(OBJECTS)
-	cp $(TARGET) ../tests/nut_spherical_emis
-	cp $(TARGET) ../tests/nut_spherical_emis_2D
-	cp $(TARGET) ../tests/nut_visc_ball
-	cp $(TARGET) ../tests/nut_neutron_star
-	cp $(TARGET) ../tests/nut_neutron_star_2D
-	cp $(TARGET) ../tests/equilibrium_ye
-	$(CXX) $(CXXFLAGS) -o ../tests/path_length_test/path_length_test.exe path_length_test.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL) $(HDF5INCS)
-	$(CXX) $(CXXFLAGS) -o ../tests/nulib_plots/nulib_test.exe nulib_test.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL) $(HDF5INCS)
-	$(CXX) $(CXXFLAGS) -o ../tests/nulib_plots/nulib_eas_single nulib_eas_single.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL) $(HDF5INCS)
-	$(CXX) $(CXXFLAGS) -o ../tests/nut_blackbody/nut_blackbody.exe nut_blackbody.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL) $(HDF5INCS)
-	$(CXX) $(CXXFLAGS) -o ../tests/nut_therm_shell/nut_therm_shell.exe nut_therm_shell.cpp $(TEST_OBJECTS) $(GSL_LIBS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS) $(LUA_INCL) $(HDF5INCS)
-
-testsclean:
-	$(MAKE) -C ../tests/nut_spherical_emis_2D clean
-	$(MAKE) -C ../tests/nut_spherical_emis clean
-	$(MAKE) -C ../tests/nut_visc_ball clean
-	$(MAKE) -C ../tests/nut_therm_shell clean
-	$(MAKE) -C ../tests/nut_neutron_star clean
-	$(MAKE) -C ../tests/nut_neutron_star_2D clean
-	$(MAKE) -C ../tests/nut_blackbody clean
-	$(MAKE) -C ../tests/equilibrium_ye clean
-	$(MAKE) -C ../tests/nulib_plots clean
-	rm -f ../tests/*/gomc
-	rm -f ../tests/nulib_plots/nulib_test.exe

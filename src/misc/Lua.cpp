@@ -8,7 +8,7 @@
 // $Header: /cvs/mp22/ddmc_sn/Lua.cc,v 1.4 2008/05/27 18:06:54 rthomas Exp $
 // 
 
-#include "Error.h"
+#include <stdexcept>
 #include "Lua.h"
 
 Lua::Lua()
@@ -78,7 +78,7 @@ void Lua::error( const char *format, ... )
    vfprintf( stderr, format, argp );
    va_end( argp );
    lua_close( _lua_state );
-   throw Error( "Lua error" );
+   throw std::runtime_error( "Lua error" );
 }
 
 void Lua::put_key( const char* key )
