@@ -345,6 +345,7 @@ Doxygen will generate useful documentation to show the structure of files and cl
 
 Then, to build the documentation, from the Sedonu base directory, execute
 
+    cd doc
     doxygen Doxyfile
 
 To see the documentation, in a browser open sedonu/html/index.html
