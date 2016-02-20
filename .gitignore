@@ -7,10 +7,6 @@
 *fluid_*
 *.exe
 *gomc
-src/*.d
-external/hdf5*
-external/EOSsuper/driver
-external/EOSsuper/nuc_eos.a
 run
 .project
 .cproject
@@ -19,4 +15,4 @@ lockfile
 gui_rpc_auth.cfg
 client_state.xml
 .settings
-external/tables/*.inc
+make.inc
