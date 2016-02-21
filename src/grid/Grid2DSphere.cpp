@@ -29,8 +29,9 @@
 #include <fstream>
 #include <iomanip>
 #include "global_options.h"
-#include "grid_2D_sphere.h"
-#include "transport.h"
+#include "Grid2DSphere.h"
+#include "Transport.h"
+#include "H5Cpp.h"
 
 using namespace std;
 namespace pc = physical_constants;
@@ -38,7 +39,7 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 // initialize the zone geometry from model file
 //------------------------------------------------------------
-void grid_2D_sphere::read_model_file(Lua* lua)
+void Grid2DSphere::read_model_file(Lua* lua)
 {
 	std::string model_type = lua->scalar<std::string>("model_type");
 	if(model_type == "flash") read_flash_file(lua);
@@ -49,7 +50,7 @@ void grid_2D_sphere::read_model_file(Lua* lua)
 	}
 }
 
-void grid_2D_sphere::read_flash_file(Lua* lua)
+void Grid2DSphere::read_flash_file(Lua* lua)
 {
 	// verbocity
 	int my_rank;
@@ -436,7 +437,7 @@ void grid_2D_sphere::read_flash_file(Lua* lua)
 //------------------------------------------------------------
 // Write a custom model here if you like
 //------------------------------------------------------------
-void grid_2D_sphere::custom_model(Lua* lua)
+void Grid2DSphere::custom_model(Lua* lua)
 {
 	// verbocity
 	int my_rank;
@@ -504,7 +505,7 @@ void grid_2D_sphere::custom_model(Lua* lua)
 //------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
-int grid_2D_sphere::zone_index(const double x[3], const int xsize) const
+int Grid2DSphere::zone_index(const double x[3], const int xsize) const
 {
 	PRINT_ASSERT(xsize,==,3);
 	double r  = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
@@ -532,7 +533,7 @@ int grid_2D_sphere::zone_index(const double x[3], const int xsize) const
 //----------------------------------------------------------------
 // Return the zone index corresponding to the directional indices
 //----------------------------------------------------------------
-int grid_2D_sphere::zone_index(const int i, const int j) const
+int Grid2DSphere::zone_index(const int i, const int j) const
 {
 	PRINT_ASSERT(i,>=,0);
 	PRINT_ASSERT(j,>=,0);
@@ -547,7 +548,7 @@ int grid_2D_sphere::zone_index(const int i, const int j) const
 //------------------------------------------------------------
 // return volume of zone
 //------------------------------------------------------------
-double grid_2D_sphere::zone_lab_volume(const int z_ind) const
+double Grid2DSphere::zone_lab_volume(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
@@ -568,7 +569,7 @@ double grid_2D_sphere::zone_lab_volume(const int z_ind) const
 //------------------------------------------------------------
 // return length of zone
 //------------------------------------------------------------
-double grid_2D_sphere::zone_min_length(const int z_ind) const
+double Grid2DSphere::zone_min_length(const int z_ind) const
 {
 	int dir_ind[2];
 	zone_directional_indices(z_ind,dir_ind,2);
@@ -588,7 +589,7 @@ double grid_2D_sphere::zone_min_length(const int z_ind) const
 //------------------------------------------------------------
 // Return the cell-center spherical coordinates of the cell
 //------------------------------------------------------------
-void grid_2D_sphere::zone_coordinates(const int z_ind, double r[2], const int rsize) const
+void Grid2DSphere::zone_coordinates(const int z_ind, double r[2], const int rsize) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)(r_out.size()*theta_out.size()));
@@ -609,7 +610,7 @@ void grid_2D_sphere::zone_coordinates(const int z_ind, double r[2], const int rs
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-void grid_2D_sphere::zone_directional_indices(const int z_ind, int dir_ind[2], const int size) const
+void Grid2DSphere::zone_directional_indices(const int z_ind, int dir_ind[2], const int size) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
@@ -626,7 +627,7 @@ void grid_2D_sphere::zone_directional_indices(const int z_ind, int dir_ind[2], c
 //------------------------------------------------------------
 // sample a random cartesian position within the spherical shell
 //------------------------------------------------------------
-void grid_2D_sphere::cartesian_sample_in_zone(const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const
+void Grid2DSphere::cartesian_sample_in_zone(const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
@@ -673,7 +674,7 @@ void grid_2D_sphere::cartesian_sample_in_zone(const int z_ind, const double rand
 //------------------------------------------------------------
 // get the cartesian velocity vector (cm/s)
 //------------------------------------------------------------
-void grid_2D_sphere::cartesian_velocity_vector(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
+void Grid2DSphere::cartesian_velocity_vector(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
 {
 	PRINT_ASSERT(xsize,==,3);
 	PRINT_ASSERT(vsize,==,3);
@@ -725,7 +726,7 @@ void grid_2D_sphere::cartesian_velocity_vector(const double x[3], const int xsiz
 //------------------------------------------------------------
 // Write the grid information out to a file
 //------------------------------------------------------------
-void grid_2D_sphere::write_rays(int iw) const
+void Grid2DSphere::write_rays(int iw) const
 {
 	PRINT_ASSERT(iw,>=,0);
 	ofstream outf;
@@ -734,7 +735,7 @@ void grid_2D_sphere::write_rays(int iw) const
 	string filename = "";
 
 	// along theta=0
-	filename = transport::filename("ray_t0",iw,".dat");
+	filename = Transport::filename("ray_t0",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
 	j = 0;
@@ -746,7 +747,7 @@ void grid_2D_sphere::write_rays(int iw) const
 	outf.close();
 
 	// along theta=pi/2
-	filename = transport::filename("ray_t.5",iw,".dat");
+	filename = Transport::filename("ray_t.5",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
 	j = theta_out.size()/2;
@@ -758,7 +759,7 @@ void grid_2D_sphere::write_rays(int iw) const
 	outf.close();
 
 	// along theta=pi
-	filename = transport::filename("ray_t1",iw,".dat");
+	filename = Transport::filename("ray_t1",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
 	j = theta_out.size()-1;
@@ -770,7 +771,7 @@ void grid_2D_sphere::write_rays(int iw) const
 	outf.close();
 
 	// along theta
-	filename = transport::filename("ray_r.5",iw,".dat");
+	filename = Transport::filename("ray_r.5",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
 	i = r_out.size()/2;
@@ -786,7 +787,7 @@ void grid_2D_sphere::write_rays(int iw) const
 //------------------------------------------------------------
 // Reflect off the outer boundary
 //------------------------------------------------------------
-void grid_2D_sphere::reflect_outer(particle *p) const{
+void Grid2DSphere::reflect_outer(Particle *p) const{
 	PRINT_ASSERT(r_out.size(),>=,1);
 	double r0 = (r_out.size()==1 ? r_out.min : r_out.size()-2);
 	double dr = r_out[r_out.size()-1] - r0;
@@ -795,7 +796,7 @@ void grid_2D_sphere::reflect_outer(particle *p) const{
 
 	// invert the radial component of the velocity
 	for(int i=0; i<3; i++) p->D[i] -= 2.*velDotRhat * p->x[i]/p->r();
-	transport::normalize(p->D,3);
+	Transport::normalize(p->D,3);
 
 	// put the particle just inside the boundary
 	double newR = r_out[r_out.size()-1] - tiny*dr;
@@ -808,14 +809,14 @@ void grid_2D_sphere::reflect_outer(particle *p) const{
 //------------------------------------------------------------
 // Reflect off the symmetry boundaries
 //------------------------------------------------------------
-void grid_2D_sphere::symmetry_boundaries(particle *p) const{
+void Grid2DSphere::symmetry_boundaries(Particle *p) const{
 // not implemented - does nothing
 }
 
 //------------------------------------------------------------
 // Find distance to outer boundary
 //------------------------------------------------------------
-double grid_2D_sphere::lab_dist_to_boundary(const particle *p) const{
+double Grid2DSphere::lab_dist_to_boundary(const Particle *p) const{
 	// Theta = angle between radius vector and direction (Pi if outgoing)
 	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
 	double Rout  = r_out[r_out.size()-1];
@@ -858,7 +859,7 @@ double grid_2D_sphere::lab_dist_to_boundary(const particle *p) const{
 }
 
 
-double grid_2D_sphere::zone_radius(const int z_ind) const{
+double Grid2DSphere::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 
@@ -873,7 +874,7 @@ double grid_2D_sphere::zone_radius(const int z_ind) const{
 //-----------------------------
 // Dimensions of the grid
 //-----------------------------
-void grid_2D_sphere::dims(hsize_t dims[2], const int size) const{
+void Grid2DSphere::dims(hsize_t dims[2], const int size) const{
 	PRINT_ASSERT(size,==,dimensionality());
 	dims[0] = r_out.size();
 	dims[1] = theta_out.size();
@@ -882,7 +883,7 @@ void grid_2D_sphere::dims(hsize_t dims[2], const int size) const{
 //----------------------------------------------------
 // Write the coordinates of the grid points to the hdf5 file
 //----------------------------------------------------
-void grid_2D_sphere::write_hdf5_coordinates(H5::H5File file) const
+void Grid2DSphere::write_hdf5_coordinates(H5::H5File file) const
 {
 	// useful quantities
 	H5::DataSet dataset;

@@ -28,12 +28,12 @@
 #ifndef _GRID_3D_CART_H
 #define _GRID_3D_CART_H 1
 
-#include "grid_general.h"
+#include "Grid.h"
 
 //*******************************************
 // 1-Dimensional Spherical geometry
 //*******************************************
-class grid_3D_cart: public grid_general
+class Grid3DCart: public Grid
 {
 
 private:
@@ -50,8 +50,8 @@ private:
 
 public:
 
-	grid_3D_cart();
-	virtual ~grid_3D_cart() {}
+	Grid3DCart();
+	virtual ~Grid3DCart() {}
 
 	void get_deltas(const int z_ind, double delta[3], const int size) const;
 
@@ -72,9 +72,9 @@ public:
 	void   cartesian_sample_in_zone (const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const;
 	void   cartesian_velocity_vector(const double x[3], const int sxize, double v[3], const int vsize, int z_ind) const;
 	void   write_rays               (const int iw                                                  ) const;
-	void   reflect_outer            (particle *p                                                   ) const;
-	void   symmetry_boundaries      (particle *p                                                   ) const;
-	double lab_dist_to_boundary     (const particle *p                                             ) const;
+	void   reflect_outer            (Particle *p                                                   ) const;
+	void   symmetry_boundaries      (Particle *p                                                   ) const;
+	double lab_dist_to_boundary     (const Particle *p                                             ) const;
 	double zone_radius              (const int z_ind) const;
 	void dims                       (hsize_t dims[3], const int size) const;
 	hsize_t dimensionality() const {return 3;};

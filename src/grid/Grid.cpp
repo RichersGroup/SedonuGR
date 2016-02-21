@@ -29,11 +29,12 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
-#include "grid_general.h"
+#include "Grid.h"
 #include "Lua.h"
 #include "nulib_interface.h"
 #include "global_options.h"
-#include "transport.h"
+#include "Transport.h"
+#include "H5Cpp.h"
 
 using namespace std;
 namespace pc = physical_constants;
@@ -41,7 +42,7 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 // initialize the grid
 //------------------------------------------------------------
-void grid_general::init(Lua* lua)
+void Grid::init(Lua* lua)
 {
 	// MPI stuff
 	int my_rank,n_procs;
@@ -94,7 +95,7 @@ void grid_general::init(Lua* lua)
 		nonrel_Tbar += z[z_ind].T * nonrel_mass;
 		rel_Yebar += z[z_ind].Ye * rest_mass;
 		nonrel_Yebar += z[z_ind].Ye * nonrel_mass;
-		total_rel_KE    += (rest_mass>0 ? (transport::lorentz_factor(z[z_ind].u,ARRSIZE(z[z_ind].u)) - 1.0) * rest_mass * pc::c*pc::c : 0);
+		total_rel_KE    += (rest_mass>0 ? (Transport::lorentz_factor(z[z_ind].u,ARRSIZE(z[z_ind].u)) - 1.0) * rest_mass * pc::c*pc::c : 0);
 		total_nonrel_KE += 0.5 * nonrel_mass * zone_speed2(z_ind);
 		total_rel_TE    += (rest_mass>0 ? rest_mass   / pc::m_n * pc::k * z[z_ind].T : 0);
 		total_nonrel_TE += nonrel_mass / pc::m_n * pc::k * z[z_ind].T;
@@ -116,7 +117,7 @@ void grid_general::init(Lua* lua)
 //------------------------------------------------------------
 // Write the grid information out to a file
 //------------------------------------------------------------
-void grid_general::write_zones(const int iw) const
+void Grid::write_zones(const int iw) const
 {
 	if(output_zones){
 		PRINT_ASSERT(z.size(),>,0);
@@ -124,7 +125,7 @@ void grid_general::write_zones(const int iw) const
 		// output all zone data in hdf5 format
 		if(output_hdf5){
 			PRINT_ASSERT(dimensionality(),>,0);
-			string filename = transport::filename("fluid",iw,".h5");
+			string filename = Transport::filename("fluid",iw,".h5");
 			H5::H5File file(filename, H5F_ACC_TRUNC);
 
 			// write coordinates to the hdf5 file (implemented in each grid type)
@@ -136,7 +137,7 @@ void grid_general::write_zones(const int iw) const
 		// output all zone data in text files
 		else{
 			ofstream outf;
-			string filename = transport::filename("fluid",iw,".dat");
+			string filename = Transport::filename("fluid",iw,".dat");
 			outf.open(filename.c_str());
 			write_header(outf);
 			for (unsigned z_ind=0; z_ind<z.size(); z_ind++) write_line(outf,z_ind);
@@ -145,17 +146,17 @@ void grid_general::write_zones(const int iw) const
 	}
 }
 
-double grid_general::zone_rest_mass(const int z_ind) const{
+double Grid::zone_rest_mass(const int z_ind) const{
 	return z[z_ind].rho*zone_comoving_volume(z_ind);
 }
 
-double grid_general::zone_comoving_volume(const int z_ind) const{
+double Grid::zone_comoving_volume(const int z_ind) const{
 	// assumes v is orthonormal in cm/s
 	if(!good_zone(z_ind)) return 0;
-	else return zone_lab_volume(z_ind) * transport::lorentz_factor(z[z_ind].u,3);
+	else return zone_lab_volume(z_ind) * Transport::lorentz_factor(z[z_ind].u,3);
 }
 
-void grid_general::write_header(ofstream& outf) const{
+void Grid::write_header(ofstream& outf) const{
 	outf << setprecision(4);
 	outf << scientific;
 	outf << "# ";
@@ -190,7 +191,7 @@ void grid_general::write_header(ofstream& outf) const{
 	outf << endl;
 }
 
-void grid_general::write_hdf5_data(H5::H5File file) const{
+void Grid::write_hdf5_data(H5::H5File file) const{
 	// useful quantities
 	H5::DataSet dataset;
 	H5::DataSpace dataspace;
@@ -258,8 +259,8 @@ void grid_general::write_hdf5_data(H5::H5File file) const{
 	// write dYe_dt_abs
 	dataset = file.createDataSet("dYe_dt_abs(1|s,lab)",H5::PredType::IEEE_F32LE,dataspace);
 	for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
-		double n_baryons_per_ccm = z[z_ind].rho / transport::mean_mass(z[z_ind].Ye);
-		tmp[z_ind] = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / transport::lorentz_factor(z[z_ind].u,ARRSIZE(z[z_ind].u));
+		double n_baryons_per_ccm = z[z_ind].rho / Transport::mean_mass(z[z_ind].Ye);
+		tmp[z_ind] = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / Transport::lorentz_factor(z[z_ind].u,ARRSIZE(z[z_ind].u));
 	}
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
@@ -342,7 +343,7 @@ void grid_general::write_hdf5_data(H5::H5File file) const{
 	dataspace.close();
 }
 
-void grid_general::write_line(ofstream& outf, const int z_ind) const{
+void Grid::write_line(ofstream& outf, const int z_ind) const{
 	int dir_ind[dimensionality()];
 	zone_directional_indices(z_ind, dir_ind, dimensionality());
 	if(dimensionality()>0) if(dir_ind[dimensionality()-1]==0) outf << endl;
@@ -368,9 +369,9 @@ void grid_general::write_line(ofstream& outf, const int z_ind) const{
 
 	outf << sqrt(zone_speed2(z_ind)) << "\t";
 
-	double n_baryons_per_ccm = z[z_ind].rho / transport::mean_mass(z[z_ind].Ye);
-	double dYe_dt_abs = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / transport::lorentz_factor(z[z_ind].u,ARRSIZE(z[z_ind].u));
-	double dYe_dt_emit = -z[z_ind].l_emit / n_baryons_per_ccm / transport::lorentz_factor(z[z_ind].u,ARRSIZE(z[z_ind].u));
+	double n_baryons_per_ccm = z[z_ind].rho / Transport::mean_mass(z[z_ind].Ye);
+	double dYe_dt_abs = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / Transport::lorentz_factor(z[z_ind].u,ARRSIZE(z[z_ind].u));
+	double dYe_dt_emit = -z[z_ind].l_emit / n_baryons_per_ccm / Transport::lorentz_factor(z[z_ind].u,ARRSIZE(z[z_ind].u));
 	outf << dYe_dt_abs << "\t";
 	outf << dYe_dt_emit << "\t";
 
@@ -402,7 +403,7 @@ void grid_general::write_line(ofstream& outf, const int z_ind) const{
 	outf << endl;
 }
 
-bool grid_general::good_zone(const int z_ind) const{
+bool Grid::good_zone(const int z_ind) const{
 	//const zone* z = &(grid->z[z_ind]);
 	//return (z->rho >= rho_min && z->rho <= rho_max &&
 	//  	    z->Ye  >= Ye_min  && z->Ye  <=  Ye_max &&
@@ -417,14 +418,14 @@ bool grid_general::good_zone(const int z_ind) const{
 //------------------------------------
 // get the velocity squared of a zone
 //------------------------------------
-double grid_general::zone_speed2(const int z_ind) const{
+double Grid::zone_speed2(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	double speed2 = transport::dot(z[z_ind].u,z[z_ind].u,ARRSIZE(z[z_ind].u));
+	double speed2 = Transport::dot(z[z_ind].u,z[z_ind].u,ARRSIZE(z[z_ind].u));
 	return speed2;
 }
 
-double grid_general::total_rest_mass() const{
+double Grid::total_rest_mass() const{
 	double mass = 0;
 	#pragma omp parallel for reduction(+:mass)
 	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) mass += zone_rest_mass(z_ind);

@@ -25,25 +25,30 @@
 //
 */
 
-#ifndef _THREAD_RNG_H
-#define _THREAD_RNG_H
+#ifndef _NEUTRINOS_H
+#define _NEUTRINOS_H
 
-#include <gsl/gsl_rng.h>
-#include <vector>
+#include "Species.h"
 
-class thread_RNG
+class Neutrino: public Species
 {
 
 protected:
 
-	// OPTIMIZE - to prevent false sharing, make sure all the RNG's are on different cache lines
-	// vector of generators
-	std::vector<gsl_rng*> generators;
-
 public:
 
-	void   init();
-	double uniform();
+	Neutrino();
+	virtual ~Neutrino() {}
+
+	int num_nut_species;
+	int nulibID;
+	double cutoff;
+
+	// required functions
+	void myInit(Lua* lua);
+	void set_eas(int zone_index);
+	double blackbody(const double T, const double chempot, const double nu) const;
+	static double annihilation_rate(const SpectrumArray& nu_dist, const SpectrumArray& nbar_dist, const bool electron_type, const int weight);
 };
 
 #endif

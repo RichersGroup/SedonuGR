@@ -28,25 +28,25 @@
 #ifndef _SPECIES_H
 #define _SPECIES_H
 
-#include "particle.h"
 #include <vector>
-#include "spectrum_array.h"
+#include "Particle.h"
+#include "SpectrumArray.h"
 #include "Lua.h"
-#include "cdf_array.h"
+#include "CDFArray.h"
 
-class transport;
+class Transport;
 
-class species_general
+class Species
 {
 
 protected:
 
 	// the frequency grid for emissivity/opacity (Hz)
-	locate_array nu_grid;
+	LocateArray nu_grid;
 
 	// the zone eas variables
-	std::vector< cdf_array      > emis;
-	std::vector< cdf_array      > biased_emis;
+	std::vector< CDFArray      > emis;
+	std::vector< CDFArray      > biased_emis;
 	std::vector< std::vector<double> > abs_opac;  // 1/cm
 	std::vector< std::vector<double> > scat_opac; // 1/cm
 
@@ -55,15 +55,15 @@ protected:
 	double grey_abs_frac;       //unitless
 
 	// pointer to the simulation info (one level up)
-	transport* sim;
+	Transport* sim;
 
 	// species-specific initialization stuff
 	virtual void myInit(Lua* lua) = 0;
 
 public:
 
-	species_general();
-	virtual ~species_general() {}
+	Species();
+	virtual ~Species() {}
 
 	// name
 	std::string name;
@@ -75,19 +75,19 @@ public:
 	double weight;
 
 	// this species' spectrum
-	spectrum_array spectrum;
+	SpectrumArray spectrum;
 
 	// the core emissivity (units of core_emis.N are erg/s)
-	cdf_array core_emis;
+	CDFArray core_emis;
 
 	// set everything up
-	void init(Lua* lua, transport* sim);
+	void init(Lua* lua, Transport* sim);
 
 	// this species' blackbody function (erg/cm^2/s/ster/Hz)
 	virtual double blackbody(const double T, const double chempot, const double nu) const = 0;
 
 	// set a CDF to blackbody distribution
-	void set_cdf_to_BB(const double T, const double chempot, cdf_array& emis);
+	void set_cdf_to_BB(const double T, const double chempot, CDFArray& emis);
 
 	// return the emissivity integrated over frequency at the core
 	double integrate_core_emis() const; //(erg/s)
@@ -99,8 +99,8 @@ public:
 
 	// return the frequency of a particle emitted from the core or a zone (Hz)
 	double sample_core_nu(const int g=-1) const;
-	double sample_nu(const cdf_array& input_emis, const int g=-1) const;
-	void sample_zone_nu(particle& p, const int zone_index, const int g=-1) const;
+	double sample_nu(const CDFArray& input_emis, const int g=-1) const;
+	void sample_zone_nu(Particle& p, const int zone_index, const int g=-1) const;
 
 	// set the emissivity, absorption opacity, and scattering opacity
 	virtual void set_eas(const int zone_index) = 0;

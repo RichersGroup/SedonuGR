@@ -29,19 +29,19 @@
 #define _NULIB_INTERFACE_H
 
 #include <vector>
-#include "cdf_array.h"
-#include "locate_array.h"
+#include "CDFArray.h"
+#include "LocateArray.h"
 //
 // returns everything in standard CGS units (i.e. ergs, s, cm, K, Hz)
 
 void nulib_init(std::string filename);
 void nulib_get_eas_arrays(double rho, double temp, double ye, int nulibID,
-		cdf_array& nut_emiss, std::vector<double>& nut_absopac, std::vector<double>& nut_scatopac);
+		CDFArray& nut_emiss, std::vector<double>& nut_absopac, std::vector<double>& nut_scatopac);
 void nulib_get_epannihil_kernels(double rho, double temp, double ye, int nulibID,
 								 std::vector< std::vector< std::vector<double> > >& phi_production,
 								 std::vector< std::vector< std::vector<double> > >& phi_annihilation);
 void nulib_get_pure_emis(double rho, double temp, double ye, int nulibID, std::vector<double>& pure_emis);
-void nulib_get_nu_grid(locate_array& nut_nu_grid);
+void nulib_get_nu_grid(LocateArray& nut_nu_grid);
 int nulib_get_nspecies();
 
 double nulib_get_Tmin();

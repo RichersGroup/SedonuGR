@@ -25,8 +25,8 @@
 //
 */
 
-#include "transport.h"
-#include "grid_general.h"
+#include "Transport.h"
+#include "Grid.h"
 #include "global_options.h"
 
 using namespace std;
@@ -34,7 +34,7 @@ namespace pc = physical_constants;
 
 // lorentz factor ("gamma")
 // v_rel = v_newframe - v_oldframe
-double transport::lorentz_factor(const double v[3], const int vsize){
+double Transport::lorentz_factor(const double v[3], const int vsize){
 	PRINT_ASSERT(vsize,<=,3);
 	PRINT_ASSERT(dot(v,v,vsize),<,pc::c*pc::c);
 	double beta2 = dot(v,v,vsize) * pc::inv_c * pc::inv_c;
@@ -46,7 +46,7 @@ double transport::lorentz_factor(const double v[3], const int vsize){
 // dot product of v_rel and relativistic particle direction
 // v_rel = v_newframe - v_oldframe
 // D = direction vector of relativistic particle in old frame
-double transport::dot(const vector<double>& a, const vector<double>& b){
+double Transport::dot(const vector<double>& a, const vector<double>& b){
 	PRINT_ASSERT(a.size(),>,0);
 	PRINT_ASSERT(b.size(),>,0);
 	PRINT_ASSERT(a.size(),==,b.size());
@@ -54,7 +54,7 @@ double transport::dot(const vector<double>& a, const vector<double>& b){
 	for(unsigned i=0; i<a.size(); i++) product += a[i]*b[i];
 	return product;
 }
-double transport::dot(const vector<double>& a, const double b[], const int size){
+double Transport::dot(const vector<double>& a, const double b[], const int size){
 	PRINT_ASSERT(a.size(),>,0);
 	PRINT_ASSERT(size,>,0);
 	PRINT_ASSERT(a.size(),==,size);
@@ -62,7 +62,7 @@ double transport::dot(const vector<double>& a, const double b[], const int size)
 	for(unsigned i=0; i<a.size(); i++) product += a[i]*b[i];
 	return product;
 }
-double transport::dot(const double a[], const double b[], const int size){
+double Transport::dot(const double a[], const double b[], const int size){
 	PRINT_ASSERT(size,>,0);
 	double product = 0;
 	for(unsigned i=0; i<size; i++) product += a[i]*b[i];
@@ -70,12 +70,12 @@ double transport::dot(const double a[], const double b[], const int size){
 }
 
 // normalize a vector
-void transport::normalize(vector<double>& a){
+void Transport::normalize(vector<double>& a){
 	PRINT_ASSERT(a.size(),>,0);
 	double inv_magnitude = 1./sqrt(dot(a,a));
 	for(unsigned i=0; i<a.size(); i++) a[i] *= inv_magnitude;
 }
-void transport::normalize(double a[],const int size){
+void Transport::normalize(double a[],const int size){
 	PRINT_ASSERT(size,>,0);
 	double inv_magnitude = 1./sqrt(dot(a,a,size));
 	for(unsigned i=0; i<sizeof(a)/sizeof(a[0]); i++) a[i] *= inv_magnitude;
@@ -91,15 +91,15 @@ double doppler_shift(const double gamma, const double vdd){
 
 // apply a lorentz transform to the particle
 // v = v_newframe - v_oldframe
-void lorentz_transform(particle* p, const double v[3], const int vsize){
+void lorentz_transform(Particle* p, const double v[3], const int vsize){
 	// check input
 	PRINT_ASSERT(vsize,==,3);
 	PRINT_ASSERT(p->nu,>,0);
 	PRINT_ASSERT(p->e,>,0);
 
 	// calculate the doppler shift, v dot D, and lorentz factors
-	double gamma = transport::lorentz_factor(v,vsize);
-	double vdd = transport::dot(p->D, v, vsize);
+	double gamma = Transport::lorentz_factor(v,vsize);
+	double vdd = Transport::dot(p->D, v, vsize);
 	double dshift = doppler_shift(gamma, vdd);
 
 	// transform the 0th component (energy and frequency)
@@ -112,7 +112,7 @@ void lorentz_transform(particle* p, const double v[3], const int vsize){
 	p->D[0] = 1.0/dshift * (p->D[0] - v[0]*tmp);
 	p->D[1] = 1.0/dshift * (p->D[1] - v[1]*tmp);
 	p->D[2] = 1.0/dshift * (p->D[2] - v[2]*tmp);
-	transport::normalize(p->D,3);
+	Transport::normalize(p->D,3);
 
 	// sanity checks
 	PRINT_ASSERT(p->e,>,0);
@@ -125,7 +125,7 @@ void lorentz_transform(particle* p, const double v[3], const int vsize){
 // get the doppler shift when moving from frame_to_frame
 // does not change any particle properties
 //------------------------------------------------------------
-double transport::dshift_comoving_to_lab(const particle* p, const int z_ind) const
+double Transport::dshift_comoving_to_lab(const Particle* p, const int z_ind) const
 {
 	if(!do_relativity) return 1.0;
 
@@ -145,7 +145,7 @@ double transport::dshift_comoving_to_lab(const particle* p, const int z_ind) con
 	return dshift;
 }
 
-double transport::dshift_lab_to_comoving(const particle* p, const int z_ind) const
+double Transport::dshift_lab_to_comoving(const Particle* p, const int z_ind) const
 {
 	if(!do_relativity) return 1.0;
 
@@ -167,7 +167,7 @@ double transport::dshift_lab_to_comoving(const particle* p, const int z_ind) con
 // do a lorentz transformation; modifies the energy, frequency
 // and direction vector of the particle
 //------------------------------------------------------------
-void transport::transform_comoving_to_lab(particle* p, const int z_ind) const
+void Transport::transform_comoving_to_lab(Particle* p, const int z_ind) const
 {
 	if(!do_relativity) return;
 
@@ -183,7 +183,7 @@ void transport::transform_comoving_to_lab(particle* p, const int z_ind) const
 	lorentz_transform(p,v,3);
 }
 
-void transport::transform_lab_to_comoving(particle* p, const int z_ind) const
+void Transport::transform_lab_to_comoving(Particle* p, const int z_ind) const
 {
 	if(!do_relativity) return;
 
@@ -196,7 +196,7 @@ void transport::transform_lab_to_comoving(particle* p, const int z_ind) const
 	lorentz_transform(p,v,3);
 }
 
-double transport::comoving_dt(const int z_ind) const{
+double Transport::comoving_dt(const int z_ind) const{
 	if(!do_relativity) return 1.0;
 
 	PRINT_ASSERT(z_ind,>=,0);

@@ -28,7 +28,7 @@
 #include <mpi.h>
 #include <string>
 #include "Lua.h"
-#include "transport.h"
+#include "Transport.h"
 
 using namespace std;
 
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 	lua.init( script_file );
 
 	// set up the transport module (includes the grid)
-	transport sim;
+	Transport sim;
 	sim.init(&lua);
 
 	// read in time stepping parameters

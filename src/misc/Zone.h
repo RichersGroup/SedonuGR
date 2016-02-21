@@ -29,18 +29,18 @@
 #define _ZONE_H
 
 #include <vector>
-#include "spectrum_array.h"
+#include "SpectrumArray.h"
 
 //-------------------------------------------------
 // Class to store properties of one zone
 //-------------------------------------------------
-class zone
+class Zone
 {
 
 public:
 
 	// constructors
-	zone();
+	Zone();
 
 	// fluid properties (rho,T are in comoving frame. Ye is invariant.)
 	double u[3];            // velocity vector (cm/s)
@@ -57,7 +57,7 @@ public:
 	double anue_abs;                      // electron anti-neutrino number deposition density rate (cm^-3 s^-1) (comoving frame)
 	double e_emit;                        // radiation energy emission rate (erg/ccm/s) (comoving frame)
 	double l_emit;						  // lepton number emission rate (cm^-3 s^-1) (comoving frame)
-	std::vector<spectrum_array> distribution;  // radiation energy density for each species in lab frame (erg/ccm. Integrated over bin frequency and direction)
+	std::vector<SpectrumArray> distribution;  // radiation energy density for each species in lab frame (erg/ccm. Integrated over bin frequency and direction)
 	double Q_annihil;                     // annihilation energy deposition rate (erg/ccm/s) (lab frame)
 
 	// timescales (all in lab frame)

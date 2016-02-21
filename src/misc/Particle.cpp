@@ -26,9 +26,9 @@
 */
 
 #include "global_options.h"
-#include "particle.h"
+#include "Particle.h"
 
-particle::particle(){
+Particle::Particle(){
 	e = NaN;
 	nu = NaN;
 	tau = NaN;

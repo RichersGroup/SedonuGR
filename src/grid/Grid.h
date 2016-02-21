@@ -46,13 +46,13 @@
 #ifndef _GRID_GENERAL_H
 #define _GRID_GENERAL_H 1
 
-#include "zone.h"
+#include "Zone.h"
 #include "Lua.h"
-#include "particle.h"
+#include "Particle.h"
 
-class transport;
+class Transport;
 
-class grid_general
+class Grid
 {
 
 protected:
@@ -68,12 +68,12 @@ protected:
 
 public:
 
-	virtual ~grid_general() {}
+	virtual ~Grid() {}
 
 	std::string grid_type;
 
 	// vector of zones
-	std::vector<zone> z;
+	std::vector<Zone> z;
 
 #ifdef __INTEL_COMPILER
 	static const double tiny = 1e-5; // used to overshoot boundary to account for error in boundary distance calculation
@@ -128,9 +128,9 @@ public:
 	virtual double zone_radius(const int z_ind) const = 0;
 
 	// boundary conditions
-	virtual void reflect_outer(particle *p) const = 0;
-	virtual double lab_dist_to_boundary(const particle *p) const = 0;
-	virtual void symmetry_boundaries(particle* p) const = 0;
+	virtual void reflect_outer(Particle *p) const = 0;
+	virtual double lab_dist_to_boundary(const Particle *p) const = 0;
+	virtual void symmetry_boundaries(Particle* p) const = 0;
 };
 
 

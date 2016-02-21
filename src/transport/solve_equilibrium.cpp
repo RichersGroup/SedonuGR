@@ -26,15 +26,15 @@
 */
 
 #include <gsl/gsl_roots.h>
-#include "transport.h"
-#include "grid_general.h"
-#include "species_general.h"
+#include "Transport.h"
+#include "Grid.h"
+#include "Species.h"
 #include "global_options.h"
 
 using namespace std;
 namespace pc = physical_constants;
 
-struct  eq_function_params{int z_ind; transport* sim;};
+struct  eq_function_params{int z_ind; Transport* sim;};
 double    temp_eq_function(double T , void* params);
 double      Ye_eq_function(double Ye, void* params);
 
@@ -42,7 +42,7 @@ double      Ye_eq_function(double Ye, void* params);
 //-------------------------------------------------------------
 //  Solve for the temperature assuming radiative equilibrium
 //-------------------------------------------------------------
-void transport::solve_eq_zone_values()
+void Transport::solve_eq_zone_values()
 {
 	if(verbose && rank0) cout << "# Solving for equilibrium values" << endl;
 	PRINT_ASSERT(brent_solve_tolerance,>,0);
@@ -156,7 +156,7 @@ double temp_eq_function(double T, void *params)
 	// read the parameters
 	struct eq_function_params *p = (struct eq_function_params *) params;
 	const int z_ind = p->z_ind;
-	transport* sim = p->sim;
+	Transport* sim = p->sim;
 
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)sim->grid->z.size());
@@ -207,7 +207,7 @@ double Ye_eq_function(double Ye, void *params)
 	// read the parameters
 	struct eq_function_params *p = (struct eq_function_params *) params;
 	const int z_ind = p->z_ind;
-	transport* sim = p->sim;
+	Transport* sim = p->sim;
 
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)sim->grid->z.size());
@@ -253,7 +253,7 @@ double Ye_eq_function(double Ye, void *params)
 //-----------------------------------------------------------
 // definitions used for solver
 #define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
-double transport::brent_method(int z_ind, double (*eq_function)(double,void*), double min, double max)
+double Transport::brent_method(int z_ind, double (*eq_function)(double,void*), double min, double max)
 {
 	PRINT_ASSERT(z_ind,>=,0);
 

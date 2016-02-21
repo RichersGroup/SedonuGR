@@ -26,16 +26,16 @@
 */
 
 #include "global_options.h"
-#include "neutrinos.h"
-#include "transport.h"
-#include "grid_general.h"
+#include "Neutrino.h"
+#include "Transport.h"
+#include "Grid.h"
 #include "nulib_interface.h"
 
 using namespace std;
 namespace pc = physical_constants;
 
 // constructor
-neutrinos::neutrinos(){
+Neutrino::Neutrino(){
 	num_nut_species = MAXLIM;
 	nulibID = MAXLIM;
 	cutoff=0;
@@ -45,7 +45,7 @@ neutrinos::neutrinos(){
 //----------------------------------------------------------------
 // called from species_general::init (neutrino-specific stuff)
 //----------------------------------------------------------------
-void neutrinos::myInit(Lua* lua)
+void Neutrino::myInit(Lua* lua)
 {
 	// set up the frequency table
 	cutoff        = lua->scalar<double>("nut_cdf_cutoff");
@@ -83,8 +83,8 @@ void neutrinos::myInit(Lua* lua)
 	PRINT_ASSERT(nu_grid.size(),>,0);
 	int nmu  = lua->scalar<int>("nut_spec_n_mu");
 	int nphi = lua->scalar<int>("nut_spec_n_phi");
-	spectrum_array tmp_spectrum;
-	locate_array tmp_mugrid, tmp_phigrid;
+	SpectrumArray tmp_spectrum;
+	LocateArray tmp_mugrid, tmp_phigrid;
 	tmp_mugrid.init( -1     , 1     , nmu );
 	tmp_phigrid.init(-pc::pi, pc::pi, nphi);
 	spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
@@ -124,9 +124,9 @@ void neutrinos::myInit(Lua* lua)
 //-----------------------------------------------------------------
 // set emissivity, abs. opacity, and scat. opacity in zones
 //-----------------------------------------------------------------
-void neutrinos::set_eas(int zone_index)
+void Neutrino::set_eas(int zone_index)
 {
-	zone* z = &(sim->grid->z[zone_index]);
+	Zone* z = &(sim->grid->z[zone_index]);
 	double ngroups = (double)emis[zone_index].size();
 
 	if(grey_opac < 0){ // get opacities and emissivity from NuLib
@@ -169,7 +169,7 @@ void neutrinos::set_eas(int zone_index)
 //-----------------------------------------------------------------
 // Calculate the fermi-dirac blackbody function (erg/s/cm^2/Hz/ster)
 //-----------------------------------------------------------------
-double neutrinos::blackbody(const double T /*K*/, const double chem_pot /*erg*/, const double nu /*Hz*/) const
+double Neutrino::blackbody(const double T /*K*/, const double chem_pot /*erg*/, const double nu /*Hz*/) const
 {
 	double zeta = (pc::h*nu - chem_pot)/pc::k/T;
 	double nu_c = nu*pc::inv_c;
@@ -193,9 +193,9 @@ double cos_angle_between(const double mu1, const double mu2, const double phi1, 
 	result = max(result,-1.0);
 	return result;
 }
-double neutrinos::annihilation_rate(
-		const spectrum_array& nu_dist,     // erg/ccm (integrated over angular bin and energy bin)
-		const spectrum_array& nubar_dist,  // erg/ccm (integrated over angular bin and energy bin)
+double Neutrino::annihilation_rate(
+		const SpectrumArray& nu_dist,     // erg/ccm (integrated over angular bin and energy bin)
+		const SpectrumArray& nubar_dist,  // erg/ccm (integrated over angular bin and energy bin)
 		const bool electron_type,		   // is this an electron-type interaction?
 		const int weight){         		   // weight of each species
 

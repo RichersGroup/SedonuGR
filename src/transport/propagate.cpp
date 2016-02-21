@@ -26,14 +26,14 @@
 */
 
 #include "global_options.h"
-#include "transport.h"
-#include "species_general.h"
-#include "grid_general.h"
+#include "Transport.h"
+#include "Species.h"
+#include "Grid.h"
 
 using namespace std;
 namespace pc = physical_constants;
 
-void transport::propagate_particles()
+void Transport::propagate_particles()
 {
 	if(verbose && rank0) cout << "# Propagating particles..." << endl;
 
@@ -51,7 +51,7 @@ void transport::propagate_particles()
 
 		#pragma omp for schedule(guided)
 		for(unsigned i=start; i<end; i++){
-			particle* p = &particles[i];
+			Particle* p = &particles[i];
 			#pragma omp atomic
 			n_active[p->s]++;
 			if(p->fate == moving) propagate(p);
@@ -97,7 +97,7 @@ void transport::propagate_particles()
 //--------------------------------------------------------
 // Decide what happens to the particle
 //--------------------------------------------------------
-void transport::which_event(particle *p, const int z_ind, const double lab_opac,
+void Transport::which_event(Particle *p, const int z_ind, const double lab_opac,
 		double *d_smallest, ParticleEvent *event) const{
 	PRINT_ASSERT(lab_opac, >=, 0);
 	PRINT_ASSERT(p->e, >, 0);
@@ -137,13 +137,13 @@ void transport::which_event(particle *p, const int z_ind, const double lab_opac,
 	if( d_boundary <= *d_smallest ){
 		*event = boundary;
 		*d_smallest = d_boundary;
-		if(z_ind >= 0) *d_smallest *= (1.0 + grid_general::tiny); // bump just over the boundary if in simulation domain
-		else           *d_smallest *= (1.0 - grid_general::tiny); // don't overshoot outward through the inner boundary
+		if(z_ind >= 0) *d_smallest *= (1.0 + Grid::tiny); // bump just over the boundary if in simulation domain
+		else           *d_smallest *= (1.0 - Grid::tiny); // don't overshoot outward through the inner boundary
 	}
 }
 
 
-void transport::event_boundary(particle* p, const int z_ind) const{
+void Transport::event_boundary(Particle* p, const int z_ind) const{
 	PRINT_ASSERT(z_ind==-1, ||, z_ind==-2);
 
 	// if outside the domain
@@ -177,7 +177,7 @@ void transport::event_boundary(particle* p, const int z_ind) const{
 	}
 }
 
-void transport::tally_radiation(const particle* p, const int z_ind, const double dshift_l2c, const double lab_d, const double lab_opac, const double abs_frac) const{
+void Transport::tally_radiation(const Particle* p, const int z_ind, const double dshift_l2c, const double lab_d, const double lab_opac, const double abs_frac) const{
 	PRINT_ASSERT(z_ind, >=, 0);
 	PRINT_ASSERT(z_ind, <, (int)grid->z.size());
 	PRINT_ASSERT(dshift_l2c, >, 0);
@@ -197,7 +197,7 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	PRINT_ASSERT(com_opac, >=, 0);
 
 	// set pointer to the current zone
-	zone* zone;
+	Zone* zone;
 	zone = &(grid->z[z_ind]);
 
 	// tally in contribution to zone's distribution function (lab frame)
@@ -256,7 +256,7 @@ void transport::tally_radiation(const particle* p, const int z_ind, const double
 	}
 }
 
-void transport::move(particle* p, const double lab_d, const double lab_opac){
+void Transport::move(Particle* p, const double lab_d, const double lab_opac){
 	PRINT_ASSERT(p->tau,>=,0);
 	PRINT_ASSERT(lab_d,>=,0);
 	PRINT_ASSERT(lab_opac,>=,0);
@@ -268,7 +268,7 @@ void transport::move(particle* p, const double lab_d, const double lab_opac){
 	PRINT_ASSERT(p->tau,>=,-grid->tiny*old_tau);
 	if(p->tau<0) p->tau = 0;
 }
-void transport::lab_opacity(const particle *p, const int z_ind, double *lab_opac, double *abs_frac, double *dshift_l2c) const{
+void Transport::lab_opacity(const Particle *p, const int z_ind, double *lab_opac, double *abs_frac, double *dshift_l2c) const{
 	if(grid->good_zone(z_ind) && z_ind>=0){ // avoid handling fluff zones if unnecessary
 		// doppler shift from comoving to lab (nu0/nu)
 		*dshift_l2c = dshift_lab_to_comoving(p,z_ind);
@@ -290,7 +290,7 @@ void transport::lab_opacity(const particle *p, const int z_ind, double *lab_opac
 // Propagate a single monte carlo particle until
 // it  escapes, is absorbed, or the time step ends
 //--------------------------------------------------------
-void transport::propagate(particle* p)
+void Transport::propagate(Particle* p)
 {
 
 	ParticleEvent event;

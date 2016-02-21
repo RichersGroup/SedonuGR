@@ -31,15 +31,15 @@
 #include <sstream>
 #include <iomanip>
 #include "physical_constants.h"
-#include "transport.h"
-#include "grid_general.h"
-#include "grid_0D_isotropic.h"
-#include "grid_1D_sphere.h"
-#include "grid_2D_sphere.h"
-#include "grid_2D_cylinder.h"
-#include "grid_3D_cart.h"
-#include "species_general.h"
-#include "neutrinos.h"
+#include "Transport.h"
+#include "Grid.h"
+#include "Grid0DIsotropic.h"
+#include "Grid1DSphere.h"
+#include "Grid2DSphere.h"
+#include "Grid2DCylinder.h"
+#include "Grid3DCart.h"
+#include "Species.h"
+#include "Neutrino.h"
 #include "nulib_interface.h"
 #include "global_options.h"
 
@@ -47,7 +47,7 @@ using namespace std;
 namespace pc = physical_constants;
 
 // constructor
-transport::transport(){
+Transport::Transport(){
 	verbose = -MAXLIM;
 	MPI_nprocs = -MAXLIM;
 	MPI_myID = -MAXLIM;
@@ -103,7 +103,7 @@ transport::transport(){
 // Includes setting up the grid, particles,
 // and MPI work distribution
 //----------------------------------------------------------------------------
-void transport::init(Lua* lua)
+void Transport::init(Lua* lua)
 { 
 	// get mpi rank
 	MPI_Comm_size( MPI_COMM_WORLD, &MPI_nprocs );
@@ -171,11 +171,11 @@ void transport::init(Lua* lua)
 	string grid_type = lua->scalar<string>("grid_type");
 
 	// create a grid of the appropriate type
-	if     (grid_type == "grid_0D_isotropic") grid = new grid_0D_isotropic;
-	else if(grid_type == "grid_1D_sphere"   ) grid = new grid_1D_sphere;
-	else if(grid_type == "grid_2D_sphere"   ) grid = new grid_2D_sphere;
-	else if(grid_type == "grid_2D_cylinder" ) grid = new grid_2D_cylinder;
-	else if(grid_type == "grid_3D_cart"     ) grid = new grid_3D_cart;
+	if     (grid_type == "grid_0D_isotropic") grid = new Grid0DIsotropic;
+	else if(grid_type == "grid_1D_sphere"   ) grid = new Grid1DSphere;
+	else if(grid_type == "grid_2D_sphere"   ) grid = new Grid2DSphere;
+	else if(grid_type == "grid_2D_cylinder" ) grid = new Grid2DCylinder;
+	else if(grid_type == "grid_3D_cart"     ) grid = new Grid3DCart;
 	else{
 		if(rank0) std::cout << "# ERROR: the requested grid type is not implemented." << std::endl;
 		exit(3);}
@@ -230,7 +230,7 @@ void transport::init(Lua* lua)
 	// create the species arrays
 	if(rank0) cout << "# Setting up misc. transport tools..." << endl;
 	for(int i=0; i<num_nut_species; i++){
-		neutrinos* neutrinos_tmp = new neutrinos;
+		Neutrino* neutrinos_tmp = new Neutrino;
 		neutrinos_tmp->nulibID = i;
 		neutrinos_tmp->num_nut_species = num_nut_species;
 		neutrinos_tmp->init(lua, this);
@@ -337,7 +337,7 @@ void transport::init(Lua* lua)
 //-----------------------------------
 // set up core (without reading lua)
 //-----------------------------------
-void transport::init_core(const double r_core /*cm*/, const vector<double>& T_core /*K*/, const vector<double>& mu_core /*erg*/, const vector<double>& L_core /*erg/s*/){
+void Transport::init_core(const double r_core /*cm*/, const vector<double>& T_core /*K*/, const vector<double>& mu_core /*erg*/, const vector<double>& L_core /*erg/s*/){
 	PRINT_ASSERT(n_emit_core>0,||,n_emit_core_per_bin>0);
 	PRINT_ASSERT(r_core,>,0);
 	PRINT_ASSERT(species_list.size(),>,0);
@@ -351,7 +351,7 @@ void transport::init_core(const double r_core /*cm*/, const vector<double>& T_co
 	}
 	core_species_luminosity.normalize();
 }
-void transport::init_core(const double r_core /*cm*/, const double T_core /*K*/, const double munue_core /*erg*/){
+void Transport::init_core(const double r_core /*cm*/, const double T_core /*K*/, const double munue_core /*erg*/){
 	PRINT_ASSERT(n_emit_core>0,||,n_emit_core_per_bin>0);
 	PRINT_ASSERT(r_core,>,0);
 	PRINT_ASSERT(T_core,>,0);
@@ -369,7 +369,7 @@ void transport::init_core(const double r_core /*cm*/, const double T_core /*K*/,
 }
 
 
-void transport::check_parameters() const{
+void Transport::check_parameters() const{
 	if(n_emit_zones>0 && radiative_eq){
 		cout << "ERROR: Emitting particles at beginning of timestep AND re-emitting them is inconsistent." << endl;
 		exit(10);
@@ -379,7 +379,7 @@ void transport::check_parameters() const{
 //------------------------------------------------------------
 // take a transport time step 
 //------------------------------------------------------------
-void transport::step()
+void Transport::step()
 {
 	assert(particles.empty());
 
@@ -412,7 +412,7 @@ void transport::step()
 //---------------------------------
 // write all the necessary output
 //---------------------------------
-void transport::write(const int it) const{
+void Transport::write(const int it) const{
 	if(rank0){
 		// write zone state when appropriate
 		if(it%write_zones_every==0 && write_zones_every>0){
@@ -437,7 +437,7 @@ void transport::write(const int it) const{
 //----------------------------
 // reset radiation quantities
 //------------------------------
-void transport::reset_radiation(){
+void Transport::reset_radiation(){
 	// clear global radiation quantities
 	for(unsigned i=0; i<species_list.size(); i++){
 		species_list[i]->spectrum.wipe();
@@ -456,7 +456,7 @@ void transport::reset_radiation(){
 	// prepare zone quantities for another round of transport
 	for(unsigned z_ind=0;z_ind<grid->z.size();z_ind++)
 	{
-		zone* z = &(grid->z[z_ind]);
+		Zone* z = &(grid->z[z_ind]);
 		z->nue_abs  = 0;
 		z->anue_abs = 0;
 		z->e_abs    = 0;
@@ -474,7 +474,7 @@ void transport::reset_radiation(){
 //-----------------------------
 // calculate annihilation rates
 //-----------------------------
-void transport::calculate_annihilation() const{
+void Transport::calculate_annihilation() const{
 	if(rank0 && verbose) cout << "# Calculating annihilation rates...";
 
 	// remember what zones I'm responsible for
@@ -497,7 +497,7 @@ void transport::calculate_annihilation() const{
 		double vol = grid->zone_lab_volume(z_ind);
 		double zone_annihil_net = 0;
 		bool count_annihil = (grid->z[z_ind].rho < annihil_rho_cutoff) || (annihil_rho_cutoff < 0);
-		Q_tmp = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nue],
+		Q_tmp = Neutrino::annihilation_rate(grid->z[z_ind].distribution[s_nue],
 				 grid->z[z_ind].distribution[s_nubare],
 				 true,species_list[s_nue]->weight);
 		zone_annihil_net += Q_tmp;
@@ -509,7 +509,7 @@ void transport::calculate_annihilation() const{
 
 		if(species_list.size()==3){
 			unsigned s_nux = 2;
-			Q_tmp = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nux],
+			Q_tmp = Neutrino::annihilation_rate(grid->z[z_ind].distribution[s_nux],
 					grid->z[z_ind].distribution[s_nux],
 					false,species_list[s_nux]->weight);
 			zone_annihil_net += 2.0 * Q_tmp;
@@ -523,7 +523,7 @@ void transport::calculate_annihilation() const{
 			unsigned s_nux = 2;
 			unsigned s_nubarx = 3;
 			PRINT_ASSERT(species_list[s_nux]->weight,==,species_list[s_nubarx]->weight);
-			Q_tmp = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nux   ],
+			Q_tmp = Neutrino::annihilation_rate(grid->z[z_ind].distribution[s_nux   ],
 					grid->z[z_ind].distribution[s_nubarx],
 					false,species_list[s_nux]->weight);
 			zone_annihil_net += 2.0 * Q_tmp;
@@ -541,7 +541,7 @@ void transport::calculate_annihilation() const{
 			unsigned s_nubartau = 5;
 			PRINT_ASSERT(species_list[s_numu]->weight,==,species_list[s_nubarmu]->weight);
 			PRINT_ASSERT(species_list[s_nutau]->weight,==,species_list[s_nubartau]->weight);
-			Q_tmp = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_numu   ],
+			Q_tmp = Neutrino::annihilation_rate(grid->z[z_ind].distribution[s_numu   ],
 					  grid->z[z_ind].distribution[s_nubarmu],
 					  false,species_list[s_numu]->weight);
 			zone_annihil_net += Q_tmp;
@@ -550,7 +550,7 @@ void transport::calculate_annihilation() const{
 				H_nunu_lab[2] += Q_tmp*vol;
 			}
 			PRINT_ASSERT(H_nunu_lab[3],==,0);
-			Q_tmp = neutrinos::annihilation_rate(grid->z[z_ind].distribution[s_nutau   ],
+			Q_tmp = Neutrino::annihilation_rate(grid->z[z_ind].distribution[s_nutau   ],
 					  grid->z[z_ind].distribution[s_nubartau],
 					  false,species_list[s_nutau]->weight);
 			zone_annihil_net += Q_tmp;
@@ -588,10 +588,10 @@ void transport::calculate_annihilation() const{
 //-----------------------------
 // calculate various timescales
 //-----------------------------
-void transport::calculate_timescales() const{
+void Transport::calculate_timescales() const{
     #pragma omp parallel for
 	for(unsigned i=0;i<grid->z.size();i++){
-		zone *z = &(grid->z[i]);
+		Zone *z = &(grid->z[i]);
 		double e_gas = z->rho*pc::k*z->T/pc::m_p;  // gas energy density (erg/ccm)
 		z->t_eabs  = e_gas / z->e_abs;
 		z->t_eemit = e_gas / z->e_emit;
@@ -603,7 +603,7 @@ void transport::calculate_timescales() const{
 //----------------------------------------------------------------------------
 // normalize the radiative quantities
 //----------------------------------------------------------------------------
-void transport::normalize_radiative_quantities(){
+void Transport::normalize_radiative_quantities(){
 	if(verbose && rank0) cout << "# Normalizing Radiative Quantities" << endl;
 	double net_visc_heating = 0;
 	double net_neut_heating = 0;
@@ -614,7 +614,7 @@ void transport::normalize_radiative_quantities(){
     #pragma omp parallel for reduction(+:net_visc_heating,net_neut_heating)
 	for(unsigned z_ind=0;z_ind<grid->z.size();z_ind++)
 	{
-		zone *z = &(grid->z[z_ind]);
+		Zone *z = &(grid->z[z_ind]);
 		double inv_mult_four_vol = 1.0/(multiplier * grid->zone_lab_volume(z_ind)); // Lorentz invariant - same in lab and comoving frames. Assume lab_dt=1.0
 
 		if(!grid->good_zone(z_ind)){
@@ -728,7 +728,7 @@ void transport::normalize_radiative_quantities(){
 //----------------------------------------------------------------------------
 // sum up the number of particles in all species
 //----------------------------------------------------------------------------
-int transport::total_particles() const{
+int Transport::total_particles() const{
 	return particles.size();
 }
 
@@ -738,7 +738,7 @@ int transport::total_particles() const{
 // species to determine the species of a new particle
 // emitted from the core
 //----------------------------------------------------------------------------
-int transport::sample_core_species() const
+int Transport::sample_core_species() const
 {
 	// randomly sample the species (precomputed CDF)
 	double z = rangen.uniform();
@@ -755,9 +755,9 @@ int transport::sample_core_species() const
 // note: could store a zone_species_cdf structure in transport,
 // but this would use more memory. Here, trading CPU cycles for 
 // memory. If we are CPU limited, we could change this
-void transport::sample_zone_species(particle *p, const int zone_index) const
+void Transport::sample_zone_species(Particle *p, const int zone_index) const
 {
-	cdf_array species_cdf;
+	CDFArray species_cdf;
 	double integrated_emis;
 	species_cdf.resize(species_list.size());
 
@@ -783,7 +783,7 @@ void transport::sample_zone_species(particle *p, const int zone_index) const
 // from all processors using MPI reduce
 // after this, radiation quantities on all procs match
 //------------------------------------------------------------
-void transport::reduce_radiation()
+void Transport::reduce_radiation()
 {
 	if(verbose && rank0) cout << "# Reducing Radiation" << endl;
 	int my_begin, my_end, size;
@@ -911,7 +911,7 @@ void transport::reduce_radiation()
 
 // after this, only the processor's chunk of radiation quantities
 // is correct, but all gas quantities are correct.
-void transport::synchronize_gas()
+void Transport::synchronize_gas()
 {
 	if(verbose && rank0) cout << "# Synchronizing Gas" << endl;
 	vector<double> buffer;
@@ -953,14 +953,14 @@ void transport::synchronize_gas()
 
 
 // rate at which viscosity energizes the fluid (erg/s)
-double transport::zone_comoving_visc_heat_rate(const int z_ind) const{
+double Transport::zone_comoving_visc_heat_rate(const int z_ind) const{
 	if(visc_specific_heat_rate >= 0) return visc_specific_heat_rate * grid->z[z_ind].rho * grid->zone_comoving_volume(z_ind);
 	else                             return grid->z[z_ind].H_vis    * grid->z[z_ind].rho * grid->zone_comoving_volume(z_ind);
 }
 
 
 // update zone quantities based on heat capacity and lepton capacity
-void transport::update_zone_quantities(){
+void Transport::update_zone_quantities(){
 	if(verbose && rank0) cout << "# Updating Zone Quantities" << endl;
 	// remember what zones I'm responsible for
 	int start = ( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
@@ -971,7 +971,7 @@ void transport::update_zone_quantities(){
     #pragma omp parallel for schedule(guided)
 	for (int i=start; i<end; i++) if( (grid->z[i].rho >= rho_min) && (grid->z[i].rho <= rho_max) )
 	{
-		zone *z = &(grid->z[i]);
+		Zone *z = &(grid->z[i]);
 
 		// adjust the temperature based on the heat capacity (erg/K)
 		if(solve_T){
@@ -992,7 +992,7 @@ void transport::update_zone_quantities(){
 	}
 }
 
-string transport::filename(const char* filebase, const int iw, const char* suffix){
+string Transport::filename(const char* filebase, const int iw, const char* suffix){
 	string number_string;
 	stringstream iwstream;
 	iwstream << iw;
@@ -1006,17 +1006,17 @@ string transport::filename(const char* filebase, const int iw, const char* suffi
 	return filename;
 }
 
-double transport::mean_mass(const double Ye){
+double Transport::mean_mass(const double Ye){
 	return 1.0 / (Ye/pc::m_p + (1.0-Ye)/pc::m_n);
 }
 
-int transport::number_of_bins() const{
+int Transport::number_of_bins() const{
 	int number_energy_bins = 0;
 	for(unsigned s = 0; s<species_list.size(); s++) number_energy_bins += species_list[s]->number_of_bins();
 	return number_energy_bins;
 }
 
-double transport::importance(const double abs_opac, const double scat_opac, const double dx) const{
+double Transport::importance(const double abs_opac, const double scat_opac, const double dx) const{
 	if(importance_bias<=0) return 1.0;
 	double taubar = (abs_opac + scat_opac) * dx * importance_bias;
 	double result = (importance_bias*taubar<=1.0 ? 1.0 : exp(1.0 - importance_bias * taubar));

@@ -29,8 +29,8 @@
 #include <sstream>
 #include <fstream>
 #include "global_options.h"
-#include "spectrum_array.h"
-#include "transport.h"
+#include "SpectrumArray.h"
+#include "Transport.h"
 
 using namespace std;
 namespace pc = physical_constants;
@@ -38,7 +38,7 @@ namespace pc = physical_constants;
 //--------------------------------------------------------------
 // Initialization and Allocation
 //--------------------------------------------------------------
-void spectrum_array::init(const std::vector<double> w,
+void SpectrumArray::init(const std::vector<double> w,
 		const int n_mu, const int n_phi)
 {
 	// assign wave grid
@@ -68,8 +68,8 @@ void spectrum_array::init(const std::vector<double> w,
 //--------------------------------------------------------------
 // Initialization and Allocation
 //--------------------------------------------------------------
-void spectrum_array::init(const locate_array wg,
-		const locate_array mg, const locate_array pg)
+void SpectrumArray::init(const LocateArray wg,
+		const LocateArray mg, const LocateArray pg)
 {
 	// initialize locate arrays by swapping with the inputs
 	nu_grid.copy(wg);
@@ -94,7 +94,7 @@ void spectrum_array::init(const locate_array wg,
 //--------------------------------------------------------------
 // Functional procedure: Wipe
 //--------------------------------------------------------------
-void spectrum_array::wipe()
+void SpectrumArray::wipe()
 {
 	for(unsigned i=0;i<flux.size();i++) flux[i] = 0;
 }
@@ -105,7 +105,7 @@ void spectrum_array::wipe()
 // handles the indexing: should be called in this order
 //    group, mu, phi
 //--------------------------------------------------------------
-unsigned spectrum_array::index(const unsigned nu_bin, const unsigned mu_bin, const unsigned phi_bin) const
+unsigned SpectrumArray::index(const unsigned nu_bin, const unsigned mu_bin, const unsigned phi_bin) const
 {
 	unsigned n_phi = phi_grid.size();
 	unsigned n_nu  =  nu_grid.size();
@@ -123,19 +123,19 @@ unsigned spectrum_array::index(const unsigned nu_bin, const unsigned mu_bin, con
 //----------------
 // get bin indices
 //----------------
-unsigned spectrum_array::nu_bin(const unsigned index) const{
+unsigned SpectrumArray::nu_bin(const unsigned index) const{
 	PRINT_ASSERT(index,<,flux.size());
 	unsigned result = index / (phi_grid.size()*mu_grid.size());
 	PRINT_ASSERT(result,<,nu_grid.size());
 	return result;
 }
-unsigned spectrum_array::mu_bin(const unsigned index) const{
+unsigned SpectrumArray::mu_bin(const unsigned index) const{
 	PRINT_ASSERT(index,<,flux.size());
 	double result =  (index%(phi_grid.size()*mu_grid.size())) / phi_grid.size();
 	PRINT_ASSERT(result,<,mu_grid.size());
 	return result;
 }
-unsigned spectrum_array::phi_bin(const unsigned index) const{
+unsigned SpectrumArray::phi_bin(const unsigned index) const{
 	PRINT_ASSERT(index,<,flux.size());
 	double result = index % phi_grid.size();
 	PRINT_ASSERT(result,<,phi_grid.size());
@@ -145,27 +145,27 @@ unsigned spectrum_array::phi_bin(const unsigned index) const{
 //--------------------
 // get centers of bins
 //--------------------
-double spectrum_array::nu_center(const unsigned index) const{
+double SpectrumArray::nu_center(const unsigned index) const{
 	PRINT_ASSERT(index,<,flux.size());
 	return nu_grid.center(nu_bin(index));
 }
-double spectrum_array::mu_center(const unsigned index) const{
+double SpectrumArray::mu_center(const unsigned index) const{
 	PRINT_ASSERT(index,<,flux.size());
 	return mu_grid.center(mu_bin(index));
 }
-double spectrum_array::phi_center(const unsigned index) const{
+double SpectrumArray::phi_center(const unsigned index) const{
 	PRINT_ASSERT(index,<,flux.size());
 	return phi_grid.center(phi_bin(index));
 }
-double spectrum_array::nu_bin_center(const unsigned index) const{
+double SpectrumArray::nu_bin_center(const unsigned index) const{
 	PRINT_ASSERT(index,<,nu_grid.size());
 	return nu_grid.center(index);
 }
-double spectrum_array::mu_bin_center(const unsigned index) const{
+double SpectrumArray::mu_bin_center(const unsigned index) const{
 	PRINT_ASSERT(index,<,mu_grid.size());
 	return mu_grid.center(index);
 }
-double spectrum_array::phi_bin_center(const unsigned index) const{
+double SpectrumArray::phi_bin_center(const unsigned index) const{
 	PRINT_ASSERT(index,<,phi_grid.size());
 	return phi_grid.center(index);
 }
@@ -173,21 +173,21 @@ double spectrum_array::phi_bin_center(const unsigned index) const{
 //-------
 // getter
 //-------
-double spectrum_array::get(const int index) const{
+double SpectrumArray::get(const int index) const{
 	return flux[index];
 }
 
 //----------------------
 // get size of spectrum
 //----------------------
-unsigned spectrum_array::size() const{
+unsigned SpectrumArray::size() const{
 	return flux.size();
 }
 
 //--------------------------------------------------------------
 // count a particle
 ////--------------------------------------------------------------
-void spectrum_array::count(const double D[3], const int Dsize, const double nu, const double E)
+void SpectrumArray::count(const double D[3], const int Dsize, const double nu, const double E)
 {
 	PRINT_ASSERT(Dsize,==,3);
 	PRINT_ASSERT(E,>=,0);
@@ -229,7 +229,7 @@ void spectrum_array::count(const double D[3], const int Dsize, const double nu, 
 	PRINT_ASSERT(flux[ind],<,INFINITY);
 }
 
-double spectrum_array::average_nu() const{
+double SpectrumArray::average_nu() const{
 	double integral1 = 0;
 	double integral2 = 0;
 	for(unsigned nu_bin=0; nu_bin<nu_grid.size(); nu_bin++){
@@ -245,7 +245,7 @@ double spectrum_array::average_nu() const{
 	else return 0;
 }
 
-double spectrum_array::integrate() const{
+double SpectrumArray::integrate() const{
 	double integral = 0;
 	for(unsigned nu_bin=0; nu_bin<nu_grid.size(); nu_bin++){
 		for(unsigned mu_bin=0; mu_bin<mu_grid.size(); mu_bin++){
@@ -259,7 +259,7 @@ double spectrum_array::integrate() const{
 }
 
 // integrate over direction
-void spectrum_array::integrate_over_direction(vector<double>& integral) const{
+void SpectrumArray::integrate_over_direction(vector<double>& integral) const{
 	integral = vector<double>(nu_grid.size(),0);
 	for(unsigned nu_bin=0; nu_bin<nu_grid.size(); nu_bin++){
 		for(unsigned mu_bin=0; mu_bin<mu_grid.size(); mu_bin++){
@@ -274,13 +274,13 @@ void spectrum_array::integrate_over_direction(vector<double>& integral) const{
 //--------------------------------------------------------------
 // print out
 //--------------------------------------------------------------
-void spectrum_array::print(const int iw, const int species) const
+void SpectrumArray::print(const int iw, const int species) const
 {
 	ofstream outf;
 	stringstream speciesstream;
 	speciesstream << species;
 	string prefix = "spectrum_species"+speciesstream.str();
-	string filename = transport::filename(prefix.c_str(),iw,".dat");
+	string filename = Transport::filename(prefix.c_str(),iw,".dat");
 	outf.open(filename.c_str());
 
 	unsigned n_nu  =  nu_grid.size();
@@ -312,7 +312,7 @@ void spectrum_array::print(const int iw, const int species) const
 }
 
 
-void  spectrum_array::rescale(double r)
+void  SpectrumArray::rescale(double r)
 {
 	for(unsigned i=0;i<flux.size();i++) flux[i] *= r;
 }
@@ -322,7 +322,7 @@ void  spectrum_array::rescale(double r)
 // MPI average the spectrum contents
 //--------------------------------------------------------------
 // only process 0 gets the reduced spectrum to print
-void spectrum_array::MPI_average()
+void SpectrumArray::MPI_average()
 {
 	const unsigned n_elements = nu_grid.size()*mu_grid.size()*phi_grid.size();
 
@@ -342,7 +342,7 @@ void spectrum_array::MPI_average()
 //--------------------------------------------------------------
 // Write data to specified location in an HDF5 file
 //--------------------------------------------------------------
-void spectrum_array::write_hdf5_data(H5::DataSet dataset, H5::DataSpace dataspace) const
+void SpectrumArray::write_hdf5_data(H5::DataSet dataset, H5::DataSpace dataspace) const
 {
 	// some sanity checks
 	unsigned ndims = dataspace.getSimpleExtentNdims();
@@ -371,7 +371,7 @@ void spectrum_array::write_hdf5_data(H5::DataSet dataset, H5::DataSpace dataspac
 //--------------------------------------------------------------
 // Write distribution function coordinates to an HDF5 file
 //--------------------------------------------------------------
-void spectrum_array::write_hdf5_coordinates(H5::H5File file) const
+void SpectrumArray::write_hdf5_coordinates(H5::H5File file) const
 {
 	// useful quantities
 	hsize_t dims[1];

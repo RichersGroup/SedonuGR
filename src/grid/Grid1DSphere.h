@@ -25,47 +25,43 @@
 //
 */
 
-#ifndef _GRID_2D_SPHERE_H
-#define _GRID_2D_SPHERE_H 1
+#ifndef _GRID_1D_SPHERE_H
+#define _GRID_1D_SPHERE_H 1
 
-#include "grid_general.h"
+#include "Grid.h"
 
 //*******************************************
 // 1-Dimensional Spherical geometry
 //*******************************************
-class grid_2D_sphere: public grid_general
+class Grid1DSphere: public Grid
 {
 
 private:
-	// store location of the outer edges of the zone.
-	// order of zone array: r is increased fastest
-	locate_array r_out;
-	locate_array theta_out;
+	// store location of the outer edge of the zone.
+	LocateArray r_out;
+
 
 public:
 
-	virtual ~grid_2D_sphere() {}
+	virtual ~Grid1DSphere() {}
 
 	void read_model_file(Lua* lua);
-	void read_flash_file(Lua* lua);
-	void custom_model(Lua* lua);
 
 	// required functions
-	int    zone_index             (const double x[3], const int xsize                            ) const;
-	int    zone_index             (const int i, const int j                                      ) const;
+	int  zone_index               (const double x[3], const int xsize                            ) const;
 	double zone_lab_volume        (const int z_ind                                               ) const;
 	double zone_min_length        (const int z_ind                                               ) const;
-	void zone_coordinates         (const int z_ind, double r[2], const int rsize                 ) const;
-	void zone_directional_indices (const int z_ind, int dir_ind[2], const int size               ) const;
+	void zone_coordinates         (const int z_ind, double r[1], const int rsize                 ) const;
+	void zone_directional_indices (const int z_ind, int dir_ind[1], const int size               ) const;
 	void cartesian_sample_in_zone (const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const;
 	void cartesian_velocity_vector(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const;
 	void write_rays               (const int iw                                                  ) const;
-	void reflect_outer            (particle *p                                                   ) const;
-	void symmetry_boundaries      (particle *p                                                   ) const;
-	double lab_dist_to_boundary   (const particle *p                                             ) const;
+	void reflect_outer            (Particle *p                                                   ) const;
+	void symmetry_boundaries      (Particle *p                                                   ) const;
+	double lab_dist_to_boundary   (const Particle *p                                             ) const;
 	double zone_radius            (const int z_ind) const;
-	void dims                     (hsize_t dims[2], const int size) const;
-	hsize_t dimensionality() const {return 2;};
+	void dims                     (hsize_t dims[1], const int size) const;
+	hsize_t dimensionality() const {return 1;};
 	void write_hdf5_coordinates(H5::H5File file) const;
 };
 

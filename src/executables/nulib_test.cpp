@@ -69,7 +69,7 @@ int main(int argc, char* argv[]){
 	ofstream grid_file;
 	grid_file.open("grids.dat");
 
-	locate_array nu_grid; // Hz
+	LocateArray nu_grid; // Hz
 	nulib_get_nu_grid(nu_grid);
 	grid_file << "Energy Grid (bin tops) (MeV)" << endl;
 	grid_file << "min:" << nu_grid.min << endl;
@@ -109,7 +109,7 @@ int main(int argc, char* argv[]){
 	vector<double> absopac  (ng,0); // cm^-1
 	vector<double> scatopac (ng,0); // cm^-1
 	vector<double> pure_emis(ng,0); // erg/cm^3/s/ster/Hz
-	cdf_array emis;                 // erg/cm^3/s/ster
+	CDFArray emis;                 // erg/cm^3/s/ster
 	emis.resize(ng);
 
 	//========================//

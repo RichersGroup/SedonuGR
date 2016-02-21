@@ -25,30 +25,25 @@
 //
 */
 
-#ifndef _NEUTRINOS_H
-#define _NEUTRINOS_H
+#include "Zone.h"
+#include "global_options.h"
 
-#include "species_general.h"
-
-class neutrinos: public species_general
-{
-
-protected:
-
-public:
-
-	neutrinos();
-	virtual ~neutrinos() {}
-
-	int num_nut_species;
-	int nulibID;
-	double cutoff;
-
-	// required functions
-	void myInit(Lua* lua);
-	void set_eas(int zone_index);
-	double blackbody(const double T, const double chempot, const double nu) const;
-	static double annihilation_rate(const spectrum_array& nu_dist, const spectrum_array& nbar_dist, const bool electron_type, const int weight);
-};
-
-#endif
+Zone::Zone(){
+	u[0] = NaN;
+	u[1] = NaN;
+	u[2] = NaN;
+	rho = NaN;
+	T = NaN;
+	Ye = NaN;
+	H_vis = NaN;
+	e_abs = NaN;
+	nue_abs = NaN;
+	anue_abs = NaN;
+	e_emit = NaN;
+	l_emit = NaN;
+	t_eabs = NaN;
+	t_eemit = NaN;
+	t_labs = NaN;
+	t_lemit = NaN;
+	Q_annihil = NaN;
+}

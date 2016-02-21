@@ -51,7 +51,7 @@ int main(int argc, char* argv[]){
 	nulib_init(filename);
 
 	// grids
-	locate_array nu_grid; // Hz
+	LocateArray nu_grid; // Hz
 	vector<double> ye_grid;
 	vector<double> T_grid; // K
 	vector<double> rho_grid; // g/cm^3
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]){
 	vector<double> absopac  (n_groups,0); // cm^-1
 	vector<double> scatopac (n_groups,0); // cm^-1
 	vector<double> pure_emis(n_groups,0); // erg/cm^3/s/ster/Hz
-	cdf_array emis;                 // erg/cm^3/s/ster
+	CDFArray emis;                 // erg/cm^3/s/ster
 	emis.resize(n_groups);
 
 	//===================//

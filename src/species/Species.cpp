@@ -28,14 +28,14 @@
 #include <mpi.h>
 #include "global_options.h"
 #include "physical_constants.h"
-#include "species_general.h"
-#include "transport.h"
-#include "grid_general.h"
+#include "Species.h"
+#include "Transport.h"
+#include "Grid.h"
 
 using namespace std;
 namespace pc = physical_constants;
 
-species_general::species_general(){
+Species::Species(){
 	weight = NaN;
 	grey_opac = NaN;
 	grey_abs_frac = NaN;
@@ -49,7 +49,7 @@ species_general::species_general(){
 	sim = NULL;
 }
 
-void species_general::init(Lua* lua, transport* simulation)
+void Species::init(Lua* lua, Transport* simulation)
 {
 	// initialize MPI parallelism
 	int my_rank;
@@ -91,10 +91,10 @@ void species_general::init(Lua* lua, transport* simulation)
 	int n_phi = lua->scalar<int>("distribution_nphi");
 
 	// temporary spectrum to be used for distribution function initialization
-	locate_array tmp_mugrid, tmp_phigrid;
+	LocateArray tmp_mugrid, tmp_phigrid;
 	tmp_mugrid.init( -1     , 1     , n_mu );
 	tmp_phigrid.init(-pc::pi, pc::pi, n_phi);
-	spectrum_array tmp_spectrum;
+	SpectrumArray tmp_spectrum;
 	tmp_spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
 
 	//#pragma omp parallel for
@@ -116,7 +116,7 @@ void species_general::init(Lua* lua, transport* simulation)
 // set cdf to blackbody distribution
 // units of emis.N: erg/s/cm^2/ster
 //-----------------------------------------------------
-void species_general::set_cdf_to_BB(const double T, const double chempot, cdf_array& emis){
+void Species::set_cdf_to_BB(const double T, const double chempot, CDFArray& emis){
     #pragma omp parallel for ordered
 	for(unsigned j=0;j<nu_grid.size();j++)
 	{
@@ -133,7 +133,7 @@ void species_general::set_cdf_to_BB(const double T, const double chempot, cdf_ar
 // return a randomly sampled frequency
 // for a particle emitted from the core or zone
 //----------------------------------------------------------------
-double species_general::interpolate_importance(double nu, const int z_ind) const{
+double Species::interpolate_importance(double nu, const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,emis.size());
 	PRINT_ASSERT(nu,>=,nu_grid.min);
@@ -144,12 +144,12 @@ double species_general::interpolate_importance(double nu, const int z_ind) const
 	double result = biased_emis[z_ind].interpolate_pdf(nu,&nu_grid)/**biased_emis[z_ind].N*/ / (emis[z_ind].interpolate_pdf(nu,&nu_grid)/**emis[z_ind].N*/);
 	return result;
 }
-double species_general::sample_core_nu(const int g) const
+double Species::sample_core_nu(const int g) const
 {
 	PRINT_ASSERT(nu_grid.min,>=,0);
 	return sample_nu(core_emis);
 }
-void species_general::sample_zone_nu(particle& p, const int zone_index, const int g) const
+void Species::sample_zone_nu(Particle& p, const int zone_index, const int g) const
 {
 	PRINT_ASSERT(nu_grid.min,>=,0);
 	p.nu = sample_nu(biased_emis[zone_index]);
@@ -157,7 +157,7 @@ void species_general::sample_zone_nu(particle& p, const int zone_index, const in
 	PRINT_ASSERT(imp,>,0);
 	p.e /= imp;
 }
-double species_general::sample_nu(const cdf_array& input_emis, const int g) const{
+double Species::sample_nu(const CDFArray& input_emis, const int g) const{
 	// randomly pick a frequency
 	double rand = sim->rangen.uniform();
 
@@ -170,7 +170,7 @@ double species_general::sample_nu(const cdf_array& input_emis, const int g) cons
 //----------------------------------------------------------------
 // return the emissivity integrated over nu for the core (erg/s)
 //----------------------------------------------------------------
-double species_general::integrate_core_emis() const
+double Species::integrate_core_emis() const
 {
 	return core_emis.N;
 }
@@ -178,11 +178,11 @@ double species_general::integrate_core_emis() const
 //----------------------------------------------------------------
 // return the emissivity integrated over nu for a zone (erg/s/ster/cm^3)
 //----------------------------------------------------------------
-double species_general::integrate_zone_emis(const int zone_index) const
+double Species::integrate_zone_emis(const int zone_index) const
 {
 	return emis[zone_index].N;
 }
-double species_general::integrate_zone_biased_emis(const int zone_index) const{
+double Species::integrate_zone_biased_emis(const int zone_index) const{
 	return biased_emis[zone_index].N;
 }
 
@@ -191,7 +191,7 @@ double species_general::integrate_zone_biased_emis(const int zone_index) const{
 // return the lepton emissivity integrated over nu for a zone (#/s/ster/cm^3)
 // ASSUMES linear cdf sampling
 //----------------------------------------------------------------
-double species_general::integrate_zone_lepton_emis(const int zone_index) const
+double Species::integrate_zone_lepton_emis(const int zone_index) const
 {
 	double l_emis = 0;
 	for(unsigned i=0; i<emis[zone_index].size(); i++)
@@ -201,10 +201,10 @@ double species_general::integrate_zone_lepton_emis(const int zone_index) const
 	return l_emis * emis[zone_index].N;
 }
 
-double species_general::bin_emis(const int z_ind, const int g) const{
+double Species::bin_emis(const int z_ind, const int g) const{
 	return emis[z_ind].get_value(g) * emis[z_ind].N;
 }
 
-unsigned species_general::number_of_bins(){
+unsigned Species::number_of_bins(){
 	return nu_grid.size();
 }

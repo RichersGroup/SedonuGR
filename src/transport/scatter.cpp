@@ -25,9 +25,9 @@
 //
 */
 
-#include "species_general.h"
-#include "transport.h"
-#include "grid_general.h"
+#include "Species.h"
+#include "Transport.h"
+#include "Grid.h"
 #include "global_options.h"
 
 using namespace std;
@@ -36,7 +36,7 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 // physics of absorption/scattering
 //------------------------------------------------------------
-void transport::event_interact(particle* p, const int z_ind, const double abs_frac, const double lab_opac){
+void Transport::event_interact(Particle* p, const int z_ind, const double abs_frac, const double lab_opac){
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
 	PRINT_ASSERT(abs_frac,>=,0.0);
@@ -85,7 +85,7 @@ void transport::event_interact(particle* p, const int z_ind, const double abs_fr
 
 
 // decide whether to kill a particle
-void transport::window(particle* p, const int z_ind){
+void Transport::window(Particle* p, const int z_ind){
 	PRINT_ASSERT(p->fate,!=,rouletted);
 
 	// Roulette if too low energy
@@ -98,7 +98,7 @@ void transport::window(particle* p, const int z_ind){
 	// split if too high energy, if enough space, and if in important region
 	while(p->e>max_packet_energy && particles.size()<max_particles && species_list[p->s]->interpolate_importance(p->nu,z_ind)>=1.0){
 		p->e /= 2.0;
-		particle pnew = *p;
+		Particle pnew = *p;
 		window(&pnew,z_ind);
 		#pragma omp critical
 		particles.push_back(pnew);
@@ -115,7 +115,7 @@ void transport::window(particle* p, const int z_ind){
 }
 
 // re-emission, done in COMOVING frame
-void transport::re_emit(particle* p, const int z_ind) const{
+void Transport::re_emit(Particle* p, const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
 
@@ -134,7 +134,7 @@ void transport::re_emit(particle* p, const int z_ind) const{
 }
 
 // isotropic scatter, done in COMOVING frame
-void transport::isotropic_scatter(particle* p) const
+void Transport::isotropic_scatter(Particle* p) const
 {
 	// Randomly generate new direction isotropically in comoving frame
 	double mu  = 1 - 2.0*rangen.uniform();
@@ -149,7 +149,7 @@ void transport::isotropic_scatter(particle* p) const
 //---------------------------------------------------------------------
 // Randomly select an optical depth through which a particle will move.
 //---------------------------------------------------------------------
-void transport::sample_tau(particle *p, const double lab_opac, const double abs_frac){
+void Transport::sample_tau(Particle *p, const double lab_opac, const double abs_frac){
 	PRINT_ASSERT(bias_path_length,>=,0);
 	PRINT_ASSERT(p->fate,==,moving);
 

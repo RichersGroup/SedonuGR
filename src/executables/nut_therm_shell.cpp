@@ -30,16 +30,16 @@
 #include <iostream>
 #include <fstream>
 #include "Lua.h"
-#include "transport.h"
-#include "species_general.h"
-#include "grid_general.h"
+#include "Transport.h"
+#include "Species.h"
+#include "Grid.h"
 #include "nulib_interface.h"
 #include "global_options.h"
 
 using namespace std;
 namespace pc = physical_constants;
 
-double run_test(const int nsteps, const bool rank0, const double rho, const double T_MeV, const double target_ye, transport& sim, ofstream& outf){
+double run_test(const int nsteps, const bool rank0, const double rho, const double T_MeV, const double target_ye, Transport& sim, ofstream& outf){
 	if(rank0) cout << endl << "Currently running: rho=" << rho << "g/ccm T_core=" << T_MeV << "MeV Ye=" << target_ye << endl;
 
 	// set the fluid properties
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
 	lua.init( script_file );
 
 	// set up the transport module (includes the grid)
-	transport sim;
+	Transport sim;
 	sim.init(&lua);
 
 	// read in time stepping parameters

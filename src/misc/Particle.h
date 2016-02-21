@@ -34,12 +34,12 @@
 enum ParticleFate  {moving, escaped, absorbed, rouletted};
 
 // particle class
-class particle
+class Particle
 {
 
 public:
 
-	particle();
+	Particle();
 
 	double x[3];            // x,y,z position (cm)
 	double D[3];            // direction vector, Dx,Dy,Dz (normalized to unit magnitude)

@@ -26,9 +26,9 @@
 */
 
 #include "global_options.h"
-#include "grid_0D_isotropic.h"
+#include "Grid0DIsotropic.h"
 #include "Lua.h"
-#include "transport.h"
+#include "Transport.h"
 
 using namespace std;
 namespace pc = physical_constants;
@@ -36,7 +36,7 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 // initialize the zone geometry from model file
 //------------------------------------------------------------
-void grid_0D_isotropic::read_model_file(Lua* lua)
+void Grid0DIsotropic::read_model_file(Lua* lua)
 {
 	// number of zones
 	z.resize(1);
@@ -58,7 +58,7 @@ void grid_0D_isotropic::read_model_file(Lua* lua)
 //------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
-int grid_0D_isotropic::zone_index(const double x[3], const int xsize) const
+int Grid0DIsotropic::zone_index(const double x[3], const int xsize) const
 {
 	return 0;
 }
@@ -67,7 +67,7 @@ int grid_0D_isotropic::zone_index(const double x[3], const int xsize) const
 //------------------------------------------------------------
 // return volume of zone z_ind
 //------------------------------------------------------------
-double  grid_0D_isotropic::zone_lab_volume(const int z_ind) const
+double  Grid0DIsotropic::zone_lab_volume(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,==,0);
 	return 1.0;
@@ -77,7 +77,7 @@ double  grid_0D_isotropic::zone_lab_volume(const int z_ind) const
 //------------------------------------------------------------
 // return length of zone
 //------------------------------------------------------------
-double  grid_0D_isotropic::zone_min_length(const int z_ind) const
+double  Grid0DIsotropic::zone_min_length(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,==,0);
 	return INFINITY;
@@ -87,7 +87,7 @@ double  grid_0D_isotropic::zone_min_length(const int z_ind) const
 // ------------------------------------------------------------
 // find the coordinates of the zone in geometrical coordinates
 // ------------------------------------------------------------
-void grid_0D_isotropic::zone_coordinates(const int z_ind, double r[0], const int rsize) const{
+void Grid0DIsotropic::zone_coordinates(const int z_ind, double r[0], const int rsize) const{
 	PRINT_ASSERT(z_ind,==,0);
 	PRINT_ASSERT(rsize,==,0);
 }
@@ -96,7 +96,7 @@ void grid_0D_isotropic::zone_coordinates(const int z_ind, double r[0], const int
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-void grid_0D_isotropic::zone_directional_indices(const int z_ind, int dir_ind[0], const int size) const
+void Grid0DIsotropic::zone_directional_indices(const int z_ind, int dir_ind[0], const int size) const
 {
 	PRINT_ASSERT(z_ind,==,0);
 	PRINT_ASSERT(size,==,0);
@@ -106,7 +106,7 @@ void grid_0D_isotropic::zone_directional_indices(const int z_ind, int dir_ind[0]
 //------------------------------------------------------------
 // sample a random position within the spherical shell
 //------------------------------------------------------------
-void grid_0D_isotropic::cartesian_sample_in_zone
+void Grid0DIsotropic::cartesian_sample_in_zone
 (const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const
 {
 	PRINT_ASSERT(z_ind,==,0);
@@ -122,20 +122,20 @@ void grid_0D_isotropic::cartesian_sample_in_zone
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void grid_0D_isotropic::cartesian_velocity_vector(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
+void Grid0DIsotropic::cartesian_velocity_vector(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
 {
 	PRINT_ASSERT(z_ind,==,0);
 	PRINT_ASSERT(xsize,==,3);
 	PRINT_ASSERT(vsize,==,3);
 	for(int i=0; i<vsize; i++) v[i] = z[z_ind].u[i];
-	PRINT_ASSERT(transport::dot(v,v,vsize),<=,pc::c*pc::c);
+	PRINT_ASSERT(Transport::dot(v,v,vsize),<=,pc::c*pc::c);
 }
 
 
 //------------------------------------------------------------
 // Write the grid information out to a file
 //------------------------------------------------------------
-void grid_0D_isotropic::write_rays(const int iw) const
+void Grid0DIsotropic::write_rays(const int iw) const
 {
 	// this is a 0D grid, so the function is exactly the same
 	// as write_zones
@@ -145,14 +145,14 @@ void grid_0D_isotropic::write_rays(const int iw) const
 //------------------------------------------------------------
 // Reflect off the outer boundary
 //------------------------------------------------------------
-void grid_0D_isotropic::reflect_outer(particle *p) const{
+void Grid0DIsotropic::reflect_outer(Particle *p) const{
 	// does nothing - no boundary
 }
 
 //------------------------------------------------------------
 // Reflect off symmetry plane
 //------------------------------------------------------------
-void grid_0D_isotropic::symmetry_boundaries(particle *p) const{
+void Grid0DIsotropic::symmetry_boundaries(Particle *p) const{
 	// does nothing - no boundary
 }
 
@@ -160,25 +160,25 @@ void grid_0D_isotropic::symmetry_boundaries(particle *p) const{
 // Find distance to outer boundary (less a tiny bit)
 // negative distance means inner boundary
 //------------------------------------------------------------
-double grid_0D_isotropic::lab_dist_to_boundary(const particle *p) const{
+double Grid0DIsotropic::lab_dist_to_boundary(const Particle *p) const{
 	return INFINITY;
 }
 
-double grid_0D_isotropic::zone_radius(const int z_ind) const{
+double Grid0DIsotropic::zone_radius(const int z_ind) const{
 	return 0;
 }
 
 //-----------------------------
 // Dimensions of the grid
 //-----------------------------
-void grid_0D_isotropic::dims(hsize_t dims[0], const int size) const{
+void Grid0DIsotropic::dims(hsize_t dims[0], const int size) const{
 	PRINT_ASSERT(size,==,dimensionality());
 }
 
 //----------------------------------------------------
 // Write the coordinates of the grid points to the hdf5 file
 //----------------------------------------------------
-void grid_0D_isotropic::write_hdf5_coordinates(H5::H5File file) const
+void Grid0DIsotropic::write_hdf5_coordinates(H5::H5File file) const
 {
 	// it's stupid to output this in hdf5...
 	cout << "ERROR: write_hdf5_coordinates is not implemented for grid_0D_isotropic." << endl;

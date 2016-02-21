@@ -28,12 +28,12 @@
 #include <cmath>
 #include <algorithm>
 #include "global_options.h"
-#include "cdf_array.h"
+#include "CDFArray.h"
 
 using namespace std;
 
 // safe constructor
-cdf_array::cdf_array(const int iorder){
+CDFArray::CDFArray(const int iorder){
 	N = NaN;
 	PRINT_ASSERT(iorder==1,||,iorder==3);
 	interpolation_order = iorder;
@@ -42,7 +42,7 @@ cdf_array::cdf_array(const int iorder){
 //------------------------------------------------------
 // return the actual y value, not the integrated
 //------------------------------------------------------
-double cdf_array::get_value(const int i) const
+double CDFArray::get_value(const int i) const
 {
 	PRINT_ASSERT(i,>=,0);
 	PRINT_ASSERT(i,<,(int)size());
@@ -58,7 +58,7 @@ double cdf_array::get_value(const int i) const
 // set the actual y value, not the integrated
 // must be called in order
 //------------------------------------------------------
-void cdf_array::set_value(const int i, const double f)
+void CDFArray::set_value(const int i, const double f)
 {
 	PRINT_ASSERT(i,>=,0);
 	PRINT_ASSERT(i,<,(int)size());
@@ -68,7 +68,7 @@ void cdf_array::set_value(const int i, const double f)
 //------------------------------------------------------
 // Normalize such that the last entry is 1.0
 //------------------------------------------------------
-void cdf_array::normalize(double cutoff)
+void CDFArray::normalize(double cutoff)
 {
 	// check for zero array, set to all constant
 	if (y.back() == 0){
@@ -102,7 +102,7 @@ void cdf_array::normalize(double cutoff)
 // Returns the index of the first value larger than yval
 // if larger than largest element, returns size
 //---------------------------------------------------------
-int cdf_array::get_index(const double yval) const
+int CDFArray::get_index(const double yval) const
 {
 	PRINT_ASSERT(yval,>=,0);
 	PRINT_ASSERT(yval,<=,1.0);
@@ -118,7 +118,7 @@ int cdf_array::get_index(const double yval) const
 // i==-1 means at the left boundary
 // assumes the cdf is monotonic
 //-----------------------------------------------------
-double cdf_array::inverse_tangent(const int i, const locate_array* xgrid) const{
+double CDFArray::inverse_tangent(const int i, const LocateArray* xgrid) const{
 	int N = size();
 	PRINT_ASSERT(i,>=,-1);
 	PRINT_ASSERT(i,<=,(int)size()-1);
@@ -137,7 +137,7 @@ double cdf_array::inverse_tangent(const int i, const locate_array* xgrid) const{
 	}
 	return result;
 }
-double cdf_array::tangent(const int i, const locate_array* xgrid) const{
+double CDFArray::tangent(const int i, const LocateArray* xgrid) const{
 	int N = size();
 	PRINT_ASSERT(i,>=,-1);
 	PRINT_ASSERT(i,<=,(int)size()-1);
@@ -160,10 +160,10 @@ double cdf_array::tangent(const int i, const locate_array* xgrid) const{
 // return secant line between two points
 // (CDF is x value, xgrid is y value)
 //--------------------------------------
-double cdf_array::inverse_secant(const int i, const int j, const locate_array* xgrid) const{
+double CDFArray::inverse_secant(const int i, const int j, const LocateArray* xgrid) const{
 	return 1.0 / secant(i,j,xgrid);
 }
-double cdf_array::secant(const int i, const int j, const locate_array* xgrid) const{
+double CDFArray::secant(const int i, const int j, const LocateArray* xgrid) const{
 	PRINT_ASSERT(i>=-1,&&,i<(int)size()-1);
 	PRINT_ASSERT(j>=0, &&,j<(int)size()  );
 	PRINT_ASSERT(j,>,i);
@@ -221,7 +221,7 @@ double h11p(const double t){
 	PRINT_ASSERT(t,<=,1.0);
 	return t*(3.0*t-2.0);
 }
-double cdf_array::invert(const double rand, const locate_array* xgrid, const int i_in) const{
+double CDFArray::invert(const double rand, const LocateArray* xgrid, const int i_in) const{
 	double result = 0;
 	assert(interpolation_order==1 || interpolation_order==3 || interpolation_order==0);
 	if     (interpolation_order==0) result = invert_piecewise(rand,xgrid,i_in);
@@ -230,7 +230,7 @@ double cdf_array::invert(const double rand, const locate_array* xgrid, const int
 	PRINT_ASSERT(result,>,0);
 	return result;
 }
-double cdf_array::interpolate_pdf(const double x, const locate_array* xgrid) const
+double CDFArray::interpolate_pdf(const double x, const LocateArray* xgrid) const
 {
 	double result = 0;
 	assert(interpolation_order==1 || interpolation_order==3 || interpolation_order==0);
@@ -240,7 +240,7 @@ double cdf_array::interpolate_pdf(const double x, const locate_array* xgrid) con
 	PRINT_ASSERT(result,>=,0);
 	return result;
 }
-double cdf_array::invert_cubic(const double rand, const locate_array* xgrid, const int i_in) const
+double CDFArray::invert_cubic(const double rand, const LocateArray* xgrid, const int i_in) const
 // INCONSISTENCY - the emissivity is integrated assuming piecewise constant.
 // This is inconsistent with cubic interpolation.
 {
@@ -292,7 +292,7 @@ double cdf_array::invert_cubic(const double rand, const locate_array* xgrid, con
 	PRINT_ASSERT(xRight,>=,result);
 	return result;
 }
-double cdf_array::interpolate_pdf_cubic(const double x, const locate_array* xgrid) const
+double CDFArray::interpolate_pdf_cubic(const double x, const LocateArray* xgrid) const
 {
 	PRINT_ASSERT(x,>=,xgrid->min);
 	PRINT_ASSERT(x,<=,xgrid->x[xgrid->size()-1]);
@@ -343,7 +343,7 @@ double cdf_array::interpolate_pdf_cubic(const double x, const locate_array* xgri
 	//PRINT_ASSERT(yRight>=result);
 	return result;
 }
-double cdf_array::interpolate_pdf_linear(const double x, const locate_array* xgrid) const
+double CDFArray::interpolate_pdf_linear(const double x, const LocateArray* xgrid) const
 {
 	PRINT_ASSERT(x,>=,xgrid->min);
 	PRINT_ASSERT(x,<=,xgrid->x[xgrid->size()-1]);
@@ -375,7 +375,7 @@ double cdf_array::interpolate_pdf_linear(const double x, const locate_array* xgr
 	//PRINT_ASSERT(result >= xgrid->min);
 	return result;
 }
-double cdf_array::invert_linear(const double rand, const locate_array* xgrid, const int i_in) const
+double CDFArray::invert_linear(const double rand, const LocateArray* xgrid, const int i_in) const
 {
 	PRINT_ASSERT(rand,>=,0);
 	PRINT_ASSERT(rand,<=,1);
@@ -402,7 +402,7 @@ double cdf_array::invert_linear(const double rand, const locate_array* xgrid, co
 	PRINT_ASSERT(xRight,>=,result);
 	return result;
 }
-double cdf_array::invert_piecewise(const double rand, const locate_array* xgrid, const int i_in) const
+double CDFArray::invert_piecewise(const double rand, const LocateArray* xgrid, const int i_in) const
 {
 	PRINT_ASSERT(rand,>=,0);
 	PRINT_ASSERT(rand,<=,1);
@@ -412,7 +412,7 @@ double cdf_array::invert_piecewise(const double rand, const locate_array* xgrid,
 
 	return xgrid->center(i);
 }
-double cdf_array::interpolate_pdf_piecewise(const double x, const locate_array* xgrid) const
+double CDFArray::interpolate_pdf_piecewise(const double x, const LocateArray* xgrid) const
 {
 	PRINT_ASSERT(x,>=,xgrid->min);
 	PRINT_ASSERT(x,<=,xgrid->x[xgrid->size()-1]);
@@ -430,7 +430,7 @@ double cdf_array::interpolate_pdf_piecewise(const double x, const locate_array* 
 //------------------------------------------------------
 // Simple printout
 //------------------------------------------------------
-void cdf_array::print() const{
+void CDFArray::print() const{
 	for(unsigned i=0;i<y.size();i++)
 		printf("%5d %10.4e %10.4e\n",i,get_value(i),y[i]);
 }
@@ -438,7 +438,7 @@ void cdf_array::print() const{
 //------------------------------------------------------
 // Clear the arrays
 //------------------------------------------------------
-void cdf_array::wipe()
+void CDFArray::wipe()
 {
 	y.assign(y.size(), 1.0);
 }
@@ -446,7 +446,7 @@ void cdf_array::wipe()
 //------------------------------------------------------------
 // just returning the size of the array
 //------------------------------------------------------------
-unsigned cdf_array::size() const
+unsigned CDFArray::size() const
 {
 	return y.size();
 }

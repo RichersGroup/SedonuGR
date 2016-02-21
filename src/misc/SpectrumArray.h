@@ -28,13 +28,10 @@
 #ifndef _SPECTRUM_ARRAY_H
 #define _SPECTRUM_ARRAY_H 1
 
-#include "locate_array.h"
+#include "LocateArray.h"
 #include "H5Cpp.h"
 
-// default values
-#define DEFAULT_NAME "spectrum_array"
-
-class spectrum_array {
+class SpectrumArray {
 
 private:
 
@@ -42,9 +39,9 @@ private:
 	// values represent bin upper walls (the single locate_array.min value is the leftmost wall)
 	// underflow is combined into leftmost bin (right of the locate_array.min)
 	// overflow is combined into the rightmost bin (left of locate_array[size-1])
-	locate_array nu_grid;
-	locate_array mu_grid;
-	locate_array phi_grid;
+	LocateArray nu_grid;
+	LocateArray mu_grid;
+	LocateArray phi_grid;
 
 	// counting arrays
 	std::vector<double> flux;
@@ -52,7 +49,7 @@ private:
 public:
 
 	// Initialize
-	void init(const locate_array nu_grid, const locate_array mu_grid, const locate_array phi_grid);
+	void init(const LocateArray nu_grid, const LocateArray mu_grid, const LocateArray phi_grid);
 	void init(const std::vector<double> nu_grid, const int n_mu, const int n_phi);
 
 	// MPI functions

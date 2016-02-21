@@ -26,9 +26,9 @@
 */
 
 #include <omp.h>
-#include "transport.h"
-#include "species_general.h"
-#include "grid_general.h"
+#include "Transport.h"
+#include "Species.h"
+#include "Grid.h"
 #include "global_options.h"
 
 using namespace std;
@@ -37,7 +37,7 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 // emit new particles
 //------------------------------------------------------------
-void transport::emit_particles()
+void Transport::emit_particles()
 {
 	// complain if we're out of room for particles
 	assert(n_emit_core  >= 0 || n_emit_zones >= 0 || n_emit_core_per_bin>0 || n_emit_zones_per_bin>=0);
@@ -72,7 +72,7 @@ void transport::emit_particles()
 // Currently written to emit photons with 
 // blackblody spectrum based on T_core and L_core
 //------------------------------------------------------------
-void transport::emit_inner_source_by_bin(){
+void Transport::emit_inner_source_by_bin(){
 	int size_before = particles.size();
 
 	double avgEp = 0;
@@ -94,7 +94,7 @@ void transport::emit_inner_source_by_bin(){
 	if(verbose && rank0) cout << "#   <E_p> (emit_inner_source_by_bin) = " << avgEp << " erg ("
 			<< n_created << " particles)" << endl;
 }
-void transport::emit_inner_source()
+void Transport::emit_inner_source()
 {
 	PRINT_ASSERT(core_species_luminosity.N,>,0);
 	int size_before = particles.size();
@@ -114,7 +114,7 @@ void transport::emit_inner_source()
 //--------------------------------------------------------------------------
 // emit particles due to viscous heating
 //--------------------------------------------------------------------------
-void transport::emit_zones_by_bin(){
+void Transport::emit_zones_by_bin(){
 	double avgEp = 0;
 	int size_before = particles.size();
 
@@ -145,7 +145,7 @@ void transport::emit_zones_by_bin(){
 	if(verbose && rank0) cout << "#   <E_p> (emit_zones_by_bin) = " << avgEp << " erg ("
 			<< particles.size()-size_before << " particles)" << endl;
 }
-void transport::emit_zones(){
+void Transport::emit_zones(){
 	double tmp_net_energy = 0;
 	int size_before = particles.size();
 	double avgEp = 0;
@@ -212,7 +212,7 @@ void transport::emit_zones(){
 //----------------------------------------------------------------------------------------
 
 // return the cell's luminosity from thermal emission (erg/s, comoving frame)
-double transport::zone_comoving_therm_emit_energy(const int z_ind) const{
+double Transport::zone_comoving_therm_emit_energy(const int z_ind) const{
 	if(!grid->good_zone(z_ind)) return 0;                 // don't emit from superluminal zones
 	else if(grid->zone_radius(z_ind) < r_core) return 0; // don't emit within core
 	else{
@@ -227,7 +227,7 @@ double transport::zone_comoving_therm_emit_energy(const int z_ind) const{
 		return H;
 	}
 }
-double transport::zone_comoving_biased_therm_emit_energy(const int z_ind) const{
+double Transport::zone_comoving_biased_therm_emit_energy(const int z_ind) const{
 	if(!grid->good_zone(z_ind)) return 0;                 // don't emit from superluminal zones
 	else if(grid->zone_radius(z_ind) < r_core) return 0; // don't emit within core
 	else{
@@ -242,7 +242,7 @@ double transport::zone_comoving_biased_therm_emit_energy(const int z_ind) const{
 		return H;
 	}
 }
-double transport::bin_comoving_therm_emit_energy(const int z_ind, const int s, const int g) const{
+double Transport::bin_comoving_therm_emit_energy(const int z_ind, const int s, const int g) const{
 	if(!grid->good_zone(z_ind)) return 0;                 // don't emit from superluminal zones
 	else if(grid->zone_radius(z_ind) < r_core) return 0; // don't emit within core
 	else{
@@ -255,7 +255,7 @@ double transport::bin_comoving_therm_emit_energy(const int z_ind, const int s, c
 }
 
 // return the cell's luminosity from thermal emission (erg/s, comoving frame)
-double transport::zone_comoving_therm_emit_leptons(const int z_ind) const{
+double Transport::zone_comoving_therm_emit_leptons(const int z_ind) const{
 	if(!grid->good_zone(z_ind)) return 0; //don't emit from superluminal zones
 	else{
 		double L=0;
@@ -274,14 +274,14 @@ double transport::zone_comoving_therm_emit_leptons(const int z_ind) const{
 // Useful for thermal radiation emitted all througout
 // the grid
 //------------------------------------------------------------
-void transport::create_thermal_particle(const int z_ind, const double Ep, const int s, const int g)
+void Transport::create_thermal_particle(const int z_ind, const double Ep, const int s, const int g)
 {
 	PRINT_ASSERT(Ep,>,0);
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
 
 	// basic particle properties
-	particle p;
+	Particle p;
 	p.fate = moving;
 	p.e  = Ep;
 
@@ -339,12 +339,12 @@ void transport::create_thermal_particle(const int z_ind, const double Ep, const 
 // General function to create a particle on the surface
 // emitted isotropically outward in the comoving frame. 
 //------------------------------------------------------------
-void transport::create_surface_particle(const double Ep, const int s, const int g)
+void Transport::create_surface_particle(const double Ep, const int s, const int g)
 {
 	PRINT_ASSERT(Ep,>,0);
 
 	// set basic properties
-	particle p;
+	Particle p;
 	p.fate = moving;
 	p.e = Ep;
 

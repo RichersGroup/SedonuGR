@@ -28,9 +28,10 @@
 #include <mpi.h>
 #include <fstream>
 #include <sstream>
-#include "grid_3D_cart.h"
+#include "Grid3DCart.h"
 #include "global_options.h"
-#include "transport.h"
+#include "Transport.h"
+#include "H5Cpp.h"
 
 using namespace std;
 namespace pc = physical_constants;
@@ -38,7 +39,7 @@ namespace pc = physical_constants;
 //------------
 // constructor
 //------------
-grid_3D_cart::grid_3D_cart(){
+Grid3DCart::Grid3DCart(){
 	for(int i=0; i<3; i++){
 		nx[i]      = -1;
 		dx[i]      = NaN;
@@ -55,7 +56,7 @@ grid_3D_cart::grid_3D_cart(){
 //------------------------------------------------------------
 // Read in a cartesian model file
 //------------------------------------------------------------
-void grid_3D_cart::read_model_file(Lua* lua)
+void Grid3DCart::read_model_file(Lua* lua)
 {
 	std::string model_type = lua->scalar<std::string>("model_type");
 	if(model_type == "SpEC") read_SpEC_file(lua);
@@ -68,7 +69,7 @@ void grid_3D_cart::read_model_file(Lua* lua)
 
 
 
-void grid_3D_cart::read_David_file(Lua* lua)
+void Grid3DCart::read_David_file(Lua* lua)
 {
 	// verbocity
 	int my_rank;
@@ -285,7 +286,7 @@ void grid_3D_cart::read_David_file(Lua* lua)
 	file.close();
 }
 
-void grid_3D_cart::read_SpEC_file(Lua* lua)
+void Grid3DCart::read_SpEC_file(Lua* lua)
 {
 	// get mpi rank
 	int my_rank;
@@ -429,7 +430,7 @@ void grid_3D_cart::read_SpEC_file(Lua* lua)
 //------------------------------------------------------------
 // Overly simple search to find zone
 //------------------------------------------------------------
-int grid_3D_cart::zone_index(const double x[3], const int xsize) const
+int Grid3DCart::zone_index(const double x[3], const int xsize) const
 {
 	PRINT_ASSERT(xsize,==,3);
 
@@ -456,7 +457,7 @@ int grid_3D_cart::zone_index(const double x[3], const int xsize) const
 //-------------------------------------------------
 // get the zone index from the directional indices
 //-------------------------------------------------
-int grid_3D_cart::zone_index(const int i, const int j, const int k) const{
+int Grid3DCart::zone_index(const int i, const int j, const int k) const{
 	PRINT_ASSERT(i,>=,0);
 	PRINT_ASSERT(j,>=,0);
 	PRINT_ASSERT(k,>=,0);
@@ -471,7 +472,7 @@ int grid_3D_cart::zone_index(const int i, const int j, const int k) const{
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-void grid_3D_cart::zone_directional_indices(const int z_ind, int dir_ind[3], const int size) const
+void Grid3DCart::zone_directional_indices(const int z_ind, int dir_ind[3], const int size) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
@@ -491,7 +492,7 @@ void grid_3D_cart::zone_directional_indices(const int z_ind, int dir_ind[3], con
 //------------------------------------------------------------
 // return volume of zone (precomputed)
 //------------------------------------------------------------
-double grid_3D_cart::zone_lab_volume(const int z_ind) const
+double Grid3DCart::zone_lab_volume(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
@@ -506,7 +507,7 @@ double grid_3D_cart::zone_lab_volume(const int z_ind) const
 //------------------------------------------------------------
 // sample a random position within the cubical cell
 //------------------------------------------------------------
-void grid_3D_cart::cartesian_sample_in_zone
+void Grid3DCart::cartesian_sample_in_zone
 (const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
@@ -539,7 +540,7 @@ void grid_3D_cart::cartesian_sample_in_zone
 //------------------------------------------------------------
 // return length of zone
 //------------------------------------------------------------
-double  grid_3D_cart::zone_min_length(const int z_ind) const
+double  Grid3DCart::zone_min_length(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
@@ -556,7 +557,7 @@ double  grid_3D_cart::zone_min_length(const int z_ind) const
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void grid_3D_cart::cartesian_velocity_vector(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
+void Grid3DCart::cartesian_velocity_vector(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
 {
 	PRINT_ASSERT(xsize,==,3);
 	PRINT_ASSERT(vsize,==,3);
@@ -573,7 +574,7 @@ void grid_3D_cart::cartesian_velocity_vector(const double x[3], const int xsize,
 //------------------------------------------------------------
 // cell-centered coordinates of zone i
 //------------------------------------------------------------
-void grid_3D_cart::zone_coordinates(const int z_ind, double r[3], const int rsize) const
+void Grid3DCart::zone_coordinates(const int z_ind, double r[3], const int rsize) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
@@ -589,7 +590,7 @@ void grid_3D_cart::zone_coordinates(const int z_ind, double r[3], const int rsiz
 //------------------------------------------------------------
 // Write the grid information out to a file
 //------------------------------------------------------------
-void grid_3D_cart::write_rays(const int iw) const
+void Grid3DCart::write_rays(const int iw) const
 {
 	int i,j,k;
 	int z_ind;
@@ -598,7 +599,7 @@ void grid_3D_cart::write_rays(const int iw) const
 	ofstream outf;
 
 	// XY-slice
-	filename = transport::filename("slice_xy",iw,".dat");
+	filename = Transport::filename("slice_xy",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
 	k = nx[2]/2;
@@ -611,7 +612,7 @@ void grid_3D_cart::write_rays(const int iw) const
 	outf.close();
 
 	// XZ-slice
-	filename = transport::filename("slice_xz",iw,".dat");
+	filename = Transport::filename("slice_xz",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
 	j = nx[1]/2;
@@ -624,7 +625,7 @@ void grid_3D_cart::write_rays(const int iw) const
 	outf.close();
 
 	// YZ-slice
-	filename = transport::filename("slice_yz",iw,".dat");
+	filename = Transport::filename("slice_yz",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
 	i = nx[0]/2;
@@ -637,7 +638,7 @@ void grid_3D_cart::write_rays(const int iw) const
 	outf.close();
 
 	// X-direction
-	filename = transport::filename("ray_x",iw,".dat");
+	filename = Transport::filename("ray_x",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
 	j = nx[1]/2;
@@ -650,7 +651,7 @@ void grid_3D_cart::write_rays(const int iw) const
 	outf.close();
 
 	// Y-direction
-	filename = transport::filename("ray_y",iw,".dat");
+	filename = Transport::filename("ray_y",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
 	i = nx[0]/2;
@@ -663,7 +664,7 @@ void grid_3D_cart::write_rays(const int iw) const
 	outf.close();
 
 	// Z-direction
-	filename = transport::filename("ray_z",iw,".dat");
+	filename = Transport::filename("ray_z",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
 	i = nx[0]/2;
@@ -681,7 +682,7 @@ void grid_3D_cart::write_rays(const int iw) const
 //------------------------------------------------------------
 // Reflect off the outer boundary
 //------------------------------------------------------------
-void grid_3D_cart::reflect_outer(particle *p) const{
+void Grid3DCart::reflect_outer(Particle *p) const{
 	// assumes particle is placed OUTSIDE of the zones
 	int z_ind = zone_index(p->x,3);
 	double delta[3];
@@ -713,7 +714,7 @@ void grid_3D_cart::reflect_outer(particle *p) const{
 //------------------------------------------------------------
 // Find distance to outer boundary
 //------------------------------------------------------------
-double grid_3D_cart::lab_dist_to_boundary(const particle *p) const{
+double Grid3DCart::lab_dist_to_boundary(const Particle *p) const{
 	bool inside = true;
 	for(int i=0; i<3; i++) inside = inside && (p->x[i] >= x0[i]) && (p->x[i] <= xmax[i]);
 
@@ -736,18 +737,18 @@ double grid_3D_cart::lab_dist_to_boundary(const particle *p) const{
 }
 
 
-double grid_3D_cart::zone_radius(const int z_ind) const{
+double Grid3DCart::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 	double r[3];
 	zone_coordinates(z_ind,r,3);
-	return sqrt(transport::dot(r,r,3));
+	return sqrt(Transport::dot(r,r,3));
 }
 
 //-----------------------------
 // Dimensions of the grid
 //-----------------------------
-void grid_3D_cart::dims(hsize_t dims[3], const int size) const{
+void Grid3DCart::dims(hsize_t dims[3], const int size) const{
 	PRINT_ASSERT(size,==,dimensionality());
 	for(int i=0; i<3; i++) dims[i] = nx[i];
 }
@@ -755,7 +756,7 @@ void grid_3D_cart::dims(hsize_t dims[3], const int size) const{
 //----------------------------------------------------
 // Write the coordinates of the grid points to the hdf5 file
 //----------------------------------------------------
-void grid_3D_cart::write_hdf5_coordinates(H5::H5File file) const
+void Grid3DCart::write_hdf5_coordinates(H5::H5File file) const
 {
 	// useful quantities
 	H5::DataSet dataset;
@@ -783,7 +784,7 @@ void grid_3D_cart::write_hdf5_coordinates(H5::H5File file) const
 }
 
 
-void grid_3D_cart::get_deltas(const int z_ind, double delta[3], const int size) const
+void Grid3DCart::get_deltas(const int z_ind, double delta[3], const int size) const
 {
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 	PRINT_ASSERT(size,==,3);
@@ -799,7 +800,7 @@ void grid_3D_cart::get_deltas(const int z_ind, double delta[3], const int size) 
 }
 
 
-double grid_3D_cart::zone_left_boundary(const unsigned dir, const unsigned dir_ind) const{
+double Grid3DCart::zone_left_boundary(const unsigned dir, const unsigned dir_ind) const{
 	PRINT_ASSERT(dir,>=,0);
 	PRINT_ASSERT(dir,<,3);
 	PRINT_ASSERT(dir_ind,>=,0);
@@ -809,7 +810,7 @@ double grid_3D_cart::zone_left_boundary(const unsigned dir, const unsigned dir_i
 	PRINT_ASSERT(boundary,>=,x0[dir]);
 	return boundary;
 }
-double grid_3D_cart::zone_right_boundary(const unsigned dir, const unsigned dir_ind) const{
+double Grid3DCart::zone_right_boundary(const unsigned dir, const unsigned dir_ind) const{
 	PRINT_ASSERT(dir,>=,0);
 	PRINT_ASSERT(dir,<,3);
 	PRINT_ASSERT(dir_ind,>=,0);
@@ -824,7 +825,7 @@ double grid_3D_cart::zone_right_boundary(const unsigned dir, const unsigned dir_
 //------------------------------------------------------------
 // Reflect off revlecting boundary condition
 //------------------------------------------------------------
-void grid_3D_cart::symmetry_boundaries(particle *p) const{
+void Grid3DCart::symmetry_boundaries(Particle *p) const{
 	// invert the radial component of the velocity, put the particle just inside the boundary
 	for(int i=0; i<3; i++){
 		if(reflect[i] && p->x[i] < x0[i]){

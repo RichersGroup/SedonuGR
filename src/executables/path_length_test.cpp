@@ -27,7 +27,7 @@
 
 #include <mpi.h>
 #include <algorithm>
-#include "transport.h"
+#include "Transport.h"
 #include "global_options.h"
 
 using namespace std;
@@ -44,7 +44,7 @@ int main(int argc, char **argv)
 	// set up the transport module (includes the grid)
 	int nbins = 0, nsamples = 0,niter = 0;
 	double max_tau_bin = 0, abs_frac=0;
-	transport sim;
+	Transport sim;
 
 	// setup and seed random number generator(s)
 	sim.rangen.init();
@@ -73,7 +73,7 @@ int main(int argc, char **argv)
 	}
 
 	// set up the particle
-	particle p;
+	Particle p;
 	int n_above = 0;
 	double e_above = 0;
 

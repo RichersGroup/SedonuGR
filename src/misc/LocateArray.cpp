@@ -27,7 +27,7 @@
 
 #include <algorithm>
 #include <cmath>
-#include "locate_array.h"
+#include "LocateArray.h"
 #include "global_options.h"
 
 using namespace std;
@@ -35,7 +35,7 @@ using namespace std;
 //-----------------------------
 // safe nan-filled constructor
 //-----------------------------
-locate_array::locate_array(const int n){
+LocateArray::LocateArray(const int n){
 	min = NaN;
 	interpolation_method = constant;
 	x.assign(n,NaN);
@@ -45,7 +45,7 @@ locate_array::locate_array(const int n){
 // Initialize with start, stop and delta
 // if start==stop make it a catch-all
 //---------------------------------------------------------
-void locate_array::init(const double start, const double stop, const double del, const InterpolationMethod imeth)
+void LocateArray::init(const double start, const double stop, const double del, const InterpolationMethod imeth)
 {
 	PRINT_ASSERT(stop,>=,start);
 	PRINT_ASSERT(del,>,0);
@@ -77,7 +77,7 @@ void locate_array::init(const double start, const double stop, const double del,
 // if start==stop make it a catch-all
 // if n==0 make it a catch-all
 //---------------------------------------------------------
-void locate_array::init(const double start, const double stop, const int n, const InterpolationMethod imeth)
+void LocateArray::init(const double start, const double stop, const int n, const InterpolationMethod imeth)
 {
 	PRINT_ASSERT(stop,>=,start);
 	PRINT_ASSERT(n,>=,0);
@@ -103,7 +103,7 @@ void locate_array::init(const double start, const double stop, const int n, cons
 //---------------------------------------------------------
 // Initialize with passed vector
 //---------------------------------------------------------
-void locate_array::init(const std::vector<double> a, const double minval, const InterpolationMethod imeth)
+void LocateArray::init(const std::vector<double> a, const double minval, const InterpolationMethod imeth)
 {
 	min = minval;
 	interpolation_method = constant;
@@ -115,7 +115,7 @@ void locate_array::init(const std::vector<double> a, const double minval, const 
 // if off left side of boundary, returns 0
 // if off right side of boundary, returns size
 //---------------------------------------------------------
-int locate_array::locate(const double xval) const
+int LocateArray::locate(const double xval) const
 {
 	// upper_bound returns first element greater than xval
 	// values mark bin tops, so this is what we want
@@ -129,7 +129,7 @@ int locate_array::locate(const double xval) const
 //---------------------------------------------------------
 // simple printout
 //---------------------------------------------------------
-void locate_array::print() const
+void LocateArray::print() const
 {
 	printf("# Print Locate Array; n_elements = %lu\n",x.size());
 	printf("min %12.4e\n",min);
@@ -177,7 +177,7 @@ double pow_interpolate_between(const double xval, const double xleft, const doub
 	double base = (yright/yleft);
 	return yleft * pow(base,exponent);
 }
-double locate_array::value_at(const double xval, const vector<double>& y) const{
+double LocateArray::value_at(const double xval, const vector<double>& y) const{
 	int ind = locate(xval);
 	PRINT_ASSERT(ind,>=,0);
 	PRINT_ASSERT(ind,<=,(int)x.size());
@@ -216,7 +216,7 @@ double locate_array::value_at(const double xval, const vector<double>& y) const{
 }
 
 
-void locate_array::swap(locate_array& new_array){
+void LocateArray::swap(LocateArray& new_array){
 	// swap the vectors
 	x.swap(new_array.x);
 
@@ -231,7 +231,7 @@ void locate_array::swap(locate_array& new_array){
 	new_array.interpolation_method = tmp;
 }
 
-void locate_array::copy(const locate_array& new_array){
+void LocateArray::copy(const LocateArray& new_array){
 	// copy the vector
 	x.resize(new_array.x.size());
 	for(unsigned i=0; i<new_array.x.size(); i++) x[i] = new_array.x[i];

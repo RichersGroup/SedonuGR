@@ -26,14 +26,14 @@
 */
 
 #include "global_options.h"
-#include "species_general.h"
+#include "Species.h"
 
 using namespace std;
 
 //-----------------------------------------------------------------
 // get opacity at the frequency
 //-----------------------------------------------------------------
-void species_general::get_opacity(const double com_nu, const int z_ind, double* opac, double* abs_frac) const
+void Species::get_opacity(const double com_nu, const int z_ind, double* opac, double* abs_frac) const
 {
 	PRINT_ASSERT(z_ind,>=,-1);
 	PRINT_ASSERT(com_nu,>,0);
@@ -59,6 +59,6 @@ void species_general::get_opacity(const double com_nu, const int z_ind, double* 
 	}
 }
 
-double species_general::sum_opacity(const int z_ind, const int group) const{
+double Species::sum_opacity(const int z_ind, const int group) const{
 	return abs_opac[z_ind][group] + scat_opac[z_ind][group];
 }

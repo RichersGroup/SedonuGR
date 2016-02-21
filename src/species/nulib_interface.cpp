@@ -279,7 +279,7 @@ void nulib_get_eas_arrays(
 		double rho,                     // g/cm^3
 		double temp,                    // K
 		double ye, int nulibID,
-		cdf_array& nut_emiss,         // erg/cm^3/s/ster
+		CDFArray& nut_emiss,         // erg/cm^3/s/ster
 		vector<double>& nut_absopac,    // cm^-1
 		vector<double>& nut_scatopac){  // cm^-1
 
@@ -400,7 +400,7 @@ void nulib_get_pure_emis(
 /* nulib_get_nu_grid */
 /*********************/
 // Fill in the locate array with values of the array stored in the fortran module
-void nulib_get_nu_grid(locate_array& nu_grid){ // Hz
+void nulib_get_nu_grid(LocateArray& nu_grid){ // Hz
 	// assign values from the NuLib module to nu_grid
 	nu_grid.x.assign(nulibtable_etop,
 			nulibtable_etop + nulibtable_number_groups);

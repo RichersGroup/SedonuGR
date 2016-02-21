@@ -28,8 +28,9 @@
 #include <mpi.h>
 #include <fstream>
 #include "global_options.h"
-#include "grid_2D_cylinder.h"
-#include "transport.h"
+#include "Grid2DCylinder.h"
+#include "Transport.h"
+#include "H5Cpp.h"
 
 using namespace std;
 namespace pc = physical_constants;
@@ -37,7 +38,7 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 // initialize the zone geometry from model file
 //------------------------------------------------------------
-void grid_2D_cylinder::read_model_file(Lua* lua)
+void Grid2DCylinder::read_model_file(Lua* lua)
 {
     	// verbocity
     	int my_rank;
@@ -199,7 +200,7 @@ void grid_2D_cylinder::read_model_file(Lua* lua)
 //------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
-int grid_2D_cylinder::zone_index(const double x[3], const int xsize) const
+int Grid2DCylinder::zone_index(const double x[3], const int xsize) const
 {
 	PRINT_ASSERT(xsize,==,3);
 	double rcyl = sqrt(x[0]*x[0] + x[1]*x[1]);
@@ -224,7 +225,7 @@ int grid_2D_cylinder::zone_index(const double x[3], const int xsize) const
 //----------------------------------------------------------------
 // Return the zone index corresponding to the directional indices
 //----------------------------------------------------------------
-int grid_2D_cylinder::zone_index(const int i, const int j) const
+int Grid2DCylinder::zone_index(const int i, const int j) const
 {
 	PRINT_ASSERT(i,>=,0);
 	PRINT_ASSERT(j,>=,0);
@@ -239,7 +240,7 @@ int grid_2D_cylinder::zone_index(const int i, const int j) const
 //------------------------------------------------------------
 // return volume of zone
 //------------------------------------------------------------
-double grid_2D_cylinder::zone_lab_volume(const int z_ind) const
+double Grid2DCylinder::zone_lab_volume(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
@@ -260,7 +261,7 @@ double grid_2D_cylinder::zone_lab_volume(const int z_ind) const
 //------------------------------------------------------------
 // return length of zone
 //------------------------------------------------------------
-double grid_2D_cylinder::zone_min_length(const int z_ind) const
+double Grid2DCylinder::zone_min_length(const int z_ind) const
 {
 	int dir_ind[2];
 	zone_directional_indices(z_ind,dir_ind,2);
@@ -277,7 +278,7 @@ double grid_2D_cylinder::zone_min_length(const int z_ind) const
 //------------------------------------------------------------
 // Return the cell-center spherical coordinates of the cell
 //------------------------------------------------------------
-void grid_2D_cylinder::zone_coordinates(const int z_ind, double r[2], const int rsize) const
+void Grid2DCylinder::zone_coordinates(const int z_ind, double r[2], const int rsize) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)(rcyl_out.size()*zcyl_out.size()));
@@ -298,7 +299,7 @@ void grid_2D_cylinder::zone_coordinates(const int z_ind, double r[2], const int 
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-void grid_2D_cylinder::zone_directional_indices(const int z_ind, int dir_ind[2], const int size) const
+void Grid2DCylinder::zone_directional_indices(const int z_ind, int dir_ind[2], const int size) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
@@ -315,7 +316,7 @@ void grid_2D_cylinder::zone_directional_indices(const int z_ind, int dir_ind[2],
 //------------------------------------------------------------
 // sample a random cartesian position within the spherical shell
 //------------------------------------------------------------
-void grid_2D_cylinder::cartesian_sample_in_zone(const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const
+void Grid2DCylinder::cartesian_sample_in_zone(const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
@@ -359,7 +360,7 @@ void grid_2D_cylinder::cartesian_sample_in_zone(const int z_ind, const double ra
 //------------------------------------------------------------
 // get the cartesian velocity vector (cm/s)
 //------------------------------------------------------------
-void grid_2D_cylinder::cartesian_velocity_vector(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
+void Grid2DCylinder::cartesian_velocity_vector(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
 {
 	PRINT_ASSERT(xsize,==,3);
 	PRINT_ASSERT(vsize,==,3);
@@ -404,7 +405,7 @@ void grid_2D_cylinder::cartesian_velocity_vector(const double x[3], const int xs
 //------------------------------------------------------------
 // Write the grid information out to a file
 //------------------------------------------------------------
-void grid_2D_cylinder::write_rays(int iw) const
+void Grid2DCylinder::write_rays(int iw) const
 {
 	PRINT_ASSERT(iw,>=,0);
 	ofstream outf;
@@ -413,7 +414,7 @@ void grid_2D_cylinder::write_rays(int iw) const
 	string filename = "";
 
 	// along equator
-	filename = transport::filename("ray_z.5",iw,".dat");
+	filename = Transport::filename("ray_z.5",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
 	j = zcyl_out.size()/2;
@@ -425,7 +426,7 @@ void grid_2D_cylinder::write_rays(int iw) const
 	outf.close();
 
 	// along z
-	filename = transport::filename("ray_r.5",iw,".dat");
+	filename = Transport::filename("ray_r.5",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
 	i = rcyl_out.size()/2;
@@ -441,7 +442,7 @@ void grid_2D_cylinder::write_rays(int iw) const
 //------------------------------------------------------------
 // Reflect off the outer boundary
 //------------------------------------------------------------
-void grid_2D_cylinder::reflect_outer(particle *p) const{
+void Grid2DCylinder::reflect_outer(Particle *p) const{
   cout << "Error: cylindrical reflect_outer is not implemented or tested." << endl;
   exit(1);
 	// PRINT_ASSERT(r_out.size(),>=,1);
@@ -483,14 +484,14 @@ void grid_2D_cylinder::reflect_outer(particle *p) const{
 //------------------------------------------------------------
 // Reflect off the outer boundary
 //------------------------------------------------------------
-void grid_2D_cylinder::symmetry_boundaries(particle *p) const{
+void Grid2DCylinder::symmetry_boundaries(Particle *p) const{
 // does nothing - not implemented
 }
 
 //------------------------------------------------------------
 // Find distance to outer boundary
 //------------------------------------------------------------
-double grid_2D_cylinder::lab_dist_to_boundary(const particle *p) const{
+double Grid2DCylinder::lab_dist_to_boundary(const Particle *p) const{
 	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
 	double Rout  = rcyl_out[rcyl_out.size()-1];
 	double Rin   = rcyl_out.min;
@@ -539,7 +540,7 @@ double grid_2D_cylinder::lab_dist_to_boundary(const particle *p) const{
 }
 
 
-double grid_2D_cylinder::zone_radius(const int z_ind) const{
+double Grid2DCylinder::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 
@@ -559,7 +560,7 @@ double grid_2D_cylinder::zone_radius(const int z_ind) const{
 //-----------------------------
 // Dimensions of the grid
 //-----------------------------
-void grid_2D_cylinder::dims(hsize_t dims[2], const int size) const{
+void Grid2DCylinder::dims(hsize_t dims[2], const int size) const{
 	PRINT_ASSERT(size,==,dimensionality());
 	dims[0] = rcyl_out.size();
 	dims[1] = zcyl_out.size();
@@ -568,7 +569,7 @@ void grid_2D_cylinder::dims(hsize_t dims[2], const int size) const{
 //----------------------------------------------------
 // Write the coordinates of the grid points to the hdf5 file
 //----------------------------------------------------
-void grid_2D_cylinder::write_hdf5_coordinates(H5::H5File file) const
+void Grid2DCylinder::write_hdf5_coordinates(H5::H5File file) const
 {
 	// useful quantities
 	H5::DataSet dataset;

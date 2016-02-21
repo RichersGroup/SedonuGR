@@ -28,13 +28,13 @@
 #include <ctime>
 #include <mpi.h>
 #include <omp.h>
-#include "thread_RNG.h"
+#include "ThreadRNG.h"
 
 //-----------------------------------------------------------------
 // initialize the RNG system
 //-----------------------------------------------------------------
 // ASSUMES the number of threads remains constant so it only has to be initialized once
-void thread_RNG::init(){
+void ThreadRNG::init(){
 	int my_mpiID;
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_mpiID);
 
@@ -67,7 +67,7 @@ void thread_RNG::init(){
 //-----------------------------------------------------------------
 // return a uniformily distributed random number (thread safe)
 //-----------------------------------------------------------------
-double thread_RNG::uniform(){
+double ThreadRNG::uniform(){
     #ifdef _OPENMP
 	const int my_ompID = omp_get_thread_num();
     #else

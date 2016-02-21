@@ -28,23 +28,23 @@
 #ifndef _TRANSPORT_H
 #define _TRANSPORT_H
 #include <vector>
-#include "particle.h"
+#include "Particle.h"
 #include "Lua.h"
-#include "cdf_array.h"
-#include "thread_RNG.h"
+#include "CDFArray.h"
+#include "ThreadRNG.h"
 
-class species_general;
-class grid_general;
-class spectrum_array;
+class Species;
+class Grid;
+class SpectrumArray;
 enum ParticleEvent {interact, zoneEdge, boundary};
 
-class transport
+class Transport
 {
 
 private:
 
 	// this species' list of particles
-	std::vector<particle> particles;
+	std::vector<Particle> particles;
 
 	// MPI stuff
 	int MPI_nprocs;
@@ -72,28 +72,28 @@ private:
 
 	// species sampling functions
 	int sample_core_species() const;
-	void sample_zone_species(particle *p, int zone_index) const;
+	void sample_zone_species(Particle *p, int zone_index) const;
 
 	// transformation functions
 	double comoving_dt(const int z_ind) const;
-	double dshift_comoving_to_lab   (const particle* p, const int z_ind=-1) const;
-	double dshift_lab_to_comoving   (const particle* p, const int z_ind=-1) const;
-	void   transform_comoving_to_lab(particle* p, const int z_ind=-1) const;
-	void   transform_lab_to_comoving(particle* p, const int z_ind=-1) const;
-	void lab_opacity(const particle *p, const int z_ind, double *lab_opac, double *abs_frac, double *dshift_l2c) const;
+	double dshift_comoving_to_lab   (const Particle* p, const int z_ind=-1) const;
+	double dshift_lab_to_comoving   (const Particle* p, const int z_ind=-1) const;
+	void   transform_comoving_to_lab(Particle* p, const int z_ind=-1) const;
+	void   transform_lab_to_comoving(Particle* p, const int z_ind=-1) const;
+	void lab_opacity(const Particle *p, const int z_ind, double *lab_opac, double *abs_frac, double *dshift_l2c) const;
 
 	// propagate the particles
 	void propagate_particles();
-	void propagate(particle* p);
-	void move(particle* p, const double lab_d, const double lab_opac);
-	void tally_radiation(const particle* p, const int z_ind, const double dshift_l2c, const double lab_d, const double lab_opac, const double abs_frac) const;
+	void propagate(Particle* p);
+	void move(Particle* p, const double lab_d, const double lab_opac);
+	void tally_radiation(const Particle* p, const int z_ind, const double dshift_l2c, const double lab_d, const double lab_opac, const double abs_frac) const;
 	void reset_radiation();
-	void which_event(particle* p,const int z_ind, const double lab_opac, double* d_smallest, ParticleEvent *event) const;
-	void event_boundary(particle* p, const int z_ind) const;
-	void event_interact(particle* p, const int z_ind, const double abs_frac,const double lab_opac);
-	void isotropic_scatter(particle* p) const;
-	void re_emit(particle* p, const int z_ind) const;
-	void window(particle* p, const int z_ind);
+	void which_event(Particle* p,const int z_ind, const double lab_opac, double* d_smallest, ParticleEvent *event) const;
+	void event_boundary(Particle* p, const int z_ind) const;
+	void event_interact(Particle* p, const int z_ind, const double abs_frac,const double lab_opac);
+	void isotropic_scatter(Particle* p) const;
+	void re_emit(Particle* p, const int z_ind) const;
+	void window(Particle* p, const int z_ind);
 
 	// solve for temperature and Ye (if steady_state)
 	double damping;
@@ -134,7 +134,7 @@ private:
 
 public:
 
-	transport();
+	Transport();
 
 	int verbose;
 
@@ -145,10 +145,10 @@ public:
 	double rho_min, rho_max;
 
 	// arrays of species
-	std::vector<species_general*> species_list;
+	std::vector<Species*> species_list;
 
 	// pointer to grid
-	grid_general *grid;
+	Grid *grid;
 
 	// biasing
 	// minimum neutrino packet energy
@@ -158,7 +158,7 @@ public:
 	double min_importance;
 	int bias_path_length;
 	double max_path_length_boost;
-	void sample_tau(particle* p, const double lab_opac, const double abs_frac);
+	void sample_tau(Particle* p, const double lab_opac, const double abs_frac);
 
 	// items for core emission
 	double r_core;
@@ -166,7 +166,7 @@ public:
 	int n_emit_core_per_bin;
 	double core_lum_multiplier;
 	int core_emit_method;
-	cdf_array core_species_luminosity;
+	CDFArray core_species_luminosity;
 	void init_core(const double r_core, const double T_core, const double munue_core);
 	void init_core(const double r_core, const std::vector<double>& T_core, const std::vector<double>& mu_core, const std::vector<double>& L_core);
 
@@ -198,7 +198,7 @@ public:
 	int reflect_outer;
 
 	// random number generator
-	mutable thread_RNG rangen;
+	mutable ThreadRNG rangen;
 
 	// set things up
 	void   init(Lua* lua);

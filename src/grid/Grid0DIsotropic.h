@@ -28,17 +28,17 @@
 #ifndef _GRID_0D_ISOTROPIC_H
 #define _GRID_0D_ISOTROPIC_H 1
 
-#include "grid_general.h"
+#include "Grid.h"
 
 //*******************************************
 // 0-Dimensional Isotropic geometry
 //*******************************************
-class grid_0D_isotropic: public grid_general
+class Grid0DIsotropic: public Grid
 {
 
 public:
 
-	virtual ~grid_0D_isotropic() {}
+	virtual ~Grid0DIsotropic() {}
 
 	void read_model_file(Lua* lua);
 
@@ -51,9 +51,9 @@ public:
 	void cartesian_sample_in_zone (const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const;
 	void cartesian_velocity_vector(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const;
 	void write_rays               (const int iw                                              ) const;
-	void reflect_outer            (particle *p                                               ) const;
-	void symmetry_boundaries      (particle *p                                               ) const;
-	double lab_dist_to_boundary   (const particle *p                                         ) const;
+	void reflect_outer            (Particle *p                                               ) const;
+	void symmetry_boundaries      (Particle *p                                               ) const;
+	double lab_dist_to_boundary   (const Particle *p                                         ) const;
 	double zone_radius            (const int z_ind) const;
 	void dims                     (hsize_t dims[0], const int size) const;
 	hsize_t dimensionality() const {return 0;};
