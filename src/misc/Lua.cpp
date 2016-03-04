@@ -14,6 +14,8 @@
 Lua::Lua()
 {
    _status = false;
+   _lua_state = NULL;
+   _has_add_path = false;
 }
 
 Lua::~Lua() 
@@ -23,7 +25,6 @@ Lua::~Lua()
 
 Lua::Lua( std::string script )
 { 
-   _has_add_path = false; 
    init( script ); 
 }
 
