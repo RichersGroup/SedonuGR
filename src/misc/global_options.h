@@ -62,7 +62,7 @@ inline std::string trim(const std::string s)
 #ifndef DEBUG
 #define PRINT_ASSERT(a,op,b)                         \
 do {                                                 \
-	if(!(a op b)) cout << (a) << " " << (b) << endl; \
+	if(!(a op b)) std::cout << (a) << " " << (b) << std::endl; \
 	assert(a op b);                                  \
 } while (0)
 #else
