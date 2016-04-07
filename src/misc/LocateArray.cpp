@@ -90,7 +90,7 @@ void LocateArray::init(const double start, const double stop, const int n, const
 	else{
 		double del = (stop - start)/(double)n;
 		x.resize(n);
-		interpolation_method = constant;
+		interpolation_method = imeth;
 
 		min = start;
         #pragma omp parallel for
@@ -106,7 +106,7 @@ void LocateArray::init(const double start, const double stop, const int n, const
 void LocateArray::init(const std::vector<double> a, const double minval, const InterpolationMethod imeth)
 {
 	min = minval;
-	interpolation_method = constant;
+	interpolation_method = imeth;
 	x.assign(a.begin(), a.end());
 }
 
