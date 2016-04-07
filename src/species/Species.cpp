@@ -92,8 +92,20 @@ void Species::init(Lua* lua, Transport* simulation)
 
 	// temporary spectrum to be used for distribution function initialization
 	LocateArray tmp_mugrid, tmp_phigrid;
-	tmp_mugrid.init( -1     , 1     , n_mu );
-	tmp_phigrid.init(-pc::pi, pc::pi, n_phi);
+	if(n_mu>=0)	tmp_mugrid.init(-1,1,n_mu);
+	else{
+		vector<double> bin_tops = lua->vector<double>("distribution_mugrid_interfaces");
+		bin_tops.push_back(1);
+		tmp_mugrid.init(bin_tops,-1);
+	}
+	if(n_mu>=0)	tmp_phigrid.init(-pc::pi, pc::pi, n_phi);
+	else{
+		vector<double> bin_tops = lua->vector<double>("distribution_phigrid_interfaces");
+		bin_tops.push_back(pc::pi);
+		tmp_phigrid.init(bin_tops,-pc::pi);
+	}
+
+	// use the above to initialize the zone's distribution function
 	SpectrumArray tmp_spectrum;
 	tmp_spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
 
