@@ -231,10 +231,7 @@ void Grid3DCart::read_David_file(Lua* lua)
 	//===============//
 	// fill the grid //
 	//===============//
-	double Nmass=0.0, Rmass=0.0;
-	double avgT=0, KE=0, totalVolume=0;
-
-    #pragma omp parallel for reduction(+:Nmass,Rmass,avgT,KE,totalVolume)
+    #pragma omp parallel for
 	for(int z_ind=0; z_ind<z.size(); z_ind++){
 
 		// directional indices in Sedonu grid
@@ -267,22 +264,8 @@ void Grid3DCart::read_David_file(Lua* lua)
 		PRINT_ASSERT(z[z_ind].Ye,<=,1.0);
 		PRINT_ASSERT(zone_speed2(z_ind),<,pc::c*pc::c);
 		PRINT_ASSERT(zone_speed2(z_ind),>=,0.0);
-
-		// get global quantities
-		Nmass += z[z_ind].rho * zone_lab_volume(z_ind);
-		Rmass += z[z_ind].rho * zone_comoving_volume(z_ind);
-
-		KE += 0.5 * z[z_ind].rho * zone_lab_volume(z_ind) * zone_speed2(z_ind);
-		totalVolume += zone_lab_volume(z_ind);
-		avgT += z[z_ind].T * zone_lab_volume(z_ind);
 	}
 
-	if(rank0){
-		cout << "#   Newtonian    mass: " << Nmass * 2.0 << endl;
-		cout << "#   Relativistic mass: " << Rmass * 2.0 << endl;
-		cout << "#   Newtonian KE     : " << KE * 2.0 << endl;
-		cout << "#   <T>              : " << avgT/totalVolume*pc::k_MeV << endl;
-	}
 	file.close();
 }
 
