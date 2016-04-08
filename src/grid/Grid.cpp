@@ -106,7 +106,6 @@ void Grid::init(Lua* lua)
 		cout << "#   TE = " << total_TE << " erg" << endl;
 		if(do_visc) cout << "#   hvis(nonrel) = " << total_hvis << " erg/s" << endl;
 	}
-	assert(0);
 }
 
 //------------------------------------------------------------
