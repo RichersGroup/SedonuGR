@@ -43,11 +43,98 @@ void Grid2DSphere::read_model_file(Lua* lua)
 {
 	std::string model_type = lua->scalar<std::string>("model_type");
 	if(model_type == "flash") read_flash_file(lua);
+	else if(model_type == "Hiroki") read_hiroki_file(lua);
 	else if(model_type == "custom") custom_model(lua);
 	else{
 		cout << "ERROR: model type unknown." << endl;
 		exit(8);
 	}
+}
+void Grid2DSphere::read_hiroki_file(Lua* lua)
+{
+	// verbocity
+	int my_rank;
+	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
+	const int rank0 = (my_rank == 0);
+
+	// open the model files
+	if(rank0) cout << "# Reading the model file..." << endl;
+	string model_file = lua->scalar<string>("model_file");
+	ifstream infile;
+	infile.open(model_file.c_str());
+	if(infile.fail()){
+		if(rank0) cout << "Error: can't read the model file." << model_file << endl;
+		exit(4);
+	}
+
+	// get the number of r, theta bins
+	int nr = 0;
+	int ntheta = 0;
+	int nphi = 0;
+	infile >> nr;
+	infile >> ntheta;
+	infile >> nphi;
+	PRINT_ASSERT(nr,>,0);
+	PRINT_ASSERT(ntheta,>,0);
+	PRINT_ASSERT(nphi,==,1);
+	z.resize(nr*ntheta);
+	r_out.resize(nr);
+	theta_out.resize(ntheta);
+
+	// read in the radial grid
+	string rgrid_file = lua->scalar<string>("rgrid_file");
+	ifstream rgrid_infile;
+	rgrid_infile.open(rgrid_file.c_str());
+	rgrid_infile >> r_out.min;
+	for(int i=0; i<nr; i++) rgrid_infile >> r_out[i];
+	rgrid_infile.close();
+
+	// read in the theta grid
+	string thetagrid_file = lua->scalar<string>("thetagrid_file");
+	ifstream thetagrid_infile;
+	thetagrid_infile.open(thetagrid_file.c_str());
+	theta_out.min = 0;
+	theta_out[ntheta-1] = pc::pi;
+	for(int i=1; i<ntheta; i++) thetagrid_infile >> theta_out[ntheta-1-i];
+	thetagrid_infile >> theta_out.min;
+	thetagrid_infile.close();
+
+	// write grid properties
+	cout << "#   nr=" << nr << "\trmin=" << r_out.min << "\trmax=" << r_out[nr-1] << endl;
+	cout << "#   nt=" << ntheta << "\ttmin=" << theta_out.min << "\ttmax=" << theta_out[ntheta-1] << endl;
+
+	// read the fluid properties
+	for(int itheta=ntheta-1; itheta>=0; itheta--) // Hiroki's theta is backwards
+		for(int ir=0; ir<nr; ir++){
+			unsigned z_ind = zone_index(ir,itheta);
+			double trash;
+
+			// read the contents of a single line
+			infile >> trash; PRINT_ASSERT(trash-1,==,ir); // ir
+			infile >> trash; PRINT_ASSERT(trash-1,==,ntheta-1-itheta); // itheta
+			infile >> trash; // iphi
+			infile >> trash; // rbar
+			infile >> trash; // thetabar
+			infile >> trash; // phibar
+			infile >> z[z_ind].rho; // g/ccm
+			infile >> z[z_ind].Ye;
+			infile >> z[z_ind].T; // MeV
+			infile >> z[z_ind].u[0]; // cm/s
+			infile >> z[z_ind].u[1]; // 1/s
+			infile >> z[z_ind].u[2]; // 1/s
+
+			// convert units
+			z[z_ind].u[1] *= r_out.center(ir);
+			z[z_ind].u[2] *= r_out.center(ir);
+			z[z_ind].T /= pc::k_MeV;
+
+			// sanity checks
+			PRINT_ASSERT(zone_speed2(z_ind),<,pc::c*pc::c);
+			PRINT_ASSERT(z[z_ind].rho,>=,0.0);
+			PRINT_ASSERT(z[z_ind].T,>=,0.0);
+			PRINT_ASSERT(z[z_ind].Ye,>=,0.0);
+			PRINT_ASSERT(z[z_ind].Ye,<=,1.0);
+		}
 }
 
 void Grid2DSphere::read_flash_file(Lua* lua)
