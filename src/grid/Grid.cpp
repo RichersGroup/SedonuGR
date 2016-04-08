@@ -68,50 +68,45 @@ void Grid::init(Lua* lua)
 	}
 
 	// calculate integrated quantities to check
-	double total_nonrel_mass = 0.0;
-	double total_rest_mass   = 0.0;
-	double total_rel_KE      = 0.0;
-	double total_nonrel_KE   = 0.0;
-	double total_rel_TE      = 0.0;
-	double total_nonrel_TE   = 0.0;
-	double total_hvis        = 0.0;
-	double nonrel_Tbar       = 0.0;
-	double rel_Tbar          = 0.0;
-	double nonrel_Yebar      = 0.0;
-	double rel_Yebar         = 0.0;
+	double total_rest_mass = 0.0;
+	double total_KE        = 0.0;
+	double total_TE        = 0.0;
+	double total_hvis      = 0.0;
+	double Tbar            = 0.0;
+	double Yebar           = 0.0;
 	int do_visc = lua->scalar<int>("do_visc");
-    #pragma omp parallel for reduction(+:total_nonrel_mass,total_rest_mass,total_rel_KE,total_nonrel_KE,total_rel_TE,total_nonrel_TE,total_hvis,nonrel_Tbar,rel_Tbar,nonrel_Yebar,rel_Yebar)
+    #pragma omp parallel for reduction(+:total_rest_mass,total_KE,total_TE,total_hvis,Tbar,Yebar)
 	for(unsigned z_ind=0;z_ind<z.size();z_ind++){
+		// zero out fluid velocity if not doing SR
+		if(!do_relativity) for(unsigned i=0; i<ARRSIZE(z[z_ind].u); i++) z[z_ind].u[i] = 0;
+
+		// calculate cell rest mass
+		double rest_mass   = zone_rest_mass(z_ind);
+
+		// sanity checks
 		PRINT_ASSERT(z[z_ind].rho,>=,0.0);
 		PRINT_ASSERT(zone_comoving_volume(z_ind),>=,0.0);
-		double rest_mass   = zone_rest_mass(z_ind);
 		PRINT_ASSERT(rest_mass,>=,0);
-		double nonrel_mass = z[z_ind].rho * zone_lab_volume(z_ind);
-		PRINT_ASSERT(nonrel_mass,>=,0);
 
+		// calculating totals and averages
 		total_rest_mass += rest_mass;
-		total_nonrel_mass += nonrel_mass;
-		rel_Tbar += z[z_ind].T * rest_mass;
-		nonrel_Tbar += z[z_ind].T * nonrel_mass;
-		rel_Yebar += z[z_ind].Ye * rest_mass;
-		nonrel_Yebar += z[z_ind].Ye * nonrel_mass;
-		total_rel_KE    += (rest_mass>0 ? (Transport::lorentz_factor(z[z_ind].u,ARRSIZE(z[z_ind].u)) - 1.0) * rest_mass * pc::c*pc::c : 0);
-		total_nonrel_KE += 0.5 * nonrel_mass * zone_speed2(z_ind);
-		total_rel_TE    += (rest_mass>0 ? rest_mass   / pc::m_n * pc::k * z[z_ind].T : 0);
-		total_nonrel_TE += nonrel_mass / pc::m_n * pc::k * z[z_ind].T;
+		Tbar            += z[z_ind].T * rest_mass;
+		Yebar           += z[z_ind].Ye * rest_mass;
+		total_KE        += (Transport::lorentz_factor(z[z_ind].u,ARRSIZE(z[z_ind].u)) - 1.0) * rest_mass * pc::c*pc::c;
+		total_TE        += rest_mass   / pc::m_n * pc::k * z[z_ind].T;
 		if(do_visc) total_hvis += z[z_ind].H_vis * z[z_ind].rho * zone_lab_volume(z_ind);
-		if(!do_relativity) for(unsigned i=0; i<ARRSIZE(z[z_ind].u); i++) z[z_ind].u[i] = 0;
 	}
 
 	// write out useful info about the grid
 	if (rank0){
-		cout << "#   mass = " << total_rest_mass/pc::M_sun << " M_sun (nonrel: " << total_nonrel_mass/pc::M_sun << " M_sun)" << endl;
-		cout << "#   <T> = " << rel_Tbar/total_rest_mass*pc::k_MeV << " MeV (nonrel: " << nonrel_Tbar/total_nonrel_mass*pc::k_MeV << " MeV)" <<endl;
-		cout << "#   <Ye> = " << rel_Yebar/total_rest_mass << " (nonrel: " << nonrel_Yebar/total_nonrel_mass << ")" <<endl;
-		cout << "#   KE = " << total_rel_KE << " erg (nonrel: " << total_nonrel_KE << " erg)" << endl;
-		cout << "#   TE = " << total_rel_TE << " erg (nonrel: " << total_nonrel_TE << " erg)" << endl;
+		cout << "#   mass = " << total_rest_mass/pc::M_sun << " Msun" << endl;
+		cout << "#   <T> = " << Tbar/total_rest_mass*pc::k_MeV << " MeV" << endl;
+		cout << "#   <Ye> = " << Yebar/total_rest_mass << endl;
+		cout << "#   KE = " << total_KE << " erg" << endl;
+		cout << "#   TE = " << total_TE << " erg" << endl;
 		if(do_visc) cout << "#   hvis(nonrel) = " << total_hvis << " erg/s" << endl;
 	}
+	assert(0);
 }
 
 //------------------------------------------------------------
