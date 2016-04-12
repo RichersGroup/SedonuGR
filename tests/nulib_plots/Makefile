@@ -4,11 +4,11 @@ rho=1e10  #g/cm^3
 T=10      #MeV
 Ye=0.1
 E=10      #MeV
-EOS="/data/tables/EOS/LS220.h5"
-NULIB="/data/tables/NuLib/NuLib_LS220_fiducial.h5"
+EOS="/data/tables/EOS/HShen.h5"
+NULIB="/data/Hiroki/NuLib_absonly.h5"
 
 all:
-	$(eval mu=$(shell ../../external/EOSsuper/Munue_of_RhoTempYe $(EOS) $(rho) $(T) $(Ye)))
+	$(eval mu=$(shell ../../useful_scripts/EOSsuper/Munue_of_RhoTempYe $(EOS) $(rho) $(T) $(Ye)))
 	mkdir -p species_0 species_1 species_2
 	for species in 0 1 2 ; do \
 	../../exe/nulib_test $(NULIB) $(rho) $(T) $(Ye) $(mu) $(E) $$species ; \
