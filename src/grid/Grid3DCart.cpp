@@ -182,14 +182,14 @@ void Grid3DCart::read_David_file(Lua* lua)
 	}
 	// truncate outer part of zones if quadrant rotational symmetry
 	if(rotate_quadrant) for(int i=0; i<2; i++){
-	    int iother = (i+1)%2;
-	    if(nx[i] > nx[iother]){
-	      PRINT_ASSERT(x0[i]-x0[iother],==,0);
-	      PRINT_ASSERT(x1[i]-x1[iother],<,tiny);
-	      PRINT_ASSERT(dx[i]-dx[iother],<,tiny);
-	      nx[i] = nx[iother];
-	      xmax[i] = xmax[iother];
-	    }
+		int iother = (i+1)%2;
+		if(nx[i] > nx[iother]){
+			PRINT_ASSERT(x0[i]-x0[iother],==,0);
+			PRINT_ASSERT(x1[i]-x1[iother],<,tiny);
+			PRINT_ASSERT(dx[i]-dx[iother],<,tiny);
+			nx[i] = nx[iother];
+			xmax[i] = xmax[iother];
+		}
 	}	
 	
 	// set up the zone structure
