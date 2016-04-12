@@ -257,9 +257,9 @@ void nulib_init(string filename){
 	nulibtable_set_globals();
 
 	// output some facts about the table
-	int my_rank=-1;
-	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-	if(my_rank==0){
+//	int my_rank=-1;
+//	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
+//	if(my_rank==0){
 		cout << "#   rho range: {" << nulib_get_rhomin() << "," << nulib_get_rhomax() << "} g/ccm" << endl;
 		cout << "#   T   range: {" << nulib_get_Tmin()*pc::k_MeV << "," << nulib_get_Tmax()*pc::k_MeV << "} MeV" << endl;
 		cout << "#   Ye  range: {" << nulib_get_Yemin() << "," << nulib_get_Yemax() << "}" << endl;
@@ -268,7 +268,7 @@ void nulib_init(string filename){
 		cout << "#   n_T   = " << nulibtable_ntemp << endl;
 		cout << "#   n_Ye  = " << nulibtable_nye << endl;
 		cout << "#   n_E   = " << nulibtable_number_groups << endl;
-	}
+//	}
 }
 
 /**********************/
