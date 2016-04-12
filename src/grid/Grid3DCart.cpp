@@ -164,6 +164,7 @@ void Grid3DCart::read_David_file(Lua* lua)
 
 	// decide which axes to truncate
 	bool truncate[3] = {false,false,false};
+	int offset[3] = {0,0,0};
 	truncate[0] = reflect[0] || rotate_hemisphere[0] || rotate_quadrant;
 	truncate[1] = reflect[1] || rotate_hemisphere[1] || rotate_quadrant;
 	truncate[2] = reflect[2];
@@ -177,8 +178,20 @@ void Grid3DCart::read_David_file(Lua* lua)
 		if(abs(x1[i]-x0[i])/dx[i] < tiny) x1[i] += dx[i]; // don't let the leftmost grid cell be stupidly tiny.
 		PRINT_ASSERT(fmod(xmax[i]-x1[i],dx[i]) < tiny,||,fmod(xmax[i]-x1[i],dx[i])-dx[i] < tiny); // make sure cells line up
 		nx[i] = (int)((xmax[i]-x1[i])/dx[i] + 0.5) +1; // 0.5 to deal with finite precision.
+		offset[i] = hdf5_dims[i] - nx[i];
 	}
-
+	// truncate outer part of zones if quadrant rotational symmetry
+	if(rotate_quadrant) for(int i=0; i<2; i++){
+	    int iother = (i+1)%2;
+	    if(nx[i] > nx[iother]){
+	      PRINT_ASSERT(x0[i]-x0[iother],==,0);
+	      PRINT_ASSERT(x1[i]-x1[iother],<,tiny);
+	      PRINT_ASSERT(dx[i]-dx[iother],<,tiny);
+	      nx[i] = nx[iother];
+	      xmax[i] = xmax[iother];
+	    }
+	}	
+	
 	// set up the zone structure
 	int nzones = nx[0] * nx[1] * nx[2];
 	z.resize(nzones);
@@ -241,8 +254,9 @@ void Grid3DCart::read_David_file(Lua* lua)
 		// directional indices in hdf5 data
 		unsigned hdf5_dir_ind[3];
 		for(int d=0; d<3; d++){
-			hdf5_dir_ind[d] = hdf5_dims[d] - nx[d] + dir_ind[d];
+			hdf5_dir_ind[d] = offset[d] + dir_ind[d];
 			PRINT_ASSERT(hdf5_dir_ind[d],>=,0);
+			PRINT_ASSERT(offset[d],>=,0);
 		}
 
 		// global hdf5 index
@@ -846,9 +860,9 @@ void Grid3DCart::symmetry_boundaries(Particle *p) const{
 			}
 
 			// double check that the particle is in the boundary
-			for(int i=0; i<3; i++){
-				PRINT_ASSERT(p->x[i],>=,x0[i]);
-				PRINT_ASSERT(p->x[i],<=,xmax[i]);
+			for(int j=0; j<3; j++){
+				PRINT_ASSERT(p->x[j],>=,x0[j]);
+				PRINT_ASSERT(p->x[j],<=,xmax[j]);
 			}
 		}
 	}
