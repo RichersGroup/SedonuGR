@@ -589,17 +589,25 @@ void Grid3DCart::zone_coordinates(const int z_ind, double r[3], const int rsize)
 //------------------------------------------------------------
 void Grid3DCart::write_rays(const int iw) const
 {
+
 	int i,j,k;
 	int z_ind;
 	double r[3];
 	string filename = "";
 	ofstream outf;
 
+	// get the origin coordinates
+	double origin[3] = {0,0,0};
+	z_ind = zone_index(origin,3);
+	int iorigin[3] = {0,0,0};
+	zone_directional_indices(z_ind,iorigin,3);
+
+
 	// XY-slice
 	filename = Transport::filename("slice_xy",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
-	k = nx[2]/2;
+	k = iorigin[2]; //nx[2]/2;
 	for(i=0; i<nx[0]; i++) for(j=0; j<nx[1]; j++){
 		if(j==0) outf << endl;
 		z_ind = zone_index(i,j,k);
@@ -612,7 +620,7 @@ void Grid3DCart::write_rays(const int iw) const
 	filename = Transport::filename("slice_xz",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
-	j = nx[1]/2;
+	j = iorigin[1]; //nx[1]/2;
 	for(i=0; i<nx[0]; i++) for(k=0; k<nx[2]; k++){
 		if(k==0) outf << endl;
 		z_ind = zone_index(i,j,k);
@@ -625,7 +633,7 @@ void Grid3DCart::write_rays(const int iw) const
 	filename = Transport::filename("slice_yz",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
-	i = nx[0]/2;
+	i = iorigin[0]; //nx[0]/2;
 	for(j=0; j<nx[1]; j++) for(k=0; k<nx[2]; k++){
 		if(k==0) outf << endl;
 		z_ind = zone_index(i,j,k);
