@@ -30,6 +30,16 @@
 
 #include "Species.h"
 
+// PARAMETERS
+//    Neutrino_cdf_cutoff - cutoff bin value in CDF. Below this value is considered zero. Necessary for some equilibrium problems.
+//    Neutrino_grey_opac - if <0, takes opac/emis from NuLib. Else uses this constant opacity.
+//    Neutrino_grey_abs_frac - (if grey_opac<0) constant absorption fraction
+//    Neutrino_nugrid_start - (if grey_opac<0) bottom of frequency grid
+//    Neutrino_nugrid_stop - (if grey_opac<0) top of freqyency grid
+//    Neutrino_nugrid_n - (if grey_opac<0) number of frequency bins
+//    Neutrino_spec_n_mu - # of mu bins in neutrino escape spectrum
+//    Neutrino_spec_n_phi - # of phi bins in neutrino escape spectrum
+
 class Neutrino: public Species
 {
 
@@ -40,7 +50,7 @@ public:
 	Neutrino();
 	virtual ~Neutrino() {}
 
-	int num_nut_species;
+	int num_species;
 	int nulibID;
 	double cutoff;
 

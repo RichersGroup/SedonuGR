@@ -96,9 +96,9 @@ private:
 	void window(Particle* p, const int z_ind);
 
 	// solve for temperature and Ye (if steady_state)
-	double damping;
-	int    brent_itmax;
-	double brent_solve_tolerance;
+	double equilibrium_damping;
+	int    equilibrium_itmax;
+	double equilibrium_tolerance;
 	void   solve_eq_zone_values();
 	void   normalize_radiative_quantities();
 	double brent_method(const int zone_index, double (*eq_function)(double, void*), const double min, const double max);
@@ -138,8 +138,8 @@ public:
 
 	int verbose;
 
-	int    solve_T;
-	int    solve_Ye;
+	int    equilibrium_T;
+	int    equilibrium_Ye;
 	double T_min,  T_max;
 	double Ye_min, Ye_max;
 	double rho_min, rho_max;
@@ -178,7 +178,7 @@ public:
 	double visc_specific_heat_rate;
 
 	// how many times do we emit+propagate each timestep?
-	int emissions_per_timestep;
+	int n_emission_stages;
 	int do_emit_by_bin;
 
 	// global radiation quantities
@@ -191,7 +191,6 @@ public:
 	std::vector<double> N_net_esc;
 	std::vector<long> n_active;
 	std::vector<long> n_escape;
-	double annihil_rho_cutoff;
 
 
 	// reflect off the outer boundary?

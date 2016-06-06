@@ -30,6 +30,12 @@
 
 #include "Grid.h"
 
+// PARAMETERS
+//    Grid3DCart_THC_reflevel -- refinement level to use when reading in THC data
+//    Grid3DCart_reflect_{x,y,z} -- reflect particles off the {x,y,z}=0 boundary. Also truncates the fluid grid there.
+//    Grid3DCart_rotate_hemisphere_{x,y} -- assume 180-degree rotational symmetry in hemispheres where everywhere {x,y}>0
+//    Grid3DCart_rotate_quadrant -- assume 90-degree rotational symmetry. x and y >0 everywhere.
+
 //*******************************************
 // 1-Dimensional Spherical geometry
 //*******************************************
@@ -57,7 +63,7 @@ public:
 
 	void read_model_file(Lua* lua);
 	void read_SpEC_file(Lua* lua);
-	void read_David_file(Lua* lua);
+	void read_THC_file(Lua* lua);
 
 	double zone_left_boundary(const unsigned dir, const unsigned dir_ind) const;
 	double zone_right_boundary(const unsigned dir, const unsigned dir_ind) const;

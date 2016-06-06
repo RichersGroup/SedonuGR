@@ -45,7 +45,7 @@ double      Ye_eq_function(double Ye, void* params);
 void Transport::solve_eq_zone_values()
 {
 	if(verbose && rank0) cout << "# Solving for equilibrium values" << endl;
-	PRINT_ASSERT(brent_solve_tolerance,>,0);
+	PRINT_ASSERT(equilibrium_tolerance,>,0);
 
 	// remember what zones I'm responsible for
 	int start = ( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
@@ -65,22 +65,22 @@ void Transport::solve_eq_zone_values()
 		double dT_step=NaN, dYe_step=NaN;
 
 		// set up the solver
-		if(solve_T)
+		if(equilibrium_T)
 		{
-			T_error  = 10*brent_solve_tolerance;
+			T_error  = 10*equilibrium_tolerance;
 			T_last_step  = grid->z[z_ind].T;
 		}
-		if(solve_Ye)
+		if(equilibrium_Ye)
 		{
-			Ye_error = 10*brent_solve_tolerance;
+			Ye_error = 10*equilibrium_tolerance;
 			Ye_last_step = grid->z[z_ind].Ye;
 		}
 
 		// loop through solving the temperature and Ye until both are within error.
 		int iter=0;
-		while(iter<=brent_itmax && (T_error>brent_solve_tolerance || Ye_error>brent_solve_tolerance))
+		while(iter<=equilibrium_itmax && (T_error>equilibrium_tolerance || Ye_error>equilibrium_tolerance))
 		{
-			if(solve_T)
+			if(equilibrium_T)
 			{
 				T_last_iter  = grid->z[z_ind].T;
 				grid->z[z_ind].T = brent_method(z_ind, temp_eq_function, T_min,  T_max);
@@ -88,7 +88,7 @@ void Transport::solve_eq_zone_values()
 				PRINT_ASSERT(grid->z[z_ind].T,<=,T_max);
 				T_error  = fabs( (grid->z[z_ind].T - T_last_iter ) / (T_last_iter ) );
 			}
-			if(solve_Ye)
+			if(equilibrium_Ye)
 			{
 				Ye_last_iter = grid->z[z_ind].Ye;
 				grid->z[z_ind].Ye = brent_method(z_ind, Ye_eq_function, Ye_min, Ye_max);
@@ -100,7 +100,7 @@ void Transport::solve_eq_zone_values()
 		}
 
 		// warn if it didn't converge
-		if(iter == brent_itmax){
+		if(iter == equilibrium_itmax){
 			cout << "# WARNING: outer Brent solver hit maximum iterations. (zone:" << z_ind;
 			cout << " processor:" << MPI_myID;
             #ifdef _OPENMP_
@@ -110,12 +110,12 @@ void Transport::solve_eq_zone_values()
 		}
 
 		// damp the oscillations between steps, ensure that it's within the allowed boundaries
-		if(damping>0)
+		if(equilibrium_damping>0)
 		{
-			if(solve_T)
+			if(equilibrium_T)
 			{
 				dT_step  = grid->z[z_ind].T - T_last_step;
-				grid->z[z_ind].T =  T_last_step + (1.0 - damping)*dT_step;
+				grid->z[z_ind].T =  T_last_step + (1.0 - equilibrium_damping)*dT_step;
 				if(grid->z[z_ind].T > T_max){
 					cout << "# WARNING: Changing T_gas in zone " << z_ind << " from " << grid->z[z_ind].T << " to T_max=" << T_max << endl;
 					grid->z[z_ind].T = T_max;}
@@ -126,10 +126,10 @@ void Transport::solve_eq_zone_values()
 					cout << "# ERROR: T_gas is nan." << endl;
 					exit(5);}
 			}
-			if(solve_Ye)
+			if(equilibrium_Ye)
 			{
 				dYe_step = grid->z[z_ind].Ye - Ye_last_step;
-				grid->z[z_ind].Ye = Ye_last_step + (1.0 - damping)*dYe_step;
+				grid->z[z_ind].Ye = Ye_last_step + (1.0 - equilibrium_damping)*dYe_step;
 				if(grid->z[z_ind].Ye > Ye_max){
 					cout << " WARNING: Changing Ye in zone " << z_ind << " from " << grid->z[z_ind].Ye << " to Ye_max=" << Ye_max << endl;
 					grid->z[z_ind].Ye = Ye_max;}
@@ -280,11 +280,11 @@ double Transport::brent_method(int z_ind, double (*eq_function)(double,void*), d
 	// do iterative solve
 	int status = GSL_CONTINUE;
 	int iter = 0;
-	while(status == GSL_CONTINUE and iter<brent_itmax){
+	while(status == GSL_CONTINUE and iter<equilibrium_itmax){
 		status = gsl_root_fsolver_iterate (s);
 		double a = gsl_root_fsolver_x_lower(s);
 		double b = gsl_root_fsolver_x_upper(s);
-		status = gsl_root_test_interval(a,b,0,brent_solve_tolerance);
+		status = gsl_root_test_interval(a,b,0,equilibrium_tolerance);
 		iter++;
 	}
 

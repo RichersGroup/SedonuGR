@@ -40,9 +40,9 @@ void Grid0DIsotropic::read_model_file(Lua* lua)
 {
 	// number of zones
 	z.resize(1);
-	z[0].rho = lua->scalar<double>("rho");
-	z[0].T   = lua->scalar<double>("T")/pc::k_MeV;
-	z[0].Ye  = lua->scalar<double>("Ye");
+	z[0].rho = lua->scalar<double>("Grid0DIsotropic_rho");
+	z[0].T   = lua->scalar<double>("Grid0DIsotropic_T")/pc::k_MeV;
+	z[0].Ye  = lua->scalar<double>("Grid0DIsotropic_Ye");
 	z[0].H_vis = 0;
 	z[0].u[0] = 0;
 	z[0].u[1] = 0;

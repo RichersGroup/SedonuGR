@@ -60,7 +60,7 @@ void Grid3DCart::read_model_file(Lua* lua)
 {
 	std::string model_type = lua->scalar<std::string>("model_type");
 	if(model_type == "SpEC") read_SpEC_file(lua);
-	else if(model_type == "David") read_David_file(lua);
+	else if(model_type == "THC") read_THC_file(lua);
 	else{
 		cout << "ERROR: model type unknown." << endl;
 		exit(8);
@@ -69,7 +69,7 @@ void Grid3DCart::read_model_file(Lua* lua)
 
 
 
-void Grid3DCart::read_David_file(Lua* lua)
+void Grid3DCart::read_THC_file(Lua* lua)
 {
 	// verbocity
 	int my_rank;
@@ -95,7 +95,7 @@ void Grid3DCart::read_David_file(Lua* lua)
 	H5::H5File file(model_filename, H5F_ACC_RDONLY);
 
 	// get the refinement level
-	int reflevel = lua->scalar<int>("reflevel");
+	int reflevel = lua->scalar<int>("Grid3DCart_THC_reflevel");
 	stringstream groupname;
 	groupname << "/reflevel=" << reflevel << "/";
 	group = file.openGroup(groupname.str());
@@ -143,12 +143,12 @@ void Grid3DCart::read_David_file(Lua* lua)
 	}
 
 	// modify grid in event of symmetry
-	reflect[0] = lua->scalar<int>("grid3Dcart_reflect_x");
-	reflect[1] = lua->scalar<int>("grid3Dcart_reflect_y");
-	reflect[2] = lua->scalar<int>("grid3Dcart_reflect_z");
-	rotate_hemisphere[0] = lua->scalar<int>("grid3Dcart_rotate_hemisphere_x"); // rotate around z
-	rotate_hemisphere[1] = lua->scalar<int>("grid3Dcart_rotate_hemisphere_y"); // rotate around z
-	rotate_quadrant = lua->scalar<int>("grid3Dcart_rotate_quadrant"); // rotate around z, x and y both positive
+	reflect[0] = lua->scalar<int>("Grid3DCart_reflect_x");
+	reflect[1] = lua->scalar<int>("Grid3DCart_reflect_y");
+	reflect[2] = lua->scalar<int>("Grid3DCart_reflect_z");
+	rotate_hemisphere[0] = lua->scalar<int>("Grid3DCart_rotate_hemisphere_x"); // rotate around z
+	rotate_hemisphere[1] = lua->scalar<int>("Grid3DCart_rotate_hemisphere_y"); // rotate around z
+	rotate_quadrant = lua->scalar<int>("Grid3DCart_rotate_quadrant"); // rotate around z, x and y both positive
 
 	// check parameters
 	if(reflect[0] || reflect[1]){

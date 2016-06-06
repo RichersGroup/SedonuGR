@@ -42,15 +42,15 @@ namespace pc = physical_constants;
 void Grid2DSphere::read_model_file(Lua* lua)
 {
 	std::string model_type = lua->scalar<std::string>("model_type");
-	if(model_type == "flash") read_flash_file(lua);
-	else if(model_type == "Hiroki") read_hiroki_file(lua);
+	if(model_type == "Flash") read_flash_file(lua);
+	else if(model_type == "Nagakura") read_nagakura_file(lua);
 	else if(model_type == "custom") custom_model(lua);
 	else{
 		cout << "ERROR: model type unknown." << endl;
 		exit(8);
 	}
 }
-void Grid2DSphere::read_hiroki_file(Lua* lua)
+void Grid2DSphere::read_nagakura_file(Lua* lua)
 {
 	// verbocity
 	int my_rank;
@@ -82,7 +82,7 @@ void Grid2DSphere::read_hiroki_file(Lua* lua)
 	theta_out.resize(ntheta);
 
 	// read in the radial grid
-	string rgrid_file = lua->scalar<string>("rgrid_file");
+	string rgrid_file = lua->scalar<string>("Grid2DSphere_Nagakura_rgrid_file");
 	ifstream rgrid_infile;
 	rgrid_infile.open(rgrid_file.c_str());
 	rgrid_infile >> r_out.min;
@@ -90,7 +90,7 @@ void Grid2DSphere::read_hiroki_file(Lua* lua)
 	rgrid_infile.close();
 
 	// read in the theta grid
-	string thetagrid_file = lua->scalar<string>("thetagrid_file");
+	string thetagrid_file = lua->scalar<string>("Grid2DSphere_Nagakura_thetagrid_file");
 	ifstream thetagrid_infile;
 	thetagrid_infile.open(thetagrid_file.c_str());
 	theta_out.min = 0;
@@ -152,8 +152,8 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	// open the model files
 	if(rank0) cout << "# Reading the model files..." << endl;
 	string model_filename   = lua->scalar<string>("model_file"  );
-	string xCoords_filename = lua->scalar<string>("xCoords_file");
-	string yCoords_filename = lua->scalar<string>("yCoords_file");
+	string xCoords_filename = lua->scalar<string>("Grid2DSphere_Flash_xCoords_file");
+	string yCoords_filename = lua->scalar<string>("Grid2DSphere_Flash_yCoords_file");
 	H5::H5File file(model_filename, H5F_ACC_RDONLY);
 	ifstream xCoords_file, yCoords_file;
 	xCoords_file.open(xCoords_filename.c_str());

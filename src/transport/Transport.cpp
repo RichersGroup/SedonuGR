@@ -30,6 +30,7 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <string>
 #include "physical_constants.h"
 #include "Transport.h"
 #include "Grid.h"
@@ -51,11 +52,11 @@ Transport::Transport(){
 	verbose = -MAXLIM;
 	MPI_nprocs = -MAXLIM;
 	MPI_myID = -MAXLIM;
-	solve_T = -MAXLIM;
-	solve_Ye = -MAXLIM;
-	damping = NaN;
-	brent_itmax = -MAXLIM;
-	brent_solve_tolerance = NaN;
+	equilibrium_T = -MAXLIM;
+	equilibrium_Ye = -MAXLIM;
+	equilibrium_damping = NaN;
+	equilibrium_itmax = -MAXLIM;
+	equilibrium_tolerance = NaN;
 	T_min = NaN;
 	T_max = NaN;
 	Ye_min = NaN;
@@ -81,12 +82,11 @@ Transport::Transport(){
 	n_emit_zones_per_bin = -MAXLIM;
 	visc_specific_heat_rate = NaN;
 	reflect_outer = -MAXLIM;
-	emissions_per_timestep = -MAXLIM;
+	n_emission_stages = -MAXLIM;
 	do_emit_by_bin = -MAXLIM;
 	write_rays_every = -MAXLIM;
 	write_spectra_every = -MAXLIM;
 	write_zones_every = -MAXLIM;
-	annihil_rho_cutoff = NaN;
 	particle_total_energy = NaN;
 	particle_core_abs_energy = NaN;
 	particle_fluid_abs_energy = NaN;
@@ -124,7 +124,7 @@ void Transport::init(Lua* lua)
 	do_relativity = lua->scalar<int>("do_relativity");
 	if(do_visc) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");
 	reflect_outer = lua->scalar<int>("reflect_outer");
-	emissions_per_timestep = lua->scalar<int>("emissions_per_timestep");
+	n_emission_stages = lua->scalar<int>("n_emission_stages");
 	do_emit_by_bin = lua->scalar<int>("do_emit_by_bin");
 	if(do_emit_by_bin){
 		n_emit_zones_per_bin = lua->scalar<int>("n_emit_therm_per_bin");
@@ -138,14 +138,13 @@ void Transport::init(Lua* lua)
 	// read simulation parameters
 	verbose      = lua->scalar<int>("verbose");
 	do_annihilation = lua->scalar<int>("do_annihilation");
-	if(do_annihilation) annihil_rho_cutoff = lua->scalar<int>("annihil_rho_cutoff");
 	radiative_eq = lua->scalar<int>("radiative_eq");
-	solve_T       = lua->scalar<int>("solve_T");
-	solve_Ye      = lua->scalar<int>("solve_Ye");
-	if(solve_T || solve_Ye){
-		damping               = lua->scalar<double>("damping");
-		brent_itmax           = lua->scalar<int>("brent_itmax");
-		brent_solve_tolerance = lua->scalar<double>("brent_tolerance");
+	equilibrium_T       = lua->scalar<int>("equilibrium_T");
+	equilibrium_Ye      = lua->scalar<int>("equilibrium_Ye");
+	if(equilibrium_T || equilibrium_Ye){
+		equilibrium_damping   = lua->scalar<double>("equilibrium_damping");
+		equilibrium_itmax     = lua->scalar<int>("equilibrium_itmax");
+		equilibrium_tolerance = lua->scalar<double>("equilibrium_tolerance");
 	}
 	step_size     = lua->scalar<double>("step_size");
 	importance_bias = lua->scalar<double>("importance_bias");
@@ -161,7 +160,7 @@ void Transport::init(Lua* lua)
 	write_spectra_every = lua->scalar<double>("write_spectra_every");
 
 	// eos
-	string eos_filename = lua->scalar<string>("nulib_eos_filename");
+	string eos_filename = lua->scalar<string>("nulib_eos");
 	nulib_eos_read_table((char*)eos_filename.c_str());
 
 	//=================//
@@ -171,11 +170,11 @@ void Transport::init(Lua* lua)
 	string grid_type = lua->scalar<string>("grid_type");
 
 	// create a grid of the appropriate type
-	if     (grid_type == "grid_0D_isotropic") grid = new Grid0DIsotropic;
-	else if(grid_type == "grid_1D_sphere"   ) grid = new Grid1DSphere;
-	else if(grid_type == "grid_2D_sphere"   ) grid = new Grid2DSphere;
-	else if(grid_type == "grid_2D_cylinder" ) grid = new Grid2DCylinder;
-	else if(grid_type == "grid_3D_cart"     ) grid = new Grid3DCart;
+	if     (grid_type == "Grid0DIsotropic") grid = new Grid0DIsotropic;
+	else if(grid_type == "Grid1DSphere"   ) grid = new Grid1DSphere;
+	else if(grid_type == "Grid2DSphere"   ) grid = new Grid2DSphere;
+	else if(grid_type == "Grid2DCylinder" ) grid = new Grid2DCylinder;
+	else if(grid_type == "Grid3DCart"     ) grid = new Grid3DCart;
 	else{
 		if(rank0) std::cout << "# ERROR: the requested grid type is not implemented." << std::endl;
 		exit(3);}
@@ -213,7 +212,7 @@ void Transport::init(Lua* lua)
 	//==================//
 	// SET UP TRANSPORT //
 	//==================//
-	double grey_opac = lua->scalar<double>("nut_grey_opacity");
+	double grey_opac = lua->scalar<double>("grey_opacity");
 	int num_nut_species = 0;
 	if(grey_opac < 0){ // get everything from NuLib
 		// read the fortran module into memory
@@ -232,7 +231,7 @@ void Transport::init(Lua* lua)
 	for(int i=0; i<num_nut_species; i++){
 		Neutrino* neutrinos_tmp = new Neutrino;
 		neutrinos_tmp->nulibID = i;
-		neutrinos_tmp->num_nut_species = num_nut_species;
+		neutrinos_tmp->num_species = num_nut_species;
 		neutrinos_tmp->init(lua, this);
 		species_list.push_back(neutrinos_tmp);
 	}
@@ -290,17 +289,17 @@ void Transport::init(Lua* lua)
 		if(core_emit_method==2){ // give temperature, mu, luminosity
 			PRINT_ASSERT(species_list.size(),==,3);
 			vector<double> T_core(species_list.size(),0);
-			T_core[0] = lua->scalar<double>("T0_core") / pc::k_MeV; //K
-			T_core[1] = lua->scalar<double>("T1_core") / pc::k_MeV; //K
-			T_core[2] = lua->scalar<double>("T2_core") / pc::k_MeV; //K
 			vector<double> L_core(species_list.size(),0);
-			L_core[0] = lua->scalar<double>("L0_core"); //erg/s
-			L_core[1] = lua->scalar<double>("L1_core"); //erg/s
-			L_core[2] = lua->scalar<double>("L2_core"); //erg/s
 			vector<double> mu_core(species_list.size(),0);
-			mu_core[0] = lua->scalar<double>("mu0_core") * pc::MeV_to_ergs; //erg
-			mu_core[1] = lua->scalar<double>("mu1_core") * pc::MeV_to_ergs; //erg
-			mu_core[2] = lua->scalar<double>("mu2_core") * pc::MeV_to_ergs; //erg
+			string param;
+			for(unsigned i=0; i<species_list.size(); i++){
+				param = "T" + std::to_string(i) + "_core";
+				T_core[i] = lua->scalar<double>(param.c_str()) / pc::k_MeV; //K
+				param = "L" + std::to_string(i) + "_core";
+				L_core[i] = lua->scalar<double>(param.c_str()); //erg/s
+				param = "mu" + std::to_string(i) + "_core";
+				mu_core[i] = lua->scalar<double>(param.c_str()) * pc::MeV_to_ergs; //erg
+			}
 			init_core(r_core,T_core,mu_core,L_core);
 		}
 	}
@@ -388,8 +387,8 @@ void Transport::step()
 	reset_radiation();
 
 	// emit, propagate, and normalize. steady_state means no propagation time limit.
-	for(int i=0; i<emissions_per_timestep; i++){
-	  if(rank0 && verbose) cout << "#   subcycle " << i+1 << "/" << emissions_per_timestep << endl;
+	for(int i=0; i<n_emission_stages; i++){
+	  if(rank0 && verbose) cout << "#   subcycle " << i+1 << "/" << n_emission_stages << endl;
 		emit_particles();
 		propagate_particles();
 	}
@@ -398,8 +397,8 @@ void Transport::step()
 	if(do_annihilation) calculate_annihilation();
 
 	// solve for T_gas and Ye structure
-	if(solve_T || solve_Ye){
-		if(solve_T || solve_Ye) solve_eq_zone_values();  // solve T,Ye s.t. E_abs=E_emit and N_abs=N_emit
+	if(equilibrium_T || equilibrium_Ye){
+		if(equilibrium_T || equilibrium_Ye) solve_eq_zone_values();  // solve T,Ye s.t. E_abs=E_emit and N_abs=N_emit
 		else update_zone_quantities();         // update T,Ye based on heat capacity and number of leptons
 	}
 	if(MPI_nprocs>1) synchronize_gas();       // each processor broadcasts its solved zones to the other processors
@@ -496,15 +495,12 @@ void Transport::calculate_annihilation() const{
 		double Q_tmp = 0;
 		double vol = grid->zone_lab_volume(z_ind);
 		double zone_annihil_net = 0;
-		bool count_annihil = (grid->z[z_ind].rho < annihil_rho_cutoff) || (annihil_rho_cutoff < 0);
 		Q_tmp = Neutrino::annihilation_rate(grid->z[z_ind].distribution[s_nue],
 				 grid->z[z_ind].distribution[s_nubare],
 				 true,species_list[s_nue]->weight);
 		zone_annihil_net += Q_tmp;
-		if(count_annihil){
-			#pragma omp atomic
-			H_nunu_lab[0] += Q_tmp*vol;
-		}
+		#pragma omp atomic
+		H_nunu_lab[0] += Q_tmp*vol;
 		PRINT_ASSERT(H_nunu_lab[1],==,0);
 
 		if(species_list.size()==3){
@@ -513,10 +509,8 @@ void Transport::calculate_annihilation() const{
 					grid->z[z_ind].distribution[s_nux],
 					false,species_list[s_nux]->weight);
 			zone_annihil_net += 2.0 * Q_tmp;
-			if(count_annihil){
-				#pragma omp atomic
-				H_nunu_lab[2] += 2.0 * Q_tmp*vol;
-			}
+			#pragma omp atomic
+			H_nunu_lab[2] += 2.0 * Q_tmp*vol;
 		}
 
 		else if(species_list.size()==4){
@@ -527,10 +521,8 @@ void Transport::calculate_annihilation() const{
 					grid->z[z_ind].distribution[s_nubarx],
 					false,species_list[s_nux]->weight);
 			zone_annihil_net += 2.0 * Q_tmp;
-			if(count_annihil){
-				#pragma omp atomic
-				H_nunu_lab[2] += 2.0 * Q_tmp*vol;
-			}
+			#pragma omp atomic
+			H_nunu_lab[2] += 2.0 * Q_tmp*vol;
 			PRINT_ASSERT(H_nunu_lab[3],==,0);
 		}
 
@@ -545,19 +537,15 @@ void Transport::calculate_annihilation() const{
 					  grid->z[z_ind].distribution[s_nubarmu],
 					  false,species_list[s_numu]->weight);
 			zone_annihil_net += Q_tmp;
-			if(count_annihil){
-				#pragma omp atomic
-				H_nunu_lab[2] += Q_tmp*vol;
-			}
+			#pragma omp atomic
+			H_nunu_lab[2] += Q_tmp*vol;
 			PRINT_ASSERT(H_nunu_lab[3],==,0);
 			Q_tmp = Neutrino::annihilation_rate(grid->z[z_ind].distribution[s_nutau   ],
 					  grid->z[z_ind].distribution[s_nubartau],
 					  false,species_list[s_nutau]->weight);
 			zone_annihil_net += Q_tmp;
-			if(count_annihil){
-				#pragma omp atomic
-				H_nunu_lab[4] += Q_tmp*vol;
-			}
+			#pragma omp atomic
+			H_nunu_lab[4] += Q_tmp*vol;
 			PRINT_ASSERT(H_nunu_lab[5],==,0);
 		}
 		else{
@@ -609,7 +597,7 @@ void Transport::normalize_radiative_quantities(){
 	double net_neut_heating = 0;
 
 	// normalize zone quantities
-	double multiplier = (double)emissions_per_timestep;
+	double multiplier = (double)n_emission_stages;
 	double inv_multiplier = 1.0/multiplier;
     #pragma omp parallel for reduction(+:net_visc_heating,net_neut_heating)
 	for(unsigned z_ind=0;z_ind<grid->z.size();z_ind++)
@@ -929,14 +917,14 @@ void Transport::synchronize_gas()
 		buffer.resize(size);
 
 		// broadcast T_gas
-		if(solve_T){
+		if(equilibrium_T){
 			if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->z[i].T;
 			MPI_Bcast(&buffer.front(), size, MPI_DOUBLE, proc, MPI_COMM_WORLD);
 			if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->z[i].T = buffer[i-my_begin];
 		}
 
 		// broadcast Ye
-		if(solve_Ye){
+		if(equilibrium_Ye){
 			if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->z[i].Ye;
 			MPI_Bcast(&buffer.front(), size, MPI_DOUBLE, proc, MPI_COMM_WORLD);
 			if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->z[i].Ye = buffer[i-my_begin];
@@ -974,7 +962,7 @@ void Transport::update_zone_quantities(){
 		Zone *z = &(grid->z[i]);
 
 		// adjust the temperature based on the heat capacity (erg/K)
-		if(solve_T){
+		if(equilibrium_T){
 			// PRINT_ASSERT(z.heat_cap,>,0);
 			// z.T_gas += (z->e_abs-z->e_emit) / z->heat_cap;
 			// PRINT_ASSERT(z->T_gas,>=,T_min);
@@ -982,7 +970,7 @@ void Transport::update_zone_quantities(){
 		}
 
 		// adjust the Ye based on the lepton capacity (number of leptons)
-		if(solve_Ye){
+		if(equilibrium_Ye){
 			double Nbary = grid->zone_rest_mass(i) / mean_mass(i);
 			PRINT_ASSERT(Nbary,>,0);
 			z->Ye += (z->nue_abs-z->anue_abs - z->l_emit) / Nbary;
@@ -1018,7 +1006,7 @@ int Transport::number_of_bins() const{
 
 double Transport::importance(const double abs_opac, const double scat_opac, const double dx) const{
 	if(importance_bias<=0) return 1.0;
-	double taubar = (abs_opac + scat_opac) * dx * importance_bias;
+	double taubar = (abs_opac + scat_opac) * dx;
 	double result = (importance_bias*taubar<=1.0 ? 1.0 : exp(1.0 - importance_bias * taubar));
 	return max(result,min_importance);
 }

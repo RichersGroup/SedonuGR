@@ -36,7 +36,7 @@ namespace pc = physical_constants;
 
 // constructor
 Neutrino::Neutrino(){
-	num_nut_species = MAXLIM;
+	num_species = MAXLIM;
 	nulibID = MAXLIM;
 	cutoff=0;
 }
@@ -48,9 +48,8 @@ Neutrino::Neutrino(){
 void Neutrino::myInit(Lua* lua)
 {
 	// set up the frequency table
-	cutoff        = lua->scalar<double>("nut_cdf_cutoff");
-	grey_opac     = lua->scalar<double>("nut_grey_opacity");
-	grey_abs_frac = lua->scalar<double>("nut_grey_abs_frac");
+	cutoff        = lua->scalar<double>("cdf_cutoff");
+	grey_opac     = lua->scalar<double>("grey_opacity");
 	if(grey_opac < 0){
 		nulib_get_nu_grid(nu_grid);
 
@@ -64,15 +63,16 @@ void Neutrino::myInit(Lua* lua)
 
 	}
 	else{
-		double nu_start = lua->scalar<double>("nut_nugrid_start");
-		double nu_stop  = lua->scalar<double>("nut_nugrid_stop");
+		grey_abs_frac = lua->scalar<double>("grey_abs_frac");
+		double nu_start = lua->scalar<double>("nugrid_start");
+		double nu_stop  = lua->scalar<double>("nugrid_stop");
 		PRINT_ASSERT(nu_stop,>,nu_start);
-		int      n_nu   = lua->scalar<int>("nut_nugrid_n");
+		int      n_nu   = lua->scalar<int>("nugrid_n");
 		nu_grid.init(nu_start,nu_stop,n_nu);
 
 		// set neutrino's min and max values
-		T_min   =  1.0;
-		T_max   =  1e12;
+		T_min   =  0.0;
+		T_max   =  numeric_limits<double>::infinity();
 		Ye_min  = 0;
 		Ye_max  = 1;
 		rho_min = -numeric_limits<double>::infinity();
@@ -81,8 +81,8 @@ void Neutrino::myInit(Lua* lua)
 
 	// intialize output spectrum
 	PRINT_ASSERT(nu_grid.size(),>,0);
-	int nmu  = lua->scalar<int>("nut_spec_n_mu");
-	int nphi = lua->scalar<int>("nut_spec_n_phi");
+	int nmu  = lua->scalar<int>("spec_n_mu");
+	int nphi = lua->scalar<int>("spec_n_phi");
 	SpectrumArray tmp_spectrum;
 	LocateArray tmp_mugrid, tmp_phigrid;
 	tmp_mugrid.init( -1     , 1     , nmu );
@@ -98,19 +98,19 @@ void Neutrino::myInit(Lua* lua)
 	if     (nulibID == 0) {name = "Electron Neutrinos";              weight = 1.0;}
 	else if(nulibID == 1) {name = "Electron Anti-Neutrinos";         weight = 1.0;}
 	else if(nulibID == 2){
-		if     (num_nut_species == 3) {name = "Mu/Tau Anti/Neutrinos"; weight = 4.0;}
-		else if(num_nut_species == 4) {name = "Mu/Tau Neutrinos";      weight = 2.0;}
-		else if(num_nut_species == 6) {name = "Mu Neutrinos";          weight = 1.0;}
+		if     (num_species == 3) {name = "Mu/Tau Anti/Neutrinos"; weight = 4.0;}
+		else if(num_species == 4) {name = "Mu/Tau Neutrinos";      weight = 2.0;}
+		else if(num_species == 6) {name = "Mu Neutrinos";          weight = 1.0;}
 		else                          {name = "ERROR";                 weight = -1;}}
 	else if(nulibID == 3){
-		if     (num_nut_species == 4) {name = "Mu/Tau Anti-Neutrinos"; weight = 2.0;}
-		else if(num_nut_species == 6) {name = "Mu Antineutrino";       weight = 1.0;}
+		if     (num_species == 4) {name = "Mu/Tau Anti-Neutrinos"; weight = 2.0;}
+		else if(num_species == 6) {name = "Mu Antineutrino";       weight = 1.0;}
 		else                          {name = "ERROR";                 weight = -1;}}
 	else if(nulibID == 4){
-		if(num_nut_species == 6)      {name = "Tau Neutrinos";         weight = 1.0;}
+		if(num_species == 6)      {name = "Tau Neutrinos";         weight = 1.0;}
 		else                          {name = "ERROR";                 weight = -1;}}
 	else if(nulibID == 5){
-		if(num_nut_species == 6)      {name = "Tau Anti-Neutrinos";    weight = 1.0;}
+		if(num_species == 6)      {name = "Tau Anti-Neutrinos";    weight = 1.0;}
 		else                          {name = "ERROR";                 weight = -1;}}
 	else{
 		cout << "ERROR: Sedona does not know how to deal with a neutrino ID of " << nulibID << "." << endl;

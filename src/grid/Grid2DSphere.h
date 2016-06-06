@@ -30,6 +30,12 @@
 
 #include "Grid.h"
 
+// PARAMETERS
+//    Grid2DSphere_Flash_rgrid_file
+//    Grid2DSphere_Flash_thetagrid_file
+//    Grid2DSphere_Nagakura_xcoords_file
+//    Grid2DSphere_Nagakura_ycoords_file
+
 //*******************************************
 // 1-Dimensional Spherical geometry
 //*******************************************
@@ -48,7 +54,7 @@ public:
 
 	void read_model_file(Lua* lua);
 	void read_flash_file(Lua* lua);
-	void read_hiroki_file(Lua* lua);
+	void read_nagakura_file(Lua* lua);
 	void custom_model(Lua* lua);
 
 	// required functions
