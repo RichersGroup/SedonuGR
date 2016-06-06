@@ -1,0 +1,282 @@
+PARAMETERS
+===========================
+[] indicates options
+() indicates prerequisite
+
+||================||
+||INCLUDED PHYSICS||
+||================||
+
+do_visc = [0,1] add energy source to matter absorption
+	representing viscous heating. Simply adds some amount of
+        energy to each zone's e_abs immediately after particles are
+        propagated. Only affects solving for temperature, does not
+	directly affect neutrino emission rates.
+
+visc_specific_heat_rate = [double>0] (do_visc==1) viscous
+        heating per unit mass (erg/g/s)
+
+do_relativity = [0,1] lorentz transform particles as they
+        interact with the fluid. Lorentz contract fluid so the
+ 	intrinsic fluid variables (e.g. rho,T) are given in the rest
+ 	frame
+
+do_annihilation = [0,1] compute annihilation rates based on
+        integrating distribution functions over annihilation kernels.
+
+radiative_eq = [0,1] immediately re-emit particles that are
+        absorbed, and allow particles to die on absorption. Otherwise,
+	particles just die when they are absorbed. Results in speedup if valid.
+
+reflect_outer = [0,1] reflect back in from the outer boundary
+        condition? If (1) no particles escape through the outer BC. If
+	no other way of killing particles, you will find yourself in
+	an infinite loop.
+
+
+||===================||
+||EQUILIBRIUM SOLVING||
+||===================||
+
+equilibrium_T = [0,1] solve for T such that each zone emits the energy
+	      it absorbs after each iteration
+
+equilibrium_Ye = [0,1] solve for Ye such that the zone emits the
+	       lepton number it absorbs after each iteration
+
+equilibrium_damping = [0<float<1] changes in values between iterations
+		    are decreased by this factor to stabilize the solve
+
+equilibrium_itmax = [int>0] maximum number of iterations the
+		  equilibrium solver can use
+
+equilibrium_tolerance = [float>0] tolerance of the equilibrium solver
+
+
+||======================||
+||OPACITY AND EMISSIVITY||
+||======================||
+
+grey_opacity = [float>0] neutrino grey opacity (cm^2/g). If <=0, uses NuLib table instead
+
+grey_abs_frac = [0<float<1] (grey_opacity=>0) probability of neutrino
+        to be absorbed (rather than scattered)
+
+nugrid_start = [float>=0] (grey_opacity=>0) bottom of the neutrino frequency grid
+
+nugrid_stop = [float>=0] (grey_opacity=>0) top of the neutrino frequency grid
+
+nugrid_n = [int>0] (grey_opacity=>0) number of neutrino frequency bins
+
+nulib_table = [string] (grey_opacity<0) path to the NuLib opacity table
+
+nulib_eos = [string] path to the equation of state table - used in
+	  some of the tests and to print chemical potentials in the
+	  output. Value not used if compiled with Helmholtz EOS.
+
+opac_interp_method = [0,1,2,3] 
+		   0-->piecewise constant (most self-consistent)
+		   1-->linear
+		   3-->logarithmic
+		   4-->power
+
+cdf_interpolation_order = [0,1,3] -- order of interpolation of
+        emissivity CDF. 0 is most self-consistent (completely
+	self-consistent if no relativity). All are guaranteed to be
+	monotonic.
+
+cdf_cutoff = [0<real<1] -- change CDF values below this number
+        to be 0. Used to fix machine-precision errors in some
+	pathological cases.
+
+
+||==============||
+||ESCAPE SPECTRA||
+||==============||
+
+spec_n_mu = [int>0] number of cos(theta) bins in the spectra
+
+spec_n_phi = [int>0] number of phi bins in the spectra
+
+
+||=====================||
+||DISTRIBUTION FUNCTION||
+||=====================||
+
+distribution_nmu = [int>0] -- number of cos(theta) bins in every
+        grid zone's distribution function.
+
+distribution_nphi = [int>0] -- number of phi bins in every grid
+        zone's distribution function.
+
+
+||==============||
+||GRID AND MODEL||
+||==============||
+
+grid_type = [string] which type of grid the input data is for
+	  "Grid0DIsotropic" --> completely isotropic
+	  "Grid1DSphere" --> 1D (spherical symmetry)
+	  "Grid2DSphere" --> 2D (rotational symmetry)
+	  "Grid2DCylinder" --> 2D (rotational symmetry)
+	  "Grid3DCart" --> 3D (no symmetries) 
+
+model_type = [string] which format is the model file in?
+	   Grid0DIsotropic --> not used
+	   Grid1DSphere --> not used
+	   Grid2DSphere --> ["Nagakura","Flash","custom"]
+	   Grid2DCylinder --> not used
+	   Grid3DCart --> ["SpEC","THC"]
+
+model_file = [string] path to the model file
+
+(grid_type="Grid0DIsotropic")
+Grid0DIsotropic_rho = [float>0] density in g/ccm
+Grid0DIsotropic_T = [float>0] temperature in MeV
+Grid0DIsotropic_Ye = [0<=float<=1] electron fraction
+
+(grid_type="Grid2DSphere",model_type="Nagakura")
+   Grid2DSphere_Nagakura_rgrid_file = [string] path to radial coordinates
+   Grid2DSphere_Nagakura_thetagrid_file = [string] path to theta coordinates
+
+(grid_type="Grid2DSphere",model_type="Flash")
+   Grid2DSphere_Flash_xCoords_file = [string] path to Flash x coordinates
+   Grid2DSphere_Flash_yCoords_file = [string] path to Flash y coordinates
+
+(grid_type="Grid3DCart")
+   Grid3DCart_reflect_x = [0,1] reflection symmetry across x=0 plane?
+   Grid3DCart_reflect_y = [0,1] reflection symmetry across y=0 plane?
+   Grid3DCart_reflect_z = [0,1] reflection symmetry across z=0 plane?
+   Grid3DCart_rotate_hemisphere_x = [0,1] hemispherical rotational
+   				  symmetry with boundaries at x=0?
+   Grid3DCart_rotate_hemisphere_y = [0,1] hemispherical rotational
+   				  symmetry with boundaries at y=0?
+   Grid3DCart_rotate_quadrant = [0,1] quadrant rotational symmetry
+   			      with boundaries at x=0 and y=0?
+   Grid3DCart_THC_reflevel = [int>0] (model_type="THC") read data from
+   			   which THC refinement level
+
+
+||======||
+||OUTPUT||
+||======||
+
+write_zones_every = [int>0] write the fluid data every n iterations
+
+write_rays_every = [int>0] write fluid data along prescribed ray paths
+		 every n iterations
+
+write_spectra_every = [int>0] write spectra (integrated since last
+		    spectra output) every n iterations
+
+output_zones = [0,1] output fluid/radiation data zone by zone?
+
+output_zones_distribution = [0,1] (output_zones=1) output the full
+			  distribution function in every zone?
+
+output_hdf5 = [0,1] (output_zones=1) output grid data in hdf5 format?
+
+
+||=================||
+||PARTICLE CREATION||
+||=================||
+
+n_emission_stages = [int>0] number of times to emit
+		  particles. Essentially running the experiment many
+		  times rather than all at once so a huge number of
+		  particles can be used without running out of memory.
+
+do_emit_by_bin = [0,1]
+	       0 --> emit number of particle proportional to
+	             integrated emissivity 
+	       1 --> emit the same number of particles in each
+	             energy/cell/species bin
+
+(do_emit_by_bin=1)
+n_emit_core_per_bin = [int>=0] number of particles to emit from the
+ 		    core per species/energy bin during each emission
+ 		    stage
+n_emit_therm_per_bin = [int>=0] number of particles to emit from cells
+		     per energy/cell/species bin during each emission
+		     stage
+
+(do_emit_by_bin=0)
+n_emit_core = [int>0] number of particles to emit from the inner core
+	    during each emission stage
+n_emit_therm = [int>0] number of particles emitted thermally within
+	     zones during each emission stage
+
+
+||============||
+||INNER SOURCE||
+||============||
+
+r_core = [float>0] radius of inner emitting core (cm)
+
+core_emit_method = [1,2]
+		 1-->input {T,mue,multiplier}. Luminosity is determined
+		     by (blackbody luminosity) * multiplier
+		 2-->input {T,mu,L} for each species
+
+(core_emit_method=1)
+T_core = [float>0] temperature of the inner emitting core (K)
+core_nue_chem_pot = [real] electron neutrino chemical potential of
+		  neutrinos emitted from core (MeV)
+core_lum_multiplier = [real>0] amplify the natural Stefan-Boltzmann
+		    blackbody core luminosity by this factor.
+
+(core_emit_method=2)
+L[i]_core = [float>0] L0_core, L1_core, etc. Luminosity of inner
+	  emitting core for species 0, 1, etc. (erg/s)
+T[i]_core = [float>0] T0_core, T1_core, etc. Temperature of inner
+	  emitting core for species 0, 1, etc. (MeV)
+mu[i]_core = [float] mu0_core, mu1_core, etc. Chemical potential of
+	   each species emitted from the inner core (MeV)
+
+
+||================||
+||GENERAL CONTROLS||
+||================||
+
+verbose = [0,1] Print detailed information to stdout?
+
+max_n_iter = [int>=0] stop after this many iterations (1 iteration
+	   is a emit-propagate-solve cycle)
+
+step_size = [float>0] maximum fraction of a zone length a particle is
+	  allowed to travel before updating opacity information
+
+reflect_outer = [0,1]
+	      0 --> outflow outer boundary conditions
+	      1 --> reflecting outer boundary conditions
+
+
+||=======||
+||BIASING||
+||=======||
+
+max_particles = [int] maximum number of particles allowed at any time
+	      ever (to prevent memory issues)
+
+bias_path_length = [0,1]
+		 0 --> no path length biasing
+		 1 --> try to bias path length to one optical depth
+
+max_path_length_boost = [float>0] maximum factor by which step length
+		      PDF can be amplified
+
+importance_bias = [float]
+		<=0 --> no biasing
+		>0 --> assign less importance (i.e. fewer particles)
+		       to highly optically-deep regions. Importance
+                       decays as exp(1 - (optical depth)*(importance_bias))
+
+min_importance = [0<=float<=1] (importance_bias>0) minimum relative
+	       importance a bin can have
+
+min_packet_energy = [float>=0] smallest particle energy, below which
+		  particle is rouletted (erg)
+
+max_packet_energy = [float>=0] largest particle energy, above which
+		  particle is split (erg)
+
