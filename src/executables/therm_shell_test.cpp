@@ -123,7 +123,7 @@ int main(int argc, char **argv)
 	double proc_time_start = MPI_Wtime();
 
 	// read in eos table
-	nulib_eos_read_table(argv[14]);
+	//nulib_eos_read_table(argv[14]);
 
 	// open up the lua parameter file
 	Lua lua;

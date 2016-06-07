@@ -4,8 +4,8 @@ rho=1e10  #g/cm^3
 T=10      #MeV
 Ye=0.1
 E=10      #MeV
-EOS="/data/tables/EOS/HShen.h5"
-NULIB="/data/Hiroki/NuLib_absonly.h5"
+EOS="../../external/tables/EOS/SFHo.h5"
+NULIB="../../external/tables/NuLib/NuLib_simple.h5"
 
 all:
 	$(eval mu=$(shell ../../useful_scripts/EOSsuper/Munue_of_RhoTempYe $(EOS) $(rho) $(T) $(Ye)))

@@ -533,7 +533,7 @@ void Grid2DSphere::custom_model(Lua* lua)
 	if(rank0) cout << "#   Reading 1D model file, mapping to 2D" << endl;
 
 	// open up the model file, complaining if it fails to open
-	string model_file = "neutron_star.mod";
+	std::string model_file = lua->scalar<std::string>("model_file");
 	ifstream infile;
 	infile.open(model_file.c_str());
 	if(infile.fail()){

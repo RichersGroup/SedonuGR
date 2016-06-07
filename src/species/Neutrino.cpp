@@ -68,7 +68,7 @@ void Neutrino::myInit(Lua* lua)
 		double nu_stop  = lua->scalar<double>("nugrid_stop");
 		PRINT_ASSERT(nu_stop,>,nu_start);
 		int      n_nu   = lua->scalar<int>("nugrid_n");
-		nu_grid.init(nu_start,nu_stop,n_nu);
+		nu_grid.init(nu_start/pc::h_MeV,nu_stop/pc::h_MeV,n_nu);
 
 		// set neutrino's min and max values
 		T_min   =  0.0;

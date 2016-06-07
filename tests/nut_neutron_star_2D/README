@@ -1,3 +1,0 @@
-This test should output plots of the temperature and Ye profiles of a neutron star along with theoretical predictions. To run the test just execute "make". This assumes that "make tests" was run in the base directory.
-
-There is a large spike in Ye at the core's location because neutrinos well outside of NSE are being emitted there. There is also a spike at the end because the final cell's density is zero.

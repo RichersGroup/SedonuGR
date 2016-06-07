@@ -18,7 +18,7 @@ data = loadtxt("eas_ye.dat")
 outfile = "eas_ye.pdf"
 
 ## Figure Positioning
-fig = figure(figsize=(10,10))
+fig = mpl.figure.Figure(figsize=(10,10))
 left, bottom, width, height = 0.15, 0.12, 0.82, 0.31
 panels=3
 heights = [0.9*height, 0.9*height, 0.9*height]
@@ -60,11 +60,11 @@ ax[2].axis([xmin,xmax,y2min,y2max])
 for label in ax[2].get_yticklabels():
     label.set_fontsize(15)
 
-xmajorFormatter = FormatStrFormatter('%g')
+xmajorFormatter = mpl.ticker.FormatStrFormatter('%g')
 ax[0].xaxis.set_major_formatter(xmajorFormatter)
-ymajorFormatter = FormatStrFormatter('%g')
+ymajorFormatter = mpl.ticker.FormatStrFormatter('%g')
 ax[0].yaxis.set_major_formatter(ymajorFormatter)
-matplotlib.rc('ytick', labelsize=10)
+mpl.rc('ytick', labelsize=10)
 
 # Axis Labels
 labelsize=30
@@ -72,30 +72,30 @@ labelsize=30
 xlabelx = 0.5
 xlabely = -0.3
 xlabelstring = r'$Y_e$'
-text(xlabelx,xlabely,xlabelstring,fontsize=labelsize,
+mpl.text.Text(xlabelx,xlabely,xlabelstring,fontsize=labelsize,
           horizontalalignment="center",transform=ax[0].transAxes)
 
 y0labelx = -0.15
 y0labely = 0.5
 y0labelstring = r'$\epsilon$ (erg/ccm/s/ster)'
-text(y0labelx,y0labely,y0labelstring,fontsize=0.8*labelsize,
+mpl.text.Text(y0labelx,y0labely,y0labelstring,fontsize=0.8*labelsize,
          verticalalignment="center",rotation='vertical',transform=ax[0].transAxes)
 
 y1labelx = -0.15
 y1labely = 1.5
 y1labelstring = r'$\kappa_a$ (cm$^2$/g)'
-text(y1labelx,y1labely,y1labelstring,fontsize=0.8*labelsize,
+mpl.text.Text(y1labelx,y1labely,y1labelstring,fontsize=0.8*labelsize,
          verticalalignment="center",rotation='vertical',transform=ax[0].transAxes)
 
 y2labelx = -0.15
 y2labely = 2.5
 y2labelstring = r'$\kappa_s$ (cm$^2$/g)'
-text(y2labelx,y2labely,y2labelstring,fontsize=0.8*labelsize,
+mpl.text.Text(y2labelx,y2labely,y2labelstring,fontsize=0.8*labelsize,
          verticalalignment="center",rotation='vertical',transform=ax[0].transAxes)
 
 titlex = 0.5
 titley = 3.05
-text(titlex,titley,pars,fontsize=0.5*labelsize,
+mpl.text.Text(titlex,titley,pars,fontsize=0.5*labelsize,
      horizontalalignment="center",transform=ax[0].transAxes)
 
 ## Output

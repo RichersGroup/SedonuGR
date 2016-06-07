@@ -1,1 +1,1 @@
-This test should output plots of the temperature and Ye profiles of a neutron star. To run the test just execute "make". This assumes that "make tests" was run in the base directory.
+This test should output plots of the temperature and Ye profiles of a neutron star. To run the test just execute "make".

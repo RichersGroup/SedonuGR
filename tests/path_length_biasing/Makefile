@@ -7,7 +7,7 @@
 #5 - number of scatters for each particle
 
 all:
-	../../exe/path_length_test 0.0 100 10 10000000 1 > output.dat
+	../../exe/path_length_biasing_test 0.0 100 10 10000000 1 > output.dat
 	gnuplot compare.gnuplot
 
 clean:

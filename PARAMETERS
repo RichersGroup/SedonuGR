@@ -14,24 +14,24 @@ do_visc = [0,1] add energy source to matter absorption
 	directly affect neutrino emission rates.
 
 visc_specific_heat_rate = [double>0] (do_visc==1) viscous
-        heating per unit mass (erg/g/s)
+			heating per unit mass (erg/g/s)
 
 do_relativity = [0,1] lorentz transform particles as they
-        interact with the fluid. Lorentz contract fluid so the
- 	intrinsic fluid variables (e.g. rho,T) are given in the rest
- 	frame
+              interact with the fluid. Lorentz contract fluid so the
+ 	      intrinsic fluid variables (e.g. rho,T) are given in the
+ 	      rest frame
 
 do_annihilation = [0,1] compute annihilation rates based on
-        integrating distribution functions over annihilation kernels.
+		integrating distribution functions over annihilation kernels.
 
 radiative_eq = [0,1] immediately re-emit particles that are
-        absorbed, and allow particles to die on absorption. Otherwise,
-	particles just die when they are absorbed. Results in speedup if valid.
+             absorbed, and allow particles to die on
+	     absorption. Otherwise, particles just die when they are
+	     absorbed. Results in speedup if valid.
 
-reflect_outer = [0,1] reflect back in from the outer boundary
-        condition? If (1) no particles escape through the outer BC. If
-	no other way of killing particles, you will find yourself in
-	an infinite loop.
+reflect_outer = [0,1]
+	      0 --> outflow outer boundary conditions
+	      1 --> reflecting outer boundary conditions
 
 
 ||===================||
@@ -57,14 +57,17 @@ equilibrium_tolerance = [float>0] tolerance of the equilibrium solver
 ||OPACITY AND EMISSIVITY||
 ||======================||
 
-grey_opacity = [float>0] neutrino grey opacity (cm^2/g). If <=0, uses NuLib table instead
+grey_opacity = [float>0] neutrino grey opacity (cm^2/g). If <=0, uses
+	     NuLib table instead
 
 grey_abs_frac = [0<float<1] (grey_opacity=>0) probability of neutrino
         to be absorbed (rather than scattered)
 
-nugrid_start = [float>=0] (grey_opacity=>0) bottom of the neutrino frequency grid
+nugrid_start = [float>=0] (grey_opacity=>0) bottom of the neutrino
+	     frequency grid (MeV)
 
-nugrid_stop = [float>=0] (grey_opacity=>0) top of the neutrino frequency grid
+nugrid_stop = [float>=0] (grey_opacity=>0) top of the neutrino
+	    frequency grid (MeV)
 
 nugrid_n = [int>0] (grey_opacity=>0) number of neutrino frequency bins
 
@@ -122,10 +125,7 @@ grid_type = [string] which type of grid the input data is for
 	  "Grid3DCart" --> 3D (no symmetries) 
 
 model_type = [string] which format is the model file in?
-	   Grid0DIsotropic --> not used
-	   Grid1DSphere --> not used
 	   Grid2DSphere --> ["Nagakura","Flash","custom"]
-	   Grid2DCylinder --> not used
 	   Grid3DCart --> ["SpEC","THC"]
 
 model_file = [string] path to the model file
@@ -169,22 +169,20 @@ write_rays_every = [int>0] write fluid data along prescribed ray paths
 write_spectra_every = [int>0] write spectra (integrated since last
 		    spectra output) every n iterations
 
-output_zones = [0,1] output fluid/radiation data zone by zone?
-
-output_zones_distribution = [0,1] (output_zones=1) output the full
+output_zones_distribution = [0,1] (write_zones_every>0) output the full
 			  distribution function in every zone?
 
-output_hdf5 = [0,1] (output_zones=1) output grid data in hdf5 format?
+output_hdf5 = [0,1] (write_zones_every>0) output grid data in hdf5 format?
 
 
 ||=================||
 ||PARTICLE CREATION||
 ||=================||
 
-n_emission_stages = [int>0] number of times to emit
-		  particles. Essentially running the experiment many
-		  times rather than all at once so a huge number of
-		  particles can be used without running out of memory.
+n_subcycles = [int>0] number of times to emit particles. Essentially
+	    running the experiment many times rather than all at once
+	    so a huge number of particles can be used without running
+	    out of memory.
 
 do_emit_by_bin = [0,1]
 	       0 --> emit number of particle proportional to
@@ -245,10 +243,6 @@ max_n_iter = [int>=0] stop after this many iterations (1 iteration
 
 step_size = [float>0] maximum fraction of a zone length a particle is
 	  allowed to travel before updating opacity information
-
-reflect_outer = [0,1]
-	      0 --> outflow outer boundary conditions
-	      1 --> reflecting outer boundary conditions
 
 
 ||=======||

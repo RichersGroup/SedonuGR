@@ -82,7 +82,7 @@ Transport::Transport(){
 	n_emit_zones_per_bin = -MAXLIM;
 	visc_specific_heat_rate = NaN;
 	reflect_outer = -MAXLIM;
-	n_emission_stages = -MAXLIM;
+	n_subcycles = -MAXLIM;
 	do_emit_by_bin = -MAXLIM;
 	write_rays_every = -MAXLIM;
 	write_spectra_every = -MAXLIM;
@@ -124,7 +124,8 @@ void Transport::init(Lua* lua)
 	do_relativity = lua->scalar<int>("do_relativity");
 	if(do_visc) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");
 	reflect_outer = lua->scalar<int>("reflect_outer");
-	n_emission_stages = lua->scalar<int>("n_emission_stages");
+	n_subcycles = lua->scalar<int>("n_subcycles");
+	PRINT_ASSERT(n_subcycles,>=,1);
 	do_emit_by_bin = lua->scalar<int>("do_emit_by_bin");
 	if(do_emit_by_bin){
 		n_emit_zones_per_bin = lua->scalar<int>("n_emit_therm_per_bin");
@@ -158,10 +159,6 @@ void Transport::init(Lua* lua)
 	write_zones_every   = lua->scalar<double>("write_zones_every");
 	write_rays_every    = lua->scalar<double>("write_rays_every");
 	write_spectra_every = lua->scalar<double>("write_spectra_every");
-
-	// eos
-	string eos_filename = lua->scalar<string>("nulib_eos");
-	nulib_eos_read_table((char*)eos_filename.c_str());
 
 	//=================//
 	// SET UP THE GRID //
@@ -220,6 +217,11 @@ void Transport::init(Lua* lua)
 		string nulib_table = lua->scalar<string>("nulib_table");
 		nulib_init(nulib_table);
 		num_nut_species = nulib_get_nspecies();
+
+		// eos
+		string eos_filename = lua->scalar<string>("nulib_eos");
+		nulib_eos_read_table((char*)eos_filename.c_str());
+
 	}
 	else{
 		if(rank0) cout << "#   Using grey opacity for electron anti/neutrinos (0 chemical potential)" << endl;
@@ -387,8 +389,8 @@ void Transport::step()
 	reset_radiation();
 
 	// emit, propagate, and normalize. steady_state means no propagation time limit.
-	for(int i=0; i<n_emission_stages; i++){
-	  if(rank0 && verbose) cout << "#   subcycle " << i+1 << "/" << n_emission_stages << endl;
+	for(int i=0; i<n_subcycles; i++){
+	  if(rank0 && verbose) cout << "#   subcycle " << i+1 << "/" << n_subcycles << endl;
 		emit_particles();
 		propagate_particles();
 	}
@@ -414,19 +416,19 @@ void Transport::step()
 void Transport::write(const int it) const{
 	if(rank0){
 		// write zone state when appropriate
-		if(it%write_zones_every==0 && write_zones_every>0){
+		if(write_zones_every>0) if(it%write_zones_every==0 && write_zones_every>0){
 			if(verbose) cout << "# writing zone file " << it << endl;
 			grid->write_zones(it);
 		}
 
 		// write ray data when appropriate
-		if(it%write_rays_every==0 && write_rays_every>0){
+		if(write_rays_every>0) if(it%write_rays_every==0 && write_rays_every>0){
 			if(verbose) cout << "# writing ray file " << it << endl;
 			grid->write_rays(it);
 		}
 
 		// print out spectrum when appropriate
-		if(it%write_spectra_every==0 && write_spectra_every>0){
+		if(write_spectra_every>0) if(it%write_spectra_every==0 && write_spectra_every>0){
 			if(verbose) cout << "# writing spectrum files " << it << endl;
 			for(unsigned i=0; i<species_list.size(); i++) species_list[i]->spectrum.print(it,i);
 		}
@@ -597,13 +599,14 @@ void Transport::normalize_radiative_quantities(){
 	double net_neut_heating = 0;
 
 	// normalize zone quantities
-	double multiplier = (double)n_emission_stages;
+	double multiplier = (double)n_subcycles;
 	double inv_multiplier = 1.0/multiplier;
     #pragma omp parallel for reduction(+:net_visc_heating,net_neut_heating)
 	for(unsigned z_ind=0;z_ind<grid->z.size();z_ind++)
 	{
 		Zone *z = &(grid->z[z_ind]);
 		double inv_mult_four_vol = 1.0/(multiplier * grid->zone_lab_volume(z_ind)); // Lorentz invariant - same in lab and comoving frames. Assume lab_dt=1.0
+		PRINT_ASSERT(inv_mult_four_vol,>=,0);
 
 		if(!grid->good_zone(z_ind)){
 			PRINT_ASSERT(z->e_abs,==,0.0);
@@ -756,11 +759,12 @@ void Transport::sample_zone_species(Particle *p, const int zone_index) const
 		species_cdf.set_value(i,integrated_emis);
 	}
 	species_cdf.normalize();
+	PRINT_ASSERT(species_cdf.N,>=,0);
 
 	// randomly sample the species
 	double z = rangen.uniform();
 	p->s = species_cdf.get_index(z);
-	p->e *= species_list[p->s]->integrate_zone_emis(zone_index) / species_list[p->s]->integrate_zone_biased_emis(zone_index);
+	if(importance_bias>0) p->e *= species_list[p->s]->integrate_zone_emis(zone_index) / species_list[p->s]->integrate_zone_biased_emis(zone_index);
 	PRINT_ASSERT(p->e,>,0);
 	PRINT_ASSERT(p->e,<,INFINITY);
 }

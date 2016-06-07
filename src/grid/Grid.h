@@ -62,7 +62,6 @@ protected:
 
 	// output options
 	int output_zones_distribution;
-	int output_zones;
 	int output_hdf5;
 	int do_annihilation;
 

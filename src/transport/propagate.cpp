@@ -127,12 +127,11 @@ void Transport::which_event(Particle *p, const int z_ind, const double lab_opac,
 	PRINT_ASSERT(d_boundary, >, 0);
 
 	// find out what event happens (shortest distance) =====================================
-	*d_smallest = numeric_limits<double>::infinity();
-	*event = interact;
-	*d_smallest = d_interact;
-	if( d_zone <= *d_smallest ){
-		*event  = zoneEdge;
-		*d_smallest = d_zone;
+	*event  = zoneEdge;
+	*d_smallest = d_zone;
+	if( d_interact <= *d_smallest ){
+		*event = interact;
+		*d_smallest = d_interact;
 	}
 	if( d_boundary <= *d_smallest ){
 		*event = boundary;
@@ -264,10 +263,12 @@ void Transport::move(Particle* p, const double lab_d, const double lab_opac){
 	p->x[1] += lab_d*p->D[1];
 	p->x[2] += lab_d*p->D[2];
 	double old_tau = p->tau;
-	p->tau -= lab_opac*lab_d; // done like this to be >0 to numerical precision...maybe
+	p->tau -= lab_opac*lab_d;
+
 	PRINT_ASSERT(p->tau,>=,-grid->tiny*old_tau);
 	if(p->tau<0) p->tau = 0;
 }
+
 void Transport::lab_opacity(const Particle *p, const int z_ind, double *lab_opac, double *abs_frac, double *dshift_l2c) const{
 	if(grid->good_zone(z_ind) && z_ind>=0){ // avoid handling fluff zones if unnecessary
 		// doppler shift from comoving to lab (nu0/nu)
@@ -314,7 +315,6 @@ void Transport::propagate(Particle* p)
 
 		// decide which event happens
 		which_event(p,z_ind,lab_opac,&lab_d,&event);
-		if(event==interact) PRINT_ASSERT(lab_d, ==, static_cast<double>(p->tau/lab_opac));
 		PRINT_ASSERT(lab_d, >=, 0);
 
 		// accumulate counts of radiation energy, absorption, etc
@@ -350,7 +350,9 @@ void Transport::propagate(Particle* p)
 			{
 				int i=1;
 				while(z_ind>=0){
-					move(p,pow(2.0,i)*lab_d,lab_opac);
+					double tweak_distance = grid->tiny*lab_d * i*i;
+					p->tau += tweak_distance*lab_opac; // a hack to prevent tau<0
+					move(p,tweak_distance,lab_opac);
 					z_ind = grid->zone_index(p->x,3);
 					i++;
 				}

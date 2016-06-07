@@ -51,14 +51,15 @@ void Grid::init(Lua* lua)
 	bool rank0 = (my_rank==0);
 
 	// read the model file or fill in custom model
-	std::string model_file = lua->scalar<std::string>("model_file");
 	read_model_file(lua);
 
 	// read some parameters
 	int do_relativity = lua->scalar<int>("do_relativity");
-	output_zones_distribution = lua->scalar<int>("output_zones_distribution");
-	output_zones = lua->scalar<int>("output_zones");
-	output_hdf5 = lua->scalar<int>("output_hdf5");
+	int write_zones_every = lua->scalar<int>("write_zones_every");
+	if(write_zones_every>0){
+		output_zones_distribution = lua->scalar<int>("output_zones_distribution");
+		output_hdf5 = lua->scalar<int>("output_hdf5");
+	}
 	do_annihilation = lua->scalar<int>("do_annihilation");
 
 	// complain if the grid is obviously not right
@@ -113,30 +114,33 @@ void Grid::init(Lua* lua)
 //------------------------------------------------------------
 void Grid::write_zones(const int iw) const
 {
-	if(output_zones){
-		PRINT_ASSERT(z.size(),>,0);
+	PRINT_ASSERT(z.size(),>,0);
 
-		// output all zone data in hdf5 format
-		if(output_hdf5){
-			PRINT_ASSERT(dimensionality(),>,0);
-			string filename = Transport::filename("fluid",iw,".h5");
-			H5::H5File file(filename, H5F_ACC_TRUNC);
+	// output all zone data in hdf5 format
+	if(output_hdf5){
+		PRINT_ASSERT(dimensionality(),>,0);
+		string filename = Transport::filename("fluid",iw,".h5");
+		H5::H5File file(filename, H5F_ACC_TRUNC);
 
-			// write coordinates to the hdf5 file (implemented in each grid type)
-			z[0].distribution[0].write_hdf5_coordinates(file);
-			write_hdf5_coordinates(file);
-			write_hdf5_data(file);
+		// write coordinates to the hdf5 file (implemented in each grid type)
+		z[0].distribution[0].write_hdf5_coordinates(file);
+		write_hdf5_coordinates(file);
+		write_hdf5_data(file);
+	}
+
+	// output all zone data in text files
+	else{
+		ofstream outf;
+		string filename = Transport::filename("fluid",iw,".dat");
+		outf.open(filename.c_str());
+		write_header(outf);
+		for (unsigned z_ind=0; z_ind<z.size(); z_ind++){
+			int dir_ind[dimensionality()];
+			zone_directional_indices(z_ind, dir_ind, dimensionality());
+			if(dimensionality()>0) if(dir_ind[dimensionality()-1]==0) outf << endl;
+			write_line(outf,z_ind);
 		}
-
-		// output all zone data in text files
-		else{
-			ofstream outf;
-			string filename = Transport::filename("fluid",iw,".dat");
-			outf.open(filename.c_str());
-			write_header(outf);
-			for (unsigned z_ind=0; z_ind<z.size(); z_ind++) write_line(outf,z_ind);
-			outf.close();
-		}
+		outf.close();
 	}
 }
 
@@ -338,10 +342,6 @@ void Grid::write_hdf5_data(H5::H5File file) const{
 }
 
 void Grid::write_line(ofstream& outf, const int z_ind) const{
-	int dir_ind[dimensionality()];
-	zone_directional_indices(z_ind, dir_ind, dimensionality());
-	if(dimensionality()>0) if(dir_ind[dimensionality()-1]==0) outf << endl;
-
 	double r[dimensionality()];
 	zone_coordinates(z_ind,r,dimensionality());
 

@@ -178,7 +178,7 @@ public:
 	double visc_specific_heat_rate;
 
 	// how many times do we emit+propagate each timestep?
-	int n_emission_stages;
+	int n_subcycles;
 	int do_emit_by_bin;
 
 	// global radiation quantities

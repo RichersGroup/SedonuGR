@@ -5,7 +5,7 @@ from scipy.integrate import quad
 from numpy import Inf
 
 # INPUTS
-eosfile   = "/data/tables/EOS/HShen.h5"
+eosfile   = "../../external/tables/EOS/SFHo.h5"
 
 min_logrho = 6  #g/ccm
 max_logrho = 15 #g/ccm
@@ -24,7 +24,7 @@ center_ye = 0.3
 
 def plot(rho0,T0,ye0):
     string = "sed " + \
-             "-e 's/RHO_HERE/"    + str(rho0)         + "/g' " + \
+             "-e 's/RHO_HERE/"    + '%.5e' % rho0         + "/g' " + \
              "-e 's/TEMP_HERE/"   + str(T0)           + "/g' " + \
              "-e 's/YE_HERE/"     + str(ye0)          + "/g' " + \
              "template.gnuplot > compare.gnuplot"
@@ -42,7 +42,7 @@ dlogT   = (max_logT   - min_logT  ) / (n_T   - 1.0)
 dye     = (max_ye     - min_ye    ) / (n_ye  - 1.0)
 
 os.system("python shell.py > shell.mod")
-string = "mpirun -np 2 -env OMP_NUM_THREADS 2 ../../exe/nut_therm_shell param.lua " + \
+string = "mpirun -np 2 -env OMP_NUM_THREADS 2 ../../exe/therm_shell_test param.lua " + \
          str(min_logrho) + " " + str(max_logrho) + " " + str(rho0) + " " + str(n_rho) + " " + \
          str(min_logT  ) + " " + str(max_logT  ) + " " + str(T0  ) + " " + str(n_T  ) + " " + \
          str(min_ye    ) + " " + str(max_ye    ) + " " + str(ye0 ) + " " + str(n_ye ) + " " + \

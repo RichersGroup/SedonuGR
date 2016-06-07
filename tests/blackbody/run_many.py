@@ -8,17 +8,17 @@ eosfile   = "/data/tables/EOS/HShen.h5" #ignored if compiled for helmholtz eos
 
 min_logrho = 8  #g/ccm
 max_logrho = 15 #g/ccm
-n_rho = 100
+n_rho = 50
 center_logrho = 10
 
 min_logT = -1 #MeV
 max_logT = 2  #MeV
-n_T = 100
+n_T = 50
 center_logT = 0.5
 
 min_ye = 0.05
 max_ye = 0.55
-n_ye = 100
+n_ye = 50
 center_ye = 0.3
 
 
@@ -63,7 +63,7 @@ dlogrho = (max_logrho - min_logrho) / (n_rho - 1.0)
 dlogT   = (max_logT   - min_logT  ) / (n_T   - 1.0)
 dye     = (max_ye     - min_ye    ) / (n_ye  - 1.0)
 
-string = "mpirun -np 2 -env OMP_NUM_THREADS=16 ../../exe/nut_blackbody param.lua " + \
+string = "mpirun -np 2 -env OMP_NUM_THREADS=2 ../../exe/blackbody_test param.lua " + \
           str(min_logrho) + " " + str(max_logrho) + " " + str(rho0) + " " + str(n_rho) + " " + \
           str(min_logT  ) + " " + str(max_logT  ) + " " + str(T0  ) + " " + str(n_T  ) + " " + \
           str(min_ye    ) + " " + str(max_ye    ) + " " + str(ye0 ) + " " + str(n_ye ) + " " + \

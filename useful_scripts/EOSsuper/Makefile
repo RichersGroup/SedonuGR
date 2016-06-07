@@ -1,7 +1,7 @@
 SOURCES=nuc_eos_press.cc testeos.cc readtable.cc nuc_eos_press_cs2.cc nuc_eos_dpdrhoe_dpderho.cc nuc_eos_short.cc nuc_eos_full.cc
 CSOURCES= 
 INCLUDES=nuc_eos.hh helpers.hh 
-HDF5DIR=/usr/local/hdf5-1.8.13_gnu-4.8.2
+HDF5_DIR=/usr/local/hdf5_fortran_cxx
 HDF5INCS=-I$(HDF5_DIR)/include
 HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5
 GSL_BASE=$(GSL_DIR)
