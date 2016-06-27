@@ -152,7 +152,7 @@ void Transport::init(Lua* lua)
 		equilibrium_tolerance = lua->scalar<double>("equilibrium_tolerance");
 	}
 	step_size     = lua->scalar<double>("step_size");
-	randomwalk_sphere_size = lua->scalar<double>("step_size");
+	randomwalk_sphere_size = lua->scalar<double>("randomwalk_sphere_size");
 	if(randomwalk_sphere_size>0){
 		randomwalk_min_optical_depth = lua->scalar<double>("randomwalk_min_optical_depth");
 		init_randomwalk_cdf(lua);
