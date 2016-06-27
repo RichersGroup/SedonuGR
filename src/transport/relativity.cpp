@@ -78,7 +78,7 @@ void Transport::normalize(vector<double>& a){
 void Transport::normalize(double a[],const int size){
 	PRINT_ASSERT(size,>,0);
 	double inv_magnitude = 1./sqrt(dot(a,a,size));
-	for(unsigned i=0; i<sizeof(a)/sizeof(a[0]); i++) a[i] *= inv_magnitude;
+	for(unsigned i=0; i<size; i++) a[i] *= inv_magnitude;
 }
 
 // v_dot_d is the dot product of the relative velocity and the relativistic particle's direction
@@ -91,7 +91,8 @@ double doppler_shift(const double gamma, const double vdd){
 
 // apply a lorentz transform to the particle
 // v = v_newframe - v_oldframe
-void lorentz_transform(Particle* p, const double v[3], const int vsize){
+// optimized for a null particle
+void lorentz_transform_particle(Particle* p, const double v[3], const int vsize){
 	// check input
 	PRINT_ASSERT(vsize,==,3);
 	PRINT_ASSERT(p->nu,>,0);
@@ -120,17 +121,56 @@ void lorentz_transform(Particle* p, const double v[3], const int vsize){
 	PRINT_ASSERT(dshift,>,0);
 }
 
+// apply a general lorentz transform to a 3D vector.
+// first three components are spatial, 4th component is time
+// input velocity is the fluid velocity in the lab frame
+// [v] = cm/s, [x] = cm
+void Transport::transform_cartesian_4vector_c2l(const double v[3], double x[4]){
+	PRINT_ASSERT(dot(v,v,3),<=,pc::c*pc::c);
+
+	// new frame is lab frame. old frame is comoving frame.
+	// v_rel = v_lab - v_comoving  --> v must flip sign.
+	double vrel[3];
+	vrel[0] *= -v[0];
+	vrel[1] *= -v[1];
+	vrel[2] *= -v[2];
+
+	double gamma = lorentz_factor(vrel,3);
+	double v2 = dot(vrel,vrel,3);
+
+	// save comoving x
+	double xcom[4];
+	xcom[0] = x[0];
+	xcom[1] = x[1];
+	xcom[2] = x[2];
+	xcom[3] = x[3];
+
+	// time component of lab x
+	x[4] = gamma*xcom[4];
+	for(int i=0; i<3; i++) x[4] -= gamma*vrel[i]/pc::c * xcom[i];
+
+	// spatial components
+	for(int i=0; i<3; i++){
+		x[i] = xcom[i];
+		x[i] -= gamma*vrel[i]/pc::c * xcom[4];
+		for(int j=0; j<3; j++){
+			x[i] += (gamma-1.0)*vrel[i]*vrel[j]/v2 * xcom[j];
+		}
+	}
+
+}
+
 
 //------------------------------------------------------------
 // get the doppler shift when moving from frame_to_frame
 // does not change any particle properties
 //------------------------------------------------------------
-double Transport::dshift_comoving_to_lab(const Particle* p, const int z_ind) const
+double Transport::dshift_comoving_to_lab(const double x[3], const double D[3], const int z_ind) const
 {
 	if(!do_relativity) return 1.0;
 
 	double v[3];
-	grid->cartesian_velocity_vector(p->x,3,v,3,z_ind); // v_comoving - v_lab
+	grid->cartesian_velocity_vector(x,3,v,3,z_ind); // v_comoving - v_lab
 
 	// new frame is lab frame. old frame is comoving frame.
 	// v_rel = v_lab - v_comoving  --> v must flip sign.
@@ -139,24 +179,24 @@ double Transport::dshift_comoving_to_lab(const Particle* p, const int z_ind) con
 	v[2] *= -1;
 
 	double gamma = lorentz_factor(v,3);
-	double vdd = dot(v, p->D,3);
+	double vdd = dot(v,D,3);
 	double dshift = doppler_shift(gamma,vdd);
 	PRINT_ASSERT(dshift,>,0);
 	return dshift;
 }
 
-double Transport::dshift_lab_to_comoving(const Particle* p, const int z_ind) const
+double Transport::dshift_lab_to_comoving(const double x[3], const double D[3], const int z_ind) const
 {
 	if(!do_relativity) return 1.0;
 
 	double v[3];
-	grid->cartesian_velocity_vector(p->x,3,v,3,z_ind); // v_comoving - v_lab
+	grid->cartesian_velocity_vector(x,3,v,3,z_ind); // v_comoving - v_lab
 
 	// new frame is comoving frame. old frame is lab frame.
 	// v_rel = v_comoving - v_lab  -->  v keeps its sign
 
 	double gamma = lorentz_factor(v,3);
-	double vdd = dot(v, p->D,3);
+	double vdd = dot(v,D,3);
 	double dshift = doppler_shift(gamma,vdd);
 	PRINT_ASSERT(dshift,>,0);
 	return dshift;
@@ -180,7 +220,7 @@ void Transport::transform_comoving_to_lab(Particle* p, const int z_ind) const
 	v[1] *= -1;
 	v[2] *= -1;
 
-	lorentz_transform(p,v,3);
+	lorentz_transform_particle(p,v,3);
 }
 
 void Transport::transform_lab_to_comoving(Particle* p, const int z_ind) const
@@ -193,7 +233,7 @@ void Transport::transform_lab_to_comoving(Particle* p, const int z_ind) const
 	// new frame is lab frame. old frame is comoving frame.
 	// v_rel = v_comoving - v_lab  --> v keeps its sign.
 
-	lorentz_transform(p,v,3);
+	lorentz_transform_particle(p,v,3);
 }
 
 double Transport::comoving_dt(const int z_ind) const{

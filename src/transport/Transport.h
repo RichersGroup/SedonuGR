@@ -76,22 +76,26 @@ private:
 
 	// transformation functions
 	double comoving_dt(const int z_ind) const;
-	double dshift_comoving_to_lab   (const Particle* p, const int z_ind=-1) const;
-	double dshift_lab_to_comoving   (const Particle* p, const int z_ind=-1) const;
+	double dshift_comoving_to_lab   (const double x[3], const double D[3], const int z_ind=-1) const;
+	double dshift_lab_to_comoving   (const double x[3], const double D[3], const int z_ind=-1) const;
 	void   transform_comoving_to_lab(Particle* p, const int z_ind=-1) const;
 	void   transform_lab_to_comoving(Particle* p, const int z_ind=-1) const;
-	void lab_opacity(const Particle *p, const int z_ind, double *lab_opac, double *abs_frac, double *dshift_l2c) const;
+	void get_opacity(const Particle *p, const int z_ind, double *lab_opac, double *com_opac, double *abs_frac, double *dshift_l2c) const;
 
 	// propagate the particles
 	void propagate_particles();
 	void propagate(Particle* p);
 	void move(Particle* p, const double lab_d, const double lab_opac);
+	void distribution_function_basis(const double D[3], const double xyz[3], double D_newbasis[3]) const;
 	void tally_radiation(const Particle* p, const int z_ind, const double dshift_l2c, const double lab_d, const double lab_opac, const double abs_frac) const;
 	void reset_radiation();
 	void which_event(Particle* p,const int z_ind, const double lab_opac, double* d_smallest, ParticleEvent *event) const;
 	void event_boundary(Particle* p, const int z_ind) const;
-	void event_interact(Particle* p, const int z_ind, const double abs_frac,const double lab_opac);
-	void isotropic_scatter(Particle* p) const;
+	void event_interact(Particle* p, const int z_ind, const double abs_frac,const double lab_opac, const double com_opac);
+	void isotropic_direction(Particle* p) const;
+	void scatter(Particle* p, double abs_frac, double com_opac, int z_ind) const;
+	void random_walk(Particle* p, const double com_absopac, const double com_scatopac, const double Rcom, const double D, const int z_ind) const;
+	void init_randomwalk_cdf(Lua* lua);
 	void re_emit(Particle* p, const int z_ind) const;
 	void window(Particle* p, const int z_ind);
 
@@ -114,6 +118,14 @@ private:
 	int    do_annihilation;
 	int    radiative_eq;
 	int    rank0;
+
+	// random walk parameters
+	CDFArray randomwalk_diffusion_time;
+	LocateArray randomwalk_xaxis;
+	double randomwalk_sphere_size;
+	double randomwalk_min_optical_depth;
+	double randomwalk_max_x;
+	int randomwalk_sumN;
 
 	// output parameters
 	int write_zones_every;
@@ -209,6 +221,7 @@ public:
 	void write_rays(const int it);
 	static std::string filename(const char* filebase, const int iw, const char* suffix);
 	static double lorentz_factor(const double v[3], const int vsize);
+	static void transform_cartesian_4vector_c2l(const double vfluid[3], double x[4]);
 	static double dot(const std::vector<double>& a, const std::vector<double>& b);
 	static double dot(const std::vector<double>& a, const double b[], const int size);
 	static double dot(const double a[], const double b[], const int size);

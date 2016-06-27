@@ -244,6 +244,20 @@ max_n_iter = [int>=0] stop after this many iterations (1 iteration
 step_size = [float>0] maximum fraction of a zone length a particle is
 	  allowed to travel before updating opacity information
 
+randomwalk_sphere_size = [float] fraction of a zone length that the
+		       random walk approximation will cause particles
+		       to jump. If <=0 random walk is turned off.
+
+(randomwalk_sphere_size>0)
+randomwalk_max_x = [float>0] maximum dimensionless x from which to
+		 sample diffusion time. 2 should be plenty.
+randomwalk_sumN = [int>1] number of terms in the sum to evaluate the
+		diffusion time PDF during initialization. 1000 is far
+		more than necessary but does not affect run time
+randomwalk_min_optical_depth = [float>=0] optical depth below which
+			     the random walk approximation is
+			     considered invalid and will not evaluate
+			     (resort to isotropic scattering instead)
 
 ||=======||
 ||BIASING||

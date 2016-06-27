@@ -65,6 +65,7 @@ Transport::Transport(){
 	rho_max = NaN;
 	max_particles = -MAXLIM;
 	step_size = NaN;
+	randomwalk_sphere_size = NaN;
 	min_packet_energy = NaN;
 	max_packet_energy = NaN;
 	do_annihilation = -MAXLIM;
@@ -95,6 +96,9 @@ Transport::Transport(){
 	min_importance = NaN;
 	bias_path_length = -MAXLIM;
 	max_path_length_boost = NaN;
+	randomwalk_min_optical_depth = NaN;
+	randomwalk_max_x = NaN;
+	randomwalk_sumN = -MAXLIM;
 }
 
 
@@ -148,6 +152,11 @@ void Transport::init(Lua* lua)
 		equilibrium_tolerance = lua->scalar<double>("equilibrium_tolerance");
 	}
 	step_size     = lua->scalar<double>("step_size");
+	randomwalk_sphere_size = lua->scalar<double>("step_size");
+	if(randomwalk_sphere_size>0){
+		randomwalk_min_optical_depth = lua->scalar<double>("randomwalk_min_optical_depth");
+		init_randomwalk_cdf(lua);
+	}
 	importance_bias = lua->scalar<double>("importance_bias");
 	if(importance_bias>0) min_importance = lua->scalar<double>("min_importance");
 	bias_path_length = lua->scalar<int>("bias_path_length");

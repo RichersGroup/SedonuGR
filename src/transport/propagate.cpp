@@ -176,6 +176,33 @@ void Transport::event_boundary(Particle* p, const int z_ind) const{
 	}
 }
 
+void Transport::distribution_function_basis(const double D[3], const double xyz[3], double D_newbasis[3]) const{
+	double x=xyz[0], y=xyz[1], z=xyz[2];
+	double r = sqrt(dot(xyz,xyz,3));
+	double rp = sqrt(x*x + y*y);
+	double rhat[3]     = {0,0,0};
+	double thetahat[3] = {0,0,0};
+	double phihat[3]   = {0,0,0};
+	if(rp==0){
+		rhat[2] = z>0 ? -1.0 : 1.0;
+	    thetahat[1] = 1;
+	    phihat[0] = 1;
+	}
+	else{
+		rhat[0] = x/r;
+		rhat[1] = y/r;
+		rhat[2] = z/r;
+		thetahat[0] = z/r * x/rp;
+		thetahat[1] = z/r * y/rp;
+		thetahat[2] = -rp / r;
+		phihat[0] = -y/rp;
+		phihat[1] =  x/rp;
+		phihat[2] = 0;
+	}
+	D_newbasis[0] = dot(D,phihat,3);
+	D_newbasis[1] = dot(D,thetahat,3);
+	D_newbasis[2] = dot(D,rhat,3);
+}
 void Transport::tally_radiation(const Particle* p, const int z_ind, const double dshift_l2c, const double lab_d, const double lab_opac, const double abs_frac) const{
 	PRINT_ASSERT(z_ind, >=, 0);
 	PRINT_ASSERT(z_ind, <, (int)grid->z.size());
@@ -203,32 +230,8 @@ void Transport::tally_radiation(const Particle* p, const int z_ind, const double
 	// use rhat, thetahat, phihat as basis functions so rotational symmetries give accurate results
 	double to_add = p->e * lab_d;
 	PRINT_ASSERT(to_add,<,INFINITY);
-	double x=p->x[0], y=p->x[1], z=p->x[2];
-	double r = sqrt(dot(p->x,p->x,3));
-	double rp = sqrt(x*x + y*y);
-	double rhat[3]     = {0,0,0};
-	double thetahat[3] = {0,0,0};
-	double phihat[3]   = {0,0,0};
-	if(rp==0){
-		rhat[2] = z>0 ? -1.0 : 1.0;
-	    thetahat[1] = 1;
-	    phihat[0] = 1;
-	}
-	else{
-		rhat[0] = x/r;
-		rhat[1] = y/r;
-		rhat[2] = z/r;
-		thetahat[0] = z/r * x/rp;
-		thetahat[1] = z/r * y/rp;
-		thetahat[2] = -rp / r;
-		phihat[0] = -y/rp;
-		phihat[1] =  x/rp;
-		phihat[2] = 0;
-	}
 	double D_newbasis[3] = {0,0,0};
-	D_newbasis[0] = dot(p->D,phihat,3);
-	D_newbasis[1] = dot(p->D,thetahat,3);
-	D_newbasis[2] = dot(p->D,rhat,3);
+	distribution_function_basis(p->D,p->x,D_newbasis);
 	normalize(D_newbasis,3);
 	zone->distribution[p->s].count(D_newbasis, 3, p->nu, to_add);
 
@@ -269,10 +272,10 @@ void Transport::move(Particle* p, const double lab_d, const double lab_opac){
 	if(p->tau<0) p->tau = 0;
 }
 
-void Transport::lab_opacity(const Particle *p, const int z_ind, double *lab_opac, double *abs_frac, double *dshift_l2c) const{
+void Transport::get_opacity(const Particle *p, const int z_ind, double *lab_opac, double* com_opac, double *abs_frac, double *dshift_l2c) const{
 	if(grid->good_zone(z_ind) && z_ind>=0){ // avoid handling fluff zones if unnecessary
 		// doppler shift from comoving to lab (nu0/nu)
-		*dshift_l2c = dshift_lab_to_comoving(p,z_ind);
+		*dshift_l2c = dshift_lab_to_comoving(p->x,p->D,z_ind);
 		PRINT_ASSERT(*dshift_l2c, >, 0);
 
 		// get local opacity and absorption fraction
@@ -283,6 +286,7 @@ void Transport::lab_opacity(const Particle *p, const int z_ind, double *lab_opac
 	}
 	else{
 		*lab_opac = 0;
+		*com_opac = 0;
 		*dshift_l2c = NaN;
 		*abs_frac = -1;
 	}
@@ -311,7 +315,7 @@ void Transport::propagate(Particle* p)
 		PRINT_ASSERT(z_ind, >=, -1);
 		PRINT_ASSERT(z_ind, <, (int)grid->z.size());
 
-		lab_opacity(p,z_ind,&lab_opac,&abs_frac,&dshift_l2c);
+		get_opacity(p,z_ind,&lab_opac,&com_opac,&abs_frac,&dshift_l2c);
 
 		// decide which event happens
 		which_event(p,z_ind,lab_opac,&lab_d,&event);
@@ -333,7 +337,7 @@ void Transport::propagate(Particle* p)
 		    // ---------------------------------
 		case interact:
 			PRINT_ASSERT(lab_d * lab_opac, >=, p->tau);
-			event_interact(p,z_ind,abs_frac,lab_opac);
+			event_interact(p,z_ind,abs_frac,lab_opac,com_opac);
 			if(p->fate==moving){
 				PRINT_ASSERT(p->nu, >, 0);
 				PRINT_ASSERT(p->e, >, 0);

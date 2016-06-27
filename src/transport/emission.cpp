@@ -297,7 +297,7 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	p.x[2] = r[2];
 
 	// emit isotropically in comoving frame
-	isotropic_scatter(&p);
+	isotropic_direction(&p);
 
 	// sample the species and frequency
 	if(s>=0) p.s = s;
@@ -311,8 +311,8 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	transform_comoving_to_lab(&p,z_ind);
 
 	// sample tau
-	double lab_opac=0, abs_frac=0, dshift_l2c=0;
-	lab_opacity(&p,z_ind,&lab_opac,&abs_frac,&dshift_l2c);
+	double lab_opac=0, abs_frac=0, dshift_l2c=0, com_opac = 0;
+	get_opacity(&p,z_ind,&lab_opac,&com_opac,&abs_frac,&dshift_l2c);
 	sample_tau(&p,lab_opac,abs_frac);
 	window(&p,z_ind);
 
@@ -387,8 +387,8 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	p.nu = species_list[p.s]->sample_core_nu(g);
 
 	// sample tau
-	double lab_opac=0, abs_frac=0, dshift_l2c=0;
-	lab_opacity(&p,z_ind,&lab_opac,&abs_frac,&dshift_l2c);
+	double lab_opac=0, abs_frac=0, dshift_l2c=0, com_opac = 0;
+	get_opacity(&p,z_ind,&lab_opac,&com_opac,&abs_frac,&dshift_l2c);
 	sample_tau(&p,lab_opac,abs_frac);
 	window(&p,z_ind);
 
