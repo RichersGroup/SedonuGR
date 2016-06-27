@@ -110,9 +110,9 @@ void lorentz_transform_particle(Particle* p, const double v[3], const int vsize)
 	// transform the 1-3 components (direction)
 	// See Mihalas & Mihalas eq 89.8
 	double tmp = gamma/pc::c * (1 - gamma*vdd/(pc::c*(gamma+1)));
-	p->D[0] = 1.0/dshift * (p->D[0] - v[0]*tmp);
-	p->D[1] = 1.0/dshift * (p->D[1] - v[1]*tmp);
-	p->D[2] = 1.0/dshift * (p->D[2] - v[2]*tmp);
+	p->D[0] = (p->D[0] - v[0]*tmp);
+	p->D[1] = (p->D[1] - v[1]*tmp);
+	p->D[2] = (p->D[2] - v[2]*tmp);
 	Transport::normalize(p->D,3);
 
 	// sanity checks
