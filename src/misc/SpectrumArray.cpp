@@ -202,6 +202,10 @@ void SpectrumArray::count(const double D[3], const int Dsize, const double nu, c
 	// if off the LEFT of mu/phi grids, just return without counting
 	if ((mu<mu_grid.min) || (phi<phi_grid.min)){
 		cout << "Lost a particle off the left of the spectrum array!" << endl;
+		cout << "mu=" << mu << endl;
+		cout << "mu_min=" << mu_grid.min << endl;
+		cout << "phi=" << phi << endl;
+		cout << "phi_min=" << phi_grid.min << endl;
 		return;
 	}
 
@@ -213,6 +217,10 @@ void SpectrumArray::count(const double D[3], const int Dsize, const double nu, c
 	// if off the RIGHT of mu/phi grids, just return without counting
 	if((mu_bin ==   mu_grid.size()) || (phi_bin ==  phi_grid.size())){
 		cout << "Lost a particle off the right of the spectrum array!" << endl;
+		cout << "mu=" << mu << endl;
+		cout << "mu_max=" << mu_grid[mu_grid.size()-1] << endl;
+		cout << "phi=" << phi << endl;
+		cout << "phi_max=" << phi_grid[phi_grid.size()-1] << endl;
 		return;
 	}
 
