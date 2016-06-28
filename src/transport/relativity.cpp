@@ -152,9 +152,11 @@ void Transport::transform_cartesian_4vector_c2l(const double v[3], double x[4]){
 	// spatial components
 	for(int i=0; i<3; i++){
 		x[i] = xcom[i];
-		x[i] -= gamma*vrel[i]/pc::c * xcom[4];
-		for(int j=0; j<3; j++){
-			x[i] += (gamma-1.0)*vrel[i]*vrel[j]/v2 * xcom[j];
+		if(v2 > 0){
+			x[i] -= gamma*vrel[i]/pc::c * xcom[4];
+			for(int j=0; j<3; j++){
+				x[i] += (gamma-1.0)*vrel[i]*vrel[j]/v2 * xcom[j];
+			}
 		}
 	}
 

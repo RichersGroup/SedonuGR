@@ -254,6 +254,9 @@ randomwalk_max_x = [float>0] maximum dimensionless x from which to
 randomwalk_sumN = [int>1] number of terms in the sum to evaluate the
 		diffusion time PDF during initialization. 1000 is far
 		more than necessary but does not affect run time
+randomwalk_npoints = [int>1] number of points in the diffusion time PDF
+randomwalk_interpolation_order = [0,1,3] interpolation order used when
+			       sampling the diffusion time CDF
 randomwalk_min_optical_depth = [float>=0] optical depth below which
 			     the random walk approximation is
 			     considered invalid and will not evaluate

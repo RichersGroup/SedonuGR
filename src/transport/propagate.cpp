@@ -272,17 +272,16 @@ void Transport::move(Particle* p, const double lab_d, const double lab_opac){
 	if(p->tau<0) p->tau = 0;
 }
 
-void Transport::get_opacity(const Particle *p, const int z_ind, double *lab_opac, double* com_opac, double *abs_frac, double *dshift_l2c) const{
+void Transport::get_opacity(const Particle *p, const int z_ind, double *lab_opac, double *com_opac, double *abs_frac, double *dshift_l2c) const{
 	if(grid->good_zone(z_ind) && z_ind>=0){ // avoid handling fluff zones if unnecessary
 		// doppler shift from comoving to lab (nu0/nu)
 		*dshift_l2c = dshift_lab_to_comoving(p->x,p->D,z_ind);
 		PRINT_ASSERT(*dshift_l2c, >, 0);
 
 		// get local opacity and absorption fraction
-		double com_opac = 0;
 		double com_nu = p->nu * (*dshift_l2c);
-		species_list[p->s]->get_opacity(com_nu,z_ind,&com_opac,abs_frac);
-		*lab_opac = com_opac * (*dshift_l2c);
+		species_list[p->s]->get_opacity(com_nu,z_ind,com_opac,abs_frac);
+		*lab_opac = *com_opac * (*dshift_l2c);
 	}
 	else{
 		*lab_opac = 0;
@@ -290,6 +289,7 @@ void Transport::get_opacity(const Particle *p, const int z_ind, double *lab_opac
 		*dshift_l2c = NaN;
 		*abs_frac = -1;
 	}
+	PRINT_ASSERT(*lab_opac,>=,0);
 }
 //--------------------------------------------------------
 // Propagate a single monte carlo particle until

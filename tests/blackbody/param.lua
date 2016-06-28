@@ -15,7 +15,7 @@ equilibrium_Ye = 0
 
 grey_opacity  = -1
 grey_abs_frac = -1
-nulib_table = "/home/srichers/software/sedonu-devel/external/tables/NuLib/NuLib_noscat.h5"
+nulib_table = "/home/srichers/software/NuLib/NuLib_rho82_temp65_ye51_ng18_ns3_version1.0_20160627.h5"
 nulib_eos = "/home/srichers/software/sedonu-devel/external/tables/EOS/SFHo.h5"
 opac_interp_method = 0
 cdf_interpolation_order = 1
@@ -78,4 +78,9 @@ min_importance = 1e-4
 
 -- Random Walk
 
-randomwalk_sphere_size = 0
+randomwalk_sphere_size = 0.4
+randomwalk_max_x = 2
+randomwalk_sumN = 1000
+randomwalk_npoints = 200
+randomwalk_min_optical_depth = 40
+randomwalk_interpolation_order = 1

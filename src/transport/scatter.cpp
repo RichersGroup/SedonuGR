@@ -53,12 +53,8 @@ void Transport::event_interact(Particle* p, const int z_ind, const double abs_fr
 	if(do_absorb_partial){
 		p->e *= (1.0 - abs_frac);
 		window(p,z_ind);
-		if(p->fate==moving){
-			scatter(p,abs_frac,com_opac, z_ind);
-			PRINT_ASSERT(p->e,>,0.0);
-		}
+		if(p->fate==moving) scatter(p,abs_frac,com_opac, z_ind);
 	}
-
 	// absorb the particle and let the fluid re-emit another particle
 	else if(do_absorb_reemit){
 		re_emit(p,z_ind);
@@ -152,22 +148,28 @@ void Transport::scatter(Particle* p_comoving, double abs_frac, double com_opac, 
 		double Rlab = randomwalk_sphere_size * grid->zone_min_length(z_ind);
 		if(com_scatopac * Rlab >= randomwalk_min_optical_depth){
 			// determine maximum comoving sphere size
-			// TODO - optimize by
 			double v[3] = {0,0,0};
 			grid->cartesian_velocity_vector(p_comoving->x,3,v,3,z_ind);
 			double vabs = sqrt(dot(v,v,3));
 			double gamma = lorentz_factor(v,3);
-			double Rcom = 2. * Rlab / gamma / (1. + sqrt(1. + 4.*Rlab*vabs*randomwalk_max_x / (gamma*D) ) );
+
+			double Rcom = 0;
+			if(Rlab==0) Rcom = 0;
+			else if(Rlab==INFINITY) Rcom = randomwalk_min_optical_depth / (com_absopac>0 ? com_absopac : com_scatopac);
+			else Rcom =  2. * Rlab / gamma / (1. + sqrt(1. + 4.*Rlab*vabs*randomwalk_max_x / (gamma*D) ) );
 
 			// if the optical depth is below our threshold, don't do random walk
 			if(com_scatopac * Rcom >= randomwalk_min_optical_depth){
+				double eold = p_comoving->e;
 				random_walk(p_comoving,com_absopac,com_scatopac, Rcom, D, z_ind);
 				did_random_walk = true;
 			}
 		}
 	}
 
+	// isotropic scatter if can't do random walk
 	if(!did_random_walk) isotropic_direction(p_comoving);
+
 }
 
 
@@ -341,5 +343,6 @@ void Transport::random_walk(Particle* p, const double com_absopac, const double 
 
 	// move the particle to the edge of the sphere and transform to the lab frame
 	for(int i=0; i<3; i++) p->x[i] += displacement3[3];
-	transform_comoving_to_lab(p,z_ind);
+	if(ratio_deposited > 0) p->e *= 1.0 - ratio_deposited;
+	if(p->e == 0) p->fate = rouletted;
 }
