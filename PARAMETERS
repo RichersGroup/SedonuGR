@@ -134,6 +134,9 @@ model_file = [string] path to the model file
 Grid0DIsotropic_rho = [float>0] density in g/ccm
 Grid0DIsotropic_T = [float>0] temperature in MeV
 Grid0DIsotropic_Ye = [0<=float<=1] electron fraction
+Grid0DIsotropic_vx = [float] x-velocity of isotropic fluid (cm/s)
+Grid0DIsotropic_vy = [float] y-velocity of isotropic fluid (cm/s)
+Grid0DIsotropic_vz = [float] z-velocity of isotropic fluid (cm/s)
 
 (grid_type="Grid2DSphere",model_type="Nagakura")
    Grid2DSphere_Nagakura_rgrid_file = [string] path to radial coordinates
@@ -250,7 +253,7 @@ randomwalk_sphere_size = [float] fraction of a zone length that the
 
 (randomwalk_sphere_size>0)
 randomwalk_max_x = [float>0] maximum dimensionless x from which to
-		 sample diffusion time. 2 should be plenty.
+		 sample diffusion time. 1.0 should be plenty.
 randomwalk_sumN = [int>1] number of terms in the sum to evaluate the
 		diffusion time PDF during initialization. 1000 is far
 		more than necessary but does not affect run time

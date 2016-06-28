@@ -131,12 +131,13 @@ void Transport::transform_cartesian_4vector_c2l(const double v[3], double x[4]){
 	// new frame is lab frame. old frame is comoving frame.
 	// v_rel = v_lab - v_comoving  --> v must flip sign.
 	double vrel[3];
-	vrel[0] *= -v[0];
-	vrel[1] *= -v[1];
-	vrel[2] *= -v[2];
+	vrel[0] = -v[0];
+	vrel[1] = -v[1];
+	vrel[2] = -v[2];
 
 	double gamma = lorentz_factor(vrel,3);
 	double v2 = dot(vrel,vrel,3);
+
 
 	// save comoving x
 	double xcom[4];

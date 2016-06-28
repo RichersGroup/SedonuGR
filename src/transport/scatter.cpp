@@ -261,6 +261,7 @@ void Transport::random_walk(Particle* p, const double com_absopac, const double 
 	Zone* zone;
 	zone = &(grid->z[z_ind]);
 
+
 	// sample the distance travelled during the random walk
 	double distance = pc::c * Rcom*Rcom / D * randomwalk_diffusion_time.invert(rangen.uniform(),&randomwalk_xaxis,-1);
 	PRINT_ASSERT(distance,>=,Rcom);
@@ -335,7 +336,7 @@ void Transport::random_walk(Particle* p, const double com_absopac, const double 
 	// really, most should be isotropic and some should be in the direction of motion,
 	// but this should average out properly over many trajectories.
 	// depositing radiation in every bin would lead to lots of memory contention
-	transform_cartesian_4vector_c2l(grid->z[z_ind].u, displacement4);
+	transform_cartesian_4vector_c2l(zone->u, displacement4);
 	double displacement3[3] = {displacement4[0], displacement4[1], displacement4[2]};
 	normalize(displacement3,3);
 	double dshift = dshift_comoving_to_lab(p->x,displacement3,z_ind);

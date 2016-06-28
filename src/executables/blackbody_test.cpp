@@ -39,13 +39,16 @@
 using namespace std;
 namespace pc = physical_constants;
 
-void run_test(const bool rank0, const double rho, const double T, const double ye, Transport& sim, ofstream& outf){
+void run_test(const bool rank0, const double rho, const double T, const double ye, const double v[3], Transport& sim, ofstream& outf){
 	if(rank0) cout << endl << "Currently running: rho=" << rho << "g/ccm T=" << T << "MeV Ye=" << ye << endl;
 
 	// set the fluid properties
 	sim.grid->z[0].rho = rho;
 	sim.grid->z[0].T   = T/pc::k_MeV;
 	sim.grid->z[0].Ye  = ye;
+	sim.grid->z[0].u[0] = v[0];
+	sim.grid->z[0].u[1] = v[1];
+	sim.grid->z[0].u[2] = v[2];
 
 	// do the transport step
 	sim.step();
@@ -78,8 +81,9 @@ int main(int argc, char **argv)
 	double max_logrho, min_logrho, rho0;
 	double max_logT  , min_logT  , T0;
 	double max_ye    , min_ye    , ye0;
+	double v[3];
 	int n_rho, n_T, n_ye;
-	PRINT_ASSERT(argc,==,15);
+	PRINT_ASSERT(argc,==,18);
 	sscanf(argv[2 ], "%lf", &min_logrho);
 	sscanf(argv[3 ], "%lf", &max_logrho);
 	sscanf(argv[4 ], "%lf", &rho0);
@@ -92,6 +96,9 @@ int main(int argc, char **argv)
 	sscanf(argv[11], "%lf", &max_ye);
 	sscanf(argv[12], "%lf", &ye0);
 	sscanf(argv[13], "%d" , &n_ye);
+	sscanf(argv[15], "%lf" , &(v[0]));
+	sscanf(argv[16], "%lf" , &(v[1]));
+	sscanf(argv[17], "%lf" , &(v[2]));
 	double dlogT   = (max_logT   - min_logT  ) / ((double)n_T   - 1.0);
 	double dlogrho = (max_logrho - min_logrho) / ((double)n_rho - 1.0);
 	double dye     = (max_ye     - min_ye    ) / ((double)n_ye  - 1.0);
@@ -128,21 +135,21 @@ int main(int argc, char **argv)
 	//==============//
 	for(int i=0; i<n_rho; i++){
 		double logrho = min_logrho + i*dlogrho;
-		run_test(rank0,pow(10,logrho),T0,ye0,sim,outf);
+		run_test(rank0,pow(10,logrho),T0,ye0,v,sim,outf);
 	}
 	//==================//
 	// TEMPERATURE LOOP //
 	//==================//
 	for(int i=0; i<n_T; i++){
 		double logT = min_logT + i*dlogT;
-		run_test(rank0,rho0,pow(10,logT),ye0,sim,outf);
+		run_test(rank0,rho0,pow(10,logT),ye0,v,sim,outf);
 	}
 	//=========//
 	// YE LOOP //
 	//=========//
 	for(int i=0; i<n_ye; i++){
 		double ye = min_ye + i*dye;
-		run_test(rank0,rho0,T0,ye,sim,outf);
+		run_test(rank0,rho0,T0,ye,v,sim,outf);
 	}
 
 	//===================//
