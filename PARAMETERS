@@ -264,6 +264,9 @@ randomwalk_min_optical_depth = [float>=0] optical depth below which
 			     the random walk approximation is
 			     considered invalid and will not evaluate
 			     (resort to isotropic scattering instead)
+exponential_decay = [0,1] (0) - particles lose energy at scatter
+		  time. (1) - particles lose energy continuously along
+		  trajectory
 
 ||=======||
 ||BIASING||

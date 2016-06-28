@@ -51,8 +51,10 @@ void Transport::event_interact(Particle* p, const int z_ind, const double abs_fr
 
 	// absorb part of the packet
 	if(do_absorb_partial){
-		p->e *= (1.0 - abs_frac);
-		window(p,z_ind);
+		if(!exponential_decay){
+			p->e *= (1.0 - abs_frac); // UNCOMMENT THIS IF USING ALTERNATIVE TALLYING METHOD IN PROPAGATE.CPP
+			window(p,z_ind);
+		}
 		if(p->fate==moving) scatter(p,abs_frac,com_opac, z_ind);
 	}
 	// absorb the particle and let the fluid re-emit another particle

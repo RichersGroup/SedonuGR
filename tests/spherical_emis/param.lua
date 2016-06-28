@@ -74,6 +74,8 @@ min_packet_energy = 1e24
 max_packet_energy = 1e99
 max_path_length_boost = 2
 min_importance = 1e-4
+exponential_decay = 0
 
 -- Random Walk
+
 randomwalk_sphere_size = 0

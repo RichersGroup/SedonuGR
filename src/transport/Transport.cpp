@@ -141,6 +141,7 @@ void Transport::init(Lua* lua)
 	}
 
 	// read simulation parameters
+	exponential_decay = lua->scalar<int>("exponential_decay");
 	verbose      = lua->scalar<int>("verbose");
 	do_annihilation = lua->scalar<int>("do_annihilation");
 	radiative_eq = lua->scalar<int>("radiative_eq");

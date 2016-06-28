@@ -97,7 +97,7 @@ void Transport::propagate_particles()
 //--------------------------------------------------------
 // Decide what happens to the particle
 //--------------------------------------------------------
-void Transport::which_event(Particle *p, const int z_ind, const double lab_opac,
+void Transport::which_event(Particle *p, const int z_ind, const double lab_opac, const double abs_frac,
 		double *d_smallest, ParticleEvent *event) const{
 	PRINT_ASSERT(lab_opac, >=, 0);
 	PRINT_ASSERT(p->e, >, 0);
@@ -117,8 +117,9 @@ void Transport::which_event(Particle *p, const int z_ind, const double lab_opac,
 		PRINT_ASSERT(d_zone, >, 0);
 
 		// FIND D_INTERACT =================================================================
-		if (lab_opac == 0) d_interact = numeric_limits<double>::infinity();
-		else               d_interact = static_cast<double>(p->tau / lab_opac);
+		double relevant_opacity = exponential_decay ? lab_opac*(1.0-abs_frac) : lab_opac;
+		if (relevant_opacity == 0) d_interact = numeric_limits<double>::infinity();
+		else               d_interact = static_cast<double>(p->tau / relevant_opacity);
 		PRINT_ASSERT(d_interact,>=,0);
 	}
 
@@ -203,12 +204,11 @@ void Transport::distribution_function_basis(const double D[3], const double xyz[
 	D_newbasis[1] = dot(D,thetahat,3);
 	D_newbasis[2] = dot(D,rhat,3);
 }
-void Transport::tally_radiation(const Particle* p, const int z_ind, const double dshift_l2c, const double lab_d, const double lab_opac, const double abs_frac) const{
+void Transport::tally_radiation(const Particle* p, const int z_ind, const double dshift_l2c, const double lab_d, const double com_opac, const double lab_opac, const double abs_frac) const{
 	PRINT_ASSERT(z_ind, >=, 0);
 	PRINT_ASSERT(z_ind, <, (int)grid->z.size());
 	PRINT_ASSERT(dshift_l2c, >, 0);
 	PRINT_ASSERT(lab_d, >=, 0);
-	PRINT_ASSERT(lab_opac, >=, 0);
 	PRINT_ASSERT(abs_frac, >=, 0);
 	PRINT_ASSERT(abs_frac, <=, 1);
 
@@ -216,11 +216,11 @@ void Transport::tally_radiation(const Particle* p, const int z_ind, const double
 	double com_e = p->e * dshift_l2c;
 	double com_nu = p->nu * dshift_l2c;
 	double com_d  = lab_d / dshift_l2c;
-	double com_opac = lab_opac / dshift_l2c;
 	PRINT_ASSERT(com_e, >, 0);
 	PRINT_ASSERT(com_nu, >, 0);
 	PRINT_ASSERT(com_d, >=, 0);
 	PRINT_ASSERT(com_opac, >=, 0);
+	double to_add = 0;
 
 	// set pointer to the current zone
 	Zone* zone;
@@ -228,7 +228,9 @@ void Transport::tally_radiation(const Particle* p, const int z_ind, const double
 
 	// tally in contribution to zone's distribution function (lab frame)
 	// use rhat, thetahat, phihat as basis functions so rotational symmetries give accurate results
-	double to_add = p->e * lab_d;
+	double  lab_abs_opac = lab_opac * abs_frac;
+	if(exponential_decay) to_add = p->e / (lab_abs_opac) * (1.0 - exp(-lab_abs_opac * lab_d));
+	else double to_add = p->e * lab_d; // MUST ALSO UNCOMMENT ENERGY CHANGE IN SCATTERING ROUTINE AND COMMENT OUT ENERGY CHANGE IN THIS ONE TO USE THIS METHOD
 	PRINT_ASSERT(to_add,<,INFINITY);
 	double D_newbasis[3] = {0,0,0};
 	distribution_function_basis(p->D,p->x,D_newbasis);
@@ -236,7 +238,8 @@ void Transport::tally_radiation(const Particle* p, const int z_ind, const double
 	zone->distribution[p->s].count(D_newbasis, 3, p->nu, to_add);
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
-	to_add = com_e * com_d * (com_opac*abs_frac);
+	if(exponential_decay) to_add = com_e * (1.0 - exp(-com_opac * com_d));
+	else to_add = com_e * com_d * (com_opac*abs_frac);
 	#pragma omp atomic
 	zone->e_abs += to_add;
 	PRINT_ASSERT(zone->e_abs, >=, 0);
@@ -245,8 +248,7 @@ void Transport::tally_radiation(const Particle* p, const int z_ind, const double
 	// factor of this_d which is divided out later
 	double this_l_comoving = 0;
 	if(species_list[p->s]->lepton_number != 0){
-		this_l_comoving = com_e/(com_nu*pc::h) * com_d;
-		to_add = this_l_comoving * (com_opac*abs_frac);
+		to_add /= (com_nu*pc::h);
 		if(species_list[p->s]->lepton_number == 1){
             #pragma omp atomic
 			zone->nue_abs += to_add;
@@ -258,7 +260,7 @@ void Transport::tally_radiation(const Particle* p, const int z_ind, const double
 	}
 }
 
-void Transport::move(Particle* p, const double lab_d, const double lab_opac){
+void Transport::move(Particle* p, const double lab_d, const double lab_opac, const double abs_frac, const int z_ind){
 	PRINT_ASSERT(p->tau,>=,0);
 	PRINT_ASSERT(lab_d,>=,0);
 	PRINT_ASSERT(lab_opac,>=,0);
@@ -266,7 +268,18 @@ void Transport::move(Particle* p, const double lab_d, const double lab_opac){
 	p->x[1] += lab_d*p->D[1];
 	p->x[2] += lab_d*p->D[2];
 	double old_tau = p->tau;
-	p->tau -= lab_opac*lab_d;
+
+
+	// reduce the particle's remaining optical depth
+	double relevant_opacity = exponential_decay ? lab_opac*(1.0-abs_frac) : lab_opac;
+	if(relevant_opacity>0)	p->tau -= relevant_opacity*lab_d;
+
+	// appropriately reduce the particle's energy
+	if(exponential_decay){
+		double lab_abs_opac = abs_frac * lab_opac;
+		p->e *= exp(-lab_abs_opac * lab_d);
+		window(p,z_ind);
+	}
 
 	PRINT_ASSERT(p->tau,>=,-grid->tiny*old_tau);
 	if(p->tau<0) p->tau = 0;
@@ -318,20 +331,20 @@ void Transport::propagate(Particle* p)
 		get_opacity(p,z_ind,&lab_opac,&com_opac,&abs_frac,&dshift_l2c);
 
 		// decide which event happens
-		which_event(p,z_ind,lab_opac,&lab_d,&event);
+		which_event(p,z_ind,lab_opac,abs_frac,&lab_d,&event);
 		PRINT_ASSERT(lab_d, >=, 0);
 
 		// accumulate counts of radiation energy, absorption, etc
-		if(grid->good_zone(z_ind) && z_ind>=0) tally_radiation(p,z_ind,dshift_l2c,lab_d,lab_opac,abs_frac);
+		if(grid->good_zone(z_ind) && z_ind>=0) tally_radiation(p,z_ind,dshift_l2c,lab_d,com_opac,lab_opac,abs_frac);
 
 		// move particle the distance
-		move(p,lab_d,lab_opac);
+		move(p,lab_d,lab_opac, abs_frac, z_ind);
 		if(event != boundary) PRINT_ASSERT(p->tau, >=, -grid->tiny*(lab_d*lab_opac));
 		z_ind = grid->zone_index(p->x,3);
 
 		// do the selected event
 		// now the exciting bit!
-		switch(event){
+		if(p->fate != rouletted) switch(event){
 		    // ---------------------------------
 		    // Do if interacting with the fluid
 		    // ---------------------------------
@@ -356,7 +369,7 @@ void Transport::propagate(Particle* p)
 				while(z_ind>=0){
 					double tweak_distance = grid->tiny*lab_d * i*i;
 					p->tau += tweak_distance*lab_opac; // a hack to prevent tau<0
-					move(p,tweak_distance,lab_opac);
+					move(p,tweak_distance,lab_opac, abs_frac, z_ind);
 					z_ind = grid->zone_index(p->x,3);
 					i++;
 				}
