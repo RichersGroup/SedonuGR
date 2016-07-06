@@ -90,7 +90,7 @@ private:
 	void distribution_function_basis(const double D[3], const double xyz[3], double D_newbasis[3]) const;
 	void tally_radiation(const Particle* p, const int z_ind, const double dshift_l2c, const double lab_d, const double com_opac, const double lab_opac, const double abs_frac) const;
 	void reset_radiation();
-	void which_event(Particle* p,const int z_ind, const double lab_opac, const double abs_frac, double* d_smallest, ParticleEvent *event) const;
+	void which_event(LorentzHelper* lh,const int z_ind, ParticleEvent *event) const;
 	void event_boundary(Particle* p, const int z_ind) const;
 	void event_interact(Particle* p, const int z_ind, const double abs_frac,const double lab_opac, const double com_opac);
 	void isotropic_direction(Particle* p) const;

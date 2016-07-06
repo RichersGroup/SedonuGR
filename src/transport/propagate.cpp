@@ -97,11 +97,10 @@ void Transport::propagate_particles()
 //--------------------------------------------------------
 // Decide what happens to the particle
 //--------------------------------------------------------
-void Transport::which_event(Particle *p, const int z_ind, const double lab_opac, const double abs_frac,
-		double *d_smallest, ParticleEvent *event) const{
-	PRINT_ASSERT(lab_opac, >=, 0);
-	PRINT_ASSERT(p->e, >, 0);
-	PRINT_ASSERT(p->nu, >, 0);
+void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *event) const{
+	PRINT_ASSERT(lh->net_opac(lab), >=, 0);
+	PRINT_ASSERT(lh->p_e(lab), >, 0);
+	PRINT_ASSERT(lh->p_nu(lab), >, 0);
 
 	double d_zone     = numeric_limits<double>::infinity();
 	double d_time     = numeric_limits<double>::infinity();
@@ -117,29 +116,30 @@ void Transport::which_event(Particle *p, const int z_ind, const double lab_opac,
 		PRINT_ASSERT(d_zone, >, 0);
 
 		// FIND D_INTERACT =================================================================
-		double relevant_opacity = exponential_decay ? lab_opac*(1.0-abs_frac) : lab_opac;
+		double relevant_opacity = exponential_decay ? lh->scat_opac(lab) : lh->net_opac(lab);
 		if (relevant_opacity == 0) d_interact = numeric_limits<double>::infinity();
-		else               d_interact = static_cast<double>(p->tau / relevant_opacity);
+		else               d_interact = static_cast<double>(lh->p_tau() / relevant_opacity);
 		PRINT_ASSERT(d_interact,>=,0);
 	}
 
 	// FIND D_BOUNDARY ================================================================
-	d_boundary = grid->lab_dist_to_boundary(p);
+	d_boundary = grid->lab_dist_to_boundary(lh->particle_readonly(lab));
 	PRINT_ASSERT(d_boundary, >, 0);
 
 	// find out what event happens (shortest distance) =====================================
 	*event  = zoneEdge;
-	*d_smallest = d_zone;
-	if( d_interact <= *d_smallest ){
+	double d_smallest = d_zone;
+	if( d_interact <= d_smallest ){
 		*event = interact;
-		*d_smallest = d_interact;
+		d_smallest = d_interact;
 	}
-	if( d_boundary <= *d_smallest ){
+	if( d_boundary <= d_smallest ){
 		*event = boundary;
-		*d_smallest = d_boundary;
-		if(z_ind >= 0) *d_smallest *= (1.0 + Grid::tiny); // bump just over the boundary if in simulation domain
-		else           *d_smallest *= (1.0 - Grid::tiny); // don't overshoot outward through the inner boundary
+		d_smallest = d_boundary;
+		if(z_ind >= 0) d_smallest *= (1.0 + Grid::tiny); // bump just over the boundary if in simulation domain
+		else           d_smallest *= (1.0 - Grid::tiny); // don't overshoot outward through the inner boundary
 	}
+	lh->set_distance<lab>(d_smallest);
 }
 
 
@@ -328,14 +328,16 @@ void Transport::propagate(Particle* p)
 
 		// get all the opacities
 		get_opacity(&lh,z_ind);
+
+		// decide which event happens
+		which_event(&lh,z_ind,&event);
+		PRINT_ASSERT(lh.distance(lab), >=, 0);
+
 		lab_opac = lh.net_opac(lab);
 		com_opac = lh.net_opac(com);
 		abs_frac = lh.abs_fraction();
 		dshift_l2c = lh.p_nu(com)/lh.p_nu(lab);
-
-		// decide which event happens
-		which_event(p,z_ind,lab_opac,abs_frac,&lab_d,&event);
-		PRINT_ASSERT(lab_d, >=, 0);
+		lab_d = lh.distance(lab);
 
 		// accumulate counts of radiation energy, absorption, etc
 		if(grid->good_zone(z_ind) && z_ind>=0) tally_radiation(p,z_ind,dshift_l2c,lab_d,com_opac,lab_opac,abs_frac);
