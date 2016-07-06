@@ -55,7 +55,10 @@ void Transport::event_interact(Particle* p, const int z_ind, const double abs_fr
 			p->e *= (1.0 - abs_frac); // UNCOMMENT THIS IF USING ALTERNATIVE TALLYING METHOD IN PROPAGATE.CPP
 			window(p,z_ind);
 		}
-		if(p->fate==moving) scatter(p,abs_frac,com_opac, z_ind);
+		if(p->fate==moving){
+			scatter(p,abs_frac,com_opac, z_ind);
+			window(p,z_ind);
+		}
 	}
 	// absorb the particle and let the fluid re-emit another particle
 	else if(do_absorb_reemit){
@@ -289,7 +292,7 @@ void Transport::random_walk(Particle* p, const double com_absopac, const double 
 	// randomly place the particle somewhere on the sphere (comoving frame)
 	double phi = 2*pc::pi * rangen.uniform();
 	double mu = 2.0*rangen.uniform() - 1.0;
-	double displacement4[4] = {Rcom*mu*cos(phi), Rcom*mu*sin(phi), Rcom*(1.0-mu*mu), distance};
+	double displacement4[4] = {Rcom*mu*cos(phi), Rcom*mu*sin(phi), Rcom*sqrt(1.0-mu*mu), distance};
 
 
 	//------------------------------------------------------------------------
@@ -327,7 +330,6 @@ void Transport::random_walk(Particle* p, const double com_absopac, const double 
 	normalize(p->D,3);
 	//------------------------------------------------------------------------
 
-
 	// calculate radiation energy in the comoving frame
 	//double e_rad_directional = e_avg * R;
 	//double e_rad_each_bin = e_avg * (distance - R) / (double)(zone->distribution[p->s].phi_dim() * zone->distribution[p->s].mu_dim());
@@ -338,14 +340,16 @@ void Transport::random_walk(Particle* p, const double com_absopac, const double 
 	// really, most should be isotropic and some should be in the direction of motion,
 	// but this should average out properly over many trajectories.
 	// depositing radiation in every bin would lead to lots of memory contention
-	transform_cartesian_4vector_c2l(zone->u, displacement4);
-	double displacement3[3] = {displacement4[0], displacement4[1], displacement4[2]};
-	normalize(displacement3,3);
-	double dshift = dshift_comoving_to_lab(p->x,displacement3,z_ind);
-	zone->distribution[p->s].count(displacement3, 3, p->nu*dshift, erad_com*dshift);
+	//normalize(d3lab,3);
+	Particle pfake = *p;
+	pfake.e = erad_com;
+	for(int i=0; i<3; i++) pfake.D[i] = d3com[i];
+	transform_comoving_to_lab(&pfake,z_ind);
+	zone->distribution[p->s].count(pfake.D, 3, pfake.nu, pfake.e);
 
-	// move the particle to the edge of the sphere and transform to the lab frame
-	for(int i=0; i<3; i++) p->x[i] += displacement3[3];
+	// move the particle to the edge of the sphere
+	transform_cartesian_4vector_c2l(zone->u, displacement4);
+	double d3lab[3] = {displacement4[0], displacement4[1], displacement4[2]};
+	for(int i=0; i<3; i++) p->x[i] += d3lab[3];
 	if(ratio_deposited > 0) p->e *= 1.0 - ratio_deposited;
-	if(p->e == 0) p->fate = rouletted;
 }
