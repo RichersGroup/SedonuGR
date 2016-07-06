@@ -204,22 +204,16 @@ void Transport::distribution_function_basis(const double D[3], const double xyz[
 	D_newbasis[1] = dot(D,thetahat,3);
 	D_newbasis[2] = dot(D,rhat,3);
 }
-void Transport::tally_radiation(const Particle* p, const int z_ind, const double dshift_l2c, const double lab_d, const double com_opac, const double lab_opac, const double abs_frac) const{
+void Transport::tally_radiation(LorentzHelper *lh, const int z_ind) const{
 	PRINT_ASSERT(z_ind, >=, 0);
 	PRINT_ASSERT(z_ind, <, (int)grid->z.size());
-	PRINT_ASSERT(dshift_l2c, >, 0);
-	PRINT_ASSERT(lab_d, >=, 0);
-	PRINT_ASSERT(abs_frac, >=, 0);
-	PRINT_ASSERT(abs_frac, <=, 1);
-
-	// get comoving values
-	double com_e = p->e * dshift_l2c;
-	double com_nu = p->nu * dshift_l2c;
-	double com_d  = lab_d / dshift_l2c;
-	PRINT_ASSERT(com_e, >, 0);
-	PRINT_ASSERT(com_nu, >, 0);
-	PRINT_ASSERT(com_d, >=, 0);
-	PRINT_ASSERT(com_opac, >=, 0);
+	PRINT_ASSERT(lh->distance(lab), >=, 0);
+	PRINT_ASSERT(lh->abs_fraction(), >=, 0);
+	PRINT_ASSERT(lh->abs_fraction(), <=, 1);
+	PRINT_ASSERT(lh->p_e(com), >, 0);
+	PRINT_ASSERT(lh->p_nu(com), >, 0);
+	PRINT_ASSERT(lh->distance(com), >=, 0);
+	PRINT_ASSERT(lh->net_opac(com), >=, 0);
 	double to_add = 0;
 
 	// set pointer to the current zone
@@ -228,18 +222,17 @@ void Transport::tally_radiation(const Particle* p, const int z_ind, const double
 
 	// tally in contribution to zone's distribution function (lab frame)
 	// use rhat, thetahat, phihat as basis functions so rotational symmetries give accurate results
-	double  lab_abs_opac = lab_opac * abs_frac;
-	if(exponential_decay) to_add = p->e / (lab_abs_opac) * (1.0 - exp(-lab_abs_opac * lab_d));
-	else to_add = p->e * lab_d; // MUST ALSO UNCOMMENT ENERGY CHANGE IN SCATTERING ROUTINE AND COMMENT OUT ENERGY CHANGE IN THIS ONE TO USE THIS METHOD
+	if(exponential_decay) to_add = lh->p_e(lab) / lh->abs_opac(lab) * (1.0 - exp(-lh->abs_opac(lab) * lh->distance(lab)));
+	else to_add = lh->p_e(lab) * lh->distance(lab);
 	PRINT_ASSERT(to_add,<,INFINITY);
 	double D_newbasis[3] = {0,0,0};
-	distribution_function_basis(p->D,p->x,D_newbasis);
+	distribution_function_basis(lh->p_D(lab,3),lh->p_x(3),D_newbasis);
 	normalize(D_newbasis,3);
-	zone->distribution[p->s].count(D_newbasis, 3, p->nu, to_add);
+	zone->distribution[lh->p_s()].count(D_newbasis, 3, lh->p_nu(lab), to_add);
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
-	if(exponential_decay) to_add = com_e * (1.0 - exp(-com_opac * com_d));
-	else to_add = com_e * com_d * (com_opac*abs_frac);
+	if(exponential_decay) to_add = lh->p_e(com) * (1.0 - exp(-lh->abs_opac(com) * lh->distance(com)));
+	else to_add = lh->p_e(com) * lh->distance(com) * (lh->abs_opac(com));
 	#pragma omp atomic
 	zone->e_abs += to_add;
 	PRINT_ASSERT(zone->e_abs, >=, 0);
@@ -247,13 +240,13 @@ void Transport::tally_radiation(const Particle* p, const int z_ind, const double
 	// store absorbed lepton number (same in both frames, except for the
 	// factor of this_d which is divided out later
 	double this_l_comoving = 0;
-	if(species_list[p->s]->lepton_number != 0){
-		to_add /= (com_nu*pc::h);
-		if(species_list[p->s]->lepton_number == 1){
+	if(species_list[lh->p_s()]->lepton_number != 0){
+		to_add /= (lh->p_nu(com)*pc::h);
+		if(species_list[lh->p_s()]->lepton_number == 1){
             #pragma omp atomic
 			zone->nue_abs += to_add;
 		}
-		else if(species_list[p->s]->lepton_number == -1){
+		else if(species_list[lh->p_s()]->lepton_number == -1){
             #pragma omp atomic
 			zone->anue_abs += to_add;
 		}
@@ -333,14 +326,14 @@ void Transport::propagate(Particle* p)
 		which_event(&lh,z_ind,&event);
 		PRINT_ASSERT(lh.distance(lab), >=, 0);
 
+		// accumulate counts of radiation energy, absorption, etc
+		if(grid->good_zone(z_ind) && z_ind>=0) tally_radiation(&lh,z_ind);
+
 		lab_opac = lh.net_opac(lab);
 		com_opac = lh.net_opac(com);
 		abs_frac = lh.abs_fraction();
 		dshift_l2c = lh.p_nu(com)/lh.p_nu(lab);
 		lab_d = lh.distance(lab);
-
-		// accumulate counts of radiation energy, absorption, etc
-		if(grid->good_zone(z_ind) && z_ind>=0) tally_radiation(p,z_ind,dshift_l2c,lab_d,com_opac,lab_opac,abs_frac);
 
 		// move particle the distance
 		move(p,lab_d,lab_opac, abs_frac, z_ind);
