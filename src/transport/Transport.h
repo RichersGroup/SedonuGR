@@ -32,6 +32,7 @@
 #include "Lua.h"
 #include "CDFArray.h"
 #include "ThreadRNG.h"
+#include "LorentzHelper.h"
 
 class Species;
 class Grid;
@@ -80,7 +81,7 @@ private:
 	double dshift_lab_to_comoving   (const double x[3], const double D[3], const int z_ind=-1) const;
 	void   transform_comoving_to_lab(Particle* p, const int z_ind=-1) const;
 	void   transform_lab_to_comoving(Particle* p, const int z_ind=-1) const;
-	void get_opacity(const Particle *p, const int z_ind, double *lab_opac, double *com_opac, double *abs_frac, double *dshift_l2c) const;
+	void get_opacity(LorentzHelper *lh, const int z_ind) const;
 
 	// propagate the particles
 	void propagate_particles();

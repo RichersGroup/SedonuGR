@@ -307,12 +307,20 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	species_list[p.s]->sample_zone_nu(p,z_ind,g);
 	PRINT_ASSERT(p.nu,>,0);
 
+	// set up LorentzHelper
+	LorentzHelper lh(grid->z[z_ind].u);
+	lh.set_p<com>(&p);
+
 	// lorentz transform from the comoving to lab frame
 	transform_comoving_to_lab(&p,z_ind);
 
 	// sample tau
 	double lab_opac=0, abs_frac=0, dshift_l2c=0, com_opac = 0;
-	get_opacity(&p,z_ind,&lab_opac,&com_opac,&abs_frac,&dshift_l2c);
+	get_opacity(&lh,z_ind);
+	lab_opac = lh.net_opac(lab);
+	com_opac = lh.net_opac(com);
+	abs_frac = lh.abs_fraction();
+	dshift_l2c = lh.p_nu(com)/lh.p_nu(lab);
 	sample_tau(&p,lab_opac,abs_frac);
 	window(&p,z_ind);
 
@@ -386,9 +394,17 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	PRINT_ASSERT(p.s,<,(int)species_list.size());
 	p.nu = species_list[p.s]->sample_core_nu(g);
 
+	// set up the LorentzHelper
+	LorentzHelper lh(grid->z[z_ind].u);
+	lh.set_p<lab>(&p);
+
 	// sample tau
 	double lab_opac=0, abs_frac=0, dshift_l2c=0, com_opac = 0;
-	get_opacity(&p,z_ind,&lab_opac,&com_opac,&abs_frac,&dshift_l2c);
+	get_opacity(&lh,z_ind);
+	lab_opac = lh.net_opac(lab);
+	com_opac = lh.net_opac(com);
+	abs_frac = lh.abs_fraction();
+	dshift_l2c = lh.p_nu(com)/lh.p_nu(lab);
 	sample_tau(&p,lab_opac,abs_frac);
 	window(&p,z_ind);
 

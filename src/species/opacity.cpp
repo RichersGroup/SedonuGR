@@ -33,29 +33,22 @@ using namespace std;
 //-----------------------------------------------------------------
 // get opacity at the frequency
 //-----------------------------------------------------------------
-void Species::get_opacity(const double com_nu, const int z_ind, double* opac, double* abs_frac) const
+void Species::get_opacity(const double com_nu, const int z_ind, double* a, double* s) const
 {
 	PRINT_ASSERT(z_ind,>=,-1);
 	PRINT_ASSERT(com_nu,>,0);
 
 	if(z_ind == -1){ // particle is within inner boundary
-		*opac = 0;
-		*abs_frac = 0;
+		*a = 0;
+		*s = 0;
 	}
 
 	else{
 		// absorption and scattering opacities
-		double a = max(nu_grid.value_at(com_nu, abs_opac[z_ind]),0.0);
-		double s = max(nu_grid.value_at(com_nu,scat_opac[z_ind]),0.0);
-
-		// output - net opacity
-		*opac = a+s;
-		PRINT_ASSERT(*opac,>=,0);
-
-		// output - absorption fraction
-		*abs_frac = (a+s>0 ? a/(a+s) : 0);
-		PRINT_ASSERT(0,<=,*abs_frac);
-		PRINT_ASSERT(*abs_frac,<=,1.0);
+		*a = max(nu_grid.value_at(com_nu, abs_opac[z_ind]),0.0);
+		*s = max(nu_grid.value_at(com_nu,scat_opac[z_ind]),0.0);
+		PRINT_ASSERT(*a,>=,0);
+		PRINT_ASSERT(*s,>=,0);
 	}
 }
 

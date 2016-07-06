@@ -285,24 +285,18 @@ void Transport::move(Particle* p, const double lab_d, const double lab_opac, con
 	if(p->tau<0) p->tau = 0;
 }
 
-void Transport::get_opacity(const Particle *p, const int z_ind, double *lab_opac, double *com_opac, double *abs_frac, double *dshift_l2c) const{
+void Transport::get_opacity(LorentzHelper *lh, const int z_ind) const{
 	if(grid->good_zone(z_ind) && z_ind>=0){ // avoid handling fluff zones if unnecessary
-		// doppler shift from comoving to lab (nu0/nu)
-		*dshift_l2c = dshift_lab_to_comoving(p->x,p->D,z_ind);
-		PRINT_ASSERT(*dshift_l2c, >, 0);
 
 		// get local opacity and absorption fraction
-		double com_nu = p->nu * (*dshift_l2c);
-		species_list[p->s]->get_opacity(com_nu,z_ind,com_opac,abs_frac);
-		*lab_opac = *com_opac * (*dshift_l2c);
+		double a=-1,s=-1;
+		species_list[lh->p_s()]->get_opacity(lh->p_nu(com), z_ind, &a, &s);
+		lh->set_opac<com>(a,s);
 	}
 	else{
-		*lab_opac = 0;
-		*com_opac = 0;
-		*dshift_l2c = NaN;
-		*abs_frac = -1;
+		lh->set_opac<com>(0,0);
 	}
-	PRINT_ASSERT(*lab_opac,>=,0);
+	PRINT_ASSERT(lh->net_opac(lab),>=,0);
 }
 //--------------------------------------------------------
 // Propagate a single monte carlo particle until
@@ -328,7 +322,16 @@ void Transport::propagate(Particle* p)
 		PRINT_ASSERT(z_ind, >=, -1);
 		PRINT_ASSERT(z_ind, <, (int)grid->z.size());
 
-		get_opacity(p,z_ind,&lab_opac,&com_opac,&abs_frac,&dshift_l2c);
+		// set up the LorentzHelper
+		LorentzHelper lh(grid->z[z_ind].u);
+		lh.set_p<lab>(p);
+
+		// get all the opacities
+		get_opacity(&lh,z_ind);
+		lab_opac = lh.net_opac(lab);
+		com_opac = lh.net_opac(com);
+		abs_frac = lh.abs_fraction();
+		dshift_l2c = lh.p_nu(com)/lh.p_nu(lab);
 
 		// decide which event happens
 		which_event(p,z_ind,lab_opac,abs_frac,&lab_d,&event);
