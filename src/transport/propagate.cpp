@@ -253,29 +253,35 @@ void Transport::tally_radiation(LorentzHelper *lh, const int z_ind) const{
 	}
 }
 
-void Transport::move(Particle* p, const double lab_d, const double lab_opac, const double abs_frac, const int z_ind){
-	PRINT_ASSERT(p->tau,>=,0);
-	PRINT_ASSERT(lab_d,>=,0);
-	PRINT_ASSERT(lab_opac,>=,0);
-	p->x[0] += lab_d*p->D[0];
-	p->x[1] += lab_d*p->D[1];
-	p->x[2] += lab_d*p->D[2];
-	double old_tau = p->tau;
+void Transport::move(LorentzHelper *lh, const int z_ind){
+	PRINT_ASSERT(lh->p_tau(),>=,0);
+	PRINT_ASSERT(lh->distance(lab),>=,0);
+	PRINT_ASSERT(lh->net_opac(lab),>=,0);
 
+	// create a dummy particle
+	Particle plab = lh->particle_copy(lab);
+
+	// translate the particle
+	plab.x[0] += lh->distance(lab) * plab.D[0];
+	plab.x[1] += lh->distance(lab) * plab.D[1];
+	plab.x[2] += lh->distance(lab) * plab.D[2];
 
 	// reduce the particle's remaining optical depth
-	double relevant_opacity = exponential_decay ? lab_opac*(1.0-abs_frac) : lab_opac;
-	if(relevant_opacity>0)	p->tau -= relevant_opacity*lab_d;
+	double old_tau = plab.tau;
+	double relevant_opacity = exponential_decay ? lh->scat_opac(lab) : lh->net_opac(lab);
+	if(relevant_opacity>0)	plab.tau -= relevant_opacity * lh->distance(lab);
 
 	// appropriately reduce the particle's energy
 	if(exponential_decay){
-		double lab_abs_opac = abs_frac * lab_opac;
-		p->e *= exp(-lab_abs_opac * lab_d);
-		window(p,z_ind);
+		plab.e *= exp(-lh->abs_opac(lab) * lh->distance(lab));
+		window(&plab,z_ind);
 	}
 
-	PRINT_ASSERT(p->tau,>=,-grid->tiny*old_tau);
-	if(p->tau<0) p->tau = 0;
+	PRINT_ASSERT(plab.tau,>=,-grid->tiny*old_tau);
+	if(plab.tau<0) plab.tau = 0;
+
+	// return the particle to the LorentzHelper
+	lh->set_p<lab>(&plab);
 }
 
 void Transport::get_opacity(LorentzHelper *lh, const int z_ind) const{
@@ -302,11 +308,6 @@ void Transport::propagate(Particle* p)
 
 	PRINT_ASSERT(p->fate, ==, moving);
 
-	// local variables
-	double lab_d = NaN;                            // distance to particle's next event
-	double lab_opac = NaN, com_opac = NaN, abs_frac = NaN;                 // opacity variables
-	double dshift_l2c = NaN;
-
 	while (p->fate == moving)
 	{
 		PRINT_ASSERT(p->nu, >, 0);
@@ -329,16 +330,17 @@ void Transport::propagate(Particle* p)
 		// accumulate counts of radiation energy, absorption, etc
 		if(grid->good_zone(z_ind) && z_ind>=0) tally_radiation(&lh,z_ind);
 
-		lab_opac = lh.net_opac(lab);
-		com_opac = lh.net_opac(com);
-		abs_frac = lh.abs_fraction();
-		dshift_l2c = lh.p_nu(com)/lh.p_nu(lab);
-		lab_d = lh.distance(lab);
-
 		// move particle the distance
-		move(p,lab_d,lab_opac, abs_frac, z_ind);
-		if(event != boundary) PRINT_ASSERT(p->tau, >=, -grid->tiny*(lab_d*lab_opac));
-		z_ind = grid->zone_index(p->x,3);
+		move(&lh, z_ind);
+		if(event != boundary) PRINT_ASSERT(lh.p_tau(), >=, -grid->tiny*(lh.distance(lab) * lh.net_opac(lab)));
+		z_ind = grid->zone_index(lh.p_x(3),3);
+
+		double lab_opac = lh.net_opac(lab);
+		double com_opac = lh.net_opac(com);
+		double abs_frac = lh.abs_fraction();
+		double dshift_l2c = lh.p_nu(com)/lh.p_nu(lab);
+		double lab_d = lh.distance(lab);
+		*p = lh.particle_copy(lab);
 
 		// do the selected event
 		// now the exciting bit!
@@ -367,7 +369,15 @@ void Transport::propagate(Particle* p)
 				while(z_ind>=0){
 					double tweak_distance = grid->tiny*lab_d * i*i;
 					p->tau += tweak_distance*lab_opac; // a hack to prevent tau<0
-					move(p,tweak_distance,lab_opac, abs_frac, z_ind);
+
+					lh = LorentzHelper(grid->z[z_ind].u);
+					lh.set_p<lab>(p);
+					lh.set_distance<lab>(tweak_distance);
+					lh.set_opac<lab>(lab_opac*abs_frac, lab_opac*(1.0-abs_frac));
+
+					move(&lh, z_ind);
+					*p = lh.particle_copy(lab);
+
 					z_ind = grid->zone_index(p->x,3);
 					i++;
 				}

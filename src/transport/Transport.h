@@ -86,7 +86,7 @@ private:
 	// propagate the particles
 	void propagate_particles();
 	void propagate(Particle* p);
-	void move(Particle* p, const double lab_d, const double lab_opac, const double abs_frac, const int z_ind);
+	void move(LorentzHelper *lh, const int z_ind);
 	void distribution_function_basis(const double D[3], const double xyz[3], double D_newbasis[3]) const;
 	void tally_radiation(LorentzHelper *lh, const int z_ind) const;
 	void reset_radiation();
