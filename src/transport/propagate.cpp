@@ -230,7 +230,7 @@ void Transport::tally_radiation(const Particle* p, const int z_ind, const double
 	// use rhat, thetahat, phihat as basis functions so rotational symmetries give accurate results
 	double  lab_abs_opac = lab_opac * abs_frac;
 	if(exponential_decay) to_add = p->e / (lab_abs_opac) * (1.0 - exp(-lab_abs_opac * lab_d));
-	else double to_add = p->e * lab_d; // MUST ALSO UNCOMMENT ENERGY CHANGE IN SCATTERING ROUTINE AND COMMENT OUT ENERGY CHANGE IN THIS ONE TO USE THIS METHOD
+	else to_add = p->e * lab_d; // MUST ALSO UNCOMMENT ENERGY CHANGE IN SCATTERING ROUTINE AND COMMENT OUT ENERGY CHANGE IN THIS ONE TO USE THIS METHOD
 	PRINT_ASSERT(to_add,<,INFINITY);
 	double D_newbasis[3] = {0,0,0};
 	distribution_function_basis(p->D,p->x,D_newbasis);
