@@ -186,6 +186,7 @@ void Grid::write_header(ofstream& outf) const{
 			}
 		}
 	}
+	outf << ++c << "-Edens_invariant(erg/ccm/MeV^3) ";
 	outf << endl;
 }
 
@@ -393,6 +394,14 @@ void Grid::write_line(ofstream& outf, const int z_ind) const{
 //			outf << direction_integrated_edens[g] << "\t";
 //		}
 //	}
+
+	double Binvar = 0;
+	for(unsigned s=0; s<z[z_ind].distribution.size(); s++){
+		for(unsigned i=0; i<z[z_ind].distribution[s].size(); i++){
+			Binvar += z[z_ind].distribution[s].get(i) / pow(z[z_ind].distribution[s].nu_center(i) * pc::h_MeV,3);
+		}
+	}
+	outf << Binvar << "\t";
 
 	outf << endl;
 }

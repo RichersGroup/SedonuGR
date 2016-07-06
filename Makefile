@@ -1,7 +1,7 @@
 include make.inc
 .PHONY: sedonu clean nulib nulibclean realclean
 
-sedonu: nulib
+sedonu: #nulib
 	mkdir -p exe
 	$(MAKE) -C src
 	ln -sf exe/sedonu

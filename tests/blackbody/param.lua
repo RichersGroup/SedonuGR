@@ -1,7 +1,7 @@
 -- Included Physics
 
 do_visc       = 0
-do_relativity = 0
+do_relativity = 1
 do_annihilation = 0
 radiative_eq  = 0
 reflect_outer = 0
@@ -17,7 +17,7 @@ grey_opacity  = -1
 grey_abs_frac = -1
 nulib_table = "/home/srichers/software/NuLib/NuLib_noscat.h5"
 nulib_eos = "/home/srichers/software/sedonu-devel/external/tables/EOS/SFHo.h5"
-opac_interp_method = 0
+opac_interp_method = 3
 cdf_interpolation_order = 1
 cdf_cutoff    = 0
 
@@ -28,8 +28,8 @@ spec_n_phi      = 1
 
 -- Distribution Function
 
-distribution_nmu = 2
-distribution_nphi = 2
+distribution_nmu = 50
+distribution_nphi = 100
 
 -- Grid and Model
 
@@ -44,9 +44,11 @@ Grid0DIsotropic_vz  = 0
 
 -- Output
 
-write_zones_every   = 0
+write_zones_every   = 1
 write_rays_every    = 0
 write_spectra_every = 1
+output_zones_distribution = 0
+output_hdf5 = 0
 
 -- Particle Creation
 
