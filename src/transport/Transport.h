@@ -173,7 +173,7 @@ public:
 	double min_importance;
 	int bias_path_length;
 	double max_path_length_boost;
-	void sample_tau(Particle* p, const double lab_opac, const double abs_frac);
+	void sample_tau(LorentzHelper *lh);
 
 	// items for core emission
 	double r_core;

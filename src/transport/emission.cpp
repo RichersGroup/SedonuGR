@@ -280,6 +280,11 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
 
+	// set up LorentzHelper
+	LorentzHelper lh(grid->z[z_ind].u,exponential_decay);
+
+	// isolate the particle creation so it can't be use later
+	{
 	// basic particle properties
 	Particle p;
 	p.fate = moving;
@@ -307,38 +312,30 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	species_list[p.s]->sample_zone_nu(p,z_ind,g);
 	PRINT_ASSERT(p.nu,>,0);
 
-	// set up LorentzHelper
-	LorentzHelper lh(grid->z[z_ind].u,exponential_decay);
 	lh.set_p<com>(&p);
-
-	// lorentz transform from the comoving to lab frame
-	transform_comoving_to_lab(&p,z_ind);
+	}
 
 	// sample tau
 	double lab_opac=0, abs_frac=0, dshift_l2c=0, com_opac = 0;
 	get_opacity(&lh,z_ind);
-	lab_opac = lh.net_opac(lab);
-	com_opac = lh.net_opac(com);
-	abs_frac = lh.abs_fraction();
-	dshift_l2c = lh.p_nu(com)/lh.p_nu(lab);
-	sample_tau(&p,lab_opac,abs_frac);
-	window(&p,z_ind);
+	sample_tau(&lh);
+	window(&lh,z_ind);
 
 	// add to particle vector
-	if(p.fate == moving){
+	if(lh.p_fate() == moving){
 		PRINT_ASSERT(particles.size(),<,particles.capacity());
-		PRINT_ASSERT(p.e,>,0);
-		PRINT_ASSERT(p.tau,>,0);
+		PRINT_ASSERT(lh.p_e(lab),>,0);
+		PRINT_ASSERT(lh.p_tau(),>,0);
 		#pragma omp critical
-		particles.push_back(p);
+		particles.push_back(lh.particle_copy(lab));
 
 		// count up the emitted energy in each zone
 		#pragma omp atomic
-		L_net_lab[p.s] += p.e;
+		L_net_lab[lh.p_s()] += lh.p_e(lab);
 		#pragma omp atomic
-		E_avg_lab[p.s] += p.nu * p.e;
+		E_avg_lab[lh.p_s()] += lh.p_nu(lab) * lh.p_e(lab);
 		#pragma omp atomic
-		N_net_lab[p.s] += p.e / (p.nu * pc::h);
+		N_net_lab[lh.p_s()] += lh.p_e(lab) / (lh.p_nu(lab) * pc::h);
 	}
 }
 
@@ -387,33 +384,25 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	p.D[2] = -sint_core*D_xl+cost_core*D_zl;
 	normalize(p.D,3);
 
-
 	// sample the species and frequency
 	p.s = (s>=0 ? s : sample_core_species());
 	PRINT_ASSERT(p.s,>=,0);
 	PRINT_ASSERT(p.s,<,(int)species_list.size());
 	p.nu = species_list[p.s]->sample_core_nu(g);
 
-	// set up the LorentzHelper
-	LorentzHelper lh(grid->z[z_ind].u,exponential_decay);
+	// fill in the LorentzHelper
+	LorentzHelper lh = LorentzHelper(grid->z[z_ind].u,exponential_decay);
 	lh.set_p<lab>(&p);
-
-	// sample tau
-	double lab_opac=0, abs_frac=0, dshift_l2c=0, com_opac = 0;
 	get_opacity(&lh,z_ind);
-	lab_opac = lh.net_opac(lab);
-	com_opac = lh.net_opac(com);
-	abs_frac = lh.abs_fraction();
-	dshift_l2c = lh.p_nu(com)/lh.p_nu(lab);
-	sample_tau(&p,lab_opac,abs_frac);
-	window(&p,z_ind);
+	sample_tau(&lh);
+	window(&lh,z_ind);
 
 	// add to particle vector
-	if(p.fate == moving){
+	if(lh.p_fate() == moving){
 		PRINT_ASSERT(particles.size(),<,particles.capacity());
 	    #pragma omp critical
-		particles.push_back(p);
+		particles.push_back(lh.particle_copy(lab));
 	    #pragma omp atomic
-		L_core_lab[p.s] += p.e;
+		L_core_lab[lh.p_s()] += lh.p_e(lab);
 	}
 }

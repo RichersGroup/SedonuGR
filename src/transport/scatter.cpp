@@ -57,13 +57,7 @@ void Transport::event_interact(LorentzHelper* lh, const int z_ind){
 	}
 
 	// resample the path length
-	if(lh->p_fate()==moving){
-		{
-		Particle p = lh->particle_copy(lab);
-		sample_tau(&p,lh->net_opac(lab),lh->abs_fraction());
-		lh->set_p<com>(&p);
-		}
-	}
+	if(lh->p_fate()==moving) sample_tau(lh);
 
 	// window the particle
 	if(lh->p_fate()==moving) window(lh,z_ind);
@@ -230,34 +224,34 @@ void Transport::isotropic_direction(double D[3], const int size) const
 //---------------------------------------------------------------------
 // Randomly select an optical depth through which a particle will move.
 //---------------------------------------------------------------------
-void Transport::sample_tau(Particle *p, const double lab_opac, const double abs_frac){
+void Transport::sample_tau(LorentzHelper *lh){
 	PRINT_ASSERT(bias_path_length,>=,0);
-	PRINT_ASSERT(p->fate,==,moving);
+	PRINT_ASSERT(lh->p_fate(),==,moving);
 
 	// tweak distribution if biasing path length
 	// this is probably computed more times than necessary. OPTIMIZE
 	double taubar = 1.0;
-	if(bias_path_length && abs_frac<1.0){
-		taubar = 1.0/(1.0-abs_frac);
+	if(bias_path_length && lh->abs_fraction()<1.0){
+		taubar = 1.0/(1.0-lh->abs_fraction());
 		taubar = min(taubar,max_path_length_boost);
 	}
 
 	// sample the distribution and modify the energy
 	do{ // don't allow tau to be infinity
-		p->tau = -taubar*log(rangen.uniform());
-	} while(p->tau >= INFINITY);
-	if(taubar != 1.0) p->e *= taubar * exp(-p->tau * (1.0 - 1.0/taubar));
-	if(p->e==0) p->fate = rouletted;
-	PRINT_ASSERT(p->e,>=,0);
+		lh->set_p_tau( -taubar*log(rangen.uniform()) );
+	} while(lh->p_tau() >= INFINITY);
+	if(taubar != 1.0) lh->scale_p_e( taubar * exp(-lh->p_tau() * (1.0 - 1.0/taubar)) );
+	if(lh->p_e(lab)==0) lh->set_p_fate(rouletted);
+	PRINT_ASSERT(lh->p_e(lab),>=,0);
 
 	// make sure nothing crazy happened
-	if(p->fate==moving){
-		PRINT_ASSERT(p->tau,>=,0);
-		PRINT_ASSERT(p->e,>,0);
-		PRINT_ASSERT(p->e,<,INFINITY);
-		PRINT_ASSERT(p->tau,<,INFINITY);
+	if(lh->p_fate()==moving){
+		PRINT_ASSERT(lh->p_tau(),>=,0);
+		PRINT_ASSERT(lh->p_e(lab),>,0);
+		PRINT_ASSERT(lh->p_e(lab),<,INFINITY);
+		PRINT_ASSERT(lh->p_tau(),<,INFINITY);
 	}
-	else PRINT_ASSERT(p->fate,==,rouletted);
+	else PRINT_ASSERT(lh->p_fate(),==,rouletted);
 }
 
 

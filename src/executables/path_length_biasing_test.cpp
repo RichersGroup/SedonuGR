@@ -73,7 +73,8 @@ int main(int argc, char **argv)
 	}
 
 	// set up the particle
-	Particle p;
+	double v[3] = {0,0,0};
+	LorentzHelper lh(v,false);
 	int n_above = 0;
 	double e_above = 0;
 
@@ -83,31 +84,36 @@ int main(int argc, char **argv)
 
 	// sample lots of particles
 	for(int i=0; i<nsamples; i++){
-		p.e = 1.0;
-		p.fate = moving;
-		double opacity = 1.0;//sim.rangen.uniform();
-		for(int j=0; j<niter; j++) if(p.fate==moving){
-			sim.sample_tau(&p,opacity,abs_frac);
-			while(p.e<=sim.min_packet_energy && p.fate==moving){
-				if(sim.rangen.uniform() < 0.5) p.fate = rouletted;
-				else p.e *= 2.0;
+		{
+			Particle p;
+			p.e = 1.0;
+			p.fate = moving;
+			double opacity = 1.0;//sim.rangen.uniform();
+			lh.set_p<com>(&p);
+			lh.set_opac<com>(opacity*abs_frac, opacity*(1.0-abs_frac));
+		}
+		for(int j=0; j<niter; j++) if(lh.p_fate()==moving){
+			sim.sample_tau(&lh);
+			while(lh.p_e(com)<=sim.min_packet_energy && lh.p_fate()==moving){
+				if(sim.rangen.uniform() < 0.5) lh.set_p_fate(rouletted);
+				else lh.scale_p_e(2.0);
 			}
 		}
 
 		// log the sample
-		int ind = upper_bound(grid.begin(), grid.end(), p.tau) - grid.begin();
+		int ind = upper_bound(grid.begin(), grid.end(), lh.p_tau()) - grid.begin();
 		if(ind<grid.size()){
 			packets[ind]++;
-			energy[ind] += p.e;
-			avg_e += p.e;
+			energy[ind] += lh.p_e(com);
+			avg_e += lh.p_e(com);
 		}
 		else{
 			n_above ++;
-			e_above += p.e;
+			e_above += lh.p_e(com);
 		}
-		if(p.e==0) n_zero++;
-		if(p.fate!=moving) n_dead++;
-		else PRINT_ASSERT(p.e, >=, sim.min_packet_energy);
+		if(lh.p_e(com)==0) n_zero++;
+		if(lh.p_fate()!=moving) n_dead++;
+		else PRINT_ASSERT(lh.p_e(com), >=, sim.min_packet_energy);
 	}
 
 	// calculate energy variance
