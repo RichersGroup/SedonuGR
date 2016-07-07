@@ -48,6 +48,10 @@ LorentzHelper::LorentzHelper(const double v_in[3], const bool exp_dec){
 	for(int i=0; i<3; i++) v[i] = v_in[i];
 }
 
+const double* LorentzHelper::velocity(const int size) const{
+	return v;
+}
+
 //==========//
 // particle //
 //==========//
@@ -62,6 +66,10 @@ void LorentzHelper::set_p(const Particle* p_in){
 
 	Frame other = ( f==com ? lab : com );
 	lorentz_transform_particle(&(p[other]), vrel, 3);
+
+	// set the other things
+	set_opac<com>(absopac[com],scatopac[com]);
+	set_distance<com>(dist[com]);
 }
 template void LorentzHelper::set_p<com>(const Particle* p);
 template void LorentzHelper::set_p<lab>(const Particle* p);
@@ -109,6 +117,15 @@ void LorentzHelper::set_p_x(const double x[3], const int size) {
 		p[lab].x[i] = x[i];
 	}
 }
+template<Frame f>
+void LorentzHelper::set_p_D(const double D[3], const int size) {
+	PRINT_ASSERT(size,==,3);
+	for(int i=0; i<size; i++) p[f].D[i] = D[f];
+	set_p<f>(&(p[f]));
+}
+template void LorentzHelper::set_p_D<com>(const double D[3], const int size);
+template void LorentzHelper::set_p_D<lab>(const double D[3], const int size);
+
 void LorentzHelper::set_p_fate(const ParticleFate fate){
 	p[com].fate = fate;
 	p[lab].fate = fate;

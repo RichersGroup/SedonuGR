@@ -141,12 +141,14 @@ void Transport::window(Particle* p, const int z_ind){
 
 // re-emission, done in COMOVING frame
 void Transport::re_emit(LorentzHelper *lh, const int z_ind) const{
-	Particle p = lh->particle_copy(com);
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
 
 	// reset the particle properties
-	isotropic_direction(&p);
+	double Dnew[3];
+	isotropic_direction(Dnew,3);
+	lh->set_p_D<com>(Dnew,3);
+	Particle p = lh->particle_copy(com);
 	sample_zone_species(&p,z_ind);
 	species_list[p.s]->sample_zone_nu(p,z_ind);
 
@@ -163,68 +165,66 @@ void Transport::re_emit(LorentzHelper *lh, const int z_ind) const{
 }
 
 // choose which type of scattering event to do
-void Transport::scatter(LorentzHelper *lh, int z_ind) const{
-	// temporaty hack
-	double abs_frac = lh->abs_fraction();
-	double com_opac = lh->net_opac(com);
-	Particle p = lh->particle_copy(com);
-
-	PRINT_ASSERT(abs_frac,>=,0);
-	PRINT_ASSERT(abs_frac,<=,1.0);
-	PRINT_ASSERT(com_opac,>=,0);
+void Transport::scatter(LorentzHelper *lh, int z_ind) const{\
+	PRINT_ASSERT(lh->abs_fraction(),>=,0);
+	PRINT_ASSERT(lh->abs_fraction(),<=,1.0);
+	PRINT_ASSERT(lh->net_opac(com),>=,0);
 	bool did_random_walk = false;
 
 	// try to do random walk approximation in scattering-dominated diffusion regime
 	if(randomwalk_sphere_size>0){
 
-		double com_absopac = com_opac * abs_frac;
-		double com_scatopac = com_opac * (1.0-abs_frac);
-		double D = pc::c / (3.0 * com_scatopac); // diffusion coefficient (cm^2/s)
+		double D = pc::c / (3.0 * lh->scat_opac(com)); // diffusion coefficient (cm^2/s)
 
 		// if the optical depth is below our threshold, don't do random walk
 		// (first pass to avoid doing lots of math)
 		double Rlab = randomwalk_sphere_size * grid->zone_min_length(z_ind);
-		if(com_scatopac * Rlab >= randomwalk_min_optical_depth){
+		if(lh->scat_opac(com) * Rlab >= randomwalk_min_optical_depth){
 			// determine maximum comoving sphere size
-			double v[3] = {0,0,0};
-			grid->cartesian_velocity_vector(p.x,3,v,3,z_ind);
+			const double* v = lh->velocity(3);
 			double vabs = sqrt(dot(v,v,3));
 			double gamma = lorentz_factor(v,3);
 
 			double Rcom = 0;
 			if(Rlab==0) Rcom = 0;
-			else if(Rlab==INFINITY) Rcom = randomwalk_min_optical_depth / (com_absopac>0 ? com_absopac : com_scatopac);
+			else if(Rlab==INFINITY) Rcom = randomwalk_min_optical_depth / (lh->abs_opac(com)>0 ? lh->abs_opac(com) : lh->scat_opac(com));
 			else Rcom =  2. * Rlab / gamma / (1. + sqrt(1. + 4.*Rlab*vabs*randomwalk_max_x / (gamma*D) ) );
 
 			// if the optical depth is below our threshold, don't do random walk
-			if(com_scatopac * Rcom >= randomwalk_min_optical_depth){
-				double eold = p.e;
-				random_walk(&p,com_absopac,com_scatopac, Rcom, D, z_ind);
+			if(lh->scat_opac(com) * Rcom >= randomwalk_min_optical_depth){
+				{
+				Particle p = lh->particle_copy(com);
+				random_walk(&p,lh->abs_opac(com),lh->scat_opac(com), Rcom, D, z_ind);
+				lh->set_p<com>(&p);
+				}
 				did_random_walk = true;
 			}
 		}
 	}
 
 	// isotropic scatter if can't do random walk
-	if(!did_random_walk) isotropic_direction(&p);
-
-	// give the particle back to LorentzHelper
-	lh->set_p<com>(&p);
-
+	if(!did_random_walk){
+		double Dnew[3];
+		isotropic_direction(Dnew,3);
+		lh->set_p_D<com>(Dnew,3);
+	}
 }
 
 
 // isotropic scatter, done in COMOVING frame
-void Transport::isotropic_direction(Particle* p_comoving) const
+void Transport::isotropic_direction(double D[3], const int size) const
 {
+	PRINT_ASSERT(size,==,3);
+
 	// Randomly generate new direction isotropically in comoving frame
 	double mu  = 1 - 2.0*rangen.uniform();
 	double phi = 2.0*pc::pi*rangen.uniform();
 	double smu = sqrt(1 - mu*mu);
-	p_comoving->D[0] = smu*cos(phi);
-	p_comoving->D[1] = smu*sin(phi);
-	p_comoving->D[2] = mu;
-	normalize(p_comoving->D,3);
+
+	D[0] = smu*cos(phi);
+	D[1] = smu*sin(phi);
+	D[2] = mu;
+	normalize(D,3);
 }
 
 //---------------------------------------------------------------------

@@ -48,6 +48,7 @@ private:
 public:
 	LorentzHelper(const double v[3], const bool exp_dec);
 
+	const double* velocity(const int size) const;
 
 	//==========//
 	// particle //
@@ -72,6 +73,9 @@ public:
 	void set_p_tau(const double tau);
 
 	void set_p_x(const double x[3], const int size);
+
+	template<Frame f>
+	void set_p_D(const double D[3], const int size);
 
 	void set_p_fate(const ParticleFate fate);
 
