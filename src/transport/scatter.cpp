@@ -46,23 +46,14 @@ void Transport::event_interact(LorentzHelper* lh, const int z_ind){
 
 	// absorb the particle and let the fluid re-emit another particle
 	if(radiative_eq){
-		{
-		Particle p = lh->particle_copy(lab);
-		re_emit(&p,z_ind);
-		lh->set_p<com>(&p);
-		}
+		re_emit(lh,z_ind);
 		L_net_lab[lh->p_s()] += lh->p_e(lab);
-		PRINT_ASSERT(lh->p_e(com),>,0.0);
 	}
 
 	// absorb part of the packet
 	else{
 		if(!exponential_decay) lh->scale_p_e(1.0 - lh->abs_fraction());
-		{
-			Particle p = lh->particle_copy(com);
-			scatter(&p,lh->abs_fraction(),lh->net_opac(com), z_ind);
-			lh->set_p<com>(&p);
-		}
+		scatter(lh, z_ind);
 	}
 
 	// resample the path length
@@ -149,26 +140,35 @@ void Transport::window(Particle* p, const int z_ind){
 }
 
 // re-emission, done in COMOVING frame
-void Transport::re_emit(Particle* p, const int z_ind) const{
+void Transport::re_emit(LorentzHelper *lh, const int z_ind) const{
+	Particle p = lh->particle_copy(com);
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
 
 	// reset the particle properties
-	isotropic_direction(p);
-	sample_zone_species(p,z_ind);
-	species_list[p->s]->sample_zone_nu(*p,z_ind);
+	isotropic_direction(&p);
+	sample_zone_species(&p,z_ind);
+	species_list[p.s]->sample_zone_nu(p,z_ind);
 
 	// tally into zone's emitted energy
-	grid->z[z_ind].e_emit += p->e;
+	grid->z[z_ind].e_emit += p.e;
 
 	// sanity checks
-	PRINT_ASSERT(p->nu,>,0);
-	PRINT_ASSERT(p->s,>=,0);
-	PRINT_ASSERT(p->s,<,(int)species_list.size());
+	PRINT_ASSERT(p.nu,>,0);
+	PRINT_ASSERT(p.s,>=,0);
+	PRINT_ASSERT(p.s,<,(int)species_list.size());
+
+	// give particle back to LorentzHelper
+	lh->set_p<com>(&p);
 }
 
 // choose which type of scattering event to do
-void Transport::scatter(Particle* p_comoving, double abs_frac, double com_opac, int z_ind) const{
+void Transport::scatter(LorentzHelper *lh, int z_ind) const{
+	// temporaty hack
+	double abs_frac = lh->abs_fraction();
+	double com_opac = lh->net_opac(com);
+	Particle p = lh->particle_copy(com);
+
 	PRINT_ASSERT(abs_frac,>=,0);
 	PRINT_ASSERT(abs_frac,<=,1.0);
 	PRINT_ASSERT(com_opac,>=,0);
@@ -187,7 +187,7 @@ void Transport::scatter(Particle* p_comoving, double abs_frac, double com_opac, 
 		if(com_scatopac * Rlab >= randomwalk_min_optical_depth){
 			// determine maximum comoving sphere size
 			double v[3] = {0,0,0};
-			grid->cartesian_velocity_vector(p_comoving->x,3,v,3,z_ind);
+			grid->cartesian_velocity_vector(p.x,3,v,3,z_ind);
 			double vabs = sqrt(dot(v,v,3));
 			double gamma = lorentz_factor(v,3);
 
@@ -198,15 +198,18 @@ void Transport::scatter(Particle* p_comoving, double abs_frac, double com_opac, 
 
 			// if the optical depth is below our threshold, don't do random walk
 			if(com_scatopac * Rcom >= randomwalk_min_optical_depth){
-				double eold = p_comoving->e;
-				random_walk(p_comoving,com_absopac,com_scatopac, Rcom, D, z_ind);
+				double eold = p.e;
+				random_walk(&p,com_absopac,com_scatopac, Rcom, D, z_ind);
 				did_random_walk = true;
 			}
 		}
 	}
 
 	// isotropic scatter if can't do random walk
-	if(!did_random_walk) isotropic_direction(p_comoving);
+	if(!did_random_walk) isotropic_direction(&p);
+
+	// give the particle back to LorentzHelper
+	lh->set_p<com>(&p);
 
 }
 
