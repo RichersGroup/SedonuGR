@@ -143,38 +143,43 @@ void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *e
 }
 
 
-void Transport::event_boundary(Particle* p, const int z_ind) const{
+void Transport::event_boundary(LorentzHelper *lh, const int z_ind) const{
 	PRINT_ASSERT(z_ind==-1, ||, z_ind==-2);
+	// temporary hack
+	Particle p = lh->particle_copy(lab);
 
 	// if outside the domain
 	if(z_ind == -2){
 		int new_ind = z_ind;
 		if(reflect_outer){
-			grid->reflect_outer(p);
-			PRINT_ASSERT(p->fate, ==, moving);
-			new_ind = grid->zone_index(p->x,3);
+			grid->reflect_outer(&p);
+			PRINT_ASSERT(p.fate, ==, moving);
+			new_ind = grid->zone_index(p.x,3);
 			PRINT_ASSERT(new_ind, >=, 0);
 			PRINT_ASSERT(new_ind, <, (int)grid->z.size());
-			PRINT_ASSERT(p->nu, >, 0);
+			PRINT_ASSERT(p.nu, >, 0);
 		}
 		else{
-			grid->symmetry_boundaries(p);
-			new_ind = grid->zone_index(p->x,3);
+			grid->symmetry_boundaries(&p);
+			new_ind = grid->zone_index(p.x,3);
 		}
 
-		if(new_ind < 0) p->fate = escaped;
+		if(new_ind < 0) p.fate = escaped;
 	}
 
 	// if inside the inner boundary
 	if(z_ind==-1){
-		if(p->r() < r_core) p->fate = absorbed;
-		else if(p->x_dot_d() >= 0){
+		if(p.r() < r_core) p.fate = absorbed;
+		else if(p.x_dot_d() >= 0){
 			// set the particle just outside the inner boundary
 			cout << "ERROR: have not yet implemented passing out through the inner boundary without overshooting" << endl;
 			exit(5);
 		}
-		else PRINT_ASSERT(p->fate, ==, moving); // the particle just went into the inner boundary
+		else PRINT_ASSERT(p.fate, ==, moving); // the particle just went into the inner boundary
 	}
+
+	// give p back to lh
+	lh->set_p<lab>(&p);
 }
 
 void Transport::distribution_function_basis(const double D[3], const double xyz[3], double D_newbasis[3]) const{
@@ -333,7 +338,7 @@ void Transport::propagate(Particle* p)
 		// move particle the distance
 		move(&lh, z_ind);
 		if(event != boundary) PRINT_ASSERT(lh.p_tau(), >=, -grid->tiny*(lh.distance(lab) * lh.net_opac(lab)));
-		z_ind = grid->zone_index(lh.p_x(3),3);
+		//z_ind = grid->zone_index(lh.p_x(3),3);
 
 		double lab_opac = lh.net_opac(lab);
 		double com_opac = lh.net_opac(com);
@@ -369,22 +374,18 @@ void Transport::propagate(Particle* p)
 			{
 				int i=1;
 				while(z_ind>=0){
-					double tweak_distance = grid->tiny*lab_d * i*i;
-					p->tau += tweak_distance*lab_opac; // a hack to prevent tau<0
+					double tweak_distance = grid->tiny*lh.distance(lab) * i*i;
+					p->tau += tweak_distance*lh.net_opac(lab); // a hack to prevent tau<0
 
-					lh = LorentzHelper(grid->z[z_ind].u);
-					lh.set_p<lab>(p);
 					lh.set_distance<lab>(tweak_distance);
-					lh.set_opac<lab>(lab_opac*abs_frac, lab_opac*(1.0-abs_frac));
-
 					move(&lh, z_ind);
-					*p = lh.particle_copy(lab);
 
-					z_ind = grid->zone_index(p->x,3);
+					z_ind = grid->zone_index(lh.p_x(3),3);
 					i++;
 				}
 			}
-			event_boundary(p,z_ind);
+			event_boundary(&lh,z_ind);
+			*p = lh.particle_copy(lab);
 			break;
 		}
 
