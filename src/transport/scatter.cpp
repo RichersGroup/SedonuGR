@@ -37,65 +37,57 @@ namespace pc = physical_constants;
 // physics of absorption/scattering
 //------------------------------------------------------------
 void Transport::event_interact(LorentzHelper* lh, const int z_ind){
-	// temporary hack
-	const double abs_frac = lh->abs_fraction();
-	const double com_opac = lh->net_opac(com);
-	const double lab_opac = lh->net_opac(lab);
-	Particle p = lh->particle_copy(lab);
-
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
-	PRINT_ASSERT(abs_frac,>=,0.0);
-	PRINT_ASSERT(abs_frac,<=,1.0);
-	PRINT_ASSERT(p.e,>,0);
+	PRINT_ASSERT(lh->abs_fraction(),>=,0.0);
+	PRINT_ASSERT(lh->abs_fraction(),<=,1.0);
+	PRINT_ASSERT(lh->p_e(com),>,0);
+	PRINT_ASSERT(lh->p_fate(),==,moving);
 
-	int do_absorb_partial  = !radiative_eq;
-	int do_absorb_reemit   =  radiative_eq;
-
-	// particle is transformed to the comoving frame
-	transform_lab_to_comoving(&p,z_ind);
+	// absorb the particle and let the fluid re-emit another particle
+	if(radiative_eq){
+		{
+		Particle p = lh->particle_copy(lab);
+		re_emit(&p,z_ind);
+		lh->set_p<com>(&p);
+		}
+		L_net_lab[lh->p_s()] += lh->p_e(lab);
+		PRINT_ASSERT(lh->p_e(com),>,0.0);
+	}
 
 	// absorb part of the packet
-	if(do_absorb_partial){
-		if(!exponential_decay){
-			p.e *= (1.0 - abs_frac); // UNCOMMENT THIS IF USING ALTERNATIVE TALLYING METHOD IN PROPAGATE.CPP
-			window(&p,z_ind);
-		}
-		if(p.fate==moving){
-			scatter(&p,abs_frac,com_opac, z_ind);
-			window(&p,z_ind);
-		}
-	}
-	// absorb the particle and let the fluid re-emit another particle
-	else if(do_absorb_reemit){
-		re_emit(&p,z_ind);
-		L_net_lab[p.s] += p.e;
-		PRINT_ASSERT(p.e,>,0.0);
-	}
-
-	if(p.fate==moving){
-		// particle is transformed back to the lab frame
-		PRINT_ASSERT(p.e,>,0);
-		transform_comoving_to_lab(&p,z_ind);
-
-		// resample the path length
-		sample_tau(&p,lab_opac,abs_frac);
-		if(p.fate==moving) window(&p,z_ind);
-
-		// sanity checks
-		if(p.fate==moving){
-			PRINT_ASSERT(p.nu,>,0);
-			PRINT_ASSERT(p.e,>,0);
+	else{
+		if(!exponential_decay) lh->scale_p_e(1.0 - lh->abs_fraction());
+		{
+			Particle p = lh->particle_copy(com);
+			scatter(&p,lh->abs_fraction(),lh->net_opac(com), z_ind);
+			lh->set_p<com>(&p);
 		}
 	}
 
-	// reset lh
-	lh->set_p<lab>(&p);
+	// resample the path length
+	if(lh->p_fate()==moving){
+		{
+		Particle p = lh->particle_copy(lab);
+		sample_tau(&p,lh->net_opac(lab),lh->abs_fraction());
+		lh->set_p<com>(&p);
+		}
+	}
+
+	// window the particle
+	if(lh->p_fate()==moving) window(lh,z_ind);
+
+	// sanity checks
+	if(lh->p_fate()==moving){
+		PRINT_ASSERT(lh->p_nu(com),>,0);
+		PRINT_ASSERT(lh->p_nu(com),>,0);
+	}
 }
 
 
 // decide whether to kill a particle
 void Transport::window(LorentzHelper *lh, const int z_ind){
+	PRINT_ASSERT(lh->p_e(com),>=,0);
 	PRINT_ASSERT(lh->p_fate(),!=,rouletted);
 
 	// Roulette if too low energy
