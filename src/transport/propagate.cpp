@@ -263,29 +263,25 @@ void Transport::move(LorentzHelper *lh, const int z_ind){
 	PRINT_ASSERT(lh->distance(lab),>=,0);
 	PRINT_ASSERT(lh->net_opac(lab),>=,0);
 
-	// create a dummy particle
-	Particle plab = lh->particle_copy(lab);
-
 	// translate the particle
-	plab.x[0] += lh->distance(lab) * plab.D[0];
-	plab.x[1] += lh->distance(lab) * plab.D[1];
-	plab.x[2] += lh->distance(lab) * plab.D[2];
+	double xnew[3];
+	for(int i=0; i<3; i++) xnew[3] = lh->p_x(3)[i] + lh->distance(lab) * lh->p_D(lab,3)[i];
+	lh->set_p_x(xnew,3);
 
 	// reduce the particle's remaining optical depth
-	double old_tau = plab.tau;
-	if(lh->tau_opac(lab)>0)	plab.tau -= lh->tau_opac(lab) * lh->distance(lab);
+	if(lh->tau_opac(lab)>0){
+		double old_tau = lh->p_tau();
+		double new_tau = lh->p_tau() - lh->tau_opac(lab) * lh->distance(lab);
+		PRINT_ASSERT(new_tau,>=,-grid->tiny*old_tau);
+		lh->set_p_tau( max(0.0,new_tau) );
+	}
 
 	// appropriately reduce the particle's energy
 	if(exponential_decay){
-		plab.e *= exp(-lh->abs_opac(lab) * lh->distance(lab));
-		window(&plab,z_ind);
+		lh->scale_p_e( exp(-lh->abs_opac(lab) * lh->distance(lab)) );
+		window(lh,z_ind);
 	}
 
-	PRINT_ASSERT(plab.tau,>=,-grid->tiny*old_tau);
-	if(plab.tau<0) plab.tau = 0;
-
-	// return the particle to the LorentzHelper
-	lh->set_p<lab>(&plab);
 }
 
 void Transport::get_opacity(LorentzHelper *lh, const int z_ind) const{

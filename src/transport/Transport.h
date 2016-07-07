@@ -98,7 +98,8 @@ private:
 	void random_walk(Particle* p, const double com_absopac, const double com_scatopac, const double Rcom, const double D, const int z_ind) const;
 	void init_randomwalk_cdf(Lua* lua);
 	void re_emit(Particle* p, const int z_ind) const;
-	void window(Particle* p, const int z_ind);
+	void window(LorentzHelper *lh, const int z_ind);
+	void window(Particle *p, const int z_ind);
 
 	// solve for temperature and Ye (if steady_state)
 	double equilibrium_damping;

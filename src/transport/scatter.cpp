@@ -95,6 +95,38 @@ void Transport::event_interact(LorentzHelper* lh, const int z_ind){
 
 
 // decide whether to kill a particle
+void Transport::window(LorentzHelper *lh, const int z_ind){
+	PRINT_ASSERT(lh->p_fate(),!=,rouletted);
+
+	// Roulette if too low energy
+	while(lh->p_e(com)<=min_packet_energy && lh->p_fate()==moving){
+		if(rangen.uniform() < 0.5) lh->set_p_fate(rouletted);
+		else lh->scale_p_e(2.0);
+	}
+	if(lh->p_fate()==moving) PRINT_ASSERT(lh->p_e(com),>=,min_packet_energy);
+
+	// split if too high energy, if enough space, and if in important region
+	double ratio = lh->p_e(com) / max_packet_energy;
+	int n_new = (int)ratio;
+	if(ratio>1.0 && particles.size()+n_new<max_particles && species_list[lh->p_s()]->interpolate_importance(lh->p_nu(com),z_ind)>=1.0){
+		lh->scale_p_e( 1.0 / (double)(n_new+1) );
+		Particle plab = lh->particle_copy(lab);
+		for(int i=0; i<n_new; i++){
+			#pragma omp critical
+			particles.push_back(plab);
+		}
+	}
+
+	if(lh->p_fate() == moving){
+		PRINT_ASSERT(lh->p_e(com),<,INFINITY);
+		PRINT_ASSERT(lh->p_e(com),>,0);
+	}
+	if(particles.size()>=max_particles && verbose && rank0){
+		cout << "max_particles: " << max_particles << endl;
+		cout << "particles.size(): " << particles.size() << endl;
+		cout << "WARNING: max_particles is too small to allow splitting." << endl;
+	}
+}
 void Transport::window(Particle* p, const int z_ind){
 	PRINT_ASSERT(p->fate,!=,rouletted);
 
