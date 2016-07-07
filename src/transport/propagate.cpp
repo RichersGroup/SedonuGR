@@ -116,7 +116,7 @@ void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *e
 		PRINT_ASSERT(d_zone, >, 0);
 
 		// FIND D_INTERACT =================================================================
-		double relevant_opacity = exponential_decay ? lh->scat_opac(lab) : lh->net_opac(lab);
+		double relevant_opacity = lh->tau_opac(lab);
 		if (relevant_opacity == 0) d_interact = numeric_limits<double>::infinity();
 		else               d_interact = static_cast<double>(lh->p_tau() / relevant_opacity);
 		PRINT_ASSERT(d_interact,>=,0);
@@ -273,8 +273,7 @@ void Transport::move(LorentzHelper *lh, const int z_ind){
 
 	// reduce the particle's remaining optical depth
 	double old_tau = plab.tau;
-	double relevant_opacity = exponential_decay ? lh->scat_opac(lab) : lh->net_opac(lab);
-	if(relevant_opacity>0)	plab.tau -= relevant_opacity * lh->distance(lab);
+	if(lh->tau_opac(lab)>0)	plab.tau -= lh->tau_opac(lab) * lh->distance(lab);
 
 	// appropriately reduce the particle's energy
 	if(exponential_decay){
@@ -322,7 +321,7 @@ void Transport::propagate(Particle* p)
 		PRINT_ASSERT(z_ind, <, (int)grid->z.size());
 
 		// set up the LorentzHelper
-		LorentzHelper lh(grid->z[z_ind].u);
+		LorentzHelper lh(grid->z[z_ind].u, exponential_decay);
 		lh.set_p<lab>(p);
 
 		// get all the opacities
@@ -337,31 +336,23 @@ void Transport::propagate(Particle* p)
 
 		// move particle the distance
 		move(&lh, z_ind);
-		if(event != boundary) PRINT_ASSERT(lh.p_tau(), >=, -grid->tiny*(lh.distance(lab) * lh.net_opac(lab)));
+		if(event != boundary) PRINT_ASSERT(lh.p_tau(), >=, -grid->tiny*(lh.distance(lab) * lh.tau_opac(lab)));
 		//z_ind = grid->zone_index(lh.p_x(3),3);
-
-		double lab_opac = lh.net_opac(lab);
-		double com_opac = lh.net_opac(com);
-		double abs_frac = lh.abs_fraction();
-		double dshift_l2c = lh.p_nu(com)/lh.p_nu(lab);
-		double lab_d = lh.distance(lab);
-		*p = lh.particle_copy(lab);
 
 		// do the selected event
 		// now the exciting bit!
-		if(p->fate != rouletted) switch(event){
+		if(lh.p_fate() != rouletted) switch(event){
 		    // ---------------------------------
 		    // Do if interacting with the fluid
 		    // ---------------------------------
 		case interact:
-			PRINT_ASSERT(lh.distance(lab) * lh.net_opac(lab), >=, p->tau);
+			PRINT_ASSERT(lh.distance(lab) * lh.net_opac(lab), >=, lh.p_tau());
 			event_interact(&lh,z_ind);
 			if(lh.p_fate()==moving){
 				PRINT_ASSERT(lh.p_nu(lab), >, 0);
 				PRINT_ASSERT(lh.p_e(lab), >, 0);
 			}
 			else PRINT_ASSERT(lh.p_fate()==rouletted, ||, lh.p_fate()==absorbed);
-			*p = lh.particle_copy(lab);
 
 			break;
 
@@ -375,7 +366,7 @@ void Transport::propagate(Particle* p)
 				int i=1;
 				while(z_ind>=0){
 					double tweak_distance = grid->tiny*lh.distance(lab) * i*i;
-					p->tau += tweak_distance*lh.net_opac(lab); // a hack to prevent tau<0
+					lh.set_p_tau(lh.p_tau() + tweak_distance*lh.tau_opac(lab) ); // a hack to prevent tau<0
 
 					lh.set_distance<lab>(tweak_distance);
 					move(&lh, z_ind);
@@ -385,7 +376,6 @@ void Transport::propagate(Particle* p)
 				}
 			}
 			event_boundary(&lh,z_ind);
-			*p = lh.particle_copy(lab);
 			break;
 		}
 
@@ -398,7 +388,11 @@ void Transport::propagate(Particle* p)
 		}
 
 		// check for core absorption
-		if(p->r() < r_core) p->fate = absorbed;
+		if(lh.particle_readonly(lab)->r() < r_core) lh.set_p_fate(absorbed);
+
+		// copy particle back out of LorentzHelper
+		*p = lh.particle_copy(lab);
+
 	}
 	PRINT_ASSERT(p->fate, !=, moving);
 }

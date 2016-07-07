@@ -308,7 +308,7 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	PRINT_ASSERT(p.nu,>,0);
 
 	// set up LorentzHelper
-	LorentzHelper lh(grid->z[z_ind].u);
+	LorentzHelper lh(grid->z[z_ind].u,exponential_decay);
 	lh.set_p<com>(&p);
 
 	// lorentz transform from the comoving to lab frame
@@ -395,7 +395,7 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	p.nu = species_list[p.s]->sample_core_nu(g);
 
 	// set up the LorentzHelper
-	LorentzHelper lh(grid->z[z_ind].u);
+	LorentzHelper lh(grid->z[z_ind].u,exponential_decay);
 	lh.set_p<lab>(&p);
 
 	// sample tau

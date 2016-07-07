@@ -39,13 +39,14 @@ private:
 	double absopac[2], scatopac[2];
 	double dist[2];
 	double v[3]; // velocity of the fluid in the lab frame
+	bool exponential_decay;
 
 	double lorentz_factor(const double v[3], const int vsize) const;
 	double doppler_shift(const double v[3], const double D[3], const int size) const;
 	void lorentz_transform_particle(Particle* p, const double v[3], const int vsize) const;
 
 public:
-	LorentzHelper(const double v[3]);
+	LorentzHelper(const double v[3], const bool exp_dec);
 
 
 	//==========//
@@ -81,6 +82,7 @@ public:
 	double net_opac(const Frame f) const;
 	double abs_opac(const Frame f) const;
 	double scat_opac(const Frame f) const;
+	double tau_opac(const Frame f) const;
 
 	template<Frame f>
 	void set_opac(const double absopac, const double scatopac);

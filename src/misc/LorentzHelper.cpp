@@ -34,7 +34,8 @@
 using namespace std;
 namespace pc = physical_constants;
 
-LorentzHelper::LorentzHelper(const double v_in[3]){
+LorentzHelper::LorentzHelper(const double v_in[3], const bool exp_dec){
+	exponential_decay = exp_dec;
 	// poison the frame-dependent quantities
 	for(int i=1; i<2; i++){
 		dist[i] = -1;
@@ -136,6 +137,9 @@ template void LorentzHelper::set_opac<lab>(const double abs, const double scat);
 double LorentzHelper::net_opac (const Frame f) const {return scatopac[f] + absopac[f];}
 double LorentzHelper::abs_opac (const Frame f) const {return  absopac[f]             ;}
 double LorentzHelper::scat_opac(const Frame f) const {return scatopac[f]             ;}
+double LorentzHelper::tau_opac(const Frame f) const {
+	return exponential_decay ? scat_opac(f) : net_opac(f);
+}
 double LorentzHelper::abs_fraction() const {
 	if(net_opac(com)==0) return 0;
 	else return abs_opac(com) / net_opac(com);
