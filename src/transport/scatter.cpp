@@ -36,52 +36,61 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 // physics of absorption/scattering
 //------------------------------------------------------------
-void Transport::event_interact(Particle* p, const int z_ind, const double abs_frac, const double lab_opac, const double com_opac){
+void Transport::event_interact(LorentzHelper* lh, const int z_ind){
+	// temporary hack
+	const double abs_frac = lh->abs_fraction();
+	const double com_opac = lh->net_opac(com);
+	const double lab_opac = lh->net_opac(lab);
+	Particle p = lh->particle_copy(lab);
+
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
 	PRINT_ASSERT(abs_frac,>=,0.0);
 	PRINT_ASSERT(abs_frac,<=,1.0);
-	PRINT_ASSERT(p->e,>,0);
+	PRINT_ASSERT(p.e,>,0);
 
 	int do_absorb_partial  = !radiative_eq;
 	int do_absorb_reemit   =  radiative_eq;
 
 	// particle is transformed to the comoving frame
-	transform_lab_to_comoving(p,z_ind);
+	transform_lab_to_comoving(&p,z_ind);
 
 	// absorb part of the packet
 	if(do_absorb_partial){
 		if(!exponential_decay){
-			p->e *= (1.0 - abs_frac); // UNCOMMENT THIS IF USING ALTERNATIVE TALLYING METHOD IN PROPAGATE.CPP
-			window(p,z_ind);
+			p.e *= (1.0 - abs_frac); // UNCOMMENT THIS IF USING ALTERNATIVE TALLYING METHOD IN PROPAGATE.CPP
+			window(&p,z_ind);
 		}
-		if(p->fate==moving){
-			scatter(p,abs_frac,com_opac, z_ind);
-			window(p,z_ind);
+		if(p.fate==moving){
+			scatter(&p,abs_frac,com_opac, z_ind);
+			window(&p,z_ind);
 		}
 	}
 	// absorb the particle and let the fluid re-emit another particle
 	else if(do_absorb_reemit){
-		re_emit(p,z_ind);
-		L_net_lab[p->s] += p->e;
-		PRINT_ASSERT(p->e,>,0.0);
+		re_emit(&p,z_ind);
+		L_net_lab[p.s] += p.e;
+		PRINT_ASSERT(p.e,>,0.0);
 	}
 
-	if(p->fate==moving){
+	if(p.fate==moving){
 		// particle is transformed back to the lab frame
-		PRINT_ASSERT(p->e,>,0);
-		transform_comoving_to_lab(p,z_ind);
+		PRINT_ASSERT(p.e,>,0);
+		transform_comoving_to_lab(&p,z_ind);
 
 		// resample the path length
-		sample_tau(p,lab_opac,abs_frac);
-		if(p->fate==moving) window(p,z_ind);
+		sample_tau(&p,lab_opac,abs_frac);
+		if(p.fate==moving) window(&p,z_ind);
 
 		// sanity checks
-		if(p->fate==moving){
-			PRINT_ASSERT(p->nu,>,0);
-			PRINT_ASSERT(p->e,>,0);
+		if(p.fate==moving){
+			PRINT_ASSERT(p.nu,>,0);
+			PRINT_ASSERT(p.e,>,0);
 		}
 	}
+
+	// reset lh
+	lh->set_p<lab>(&p);
 }
 
 

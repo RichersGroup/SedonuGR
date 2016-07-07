@@ -92,7 +92,7 @@ private:
 	void reset_radiation();
 	void which_event(LorentzHelper* lh,const int z_ind, ParticleEvent *event) const;
 	void event_boundary(Particle* p, const int z_ind) const;
-	void event_interact(Particle* p, const int z_ind, const double abs_frac,const double lab_opac, const double com_opac);
+	void event_interact(LorentzHelper* lh, const int z_ind);
 	void isotropic_direction(Particle* p) const;
 	void scatter(Particle* p, double abs_frac, double com_opac, int z_ind) const;
 	void random_walk(Particle* p, const double com_absopac, const double com_scatopac, const double Rcom, const double D, const int z_ind) const;

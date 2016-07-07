@@ -349,13 +349,15 @@ void Transport::propagate(Particle* p)
 		    // Do if interacting with the fluid
 		    // ---------------------------------
 		case interact:
-			PRINT_ASSERT(lab_d * lab_opac, >=, p->tau);
-			event_interact(p,z_ind,abs_frac,lab_opac,com_opac);
-			if(p->fate==moving){
-				PRINT_ASSERT(p->nu, >, 0);
-				PRINT_ASSERT(p->e, >, 0);
+			PRINT_ASSERT(lh.distance(lab) * lh.net_opac(lab), >=, p->tau);
+			event_interact(&lh,z_ind);
+			if(lh.p_fate()==moving){
+				PRINT_ASSERT(lh.p_nu(lab), >, 0);
+				PRINT_ASSERT(lh.p_e(lab), >, 0);
 			}
-			else PRINT_ASSERT(p->fate==rouletted, ||, p->fate==absorbed);
+			else PRINT_ASSERT(lh.p_fate()==rouletted, ||, lh.p_fate()==absorbed);
+			*p = lh.particle_copy(lab);
+
 			break;
 
 			// ---------------------------------
