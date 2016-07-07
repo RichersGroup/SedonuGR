@@ -220,3 +220,29 @@ double Species::bin_emis(const int z_ind, const int g) const{
 unsigned Species::number_of_bins(){
 	return nu_grid.size();
 }
+
+//-----------------------------------------------------------------
+// get opacity at the frequency
+//-----------------------------------------------------------------
+void Species::get_opacity(const double com_nu, const int z_ind, double* a, double* s) const
+{
+	PRINT_ASSERT(z_ind,>=,-1);
+	PRINT_ASSERT(com_nu,>,0);
+
+	if(z_ind == -1){ // particle is within inner boundary
+		*a = 0;
+		*s = 0;
+	}
+
+	else{
+		// absorption and scattering opacities
+		*a = max(nu_grid.value_at(com_nu, abs_opac[z_ind]),0.0);
+		*s = max(nu_grid.value_at(com_nu,scat_opac[z_ind]),0.0);
+		PRINT_ASSERT(*a,>=,0);
+		PRINT_ASSERT(*s,>=,0);
+	}
+}
+
+double Species::sum_opacity(const int z_ind, const int group) const{
+	return abs_opac[z_ind][group] + scat_opac[z_ind][group];
+}
