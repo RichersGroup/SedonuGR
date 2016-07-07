@@ -209,7 +209,7 @@ void Transport::distribution_function_basis(const double D[3], const double xyz[
 	D_newbasis[1] = dot(D,thetahat,3);
 	D_newbasis[2] = dot(D,rhat,3);
 }
-void Transport::tally_radiation(LorentzHelper *lh, const int z_ind) const{
+void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	PRINT_ASSERT(z_ind, >=, 0);
 	PRINT_ASSERT(z_ind, <, (int)grid->z.size());
 	PRINT_ASSERT(lh->distance(lab), >=, 0);
