@@ -215,10 +215,91 @@ template void LorentzHelper::set_distance<lab>(const double d);
 // other //
 //=======//
 
-double LorentzHelper::lorentz_factor(const double v[3], const int vsize) const{
+// dot product of v_rel and relativistic particle direction
+// v_rel = v_newframe - v_oldframe
+// D = direction vector of relativistic particle in old frame
+double LorentzHelper::dot(const vector<double>& a, const vector<double>& b){
+	PRINT_ASSERT(a.size(),>,0);
+	PRINT_ASSERT(b.size(),>,0);
+	PRINT_ASSERT(a.size(),==,b.size());
+	double product = 0;
+	for(unsigned i=0; i<a.size(); i++) product += a[i]*b[i];
+	return product;
+}
+double LorentzHelper::dot(const vector<double>& a, const double b[], const int size){
+	PRINT_ASSERT(a.size(),>,0);
+	PRINT_ASSERT(size,>,0);
+	PRINT_ASSERT(a.size(),==,size);
+	double product = 0;
+	for(unsigned i=0; i<a.size(); i++) product += a[i]*b[i];
+	return product;
+}
+double LorentzHelper::dot(const double a[], const double b[], const int size){
+	PRINT_ASSERT(size,>,0);
+	double product = 0;
+	for(unsigned i=0; i<size; i++) product += a[i]*b[i];
+	return product;
+}
+
+// normalize a vector
+void LorentzHelper::normalize(vector<double>& a){
+	PRINT_ASSERT(a.size(),>,0);
+	double inv_magnitude = 1./sqrt(dot(a,a));
+	for(unsigned i=0; i<a.size(); i++) a[i] *= inv_magnitude;
+}
+void LorentzHelper::normalize(double a[],const int size){
+	PRINT_ASSERT(size,>,0);
+	double inv_magnitude = 1./sqrt(dot(a,a,size));
+	for(unsigned i=0; i<size; i++) a[i] *= inv_magnitude;
+}
+
+
+// apply a general lorentz transform to a 3D vector.
+// first three components are spatial, 4th component is time
+// input velocity is the fluid velocity in the lab frame
+// [v] = cm/s, [x] = cm
+void LorentzHelper::transform_cartesian_4vector_c2l(const double v[3], double x[4]){
+	PRINT_ASSERT(dot(v,v,3),<=,pc::c*pc::c);
+
+	// new frame is lab frame. old frame is comoving frame.
+	// v_rel = v_lab - v_comoving  --> v must flip sign.
+	double vrel[3];
+	vrel[0] = -v[0];
+	vrel[1] = -v[1];
+	vrel[2] = -v[2];
+
+	double gamma = LorentzHelper::lorentz_factor(vrel,3);
+	double v2 = dot(vrel,vrel,3);
+
+
+	// save comoving x
+	double xcom[4];
+	xcom[0] = x[0];
+	xcom[1] = x[1];
+	xcom[2] = x[2];
+	xcom[3] = x[3];
+
+	// time component of lab x
+	x[4] = gamma*xcom[4];
+	for(int i=0; i<3; i++) x[4] -= gamma*vrel[i]/pc::c * xcom[i];
+
+	// spatial components
+	for(int i=0; i<3; i++){
+		x[i] = xcom[i];
+		if(v2 > 0){
+			x[i] -= gamma*vrel[i]/pc::c * xcom[4];
+			for(int j=0; j<3; j++){
+				x[i] += (gamma-1.0)*vrel[i]*vrel[j]/v2 * xcom[j];
+			}
+		}
+	}
+
+}
+
+double LorentzHelper::lorentz_factor(const double v[3], const int vsize){
 	PRINT_ASSERT(vsize,<=,3);
-	PRINT_ASSERT(Transport::dot(v,v,vsize),<,pc::c*pc::c);
-	double beta2 = Transport::dot(v,v,vsize) * pc::inv_c * pc::inv_c;
+	PRINT_ASSERT(dot(v,v,vsize),<,pc::c*pc::c);
+	double beta2 = dot(v,v,vsize) * pc::inv_c * pc::inv_c;
 	double lfac = 1.0 / sqrt(1.0 - beta2);
 	PRINT_ASSERT(lfac,>=,1.0);
 	return lfac;
@@ -229,7 +310,7 @@ double LorentzHelper::doppler_shift(const double v[3], const double D[3], const 
 	// v_rel = v_comoving - v_lab  -->  v keeps its sign
 
 	double gamma = lorentz_factor(v,size);
-	double vdd = Transport::dot(v,D,size);
+	double vdd = dot(v,D,size);
 	double dshift = gamma * (1.0 - vdd*pc::inv_c);
 	//double dshift = doppler_shift(gamma,vdd);
 	PRINT_ASSERT(dshift,>,0);
@@ -247,8 +328,8 @@ void LorentzHelper::lorentz_transform_particle(Particle* p, const double v[3], c
 	PRINT_ASSERT(p->e,>=,0);
 
 	// calculate the doppler shift, v dot D, and lorentz factors
-	double gamma = Transport::lorentz_factor(v,vsize);
-	double vdd = Transport::dot(p->D, v, vsize);
+	double gamma = lorentz_factor(v,vsize);
+	double vdd = dot(p->D, v, vsize);
 	double dshift = doppler_shift(v, p->D, vsize);
 
 	// transform the 0th component (energy and frequency)
@@ -261,7 +342,7 @@ void LorentzHelper::lorentz_transform_particle(Particle* p, const double v[3], c
 	p->D[0] = (p->D[0] - v[0]*tmp);
 	p->D[1] = (p->D[1] - v[1]*tmp);
 	p->D[2] = (p->D[2] - v[2]*tmp);
-	Transport::normalize(p->D,3);
+	normalize(p->D,3);
 
 	// sanity checks
 	PRINT_ASSERT(p->e,>=,0);

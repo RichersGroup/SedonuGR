@@ -179,7 +179,7 @@ void Transport::event_boundary(LorentzHelper *lh, const int z_ind) const{
 
 void Transport::distribution_function_basis(const double D[3], const double xyz[3], double D_newbasis[3]) const{
 	double x=xyz[0], y=xyz[1], z=xyz[2];
-	double r = sqrt(dot(xyz,xyz,3));
+	double r = sqrt(LorentzHelper::dot(xyz,xyz,3));
 	double rp = sqrt(x*x + y*y);
 	double rhat[3]     = {0,0,0};
 	double thetahat[3] = {0,0,0};
@@ -200,9 +200,9 @@ void Transport::distribution_function_basis(const double D[3], const double xyz[
 		phihat[1] =  x/rp;
 		phihat[2] = 0;
 	}
-	D_newbasis[0] = dot(D,phihat,3);
-	D_newbasis[1] = dot(D,thetahat,3);
-	D_newbasis[2] = dot(D,rhat,3);
+	D_newbasis[0] = LorentzHelper::dot(D,phihat,3);
+	D_newbasis[1] = LorentzHelper::dot(D,thetahat,3);
+	D_newbasis[2] = LorentzHelper::dot(D,rhat,3);
 }
 void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	PRINT_ASSERT(z_ind, >=, 0);
@@ -227,7 +227,7 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	PRINT_ASSERT(to_add,<,INFINITY);
 	double D_newbasis[3] = {0,0,0};
 	distribution_function_basis(lh->p_D(lab,3),lh->p_x(3),D_newbasis);
-	normalize(D_newbasis,3);
+	LorentzHelper::normalize(D_newbasis,3);
 	zone->distribution[lh->p_s()].count(D_newbasis, 3, lh->p_nu(lab), to_add);
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)

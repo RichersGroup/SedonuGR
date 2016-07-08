@@ -171,8 +171,8 @@ void Transport::scatter(LorentzHelper *lh, int z_ind) const{\
 		if(lh->scat_opac(com) * Rlab >= randomwalk_min_optical_depth){
 			// determine maximum comoving sphere size
 			const double* v = lh->velocity(3);
-			double vabs = sqrt(dot(v,v,3));
-			double gamma = lorentz_factor(v,3);
+			double vabs = sqrt(LorentzHelper::dot(v,v,3));
+			double gamma = LorentzHelper::lorentz_factor(v,3);
 
 			double Rcom = 0;
 			if(Rlab==0) Rcom = 0;
@@ -209,7 +209,7 @@ void Transport::isotropic_direction(double D[3], const int size) const
 	D[0] = smu*cos(phi);
 	D[1] = smu*sin(phi);
 	D[2] = mu;
-	normalize(D,3);
+	LorentzHelper::normalize(D,3);
 }
 
 //---------------------------------------------------------------------
@@ -327,7 +327,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 
 	// get the displacement vector polar coordinates
 	double d3com[3] = {displacement4[0], displacement4[1], displacement4[2]};
-	normalize(d3com,3);
+	LorentzHelper::normalize(d3com,3);
 	double costheta = d3com[2];
 	double sintheta = sqrt(d3com[0]*d3com[0] + d3com[1]*d3com[1]);
 
@@ -337,19 +337,19 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 		double sinphi = d3com[1] / sintheta;
 
 		// first rotate away from the z axis along y=0 (move it toward x=0)
-		normalize(pD,3);
+		LorentzHelper::normalize(pD,3);
 		double tmp[3];
 		for(int i=0; i<3; i++) tmp[i] = pD[i];
 		pD[0] =  costheta*tmp[0] + sintheta*tmp[2];
 		pD[2] = -sintheta*tmp[0] + costheta*tmp[2];
 
 		// second rotate around the z axis, away from the x-axis
-		normalize(pD,3);
+		LorentzHelper::normalize(pD,3);
 		for(int i=0; i<3; i++) tmp[i] = pD[i];
 		pD[0] = cosphi*tmp[0] - sinphi*tmp[1];
 		pD[1] = sinphi*tmp[0] + cosphi*tmp[1];
 	}
-	normalize(pD,3);
+	LorentzHelper::normalize(pD,3);
 	lh->set_p_D<com>(pD,3);
 	//------------------------------------------------------------------------
 
@@ -363,7 +363,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	// really, most should be isotropic and some should be in the direction of motion,
 	// but this should average out properly over many trajectories.
 	// depositing radiation in every bin would lead to lots of memory contention
-	//normalize(d3lab,3);
+	//LorentzHelper::normalize(d3lab,3);
 	LorentzHelper lhtmp(false);
 	lhtmp.set_v(lh->velocity(3),3);
 	lhtmp.set_p_e<com>(erad_com);
@@ -371,7 +371,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	zone->distribution[lh->p_s()].count(lhtmp.p_D(lab,3), 3, lhtmp.p_nu(lab), lhtmp.p_e(lab));
 
 	// move the particle to the edge of the sphere
-	transform_cartesian_4vector_c2l(zone->u, displacement4);
+	LorentzHelper::transform_cartesian_4vector_c2l(zone->u, displacement4);
 	double d3lab[3] = {displacement4[0], displacement4[1], displacement4[2]};
 	double xnew[3];
 	for(int i=0; i<3; i++) xnew[i] = lh->p_x(3)[i] + d3lab[3];

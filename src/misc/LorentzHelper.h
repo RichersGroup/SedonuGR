@@ -29,6 +29,7 @@
 #ifndef _LORENTZ_H
 #define _LORENTZ_H
 #include "Particle.h"
+#include <vector>
 
 enum Frame {com,lab};
 
@@ -41,13 +42,20 @@ private:
 	double v[3]; // velocity of the fluid in the lab frame
 	bool exponential_decay;
 
-	double lorentz_factor(const double v[3], const int vsize) const;
 	double doppler_shift(const double v[3], const double D[3], const int size) const;
 	void lorentz_transform_particle(Particle* p, const double v[3], const int vsize) const;
 
 public:
 	LorentzHelper(const bool exp_dec);
 	LorentzHelper(const double v[3], const bool exp_dec);
+
+	static double lorentz_factor(const double v[3], const int vsize);
+	static void transform_cartesian_4vector_c2l(const double vfluid[3], double x[4]);
+	static double dot(const std::vector<double>& a, const std::vector<double>& b);
+	static double dot(const std::vector<double>& a, const double b[], const int size);
+	static double dot(const double a[], const double b[], const int size);
+	static void normalize(std::vector<double>& a);
+	static void normalize(double a[], const int size);
 
 	void set_v(const double v_in[3], const int size);
 	const double* velocity(const int size) const;

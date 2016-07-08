@@ -99,6 +99,7 @@ Transport::Transport(){
 	randomwalk_min_optical_depth = NaN;
 	randomwalk_max_x = NaN;
 	randomwalk_sumN = -MAXLIM;
+	exponential_decay = -MAXLIM;
 }
 
 

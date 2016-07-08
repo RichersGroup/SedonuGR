@@ -76,11 +76,6 @@ private:
 	void sample_zone_species(LorentzHelper *lh, int zone_index) const;
 
 	// transformation functions
-	double comoving_dt(const int z_ind) const;
-	double dshift_comoving_to_lab   (const double x[3], const double D[3], const int z_ind=-1) const;
-	double dshift_lab_to_comoving   (const double x[3], const double D[3], const int z_ind=-1) const;
-	void   transform_comoving_to_lab(Particle* p, const int z_ind=-1) const;
-	void   transform_lab_to_comoving(Particle* p, const int z_ind=-1) const;
 	void get_opacity(LorentzHelper *lh, const int z_ind) const;
 
 	// propagate the particles
@@ -223,13 +218,6 @@ public:
 	int  total_particles() const;
 	void write_rays(const int it);
 	static std::string filename(const char* filebase, const int iw, const char* suffix);
-	static double lorentz_factor(const double v[3], const int vsize);
-	static void transform_cartesian_4vector_c2l(const double vfluid[3], double x[4]);
-	static double dot(const std::vector<double>& a, const std::vector<double>& b);
-	static double dot(const std::vector<double>& a, const double b[], const int size);
-	static double dot(const double a[], const double b[], const int size);
-	static void normalize(std::vector<double>& a);
-	static void normalize(double a[], const int size);
 	static double mean_mass(const double Ye);
 	double importance(const double abs_opac, const double scat_opac, const double dx) const;
 
@@ -240,7 +228,6 @@ public:
 	double zone_comoving_therm_emit_leptons(const int zone_index) const;
 	double zone_comoving_biased_therm_emit_energy(const int z_ind) const;
 	double bin_comoving_therm_emit_energy(const int z_ind, const int s, const int g) const;
-
 
 };
 

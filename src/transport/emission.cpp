@@ -379,7 +379,7 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	D[0] = cost_core*cosp_core*D_xl-sinp_core*D_yl+sint_core*cosp_core*D_zl;
 	D[1] = cost_core*sinp_core*D_xl+cosp_core*D_yl+sint_core*sinp_core*D_zl;
 	D[2] = -sint_core*D_xl+cost_core*D_zl;
-	normalize(D,3);
+	LorentzHelper::normalize(D,3);
 	lh.set_p_D<lab>(D,3);
 
 	// sample the species
