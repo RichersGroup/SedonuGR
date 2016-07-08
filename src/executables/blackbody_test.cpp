@@ -114,6 +114,9 @@ int main(int argc, char **argv)
 	string script_file = string(argv[1]);
 	lua.init( script_file );
 
+	// fix velocities if nonrelativistic
+	if(!lua.scalar<int>("do_relativity")) for(int i=0; i<3; i++) v[i] = 0;
+
 	// set up the transport module (includes the grid)
 	Transport sim;
 	sim.init(&lua);
