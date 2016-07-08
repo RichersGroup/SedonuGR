@@ -282,6 +282,8 @@ void Transport::init_randomwalk_cdf(Lua* lua){
 void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D, const int z_ind) const{
 	PRINT_ASSERT(lh->scat_opac(com),>,0);
 	PRINT_ASSERT(lh->abs_opac(com),>=,0);
+	PRINT_ASSERT(lh->p_e(com),>=,0);
+	PRINT_ASSERT(lh->p_nu(com),>=,0);
 
 	// set pointer to the current zone
 	Zone* zone;
@@ -366,6 +368,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	//LorentzHelper::normalize(d3lab,3);
 	LorentzHelper lhtmp(false);
 	lhtmp.set_v(lh->velocity(3),3);
+	lhtmp.set_p_nu<com>(lh->p_nu(com));
 	lhtmp.set_p_e<com>(erad_com);
 	lhtmp.set_p_D<com>(d3com,3);
 	zone->distribution[lh->p_s()].count(lhtmp.p_D(lab,3), 3, lhtmp.p_nu(lab), lhtmp.p_e(lab));
