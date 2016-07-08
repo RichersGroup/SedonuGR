@@ -46,8 +46,10 @@ private:
 	void lorentz_transform_particle(Particle* p, const double v[3], const int vsize) const;
 
 public:
+	LorentzHelper(const bool exp_dec);
 	LorentzHelper(const double v[3], const bool exp_dec);
 
+	void set_v(const double v_in[3], const int size);
 	const double* velocity(const int size) const;
 
 	//==========//

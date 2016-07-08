@@ -74,7 +74,8 @@ int main(int argc, char **argv)
 
 	// set up the particle
 	double v[3] = {0,0,0};
-	LorentzHelper lh(v,false);
+	LorentzHelper lh(false);
+	lh.set_v(v,3);
 	int n_above = 0;
 	double e_above = 0;
 

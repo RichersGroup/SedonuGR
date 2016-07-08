@@ -281,7 +281,8 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
 
 	// set up LorentzHelper
-	LorentzHelper lh(grid->z[z_ind].u,exponential_decay);
+	LorentzHelper lh(exponential_decay);
+	lh.set_v(grid->z[z_ind].u,3);
 	lh.set_p_fate(moving);
 	lh.set_p_e<com>(Ep);
 
@@ -358,7 +359,8 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	PRINT_ASSERT(z_ind,>=,0);
 
 	// set up LorentzHelper
-	LorentzHelper lh(grid->z[z_ind].u,exponential_decay);
+	LorentzHelper lh(exponential_decay);
+	lh.set_v(grid->z[z_ind].u,3);
 	lh.set_p_fate(moving);
 	lh.set_p_e<lab>(Ep);
 	lh.set_p_x(x,3);

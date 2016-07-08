@@ -34,18 +34,25 @@
 using namespace std;
 namespace pc = physical_constants;
 
-LorentzHelper::LorentzHelper(const double v_in[3], const bool exp_dec){
+LorentzHelper::LorentzHelper(const bool exp_dec){
 	exponential_decay = exp_dec;
-	// poison the frame-dependent quantities
 	for(int i=1; i<2; i++){
 		dist[i] = -1;
 		absopac[i] = -1;
 		scatopac[i] = -1;
 		p[i] = Particle();
 	}
+	for(int i=0; i<3; i++) v[i] = 0;
+}
+
+// updates the fluid velocity, assuming the particle in the lab frame remains constant
+void LorentzHelper::set_v(const double v_in[3], const int size){
+	PRINT_ASSERT(size,==,3);
 
 	// set the relativistic quantities to be used later
 	for(int i=0; i<3; i++) v[i] = v_in[i];
+
+	if(p[lab].e>=0 && p[lab].nu>=0) set_p<lab>(&(p[lab]));
 }
 
 const double* LorentzHelper::velocity(const int size) const{

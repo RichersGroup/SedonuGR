@@ -364,7 +364,8 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	// but this should average out properly over many trajectories.
 	// depositing radiation in every bin would lead to lots of memory contention
 	//normalize(d3lab,3);
-	LorentzHelper lhtmp(lh->velocity(3),false);
+	LorentzHelper lhtmp(false);
+	lhtmp.set_v(lh->velocity(3),3);
 	lhtmp.set_p_e<com>(erad_com);
 	lhtmp.set_p_D<com>(d3com,3);
 	zone->distribution[lh->p_s()].count(lhtmp.p_D(lab,3), 3, lhtmp.p_nu(lab), lhtmp.p_e(lab));

@@ -300,20 +300,21 @@ void Transport::propagate(Particle* p)
 {
 
 	ParticleEvent event;
+	LorentzHelper lh(exponential_decay);
+	lh.set_p<lab>(p);
 
-	PRINT_ASSERT(p->fate, ==, moving);
+	PRINT_ASSERT(lh.p_fate(), ==, moving);
 
-	while (p->fate == moving)
+	while (lh.p_fate() == moving)
 	{
-		PRINT_ASSERT(p->nu, >, 0);
+		PRINT_ASSERT(lh.p_nu(lab), >, 0);
 
 		int z_ind = grid->zone_index(p->x,3);
 		PRINT_ASSERT(z_ind, >=, -1);
 		PRINT_ASSERT(z_ind, <, (int)grid->z.size());
 
 		// set up the LorentzHelper
-		LorentzHelper lh(grid->z[z_ind].u, exponential_decay);
-		lh.set_p<lab>(p);
+		lh.set_v(grid->z[z_ind].u,3);
 
 		// get all the opacities
 		get_opacity(&lh,z_ind);
@@ -380,10 +381,9 @@ void Transport::propagate(Particle* p)
 
 		// check for core absorption
 		if(lh.particle_readonly(lab)->r() < r_core) lh.set_p_fate(absorbed);
-
-		// copy particle back out of LorentzHelper
-		*p = lh.particle_copy(lab);
-
 	}
+
+	// copy particle back out of LorentzHelper
+	*p = lh.particle_copy(lab);
 	PRINT_ASSERT(p->fate, !=, moving);
 }
