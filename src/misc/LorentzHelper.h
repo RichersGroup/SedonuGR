@@ -63,39 +63,31 @@ public:
 	//==========//
 	// particle //
 	//==========//
+	Particle particle_copy(const Frame f) const;
+	const Particle* particle_readonly(const Frame f) const;
+
 	int p_s() const;
+	double p_e (const Frame f) const;
+	double p_nu(const Frame f) const;
 	double p_tau() const;
 	ParticleFate p_fate() const;
 	const double* p_D(Frame f, const int size) const;
 	const double* p_x(const int size) const;
 
-	Particle particle_copy(const Frame f) const;
-	const Particle* particle_readonly(const Frame f) const;
-
-	double p_e (const Frame f) const;
-	double p_nu(const Frame f) const;
-
 	template<Frame f>
 	void set_p(const Particle* p);
-
-	void scale_p_e(const double e);
-
-	void set_p_tau(const double tau);
-
-	void set_p_x(const double x[3], const int size);
-
 	template<Frame f>
 	void set_p_D(const double D[3], const int size);
-
-	void set_p_fate(const ParticleFate fate);
-
-	void set_p_s(const int s);
-
 	template<Frame f>
 	void set_p_e(const double e);
-
 	template<Frame f>
 	void set_p_nu(const double nu);
+
+	void scale_p_e(const double e);
+	void set_p_tau(const double tau);
+	void set_p_fate(const ParticleFate fate);
+	void set_p_s(const int s);
+	void set_p_x(const double x[3], const int size);
 
 	//=========//
 	// opacity //

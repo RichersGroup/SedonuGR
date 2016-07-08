@@ -34,6 +34,8 @@
 using namespace std;
 namespace pc = physical_constants;
 
+// initialize with the exponential_decay parameter
+// so it knows which opacity to use for tau calculations
 LorentzHelper::LorentzHelper(const bool exp_dec){
 	exponential_decay = exp_dec;
 	for(int i=1; i<2; i++){
@@ -55,6 +57,7 @@ void LorentzHelper::set_v(const double v_in[3], const int size){
 	if(p[lab].e>=0 && p[lab].nu>=0) set_p<lab>(&(p[lab]));
 }
 
+// get the velocity vector back out
 const double* LorentzHelper::velocity(const int size) const{
 	return v;
 }
@@ -63,6 +66,13 @@ const double* LorentzHelper::velocity(const int size) const{
 // particle //
 //==========//
 
+// two ways to get a copy of the paricle. The readonly is more efficient.
+Particle LorentzHelper::particle_copy(const Frame f) const{ return p[f];}
+const Particle* LorentzHelper::particle_readonly(const Frame f) const { return &(p[f]);}
+
+
+// set the particle quantities based on an input particle.
+// Resets the distance and opacities if they have already been set
 template<Frame f>
 void LorentzHelper::set_p(const Particle* p_in){
 	p[lab] = *p_in;
@@ -81,20 +91,67 @@ void LorentzHelper::set_p(const Particle* p_in){
 template void LorentzHelper::set_p<com>(const Particle* p);
 template void LorentzHelper::set_p<lab>(const Particle* p);
 
+
+// set the particle frame-dependent quantities individually
+template<Frame f>
+void LorentzHelper::set_p_D(const double D[3], const int size) {
+	PRINT_ASSERT(size,==,3);
+	for(int i=0; i<size; i++) p[f].D[i] = D[i];
+	if(p[f].nu>0 && p[f].e>0) set_p<f>(&(p[f]));
+}
+template void LorentzHelper::set_p_D<com>(const double D[3], const int size);
+template void LorentzHelper::set_p_D<lab>(const double D[3], const int size);
+
+template<Frame f>
+void LorentzHelper::set_p_e(const double e){
+	p[f].e = e;
+	if(p[f].nu > 0)	set_p<f>(&(p[f]));
+}
+template void LorentzHelper::set_p_e<com>(const double e);
+template void LorentzHelper::set_p_e<lab>(const double e);
+
+template<Frame f>
+void LorentzHelper::set_p_nu(const double nu){
+	p[f].nu = nu;
+	if(p[f].e > 0) set_p<f>(&(p[f]));
+}
+template void LorentzHelper::set_p_nu<com>(const double nu);
+template void LorentzHelper::set_p_nu<lab>(const double nu);
+
+
+// rescale the particle energies. Does not require performing transformations
 void LorentzHelper::scale_p_e(const double factor){
 	PRINT_ASSERT(factor,>=,0);
 	p[lab].e *= factor;
 	p[com].e *= factor;
 }
 
+
+// set the lorentz-invariant particle properties
 void LorentzHelper::set_p_tau(const double tau){
 	PRINT_ASSERT(tau,>=,0);
 	p[lab].tau = tau;
 	p[com].tau = tau;
 }
+void LorentzHelper::set_p_x(const double x[3], const int size) {
+	PRINT_ASSERT(size,==,3);
+	for(int i=0; i<size; i++){
+		p[com].x[i] = x[i];
+		p[lab].x[i] = x[i];
+	}
+}
+void LorentzHelper::set_p_fate(const ParticleFate fate){
+	p[com].fate = fate;
+	p[lab].fate = fate;
+}
+void LorentzHelper::set_p_s(const int s){
+	PRINT_ASSERT(s,>=,0);
+	p[com].s = s;
+	p[lab].s = s;
+}
 
-Particle LorentzHelper::particle_copy(const Frame f) const{ return p[f];}
-const Particle* LorentzHelper::particle_readonly(const Frame f) const { return &(p[f]);}
+
+// get the particle properties
 double LorentzHelper::p_e(const Frame f) const {return p[f].e;}
 double LorentzHelper::p_nu(const Frame f) const {return p[f].nu;}
 int    LorentzHelper::p_s() const {
@@ -117,48 +174,8 @@ const double* LorentzHelper::p_D(Frame f, const int size) const{
 	PRINT_ASSERT(size,==,3);
 	return p[f].D;
 }
-void LorentzHelper::set_p_x(const double x[3], const int size) {
-	PRINT_ASSERT(size,==,3);
-	for(int i=0; i<size; i++){
-		p[com].x[i] = x[i];
-		p[lab].x[i] = x[i];
-	}
-}
-template<Frame f>
-void LorentzHelper::set_p_D(const double D[3], const int size) {
-	PRINT_ASSERT(size,==,3);
-	for(int i=0; i<size; i++) p[f].D[i] = D[i];
-	if(p[f].nu>0 && p[f].e>0) set_p<f>(&(p[f]));
-}
-template void LorentzHelper::set_p_D<com>(const double D[3], const int size);
-template void LorentzHelper::set_p_D<lab>(const double D[3], const int size);
 
-void LorentzHelper::set_p_fate(const ParticleFate fate){
-	p[com].fate = fate;
-	p[lab].fate = fate;
-}
 
-void LorentzHelper::set_p_s(const int s){
-	PRINT_ASSERT(s,>=,0);
-	p[com].s = s;
-	p[lab].s = s;
-}
-
-template<Frame f>
-void LorentzHelper::set_p_e(const double e){
-	p[f].e = e;
-	if(p[f].nu > 0)	set_p<f>(&(p[f]));
-}
-template void LorentzHelper::set_p_e<com>(const double e);
-template void LorentzHelper::set_p_e<lab>(const double e);
-
-template<Frame f>
-void LorentzHelper::set_p_nu(const double nu){
-	p[f].nu = nu;
-	if(p[f].e > 0) set_p<f>(&(p[f]));
-}
-template void LorentzHelper::set_p_nu<com>(const double nu);
-template void LorentzHelper::set_p_nu<lab>(const double nu);
 
 //=========//
 // opacity //
@@ -255,7 +272,7 @@ void LorentzHelper::normalize(double a[],const int size){
 
 
 // apply a general lorentz transform to a 3D vector.
-// first three components are spatial, 4th component is time
+// first three components are spatial, 4th component is time (units of distance)
 // input velocity is the fluid velocity in the lab frame
 // [v] = cm/s, [x] = cm
 void LorentzHelper::transform_cartesian_4vector_c2l(const double v[3], double x[4]){
