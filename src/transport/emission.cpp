@@ -282,41 +282,33 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 
 	// set up LorentzHelper
 	LorentzHelper lh(grid->z[z_ind].u,exponential_decay);
-
-	// isolate the particle creation so it can't be use later
-	{
-	// basic particle properties
-	Particle p;
-	p.fate = moving;
-	p.e  = Ep;
+	lh.set_p_fate(moving);
+	lh.set_p_e<com>(Ep);
 
 	// random sample position in zone
 	double rand[3];
 	rand[0] = rangen.uniform();
 	rand[1] = rangen.uniform();
 	rand[2] = rangen.uniform();
-	double r[3];
-	grid->cartesian_sample_in_zone(z_ind,rand,3,r,3);
-	p.x[0] = r[0];
-	p.x[1] = r[1];
-	p.x[2] = r[2];
+	double x[3];
+	grid->cartesian_sample_in_zone(z_ind,rand,3,x,3);
+	lh.set_p_x(x,3);
 
 	// emit isotropically in comoving frame
-	isotropic_direction(p.D,3);
+	double D[3];
+	isotropic_direction(D,3);
+	lh.set_p_D<com>(D,3);
 
-	// sample the species and frequency
-	if(s>=0) p.s = s;
-	else sample_zone_species(&p,z_ind);
-	PRINT_ASSERT(p.s,>=,0);
-	PRINT_ASSERT(p.s,<,(int)species_list.size());
-	species_list[p.s]->sample_zone_nu(p,z_ind,g);
-	PRINT_ASSERT(p.nu,>,0);
+	// species
+	if(s>=0) lh.set_p_s(s);
+	else sample_zone_species(&lh,z_ind);
+	PRINT_ASSERT(lh.p_s(),>=,0);
+	PRINT_ASSERT(lh.p_s(),<,(int)species_list.size());
 
-	lh.set_p<com>(&p);
-	}
+	// frequency
+	species_list[lh.p_s()]->sample_zone_nu(&lh,z_ind,g);
 
 	// sample tau
-	double lab_opac=0, abs_frac=0, dshift_l2c=0, com_opac = 0;
 	get_opacity(&lh,z_ind);
 	sample_tau(&lh);
 	window(&lh,z_ind);
@@ -348,12 +340,8 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 {
 	PRINT_ASSERT(Ep,>,0);
 
-	// set basic properties
-	Particle p;
-	p.fate = moving;
-	p.e = Ep;
-
 	// pick initial position on photosphere
+	double x[3];
 	double phi_core   = 2*pc::pi*rangen.uniform();
 	double cosp_core  = cos(phi_core);
 	double sinp_core  = sin(phi_core);
@@ -361,15 +349,22 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	double sint_core  = sqrt(1-cost_core*cost_core);
 	// double spatial coordinates
 	double a_phot = r_core + r_core*1e-10;
-	p.x[0] = a_phot*sint_core*cosp_core;
-	p.x[1] = a_phot*sint_core*sinp_core;
-	p.x[2] = a_phot*cost_core;
+	x[0] = a_phot*sint_core*cosp_core;
+	x[1] = a_phot*sint_core*sinp_core;
+	x[2] = a_phot*cost_core;
 
 	// get index of current zone
-	const int z_ind = grid->zone_index(p.x,3);
+	const int z_ind = grid->zone_index(x,3);
 	PRINT_ASSERT(z_ind,>=,0);
 
+	// set up LorentzHelper
+	LorentzHelper lh(grid->z[z_ind].u,exponential_decay);
+	lh.set_p_fate(moving);
+	lh.set_p_e<lab>(Ep);
+	lh.set_p_x(x,3);
+
 	// pick photon propagation direction wtr to local normal
+	double D[3];
 	double phi_loc = 2*pc::pi*rangen.uniform();
 	// choose sqrt(R) to get outward, cos(theta) emission
 	double cost_loc  = sqrt(rangen.uniform());
@@ -379,20 +374,21 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	double D_yl = sint_loc*sin(phi_loc);
 	double D_zl = cost_loc;
 	// apply rotation matrix to convert D vector into overall frame
-	p.D[0] = cost_core*cosp_core*D_xl-sinp_core*D_yl+sint_core*cosp_core*D_zl;
-	p.D[1] = cost_core*sinp_core*D_xl+cosp_core*D_yl+sint_core*sinp_core*D_zl;
-	p.D[2] = -sint_core*D_xl+cost_core*D_zl;
-	normalize(p.D,3);
+	D[0] = cost_core*cosp_core*D_xl-sinp_core*D_yl+sint_core*cosp_core*D_zl;
+	D[1] = cost_core*sinp_core*D_xl+cosp_core*D_yl+sint_core*sinp_core*D_zl;
+	D[2] = -sint_core*D_xl+cost_core*D_zl;
+	normalize(D,3);
+	lh.set_p_D<lab>(D,3);
 
-	// sample the species and frequency
-	p.s = (s>=0 ? s : sample_core_species());
-	PRINT_ASSERT(p.s,>=,0);
-	PRINT_ASSERT(p.s,<,(int)species_list.size());
-	p.nu = species_list[p.s]->sample_core_nu(g);
+	// sample the species
+	lh.set_p_s( s>=0 ? s : sample_core_species() );
+	PRINT_ASSERT(lh.p_s(),>=,0);
+	PRINT_ASSERT(lh.p_s(),<,(int)species_list.size());
 
-	// fill in the LorentzHelper
-	LorentzHelper lh = LorentzHelper(grid->z[z_ind].u,exponential_decay);
-	lh.set_p<lab>(&p);
+	// sample the frequency
+	lh.set_p_nu<lab>( species_list[lh.p_s()]->sample_core_nu(g) );
+
+	// sample the optical depth
 	get_opacity(&lh,z_ind);
 	sample_tau(&lh);
 	window(&lh,z_ind);

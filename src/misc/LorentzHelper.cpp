@@ -68,8 +68,8 @@ void LorentzHelper::set_p(const Particle* p_in){
 	lorentz_transform_particle(&(p[other]), vrel, 3);
 
 	// set the other things
-	set_opac<com>(absopac[com],scatopac[com]);
-	set_distance<com>(dist[com]);
+	if(absopac[f]>=0 && scatopac[f]>=0) set_opac<f>(absopac[f],scatopac[f]);
+	if(dist[f]>=0) set_distance<f>(dist[f]);
 }
 template void LorentzHelper::set_p<com>(const Particle* p);
 template void LorentzHelper::set_p<lab>(const Particle* p);
@@ -120,8 +120,8 @@ void LorentzHelper::set_p_x(const double x[3], const int size) {
 template<Frame f>
 void LorentzHelper::set_p_D(const double D[3], const int size) {
 	PRINT_ASSERT(size,==,3);
-	for(int i=0; i<size; i++) p[f].D[i] = D[f];
-	set_p<f>(&(p[f]));
+	for(int i=0; i<size; i++) p[f].D[i] = D[i];
+	if(p[f].nu>0 && p[f].e>0) set_p<f>(&(p[f]));
 }
 template void LorentzHelper::set_p_D<com>(const double D[3], const int size);
 template void LorentzHelper::set_p_D<lab>(const double D[3], const int size);
@@ -130,6 +130,28 @@ void LorentzHelper::set_p_fate(const ParticleFate fate){
 	p[com].fate = fate;
 	p[lab].fate = fate;
 }
+
+void LorentzHelper::set_p_s(const int s){
+	PRINT_ASSERT(s,>=,0);
+	p[com].s = s;
+	p[lab].s = s;
+}
+
+template<Frame f>
+void LorentzHelper::set_p_e(const double e){
+	p[f].e = e;
+	if(p[f].nu > 0)	set_p<f>(&(p[f]));
+}
+template void LorentzHelper::set_p_e<com>(const double e);
+template void LorentzHelper::set_p_e<lab>(const double e);
+
+template<Frame f>
+void LorentzHelper::set_p_nu(const double nu){
+	p[f].nu = nu;
+	if(p[f].e > 0) set_p<f>(&(p[f]));
+}
+template void LorentzHelper::set_p_nu<com>(const double nu);
+template void LorentzHelper::set_p_nu<lab>(const double nu);
 
 //=========//
 // opacity //

@@ -87,10 +87,9 @@ void Transport::window(LorentzHelper *lh, const int z_ind){
 	int n_new = (int)ratio;
 	if(ratio>1.0 && particles.size()+n_new<max_particles && species_list[lh->p_s()]->interpolate_importance(lh->p_nu(com),z_ind)>=1.0){
 		lh->scale_p_e( 1.0 / (double)(n_new+1) );
-		Particle plab = lh->particle_copy(lab);
 		for(int i=0; i<n_new; i++){
 			#pragma omp critical
-			particles.push_back(plab);
+			particles.push_back(lh->particle_copy(lab));
 		}
 	}
 
@@ -142,20 +141,16 @@ void Transport::re_emit(LorentzHelper *lh, const int z_ind) const{
 	double Dnew[3];
 	isotropic_direction(Dnew,3);
 	lh->set_p_D<com>(Dnew,3);
-	Particle p = lh->particle_copy(com);
-	sample_zone_species(&p,z_ind);
-	species_list[p.s]->sample_zone_nu(p,z_ind);
+	sample_zone_species(lh,z_ind);
+	species_list[lh->p_s()]->sample_zone_nu(lh,z_ind);
 
 	// tally into zone's emitted energy
-	grid->z[z_ind].e_emit += p.e;
+	grid->z[z_ind].e_emit += lh->p_e(com);
 
 	// sanity checks
-	PRINT_ASSERT(p.nu,>,0);
-	PRINT_ASSERT(p.s,>=,0);
-	PRINT_ASSERT(p.s,<,(int)species_list.size());
-
-	// give particle back to LorentzHelper
-	lh->set_p<com>(&p);
+	PRINT_ASSERT(lh->p_nu(com),>,0);
+	PRINT_ASSERT(lh->p_s(),>=,0);
+	PRINT_ASSERT(lh->p_s(),<,(int)species_list.size());
 }
 
 // choose which type of scattering event to do

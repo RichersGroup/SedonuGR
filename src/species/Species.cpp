@@ -161,13 +161,14 @@ double Species::sample_core_nu(const int g) const
 	PRINT_ASSERT(nu_grid.min,>=,0);
 	return sample_nu(core_emis);
 }
-void Species::sample_zone_nu(Particle& p, const int zone_index, const int g) const
+void Species::sample_zone_nu(LorentzHelper *lh, const int zone_index, const int g) const
 {
 	PRINT_ASSERT(nu_grid.min,>=,0);
-	p.nu = sample_nu(biased_emis[zone_index]);
-	double imp = interpolate_importance(p.nu,zone_index);
+	lh->set_p_nu<com>( sample_nu(biased_emis[zone_index]) );
+	double imp = interpolate_importance(lh->p_nu(com),zone_index);
 	PRINT_ASSERT(imp,>,0);
-	p.e /= imp;
+	lh->scale_p_e(1.0/imp);
+	PRINT_ASSERT(lh->p_nu(com),>,0);
 }
 double Species::sample_nu(const CDFArray& input_emis, const int g) const{
 	// randomly pick a frequency

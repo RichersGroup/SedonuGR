@@ -29,7 +29,7 @@
 #define _SPECIES_H
 
 #include <vector>
-#include "Particle.h"
+#include "LorentzHelper.h"
 #include "SpectrumArray.h"
 #include "Lua.h"
 #include "CDFArray.h"
@@ -100,7 +100,7 @@ public:
 	// return the frequency of a particle emitted from the core or a zone (Hz)
 	double sample_core_nu(const int g=-1) const;
 	double sample_nu(const CDFArray& input_emis, const int g=-1) const;
-	void sample_zone_nu(Particle& p, const int zone_index, const int g=-1) const;
+	void sample_zone_nu(LorentzHelper *lh, const int zone_index, const int g=-1) const;
 
 	// set the emissivity, absorption opacity, and scattering opacity
 	virtual void set_eas(const int zone_index) = 0;

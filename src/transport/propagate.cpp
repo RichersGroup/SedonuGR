@@ -145,41 +145,44 @@ void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *e
 
 void Transport::event_boundary(LorentzHelper *lh, const int z_ind) const{
 	PRINT_ASSERT(z_ind==-1, ||, z_ind==-2);
-	// temporary hack
-	Particle p = lh->particle_copy(lab);
 
 	// if outside the domain
 	if(z_ind == -2){
 		int new_ind = z_ind;
 		if(reflect_outer){
+			{
+			Particle p = lh->particle_copy(lab);
 			grid->reflect_outer(&p);
-			PRINT_ASSERT(p.fate, ==, moving);
-			new_ind = grid->zone_index(p.x,3);
+			lh->set_p<lab>(&p);
+			}
+			PRINT_ASSERT(lh->p_fate(), ==, moving);
+			new_ind = grid->zone_index(lh->p_x(3),3);
 			PRINT_ASSERT(new_ind, >=, 0);
 			PRINT_ASSERT(new_ind, <, (int)grid->z.size());
-			PRINT_ASSERT(p.nu, >, 0);
+			PRINT_ASSERT(lh->p_nu(lab), >, 0);
 		}
 		else{
+			{
+			Particle p = lh->particle_copy(lab);
 			grid->symmetry_boundaries(&p);
-			new_ind = grid->zone_index(p.x,3);
+			lh->set_p<lab>(&p);
+			}
+			new_ind = grid->zone_index(lh->p_x(3),3);
 		}
 
-		if(new_ind < 0) p.fate = escaped;
+		if(new_ind < 0) lh->set_p_fate(escaped);
 	}
 
 	// if inside the inner boundary
 	if(z_ind==-1){
-		if(p.r() < r_core) p.fate = absorbed;
-		else if(p.x_dot_d() >= 0){
+		if(lh->particle_readonly(lab)->r() < r_core) lh->set_p_fate(absorbed);
+		else if(lh->particle_readonly(lab)->x_dot_d() >= 0){
 			// set the particle just outside the inner boundary
 			cout << "ERROR: have not yet implemented passing out through the inner boundary without overshooting" << endl;
 			exit(5);
 		}
-		else PRINT_ASSERT(p.fate, ==, moving); // the particle just went into the inner boundary
+		else PRINT_ASSERT(lh->p_fate(), ==, moving); // the particle just went into the inner boundary
 	}
-
-	// give p back to lh
-	lh->set_p<lab>(&p);
 }
 
 void Transport::distribution_function_basis(const double D[3], const double xyz[3], double D_newbasis[3]) const{

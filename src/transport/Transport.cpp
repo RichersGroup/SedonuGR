@@ -756,7 +756,7 @@ int Transport::sample_core_species() const
 // note: could store a zone_species_cdf structure in transport,
 // but this would use more memory. Here, trading CPU cycles for 
 // memory. If we are CPU limited, we could change this
-void Transport::sample_zone_species(Particle *p, const int zone_index) const
+void Transport::sample_zone_species(LorentzHelper *lh, const int zone_index) const
 {
 	CDFArray species_cdf;
 	double integrated_emis;
@@ -773,10 +773,10 @@ void Transport::sample_zone_species(Particle *p, const int zone_index) const
 
 	// randomly sample the species
 	double z = rangen.uniform();
-	p->s = species_cdf.get_index(z);
-	if(importance_bias>0) p->e *= species_list[p->s]->integrate_zone_emis(zone_index) / species_list[p->s]->integrate_zone_biased_emis(zone_index);
-	PRINT_ASSERT(p->e,>,0);
-	PRINT_ASSERT(p->e,<,INFINITY);
+	lh->set_p_s( species_cdf.get_index(z) );
+	if(importance_bias>0) lh->scale_p_e( species_list[lh->p_s()]->integrate_zone_emis(zone_index) / species_list[lh->p_s()]->integrate_zone_biased_emis(zone_index) );
+	PRINT_ASSERT(lh->p_e(com),>,0);
+	PRINT_ASSERT(lh->p_e(com),<,INFINITY);
 }
 
 

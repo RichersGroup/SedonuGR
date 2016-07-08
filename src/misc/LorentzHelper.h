@@ -79,6 +79,14 @@ public:
 
 	void set_p_fate(const ParticleFate fate);
 
+	void set_p_s(const int s);
+
+	template<Frame f>
+	void set_p_e(const double e);
+
+	template<Frame f>
+	void set_p_nu(const double nu);
+
 	//=========//
 	// opacity //
 	//=========//

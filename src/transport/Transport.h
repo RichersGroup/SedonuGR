@@ -73,7 +73,7 @@ private:
 
 	// species sampling functions
 	int sample_core_species() const;
-	void sample_zone_species(Particle *p, int zone_index) const;
+	void sample_zone_species(LorentzHelper *lh, int zone_index) const;
 
 	// transformation functions
 	double comoving_dt(const int z_ind) const;
