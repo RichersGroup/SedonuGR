@@ -183,7 +183,7 @@ void Transport::scatter(LorentzHelper *lh, int z_ind) const{\
 			if(lh->scat_opac(com) * Rcom >= randomwalk_min_optical_depth){
 				{
 				Particle p = lh->particle_copy(com);
-				random_walk(&p,lh->abs_opac(com),lh->scat_opac(com), Rcom, D, z_ind);
+				random_walk(lh, Rcom, D, z_ind);
 				lh->set_p<com>(&p);
 				}
 				did_random_walk = true;
@@ -283,9 +283,9 @@ void Transport::init_randomwalk_cdf(Lua* lua){
 //----------------------
 // Do a random walk step
 //----------------------
-void Transport::random_walk(Particle* p, const double com_absopac, const double com_scatopac, const double Rcom, const double D, const int z_ind) const{
-	PRINT_ASSERT(com_scatopac,>,0);
-	PRINT_ASSERT(com_absopac,>=,0);
+void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D, const int z_ind) const{
+	PRINT_ASSERT(lh->scat_opac(com),>,0);
+	PRINT_ASSERT(lh->abs_opac(com),>=,0);
 
 	// set pointer to the current zone
 	Zone* zone;
@@ -297,18 +297,18 @@ void Transport::random_walk(Particle* p, const double com_absopac, const double 
 	PRINT_ASSERT(distance,>=,Rcom);
 
 	// deposit fluid quantities (comoving frame)
-	double ratio_deposited = 1.0 - exp(-com_absopac * distance);
+	double ratio_deposited = 1.0 - exp(-lh->abs_opac(com) * distance);
 	#pragma omp atomic
-	zone->e_abs += p->e * ratio_deposited;
+	zone->e_abs += lh->p_e(com) * ratio_deposited;
 	double this_l_comoving = 0;
-	if(species_list[p->s]->lepton_number != 0){
-		this_l_comoving = p->e/(p->nu*pc::h);
+	if(species_list[lh->p_s()]->lepton_number != 0){
+		this_l_comoving = lh->p_e(com)/(lh->p_nu(com)*pc::h);
 		double to_add = this_l_comoving * ratio_deposited;
-		if(species_list[p->s]->lepton_number == 1){
+		if(species_list[lh->p_s()]->lepton_number == 1){
             #pragma omp atomic
 			zone->nue_abs += to_add;
 		}
-		else if(species_list[p->s]->lepton_number == -1){
+		else if(species_list[lh->p_s()]->lepton_number == -1){
             #pragma omp atomic
 			zone->anue_abs += to_add;
 		}
@@ -322,11 +322,12 @@ void Transport::random_walk(Particle* p, const double com_absopac, const double 
 
 	//------------------------------------------------------------------------
 	// pick a random outward direction, starting distribution pointing along z (comoving frame)
+	double pD[3];
 	phi = 2*pc::pi * rangen.uniform();
 	mu = rangen.uniform();
-	p->D[0] = mu*cos(phi);
-	p->D[1] = mu*sin(phi);
-	p->D[2] = sqrt(1.0-mu*mu);
+	pD[0] = mu*cos(phi);
+	pD[1] = mu*sin(phi);
+	pD[2] = sqrt(1.0-mu*mu);
 
 	// get the displacement vector polar coordinates
 	double d3com[3] = {displacement4[0], displacement4[1], displacement4[2]};
@@ -334,31 +335,32 @@ void Transport::random_walk(Particle* p, const double com_absopac, const double 
 	double costheta = d3com[2];
 	double sintheta = sqrt(d3com[0]*d3com[0] + d3com[1]*d3com[1]);
 
-	if(abs(sintheta) < grid->tiny) p->D[2] *= costheta>0 ? 1.0 : -1.0;
+	if(abs(sintheta) < grid->tiny) pD[2] *= costheta>0 ? 1.0 : -1.0;
 	else{
 		double cosphi = d3com[0] / sintheta;
 		double sinphi = d3com[1] / sintheta;
 
 		// first rotate away from the z axis along y=0 (move it toward x=0)
-		normalize(p->D,3);
+		normalize(pD,3);
 		double tmp[3];
-		for(int i=0; i<3; i++) tmp[i] = p->D[i];
-		p->D[0] =  costheta*tmp[0] + sintheta*tmp[2];
-		p->D[2] = -sintheta*tmp[0] + costheta*tmp[2];
+		for(int i=0; i<3; i++) tmp[i] = pD[i];
+		pD[0] =  costheta*tmp[0] + sintheta*tmp[2];
+		pD[2] = -sintheta*tmp[0] + costheta*tmp[2];
 
 		// second rotate around the z axis, away from the x-axis
-		normalize(p->D,3);
-		for(int i=0; i<3; i++) tmp[i] = p->D[i];
-		p->D[0] = cosphi*tmp[0] - sinphi*tmp[1];
-		p->D[1] = sinphi*tmp[0] + cosphi*tmp[1];
+		normalize(pD,3);
+		for(int i=0; i<3; i++) tmp[i] = pD[i];
+		pD[0] = cosphi*tmp[0] - sinphi*tmp[1];
+		pD[1] = sinphi*tmp[0] + cosphi*tmp[1];
 	}
-	normalize(p->D,3);
+	normalize(pD,3);
+	lh->set_p_D<com>(pD,3);
 	//------------------------------------------------------------------------
 
 	// calculate radiation energy in the comoving frame
 	//double e_rad_directional = e_avg * R;
 	//double e_rad_each_bin = e_avg * (distance - R) / (double)(zone->distribution[p->s].phi_dim() * zone->distribution[p->s].mu_dim());
-	double e_avg = p->e / (com_absopac * distance) * (1.0 - exp(-com_absopac * distance));
+	double e_avg = lh->p_e(com) / (lh->abs_opac(com) * distance) * (1.0 - exp(-lh->abs_opac(com) * distance));
 	double erad_com = e_avg * distance;
 
 	// deposit all radiaton energy into the bin corresponding to the direction of motion.
@@ -366,15 +368,16 @@ void Transport::random_walk(Particle* p, const double com_absopac, const double 
 	// but this should average out properly over many trajectories.
 	// depositing radiation in every bin would lead to lots of memory contention
 	//normalize(d3lab,3);
-	Particle pfake = *p;
-	pfake.e = erad_com;
-	for(int i=0; i<3; i++) pfake.D[i] = d3com[i];
-	transform_comoving_to_lab(&pfake,z_ind);
-	zone->distribution[p->s].count(pfake.D, 3, pfake.nu, pfake.e);
+	LorentzHelper lhtmp(lh->velocity(3),false);
+	lhtmp.set_p_e<com>(erad_com);
+	lhtmp.set_p_D<com>(d3com,3);
+	zone->distribution[lh->p_s()].count(lhtmp.p_D(lab,3), 3, lhtmp.p_nu(lab), lhtmp.p_e(lab));
 
 	// move the particle to the edge of the sphere
 	transform_cartesian_4vector_c2l(zone->u, displacement4);
 	double d3lab[3] = {displacement4[0], displacement4[1], displacement4[2]};
-	for(int i=0; i<3; i++) p->x[i] += d3lab[3];
-	if(ratio_deposited > 0) p->e *= 1.0 - ratio_deposited;
+	double xnew[3];
+	for(int i=0; i<3; i++) xnew[i] = lh->p_x(3)[i] + d3lab[3];
+	lh->set_p_x(xnew,3);
+	if(ratio_deposited > 0) lh->scale_p_e( 1.0 - ratio_deposited );
 }
