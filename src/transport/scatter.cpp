@@ -291,11 +291,11 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 
 
 	// sample the distance travelled during the random walk
-	double distance = pc::c * Rcom*Rcom / D * randomwalk_diffusion_time.invert(rangen.uniform(),&randomwalk_xaxis,-1);
-	PRINT_ASSERT(distance,>=,Rcom);
+	double path_length_com = pc::c * Rcom*Rcom / D * randomwalk_diffusion_time.invert(rangen.uniform(),&randomwalk_xaxis,-1);
+	PRINT_ASSERT(path_length_com,>=,Rcom);
 
 	// deposit fluid quantities (comoving frame)
-	double ratio_deposited = 1.0 - exp(-lh->abs_opac(com) * distance);
+	double ratio_deposited = 1.0 - exp(-lh->abs_opac(com) * path_length_com);
 	#pragma omp atomic
 	zone->e_abs += lh->p_e(com) * ratio_deposited;
 	double this_l_comoving = 0;
@@ -313,43 +313,48 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	}
 
 	// randomly place the particle somewhere on the sphere (comoving frame)
-	double phi = 2*pc::pi * rangen.uniform();
-	double mu = 2.0*rangen.uniform() - 1.0;
-	double displacement4[4] = {Rcom*mu*cos(phi), Rcom*mu*sin(phi), Rcom*sqrt(1.0-mu*mu), distance};
-
+	double Diso[3];
+	isotropic_direction(Diso,3);
+	double displacement4[4] = {Rcom*Diso[0], Rcom*Diso[1], Rcom*Diso[2], path_length_com};
+	double d3com[3] = {displacement4[0], displacement4[1], displacement4[2]};
+	LorentzHelper::transform_cartesian_4vector_c2l(zone->u, displacement4);
+	double d3lab[3] = {displacement4[0], displacement4[1], displacement4[2]};
+	double xnew[3];
+	for(int i=0; i<3; i++) xnew[i] = lh->p_x(3)[i] + d3lab[3];
+	lh->set_p_x(xnew,3);
 
 	//------------------------------------------------------------------------
 	// pick a random outward direction, starting distribution pointing along z (comoving frame)
 	double pD[3];
-	phi = 2*pc::pi * rangen.uniform();
-	mu = rangen.uniform();
-	pD[0] = mu*cos(phi);
-	pD[1] = mu*sin(phi);
-	pD[2] = sqrt(1.0-mu*mu);
+	double outward_phi = 2*pc::pi * rangen.uniform();
+	double outward_mu = rangen.uniform();
+	pD[0] = outward_mu*cos(outward_phi);
+	pD[1] = outward_mu*sin(outward_phi);
+	pD[2] = sqrt(1.0 - outward_mu*outward_mu);
 
 	// get the displacement vector polar coordinates
-	double d3com[3] = {displacement4[0], displacement4[1], displacement4[2]};
+	// theta_rotate is angle away from z-axis, not from xy-plane
 	LorentzHelper::normalize(d3com,3);
-	double costheta = d3com[2];
-	double sintheta = sqrt(d3com[0]*d3com[0] + d3com[1]*d3com[1]);
+	double costheta_rotate = sqrt(1.0 - d3com[2]*d3com[2]);
+	double sintheta_rotate = d3com[2];
 
-	if(abs(sintheta) < grid->tiny) pD[2] *= costheta>0 ? 1.0 : -1.0;
+	if(abs(sintheta_rotate) < grid->tiny) pD[2] *= costheta_rotate>0 ? 1.0 : -1.0;
 	else{
-		double cosphi = d3com[0] / sintheta;
-		double sinphi = d3com[1] / sintheta;
 
 		// first rotate away from the z axis along y=0 (move it toward x=0)
 		LorentzHelper::normalize(pD,3);
-		double tmp[3];
-		for(int i=0; i<3; i++) tmp[i] = pD[i];
-		pD[0] =  costheta*tmp[0] + sintheta*tmp[2];
-		pD[2] = -sintheta*tmp[0] + costheta*tmp[2];
+		double pD_old[3];
+		for(int i=0; i<3; i++) pD_old[i] = pD[i];
+		pD[0] =  costheta_rotate*pD_old[0] + sintheta_rotate*pD_old[2];
+		pD[2] = -sintheta_rotate*pD_old[0] + costheta_rotate*pD_old[2];
 
 		// second rotate around the z axis, away from the x-axis
+		double cosphi_rotate = d3com[0] / sqrt(d3com[0]*d3com[0] + d3com[1]*d3com[1]);
+		double sinphi_rotate = d3com[0] / sqrt(d3com[0]*d3com[0] + d3com[1]*d3com[1]);
 		LorentzHelper::normalize(pD,3);
-		for(int i=0; i<3; i++) tmp[i] = pD[i];
-		pD[0] = cosphi*tmp[0] - sinphi*tmp[1];
-		pD[1] = sinphi*tmp[0] + cosphi*tmp[1];
+		for(int i=0; i<3; i++) pD_old[i] = pD[i];
+		pD[0] = cosphi_rotate*pD_old[0] - sinphi_rotate*pD_old[1];
+		pD[1] = sinphi_rotate*pD_old[0] + cosphi_rotate*pD_old[1];
 	}
 	LorentzHelper::normalize(pD,3);
 	lh->set_p_D<com>(pD,3);
@@ -358,26 +363,20 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	// calculate radiation energy in the comoving frame
 	//double e_rad_directional = e_avg * R;
 	//double e_rad_each_bin = e_avg * (distance - R) / (double)(zone->distribution[p->s].phi_dim() * zone->distribution[p->s].mu_dim());
-	double e_avg = lh->p_e(com) / (lh->abs_opac(com) * distance) * (1.0 - exp(-lh->abs_opac(com) * distance));
-	double erad_com = e_avg * distance;
+	double eavg_com = lh->p_e(com) / (path_length_com * lh->abs_opac(com)) * (1.0 - exp(-lh->abs_opac(com) * path_length_com));
 
 	// deposit all radiaton energy into the bin corresponding to the direction of motion.
 	// really, most should be isotropic and some should be in the direction of motion,
 	// but this should average out properly over many trajectories.
 	// depositing radiation in every bin would lead to lots of memory contention
-	//LorentzHelper::normalize(d3lab,3);
 	LorentzHelper lhtmp(false);
 	lhtmp.set_v(lh->velocity(3),3);
 	lhtmp.set_p_nu<com>(lh->p_nu(com));
-	lhtmp.set_p_e<com>(erad_com);
+	lhtmp.set_p_e<com>(eavg_com);
 	lhtmp.set_p_D<com>(d3com,3);
-	zone->distribution[lh->p_s()].count(lhtmp.p_D(lab,3), 3, lhtmp.p_nu(lab), lhtmp.p_e(lab));
+	lhtmp.set_distance<com>(path_length_com);
+	zone->distribution[lh->p_s()].count(lhtmp.p_D(lab,3), 3, lhtmp.p_nu(lab), lhtmp.p_e(lab) * lhtmp.distance(lab));
 
 	// move the particle to the edge of the sphere
-	LorentzHelper::transform_cartesian_4vector_c2l(zone->u, displacement4);
-	double d3lab[3] = {displacement4[0], displacement4[1], displacement4[2]};
-	double xnew[3];
-	for(int i=0; i<3; i++) xnew[i] = lh->p_x(3)[i] + d3lab[3];
-	lh->set_p_x(xnew,3);
 	if(ratio_deposited > 0) lh->scale_p_e( 1.0 - ratio_deposited );
 }
