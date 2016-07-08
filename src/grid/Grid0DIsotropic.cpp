@@ -146,14 +146,14 @@ void Grid0DIsotropic::write_rays(const int iw) const
 //------------------------------------------------------------
 // Reflect off the outer boundary
 //------------------------------------------------------------
-void Grid0DIsotropic::reflect_outer(Particle *p) const{
+void Grid0DIsotropic::reflect_outer(LorentzHelper *lh) const{
 	// does nothing - no boundary
 }
 
 //------------------------------------------------------------
 // Reflect off symmetry plane
 //------------------------------------------------------------
-void Grid0DIsotropic::symmetry_boundaries(Particle *p) const{
+void Grid0DIsotropic::symmetry_boundaries(LorentzHelper *lh) const{
 	// does nothing - no boundary
 }
 
@@ -161,7 +161,7 @@ void Grid0DIsotropic::symmetry_boundaries(Particle *p) const{
 // Find distance to outer boundary (less a tiny bit)
 // negative distance means inner boundary
 //------------------------------------------------------------
-double Grid0DIsotropic::lab_dist_to_boundary(const Particle *p) const{
+double Grid0DIsotropic::lab_dist_to_boundary(const LorentzHelper *lh) const{
 	return INFINITY;
 }
 

@@ -874,7 +874,9 @@ void Grid2DSphere::write_rays(int iw) const
 //------------------------------------------------------------
 // Reflect off the outer boundary
 //------------------------------------------------------------
-void Grid2DSphere::reflect_outer(Particle *p) const{
+void Grid2DSphere::reflect_outer(LorentzHelper *lh) const{
+	const Particle *p = lh->particle_readonly(lab);
+
 	PRINT_ASSERT(r_out.size(),>=,1);
 	double r0 = (r_out.size()==1 ? r_out.min : r_out.size()-2);
 	double dr = r_out[r_out.size()-1] - r0;
@@ -882,28 +884,33 @@ void Grid2DSphere::reflect_outer(Particle *p) const{
 	double velDotRhat = p->mu();
 
 	// invert the radial component of the velocity
-	for(int i=0; i<3; i++) p->D[i] -= 2.*velDotRhat * p->x[i]/p->r();
-	Transport::normalize(p->D,3);
+	double D[3];
+	for(int i=0; i<3; i++) D[i] -= 2.*velDotRhat * p->x[i]/p->r();
+	Transport::normalize(D,3);
+	lh->set_p_D<lab>(D,3);
 
 	// put the particle just inside the boundary
 	double newR = r_out[r_out.size()-1] - tiny*dr;
-	for(int i=0; i<3; i++) p->x[i] = p->x[i]/p->r()*newR;
+	double x[3];
+	for(int i=0; i<3; i++) x[i] = p->x[i]/p->r()*newR;
+	lh->set_p_x(x,3);
 
 	// must be inside the boundary, or will get flagged as escaped
-	PRINT_ASSERT(zone_index(p->x,3),>=,0);
+	PRINT_ASSERT(zone_index(x,3),>=,0);
 }
 
 //------------------------------------------------------------
 // Reflect off the symmetry boundaries
 //------------------------------------------------------------
-void Grid2DSphere::symmetry_boundaries(Particle *p) const{
+void Grid2DSphere::symmetry_boundaries(LorentzHelper *lh) const{
 // not implemented - does nothing
 }
 
 //------------------------------------------------------------
 // Find distance to outer boundary
 //------------------------------------------------------------
-double Grid2DSphere::lab_dist_to_boundary(const Particle *p) const{
+double Grid2DSphere::lab_dist_to_boundary(const LorentzHelper *lh) const{
+	const Particle *p = lh->particle_readonly(lab);
 	// Theta = angle between radius vector and direction (Pi if outgoing)
 	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
 	double Rout  = r_out[r_out.size()-1];

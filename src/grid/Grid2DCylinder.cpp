@@ -442,7 +442,7 @@ void Grid2DCylinder::write_rays(int iw) const
 //------------------------------------------------------------
 // Reflect off the outer boundary
 //------------------------------------------------------------
-void Grid2DCylinder::reflect_outer(Particle *p) const{
+void Grid2DCylinder::reflect_outer(LorentzHelper *lh) const{
   cout << "Error: cylindrical reflect_outer is not implemented or tested." << endl;
   exit(1);
 	// PRINT_ASSERT(r_out.size(),>=,1);
@@ -484,14 +484,16 @@ void Grid2DCylinder::reflect_outer(Particle *p) const{
 //------------------------------------------------------------
 // Reflect off the outer boundary
 //------------------------------------------------------------
-void Grid2DCylinder::symmetry_boundaries(Particle *p) const{
+void Grid2DCylinder::symmetry_boundaries(LorentzHelper *lh) const{
 // does nothing - not implemented
 }
 
 //------------------------------------------------------------
 // Find distance to outer boundary
 //------------------------------------------------------------
-double Grid2DCylinder::lab_dist_to_boundary(const Particle *p) const{
+double Grid2DCylinder::lab_dist_to_boundary(const LorentzHelper *lh) const{
+	const Particle* p = lh->particle_readonly(lab);
+
 	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
 	double Rout  = rcyl_out[rcyl_out.size()-1];
 	double Rin   = rcyl_out.min;

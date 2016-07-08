@@ -49,6 +49,7 @@
 #include "Zone.h"
 #include "Lua.h"
 #include "Particle.h"
+#include "LorentzHelper.h"
 
 class Transport;
 
@@ -127,9 +128,9 @@ public:
 	virtual double zone_radius(const int z_ind) const = 0;
 
 	// boundary conditions
-	virtual void reflect_outer(Particle *p) const = 0;
-	virtual double lab_dist_to_boundary(const Particle *p) const = 0;
-	virtual void symmetry_boundaries(Particle* p) const = 0;
+	virtual void reflect_outer(LorentzHelper *lh) const = 0;
+	virtual double lab_dist_to_boundary(const LorentzHelper *lh) const = 0;
+	virtual void symmetry_boundaries(LorentzHelper *lh) const = 0;
 };
 
 

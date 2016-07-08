@@ -253,7 +253,8 @@ void Grid1DSphere::write_rays(const int iw) const
 //------------------------------------------------------------
 // Reflect off the outer boundary
 //------------------------------------------------------------
-void Grid1DSphere::reflect_outer(Particle *p) const{
+void Grid1DSphere::reflect_outer(LorentzHelper *lh) const{
+	const Particle *p = lh->particle_readonly(lab);
 	double r0 = (r_out.size()>1 ? r_out[r_out.size()-2] : r_out.min);
 	double rmax = r_out[r_out.size()-1];
 	double dr = rmax - r0;
@@ -262,25 +263,29 @@ void Grid1DSphere::reflect_outer(Particle *p) const{
 	PRINT_ASSERT( fabs(R - r_out[r_out.size()-1]),<,tiny*dr);
 
 	// invert the radial component of the velocity
-	p->D[0] -= 2.*velDotRhat * p->x[0]/R;
-	p->D[1] -= 2.*velDotRhat * p->x[1]/R;
-	p->D[2] -= 2.*velDotRhat * p->x[2]/R;
-	Transport::normalize(p->D,3);
+	double D[3];
+	D[0] -= 2.*velDotRhat * p->x[0]/R;
+	D[1] -= 2.*velDotRhat * p->x[1]/R;
+	D[2] -= 2.*velDotRhat * p->x[2]/R;
+	Transport::normalize(D,3);
+	lh->set_p_D<lab>(D,3);
 
 	// put the particle just inside the boundary
 	double newR = rmax - tiny*dr;
-	p->x[0] = p->x[0]/R*newR;
-	p->x[1] = p->x[1]/R*newR;
-	p->x[2] = p->x[2]/R*newR;
+	double x[3];
+	x[0] = p->x[0]/R*newR;
+	x[1] = p->x[1]/R*newR;
+	x[2] = p->x[2]/R*newR;
+	lh->set_p_x(x,3);
 
 	// must be inside the boundary, or will get flagged as escaped
-	PRINT_ASSERT(zone_index(p->x,3),>=,0);
+	PRINT_ASSERT(zone_index(x,3),>=,0);
 }
 
 //------------------------------------------------------------
 // Reflect off symmetry axis
 //------------------------------------------------------------
-void Grid1DSphere::symmetry_boundaries(Particle *p) const{
+void Grid1DSphere::symmetry_boundaries(LorentzHelper *lh) const{
 // not implemented - does nothing
 }
 
@@ -288,7 +293,8 @@ void Grid1DSphere::symmetry_boundaries(Particle *p) const{
 // Find distance to outer boundary (less a tiny bit)
 // negative distance means inner boundary
 //------------------------------------------------------------
-double Grid1DSphere::lab_dist_to_boundary(const Particle *p) const{
+double Grid1DSphere::lab_dist_to_boundary(const LorentzHelper *lh) const{
+	const Particle *p = lh->particle_readonly(lab);
 	// Theta = angle between radius vector and direction (Pi if outgoing)
 	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
 	double Rout  = r_out[r_out.size()-1];

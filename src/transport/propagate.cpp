@@ -123,7 +123,7 @@ void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *e
 	}
 
 	// FIND D_BOUNDARY ================================================================
-	d_boundary = grid->lab_dist_to_boundary(lh->particle_readonly(lab));
+	d_boundary = grid->lab_dist_to_boundary(lh);
 	PRINT_ASSERT(d_boundary, >, 0);
 
 	// find out what event happens (shortest distance) =====================================
@@ -150,11 +150,7 @@ void Transport::event_boundary(LorentzHelper *lh, const int z_ind) const{
 	if(z_ind == -2){
 		int new_ind = z_ind;
 		if(reflect_outer){
-			{
-			Particle p = lh->particle_copy(lab);
-			grid->reflect_outer(&p);
-			lh->set_p<lab>(&p);
-			}
+			grid->reflect_outer(lh);
 			PRINT_ASSERT(lh->p_fate(), ==, moving);
 			new_ind = grid->zone_index(lh->p_x(3),3);
 			PRINT_ASSERT(new_ind, >=, 0);
@@ -162,11 +158,7 @@ void Transport::event_boundary(LorentzHelper *lh, const int z_ind) const{
 			PRINT_ASSERT(lh->p_nu(lab), >, 0);
 		}
 		else{
-			{
-			Particle p = lh->particle_copy(lab);
-			grid->symmetry_boundaries(&p);
-			lh->set_p<lab>(&p);
-			}
+			grid->symmetry_boundaries(lh);
 			new_ind = grid->zone_index(lh->p_x(3),3);
 		}
 
