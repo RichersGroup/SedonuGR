@@ -181,11 +181,7 @@ void Transport::scatter(LorentzHelper *lh, int z_ind) const{\
 
 			// if the optical depth is below our threshold, don't do random walk
 			if(lh->scat_opac(com) * Rcom >= randomwalk_min_optical_depth){
-				{
-				Particle p = lh->particle_copy(com);
 				random_walk(lh, Rcom, D, z_ind);
-				lh->set_p<com>(&p);
-				}
 				did_random_walk = true;
 			}
 		}
