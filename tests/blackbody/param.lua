@@ -15,7 +15,7 @@ equilibrium_Ye = 0
 
 grey_opacity  = -1
 grey_abs_frac = -1
-nulib_table = "/home/srichers/software/NuLib/NuLib_noscat.h5"
+nulib_table = "/home/srichers/software/NuLib/NuLib_full_nokernel.h5"
 nulib_eos = "/home/srichers/software/sedonu-devel/external/tables/EOS/SFHo.h5"
 opac_interp_method = 3
 cdf_interpolation_order = 1
@@ -54,9 +54,9 @@ output_hdf5 = 0
 
 max_particles  = 2e6
 n_subcycles = 10
-do_emit_by_bin = 1
-n_emit_core_per_bin    = 0
-n_emit_therm_per_bin   = 1000
+do_emit_by_bin = 0
+n_emit_core    = 0
+n_emit_therm   = 54000
 
 -- Inner Source
 
@@ -76,7 +76,7 @@ step_size = 0.4
 
 importance_bias = 0
 bias_path_length = 0
-min_packet_energy = 1e24
+min_packet_energy = 1e18
 max_packet_energy = 1e99
 max_path_length_boost = 2
 min_importance = 1e-4
@@ -84,7 +84,7 @@ exponential_decay = 0
 
 -- Random Walk
 
-randomwalk_sphere_size = 0 --0.4
+randomwalk_sphere_size = 0.4
 randomwalk_max_x = 2
 randomwalk_sumN = 1000
 randomwalk_npoints = 200
