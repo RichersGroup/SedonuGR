@@ -131,6 +131,13 @@ public:
 	virtual void reflect_outer(LorentzHelper *lh) const = 0;
 	virtual double lab_dist_to_boundary(const LorentzHelper *lh) const = 0;
 	virtual void symmetry_boundaries(LorentzHelper *lh) const = 0;
+
+	// vector operations
+	static double dot(const std::vector<double>& a, const std::vector<double>& b);
+	static double dot(const std::vector<double>& a, const double b[], const int size);
+	static double dot(const double a[], const double b[], const int size);
+	static void normalize(std::vector<double>& a);
+	static void normalize(double a[], const int size);
 };
 
 

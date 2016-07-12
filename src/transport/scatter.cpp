@@ -171,7 +171,7 @@ void Transport::scatter(LorentzHelper *lh, int z_ind) const{\
 		if(lh->scat_opac(com) * Rlab >= randomwalk_min_optical_depth){
 			// determine maximum comoving sphere size
 			const double* v = lh->velocity(3);
-			double vabs = sqrt(LorentzHelper::dot(v,v,3));
+			double vabs = sqrt(Grid::dot(v,v,3));
 			double gamma = LorentzHelper::lorentz_factor(v,3);
 
 			double Rcom = 0;
@@ -209,7 +209,7 @@ void Transport::isotropic_direction(double D[3], const int size) const
 	D[0] = smu*cos(phi);
 	D[1] = smu*sin(phi);
 	D[2] = mu;
-	LorentzHelper::normalize(D,3);
+	Grid::normalize(D,3);
 }
 
 //---------------------------------------------------------------------
@@ -334,7 +334,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 
 	// get the displacement vector polar coordinates
 	// theta_rotate is angle away from z-axis, not from xy-plane
-	LorentzHelper::normalize(d3com,3);
+	Grid::normalize(d3com,3);
 	double costheta_rotate = sqrt(1.0 - d3com[2]*d3com[2]);
 	double sintheta_rotate = d3com[2];
 
@@ -342,7 +342,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	else{
 
 		// first rotate away from the z axis along y=0 (move it toward x=0)
-		LorentzHelper::normalize(pD,3);
+		Grid::normalize(pD,3);
 		double pD_old[3];
 		for(int i=0; i<3; i++) pD_old[i] = pD[i];
 		pD[0] =  costheta_rotate*pD_old[0] + sintheta_rotate*pD_old[2];
@@ -351,12 +351,12 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 		// second rotate around the z axis, away from the x-axis
 		double cosphi_rotate = d3com[0] / sqrt(d3com[0]*d3com[0] + d3com[1]*d3com[1]);
 		double sinphi_rotate = d3com[0] / sqrt(d3com[0]*d3com[0] + d3com[1]*d3com[1]);
-		LorentzHelper::normalize(pD,3);
+		Grid::normalize(pD,3);
 		for(int i=0; i<3; i++) pD_old[i] = pD[i];
 		pD[0] = cosphi_rotate*pD_old[0] - sinphi_rotate*pD_old[1];
 		pD[1] = sinphi_rotate*pD_old[0] + cosphi_rotate*pD_old[1];
 	}
-	LorentzHelper::normalize(pD,3);
+	Grid::normalize(pD,3);
 	lh->set_p_D<com>(pD,3);
 	//------------------------------------------------------------------------
 

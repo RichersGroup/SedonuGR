@@ -51,11 +51,6 @@ public:
 
 	static double lorentz_factor(const double v[3], const int vsize);
 	static void transform_cartesian_4vector_c2l(const double vfluid[3], double x[4]);
-	static double dot(const std::vector<double>& a, const std::vector<double>& b);
-	static double dot(const std::vector<double>& a, const double b[], const int size);
-	static double dot(const double a[], const double b[], const int size);
-	static void normalize(std::vector<double>& a);
-	static void normalize(double a[], const int size);
 
 	void set_v(const double v_in[3], const int size);
 	const double* velocity(const int size) const;

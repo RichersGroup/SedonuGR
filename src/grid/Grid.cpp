@@ -424,7 +424,7 @@ bool Grid::good_zone(const int z_ind) const{
 double Grid::zone_speed2(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	double speed2 = LorentzHelper::dot(z[z_ind].u,z[z_ind].u,ARRSIZE(z[z_ind].u));
+	double speed2 = dot(z[z_ind].u,z[z_ind].u,ARRSIZE(z[z_ind].u));
 	return speed2;
 }
 
@@ -435,3 +435,38 @@ double Grid::total_rest_mass() const{
 	return mass;
 }
 
+// vector operations
+double Grid::dot(const vector<double>& a, const vector<double>& b){
+	PRINT_ASSERT(a.size(),>,0);
+	PRINT_ASSERT(b.size(),>,0);
+	PRINT_ASSERT(a.size(),==,b.size());
+	double product = 0;
+	for(unsigned i=0; i<a.size(); i++) product += a[i]*b[i];
+	return product;
+}
+double Grid::dot(const vector<double>& a, const double b[], const int size){
+	PRINT_ASSERT(a.size(),>,0);
+	PRINT_ASSERT(size,>,0);
+	PRINT_ASSERT(a.size(),==,size);
+	double product = 0;
+	for(unsigned i=0; i<a.size(); i++) product += a[i]*b[i];
+	return product;
+}
+double Grid::dot(const double a[], const double b[], const int size){
+	PRINT_ASSERT(size,>,0);
+	double product = 0;
+	for(unsigned i=0; i<size; i++) product += a[i]*b[i];
+	return product;
+}
+
+// normalize a vector
+void Grid::normalize(vector<double>& a){
+	PRINT_ASSERT(a.size(),>,0);
+	double inv_magnitude = 1./sqrt(dot(a,a));
+	for(unsigned i=0; i<a.size(); i++) a[i] *= inv_magnitude;
+}
+void Grid::normalize(double a[],const int size){
+	PRINT_ASSERT(size,>,0);
+	double inv_magnitude = 1./sqrt(dot(a,a,size));
+	for(unsigned i=0; i<size; i++) a[i] *= inv_magnitude;
+}
