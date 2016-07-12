@@ -29,6 +29,7 @@
 #define _GRID_1D_SCHWARZ_H 1
 
 #include "Grid.h"
+#include "Grid1DSphere.h"
 
 //*******************************************
 // 1-Dimensional Spherical geometry
