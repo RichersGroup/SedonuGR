@@ -260,7 +260,7 @@ void Transport::move(LorentzHelper *lh, const int z_ind){
 
 	// translate the particle
 	double xnew[3];
-	for(int i=0; i<3; i++) xnew[3] = lh->p_x(3)[i] + lh->distance(lab) * lh->p_D(lab,3)[i];
+	for(int i=0; i<3; i++) xnew[i] = lh->p_x(3)[i] + lh->distance(lab) * lh->p_D(lab,3)[i];
 	lh->set_p_x(xnew,3);
 
 	// reduce the particle's remaining optical depth
@@ -329,7 +329,6 @@ void Transport::propagate(Particle* p)
 		// move particle the distance
 		move(&lh, z_ind);
 		if(event != boundary) PRINT_ASSERT(lh.p_tau(), >=, -grid->tiny*(lh.distance(lab) * lh.tau_opac(lab)));
-		//z_ind = grid->zone_index(lh.p_x(3),3);
 
 		// do the selected event
 		// now the exciting bit!
@@ -358,6 +357,8 @@ void Transport::propagate(Particle* p)
 				int i=1;
 				while(z_ind>=0){
 					double tweak_distance = grid->tiny*lh.distance(lab) * i*i;
+					PRINT_ASSERT(tweak_distance,<,grid->zone_min_length(z_ind));
+					PRINT_ASSERT(i,<,10);
 					lh.set_p_tau(lh.p_tau() + tweak_distance*lh.tau_opac(lab) ); // a hack to prevent tau<0
 
 					lh.set_distance<lab>(tweak_distance);
