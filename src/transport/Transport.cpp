@@ -178,11 +178,12 @@ void Transport::init(Lua* lua)
 	string grid_type = lua->scalar<string>("grid_type");
 
 	// create a grid of the appropriate type
-	if     (grid_type == "Grid0DIsotropic") grid = new Grid0DIsotropic;
-	else if(grid_type == "Grid1DSphere"   ) grid = new Grid1DSphere;
-	else if(grid_type == "Grid2DSphere"   ) grid = new Grid2DSphere;
-	else if(grid_type == "Grid2DCylinder" ) grid = new Grid2DCylinder;
-	else if(grid_type == "Grid3DCart"     ) grid = new Grid3DCart;
+	if     (grid_type == "Grid0DIsotropic"    ) grid = new Grid0DIsotropic;
+	else if(grid_type == "Grid1DSphere"       ) grid = new Grid1DSphere;
+	else if(grid_type == "Grid2DSphere"       ) grid = new Grid2DSphere;
+	else if(grid_type == "Grid2DCylinder"     ) grid = new Grid2DCylinder;
+	else if(grid_type == "Grid3DCart"         ) grid = new Grid3DCart;
+	else if(grid_type == "Grid1DSchwarzschild") grid = new Grid1DSchwarzschild;
 	else{
 		if(rank0) std::cout << "# ERROR: the requested grid type is not implemented." << std::endl;
 		exit(3);}
