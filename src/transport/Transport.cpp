@@ -36,6 +36,7 @@
 #include "Grid.h"
 #include "Grid0DIsotropic.h"
 #include "Grid1DSphere.h"
+#include "Grid1DSchwarzschild.h"
 #include "Grid2DSphere.h"
 #include "Grid2DCylinder.h"
 #include "Grid3DCart.h"
