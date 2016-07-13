@@ -494,11 +494,14 @@ void Grid2DCylinder::symmetry_boundaries(LorentzHelper *lh) const{
 double Grid2DCylinder::lab_dist_to_boundary(const LorentzHelper *lh) const{
 	const Particle* p = lh->particle_readonly(lab);
 
+	// calculate some geometric quantities
+	double rcyl = sqrt(p->x[0]*p->x[0] + p->x[1]*p->x[1]);
+	double xcyl_dot_dcyl = p->x[0]*p->D[0] + p->x[1]*p->D[1];
+	double mucyl = ( rcyl==0 ? 0 : xcyl_dot_dcyl/rcyl );
+
 	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
 	double Rout  = rcyl_out[rcyl_out.size()-1];
 	double Rin   = rcyl_out.min;
-	double rcyl  = p->rcyl();
-	double mucyl = p->mucyl();
 	double costheta = sqrt(p->D[0]*p->D[0] + p->D[1]*p->D[1]);
 	double d_outer_boundary = numeric_limits<double>::infinity();
 	double d_inner_boundary = numeric_limits<double>::infinity();

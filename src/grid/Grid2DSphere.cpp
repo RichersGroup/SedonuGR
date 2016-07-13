@@ -880,19 +880,20 @@ void Grid2DSphere::reflect_outer(LorentzHelper *lh) const{
 	PRINT_ASSERT(r_out.size(),>=,1);
 	double r0 = (r_out.size()==1 ? r_out.min : r_out.size()-2);
 	double dr = r_out[r_out.size()-1] - r0;
-	PRINT_ASSERT( fabs(p->r() - r_out[r_out.size()-1]),<,tiny*dr);
-	double velDotRhat = p->mu();
+	PRINT_ASSERT( fabs(radius(p->x,3) - r_out[r_out.size()-1]),<,tiny*dr);
+	double x_dot_d = p->x[0]*p->D[0] + p->x[1]*p->D[1] + p->x[2]*p->D[2];
+	double velDotRhat = x_dot_d / radius(p->x,3);
 
 	// invert the radial component of the velocity
 	double D[3];
-	for(int i=0; i<3; i++) D[i] -= 2.*velDotRhat * p->x[i]/p->r();
+	for(int i=0; i<3; i++) D[i] -= 2.*velDotRhat * p->x[i]/radius(p->x,3);
 	normalize(D,3);
 	lh->set_p_D<lab>(D,3);
 
 	// put the particle just inside the boundary
 	double newR = r_out[r_out.size()-1] - tiny*dr;
 	double x[3];
-	for(int i=0; i<3; i++) x[i] = p->x[i]/p->r()*newR;
+	for(int i=0; i<3; i++) x[i] = p->x[i]/radius(p->x,3)*newR;
 	lh->set_p_x(x,3);
 
 	// must be inside the boundary, or will get flagged as escaped
@@ -915,8 +916,9 @@ double Grid2DSphere::lab_dist_to_boundary(const LorentzHelper *lh) const{
 	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
 	double Rout  = r_out[r_out.size()-1];
 	double Rin   = r_out.min;
-	double r  = p->r();
-	double mu = p->mu();
+	double r  = radius(p->x,3);
+	double x_dot_d = p->x[0]*p->D[0] + p->x[1]*p->D[1] + p->x[2]*p->D[2];
+	double mu = x_dot_d / r;
 	double d_outer_boundary = numeric_limits<double>::infinity();
 	double d_inner_boundary = numeric_limits<double>::infinity();
 	PRINT_ASSERT(r,<,Rout);

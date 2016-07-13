@@ -470,3 +470,8 @@ void Grid::normalize(double a[],const int size){
 	double inv_magnitude = 1./sqrt(dot(a,a,size));
 	for(unsigned i=0; i<size; i++) a[i] *= inv_magnitude;
 }
+
+// radius given coordinates
+double Grid::radius(const double x[3], const int size) const{
+	return sqrt(dot(x,x,size));
+}

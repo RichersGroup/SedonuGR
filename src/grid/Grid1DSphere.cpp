@@ -258,8 +258,9 @@ void Grid1DSphere::reflect_outer(LorentzHelper *lh) const{
 	double r0 = (r_out.size()>1 ? r_out[r_out.size()-2] : r_out.min);
 	double rmax = r_out[r_out.size()-1];
 	double dr = rmax - r0;
-	double velDotRhat = p->mu();
-	double R = p->r();
+	double R = radius(p->x,3);
+	double x_dot_d = p->x[0]*p->D[0] + p->x[1]*p->D[1] + p->x[2]*p->D[2];
+	double velDotRhat = x_dot_d / R;
 	PRINT_ASSERT( fabs(R - r_out[r_out.size()-1]),<,tiny*dr);
 
 	// invert the radial component of the velocity
@@ -299,8 +300,9 @@ double Grid1DSphere::lab_dist_to_boundary(const LorentzHelper *lh) const{
 	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
 	double Rout  = r_out[r_out.size()-1];
 	double Rin   = r_out.min;
-	double r  = p->r();
-	double mu = p->mu();
+	double r  = radius(p->x,3);
+	double x_dot_d = p->x[0]*p->D[0] + p->x[1]*p->D[1] + p->x[2]*p->D[2];
+	double mu = x_dot_d / r;
 	double d_outer_boundary = numeric_limits<double>::infinity();
 	double d_inner_boundary = numeric_limits<double>::infinity();
 	PRINT_ASSERT(r,<,Rout);

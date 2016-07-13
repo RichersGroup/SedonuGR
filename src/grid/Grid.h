@@ -101,6 +101,7 @@ public:
 
 	// get the velocity squared from the stored velocity vector
 	double zone_speed2(const int z_ind) const;
+	double radius(const double x[3], const int size) const;
 
 	// get zone index from x,y,z position
 	virtual int zone_index(const double x[3], const int size) const   = 0;

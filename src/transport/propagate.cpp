@@ -167,12 +167,7 @@ void Transport::event_boundary(LorentzHelper *lh, const int z_ind) const{
 
 	// if inside the inner boundary
 	if(z_ind==-1){
-		if(lh->particle_readonly(lab)->r() < r_core) lh->set_p_fate(absorbed);
-		else if(lh->particle_readonly(lab)->x_dot_d() >= 0){
-			// set the particle just outside the inner boundary
-			cout << "ERROR: have not yet implemented passing out through the inner boundary without overshooting" << endl;
-			exit(5);
-		}
+		if(grid->radius(lh->particle_readonly(lab)->x,3) < r_core) lh->set_p_fate(absorbed);
 		else PRINT_ASSERT(lh->p_fate(), ==, moving); // the particle just went into the inner boundary
 	}
 }
@@ -381,7 +376,7 @@ void Transport::propagate(Particle* p)
 		}
 
 		// check for core absorption
-		if(lh.particle_readonly(lab)->r() < r_core) lh.set_p_fate(absorbed);
+		if(grid->radius(lh.particle_readonly(lab)->x,3) < r_core) lh.set_p_fate(absorbed);
 	}
 
 	// copy particle back out of LorentzHelper
