@@ -81,7 +81,7 @@ void Transport::propagate_particles()
 		if(particles[i].fate!=rouletted) tot += particles[i].e;
 		if(particles[i].fate==escaped) esc += particles[i].e;
 		if(particles[i].fate==absorbed){
-			if(grid->zone_index(particles[i].x,3)>=0 ) fluid += particles[i].e;
+			if(grid->zone_index(particles[i].x3(),3)>=0 ) fluid += particles[i].e;
 			else core += particles[i].e;
 		}
 	}
@@ -167,7 +167,7 @@ void Transport::event_boundary(LorentzHelper *lh, const int z_ind) const{
 
 	// if inside the inner boundary
 	if(z_ind==-1){
-		if(grid->radius(lh->particle_readonly(lab)->x,3) < r_core) lh->set_p_fate(absorbed);
+		if(grid->radius(lh->particle_readonly(lab)->x3(),3) < r_core) lh->set_p_fate(absorbed);
 		else PRINT_ASSERT(lh->p_fate(), ==, moving); // the particle just went into the inner boundary
 	}
 }
@@ -304,7 +304,7 @@ void Transport::propagate(Particle* p)
 	{
 		PRINT_ASSERT(lh.p_nu(lab), >, 0);
 
-		int z_ind = grid->zone_index(p->x,3);
+		int z_ind = grid->zone_index(p->x3(),3);
 		PRINT_ASSERT(z_ind, >=, -1);
 		PRINT_ASSERT(z_ind, <, (int)grid->z.size());
 
@@ -376,7 +376,7 @@ void Transport::propagate(Particle* p)
 		}
 
 		// check for core absorption
-		if(grid->radius(lh.particle_readonly(lab)->x,3) < r_core) lh.set_p_fate(absorbed);
+		if(grid->radius(lh.particle_readonly(lab)->x3(),3) < r_core) lh.set_p_fate(absorbed);
 	}
 
 	// copy particle back out of LorentzHelper

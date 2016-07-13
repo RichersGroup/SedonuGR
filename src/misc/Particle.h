@@ -30,6 +30,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <iostream>
 #include "global_options.h"
 
 enum ParticleFate  {moving, escaped, absorbed, rouletted};
@@ -41,6 +42,7 @@ class Particle
 public:
 
 	Particle(){
+		for(int i=0; i<4; i++) xup[i] = NaN;
 		e = NaN;
 		nu = NaN;
 		tau = NaN;
@@ -48,7 +50,7 @@ public:
 		fate = moving;
 	}
 
-	double x[3];            // x,y,z position (cm)
+	double xup[4];            // x,y,z position (cm)
 	double D[3];            // direction vector, Dx,Dy,Dz (normalized to unit magnitude)
 	double       e;         // total energy in ergs of packet
 	double      nu;         // frequency (Hz)
@@ -56,10 +58,13 @@ public:
 	int          s;         // species number
 	ParticleFate fate;
 
+	double* x3() {return &(xup[1]); };
+	const double* x3() const {return &(xup[1]); };
+
 	void print() const
 	{
-		printf("%10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e %i %i\n",
-				x[0],x[1],x[2],D[0],D[1],D[2],e,nu,tau,s,fate);
+		printf("%10.3e %10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e %i %i\n",
+				xup[0],xup[1],xup[2],xup[3],D[0],D[1],D[2],e,nu,tau,s,fate);
 	}
 
 };

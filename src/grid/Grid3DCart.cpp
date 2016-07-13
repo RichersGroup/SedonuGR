@@ -691,7 +691,7 @@ void Grid3DCart::reflect_outer(LorentzHelper *lh) const{
 	const Particle *p = lh->particle_readonly(lab);
 
 	// assumes particle is placed OUTSIDE of the zones
-	int z_ind = zone_index(p->x,3);
+	int z_ind = zone_index(p->x3(),3);
 	double delta[3];
 	get_deltas(z_ind,delta,3);
 
@@ -703,14 +703,14 @@ void Grid3DCart::reflect_outer(LorentzHelper *lh) const{
 		D[i] = lh->p_D(lab,3)[i];
 
 		// inner boundary
-		if(p->x[i] < x0[i]){
+		if(p->x3()[i] < x0[i]){
 			PRINT_ASSERT(p->D[i],<,0);
 			D[i] = -p->D[i];
 			x[i] = x0[i] + tiny*delta[i];
 		}
 
 		// outer boundary
-		if(p->x[i] > xmax[i]){
+		if(p->x3()[i] > xmax[i]){
 			PRINT_ASSERT(p->D[i],>,0);
 			D[i] = -p->D[i];
 			x[i] = xmax[i] - tiny*delta[i];
@@ -734,13 +734,13 @@ double Grid3DCart::lab_dist_to_boundary(const LorentzHelper *lh) const{
 	const Particle *p = lh->particle_readonly(lab);
 
 	bool inside = true;
-	for(int i=0; i<3; i++) inside = inside && (p->x[i] >= x0[i]) && (p->x[i] <= xmax[i]);
+	for(int i=0; i<3; i++) inside = inside && (p->x3()[i] >= x0[i]) && (p->x3()[i] <= xmax[i]);
 
 	// case: particle is inside the boundaries
 	if(inside){
 		double dist[3] = {-1,-1,-1};
 		for(int i=0; i<3; i++){
-			dist[i] = (p->D[i]>0 ? xmax[i]-p->x[i] : p->x[i]-x0[i]);
+			dist[i] = (p->D[i]>0 ? xmax[i]-p->x3()[i] : p->x3()[i]-x0[i]);
 			dist[i] /= fabs(p->D[i]);
 			PRINT_ASSERT(dist[i],>=,0);
 		}
