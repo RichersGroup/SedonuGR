@@ -28,19 +28,18 @@
 #ifndef _GRID_1D_SCHWARZ_H
 #define _GRID_1D_SCHWARZ_H 1
 
-#include "Grid.h"
-#include "Grid1DSphere.h"
+#include "GridGR.h"
 
 //*******************************************
 // 1-Dimensional Spherical geometry
 //*******************************************
-class Grid1DSchwarzschild: public Grid1DSphere
+class Grid1DSchwarzschild: public GridGR
 {
 
 private:
+	// store location of the outer edge of the zone.
+	LocateArray r_out;
 
-	// Schwarzschild radius
-	double r_sch; // cm
 
 public:
 
@@ -48,6 +47,22 @@ public:
 
 	void read_model_file(Lua* lua);
 
+	// required functions
+	int  zone_index               (const double x[3], const int xsize                            ) const;
+	double zone_lab_volume        (const int z_ind                                               ) const;
+	double zone_min_length        (const int z_ind                                               ) const;
+	void zone_coordinates         (const int z_ind, double r[1], const int rsize                 ) const;
+	void zone_directional_indices (const int z_ind, int dir_ind[1], const int size               ) const;
+	void cartesian_sample_in_zone (const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const;
+	void cartesian_velocity_vector(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const;
+	void write_rays               (const int iw                                                  ) const;
+	void reflect_outer            (LorentzHelper *lh                                             ) const;
+	void symmetry_boundaries      (LorentzHelper *lh                                             ) const;
+	double lab_dist_to_boundary   (const LorentzHelper *lh                                       ) const;
+	double zone_radius            (const int z_ind) const;
+	void dims                     (hsize_t dims[1], const int size) const;
+	hsize_t dimensionality() const {return 1;};
+	void write_hdf5_coordinates(H5::H5File file) const;
 };
 
 
