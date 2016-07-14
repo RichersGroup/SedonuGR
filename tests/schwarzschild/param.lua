@@ -33,7 +33,7 @@ distribution_nphi = 2
 
 -- Grid and Model
 
-grid_type = "Grid1DSphere"
+grid_type = "Grid1DSchwarzschild"
 model_file = "empty_sphere.mod"
 
 -- Output
