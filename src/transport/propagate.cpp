@@ -310,7 +310,9 @@ void Transport::propagate(Particle* p)
 		PRINT_ASSERT(z_ind, <, (int)grid->z.size());
 
 		// set up the LorentzHelper
-		lh.set_v(grid->z[z_ind].u,3);
+		double v[3];
+		grid->cartesian_velocity_vector(lh.p_x3(3),3,v,3,z_ind);
+		lh.set_v(v,3);
 
 		// get all the opacities
 		get_opacity(&lh,z_ind);

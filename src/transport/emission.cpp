@@ -280,12 +280,6 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
 
-	// set up LorentzHelper
-	LorentzHelper lh(exponential_decay);
-	lh.set_v(grid->z[z_ind].u,3);
-	lh.set_p_fate(moving);
-	lh.set_p_e<com>(Ep);
-
 	// random sample position in zone
 	double rand[3];
 	rand[0] = rangen.uniform();
@@ -294,6 +288,17 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	double x[4];
 	x[0] = 0;
 	grid->cartesian_sample_in_zone(z_ind,rand,3,&(x[1]),3);
+
+	// get the velocity
+	double v[3];
+	double* x3 = &(x[1]);
+	grid->cartesian_velocity_vector(x3,3,v,3,z_ind);
+
+	// set up LorentzHelper
+	LorentzHelper lh(exponential_decay);
+	lh.set_v(v,3);
+	lh.set_p_fate(moving);
+	lh.set_p_e<com>(Ep);
 	lh.set_p_xup(x,4);
 
 	// emit isotropically in comoving frame
@@ -360,9 +365,14 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	const int z_ind = grid->zone_index(&(x[1]), 3);
 	PRINT_ASSERT(z_ind,>=,0);
 
+	// get the velocity vector
+	double v[3];
+	double* x3 = &(x[1]);
+	grid->cartesian_velocity_vector(x3,3,v,3,z_ind);
+
 	// set up LorentzHelper
 	LorentzHelper lh(exponential_decay);
-	lh.set_v(grid->z[z_ind].u,3);
+	lh.set_v(v,3);
 	lh.set_p_fate(moving);
 	lh.set_p_e<lab>(Ep);
 	lh.set_p_xup(x,4);
