@@ -475,3 +475,14 @@ void Grid::normalize(double a[],const int size){
 double Grid::radius(const double x[3], const int size) const{
 	return sqrt(dot(x,x,size));
 }
+
+
+// translate a particle
+void Grid::integrate_geodesic(LorentzHelper *lh) const{
+	double xnew[4];
+	double Dlab[3];
+	lh->p_D(lab,Dlab,3);
+	for(int i=0; i<3; i++) xnew[i] = lh->p_xup()[i] + lh->distance(lab) * Dlab[i];
+	xnew[3] = lh->p_xup()[3] + lh->distance(lab);
+	lh->set_p_xup(xnew,4);
+}

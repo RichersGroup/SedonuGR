@@ -133,6 +133,9 @@ public:
 	static double dot(const double a[], const double b[], const int size);
 	static void normalize(std::vector<double>& a);
 	static void normalize(double a[], const int size);
+
+	// move the particle
+	void integrate_geodesic(LorentzHelper *lh) const;
 };
 
 

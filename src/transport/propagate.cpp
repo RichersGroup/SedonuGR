@@ -259,12 +259,7 @@ void Transport::move(LorentzHelper *lh, const int z_ind){
 	PRINT_ASSERT(lh->net_opac(lab),>=,0);
 
 	// translate the particle
-	double xnew[4];
-	double Dlab[3];
-	lh->p_D(lab,Dlab,3);
-	for(int i=0; i<3; i++) xnew[i] = lh->p_xup()[i] + lh->distance(lab) * Dlab[i];
-	xnew[3] = lh->p_xup()[3] + lh->distance(lab);
-	lh->set_p_xup(xnew,4);
+	grid->integrate_geodesic(lh);
 
 	// reduce the particle's remaining optical depth
 	if(lh->tau_opac(lab)>0){
