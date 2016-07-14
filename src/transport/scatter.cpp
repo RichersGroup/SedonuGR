@@ -319,10 +319,6 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	double d3com[3] = {displacement4[0], displacement4[1], displacement4[2]};
 	LorentzHelper::transform_cartesian_4vector_c2l(zone->u, displacement4);
 	double d3lab[3] = {displacement4[0], displacement4[1], displacement4[2]};
-	double xnew[4];
-	xnew[0] = lh->p_xup(4)[0];
-	for(int i=1; i<=3; i++) xnew[i+1] = lh->p_xup(4)[i] + d3lab[i];
-	lh->set_p_xup(xnew,4);
 
 	//------------------------------------------------------------------------
 	// pick a random outward direction, starting distribution pointing along z (comoving frame)
@@ -376,8 +372,12 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	lhtmp.set_p_e<com>(eavg_com);
 	lhtmp.set_p_D<com>(d3com,3);
 	lhtmp.set_distance<com>(path_length_com);
-	zone->distribution[lh->p_s()].count(lhtmp.p_D(lab,3), 3, lhtmp.p_nu(lab), lhtmp.p_e(lab) * lhtmp.distance(lab));
+	zone->distribution[lh->p_s()].count(lhtmp.p_D(lab), 3, lhtmp.p_nu(lab), lhtmp.p_e(lab) * lhtmp.distance(lab));
 
 	// move the particle to the edge of the sphere
+	double xnew[4];
+	for(int i=0; i<3; i++) xnew[i] = lh->p_xup()[i] + d3lab[i];
+	xnew[3] = lh->p_xup()[3] + lh->distance(lab);
+	lh->set_p_xup(xnew,4);
 	if(ratio_deposited > 0) lh->scale_p_e( 1.0 - ratio_deposited );
 }

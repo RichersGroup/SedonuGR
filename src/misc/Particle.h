@@ -50,16 +50,13 @@ public:
 		fate = moving;
 	}
 
-	double xup[4];            // x,y,z position (cm)
+	double xup[4];            // x,y,z,ct position (cm)
 	double D[3];            // direction vector, Dx,Dy,Dz (normalized to unit magnitude)
 	double       e;         // total energy in ergs of packet
 	double      nu;         // frequency (Hz)
 	double     tau;         // remaining optical depth
 	int          s;         // species number
 	ParticleFate fate;
-
-	double* x3() {return &(xup[1]); };
-	const double* x3() const {return &(xup[1]); };
 
 	void print() const
 	{

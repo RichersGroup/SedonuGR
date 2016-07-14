@@ -285,21 +285,20 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	rand[0] = rangen.uniform();
 	rand[1] = rangen.uniform();
 	rand[2] = rangen.uniform();
-	double x[4];
-	x[0] = 0;
-	grid->cartesian_sample_in_zone(z_ind,rand,3,&(x[1]),3);
+	double xup[4];
+	grid->cartesian_sample_in_zone(z_ind,rand,3,xup,3);
+	xup[3] = 0;
 
 	// get the velocity
 	double v[3];
-	double* x3 = &(x[1]);
-	grid->cartesian_velocity_vector(x3,3,v,3,z_ind);
+	grid->cartesian_velocity_vector(xup,3,v,3,z_ind);
 
 	// set up LorentzHelper
 	LorentzHelper lh(exponential_decay);
 	lh.set_v(v,3);
 	lh.set_p_fate(moving);
 	lh.set_p_e<com>(Ep);
-	lh.set_p_xup(x,4);
+	lh.set_p_xup(xup,4);
 
 	// emit isotropically in comoving frame
 	double D[3];
@@ -348,7 +347,7 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	PRINT_ASSERT(Ep,>,0);
 
 	// pick initial position on photosphere
-	double x[4];
+	double xup[4];
 	double phi_core   = 2*pc::pi*rangen.uniform();
 	double cosp_core  = cos(phi_core);
 	double sinp_core  = sin(phi_core);
@@ -356,26 +355,25 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	double sint_core  = sqrt(1-cost_core*cost_core);
 	// double spatial coordinates
 	double a_phot = r_core + r_core*1e-10;
-	x[0] = 0;
-	x[1] = a_phot*sint_core*cosp_core;
-	x[2] = a_phot*sint_core*sinp_core;
-	x[3] = a_phot*cost_core;
+	xup[0] = a_phot*sint_core*cosp_core;
+	xup[1] = a_phot*sint_core*sinp_core;
+	xup[2] = a_phot*cost_core;
+	xup[3] = 0;
 
 	// get index of current zone
-	const int z_ind = grid->zone_index(&(x[1]), 3);
+	const int z_ind = grid->zone_index(xup, 3);
 	PRINT_ASSERT(z_ind,>=,0);
 
 	// get the velocity vector
 	double v[3];
-	double* x3 = &(x[1]);
-	grid->cartesian_velocity_vector(x3,3,v,3,z_ind);
+	grid->cartesian_velocity_vector(xup,3,v,3,z_ind);
 
 	// set up LorentzHelper
 	LorentzHelper lh(exponential_decay);
 	lh.set_v(v,3);
 	lh.set_p_fate(moving);
 	lh.set_p_e<lab>(Ep);
-	lh.set_p_xup(x,4);
+	lh.set_p_xup(xup,4);
 
 	// pick photon propagation direction wtr to local normal
 	double D[3];

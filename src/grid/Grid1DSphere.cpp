@@ -258,30 +258,30 @@ void Grid1DSphere::reflect_outer(LorentzHelper *lh) const{
 	double r0 = (r_out.size()>1 ? r_out[r_out.size()-2] : r_out.min);
 	double rmax = r_out[r_out.size()-1];
 	double dr = rmax - r0;
-	double R = radius(p->x3(),3);
-	double x_dot_d = p->x3()[0]*p->D[0] + p->x3()[1]*p->D[1] + p->x3()[2]*p->D[2];
+	double R = radius(p->xup,3);
+	double x_dot_d = p->xup[0]*p->D[0] + p->xup[1]*p->D[1] + p->xup[2]*p->D[2];
 	double velDotRhat = x_dot_d / R;
 	PRINT_ASSERT( fabs(R - r_out[r_out.size()-1]),<,tiny*dr);
 
 	// invert the radial component of the velocity
 	double D[3];
-	D[0] -= 2.*velDotRhat * p->x3()[0]/R;
-	D[1] -= 2.*velDotRhat * p->x3()[1]/R;
-	D[2] -= 2.*velDotRhat * p->x3()[2]/R;
+	D[0] -= 2.*velDotRhat * p->xup[0]/R;
+	D[1] -= 2.*velDotRhat * p->xup[1]/R;
+	D[2] -= 2.*velDotRhat * p->xup[2]/R;
 	normalize(D,3);
 	lh->set_p_D<lab>(D,3);
 
 	// put the particle just inside the boundary
 	double newR = rmax - tiny*dr;
 	double x[4];
-	x[0] = p->xup[0];
+	x[0] = p->xup[0]/R*newR;
 	x[1] = p->xup[1]/R*newR;
 	x[2] = p->xup[2]/R*newR;
-	x[3] = p->xup[3]/R*newR;
+	x[3] = p->xup[3];
 	lh->set_p_xup(x,4);
 
 	// must be inside the boundary, or will get flagged as escaped
-	PRINT_ASSERT(zone_index(&(x[1]),3),>=,0);
+	PRINT_ASSERT(zone_index(x,3),>=,0);
 }
 
 //------------------------------------------------------------
@@ -301,13 +301,13 @@ double Grid1DSphere::lab_dist_to_boundary(const LorentzHelper *lh) const{
 	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
 	double Rout  = r_out[r_out.size()-1];
 	double Rin   = r_out.min;
-	double r  = radius(p->x3(),3);
-	double x_dot_d = p->x3()[0]*p->D[0] + p->x3()[1]*p->D[1] + p->x3()[2]*p->D[2];
+	double r  = radius(p->xup,3);
+	double x_dot_d = p->xup[0]*p->D[0] + p->xup[1]*p->D[1] + p->xup[2]*p->D[2];
 	double mu = x_dot_d / r;
 	double d_outer_boundary = numeric_limits<double>::infinity();
 	double d_inner_boundary = numeric_limits<double>::infinity();
 	PRINT_ASSERT(r,<,Rout);
-	PRINT_ASSERT(zone_index(p->x3(),3),>=,-1);
+	PRINT_ASSERT(zone_index(p->xup,3),>=,-1);
 
 	// distance to inner boundary
 	if(r >= Rin){

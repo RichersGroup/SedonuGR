@@ -81,7 +81,7 @@ void Transport::propagate_particles()
 		if(particles[i].fate!=rouletted) tot += particles[i].e;
 		if(particles[i].fate==escaped) esc += particles[i].e;
 		if(particles[i].fate==absorbed){
-			if(grid->zone_index(particles[i].x3(),3)>=0 ) fluid += particles[i].e;
+			if(grid->zone_index(particles[i].xup,3)>=0 ) fluid += particles[i].e;
 			else core += particles[i].e;
 		}
 	}
@@ -152,14 +152,14 @@ void Transport::event_boundary(LorentzHelper *lh, const int z_ind) const{
 		if(reflect_outer){
 			grid->reflect_outer(lh);
 			PRINT_ASSERT(lh->p_fate(), ==, moving);
-			new_ind = grid->zone_index(lh->p_x3(3),3);
+			new_ind = grid->zone_index(lh->p_xup(),3);
 			PRINT_ASSERT(new_ind, >=, 0);
 			PRINT_ASSERT(new_ind, <, (int)grid->z.size());
 			PRINT_ASSERT(lh->p_nu(lab), >, 0);
 		}
 		else{
 			grid->symmetry_boundaries(lh);
-			new_ind = grid->zone_index(lh->p_x3(3),3);
+			new_ind = grid->zone_index(lh->p_xup(),3);
 		}
 
 		if(new_ind < 0) lh->set_p_fate(escaped);
@@ -167,7 +167,7 @@ void Transport::event_boundary(LorentzHelper *lh, const int z_ind) const{
 
 	// if inside the inner boundary
 	if(z_ind==-1){
-		if(grid->radius(lh->particle_readonly(lab)->x3(),3) < r_core) lh->set_p_fate(absorbed);
+		if(grid->radius(lh->p_xup(),3) < r_core) lh->set_p_fate(absorbed);
 		else PRINT_ASSERT(lh->p_fate(), ==, moving); // the particle just went into the inner boundary
 	}
 }
@@ -221,7 +221,7 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	else to_add = lh->p_e(lab) * lh->distance(lab);
 	PRINT_ASSERT(to_add,<,INFINITY);
 	double D_newbasis[3] = {0,0,0};
-	distribution_function_basis(lh->p_D(lab,3),lh->p_x3(3),D_newbasis);
+	distribution_function_basis(lh->p_D(lab),lh->p_xup(),D_newbasis);
 	Grid::normalize(D_newbasis,3);
 	zone->distribution[lh->p_s()].count(D_newbasis, 3, lh->p_nu(lab), to_add);
 
@@ -255,8 +255,8 @@ void Transport::move(LorentzHelper *lh, const int z_ind){
 
 	// translate the particle
 	double xnew[4];
-	xnew[0] = lh->p_xup(4)[0] + lh->distance(lab);
-	for(int i=0; i<3; i++) xnew[i+1] = lh->p_x3(3)[i] + lh->distance(lab) * lh->p_D(lab,3)[i];
+	for(int i=0; i<3; i++) xnew[i] = lh->p_xup()[i] + lh->distance(lab) * lh->p_D(lab)[i];
+	xnew[3] = lh->p_xup()[3] + lh->distance(lab);
 	lh->set_p_xup(xnew,4);
 
 	// reduce the particle's remaining optical depth
@@ -305,13 +305,13 @@ void Transport::propagate(Particle* p)
 	{
 		PRINT_ASSERT(lh.p_nu(lab), >, 0);
 
-		int z_ind = grid->zone_index(p->x3(),3);
+		int z_ind = grid->zone_index(p->xup,3);
 		PRINT_ASSERT(z_ind, >=, -1);
 		PRINT_ASSERT(z_ind, <, (int)grid->z.size());
 
 		// set up the LorentzHelper
 		double v[3];
-		grid->cartesian_velocity_vector(lh.p_x3(3),3,v,3,z_ind);
+		grid->cartesian_velocity_vector(lh.p_xup(),3,v,3,z_ind);
 		lh.set_v(v,3);
 
 		// get all the opacities
@@ -362,7 +362,7 @@ void Transport::propagate(Particle* p)
 					lh.set_distance<lab>(tweak_distance);
 					move(&lh, z_ind);
 
-					z_ind = grid->zone_index(lh.p_x3(3),3);
+					z_ind = grid->zone_index(lh.p_xup(),3);
 					i++;
 				}
 			}
@@ -379,7 +379,7 @@ void Transport::propagate(Particle* p)
 		}
 
 		// check for core absorption
-		if(grid->radius(lh.particle_readonly(lab)->x3(),3) < r_core) lh.set_p_fate(absorbed);
+		if(grid->radius(lh.p_xup(),3) < r_core) lh.set_p_fate(absorbed);
 	}
 
 	// copy particle back out of LorentzHelper

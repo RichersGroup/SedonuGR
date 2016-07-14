@@ -691,7 +691,7 @@ void Grid3DCart::reflect_outer(LorentzHelper *lh) const{
 	const Particle *p = lh->particle_readonly(lab);
 
 	// assumes particle is placed OUTSIDE of the zones
-	int z_ind = zone_index(p->x3(),3);
+	int z_ind = zone_index(p->xup,3);
 	double delta[3];
 	get_deltas(z_ind,delta,3);
 
@@ -699,18 +699,18 @@ void Grid3DCart::reflect_outer(LorentzHelper *lh) const{
 	double x3[3], D[3];
 	for(int i=0; i<3; i++){
 		// initialize values
-		x3[i] = lh->p_x3(   3)[i];
-		D[i] = lh->p_D(lab,3)[i];
+		x3[i] = lh->p_xup()[i];
+		D[i] = lh->p_D(lab)[i];
 
 		// inner boundary
-		if(p->x3()[i] < x0[i]){
+		if(p->xup[i] < x0[i]){
 			PRINT_ASSERT(p->D[i],<,0);
 			D[i] = -p->D[i];
 			x3[i] = x0[i] + tiny*delta[i];
 		}
 
 		// outer boundary
-		if(p->x3()[i] > xmax[i]){
+		if(p->xup[i] > xmax[i]){
 			PRINT_ASSERT(p->D[i],>,0);
 			D[i] = -p->D[i];
 			x3[i] = xmax[i] - tiny*delta[i];
@@ -721,7 +721,7 @@ void Grid3DCart::reflect_outer(LorentzHelper *lh) const{
 		PRINT_ASSERT(x3[i],<,xmax[i]);
 
 		// assign the arrays
-		double xup[4] = {p->xup[0], x3[0], x3[1], x3[2]};
+		double xup[4] = {x3[0], x3[1], x3[2], p->xup[3]};
 		lh->set_p_xup(xup,4);
 		lh->set_p_D<lab>(D,3);
 	}
@@ -735,13 +735,13 @@ double Grid3DCart::lab_dist_to_boundary(const LorentzHelper *lh) const{
 	const Particle *p = lh->particle_readonly(lab);
 
 	bool inside = true;
-	for(int i=0; i<3; i++) inside = inside && (p->x3()[i] >= x0[i]) && (p->x3()[i] <= xmax[i]);
+	for(int i=0; i<3; i++) inside = inside && (p->xup[i] >= x0[i]) && (p->xup[i] <= xmax[i]);
 
 	// case: particle is inside the boundaries
 	if(inside){
 		double dist[3] = {-1,-1,-1};
 		for(int i=0; i<3; i++){
-			dist[i] = (p->D[i]>0 ? xmax[i]-p->x3()[i] : p->x3()[i]-x0[i]);
+			dist[i] = (p->D[i]>0 ? xmax[i]-p->xup[i] : p->xup[i]-x0[i]);
 			dist[i] /= fabs(p->D[i]);
 			PRINT_ASSERT(dist[i],>=,0);
 		}
@@ -850,8 +850,8 @@ void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
 
 	// initialize the arrays
 	for(int i=0; i<3; i++){
-		x3[i] = lh->p_x3(3)[i];
-		D[i] = lh->p_D(lab,3)[i];
+		x3[i] = lh->p_xup()[i];
+		D[i] = lh->p_D(lab)[i];
 	}
 
 	// invert the radial component of the velocity, put the particle just inside the boundary
@@ -898,7 +898,7 @@ void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
 		}
 
 		// assign the arrays
-		double xup[4] = {lh->p_xup(4)[0], x3[0], x3[1], x3[2]};
+		double xup[4] = {x3[0], x3[1], x3[2], lh->p_xup()[3]};
 		lh->set_p_xup(xup,4);
 		lh->set_p_D<lab>(D,3);
 	}

@@ -167,16 +167,10 @@ ParticleFate LorentzHelper::p_fate() const{
 	PRINT_ASSERT(p[lab].fate,==,p[com].fate);
 	return p[lab].fate;
 }
-const double* LorentzHelper::p_xup(const int size) const {
-	PRINT_ASSERT(size,==,4);
+const double* LorentzHelper::p_xup() const {
 	return p[lab].xup;
 }
-const double* LorentzHelper::p_x3(const int size) const {
-	PRINT_ASSERT(size,==,3);
-	return p[lab].x3();
-}
-const double* LorentzHelper::p_D(Frame f, const int size) const{
-	PRINT_ASSERT(size,==,3);
+const double* LorentzHelper::p_D(Frame f) const{
 	return p[f].D;
 }
 
