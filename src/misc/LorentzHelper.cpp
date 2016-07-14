@@ -55,7 +55,7 @@ void LorentzHelper::set_v(const double v_in[3], const int size){
 	// set the relativistic quantities to be used later
 	for(int i=0; i<3; i++) v[i] = v_in[i];
 
-	if(p[lab].e>=0 && p[lab].nu>=0) set_p<lab>(&(p[lab]));
+	if(p[lab].e>=0 && p[lab].kup[3]>=0) set_p<lab>(&(p[lab]));
 }
 
 // get the velocity vector back out
@@ -97,23 +97,25 @@ template void LorentzHelper::set_p<lab>(const Particle* p);
 template<Frame f>
 void LorentzHelper::set_p_D(const double D[3], const int size) {
 	PRINT_ASSERT(size,==,3);
-	for(int i=0; i<size; i++) p[f].D[i] = D[i];
-	if(p[f].nu>0 && p[f].e>0) set_p<f>(&(p[f]));
+	PRINT_ASSERT(p[f].kup[3],>,0);
+	for(int i=0; i<size; i++) p[f].kup[i] = D[i] * p[f].kup[3];
+	if(p[f].e>0) set_p<f>(&(p[f]));
 }
 template void LorentzHelper::set_p_D<com>(const double D[3], const int size);
 template void LorentzHelper::set_p_D<lab>(const double D[3], const int size);
 
 template<Frame f>
 void LorentzHelper::set_p_e(const double e){
+	PRINT_ASSERT(e,>,0);
 	p[f].e = e;
-	if(p[f].nu > 0)	set_p<f>(&(p[f]));
+	if(p[f].kup[3] > 0)	set_p<f>(&(p[f]));
 }
 template void LorentzHelper::set_p_e<com>(const double e);
 template void LorentzHelper::set_p_e<lab>(const double e);
 
 template<Frame f>
 void LorentzHelper::set_p_nu(const double nu){
-	p[f].nu = nu;
+	p[f].kup[3] = nu * pc::h / pc::c;
 	if(p[f].e > 0) set_p<f>(&(p[f]));
 }
 template void LorentzHelper::set_p_nu<com>(const double nu);
@@ -154,7 +156,7 @@ void LorentzHelper::set_p_s(const int s){
 
 // get the particle properties
 double LorentzHelper::p_e(const Frame f) const {return p[f].e;}
-double LorentzHelper::p_nu(const Frame f) const {return p[f].nu;}
+double LorentzHelper::p_nu(const Frame f) const {return p[f].kup[3] * pc::c / pc::h;}
 int    LorentzHelper::p_s() const {
 	PRINT_ASSERT(p[lab].s,==,p[com].s);
 	return p[lab].s;
@@ -170,8 +172,11 @@ ParticleFate LorentzHelper::p_fate() const{
 const double* LorentzHelper::p_xup() const {
 	return p[lab].xup;
 }
-const double* LorentzHelper::p_D(Frame f) const{
-	return p[f].D;
+void LorentzHelper::p_D(Frame f, double D[3], const int size) const{
+	PRINT_ASSERT(size,==,3);
+	PRINT_ASSERT(p[f].kup[3],>,0);
+	for(int i=0; i<3; i++) D[i] = p[f].kup[i];
+	Grid::normalize(D,3);
 }
 
 
@@ -189,7 +194,7 @@ void LorentzHelper::set_opac(const double abs, const double scat){
 
 	// nu * opac is lorentz invariant
 	Frame other = ( f==com ? lab : com );
-	double dshift = p[f].nu / p[other].nu;
+	double dshift = p[f].kup[3] / p[other].kup[3];
 	absopac[other]  =  absopac[f] * dshift;
 	scatopac[other] = scatopac[f] * dshift;
 }
@@ -221,7 +226,7 @@ void LorentzHelper::set_distance(const double d){
 
 	// l/nu is lorentz invariant (transforms oppositely as opac)
 	Frame other = ( f==com ? lab : com );
-	double dshift = p[f].nu / p[other].nu;
+	double dshift = p[f].kup[3] / p[other].kup[3];
 	dist[other] = dist[f] / dshift;
 }
 template void LorentzHelper::set_distance<com>(const double d);
@@ -304,28 +309,37 @@ double LorentzHelper::doppler_shift(const double v[3], const double D[3], const 
 void LorentzHelper::lorentz_transform_particle(Particle* p, const double v[3], const int vsize) const{
 	// check input
 	PRINT_ASSERT(vsize,==,3);
-	PRINT_ASSERT(p->nu,>=,0);
+	PRINT_ASSERT(p->kup[3],>,0);
+	PRINT_ASSERT(p->kup[3],<,INFINITY);
 	PRINT_ASSERT(p->e,>=,0);
 
 	// calculate the doppler shift, v dot D, and lorentz factors
+	double D[3];
+	for(int i=0; i<3; i++){
+		PRINT_ASSERT(p->kup[i],<,INFINITY);
+		D[i] = p->kup[i];
+	}
+	Grid::normalize(D,3);
 	double gamma = lorentz_factor(v,vsize);
-	double vdd = Grid::dot(p->D, v, vsize);
-	double dshift = doppler_shift(v, p->D, vsize);
+	double vdd = Grid::dot(D, v, vsize);
+	PRINT_ASSERT(D[0],<,INFINITY);
+	double dshift = doppler_shift(v, D, vsize);
 
 	// transform the 0th component (energy and frequency)
 	p->e  *= dshift;
-	p->nu *= dshift;
+	p->kup[3] *= dshift;
 
 	// transform the 1-3 components (direction)
 	// See Mihalas & Mihalas eq 89.8
 	double tmp = gamma/pc::c * (1 - gamma*vdd/(pc::c*(gamma+1)));
-	p->D[0] = (p->D[0] - v[0]*tmp);
-	p->D[1] = (p->D[1] - v[1]*tmp);
-	p->D[2] = (p->D[2] - v[2]*tmp);
-	Grid::normalize(p->D,3);
+	D[0] = (D[0] - v[0]*tmp);
+	D[1] = (D[1] - v[1]*tmp);
+	D[2] = (D[2] - v[2]*tmp);
+	Grid::normalize(D,3);
+	for(int i=0; i<3; i++) p->kup[i] = D[i] * p->kup[3];
 
 	// sanity checks
 	PRINT_ASSERT(p->e,>=,0);
-	PRINT_ASSERT(p->nu,>=,0);
+	PRINT_ASSERT(p->kup[3],>=,0);
 	PRINT_ASSERT(dshift,>,0);
 }

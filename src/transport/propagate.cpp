@@ -56,15 +56,18 @@ void Transport::propagate_particles()
 			n_active[p->s]++;
 			if(p->fate == moving) propagate(p);
 			if(p->fate == escaped){
+				double nu = p->kup[3] * pc::c / pc::h;
+				double D[3] = {p->kup[0], p->kup[1], p->kup[2]};
+				Grid::normalize(D,3);
 				#pragma omp atomic
 				n_escape[p->s]++;
 				#pragma omp atomic
 				L_net_esc[p->s] += p->e;
 				#pragma omp atomic
-				E_avg_esc[p->s] += p->nu * p->e;
+				E_avg_esc[p->s] += nu * p->e;
 				#pragma omp atomic
-				N_net_esc[p->s] += p->e / (p->nu*pc::h);
-				species_list[p->s]->spectrum.count(p->D,3, p->nu, p->e);
+				N_net_esc[p->s] += p->e / (nu*pc::h);
+				species_list[p->s]->spectrum.count(D,3, nu, p->e);
 			}
 			PRINT_ASSERT(p->fate, !=, moving);
 		} //#pragma omp parallel for
@@ -221,7 +224,9 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	else to_add = lh->p_e(lab) * lh->distance(lab);
 	PRINT_ASSERT(to_add,<,INFINITY);
 	double D_newbasis[3] = {0,0,0};
-	distribution_function_basis(lh->p_D(lab),lh->p_xup(),D_newbasis);
+	double Dlab[3];
+	lh->p_D(lab,Dlab,3);
+	distribution_function_basis(Dlab,lh->p_xup(),D_newbasis);
 	Grid::normalize(D_newbasis,3);
 	zone->distribution[lh->p_s()].count(D_newbasis, 3, lh->p_nu(lab), to_add);
 
@@ -255,7 +260,9 @@ void Transport::move(LorentzHelper *lh, const int z_ind){
 
 	// translate the particle
 	double xnew[4];
-	for(int i=0; i<3; i++) xnew[i] = lh->p_xup()[i] + lh->distance(lab) * lh->p_D(lab)[i];
+	double Dlab[3];
+	lh->p_D(lab,Dlab,3);
+	for(int i=0; i<3; i++) xnew[i] = lh->p_xup()[i] + lh->distance(lab) * Dlab[i];
 	xnew[3] = lh->p_xup()[3] + lh->distance(lab);
 	lh->set_p_xup(xnew,4);
 

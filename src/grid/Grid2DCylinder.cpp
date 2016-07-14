@@ -493,16 +493,18 @@ void Grid2DCylinder::symmetry_boundaries(LorentzHelper *lh) const{
 //------------------------------------------------------------
 double Grid2DCylinder::lab_dist_to_boundary(const LorentzHelper *lh) const{
 	const Particle* p = lh->particle_readonly(lab);
+	double Dlab[3];
+	lh->p_D(lab,Dlab,3);
 
 	// calculate some geometric quantities
 	double rcyl = sqrt(p->xup[0]*p->xup[0] + p->xup[1]*p->xup[1]);
-	double xcyl_dot_dcyl = p->xup[0]*p->D[0] + p->xup[1]*p->D[1];
+	double xcyl_dot_dcyl = p->xup[0]*Dlab[0] + p->xup[1]*Dlab[1];
 	double mucyl = ( rcyl==0 ? 0 : xcyl_dot_dcyl/rcyl );
 
 	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
 	double Rout  = rcyl_out[rcyl_out.size()-1];
 	double Rin   = rcyl_out.min;
-	double costheta = sqrt(p->D[0]*p->D[0] + p->D[1]*p->D[1]);
+	double costheta = sqrt(Dlab[0]*Dlab[0] + Dlab[1]*Dlab[1]);
 	double d_outer_boundary = numeric_limits<double>::infinity();
 	double d_inner_boundary = numeric_limits<double>::infinity();
 	PRINT_ASSERT(rcyl,<,Rout);
@@ -533,7 +535,7 @@ double Grid2DCylinder::lab_dist_to_boundary(const LorentzHelper *lh) const{
 	d_outer_boundary = dcyl / costheta;
 
 	// distances to the z boundaries
-	double sintheta = p->D[2];
+	double sintheta = Dlab[2];
 	double z_dist = INFINITY;
 	if(sintheta>0)      z_dist = (zcyl_out[zcyl_out.size()-1] - p->xup[2]) / sintheta;
 	else if(sintheta<0) z_dist = (p->xup[2] - zcyl_out.min               ) / sintheta;

@@ -346,8 +346,11 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 {
 	PRINT_ASSERT(Ep,>,0);
 
+	Particle plab;
+	plab.fate = moving;
+	plab.e = Ep;
+
 	// pick initial position on photosphere
-	double xup[4];
 	double phi_core   = 2*pc::pi*rangen.uniform();
 	double cosp_core  = cos(phi_core);
 	double sinp_core  = sin(phi_core);
@@ -355,25 +358,22 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	double sint_core  = sqrt(1-cost_core*cost_core);
 	// double spatial coordinates
 	double a_phot = r_core + r_core*1e-10;
-	xup[0] = a_phot*sint_core*cosp_core;
-	xup[1] = a_phot*sint_core*sinp_core;
-	xup[2] = a_phot*cost_core;
-	xup[3] = 0;
+	plab.xup[0] = a_phot*sint_core*cosp_core;
+	plab.xup[1] = a_phot*sint_core*sinp_core;
+	plab.xup[2] = a_phot*cost_core;
+	plab.xup[3] = 0;
 
 	// get index of current zone
-	const int z_ind = grid->zone_index(xup, 3);
+	const int z_ind = grid->zone_index(plab.xup, 3);
 	PRINT_ASSERT(z_ind,>=,0);
 
-	// get the velocity vector
-	double v[3];
-	grid->cartesian_velocity_vector(xup,3,v,3,z_ind);
+	// sample the species
+	plab.s = ( s>=0 ? s : sample_core_species() );
+	PRINT_ASSERT(plab.s,>=,0);
+	PRINT_ASSERT(plab.s,<,(int)species_list.size());
 
-	// set up LorentzHelper
-	LorentzHelper lh(exponential_decay);
-	lh.set_v(v,3);
-	lh.set_p_fate(moving);
-	lh.set_p_e<lab>(Ep);
-	lh.set_p_xup(xup,4);
+	// sample the frequency
+	plab.kup[3] = species_list[plab.s]->sample_core_nu(g) * pc::h / pc::c;
 
 	// pick photon propagation direction wtr to local normal
 	double D[3];
@@ -390,15 +390,14 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	D[1] = cost_core*sinp_core*D_xl+cosp_core*D_yl+sint_core*sinp_core*D_zl;
 	D[2] = -sint_core*D_xl+cost_core*D_zl;
 	Grid::normalize(D,3);
-	lh.set_p_D<lab>(D,3);
+	for(int i=0; i<3; i++) plab.kup[i] = D[i] * plab.kup[3];
 
-	// sample the species
-	lh.set_p_s( s>=0 ? s : sample_core_species() );
-	PRINT_ASSERT(lh.p_s(),>=,0);
-	PRINT_ASSERT(lh.p_s(),<,(int)species_list.size());
-
-	// sample the frequency
-	lh.set_p_nu<lab>( species_list[lh.p_s()]->sample_core_nu(g) );
+	// set up LorentzHelper
+	LorentzHelper lh(exponential_decay);
+	double v[3];
+	grid->cartesian_velocity_vector(plab.xup,3,v,3,z_ind);
+	lh.set_v(v,3);
+	lh.set_p<lab>(&plab);
 
 	// sample the optical depth
 	get_opacity(&lh,z_ind);

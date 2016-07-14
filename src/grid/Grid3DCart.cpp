@@ -695,24 +695,27 @@ void Grid3DCart::reflect_outer(LorentzHelper *lh) const{
 	double delta[3];
 	get_deltas(z_ind,delta,3);
 
+	double Dlab[3];
+	lh->p_D(lab,Dlab,3);
+
 	// invert the radial component of the velocity, put the particle just inside the boundary
 	double x3[3], D[3];
 	for(int i=0; i<3; i++){
 		// initialize values
 		x3[i] = lh->p_xup()[i];
-		D[i] = lh->p_D(lab)[i];
+		D[i] = Dlab[i];
 
 		// inner boundary
 		if(p->xup[i] < x0[i]){
-			PRINT_ASSERT(p->D[i],<,0);
-			D[i] = -p->D[i];
+			PRINT_ASSERT(Dlab[i],<,0);
+			D[i] = -Dlab[i];
 			x3[i] = x0[i] + tiny*delta[i];
 		}
 
 		// outer boundary
 		if(p->xup[i] > xmax[i]){
-			PRINT_ASSERT(p->D[i],>,0);
-			D[i] = -p->D[i];
+			PRINT_ASSERT(Dlab[i],>,0);
+			D[i] = -Dlab[i];
 			x3[i] = xmax[i] - tiny*delta[i];
 		}
 
@@ -733,6 +736,8 @@ void Grid3DCart::reflect_outer(LorentzHelper *lh) const{
 //------------------------------------------------------------
 double Grid3DCart::lab_dist_to_boundary(const LorentzHelper *lh) const{
 	const Particle *p = lh->particle_readonly(lab);
+	double Dlab[3];
+	lh->p_D(lab,Dlab,3);
 
 	bool inside = true;
 	for(int i=0; i<3; i++) inside = inside && (p->xup[i] >= x0[i]) && (p->xup[i] <= xmax[i]);
@@ -741,8 +746,8 @@ double Grid3DCart::lab_dist_to_boundary(const LorentzHelper *lh) const{
 	if(inside){
 		double dist[3] = {-1,-1,-1};
 		for(int i=0; i<3; i++){
-			dist[i] = (p->D[i]>0 ? xmax[i]-p->xup[i] : p->xup[i]-x0[i]);
-			dist[i] /= fabs(p->D[i]);
+			dist[i] = (Dlab[i]>0 ? xmax[i]-p->xup[i] : p->xup[i]-x0[i]);
+			dist[i] /= fabs(Dlab[i]);
 			PRINT_ASSERT(dist[i],>=,0);
 		}
 
@@ -849,10 +854,8 @@ void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
 	double D[3], x3[3];
 
 	// initialize the arrays
-	for(int i=0; i<3; i++){
-		x3[i] = lh->p_xup()[i];
-		D[i] = lh->p_D(lab)[i];
-	}
+	for(int i=0; i<3; i++) x3[i] = lh->p_xup()[i];
+	lh->p_D(lab,D,3);
 
 	// invert the radial component of the velocity, put the particle just inside the boundary
 	for(int i=0; i<3; i++){

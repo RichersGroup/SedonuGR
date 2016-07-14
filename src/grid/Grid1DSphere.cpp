@@ -255,11 +255,14 @@ void Grid1DSphere::write_rays(const int iw) const
 //------------------------------------------------------------
 void Grid1DSphere::reflect_outer(LorentzHelper *lh) const{
 	const Particle *p = lh->particle_readonly(lab);
+	double Dlab[3];
+	lh->p_D(lab,Dlab,3);
+
 	double r0 = (r_out.size()>1 ? r_out[r_out.size()-2] : r_out.min);
 	double rmax = r_out[r_out.size()-1];
 	double dr = rmax - r0;
 	double R = radius(p->xup,3);
-	double x_dot_d = p->xup[0]*p->D[0] + p->xup[1]*p->D[1] + p->xup[2]*p->D[2];
+	double x_dot_d = p->xup[0]*Dlab[0] + p->xup[1]*Dlab[1] + p->xup[2]*Dlab[2];
 	double velDotRhat = x_dot_d / R;
 	PRINT_ASSERT( fabs(R - r_out[r_out.size()-1]),<,tiny*dr);
 
@@ -297,12 +300,15 @@ void Grid1DSphere::symmetry_boundaries(LorentzHelper *lh) const{
 //------------------------------------------------------------
 double Grid1DSphere::lab_dist_to_boundary(const LorentzHelper *lh) const{
 	const Particle *p = lh->particle_readonly(lab);
+	double Dlab[3];
+	lh->p_D(lab,Dlab,3);
+
 	// Theta = angle between radius vector and direction (Pi if outgoing)
 	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
 	double Rout  = r_out[r_out.size()-1];
 	double Rin   = r_out.min;
 	double r  = radius(p->xup,3);
-	double x_dot_d = p->xup[0]*p->D[0] + p->xup[1]*p->D[1] + p->xup[2]*p->D[2];
+	double x_dot_d = p->xup[0]*Dlab[0] + p->xup[1]*Dlab[1] + p->xup[2]*Dlab[2];
 	double mu = x_dot_d / r;
 	double d_outer_boundary = numeric_limits<double>::infinity();
 	double d_inner_boundary = numeric_limits<double>::infinity();

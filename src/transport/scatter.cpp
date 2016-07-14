@@ -114,7 +114,8 @@ void Transport::window(Particle* p, const int z_ind){
 	if(p->fate==moving) PRINT_ASSERT(p->e,>=,min_packet_energy);
 
 	// split if too high energy, if enough space, and if in important region
-	while(p->e>max_packet_energy && particles.size()<max_particles && species_list[p->s]->interpolate_importance(p->nu,z_ind)>=1.0){
+	double nu = p->kup[3]*pc::c/pc::h;
+	while(p->e>max_packet_energy && particles.size()<max_particles && species_list[p->s]->interpolate_importance(nu,z_ind)>=1.0){
 		p->e /= 2.0;
 		Particle pnew = *p;
 		window(&pnew,z_ind);
@@ -372,7 +373,10 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	lhtmp.set_p_e<com>(eavg_com);
 	lhtmp.set_p_D<com>(d3com,3);
 	lhtmp.set_distance<com>(path_length_com);
-	zone->distribution[lh->p_s()].count(lhtmp.p_D(lab), 3, lhtmp.p_nu(lab), lhtmp.p_e(lab) * lhtmp.distance(lab));
+
+	double Dlab[3];
+	lh->p_D(lab,Dlab,3);
+	zone->distribution[lh->p_s()].count(Dlab, 3, lhtmp.p_nu(lab), lhtmp.p_e(lab) * lhtmp.distance(lab));
 
 	// move the particle to the edge of the sphere
 	double xnew[4];

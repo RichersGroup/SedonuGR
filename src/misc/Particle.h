@@ -42,18 +42,19 @@ class Particle
 public:
 
 	Particle(){
-		for(int i=0; i<4; i++) xup[i] = NaN;
+		for(int i=0; i<4; i++){
+			xup[i] = NaN;
+			kup[i] = NaN;
+		}
 		e = NaN;
-		nu = NaN;
 		tau = NaN;
 		s = -1;
 		fate = moving;
 	}
 
-	double xup[4];            // x,y,z,ct position (cm)
-	double D[3];            // direction vector, Dx,Dy,Dz (normalized to unit magnitude)
+	double xup[4];          // x,y,z,ct position (cm)
+	double kup[4];          // momentum 4-vector (ergs/c)
 	double       e;         // total energy in ergs of packet
-	double      nu;         // frequency (Hz)
 	double     tau;         // remaining optical depth
 	int          s;         // species number
 	ParticleFate fate;
@@ -61,7 +62,7 @@ public:
 	void print() const
 	{
 		printf("%10.3e %10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e %i %i\n",
-				xup[0],xup[1],xup[2],xup[3],D[0],D[1],D[2],e,nu,tau,s,fate);
+				xup[0],xup[1],xup[2],xup[3],kup[0],kup[1],kup[2],kup[3],e,tau,s,fate);
 	}
 
 };

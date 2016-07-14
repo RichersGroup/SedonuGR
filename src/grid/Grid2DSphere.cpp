@@ -876,12 +876,14 @@ void Grid2DSphere::write_rays(int iw) const
 //------------------------------------------------------------
 void Grid2DSphere::reflect_outer(LorentzHelper *lh) const{
 	const Particle *p = lh->particle_readonly(lab);
+	double Dlab[3];
+	lh->p_D(lab,Dlab,3);
 
 	PRINT_ASSERT(r_out.size(),>=,1);
 	double r0 = (r_out.size()==1 ? r_out.min : r_out.size()-2);
 	double dr = r_out[r_out.size()-1] - r0;
 	PRINT_ASSERT( fabs(radius(p->xup,3) - r_out[r_out.size()-1]),<,tiny*dr);
-	double x_dot_d = p->xup[0]*p->D[0] + p->xup[1]*p->D[1] + p->xup[2]*p->D[2];
+	double x_dot_d = p->xup[0]*Dlab[0] + p->xup[1]*Dlab[1] + p->xup[2]*Dlab[2];
 	double velDotRhat = x_dot_d / radius(p->xup,3);
 
 	// invert the radial component of the velocity
@@ -913,12 +915,15 @@ void Grid2DSphere::symmetry_boundaries(LorentzHelper *lh) const{
 //------------------------------------------------------------
 double Grid2DSphere::lab_dist_to_boundary(const LorentzHelper *lh) const{
 	const Particle *p = lh->particle_readonly(lab);
+	double Dlab[3];
+	lh->p_D(lab,Dlab,3);
+
 	// Theta = angle between radius vector and direction (Pi if outgoing)
 	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
 	double Rout  = r_out[r_out.size()-1];
 	double Rin   = r_out.min;
 	double r  = radius(p->xup,3);
-	double x_dot_d = p->xup[0]*p->D[0] + p->xup[1]*p->D[1] + p->xup[2]*p->D[2];
+	double x_dot_d = p->xup[0]*Dlab[0] + p->xup[1]*Dlab[1] + p->xup[2]*Dlab[2];
 	double mu = x_dot_d / r;
 	double d_outer_boundary = numeric_limits<double>::infinity();
 	double d_inner_boundary = numeric_limits<double>::infinity();
