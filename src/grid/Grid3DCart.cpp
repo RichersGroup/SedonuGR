@@ -696,32 +696,33 @@ void Grid3DCart::reflect_outer(LorentzHelper *lh) const{
 	get_deltas(z_ind,delta,3);
 
 	// invert the radial component of the velocity, put the particle just inside the boundary
-	double x[3], D[3];
+	double x3[3], D[3];
 	for(int i=0; i<3; i++){
 		// initialize values
-		x[i] = lh->p_x(    3)[i];
+		x3[i] = lh->p_x3(   3)[i];
 		D[i] = lh->p_D(lab,3)[i];
 
 		// inner boundary
 		if(p->x3()[i] < x0[i]){
 			PRINT_ASSERT(p->D[i],<,0);
 			D[i] = -p->D[i];
-			x[i] = x0[i] + tiny*delta[i];
+			x3[i] = x0[i] + tiny*delta[i];
 		}
 
 		// outer boundary
 		if(p->x3()[i] > xmax[i]){
 			PRINT_ASSERT(p->D[i],>,0);
 			D[i] = -p->D[i];
-			x[i] = xmax[i] - tiny*delta[i];
+			x3[i] = xmax[i] - tiny*delta[i];
 		}
 
 		// double check that the particle is in the boundary
-		PRINT_ASSERT(x[i],>,x0[i]);
-		PRINT_ASSERT(x[i],<,xmax[i]);
+		PRINT_ASSERT(x3[i],>,x0[i]);
+		PRINT_ASSERT(x3[i],<,xmax[i]);
 
 		// assign the arrays
-		lh->set_p_x(x,3);
+		double xup[4] = {p->xup[0], x3[0], x3[1], x3[2]};
+		lh->set_p_xup(xup,4);
 		lh->set_p_D<lab>(D,3);
 	}
 }
@@ -845,59 +846,60 @@ double Grid3DCart::zone_right_boundary(const unsigned dir, const unsigned dir_in
 //------------------------------------------------------------
 void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
 
-	double D[3], x[3];
+	double D[3], x3[3];
 
 	// initialize the arrays
 	for(int i=0; i<3; i++){
-		x[i] = lh->p_x(3)[i];
+		x3[i] = lh->p_x3(3)[i];
 		D[i] = lh->p_D(lab,3)[i];
 	}
 
 	// invert the radial component of the velocity, put the particle just inside the boundary
 	for(int i=0; i<3; i++){
-		if(reflect[i] && x[i] < x0[i]){
-			PRINT_ASSERT(x0[i]-x[i],<,tiny*dx[i]);
+		if(reflect[i] && x3[i] < x0[i]){
+			PRINT_ASSERT(x0[i]-x3[i],<,tiny*dx[i]);
 			PRINT_ASSERT(x0[i],==,0);
 			PRINT_ASSERT(D[i],<,0);
 			D[i] = -D[i];
-			x[i] = x0[i] + tiny*(x1[i]-x0[i]);
+			x3[i] = x0[i] + tiny*(x1[i]-x0[i]);
 
 			// double check that the particle is in the boundary
-			PRINT_ASSERT(x[i],>=,x0[i]);
-			PRINT_ASSERT(x[i],<=,xmax[i]);
+			PRINT_ASSERT(x3[i],>=,x0[i]);
+			PRINT_ASSERT(x3[i],<=,xmax[i]);
 		}
 	}
 
 	// rotating boundary conditions
 	for(int i=0; i<2; i++){
-		if(x[i] < x0[i] && (rotate_hemisphere[i] || rotate_quadrant)){
-			PRINT_ASSERT(x0[i]-x[i],<,tiny*(x1[i]-x0[i]));
+		if(x3[i] < x0[i] && (rotate_hemisphere[i] || rotate_quadrant)){
+			PRINT_ASSERT(x0[i]-x3[i],<,tiny*(x1[i]-x0[i]));
 			PRINT_ASSERT(x0[i],==,0);
 			PRINT_ASSERT(D[i],<,0);
 			int other = i==0 ? 1 : 0;
 			
 			if(rotate_hemisphere[i]){
 				for(int j=0; j<2; j++) D[j] = -D[j];
-				x[i    ] = x0[i] + tiny*(x1[i]-x0[i]);
-				x[other] = -x[other];
+				x3[i    ] = x0[i] + tiny*(x1[i]-x0[i]);
+				x3[other] = -x3[other];
 			}
 			else if(rotate_quadrant){
 				double tmp = D[i];
 				D[i] = D[other];
 				D[other] = -tmp;
-				x[i] = x[other];
-				x[other] = x0[other] + tiny*(x1[other]-x0[other]);
+				x3[i] = x3[other];
+				x3[other] = x0[other] + tiny*(x1[other]-x0[other]);
 			}
 
 			// double check that the particle is in the boundary
 			for(int j=0; j<3; j++){
-				PRINT_ASSERT(x[j],>=,x0[j]);
-				PRINT_ASSERT(x[j],<=,xmax[j]);
+				PRINT_ASSERT(x3[j],>=,x0[j]);
+				PRINT_ASSERT(x3[j],<=,xmax[j]);
 			}
 		}
 
 		// assign the arrays
-		lh->set_p_x(x,3);
+		double xup[4] = {lh->p_xup(4)[0], x3[0], x3[1], x3[2]};
+		lh->set_p_xup(xup,4);
 		lh->set_p_D<lab>(D,3);
 	}
 }

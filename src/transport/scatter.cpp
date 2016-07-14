@@ -319,9 +319,10 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	double d3com[3] = {displacement4[0], displacement4[1], displacement4[2]};
 	LorentzHelper::transform_cartesian_4vector_c2l(zone->u, displacement4);
 	double d3lab[3] = {displacement4[0], displacement4[1], displacement4[2]};
-	double xnew[3];
-	for(int i=0; i<3; i++) xnew[i] = lh->p_x(3)[i] + d3lab[3];
-	lh->set_p_x(xnew,3);
+	double xnew[4];
+	xnew[0] = lh->p_xup(4)[0];
+	for(int i=1; i<=3; i++) xnew[i+1] = lh->p_xup(4)[i] + d3lab[i];
+	lh->set_p_xup(xnew,4);
 
 	//------------------------------------------------------------------------
 	// pick a random outward direction, starting distribution pointing along z (comoving frame)

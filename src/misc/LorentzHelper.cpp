@@ -134,11 +134,11 @@ void LorentzHelper::set_p_tau(const double tau){
 	p[lab].tau = tau;
 	p[com].tau = tau;
 }
-void LorentzHelper::set_p_x(const double x[3], const int size) {
-	PRINT_ASSERT(size,==,3);
+void LorentzHelper::set_p_xup(const double x[4], const int size) {
+	PRINT_ASSERT(size,==,4);
 	for(int i=0; i<size; i++){
-		p[com].x3()[i] = x[i];
-		p[lab].x3()[i] = x[i];
+		p[com].xup[i] = x[i];
+		p[lab].xup[i] = x[i];
 	}
 }
 void LorentzHelper::set_p_fate(const ParticleFate fate){
@@ -167,7 +167,11 @@ ParticleFate LorentzHelper::p_fate() const{
 	PRINT_ASSERT(p[lab].fate,==,p[com].fate);
 	return p[lab].fate;
 }
-const double* LorentzHelper::p_x(const int size) const {
+const double* LorentzHelper::p_xup(const int size) const {
+	PRINT_ASSERT(size,==,4);
+	return p[lab].xup;
+}
+const double* LorentzHelper::p_x3(const int size) const {
 	PRINT_ASSERT(size,==,3);
 	return p[lab].x3();
 }

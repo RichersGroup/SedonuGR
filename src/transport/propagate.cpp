@@ -152,14 +152,14 @@ void Transport::event_boundary(LorentzHelper *lh, const int z_ind) const{
 		if(reflect_outer){
 			grid->reflect_outer(lh);
 			PRINT_ASSERT(lh->p_fate(), ==, moving);
-			new_ind = grid->zone_index(lh->p_x(3),3);
+			new_ind = grid->zone_index(lh->p_x3(3),3);
 			PRINT_ASSERT(new_ind, >=, 0);
 			PRINT_ASSERT(new_ind, <, (int)grid->z.size());
 			PRINT_ASSERT(lh->p_nu(lab), >, 0);
 		}
 		else{
 			grid->symmetry_boundaries(lh);
-			new_ind = grid->zone_index(lh->p_x(3),3);
+			new_ind = grid->zone_index(lh->p_x3(3),3);
 		}
 
 		if(new_ind < 0) lh->set_p_fate(escaped);
@@ -221,7 +221,7 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	else to_add = lh->p_e(lab) * lh->distance(lab);
 	PRINT_ASSERT(to_add,<,INFINITY);
 	double D_newbasis[3] = {0,0,0};
-	distribution_function_basis(lh->p_D(lab,3),lh->p_x(3),D_newbasis);
+	distribution_function_basis(lh->p_D(lab,3),lh->p_x3(3),D_newbasis);
 	Grid::normalize(D_newbasis,3);
 	zone->distribution[lh->p_s()].count(D_newbasis, 3, lh->p_nu(lab), to_add);
 
@@ -254,9 +254,10 @@ void Transport::move(LorentzHelper *lh, const int z_ind){
 	PRINT_ASSERT(lh->net_opac(lab),>=,0);
 
 	// translate the particle
-	double xnew[3];
-	for(int i=0; i<3; i++) xnew[i] = lh->p_x(3)[i] + lh->distance(lab) * lh->p_D(lab,3)[i];
-	lh->set_p_x(xnew,3);
+	double xnew[4];
+	xnew[0] = lh->p_xup(4)[0] + lh->distance(lab);
+	for(int i=0; i<3; i++) xnew[i+1] = lh->p_x3(3)[i] + lh->distance(lab) * lh->p_D(lab,3)[i];
+	lh->set_p_xup(xnew,4);
 
 	// reduce the particle's remaining optical depth
 	if(lh->tau_opac(lab)>0){
@@ -359,7 +360,7 @@ void Transport::propagate(Particle* p)
 					lh.set_distance<lab>(tweak_distance);
 					move(&lh, z_ind);
 
-					z_ind = grid->zone_index(lh.p_x(3),3);
+					z_ind = grid->zone_index(lh.p_x3(3),3);
 					i++;
 				}
 			}

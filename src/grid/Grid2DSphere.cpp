@@ -892,12 +892,13 @@ void Grid2DSphere::reflect_outer(LorentzHelper *lh) const{
 
 	// put the particle just inside the boundary
 	double newR = r_out[r_out.size()-1] - tiny*dr;
-	double x[3];
-	for(int i=0; i<3; i++) x[i] = p->x3()[i]/radius(p->x3(),3)*newR;
-	lh->set_p_x(x,3);
+	double x[4];
+	x[0] = p->xup[0];
+	for(int i=1; i<=3; i++) x[i] = p->xup[i]/radius(p->x3(),3)*newR;
+	lh->set_p_xup(x,4);
 
 	// must be inside the boundary, or will get flagged as escaped
-	PRINT_ASSERT(zone_index(x,3),>=,0);
+	PRINT_ASSERT(zone_index(&(x[1]),3),>=,0);
 }
 
 //------------------------------------------------------------

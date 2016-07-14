@@ -274,14 +274,15 @@ void Grid1DSchwarzschild::reflect_outer(LorentzHelper *lh) const{
 
 	// put the particle just inside the boundary
 	double newR = rmax - tiny*dr;
-	double x[3];
-	x[0] = p->x3()[0]/R*newR;
-	x[1] = p->x3()[1]/R*newR;
-	x[2] = p->x3()[2]/R*newR;
-	lh->set_p_x(x,3);
+	double x[4];
+	x[0] = p->xup[0];
+	x[1] = p->xup[1]/R*newR;
+	x[2] = p->xup[2]/R*newR;
+	x[3] = p->xup[3]/R*newR;
+	lh->set_p_xup(x,4);
 
 	// must be inside the boundary, or will get flagged as escaped
-	PRINT_ASSERT(zone_index(x,3),>=,0);
+	PRINT_ASSERT(zone_index(&(x[1]),3),>=,0);
 }
 
 //------------------------------------------------------------

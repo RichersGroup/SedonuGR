@@ -67,7 +67,8 @@ public:
 	double p_tau() const;
 	ParticleFate p_fate() const;
 	const double* p_D(Frame f, const int size) const;
-	const double* p_x(const int size) const;
+	const double* p_xup(const int size) const;
+	const double* p_x3(const int size) const;
 
 	template<Frame f>
 	void set_p(const Particle* p);
@@ -82,7 +83,7 @@ public:
 	void set_p_tau(const double tau);
 	void set_p_fate(const ParticleFate fate);
 	void set_p_s(const int s);
-	void set_p_x(const double x[3], const int size);
+	void set_p_xup(const double x[4], const int size);
 
 	//=========//
 	// opacity //
