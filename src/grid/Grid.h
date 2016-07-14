@@ -75,12 +75,6 @@ public:
 	// vector of zones
 	std::vector<Zone> z;
 
-#ifdef __INTEL_COMPILER
-	static const double tiny = 1e-5; // used to overshoot boundary to account for error in boundary distance calculation
-#else
-	static constexpr double tiny = 1e-5; // used to overshoot boundary to account for error in boundary distance calculation
-#endif
-
 	// set everything up
 	void init(Lua* lua);
 

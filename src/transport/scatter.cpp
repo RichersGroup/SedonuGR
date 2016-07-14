@@ -336,7 +336,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	double costheta_rotate = sqrt(1.0 - d3com[2]*d3com[2]);
 	double sintheta_rotate = d3com[2];
 
-	if(abs(sintheta_rotate) < grid->tiny) pD[2] *= costheta_rotate>0 ? 1.0 : -1.0;
+	if(abs(sintheta_rotate) < TINY) pD[2] *= costheta_rotate>0 ? 1.0 : -1.0;
 	else{
 
 		// first rotate away from the z axis along y=0 (move it toward x=0)

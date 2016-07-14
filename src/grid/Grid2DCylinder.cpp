@@ -337,8 +337,8 @@ void Grid2DCylinder::cartesian_sample_in_zone(const int z_ind, const double rand
 
 	// sample radial position in shell using a probability integral transform
 	double radius = pow( rand[0]*(rcyl1*rcyl1 - rcyl0*rcyl0) + rcyl0*rcyl0, 1./2.);
-	PRINT_ASSERT(radius,>=,rcyl0*(1.-tiny));
-	PRINT_ASSERT(radius,<=,rcyl1*(1.+tiny));
+	PRINT_ASSERT(radius,>=,rcyl0*(1.-TINY));
+	PRINT_ASSERT(radius,<=,rcyl1*(1.+TINY));
 	radius = max(rcyl0,radius);
 	radius = min(rcyl1,radius);
 
@@ -373,7 +373,7 @@ void Grid2DCylinder::cartesian_velocity_vector(const double x[3], const int xsiz
 		// radius in zone
 		double r    = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 		double rcyl = sqrt(x[0]*x[0] + x[1]*x[1]);
-		int along_axis = (rcyl/r < tiny);
+		int along_axis = (rcyl/r < TINY);
 
 		// Based on position, calculate what the 3-velocity is
 		PRINT_ASSERT(ARRSIZE(z[z_ind].u),==,3);
@@ -451,13 +451,13 @@ void Grid2DCylinder::reflect_outer(LorentzHelper *lh) const{
 	// double z0    = (   z_out.size()==1 ?    z_out.min :    z_out.size()-2);
 	// double drcyl = rcyl_out[rcyl_out.size()-1] - rcyl0;
 	// double dz    =    z_out[   z_out.size()-1] -    z0;
-	// PRINT_ASSERT( fabs(prcyl - rcyl_out[rcyl_out.size()-1]),<,tiny*dr);
+	// PRINT_ASSERT( fabs(prcyl - rcyl_out[rcyl_out.size()-1]),<,TINY*dr);
 
 	// // invert the radial component of the velocity
 	// if(p->rcyl > rcyl_out[rcyl_out.size()-1]){
 	//   p->D[0] *= -1;
 	//   p->D[1] *= -1;
-	//   double newRcyl = rcyl_out[rcyl_out.size()-1] - tiny*dr;
+	//   double newRcyl = rcyl_out[rcyl_out.size()-1] - TINY*dr;
 	//   for(int i=0; i<2; i++) p->x[i] = p->x[i]/p->rcyl()*newRcyl;
 	// }
 
@@ -465,13 +465,13 @@ void Grid2DCylinder::reflect_outer(LorentzHelper *lh) const{
 	// if(p->x[2]<z_out.min){
 	//   PRINT_ASSERT(p->D[2],<,0);
 	//   p->D[2] *= -1;
-	//   p->x[2] = z_out.min + tiny*dz;
+	//   p->x[2] = z_out.min + TINY*dz;
 	// }
 
 	// if(p->x[2] > z_out[z_out.size()-1]){
 	//   PRINT_ASSERT(p->D[2],>,0);
 	//   p->D[2] *= -1;
-	//   p->x[2] = z_out[z_out.size()-1] - tiny*dz;
+	//   p->x[2] = z_out[z_out.size()-1] - TINY*dz;
 	// }
 
 	// // normalize the direction vector
@@ -515,7 +515,7 @@ double Grid2DCylinder::lab_dist_to_boundary(const LorentzHelper *lh) const{
 	if(rcyl >= Rin){
 		if(Rin>0 && mucyl<0 && radical>=0){
 			double dcyl = -rcyl*mucyl - sqrt(radical);
-			PRINT_ASSERT(dcyl,<=,sqrt(Rout*Rout-Rin*Rin)*(1.0+tiny));
+			PRINT_ASSERT(dcyl,<=,sqrt(Rout*Rout-Rin*Rin)*(1.0+TINY));
 			d_inner_boundary = dcyl / costheta;
 		}
 	}
@@ -524,12 +524,12 @@ double Grid2DCylinder::lab_dist_to_boundary(const LorentzHelper *lh) const{
 		PRINT_ASSERT(dcyl,<=,2.*Rin);
 		d_inner_boundary = dcyl / costheta;
 	}
-	if(d_inner_boundary<0 && fabs(d_inner_boundary/Rin)<tiny*(rcyl_out[0]-Rin)) d_inner_boundary = tiny*(rcyl_out[0]-Rin);
+	if(d_inner_boundary<0 && fabs(d_inner_boundary/Rin)<TINY*(rcyl_out[0]-Rin)) d_inner_boundary = TINY*(rcyl_out[0]-Rin);
 	PRINT_ASSERT(d_inner_boundary,>=,0);
 
 	// distance to outer boundary
 	double dcyl = -rcyl*mucyl + sqrt(rcyl*rcyl*(mucyl*mucyl-1.0) + Rout*Rout);
-	if(dcyl<=0 && fabs(dcyl/Rin)<tiny*(Rout-rcyl_out[rcyl_out.size()-2])) dcyl = tiny*(Rout-rcyl_out[rcyl_out.size()-2]);
+	if(dcyl<=0 && fabs(dcyl/Rin)<TINY*(Rout-rcyl_out[rcyl_out.size()-2])) dcyl = TINY*(Rout-rcyl_out[rcyl_out.size()-2]);
 	PRINT_ASSERT(dcyl,>,0);
 	PRINT_ASSERT(dcyl,<=,2.*Rout);
 	d_outer_boundary = dcyl / costheta;

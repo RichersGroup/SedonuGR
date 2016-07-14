@@ -139,8 +139,8 @@ void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *e
 	if( d_boundary <= d_smallest ){
 		*event = boundary;
 		d_smallest = d_boundary;
-		if(z_ind >= 0) d_smallest *= (1.0 + Grid::tiny); // bump just over the boundary if in simulation domain
-		else           d_smallest *= (1.0 - Grid::tiny); // don't overshoot outward through the inner boundary
+		if(z_ind >= 0) d_smallest *= (1.0 + TINY); // bump just over the boundary if in simulation domain
+		else           d_smallest *= (1.0 - TINY); // don't overshoot outward through the inner boundary
 	}
 	lh->set_distance<lab>(d_smallest);
 }
@@ -270,7 +270,7 @@ void Transport::move(LorentzHelper *lh, const int z_ind){
 	if(lh->tau_opac(lab)>0){
 		double old_tau = lh->p_tau();
 		double new_tau = lh->p_tau() - lh->tau_opac(lab) * lh->distance(lab);
-		PRINT_ASSERT(new_tau,>=,-grid->tiny*old_tau);
+		PRINT_ASSERT(new_tau,>=,-TINY*old_tau);
 		lh->set_p_tau( max(0.0,new_tau) );
 	}
 
@@ -333,7 +333,7 @@ void Transport::propagate(Particle* p)
 
 		// move particle the distance
 		move(&lh, z_ind);
-		if(event != boundary) PRINT_ASSERT(lh.p_tau(), >=, -grid->tiny*(lh.distance(lab) * lh.tau_opac(lab)));
+		if(event != boundary) PRINT_ASSERT(lh.p_tau(), >=, -TINY*(lh.distance(lab) * lh.tau_opac(lab)));
 
 		// do the selected event
 		// now the exciting bit!
@@ -361,7 +361,7 @@ void Transport::propagate(Particle* p)
 			{
 				int i=1;
 				while(z_ind>=0){
-					double tweak_distance = grid->tiny*lh.distance(lab) * i*i;
+					double tweak_distance = TINY*lh.distance(lab) * i*i;
 					PRINT_ASSERT(tweak_distance,<,grid->zone_min_length(z_ind));
 					PRINT_ASSERT(i,<,10);
 					lh.set_p_tau(lh.p_tau() + tweak_distance*lh.tau_opac(lab) ); // a hack to prevent tau<0

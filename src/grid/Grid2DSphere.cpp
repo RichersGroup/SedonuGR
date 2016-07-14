@@ -599,7 +599,7 @@ int Grid2DSphere::zone_index(const double x[3], const int xsize) const
 	double theta = atan2(sqrt(x[0]*x[0] + x[1]*x[1]), x[2]);
 	PRINT_ASSERT(r,>=,0);
 	PRINT_ASSERT(theta,>=,0);
-	if(fabs(theta-pc::pi)<tiny) theta = pc::pi-tiny;
+	if(fabs(theta-pc::pi)<TINY) theta = pc::pi-TINY;
 	PRINT_ASSERT(theta,<=,pc::pi);
 
 	// check if off the boundaries
@@ -735,8 +735,8 @@ void Grid2DSphere::cartesian_sample_in_zone(const int z_ind, const double rand[3
 
 	// sample radial position in shell using a probability integral transform
 	double radius = pow( rand[0]*(r1*r1*r1 - r0*r0*r0) + r0*r0*r0, 1./3.);
-	PRINT_ASSERT(radius,>=,r0*(1.-tiny));
-	PRINT_ASSERT(radius,<=,r1*(1.+tiny));
+	PRINT_ASSERT(radius,>=,r0*(1.-TINY));
+	PRINT_ASSERT(radius,<=,r1*(1.+TINY));
 	radius = max(r0,radius);
 	radius = min(r1,radius);
 
@@ -774,7 +774,7 @@ void Grid2DSphere::cartesian_velocity_vector(const double x[3], const int xsize,
 		// radius in zone
 		double r    = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 		double rhat = sqrt(x[0]*x[0] + x[1]*x[1]);
-		int along_axis = (rhat/r < tiny);
+		int along_axis = (rhat/r < TINY);
 
 		// Based on position, calculate what the 3-velocity is
 		PRINT_ASSERT(ARRSIZE(z[z_ind].u),==,3);
@@ -882,7 +882,7 @@ void Grid2DSphere::reflect_outer(LorentzHelper *lh) const{
 	PRINT_ASSERT(r_out.size(),>=,1);
 	double r0 = (r_out.size()==1 ? r_out.min : r_out.size()-2);
 	double dr = r_out[r_out.size()-1] - r0;
-	PRINT_ASSERT( fabs(radius(p->xup,3) - r_out[r_out.size()-1]),<,tiny*dr);
+	PRINT_ASSERT( fabs(radius(p->xup,3) - r_out[r_out.size()-1]),<,TINY*dr);
 	double x_dot_d = p->xup[0]*Dlab[0] + p->xup[1]*Dlab[1] + p->xup[2]*Dlab[2];
 	double velDotRhat = x_dot_d / radius(p->xup,3);
 
@@ -893,7 +893,7 @@ void Grid2DSphere::reflect_outer(LorentzHelper *lh) const{
 	lh->set_p_D<lab>(D,3);
 
 	// put the particle just inside the boundary
-	double newR = r_out[r_out.size()-1] - tiny*dr;
+	double newR = r_out[r_out.size()-1] - TINY*dr;
 	double x[4];
 	for(int i=0; i<3; i++) x[i] = p->xup[i]/radius(p->xup,3)*newR;
 	x[3] = p->xup[3];
@@ -935,24 +935,24 @@ double Grid2DSphere::lab_dist_to_boundary(const LorentzHelper *lh) const{
 		double radical = r*r*(mu*mu-1.0) + Rin*Rin;
 		if(Rin>0 && mu<0 && radical>=0){
 			d_inner_boundary = -r*mu - sqrt(radical);
-			PRINT_ASSERT(d_inner_boundary,<=,sqrt(Rout*Rout-Rin*Rin)*(1.0+tiny));
+			PRINT_ASSERT(d_inner_boundary,<=,sqrt(Rout*Rout-Rin*Rin)*(1.0+TINY));
 		}
 	}
 	else{
 		d_inner_boundary = -r*mu + sqrt(r*r*(mu*mu-1.0) + Rin*Rin);
 		PRINT_ASSERT(d_inner_boundary,<=,2.*Rin);
 	}
-	if(d_inner_boundary<0 && fabs(d_inner_boundary/Rin)<tiny*(r_out[0]-Rin)) d_inner_boundary = tiny*(r_out[0]-Rin);
+	if(d_inner_boundary<0 && fabs(d_inner_boundary/Rin)<TINY*(r_out[0]-Rin)) d_inner_boundary = TINY*(r_out[0]-Rin);
 	PRINT_ASSERT(d_inner_boundary,>=,0);
 
 	// distance to outer boundary
 	d_outer_boundary = -r*mu + sqrt(r*r*(mu*mu-1.0) + Rout*Rout);
-	if(d_outer_boundary<=0 && fabs(d_outer_boundary/Rin)<tiny*(Rout-r_out[r_out.size()-1])) d_outer_boundary = tiny*(Rout-r_out[r_out.size()-1]);
+	if(d_outer_boundary<=0 && fabs(d_outer_boundary/Rin)<TINY*(Rout-r_out[r_out.size()-1])) d_outer_boundary = TINY*(Rout-r_out[r_out.size()-1]);
 	PRINT_ASSERT(d_outer_boundary,>,0);
 	PRINT_ASSERT(d_outer_boundary,<=,2.*Rout);
 
 	// distances to the theta boundaries - NOT IMPLEMENTED THETA BOUNDARIES
-	PRINT_ASSERT( fabs((theta_out[theta_out.size()-1] - theta_out.min) - pc::pi),<,tiny);
+	PRINT_ASSERT( fabs((theta_out[theta_out.size()-1] - theta_out.min) - pc::pi),<,TINY);
 	double theta_dist = INFINITY;
 
 	// make sure the particle ends up in a reasonable place

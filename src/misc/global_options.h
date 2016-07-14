@@ -42,6 +42,7 @@
 //const MPI_Datatype MPI_real = ( sizeof(real)==4 ? MPI_FLOAT : MPI_DOUBLE );
 #define NaN std::numeric_limits<double>::quiet_NaN()
 #define MAXLIM std::numeric_limits<int>::max()
+#define TINY 1e-5
 
 inline std::string trim(const std::string s)
 {

@@ -190,8 +190,8 @@ void Grid1DSphere::cartesian_sample_in_zone
 
 	// sample radial position in shell using a probability integral transform
 	double radius = pow( rand[0]*(r1*r1*r1 - r0*r0*r0) + r0*r0*r0, 1./3.);
-	PRINT_ASSERT(radius,>=,r0*(1.-tiny));
-	PRINT_ASSERT(radius,<=,r1*(1.+tiny));
+	PRINT_ASSERT(radius,>=,r0*(1.-TINY));
+	PRINT_ASSERT(radius,<=,r1*(1.+TINY));
 	if(radius<r0) radius = r0;
 	if(radius>r1) radius = r1;
 
@@ -264,7 +264,7 @@ void Grid1DSphere::reflect_outer(LorentzHelper *lh) const{
 	double R = radius(p->xup,3);
 	double x_dot_d = p->xup[0]*Dlab[0] + p->xup[1]*Dlab[1] + p->xup[2]*Dlab[2];
 	double velDotRhat = x_dot_d / R;
-	PRINT_ASSERT( fabs(R - r_out[r_out.size()-1]),<,tiny*dr);
+	PRINT_ASSERT( fabs(R - r_out[r_out.size()-1]),<,TINY*dr);
 
 	// invert the radial component of the velocity
 	double D[3];
@@ -275,7 +275,7 @@ void Grid1DSphere::reflect_outer(LorentzHelper *lh) const{
 	lh->set_p_D<lab>(D,3);
 
 	// put the particle just inside the boundary
-	double newR = rmax - tiny*dr;
+	double newR = rmax - TINY*dr;
 	double x[4];
 	x[0] = p->xup[0]/R*newR;
 	x[1] = p->xup[1]/R*newR;
@@ -295,7 +295,7 @@ void Grid1DSphere::symmetry_boundaries(LorentzHelper *lh) const{
 }
 
 //------------------------------------------------------------
-// Find distance to outer boundary (less a tiny bit)
+// Find distance to outer boundary (less a TINY bit)
 // negative distance means inner boundary
 //------------------------------------------------------------
 double Grid1DSphere::lab_dist_to_boundary(const LorentzHelper *lh) const{
@@ -320,19 +320,19 @@ double Grid1DSphere::lab_dist_to_boundary(const LorentzHelper *lh) const{
 		double radical = r*r*(mu*mu-1.0) + Rin*Rin;
 		if(Rin>0 && mu<0 && radical>=0){
 			d_inner_boundary = -r*mu - sqrt(radical);
-			PRINT_ASSERT(d_inner_boundary,<=,sqrt(Rout*Rout-Rin*Rin)*(1.0+tiny));
+			PRINT_ASSERT(d_inner_boundary,<=,sqrt(Rout*Rout-Rin*Rin)*(1.0+TINY));
 		}
 	}
 	else{
 		d_inner_boundary = -r*mu + sqrt(r*r*(mu*mu-1.0) + Rin*Rin);
 		PRINT_ASSERT(d_inner_boundary,<=,2.*Rin);
 	}
-	if(d_inner_boundary<=0 && fabs(d_inner_boundary/Rin)<tiny*(r_out[0]-Rin)) d_inner_boundary = tiny*(r_out[0]-Rin);
+	if(d_inner_boundary<=0 && fabs(d_inner_boundary/Rin)<TINY*(r_out[0]-Rin)) d_inner_boundary = TINY*(r_out[0]-Rin);
 	PRINT_ASSERT(d_inner_boundary,>,0);
 
 	// distance to outer boundary
 	d_outer_boundary = -r*mu + sqrt(r*r*(mu*mu-1.0) + Rout*Rout);
-	if(d_outer_boundary<=0 && fabs(d_outer_boundary/Rin)<tiny*(Rout-r_out[r_out.size()-1])) d_outer_boundary = tiny*(Rout-r_out[r_out.size()-1]);
+	if(d_outer_boundary<=0 && fabs(d_outer_boundary/Rin)<TINY*(Rout-r_out[r_out.size()-1])) d_outer_boundary = TINY*(Rout-r_out[r_out.size()-1]);
 	PRINT_ASSERT(d_outer_boundary,>,0);
 	PRINT_ASSERT(d_outer_boundary,<=,2.*Rout);
 

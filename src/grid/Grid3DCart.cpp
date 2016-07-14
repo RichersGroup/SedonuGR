@@ -139,7 +139,7 @@ void Grid3DCart::read_THC_file(Lua* lua)
 
 		// check that the number of data points is consistent with the range and delta
 		double ntmp = (xmax[i] - x0[i])/dx[i];
-		PRINT_ASSERT(abs(nx[i]-ntmp),<,tiny);
+		PRINT_ASSERT(abs(nx[i]-ntmp),<,TINY);
 	}
 
 	// modify grid in event of symmetry
@@ -175,8 +175,8 @@ void Grid3DCart::read_THC_file(Lua* lua)
 		PRINT_ASSERT(x0[i],<=,0);
 		x0[i] = 0.0;
 		x1[i] = fmod(xmax[i],dx[i]);
-		if(abs(x1[i]-x0[i])/dx[i] < tiny) x1[i] += dx[i]; // don't let the leftmost grid cell be stupidly tiny.
-		PRINT_ASSERT(fmod(xmax[i]-x1[i],dx[i]) < tiny,||,fmod(xmax[i]-x1[i],dx[i])-dx[i] < tiny); // make sure cells line up
+		if(abs(x1[i]-x0[i])/dx[i] < TINY) x1[i] += dx[i]; // don't let the leftmost grid cell be stupidly TINY.
+		PRINT_ASSERT(fmod(xmax[i]-x1[i],dx[i]) < TINY,||,fmod(xmax[i]-x1[i],dx[i])-dx[i] < TINY); // make sure cells line up
 		nx[i] = (int)((xmax[i]-x1[i])/dx[i] + 0.5) +1; // 0.5 to deal with finite precision.
 		offset[i] = hdf5_dims[i] - nx[i];
 	}
@@ -185,8 +185,8 @@ void Grid3DCart::read_THC_file(Lua* lua)
 		int iother = (i+1)%2;
 		if(nx[i] > nx[iother]){
 			PRINT_ASSERT(x0[i]-x0[iother],==,0);
-			PRINT_ASSERT(x1[i]-x1[iother],<,tiny);
-			PRINT_ASSERT(dx[i]-dx[iother],<,tiny);
+			PRINT_ASSERT(x1[i]-x1[iother],<,TINY);
+			PRINT_ASSERT(dx[i]-dx[iother],<,TINY);
 			nx[i] = nx[iother];
 			xmax[i] = xmax[iother];
 		}
@@ -524,8 +524,8 @@ void Grid3DCart::cartesian_sample_in_zone
 		x[i] = zone_left_boundary(i,dir_ind[i]) + delta[i]*rand[i];
 
 		// make sure the particle is in bounds
-		PRINT_ASSERT(x[i],>,x0[i]   - tiny*dx[i]);
-		PRINT_ASSERT(x[0],<,xmax[i] + tiny*dx[i]);
+		PRINT_ASSERT(x[i],>,x0[i]   - TINY*dx[i]);
+		PRINT_ASSERT(x[0],<,xmax[i] + TINY*dx[i]);
 
 		// return particles just outside cell boundaries to within cell boundaries
 		x[i] = min(x[i], zone_right_boundary(i,dir_ind[i]));
@@ -709,14 +709,14 @@ void Grid3DCart::reflect_outer(LorentzHelper *lh) const{
 		if(p->xup[i] < x0[i]){
 			PRINT_ASSERT(Dlab[i],<,0);
 			D[i] = -Dlab[i];
-			x3[i] = x0[i] + tiny*delta[i];
+			x3[i] = x0[i] + TINY*delta[i];
 		}
 
 		// outer boundary
 		if(p->xup[i] > xmax[i]){
 			PRINT_ASSERT(Dlab[i],>,0);
 			D[i] = -Dlab[i];
-			x3[i] = xmax[i] - tiny*delta[i];
+			x3[i] = xmax[i] - TINY*delta[i];
 		}
 
 		// double check that the particle is in the boundary
@@ -840,7 +840,7 @@ double Grid3DCart::zone_right_boundary(const unsigned dir, const unsigned dir_in
 	PRINT_ASSERT(dir_ind,>=,0);
 
 	double boundary = ( dir_ind==0 ? x1[dir] : x1[dir] + (double)dir_ind * dx[dir] );
-	PRINT_ASSERT(boundary,<=,xmax[dir]*(1.0+tiny));
+	PRINT_ASSERT(boundary,<=,xmax[dir]*(1.0+TINY));
 	PRINT_ASSERT(boundary,>=,x0[dir]);
 	return boundary;
 }
@@ -860,11 +860,11 @@ void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
 	// invert the radial component of the velocity, put the particle just inside the boundary
 	for(int i=0; i<3; i++){
 		if(reflect[i] && x3[i] < x0[i]){
-			PRINT_ASSERT(x0[i]-x3[i],<,tiny*dx[i]);
+			PRINT_ASSERT(x0[i]-x3[i],<,TINY*dx[i]);
 			PRINT_ASSERT(x0[i],==,0);
 			PRINT_ASSERT(D[i],<,0);
 			D[i] = -D[i];
-			x3[i] = x0[i] + tiny*(x1[i]-x0[i]);
+			x3[i] = x0[i] + TINY*(x1[i]-x0[i]);
 
 			// double check that the particle is in the boundary
 			PRINT_ASSERT(x3[i],>=,x0[i]);
@@ -875,14 +875,14 @@ void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
 	// rotating boundary conditions
 	for(int i=0; i<2; i++){
 		if(x3[i] < x0[i] && (rotate_hemisphere[i] || rotate_quadrant)){
-			PRINT_ASSERT(x0[i]-x3[i],<,tiny*(x1[i]-x0[i]));
+			PRINT_ASSERT(x0[i]-x3[i],<,TINY*(x1[i]-x0[i]));
 			PRINT_ASSERT(x0[i],==,0);
 			PRINT_ASSERT(D[i],<,0);
 			int other = i==0 ? 1 : 0;
 			
 			if(rotate_hemisphere[i]){
 				for(int j=0; j<2; j++) D[j] = -D[j];
-				x3[i    ] = x0[i] + tiny*(x1[i]-x0[i]);
+				x3[i    ] = x0[i] + TINY*(x1[i]-x0[i]);
 				x3[other] = -x3[other];
 			}
 			else if(rotate_quadrant){
@@ -890,7 +890,7 @@ void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
 				D[i] = D[other];
 				D[other] = -tmp;
 				x3[i] = x3[other];
-				x3[other] = x0[other] + tiny*(x1[other]-x0[other]);
+				x3[other] = x0[other] + TINY*(x1[other]-x0[other]);
 			}
 
 			// double check that the particle is in the boundary
