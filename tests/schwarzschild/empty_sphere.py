@@ -1,7 +1,7 @@
 MeV = 1.1605e10 # Kelvin
 km = 1.0e5      # cm
 
-nx = 100
+nx = 10
 
 R_max = 10*km
 R_min = 2*km

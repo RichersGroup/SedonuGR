@@ -50,6 +50,7 @@
 #include "Lua.h"
 #include "Particle.h"
 #include "LorentzHelper.h"
+#include "ThreadRNG.h"
 
 class Transport;
 
@@ -136,6 +137,9 @@ public:
 
 	// move the particle
 	void integrate_geodesic(LorentzHelper *lh) const;
+
+	// help with spawning particles
+	virtual void random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3], double D[3], const int size) const;
 };
 
 

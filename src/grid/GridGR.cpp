@@ -25,33 +25,38 @@
 //
 */
 
-#ifndef _GRID_GR_H
-#define _GRID_GR_H 1
-
-#include "Grid.h"
+#include <mpi.h>
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+#include "GridGR.h"
+#include "Lua.h"
+#include "nulib_interface.h"
+#include "global_options.h"
+#include "Transport.h"
+#include "H5Cpp.h"
 
 using namespace std;
+namespace pc = physical_constants;
 
-enum Index{up,down};
+void GridGR::integrate_geodesic(LorentzHelper *lh){
+	double lambda = lh->distance(lab);
 
-//*******************************************
-// general GR grid functionality
-//*******************************************
-class GridGR: public Grid
-{
+	double dk_dlambda[4];
+	for(int a=0; a<4; a++){
+		dk_dlambda[a] = 0;
+		for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++){
+			dk_dlambda[a] -= connection_coefficient(lh->p_xup(),a,mu,nu) * lh->p_kup(lab)[mu] * lh->p_kup(lab)[nu];
+		}
+	}
 
-private:
+	// move x forward
+	double xnew[4];
+	for(int i=0; i<4; i++) xnew[i] = lh->p_xup()[i] + lh->p_kup(lab)[i]*lambda + 0.5*dk_dlambda[i]*lambda*lambda;
+	lh->set_p_xup(xnew,4);
 
-	virtual double g_down(const double xup[4], const int mu, const int nu) const = 0;
-	virtual double connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const = 0; // Gamma^alhpa_mu_nu
-
-public:
-
-	virtual ~GridGR() {}
-
-	void integrate_geodesic(LorentzHelper *lh);
-
-};
-
-
-#endif
+	// change k
+	//double knew[4];
+	//for(int i=0; i<4; i++) knew[i] = lh->p_kup(lab)[i] + dk_dlambda[i]*lambda;
+	//lh->set_p_kup<lab>(knew,4);
+}

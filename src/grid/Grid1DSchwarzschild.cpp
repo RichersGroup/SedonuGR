@@ -39,6 +39,8 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 void Grid1DSchwarzschild::read_model_file(Lua* lua)
 {
+	r_sch = lua->scalar<double>("Grid1DSchwarzschild_r_sch");
+
 	// verbocity
 	int my_rank;
 	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
@@ -99,7 +101,7 @@ int Grid1DSchwarzschild::zone_index(const double x[3], const int xsize) const
 {
 	PRINT_ASSERT(z.size(),>,0);
 	PRINT_ASSERT(xsize,==,3);
-	double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+	double r = x[0];
 	PRINT_ASSERT(r,>,0);
 
 	// check if off the boundaries
@@ -201,9 +203,9 @@ void Grid1DSchwarzschild::cartesian_sample_in_zone
 	double sin_theta = sqrt(1 - mu*mu);
 
 	// set the double 3-d coordinates
-	x[0] = radius*sin_theta*cos(phi);
-	x[1] = radius*sin_theta*sin(phi);
-	x[2] = radius*mu;
+	x[0] = radius;
+	x[1] = acos(mu);
+	x[2] = phi;
 }
 
 
@@ -219,14 +221,14 @@ void Grid1DSchwarzschild::cartesian_velocity_vector(const double x[3], const int
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 
 	// radius in zone
-	double r = sqrt(dot(x,x,xsize));
+	double r = x[0];
 
 	// assuming radial velocity (may want to interpolate here)
 	// (the other two components are ignored and mean nothing)
 	PRINT_ASSERT(ARRSIZE(z[z_ind].u),==,3);
-	v[0] = x[0]/r*z[z_ind].u[0];
-	v[1] = x[1]/r*z[z_ind].u[0];
-	v[2] = x[2]/r*z[z_ind].u[0];
+	v[0] = z[z_ind].u[0];
+	v[1] = 0;
+	v[2] = 0;
 
 	// check for pathological case
 	if (r == 0)
@@ -261,26 +263,24 @@ void Grid1DSchwarzschild::reflect_outer(LorentzHelper *lh) const{
 	double r0 = (r_out.size()>1 ? r_out[r_out.size()-2] : r_out.min);
 	double rmax = r_out[r_out.size()-1];
 	double dr = rmax - r0;
-	double R = radius(p->xup,3);
-	double x_dot_d = p->xup[0]*Dlab[0] + p->xup[1]*Dlab[1] + p->xup[2]*Dlab[2];
-	double velDotRhat = x_dot_d / R;
+	double R = p->xup[0];
 
 	PRINT_ASSERT( fabs(R - r_out[r_out.size()-1]),<,TINY*dr);
 
 	// invert the radial component of the velocity
-	double D[3];
-	D[0] -= 2.*velDotRhat * p->xup[0]/R;
-	D[1] -= 2.*velDotRhat * p->xup[1]/R;
-	D[2] -= 2.*velDotRhat * p->xup[2]/R;
-	normalize(D,3);
-	lh->set_p_D<lab>(D,3);
+	double knew[4];
+	knew[0] = -p->kup[0];
+	knew[1] =  p->kup[1];
+	knew[2] =  p->kup[2];
+	knew[3] =  p->kup[3];
+	lh->set_p_kup<lab>(knew,4);
 
 	// put the particle just inside the boundary
 	double newR = rmax - TINY*dr;
 	double x[4];
-	x[0] = p->xup[0]/R*newR;
-	x[1] = p->xup[1]/R*newR;
-	x[2] = p->xup[2]/R*newR;
+	x[0] = newR;
+	x[1] = p->xup[1];
+	x[2] = p->xup[2];
 	x[3] = p->xup[3];
 	lh->set_p_xup(x,4);
 
@@ -308,9 +308,8 @@ double Grid1DSchwarzschild::lab_dist_to_boundary(const LorentzHelper *lh) const{
 	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
 	double Rout  = r_out[r_out.size()-1];
 	double Rin   = r_out.min;
-	double r  = radius(p->xup,3);
-	double x_dot_d = p->xup[0]*Dlab[0] + p->xup[1]*Dlab[1] + p->xup[2]*Dlab[2];
-	double mu = x_dot_d / r;
+	double r  = p->xup[0];
+	double mu = p->kup[0] / p->kup[3];
 	double d_outer_boundary = numeric_limits<double>::infinity();
 	double d_inner_boundary = numeric_limits<double>::infinity();
 	PRINT_ASSERT(r,<,Rout);
@@ -377,4 +376,78 @@ void Grid1DSchwarzschild::write_hdf5_coordinates(H5::H5File file) const
 	for(unsigned i=1; i<r_out.size()+1; i++) tmp[i] = r_out[i-1];
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
+}
+
+
+// GR stuff
+double Grid1DSchwarzschild::g_down(const double xup[4], const int mu, const int nu) const{
+	PRINT_ASSERT(mu,>=,0);
+	PRINT_ASSERT(mu,<=,3);
+	PRINT_ASSERT(nu,>=,0);
+	PRINT_ASSERT(nu,<=,3);
+	PRINT_ASSERT(xup[1],>,r_sch);
+
+	if(mu != nu) return 0;
+
+	switch (mu){
+	case 3:  return -(1.0 - r_sch / xup[1]);
+	case 0:  return 1.0 / (1.0 - r_sch / xup[1]);
+	case 1:  return xup[1] * xup[1];
+	case 2:  return xup[1] * xup[1] * sin(xup[2]) * sin(xup[2]);
+	default: return NaN;
+	}
+}
+double Grid1DSchwarzschild::d_g_down(const double xup[4], const int mu, const int nu, const int eta) const {
+	if(mu != nu) return 0;
+	switch(eta){
+	case 3: return 0;
+	case 0:
+		switch(mu){
+		case 3: return - r_sch / (xup[1]*xup[1]); break;
+		case 0: return - r_sch / (xup[1]-r_sch)*(xup[1]-r_sch); break;
+		case 1: return xup[1]; break;
+		case 2: return xup[1] * sin(xup[2]) * sin(xup[2]); break;
+		default: return 0; break;
+		} break;
+	case 1:
+		if(mu==3) return xup[1]*xup[1] * 2.0 * sin(xup[2]) * cos(xup[2]);
+		else return 0;
+		break;
+	default: return 0; break;
+	}
+}
+
+double Grid1DSchwarzschild::connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const{ // Gamma^alhpa_mu_nu
+	double gamma = 0;
+
+	for(int eta=0; eta<4; eta++){
+		double ginv_aeta = (mu==nu ? 1.0/g_down(xup,a,eta) : 0);
+		gamma += ginv_aeta * (d_g_down(xup,mu,eta,nu) + d_g_down(xup,eta,nu,mu) - d_g_down(xup,mu,nu,eta));
+	}
+
+	return gamma;
+}
+
+void Grid1DSchwarzschild::random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3], double D[3], const int size) const{
+	PRINT_ASSERT(size,==,3);
+
+	double phi_core   = 2*pc::pi*rangen->uniform();
+	double cost_core  = 1 - 2.0*rangen->uniform();
+	double sint_core  = sqrt(1-cost_core*cost_core);
+
+	// pick a random position
+	double a_phot = r_core + r_core*1e-10;
+	x3[0] = r_core * (1.0 + 1e-10);
+	x3[1] = acos(cost_core);
+	x3[2] = phi_core;
+
+	// pick photon propagation direction wtr to local normal
+	double phi_dir = 2*pc::pi*rangen->uniform();
+	double cost_dir = rangen->uniform();
+	double sint_dir = sqrt(1.0 - cost_dir*cost_dir);
+	// local direction vector
+	D[0] = rangen->uniform();
+	D[1] = sint_dir * cos(phi_dir);
+	D[2] = sint_dir * sin(phi_dir);
+	Grid::normalize(D,3);
 }

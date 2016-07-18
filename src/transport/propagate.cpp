@@ -56,7 +56,7 @@ void Transport::propagate_particles()
 			n_active[p->s]++;
 			if(p->fate == moving) propagate(p);
 			if(p->fate == escaped){
-				double nu = p->kup[3] * pc::c / pc::h;
+				double nu = p->kup[3]/(2.0*pc::pi) * pc::c;
 				double D[3] = {p->kup[0], p->kup[1], p->kup[2]};
 				Grid::normalize(D,3);
 				#pragma omp atomic
@@ -356,11 +356,9 @@ void Transport::propagate(Particle* p)
 			{
 				int i=1;
 				while(z_ind>=0){
-					double tweak_distance = TINY*lh.distance(lab) * i*i;
-					PRINT_ASSERT(tweak_distance,<,grid->zone_min_length(z_ind));
-					PRINT_ASSERT(i,<,10);
+					double tweak_distance = TINY*grid->zone_min_length(z_ind) * i*i;
+					PRINT_ASSERT(tweak_distance,<,2*grid->zone_min_length(z_ind));
 					lh.set_p_tau(lh.p_tau() + tweak_distance*lh.tau_opac(lab) ); // a hack to prevent tau<0
-
 					lh.set_distance<lab>(tweak_distance);
 					move(&lh, z_ind);
 

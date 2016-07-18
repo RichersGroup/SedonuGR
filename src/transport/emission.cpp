@@ -351,16 +351,8 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	plab.e = Ep;
 
 	// pick initial position on photosphere
-	double phi_core   = 2*pc::pi*rangen.uniform();
-	double cosp_core  = cos(phi_core);
-	double sinp_core  = sin(phi_core);
-	double cost_core  = 1 - 2.0*rangen.uniform();
-	double sint_core  = sqrt(1-cost_core*cost_core);
-	// double spatial coordinates
-	double a_phot = r_core + r_core*1e-10;
-	plab.xup[0] = a_phot*sint_core*cosp_core;
-	plab.xup[1] = a_phot*sint_core*sinp_core;
-	plab.xup[2] = a_phot*cost_core;
+	double D[3];
+	grid->random_core_x_D(r_core,&rangen,plab.xup,D,3);
 	plab.xup[3] = 0;
 
 	// get index of current zone
@@ -373,23 +365,7 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	PRINT_ASSERT(plab.s,<,(int)species_list.size());
 
 	// sample the frequency
-	plab.kup[3] = species_list[plab.s]->sample_core_nu(g) * pc::h / pc::c;
-
-	// pick photon propagation direction wtr to local normal
-	double D[3];
-	double phi_loc = 2*pc::pi*rangen.uniform();
-	// choose sqrt(R) to get outward, cos(theta) emission
-	double cost_loc  = sqrt(rangen.uniform());
-	double sint_loc  = sqrt(1 - cost_loc*cost_loc);
-	// local direction vector
-	double D_xl = sint_loc*cos(phi_loc);
-	double D_yl = sint_loc*sin(phi_loc);
-	double D_zl = cost_loc;
-	// apply rotation matrix to convert D vector into overall frame
-	D[0] = cost_core*cosp_core*D_xl-sinp_core*D_yl+sint_core*cosp_core*D_zl;
-	D[1] = cost_core*sinp_core*D_xl+cosp_core*D_yl+sint_core*sinp_core*D_zl;
-	D[2] = -sint_core*D_xl+cost_core*D_zl;
-	Grid::normalize(D,3);
+	plab.kup[3] = species_list[plab.s]->sample_core_nu(g) / pc::c * 2.0*pc::pi;
 	for(int i=0; i<3; i++) plab.kup[i] = D[i] * plab.kup[3];
 
 	// set up LorentzHelper

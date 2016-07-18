@@ -54,7 +54,8 @@ n_emit_therm_per_bin   = 0
 
 -- Inner Source
 
-r_core = 9.99999e5
+Grid1DSchwarzschild_r_sch = 0
+r_core = 2e5
 core_emit_method = 1
 T_core = 10
 core_nue_chem_pot = 10

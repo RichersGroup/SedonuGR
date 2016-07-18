@@ -66,8 +66,9 @@ public:
 	double p_nu(const Frame f) const;
 	double p_tau() const;
 	ParticleFate p_fate() const;
-	void p_D(Frame f, double D[3], const int size) const;
+	void p_D(const Frame f, double D[3], const int size) const;
 	const double* p_xup() const;
+	const double* p_kup(const Frame f) const;
 
 	template<Frame f>
 	void set_p(const Particle* p);
@@ -77,6 +78,8 @@ public:
 	void set_p_e(const double e);
 	template<Frame f>
 	void set_p_nu(const double nu);
+	template<Frame f>
+	void set_p_kup(const double x[4], const int size);
 
 	void scale_p_e(const double e);
 	void set_p_tau(const double tau);

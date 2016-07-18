@@ -105,6 +105,15 @@ template void LorentzHelper::set_p_D<com>(const double D[3], const int size);
 template void LorentzHelper::set_p_D<lab>(const double D[3], const int size);
 
 template<Frame f>
+void LorentzHelper::set_p_kup(const double kup[4], const int size) {
+	PRINT_ASSERT(size,==,3);
+	for(int i=0; i<size; i++) p[f].kup[i] = kup[i];
+	if(p[f].e>0) set_p<f>(&(p[f]));
+}
+template void LorentzHelper::set_p_kup<com>(const double kup[4], const int size);
+template void LorentzHelper::set_p_kup<lab>(const double kup[4], const int size);
+
+template<Frame f>
 void LorentzHelper::set_p_e(const double e){
 	PRINT_ASSERT(e,>,0);
 	p[f].e = e;
@@ -172,11 +181,14 @@ ParticleFate LorentzHelper::p_fate() const{
 const double* LorentzHelper::p_xup() const {
 	return p[lab].xup;
 }
-void LorentzHelper::p_D(Frame f, double D[3], const int size) const{
+void LorentzHelper::p_D(const Frame f, double D[3], const int size) const{
 	PRINT_ASSERT(size,==,3);
 	PRINT_ASSERT(p[f].kup[3],>,0);
 	for(int i=0; i<3; i++) D[i] = p[f].kup[i];
 	Grid::normalize(D,3);
+}
+const double* LorentzHelper::p_kup(const Frame f) const {
+	return p[f].kup;
 }
 
 
