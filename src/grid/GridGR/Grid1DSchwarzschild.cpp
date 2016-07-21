@@ -385,45 +385,43 @@ double Grid1DSchwarzschild::g_down(const double xup[4], const int mu, const int 
 	PRINT_ASSERT(mu,<=,3);
 	PRINT_ASSERT(nu,>=,0);
 	PRINT_ASSERT(nu,<=,3);
-	PRINT_ASSERT(xup[1],>,r_sch);
+	PRINT_ASSERT(xup[0],>,r_sch);
 
 	if(mu != nu) return 0;
 
 	switch (mu){
-	case 3:  return -(1.0 - r_sch / xup[1]);
-	case 0:  return 1.0 / (1.0 - r_sch / xup[1]);
-	case 1:  return xup[1] * xup[1];
-	case 2:  return xup[1] * xup[1] * sin(xup[2]) * sin(xup[2]);
+	case 3:  return     - (1.0 - r_sch / xup[0]);
+	case 0:  return 1.0 / (1.0 - r_sch / xup[0]);
+	case 1:  return xup[0] * xup[0];
+	case 2:  return xup[0] * xup[0] * sin(xup[1]) * sin(xup[1]);
 	default: return NaN;
 	}
 }
 double Grid1DSchwarzschild::d_g_down(const double xup[4], const int mu, const int nu, const int eta) const {
-	if(mu != nu) return 0;
-	switch(eta){
-	case 3: return 0;
-	case 0:
-		switch(mu){
-		case 3: return - r_sch / (xup[1]*xup[1]); break;
-		case 0: return - r_sch / (xup[1]-r_sch)*(xup[1]-r_sch); break;
-		case 1: return xup[1]; break;
-		case 2: return xup[1] * sin(xup[2]) * sin(xup[2]); break;
-		default: return 0; break;
-		} break;
-	case 1:
-		if(mu==3) return xup[1]*xup[1] * 2.0 * sin(xup[2]) * cos(xup[2]);
-		else return 0;
-		break;
-	default: return 0; break;
+	double retval = 0;
+
+	if(mu==nu){
+		if(eta==0){
+			switch(mu){
+			case 3: retval = - r_sch / (xup[0]*xup[0]); break;
+			case 0: retval = - r_sch / ((xup[0]-r_sch)*(xup[0]-r_sch)); break;
+			case 1: retval = 2.0 * xup[0]; break;
+			case 2: retval = 2.0 * xup[0] * sin(xup[1]) * sin(xup[1]); break;
+			default: retval = NaN; break;
+			}
+		}
+		else if(eta==1 && mu==2) retval = xup[0]*xup[0] * 2.0 * sin(xup[1]) * cos(xup[1]);
 	}
+
+	PRINT_ASSERT(retval,==,retval);
+	return retval;
 }
 
 double Grid1DSchwarzschild::connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const{ // Gamma^alhpa_mu_nu
 	double gamma = 0;
 
-	for(int eta=0; eta<4; eta++){
-		double ginv_aeta = (mu==nu ? 1.0/g_down(xup,a,eta) : 0);
-		gamma += ginv_aeta * (d_g_down(xup,mu,eta,nu) + d_g_down(xup,eta,nu,mu) - d_g_down(xup,mu,nu,eta));
-	}
+	double ginv = 1.0 / g_down(xup,a,a);
+	gamma += 0.5 * ginv * (d_g_down(xup,mu,a,nu) + d_g_down(xup,a,nu,mu) - d_g_down(xup,mu,nu,a));
 
 	return gamma;
 }
@@ -451,3 +449,7 @@ void Grid1DSchwarzschild::random_core_x_D(const double r_core, ThreadRNG *rangen
 	D[2] = sint_dir * sin(phi_dir);
 	Grid::normalize(D,3);
 }
+
+///void Grid1DSchwarzschild::integrate_geodesic(LorentzHelper *lh){
+//	GridGR::integrate_geodesic(lh);
+//}
