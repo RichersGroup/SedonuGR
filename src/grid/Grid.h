@@ -113,13 +113,13 @@ public:
 	// return the smallest length dimension of zone  z_ind
 	virtual double zone_min_length(const int z_ind) const     = 0;
 
-	// randomly sample a position within the zone z_ind
+	// randomly sample a position within the zone z_ind (PARTICLE COORDINATES)
 	virtual void sample_in_zone(const int z_ind,const double rand[], const int randsize, double x[3], const int xsize) const = 0;
 
-	// give the velocity vector at this point
+	// give the velocity vector at this point (PARTICLE COORDINATES)
 	virtual void interpolate_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind=-1) const = 0;
 
-	// get the coordinates at the center of the zone z_ind
+	// get the coordinates at the center of the zone z_ind (GRID COORDINATES)
 	virtual void zone_coordinates(const int z_ind, double r[], const int rsize) const = 0;
 	virtual double zone_radius(const int z_ind) const = 0;
 
@@ -142,6 +142,7 @@ public:
 	template<int s>
 	static void normalize_null_Minkowski(double a[], const int size);
 	virtual double dot(const double a[], const double b[], const int size, const double xup[]) const = 0;
+	double dot(const double a[], const double b[], const int size, const int z_ind) const;
 	virtual void normalize(double a[], const int size, const double xup[]) const = 0;
 	virtual void normalize_null(double a[], const int size, const double xup[]) const = 0;
 

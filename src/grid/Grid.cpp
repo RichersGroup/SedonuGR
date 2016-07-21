@@ -498,6 +498,11 @@ double Grid::radius(const double x[3], const int size) const{
 	return sqrt(dot_Minkowski<3>(x,x,size));
 }
 
+double Grid::dot(const double a[4], const double b[4], const int size, const int z_ind) const{
+	double xup[4];
+	zone_coordinates(z_ind,xup,4);
+	return dot(a,b,size,xup);
+}
 
 
 
