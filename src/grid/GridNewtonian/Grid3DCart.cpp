@@ -766,7 +766,7 @@ double Grid3DCart::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 	double r[3];
 	zone_coordinates(z_ind,r,3);
-	return sqrt(dot(r,r,3));
+	return sqrt(dot_Minkowski<3>(r,r,3));
 }
 
 //-----------------------------

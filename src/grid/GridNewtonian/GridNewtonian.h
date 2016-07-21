@@ -47,6 +47,11 @@ public:
 
 	void integrate_geodesic(LorentzHelper *lh) const;
 	void random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3], double D[3], const int size) const;
+
+	// vector functions
+	double dot(const double a[], const double b[], const int size, const double xup[]) const;
+	void normalize(double a[], const int size, const double xup[]) const;
+	void normalize_null(double a[], const int size, const double xup[]) const;
 };
 
 

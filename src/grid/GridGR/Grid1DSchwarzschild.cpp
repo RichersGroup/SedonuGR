@@ -238,7 +238,7 @@ void Grid1DSchwarzschild::cartesian_velocity_vector(const double x[3], const int
 		v[2] = 0;
 	}
 
-	PRINT_ASSERT(dot(v,v,vsize),<=,pc::c*pc::c);
+	PRINT_ASSERT(dot_Minkowski<3>(v,v,vsize),<=,pc::c*pc::c);
 }
 
 
@@ -447,9 +447,6 @@ void Grid1DSchwarzschild::random_core_x_D(const double r_core, ThreadRNG *rangen
 	D[0] = rangen->uniform();
 	D[1] = sint_dir * cos(phi_dir);
 	D[2] = sint_dir * sin(phi_dir);
-	Grid::normalize(D,3);
+	Grid::normalize_Minkowski<3>(D,3);
 }
 
-///void Grid1DSchwarzschild::integrate_geodesic(LorentzHelper *lh){
-//	GridGR::integrate_geodesic(lh);
-//}

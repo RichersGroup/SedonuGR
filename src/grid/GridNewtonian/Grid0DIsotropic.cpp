@@ -129,7 +129,7 @@ void Grid0DIsotropic::cartesian_velocity_vector(const double x[3], const int xsi
 	PRINT_ASSERT(xsize,==,3);
 	PRINT_ASSERT(vsize,==,3);
 	for(int i=0; i<vsize; i++) v[i] = z[z_ind].u[i];
-	PRINT_ASSERT(dot(v,v,vsize),<=,pc::c*pc::c);
+	PRINT_ASSERT(dot_Minkowski<3>(v,v,vsize),<=,pc::c*pc::c);
 }
 
 

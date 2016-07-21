@@ -889,7 +889,7 @@ void Grid2DSphere::reflect_outer(LorentzHelper *lh) const{
 	// invert the radial component of the velocity
 	double D[3];
 	for(int i=0; i<3; i++) D[i] -= 2.*velDotRhat * p->xup[i]/radius(p->xup,3);
-	normalize(D,3);
+	normalize_Minkowski<3>(D,3);
 	lh->set_p_D<lab>(D,3);
 
 	// put the particle just inside the boundary

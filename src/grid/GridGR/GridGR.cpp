@@ -63,3 +63,36 @@ void GridGR::integrate_geodesic(LorentzHelper *lh) const{
 	lh->set_p_xup(xnew,4);
 	lh->set_p_kup<lab>(knew,4);
 }
+
+double GridGR::dot(const double a[4], const double b[4], const int size, const double xup[4]) const{
+	PRINT_ASSERT(size,==,4);
+
+	double product = 0;
+	for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++)
+		product += a[mu] * b[nu] * g_down(xup,mu,nu);
+	return product;
+}
+void GridGR::normalize(double a[], const int size, const double xup[]) const{
+	PRINT_ASSERT(size,==,4);
+
+	double inv_norm = 0;
+	for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++)
+		inv_norm += a[mu] * a[nu] * g_down(xup,mu,nu);
+	inv_norm = 1.0 / sqrt(inv_norm);
+
+	for(int mu=0; mu<4; mu++) a[mu] *= inv_norm;
+}
+void GridGR::normalize_null(double a[], const int size, const double xup[]) const{
+	PRINT_ASSERT(size,==,4);
+
+	double A = g_down(xup,3,3);
+
+	double B = 0;
+	for(int i=0; i<3; i++) B += a[i] * g_down(xup,i,3);
+	B *= 2.0;
+
+	double C = 0;
+	for(int i=0; i<3; i++) for(int j=0; j<3; j++) C += a[i] * a[j] * g_down(xup,i,j);
+
+	a[0] = (-B - sqrt(abs( B*B - 4.0*A*C )) ) / (2.0*A);
+}

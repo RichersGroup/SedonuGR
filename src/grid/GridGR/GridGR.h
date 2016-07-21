@@ -51,6 +51,10 @@ public:
 
 	void integrate_geodesic(LorentzHelper *lh) const;
 
+	// vector quantities
+	double dot(const double a[], const double b[], const int size, const double xup[]) const;
+	void normalize(double a[], const int size, const double xup[]) const;
+	void normalize_null(double a[], const int size, const double xup[]) const;
 };
 
 

@@ -58,7 +58,7 @@ void Transport::propagate_particles()
 			if(p->fate == escaped){
 				double nu = p->kup[3]/(2.0*pc::pi) * pc::c;
 				double D[3] = {p->kup[0], p->kup[1], p->kup[2]};
-				Grid::normalize(D,3);
+				Grid::normalize_Minkowski<3>(D,3);
 				#pragma omp atomic
 				n_escape[p->s]++;
 				#pragma omp atomic
@@ -177,7 +177,7 @@ void Transport::event_boundary(LorentzHelper *lh, const int z_ind) const{
 
 void Transport::distribution_function_basis(const double D[3], const double xyz[3], double D_newbasis[3]) const{
 	double x=xyz[0], y=xyz[1], z=xyz[2];
-	double r = sqrt(Grid::dot(xyz,xyz,3));
+	double r = sqrt(Grid::dot_Minkowski<3>(xyz,xyz,3));
 	double rp = sqrt(x*x + y*y);
 	double rhat[3]     = {0,0,0};
 	double thetahat[3] = {0,0,0};
@@ -198,9 +198,9 @@ void Transport::distribution_function_basis(const double D[3], const double xyz[
 		phihat[1] =  x/rp;
 		phihat[2] = 0;
 	}
-	D_newbasis[0] = Grid::dot(D,phihat,3);
-	D_newbasis[1] = Grid::dot(D,thetahat,3);
-	D_newbasis[2] = Grid::dot(D,rhat,3);
+	D_newbasis[0] = Grid::dot_Minkowski<3>(D,phihat,3);
+	D_newbasis[1] = Grid::dot_Minkowski<3>(D,thetahat,3);
+	D_newbasis[2] = Grid::dot_Minkowski<3>(D,rhat,3);
 }
 void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	PRINT_ASSERT(z_ind, >=, 0);
@@ -227,7 +227,7 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	double Dlab[3];
 	lh->p_D(lab,Dlab,3);
 	distribution_function_basis(Dlab,lh->p_xup(),D_newbasis);
-	Grid::normalize(D_newbasis,3);
+	Grid::normalize_Minkowski<3>(D_newbasis,3);
 	zone->distribution[lh->p_s()].count(D_newbasis, 3, lh->p_nu(lab), to_add);
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)

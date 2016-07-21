@@ -185,7 +185,7 @@ void LorentzHelper::p_D(const Frame f, double D[3], const int size) const{
 	PRINT_ASSERT(size,==,3);
 	PRINT_ASSERT(p[f].kup[3],>,0);
 	for(int i=0; i<3; i++) D[i] = p[f].kup[i];
-	Grid::normalize(D,3);
+	Grid::normalize_Minkowski<3>(D,3);
 }
 const double* LorentzHelper::p_kup(const Frame f) const {
 	return p[f].kup;
@@ -256,7 +256,7 @@ template void LorentzHelper::set_distance<lab>(const double d);
 // input velocity is the fluid velocity in the lab frame
 // [v] = cm/s, [x] = cm
 void LorentzHelper::transform_cartesian_4vector_c2l(const double v[3], double x[4]){
-	PRINT_ASSERT(Grid::dot(v,v,3),<=,pc::c*pc::c);
+	PRINT_ASSERT(Grid::dot_Minkowski<3>(v,v,3),<=,pc::c*pc::c);
 
 	// new frame is lab frame. old frame is comoving frame.
 	// v_rel = v_lab - v_comoving  --> v must flip sign.
@@ -266,7 +266,7 @@ void LorentzHelper::transform_cartesian_4vector_c2l(const double v[3], double x[
 	vrel[2] = -v[2];
 
 	double gamma = LorentzHelper::lorentz_factor(vrel,3);
-	double v2 = Grid::dot(vrel,vrel,3);
+	double v2 = Grid::dot_Minkowski<3>(vrel,vrel,3);
 
 
 	// save comoving x
@@ -295,8 +295,8 @@ void LorentzHelper::transform_cartesian_4vector_c2l(const double v[3], double x[
 
 double LorentzHelper::lorentz_factor(const double v[3], const int vsize){
 	PRINT_ASSERT(vsize,<=,3);
-	PRINT_ASSERT(Grid::dot(v,v,vsize),<,pc::c*pc::c);
-	double beta2 = Grid::dot(v,v,vsize) * pc::inv_c * pc::inv_c;
+	PRINT_ASSERT(Grid::dot_Minkowski<3>(v,v,vsize),<,pc::c*pc::c);
+	double beta2 = Grid::dot_Minkowski<3>(v,v,vsize) * pc::inv_c * pc::inv_c;
 	double lfac = 1.0 / sqrt(1.0 - beta2);
 	PRINT_ASSERT(lfac,>=,1.0);
 	return lfac;
@@ -307,7 +307,7 @@ double LorentzHelper::doppler_shift(const double v[3], const double D[3], const 
 	// v_rel = v_comoving - v_lab  -->  v keeps its sign
 
 	double gamma = lorentz_factor(v,size);
-	double vdd = Grid::dot(v,D,size);
+	double vdd = Grid::dot_Minkowski<3>(v,D,size);
 	double dshift = gamma * (1.0 - vdd*pc::inv_c);
 	//double dshift = doppler_shift(gamma,vdd);
 	PRINT_ASSERT(dshift,>,0);
@@ -331,9 +331,9 @@ void LorentzHelper::lorentz_transform_particle(Particle* p, const double v[3], c
 		PRINT_ASSERT(p->kup[i],<,INFINITY);
 		D[i] = p->kup[i];
 	}
-	Grid::normalize(D,3);
+	Grid::normalize_Minkowski<3>(D,3);
 	double gamma = lorentz_factor(v,vsize);
-	double vdd = Grid::dot(D, v, vsize);
+	double vdd = Grid::dot_Minkowski<3>(D, v, vsize);
 	PRINT_ASSERT(D[0],<,INFINITY);
 	double dshift = doppler_shift(v, D, vsize);
 
@@ -347,7 +347,7 @@ void LorentzHelper::lorentz_transform_particle(Particle* p, const double v[3], c
 	D[0] = (D[0] - v[0]*tmp);
 	D[1] = (D[1] - v[1]*tmp);
 	D[2] = (D[2] - v[2]*tmp);
-	Grid::normalize(D,3);
+	Grid::normalize_Minkowski<3>(D,3);
 	for(int i=0; i<3; i++) p->kup[i] = D[i] * p->kup[3];
 
 	// sanity checks

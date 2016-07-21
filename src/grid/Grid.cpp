@@ -424,7 +424,7 @@ bool Grid::good_zone(const int z_ind) const{
 double Grid::zone_speed2(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	double speed2 = dot(z[z_ind].u,z[z_ind].u,ARRSIZE(z[z_ind].u));
+	double speed2 = dot_Minkowski<3>(z[z_ind].u,z[z_ind].u,ARRSIZE(z[z_ind].u));
 	return speed2;
 }
 
@@ -436,44 +436,66 @@ double Grid::total_rest_mass() const{
 }
 
 // vector operations
-double Grid::dot(const vector<double>& a, const vector<double>& b){
-	PRINT_ASSERT(a.size(),>,0);
-	PRINT_ASSERT(b.size(),>,0);
+template<int s>
+double Grid::dot_Minkowski(const vector<double>& a, const vector<double>& b){
 	PRINT_ASSERT(a.size(),==,b.size());
-	double product = 0;
-	for(unsigned i=0; i<a.size(); i++) product += a[i]*b[i];
-	return product;
+	return dot_Minkowski<s>(a.data(), b.data(), a.size());
 }
-double Grid::dot(const vector<double>& a, const double b[], const int size){
-	PRINT_ASSERT(a.size(),>,0);
-	PRINT_ASSERT(size,>,0);
+template double Grid::dot_Minkowski<3>(const vector<double>& a, const vector<double>& b);
+template double Grid::dot_Minkowski<4>(const vector<double>& a, const vector<double>& b);
+
+template<int s>
+double Grid::dot_Minkowski(const vector<double>& a, const double b[], const int size){
 	PRINT_ASSERT(a.size(),==,size);
-	double product = 0;
-	for(unsigned i=0; i<a.size(); i++) product += a[i]*b[i];
-	return product;
+	return dot_Minkowski<s>(a.data(), b, size);
 }
-double Grid::dot(const double a[], const double b[], const int size){
-	PRINT_ASSERT(size,>,0);
+template double Grid::dot_Minkowski<3>(const vector<double>& a, const double b[], const int size);
+template double Grid::dot_Minkowski<4>(const vector<double>& a, const double b[], const int size);
+
+template<int s>
+double Grid::dot_Minkowski(const double a[], const double b[], const int size){
+	PRINT_ASSERT(size,>=,3);
+	PRINT_ASSERT(size,<=,4);
 	double product = 0;
 	for(unsigned i=0; i<size; i++) product += a[i]*b[i];
+	if(s==4) product -= a[3]*b[3];
 	return product;
 }
+template double Grid::dot_Minkowski<3>(const double a[], const double b[], const int size);
+template double Grid::dot_Minkowski<4>(const double a[], const double b[], const int size);
 
 // normalize a vector
-void Grid::normalize(vector<double>& a){
-	PRINT_ASSERT(a.size(),>,0);
-	double inv_magnitude = 1./sqrt(dot(a,a));
-	for(unsigned i=0; i<a.size(); i++) a[i] *= inv_magnitude;
+template<int s>
+void Grid::normalize_Minkowski(vector<double>& a){
+	normalize_Minkowski<s>(&(a[0]), a.size());
 }
-void Grid::normalize(double a[],const int size){
-	PRINT_ASSERT(size,>,0);
-	double inv_magnitude = 1./sqrt(dot(a,a,size));
+template void Grid::normalize_Minkowski<3>(vector<double>& a);
+template void Grid::normalize_Minkowski<4>(vector<double>& a);
+
+template<int s>
+void Grid::normalize_Minkowski(double a[],const int size){
+	PRINT_ASSERT(size,>=,3);
+	PRINT_ASSERT(size,<=,4);
+	double inv_magnitude = 1./sqrt(abs( dot_Minkowski<s>(a,a,size) ));
+	PRINT_ASSERT(inv_magnitude,<,INFINITY);
 	for(unsigned i=0; i<size; i++) a[i] *= inv_magnitude;
 }
+template void Grid::normalize_Minkowski<3>(double a[], const int size);
+template void Grid::normalize_Minkowski<4>(double a[], const int size);
+
+template<int s>
+void Grid::normalize_null_Minkowski(double a[], const int size){
+	PRINT_ASSERT(size,==,4);
+
+	double spatial_norm = dot_Minkowski<3>(a,a,size);
+	a[3] = sqrt(spatial_norm);
+}
+template void Grid::normalize_null_Minkowski<3>(double a[], const int size);
+template void Grid::normalize_null_Minkowski<4>(double a[], const int size);
 
 // radius given coordinates
 double Grid::radius(const double x[3], const int size) const{
-	return sqrt(dot(x,x,size));
+	return sqrt(dot_Minkowski<3>(x,x,size));
 }
 
 

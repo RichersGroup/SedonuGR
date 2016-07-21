@@ -129,11 +129,21 @@ public:
 	virtual void symmetry_boundaries(LorentzHelper *lh) const = 0;
 
 	// vector operations
-	static double dot(const std::vector<double>& a, const std::vector<double>& b);
-	static double dot(const std::vector<double>& a, const double b[], const int size);
-	static double dot(const double a[], const double b[], const int size);
-	static void normalize(std::vector<double>& a);
-	static void normalize(double a[], const int size);
+	template<int s>
+	static double dot_Minkowski(const std::vector<double>& a, const std::vector<double>& b);
+	template<int s>
+	static double dot_Minkowski(const std::vector<double>& a, const double b[], const int size);
+	template<int s>
+	static double dot_Minkowski(const double a[], const double b[], const int size);
+	template<int s>
+	static void normalize_Minkowski(std::vector<double>& a);
+	template<int s>
+	static void normalize_Minkowski(double a[], const int size);
+	template<int s>
+	static void normalize_null_Minkowski(double a[], const int size);
+	virtual double dot(const double a[], const double b[], const int size, const double xup[]) const = 0;
+	virtual void normalize(double a[], const int size, const double xup[]) const = 0;
+	virtual void normalize_null(double a[], const int size, const double xup[]) const = 0;
 
 	// move the particle
 	virtual void integrate_geodesic(LorentzHelper *lh) const = 0;

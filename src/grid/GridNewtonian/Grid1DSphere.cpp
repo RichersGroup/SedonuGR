@@ -219,7 +219,7 @@ void Grid1DSphere::cartesian_velocity_vector(const double x[3], const int xsize,
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 
 	// radius in zone
-	double r = sqrt(dot(x,x,xsize));
+	double r = sqrt(dot_Minkowski<3>(x,x,xsize));
 
 	// assuming radial velocity (may want to interpolate here)
 	// (the other two components are ignored and mean nothing)
@@ -236,7 +236,7 @@ void Grid1DSphere::cartesian_velocity_vector(const double x[3], const int xsize,
 		v[2] = 0;
 	}
 
-	PRINT_ASSERT(dot(v,v,vsize),<=,pc::c*pc::c);
+	PRINT_ASSERT(dot_Minkowski<3>(v,v,vsize),<=,pc::c*pc::c);
 }
 
 
@@ -271,7 +271,7 @@ void Grid1DSphere::reflect_outer(LorentzHelper *lh) const{
 	D[0] -= 2.*velDotRhat * p->xup[0]/R;
 	D[1] -= 2.*velDotRhat * p->xup[1]/R;
 	D[2] -= 2.*velDotRhat * p->xup[2]/R;
-	normalize(D,3);
+	normalize_Minkowski<3>(D,3);
 	lh->set_p_D<lab>(D,3);
 
 	// put the particle just inside the boundary
