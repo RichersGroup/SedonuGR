@@ -87,7 +87,6 @@ void Grid1DSchwarzschild::read_model_file(Lua* lua)
 		PRINT_ASSERT(z[z_ind].T,>=,0);
 		PRINT_ASSERT(z[z_ind].Ye,>=,0);
 		PRINT_ASSERT(z[z_ind].Ye,<=,1.0);
-		PRINT_ASSERT(ARRSIZE(z[z_ind].u),==,3);
 	}
 
 	infile.close();
@@ -225,7 +224,6 @@ void Grid1DSchwarzschild::cartesian_velocity_vector(const double x[3], const int
 
 	// assuming radial velocity (may want to interpolate here)
 	// (the other two components are ignored and mean nothing)
-	PRINT_ASSERT(ARRSIZE(z[z_ind].u),==,3);
 	v[0] = z[z_ind].u[0];
 	v[1] = 0;
 	v[2] = 0;

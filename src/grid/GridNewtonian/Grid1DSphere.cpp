@@ -85,7 +85,6 @@ void Grid1DSphere::read_model_file(Lua* lua)
 		PRINT_ASSERT(z[z_ind].T,>=,0);
 		PRINT_ASSERT(z[z_ind].Ye,>=,0);
 		PRINT_ASSERT(z[z_ind].Ye,<=,1.0);
-		PRINT_ASSERT(ARRSIZE(z[z_ind].u),==,3);
 	}
 
 	infile.close();
@@ -223,7 +222,6 @@ void Grid1DSphere::cartesian_velocity_vector(const double x[3], const int xsize,
 
 	// assuming radial velocity (may want to interpolate here)
 	// (the other two components are ignored and mean nothing)
-	PRINT_ASSERT(ARRSIZE(z[z_ind].u),==,3);
 	v[0] = x[0]/r*z[z_ind].u[0];
 	v[1] = x[1]/r*z[z_ind].u[0];
 	v[2] = x[2]/r*z[z_ind].u[0];

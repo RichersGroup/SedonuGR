@@ -176,7 +176,6 @@ void Grid2DCylinder::read_model_file(Lua* lua)
 	      vz_tmp   *= speed_max / speed;
 	      if(rank0) cout << "WARNING: velocity of superluminal cell at {r,z}={" << rcyl_out[i] << "," << zcyl_out[j] << "} set to gamma=" << gamma_max << endl;
 	    }
-	    PRINT_ASSERT(ARRSIZE(z[z_ind].u),==,3);
 	    z[z_ind].u[0] = vr_tmp;
 	    z[z_ind].u[1] = vz_tmp;
 	    z[z_ind].u[2] = vphi_tmp;
@@ -376,7 +375,6 @@ void Grid2DCylinder::cartesian_velocity_vector(const double x[3], const int xsiz
 		int along_axis = (rcyl/r < TINY);
 
 		// Based on position, calculate what the 3-velocity is
-		PRINT_ASSERT(ARRSIZE(z[z_ind].u),==,3);
 		double vrcyl = z[z_ind].u[0];
 		double vphi  = z[z_ind].u[1];
 		double vz    = z[z_ind].u[2];

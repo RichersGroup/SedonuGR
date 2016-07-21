@@ -377,7 +377,6 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 					vphi   *= speed_max / speed;
 					if(rank0) cout << "WARNING: velocity of superluminal cell at {r,theta}={" << r[0] << "," << r[1] << "} set to gamma=" << gamma_max << endl;
 				}
-				PRINT_ASSERT(ARRSIZE(z[z_ind].u),==,3);
 				z[z_ind].u[0] = vr;
 				z[z_ind].u[1] = vtheta;
 				z[z_ind].u[2] = vphi;
@@ -571,7 +570,6 @@ void Grid2DSphere::custom_model(Lua* lua)
 		infile >> z[base_ind].T;
 		infile >> z[base_ind].Ye;
 		z[base_ind].H_vis = 0;
-		PRINT_ASSERT(ARRSIZE(z[base_ind].u),==,3);
 		z[base_ind].u[0] = 0;
 		z[base_ind].u[1] = 0;
 		z[base_ind].u[2] = 0;
@@ -777,7 +775,6 @@ void Grid2DSphere::cartesian_velocity_vector(const double x[3], const int xsize,
 		int along_axis = (rhat/r < TINY);
 
 		// Based on position, calculate what the 3-velocity is
-		PRINT_ASSERT(ARRSIZE(z[z_ind].u),==,3);
 		double vr     = z[z_ind].u[0];
 		double vtheta = z[z_ind].u[1];
 		double vphi   = z[z_ind].u[2];

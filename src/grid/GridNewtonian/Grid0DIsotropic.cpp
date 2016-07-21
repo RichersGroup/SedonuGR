@@ -51,7 +51,6 @@ void Grid0DIsotropic::read_model_file(Lua* lua)
 	PRINT_ASSERT(z[0].T,>=,0);
 	PRINT_ASSERT(z[0].Ye,>=,0);
 	PRINT_ASSERT(z[0].Ye,<=,1.0);
-	PRINT_ASSERT(ARRSIZE(z[0].u),==,3);
 	PRINT_ASSERT(zone_speed2(0),<,pc::c*pc::c);
 }
 

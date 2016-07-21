@@ -79,7 +79,7 @@ void Grid::init(Lua* lua)
     #pragma omp parallel for reduction(+:total_rest_mass,total_KE,total_TE,total_hvis,Tbar,Yebar)
 	for(unsigned z_ind=0;z_ind<z.size();z_ind++){
 		// zero out fluid velocity if not doing SR
-		if(!do_relativity) for(unsigned i=0; i<ARRSIZE(z[z_ind].u); i++) z[z_ind].u[i] = 0;
+		if(!do_relativity) for(unsigned i=0; i<3; i++) z[z_ind].u[i] = 0;
 
 		// calculate cell rest mass
 		double rest_mass   = zone_rest_mass(z_ind);
@@ -93,7 +93,7 @@ void Grid::init(Lua* lua)
 		total_rest_mass += rest_mass;
 		Tbar            += z[z_ind].T * rest_mass;
 		Yebar           += z[z_ind].Ye * rest_mass;
-		total_KE        += (LorentzHelper::lorentz_factor(z[z_ind].u,ARRSIZE(z[z_ind].u)) - 1.0) * rest_mass * pc::c*pc::c;
+		total_KE        += (LorentzHelper::lorentz_factor(z[z_ind].u,3) - 1.0) * rest_mass * pc::c*pc::c;
 		total_TE        += rest_mass   / pc::m_n * pc::k * z[z_ind].T;
 		if(do_visc) total_hvis += z[z_ind].H_vis * z[z_ind].rho * zone_lab_volume(z_ind);
 	}
@@ -259,7 +259,7 @@ void Grid::write_hdf5_data(H5::H5File file) const{
 	dataset = file.createDataSet("dYe_dt_abs(1|s,lab)",H5::PredType::IEEE_F32LE,dataspace);
 	for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
 		double n_baryons_per_ccm = z[z_ind].rho / Transport::mean_mass(z[z_ind].Ye);
-		tmp[z_ind] = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / LorentzHelper::lorentz_factor(z[z_ind].u,ARRSIZE(z[z_ind].u));
+		tmp[z_ind] = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / LorentzHelper::lorentz_factor(z[z_ind].u,3);
 	}
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
@@ -365,8 +365,8 @@ void Grid::write_line(ofstream& outf, const int z_ind) const{
 	outf << sqrt(zone_speed2(z_ind)) << "\t";
 
 	double n_baryons_per_ccm = z[z_ind].rho / Transport::mean_mass(z[z_ind].Ye);
-	double dYe_dt_abs = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / LorentzHelper::lorentz_factor(z[z_ind].u,ARRSIZE(z[z_ind].u));
-	double dYe_dt_emit = -z[z_ind].l_emit / n_baryons_per_ccm / LorentzHelper::lorentz_factor(z[z_ind].u,ARRSIZE(z[z_ind].u));
+	double dYe_dt_abs = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / LorentzHelper::lorentz_factor(z[z_ind].u,3);
+	double dYe_dt_emit = -z[z_ind].l_emit / n_baryons_per_ccm / LorentzHelper::lorentz_factor(z[z_ind].u,3);
 	outf << dYe_dt_abs << "\t";
 	outf << dYe_dt_emit << "\t";
 
@@ -424,7 +424,7 @@ bool Grid::good_zone(const int z_ind) const{
 double Grid::zone_speed2(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	double speed2 = dot_Minkowski<3>(z[z_ind].u,z[z_ind].u,ARRSIZE(z[z_ind].u));
+	double speed2 = dot_Minkowski<3>(z[z_ind].u,z[z_ind].u,3);
 	return speed2;
 }
 
