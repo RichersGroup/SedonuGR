@@ -67,6 +67,9 @@ protected:
 	int output_hdf5;
 	int do_annihilation;
 
+	// get the coordinates at the center of the zone z_ind (GRID COORDINATES)
+	virtual void zone_coordinates(const int z_ind, double r[], const int rsize) const = 0;
+
 public:
 
 	virtual ~Grid() {}
@@ -119,8 +122,6 @@ public:
 	// give the velocity vector at this point (PARTICLE COORDINATES)
 	virtual void interpolate_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind=-1) const = 0;
 
-	// get the coordinates at the center of the zone z_ind (GRID COORDINATES)
-	virtual void zone_coordinates(const int z_ind, double r[], const int rsize) const = 0;
 	virtual double zone_radius(const int z_ind) const = 0;
 
 	// boundary conditions
