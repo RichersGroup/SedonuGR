@@ -106,7 +106,7 @@ template void LorentzHelper::set_p_D<lab>(const double D[3], const int size);
 
 template<Frame f>
 void LorentzHelper::set_p_kup(const double kup[4], const int size) {
-	PRINT_ASSERT(size,==,3);
+	PRINT_ASSERT(size,==,4);
 	for(int i=0; i<size; i++) p[f].kup[i] = kup[i];
 	if(p[f].e>0) set_p<f>(&(p[f]));
 }
@@ -124,7 +124,7 @@ template void LorentzHelper::set_p_e<lab>(const double e);
 
 template<Frame f>
 void LorentzHelper::set_p_nu(const double nu){
-	p[f].kup[3] = nu * pc::h / pc::c;
+	p[f].kup[3] = nu * 2.0*pc::pi / pc::c;
 	if(p[f].e > 0) set_p<f>(&(p[f]));
 }
 template void LorentzHelper::set_p_nu<com>(const double nu);
@@ -165,7 +165,7 @@ void LorentzHelper::set_p_s(const int s){
 
 // get the particle properties
 double LorentzHelper::p_e(const Frame f) const {return p[f].e;}
-double LorentzHelper::p_nu(const Frame f) const {return p[f].kup[3] * pc::c / pc::h;}
+double LorentzHelper::p_nu(const Frame f) const {return p[f].kup[3] * pc::c / (2.0*pc::pi);}
 int    LorentzHelper::p_s() const {
 	PRINT_ASSERT(p[lab].s,==,p[com].s);
 	return p[lab].s;
