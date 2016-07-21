@@ -179,7 +179,6 @@ void Grid2DCylinder::read_model_file(Lua* lua)
 	    z[z_ind].u[0] = vr_tmp;
 	    z[z_ind].u[1] = vz_tmp;
 	    z[z_ind].u[2] = vphi_tmp;
-	    PRINT_ASSERT(zone_speed2(z_ind),<,pc::c*pc::c);
 	    PRINT_ASSERT(z[z_ind].rho,>=,0.0);
 	    PRINT_ASSERT(z[z_ind].T,>=,0.0);
 	    PRINT_ASSERT(z[z_ind].Ye,>=,0.0);

@@ -170,7 +170,6 @@ void Grid::write_header(ofstream& outf) const{
 	outf << ++c << "-H_vis(erg/s/g,com)  ";
 	outf << ++c << "-H_abs(erg/g/s,com)  ";
 	outf << ++c << "-C_emit(erg/g/s,com)  ";
-	outf << ++c << "-|v|(cm/s,lab)  ";
 	outf << ++c << "-dYe_dt_abs(1/s,lab)  ";
 	outf << ++c << "-dYe_dt_emit(1/s,lab)  ";
 	if(do_annihilation) outf << ++c << "-annihilation_rate(erg/ccm/s,lab)  ";
@@ -246,12 +245,6 @@ void Grid::write_hdf5_data(H5::H5File file) const{
 	// write C_emit
 	dataset = file.createDataSet("C_emit(erg|s|g,com)",H5::PredType::IEEE_F32LE,dataspace);
 	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].e_emit / z[z_ind].rho;
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-	dataset.close();
-
-	// write |v|
-	dataset = file.createDataSet("|v|(cm|s,lab)",H5::PredType::IEEE_F32LE,dataspace);
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = sqrt(zone_speed2(z_ind));
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 
@@ -362,8 +355,6 @@ void Grid::write_line(ofstream& outf, const int z_ind) const{
 	outf << H_abs << "\t";
 	outf << H_emit << "\t";
 
-	outf << sqrt(zone_speed2(z_ind)) << "\t";
-
 	double n_baryons_per_ccm = z[z_ind].rho / Transport::mean_mass(z[z_ind].Ye);
 	double dYe_dt_abs = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / LorentzHelper::lorentz_factor(z[z_ind].u,3);
 	double dYe_dt_emit = -z[z_ind].l_emit / n_baryons_per_ccm / LorentzHelper::lorentz_factor(z[z_ind].u,3);
@@ -412,21 +403,10 @@ bool Grid::good_zone(const int z_ind) const{
 	//  	    z->Ye  >= Ye_min  && z->Ye  <=  Ye_max &&
 	//        z->T   >=  T_min  && z->T   <=   T_max);
 	if(z_ind < 0) return false;
-	else if(zone_speed2(z_ind) > pc::c*pc::c) return false;
 	else return true;
 }
 
 
-
-//------------------------------------
-// get the velocity squared of a zone
-//------------------------------------
-double Grid::zone_speed2(const int z_ind) const{
-	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
-	double speed2 = dot_Minkowski<3>(z[z_ind].u,z[z_ind].u,3);
-	return speed2;
-}
 
 double Grid::total_rest_mass() const{
 	double mass = 0;

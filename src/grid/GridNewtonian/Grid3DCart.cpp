@@ -276,8 +276,6 @@ void Grid3DCart::read_THC_file(Lua* lua)
 		PRINT_ASSERT(z[z_ind].T,>=,0.0);
 		PRINT_ASSERT(z[z_ind].Ye,>=,0.0);
 		PRINT_ASSERT(z[z_ind].Ye,<=,1.0);
-		PRINT_ASSERT(zone_speed2(z_ind),<,pc::c*pc::c);
-		PRINT_ASSERT(zone_speed2(z_ind),>=,0.0);
 	}
 
 	file.close();

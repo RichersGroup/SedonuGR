@@ -129,7 +129,6 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 			z[z_ind].T /= pc::k_MeV;
 
 			// sanity checks
-			PRINT_ASSERT(zone_speed2(z_ind),<,pc::c*pc::c);
 			PRINT_ASSERT(z[z_ind].rho,>=,0.0);
 			PRINT_ASSERT(z[z_ind].T,>=,0.0);
 			PRINT_ASSERT(z[z_ind].Ye,>=,0.0);
@@ -380,7 +379,6 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 				z[z_ind].u[0] = vr;
 				z[z_ind].u[1] = vtheta;
 				z[z_ind].u[2] = vphi;
-				PRINT_ASSERT(zone_speed2(z_ind),<,pc::c*pc::c);
 				PRINT_ASSERT(z[z_ind].rho,>=,0.0);
 				PRINT_ASSERT(z[z_ind].T,>=,0.0);
 				PRINT_ASSERT(z[z_ind].Ye,>=,0.0);
