@@ -28,12 +28,12 @@
 #ifndef _GRID_1D_SPHERE_H
 #define _GRID_1D_SPHERE_H 1
 
-#include "Grid.h"
+#include "GridNewtonian.h"
 
 //*******************************************
 // 1-Dimensional Spherical geometry
 //*******************************************
-class Grid1DSphere: public Grid
+class Grid1DSphere: public GridNewtonian
 {
 
 private:

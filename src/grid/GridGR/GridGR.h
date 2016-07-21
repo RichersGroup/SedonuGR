@@ -49,7 +49,7 @@ public:
 
 	virtual ~GridGR() {}
 
-	void integrate_geodesic(LorentzHelper *lh);
+	void integrate_geodesic(LorentzHelper *lh) const;
 
 };
 

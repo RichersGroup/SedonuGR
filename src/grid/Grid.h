@@ -136,10 +136,10 @@ public:
 	static void normalize(double a[], const int size);
 
 	// move the particle
-	void integrate_geodesic(LorentzHelper *lh) const;
+	virtual void integrate_geodesic(LorentzHelper *lh) const = 0;
 
 	// help with spawning particles
-	virtual void random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3], double D[3], const int size) const;
+	virtual void random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3], double D[3], const int size) const = 0;
 };
 
 

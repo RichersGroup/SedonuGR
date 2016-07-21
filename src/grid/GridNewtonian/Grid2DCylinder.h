@@ -28,12 +28,12 @@
 #ifndef _GRID_2D_CYLINDER_H
 #define _GRID_2D_CYLINDER_H 1
 
-#include "Grid.h"
+#include "GridNewtonian.h"
 
 //*******************************************
 // 2-Dimensional Cylindrical geometry
 //*******************************************
-class Grid2DCylinder: public Grid
+class Grid2DCylinder: public GridNewtonian
 {
 
 private:

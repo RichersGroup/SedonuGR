@@ -28,7 +28,7 @@
 #ifndef _GRID_3D_CART_H
 #define _GRID_3D_CART_H 1
 
-#include "Grid.h"
+#include "GridNewtonian.h"
 
 // PARAMETERS
 //    Grid3DCart_THC_reflevel -- refinement level to use when reading in THC data
@@ -39,7 +39,7 @@
 //*******************************************
 // 1-Dimensional Spherical geometry
 //*******************************************
-class Grid3DCart: public Grid
+class Grid3DCart: public GridNewtonian
 {
 
 private:

@@ -28,7 +28,7 @@
 #ifndef _GRID_2D_SPHERE_H
 #define _GRID_2D_SPHERE_H 1
 
-#include "Grid.h"
+#include "GridNewtonian.h"
 
 // PARAMETERS
 //    Grid2DSphere_Flash_rgrid_file
@@ -39,7 +39,7 @@
 //*******************************************
 // 1-Dimensional Spherical geometry
 //*******************************************
-class Grid2DSphere: public Grid
+class Grid2DSphere: public GridNewtonian
 {
 
 private:

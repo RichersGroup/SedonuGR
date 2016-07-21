@@ -25,41 +25,29 @@
 //
 */
 
-#include <mpi.h>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include "GridGR.h"
-#include "Lua.h"
-#include "nulib_interface.h"
-#include "global_options.h"
-#include "Transport.h"
-#include "H5Cpp.h"
+#ifndef _GRID_NEWT_H
+#define _GRID_NEWT_H 1
+
+#include "Grid.h"
 
 using namespace std;
-namespace pc = physical_constants;
 
-void GridGR::integrate_geodesic(LorentzHelper *lh) const{
-	double lambda = lh->distance(lab) * pc::c / (2.0*pc::pi * lh->p_nu(lab));
+//*******************************************
+// general Newtonian grid functionality
+//*******************************************
+class GridNewtonian: public Grid
+{
 
-	double dk_dlambda[4];
-	for(int a=0; a<4; a++){
-		dk_dlambda[a] = 0;
-		for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++){
-			dk_dlambda[a] -= connection_coefficient(lh->p_xup(),a,mu,nu) * lh->p_kup(lab)[mu] * lh->p_kup(lab)[nu];
-		}
-		dk_dlambda[a] *= 2.0*pc::pi * lh->p_nu(lab) / pc::c;
-	}
+private:
 
-	// get new k
-	double knew[4];
-	for(int i=0; i<4; i++) knew[i] = lh->p_kup(lab)[i] + dk_dlambda[i]*lambda;
+public:
 
-	// get new x
-	double xnew[4];
-	for(int i=0; i<4; i++) xnew[i] = lh->p_xup()[i] + lambda * 0.5 * (lh->p_kup(lab)[i] + knew[i]);
+	virtual ~GridNewtonian() {}
 
-	// actually change the values
-	lh->set_p_xup(xnew,4);
-	lh->set_p_kup<lab>(knew,4);
-}
+
+	void integrate_geodesic(LorentzHelper *lh) const;
+	void random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3], double D[3], const int size) const;
+};
+
+
+#endif
