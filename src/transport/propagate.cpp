@@ -313,7 +313,7 @@ void Transport::propagate(Particle* p)
 
 		// set up the LorentzHelper
 		double v[3];
-		grid->get_fluid_velocity(lh.p_xup(),3,v,3,z_ind);
+		grid->interpolate_fluid_velocity(lh.p_xup(),3,v,3,z_ind);
 		lh.set_v(v,3);
 
 		// get all the opacities

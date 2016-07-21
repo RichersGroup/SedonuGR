@@ -291,7 +291,7 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 
 	// get the velocity
 	double v[3];
-	grid->get_fluid_velocity(xup,3,v,3,z_ind);
+	grid->interpolate_fluid_velocity(xup,3,v,3,z_ind);
 
 	// set up LorentzHelper
 	LorentzHelper lh(exponential_decay);
@@ -371,7 +371,7 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	// set up LorentzHelper
 	LorentzHelper lh(exponential_decay);
 	double v[3];
-	grid->get_fluid_velocity(plab.xup,3,v,3,z_ind);
+	grid->interpolate_fluid_velocity(plab.xup,3,v,3,z_ind);
 	lh.set_v(v,3);
 	lh.set_p<lab>(&plab);
 

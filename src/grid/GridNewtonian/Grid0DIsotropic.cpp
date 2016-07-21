@@ -122,7 +122,7 @@ void Grid0DIsotropic::sample_in_zone
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void Grid0DIsotropic::get_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
+void Grid0DIsotropic::interpolate_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
 {
 	PRINT_ASSERT(z_ind,==,0);
 	PRINT_ASSERT(xsize,==,3);

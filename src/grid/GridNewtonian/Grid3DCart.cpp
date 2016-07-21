@@ -554,7 +554,7 @@ double  Grid3DCart::zone_min_length(const int z_ind) const
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void Grid3DCart::get_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
+void Grid3DCart::interpolate_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
 {
 	PRINT_ASSERT(xsize,==,3);
 	PRINT_ASSERT(vsize,==,3);

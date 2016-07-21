@@ -759,7 +759,7 @@ void Grid2DSphere::sample_in_zone(const int z_ind, const double rand[3], const i
 //------------------------------------------------------------
 // get the cartesian velocity vector (cm/s)
 //------------------------------------------------------------
-void Grid2DSphere::get_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
+void Grid2DSphere::interpolate_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
 {
 	PRINT_ASSERT(xsize,==,3);
 	PRINT_ASSERT(vsize,==,3);

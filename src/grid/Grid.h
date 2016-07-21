@@ -117,7 +117,7 @@ public:
 	virtual void sample_in_zone(const int z_ind,const double rand[], const int randsize, double x[3], const int xsize) const = 0;
 
 	// give the velocity vector at this point
-	virtual void get_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind=-1) const = 0;
+	virtual void interpolate_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind=-1) const = 0;
 
 	// get the coordinates at the center of the zone z_ind
 	virtual void zone_coordinates(const int z_ind, double r[], const int rsize) const = 0;

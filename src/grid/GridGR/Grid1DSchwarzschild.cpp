@@ -211,7 +211,7 @@ void Grid1DSchwarzschild::sample_in_zone
 //------------------------------------------------------------
 // get the velocity vector
 //------------------------------------------------------------
-void Grid1DSchwarzschild::get_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
+void Grid1DSchwarzschild::interpolate_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
 {
 	PRINT_ASSERT(xsize,==,3);
 	PRINT_ASSERT(vsize,==,3);
