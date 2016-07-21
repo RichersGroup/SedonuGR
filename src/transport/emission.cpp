@@ -286,12 +286,12 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	rand[1] = rangen.uniform();
 	rand[2] = rangen.uniform();
 	double xup[4];
-	grid->cartesian_sample_in_zone(z_ind,rand,3,xup,3);
+	grid->sample_in_zone(z_ind,rand,3,xup,3);
 	xup[3] = 0;
 
 	// get the velocity
 	double v[3];
-	grid->cartesian_velocity_vector(xup,3,v,3,z_ind);
+	grid->get_fluid_velocity(xup,3,v,3,z_ind);
 
 	// set up LorentzHelper
 	LorentzHelper lh(exponential_decay);
@@ -371,7 +371,7 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	// set up LorentzHelper
 	LorentzHelper lh(exponential_decay);
 	double v[3];
-	grid->cartesian_velocity_vector(plab.xup,3,v,3,z_ind);
+	grid->get_fluid_velocity(plab.xup,3,v,3,z_ind);
 	lh.set_v(v,3);
 	lh.set_p<lab>(&plab);
 

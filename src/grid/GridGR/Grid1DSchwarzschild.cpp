@@ -177,7 +177,7 @@ void Grid1DSchwarzschild::zone_directional_indices(const int z_ind, int dir_ind[
 //------------------------------------------------------------
 // sample a random position within the spherical shell
 //------------------------------------------------------------
-void Grid1DSchwarzschild::cartesian_sample_in_zone
+void Grid1DSchwarzschild::sample_in_zone
 (const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
@@ -211,7 +211,7 @@ void Grid1DSchwarzschild::cartesian_sample_in_zone
 //------------------------------------------------------------
 // get the velocity vector
 //------------------------------------------------------------
-void Grid1DSchwarzschild::cartesian_velocity_vector(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
+void Grid1DSchwarzschild::get_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
 {
 	PRINT_ASSERT(xsize,==,3);
 	PRINT_ASSERT(vsize,==,3);
