@@ -55,7 +55,6 @@ private:
 	std::vector<unsigned> my_zone_end;
 
 	// subroutine for calculating timescales
-	void calculate_timescales() const;
 	void calculate_annihilation() const;
 
 	// main function to emit particles

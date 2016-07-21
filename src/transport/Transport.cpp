@@ -417,9 +417,6 @@ void Transport::step()
 		else update_zone_quantities();         // update T,Ye based on heat capacity and number of leptons
 	}
 	if(MPI_nprocs>1) synchronize_gas();       // each processor broadcasts its solved zones to the other processors
-
-	// post-processing
-	if(rank0) calculate_timescales();
 }
 
 
@@ -588,20 +585,6 @@ void Transport::calculate_annihilation() const{
 	}
 }
 
-//-----------------------------
-// calculate various timescales
-//-----------------------------
-void Transport::calculate_timescales() const{
-    #pragma omp parallel for
-	for(unsigned i=0;i<grid->z.size();i++){
-		Zone *z = &(grid->z[i]);
-		double e_gas = z->rho*pc::k*z->T/pc::m_p;  // gas energy density (erg/ccm)
-		z->t_eabs  = e_gas / z->e_abs;
-		z->t_eemit = e_gas / z->e_emit;
-		z->t_labs  = z->rho/pc::m_p / (z->nue_abs-z->anue_abs);
-		z->t_lemit = z->rho/pc::m_p / z->l_emit;
-	}
-}
 
 //----------------------------------------------------------------------------
 // normalize the radiative quantities

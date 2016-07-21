@@ -41,9 +41,5 @@ Zone::Zone(){
 	anue_abs = NaN;
 	e_emit = NaN;
 	l_emit = NaN;
-	t_eabs = NaN;
-	t_eemit = NaN;
-	t_labs = NaN;
-	t_lemit = NaN;
 	Q_annihil = NaN;
 }

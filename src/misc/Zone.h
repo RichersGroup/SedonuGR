@@ -59,12 +59,6 @@ public:
 	double l_emit;						  // lepton number emission rate (cm^-3 s^-1) (comoving frame)
 	std::vector<SpectrumArray> distribution;  // radiation energy density for each species in lab frame (erg/ccm. Integrated over bin frequency and direction)
 	double Q_annihil;                     // annihilation energy deposition rate (erg/ccm/s) (lab frame)
-
-	// timescales (all in lab frame)
-	double t_eabs;    // heating timescale
-	double t_eemit;    // cooling timescale
-	double t_labs;    // leptonization timescale from absorption
-	double t_lemit;   // leptonization timescale from emission
 };
 
 #endif
