@@ -354,6 +354,7 @@ void Transport::propagate(Particle* p)
 			//it's only when the distance to move is tiny that floating point precision becomes an issue
 			//keep moving by larger and larger steps until it's off grid
 			{
+				z_ind = grid->zone_index(lh.p_xup(),3);
 				int i=1;
 				while(z_ind>=0){
 					double tweak_distance = TINY*grid->zone_min_length(z_ind) * i*i;
