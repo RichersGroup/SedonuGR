@@ -164,7 +164,7 @@ double Species::sample_core_nu(const int g) const
 void Species::sample_zone_nu(LorentzHelper *lh, const int zone_index, const int g) const
 {
 	PRINT_ASSERT(nu_grid.min,>=,0);
-	lh->set_p_nu<com>( sample_nu(biased_emis[zone_index]) );
+	lh->set_p_nu<com>( sample_nu(biased_emis[zone_index],g) );
 	double imp = interpolate_importance(lh->p_nu(com),zone_index);
 	PRINT_ASSERT(imp,>,0);
 	lh->scale_p_e(1.0/imp);
