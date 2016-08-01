@@ -137,7 +137,7 @@ void GridGR::tetrad_to_coord(const double xup[4], const double u[4], double kup_
 	orthogonalize(e[2],e[3],xup,4);
 	orthogonalize(e[2],e[0],xup,4);
 	orthogonalize(e[2],e[1],xup,4);
-	normalize(e[1],4,xup);
+	normalize(e[2],4,xup);
 
 	// sanity checks
 	PRINT_ASSERT(abs(dot(e[0],e[1],4,xup)),<,TINY);
