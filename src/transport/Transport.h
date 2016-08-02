@@ -72,7 +72,7 @@ private:
 
 	// species sampling functions
 	int sample_core_species() const;
-	void sample_zone_species(LorentzHelper *lh, int zone_index) const;
+	int sample_zone_species(const int zone_index, double *Ep) const;
 
 	// transformation functions
 	void get_opacity(LorentzHelper *lh, const int z_ind) const;

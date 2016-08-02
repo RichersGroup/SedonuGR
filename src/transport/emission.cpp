@@ -280,6 +280,10 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
 
+	Particle pcom;
+	pcom.fate = moving;
+	pcom.e = Ep;
+
 	// random sample position in zone
 	double rand[3];
 	rand[0] = rangen.uniform();
@@ -288,28 +292,29 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	double xup[4];
 	grid->sample_in_zone(z_ind,rand,3,xup,3);
 	xup[3] = 0;
+	for(int i=0; i<4; i++) pcom.xup[i] = xup[i];
 
 	// get the velocity
 	double v[3];
 	grid->interpolate_fluid_velocity(xup,3,v,3,z_ind);
 
+	// emit isotropically in comoving frame
+	double D[3];
+	isotropic_direction(D,3);
+
 	// set up LorentzHelper
 	LorentzHelper lh(exponential_decay);
 	lh.set_v(v,3);
 	lh.set_p_fate(moving);
-	lh.set_p_e<com>(Ep);
 	lh.set_p_xup(xup,4);
-
-	// emit isotropically in comoving frame
-	double D[3];
-	isotropic_direction(D,3);
 	lh.set_p_D<com>(D,3);
+	lh.set_p_e<com>(Ep);
+	lh.set_p_s(s);
 
 	// species
-	if(s>=0) lh.set_p_s(s);
-	else sample_zone_species(&lh,z_ind);
-	PRINT_ASSERT(lh.p_s(),>=,0);
-	PRINT_ASSERT(lh.p_s(),<,(int)species_list.size());
+	pcom.s = s>=0 ? s : sample_zone_species(z_ind,&pcom.e);
+	PRINT_ASSERT(pcom.s,>=,0);
+	PRINT_ASSERT(pcom.s,<,(int)species_list.size());
 
 	// frequency
 	species_list[lh.p_s()]->sample_zone_nu(&lh,z_ind,g);

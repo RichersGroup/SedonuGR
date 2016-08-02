@@ -138,12 +138,18 @@ void Transport::re_emit(LorentzHelper *lh, const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
 
+	double Ep = lh->p_e(com);
+
 	// reset the particle properties
 	double Dnew[3];
 	isotropic_direction(Dnew,3);
+	int s = sample_zone_species(z_ind,&Ep);
+
+	// set the LorentzHelper
 	lh->set_p_D<com>(Dnew,3);
-	sample_zone_species(lh,z_ind);
-	species_list[lh->p_s()]->sample_zone_nu(lh,z_ind);
+	lh->set_p_e<com>(Ep);
+	lh->set_p_s(s);
+	species_list[s]->sample_zone_nu(lh,z_ind);
 
 	// tally into zone's emitted energy
 	grid->z[z_ind].e_emit += lh->p_e(com);
