@@ -144,12 +144,13 @@ void Transport::re_emit(LorentzHelper *lh, const int z_ind) const{
 	double Dnew[3];
 	isotropic_direction(Dnew,3);
 	int s = sample_zone_species(z_ind,&Ep);
+	double nu = species_list[s]->sample_zone_nu(z_ind,&Ep);
 
 	// set the LorentzHelper
 	lh->set_p_D<com>(Dnew,3);
 	lh->set_p_e<com>(Ep);
 	lh->set_p_s(s);
-	species_list[s]->sample_zone_nu(lh,z_ind);
+	lh->set_p_nu<com>(nu);
 
 	// tally into zone's emitted energy
 	grid->z[z_ind].e_emit += lh->p_e(com);

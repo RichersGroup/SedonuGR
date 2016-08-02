@@ -298,6 +298,14 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	double v[3];
 	grid->interpolate_fluid_velocity(xup,3,v,3,z_ind);
 
+	// species
+	pcom.s = s>=0 ? s : sample_zone_species(z_ind,&pcom.e);
+	PRINT_ASSERT(pcom.s,>=,0);
+	PRINT_ASSERT(pcom.s,<,(int)species_list.size());
+
+	// frequency
+	double nu = species_list[pcom.s]->sample_zone_nu(z_ind,&pcom.e,g);
+
 	// emit isotropically in comoving frame
 	double D[3];
 	isotropic_direction(D,3);
@@ -308,16 +316,9 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	lh.set_p_fate(moving);
 	lh.set_p_xup(xup,4);
 	lh.set_p_D<com>(D,3);
+	lh.set_p_nu<com>(nu);
 	lh.set_p_e<com>(Ep);
 	lh.set_p_s(s);
-
-	// species
-	pcom.s = s>=0 ? s : sample_zone_species(z_ind,&pcom.e);
-	PRINT_ASSERT(pcom.s,>=,0);
-	PRINT_ASSERT(pcom.s,<,(int)species_list.size());
-
-	// frequency
-	species_list[lh.p_s()]->sample_zone_nu(&lh,z_ind,g);
 
 	// sample tau
 	get_opacity(&lh,z_ind);
