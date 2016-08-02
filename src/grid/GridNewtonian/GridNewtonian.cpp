@@ -88,3 +88,19 @@ void GridNewtonian::normalize(double a[], const int size, const double xup[]) co
 void GridNewtonian::normalize_null(double a[], const int size, const double xup[]) const{
 	normalize_null_Minkowski<4>(a,size);
 }
+
+
+// isotropic scatter, done in COMOVING frame
+void GridNewtonian::isotropic_kup(const double nu, double kup[4], const double xup[4], const int size, ThreadRNG *rangen) const
+{
+	PRINT_ASSERT(size,==,4);
+
+	// Randomly generate new direction isotropically in comoving frame
+	double D[3];
+	isotropic_direction(D,3,rangen);
+
+	kup[0] = nu * D[0];
+	kup[1] = nu * D[1];
+	kup[2] = nu * D[2];
+	kup[3] = nu;
+}

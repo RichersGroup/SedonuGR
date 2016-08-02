@@ -58,6 +58,8 @@ public:
 
 	void orthogonalize(double v[4], const double e[4], const double xup[4], const int size) const;
 	void tetrad_to_coord(const double xup[4], const double u[4], double kup[4], const int size) const;
+
+	void isotropic_kup(const double nu, double kup[4], const double xup[4], const int size, ThreadRNG *rangen) const;
 };
 
 

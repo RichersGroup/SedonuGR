@@ -87,7 +87,6 @@ private:
 	void which_event(LorentzHelper* lh,const int z_ind, ParticleEvent *event) const;
 	void event_boundary(LorentzHelper *lh, const int z_ind) const;
 	void event_interact(LorentzHelper* lh, const int z_ind);
-	void isotropic_direction(double D[3], const int size) const;
 	void scatter(LorentzHelper *lh, int z_ind) const;
 	void random_walk(LorentzHelper *lh, const double Rcom, const double D, const int z_ind) const;
 	void init_randomwalk_cdf(Lua* lua);

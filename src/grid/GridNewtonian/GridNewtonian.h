@@ -52,6 +52,7 @@ public:
 	double dot(const double a[], const double b[], const int size, const double xup[]) const;
 	void normalize(double a[], const int size, const double xup[]) const;
 	void normalize_null(double a[], const int size, const double xup[]) const;
+	void isotropic_kup(const double nu, double kup[4], const double xup[4], const int size, ThreadRNG *rangen) const;
 };
 
 

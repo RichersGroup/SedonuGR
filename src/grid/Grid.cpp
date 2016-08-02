@@ -485,4 +485,18 @@ double Grid::dot(const double a[4], const double b[4], const int size, const int
 }
 
 
+// isotropic scatter, done in COMOVING frame
+void Grid::isotropic_direction(double D[3], const int size, ThreadRNG *rangen) const
+{
+	PRINT_ASSERT(size,==,3);
 
+	// Randomly generate new direction isotropically in comoving frame
+	double mu  = 1 - 2.0*rangen->uniform();
+	double phi = 2.0*pc::pi*rangen->uniform();
+	double smu = sqrt(1 - mu*mu);
+
+	D[0] = smu*cos(phi);
+	D[1] = smu*sin(phi);
+	D[2] = mu;
+	Grid::normalize_Minkowski<3>(D,3);
+}

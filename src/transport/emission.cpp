@@ -307,16 +307,15 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	double nu = species_list[pcom.s]->sample_zone_nu(z_ind,&pcom.e,g);
 
 	// emit isotropically in comoving frame
-	double D[3];
-	isotropic_direction(D,3);
+	double kup[4];
+	grid->isotropic_kup(nu,kup,xup,4,&rangen);
 
 	// set up LorentzHelper
 	LorentzHelper lh(exponential_decay);
 	lh.set_v(v,3);
 	lh.set_p_fate(moving);
 	lh.set_p_xup(xup,4);
-	lh.set_p_D<com>(D,3);
-	lh.set_p_nu<com>(nu);
+	lh.set_p_kup<com>(kup,4);
 	lh.set_p_e<com>(Ep);
 	lh.set_p_s(s);
 

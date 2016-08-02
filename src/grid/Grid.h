@@ -150,6 +150,9 @@ public:
 
 	// help with spawning particles
 	virtual void random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3], double D[3], const int size) const = 0;
+	virtual void isotropic_kup(const double nu, double kup[4], const double xup[4], const int size, ThreadRNG *rangen) const = 0;
+	void isotropic_direction(double D[3], const int size, ThreadRNG *rangen) const;
+
 };
 
 

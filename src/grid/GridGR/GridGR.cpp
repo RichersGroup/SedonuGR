@@ -152,3 +152,29 @@ void GridGR::tetrad_to_coord(const double xup[4], const double u[4], double kup_
 	for(int mu=0; mu<4; mu++) kup[mu] = dot(kup_tetrad,e[mu],4,xup);
 	for(int mu=0; mu<4; mu++) kup_tetrad[mu] = kup[mu];
 }
+
+// isotropic scatter, done in COMOVING frame
+void GridGR::isotropic_kup(const double nu, double kup[4], const double xup[4], const int size, ThreadRNG *rangen) const
+{
+	PRINT_ASSERT(size,==,4);
+
+	// Randomly generate new direction isotropically in comoving frame
+	double D[3];
+	isotropic_direction(D,3,rangen);
+
+	kup[0] = nu * D[0];
+	kup[1] = nu * D[1];
+	kup[2] = nu * D[2];
+	kup[3] = nu;
+
+	// move from tetrad frame to comoving frame
+	double v[3];
+	interpolate_fluid_velocity(xup,4,v,3);
+	double u[4];
+	double gamma = LorentzHelper::lorentz_factor(v,3);
+	u[0] = gamma * v[0];
+	u[1] = gamma * v[1];
+	u[2] = gamma * v[2];
+	u[3] = gamma * pc::c;
+	tetrad_to_coord(xup, u, kup, 4);
+}

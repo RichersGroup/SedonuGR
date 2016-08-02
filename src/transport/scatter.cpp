@@ -141,13 +141,13 @@ void Transport::re_emit(LorentzHelper *lh, const int z_ind) const{
 	double Ep = lh->p_e(com);
 
 	// reset the particle properties
-	double Dnew[3];
-	isotropic_direction(Dnew,3);
 	int s = sample_zone_species(z_ind,&Ep);
 	double nu = species_list[s]->sample_zone_nu(z_ind,&Ep);
+	double kup[4];
+	grid->isotropic_kup(nu,kup,lh->p_xup(),4,&rangen);
 
 	// set the LorentzHelper
-	lh->set_p_D<com>(Dnew,3);
+	lh->set_p_kup<com>(kup,4);
 	lh->set_p_e<com>(Ep);
 	lh->set_p_s(s);
 	lh->set_p_nu<com>(nu);
@@ -197,28 +197,13 @@ void Transport::scatter(LorentzHelper *lh, int z_ind) const{\
 
 	// isotropic scatter if can't do random walk
 	if(!did_random_walk){
-		double Dnew[3];
-		isotropic_direction(Dnew,3);
-		lh->set_p_D<com>(Dnew,3);
+		double kup[4];
+		grid->isotropic_kup(lh->p_nu(com),kup,lh->p_xup(),4,&rangen);
+		lh->set_p_kup<com>(kup,4);
 	}
 }
 
 
-// isotropic scatter, done in COMOVING frame
-void Transport::isotropic_direction(double D[3], const int size) const
-{
-	PRINT_ASSERT(size,==,3);
-
-	// Randomly generate new direction isotropically in comoving frame
-	double mu  = 1 - 2.0*rangen.uniform();
-	double phi = 2.0*pc::pi*rangen.uniform();
-	double smu = sqrt(1 - mu*mu);
-
-	D[0] = smu*cos(phi);
-	D[1] = smu*sin(phi);
-	D[2] = mu;
-	Grid::normalize_Minkowski<3>(D,3);
-}
 
 //---------------------------------------------------------------------
 // Randomly select an optical depth through which a particle will move.
@@ -322,7 +307,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 
 	// randomly place the particle somewhere on the sphere (comoving frame)
 	double Diso[3];
-	isotropic_direction(Diso,3);
+	grid->isotropic_direction(Diso,3,&rangen);
 	double displacement4[4] = {Rcom*Diso[0], Rcom*Diso[1], Rcom*Diso[2], path_length_com};
 	double d3com[3] = {displacement4[0], displacement4[1], displacement4[2]};
 	LorentzHelper::transform_cartesian_4vector_c2l(zone->u, displacement4);
