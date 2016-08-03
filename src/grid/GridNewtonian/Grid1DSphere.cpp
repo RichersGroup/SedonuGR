@@ -153,7 +153,7 @@ double  Grid1DSphere::zone_min_length(const int z_ind) const
 void Grid1DSphere::zone_coordinates(const int z_ind, double r[1], const int rsize) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	PRINT_ASSERT(rsize,==,dimensionality());
+	PRINT_ASSERT(rsize,==,(int)dimensionality());
 	r[0] = 0.5*(r_out[z_ind]+r_out.bottom(z_ind));
 	PRINT_ASSERT(r[0],>,0);
 	PRINT_ASSERT(r[0],<,r_out[r_out.size()-1]);
@@ -167,7 +167,7 @@ void Grid1DSphere::zone_directional_indices(const int z_ind, int dir_ind[1], con
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	PRINT_ASSERT(size,==,dimensionality());
+	PRINT_ASSERT(size,==,(int)dimensionality());
 	dir_ind[0] = z_ind;
 }
 
@@ -348,7 +348,7 @@ double Grid1DSphere::zone_radius(const int z_ind) const{
 // Dimensions of the grid
 //-----------------------------
 void Grid1DSphere::dims(hsize_t dims[1], const int size) const{
-	PRINT_ASSERT(size,==,dimensionality());
+	PRINT_ASSERT(size,==,(int)dimensionality());
 	dims[0] = r_out.size();
 }
 

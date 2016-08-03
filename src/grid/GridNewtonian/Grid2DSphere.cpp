@@ -972,7 +972,7 @@ double Grid2DSphere::zone_radius(const int z_ind) const{
 // Dimensions of the grid
 //-----------------------------
 void Grid2DSphere::dims(hsize_t dims[2], const int size) const{
-	PRINT_ASSERT(size,==,dimensionality());
+	PRINT_ASSERT(size,==,(int)dimensionality());
 	dims[0] = r_out.size();
 	dims[1] = theta_out.size();
 }

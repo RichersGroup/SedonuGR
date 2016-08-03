@@ -565,7 +565,7 @@ double Grid2DCylinder::zone_radius(const int z_ind) const{
 // Dimensions of the grid
 //-----------------------------
 void Grid2DCylinder::dims(hsize_t dims[2], const int size) const{
-	PRINT_ASSERT(size,==,dimensionality());
+	PRINT_ASSERT(size,==,(int)dimensionality());
 	dims[0] = rcyl_out.size();
 	dims[1] = zcyl_out.size();
 }

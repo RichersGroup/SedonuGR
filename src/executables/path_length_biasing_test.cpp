@@ -39,7 +39,6 @@ int main(int argc, char **argv)
 	MPI_Init( &argc, &argv );
 	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
 	MPI_Comm_size( MPI_COMM_WORLD, &n_procs);
-	const int rank0 = (my_rank == 0);
 
 	// set up the transport module (includes the grid)
 	int nbins = 0, nsamples = 0,niter = 0;
@@ -66,7 +65,7 @@ int main(int argc, char **argv)
 	vector<int>    packets          = vector<int>(nbins,0);
 	vector<double> expected_packets = vector<double>(nbins,0);
 	double alpha = 1./(1.0-abs_frac);
-	for(int i=0; i<grid.size(); i++){
+	for(int i=0; i<(int)grid.size(); i++){
 		grid[i] = (i+1)*max_tau_bin / (double)nbins;
 		expected_energy[i]  = ( i==0 ? 1 : exp(-grid[i-1])       ) - exp(-grid[i]      );
 		expected_packets[i] = ( i==0 ? 1 : exp(-grid[i-1]/alpha) ) - exp(-grid[i]/alpha);
@@ -103,7 +102,7 @@ int main(int argc, char **argv)
 
 		// log the sample
 		int ind = upper_bound(grid.begin(), grid.end(), lh.p_tau()) - grid.begin();
-		if(ind<grid.size()){
+		if(ind<(int)grid.size()){
 			packets[ind]++;
 			energy[ind] += lh.p_e(com);
 			avg_e += lh.p_e(com);
@@ -120,7 +119,7 @@ int main(int argc, char **argv)
 	// calculate energy variance
 	double delta2 = 0;
 	double weight_sum = 0;
-	for(int i=0; i<grid.size(); i++){
+	for(int i=0; i<(int)grid.size(); i++){
 		double tmp = (energy[i]/(double)nsamples-expected_energy[i]);
 		delta2 += expected_energy[i] * tmp*tmp;
 		weight_sum += expected_energy[i];
@@ -135,7 +134,7 @@ int main(int argc, char **argv)
 	cout << "n_zero = " << (double)n_zero/(double)nsamples << endl;
 	cout << "n_dead = " << (double)n_dead/(double)nsamples << endl;
 	cout << "1-tau\t2-Ebar\t3-Nbar\t4-expected_energy\t5-expected_packets" << endl;
-	for(int i=0; i<grid.size(); i++){
+	for(int i=0; i<(int)grid.size(); i++){
 		cout << grid[i] << '\t';
 		cout << energy[i]          / (double)nsamples << '\t';
 		cout << (double)packets[i] / (double)nsamples << '\t';

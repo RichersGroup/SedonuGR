@@ -90,7 +90,7 @@ void Transport::emit_inner_source_by_bin(){
 	int n_created = particles.size()-size_before;
 	avgEp /= (double)n_created;
 
-	PRINT_ASSERT(n_created,==,particles.size()-size_before);
+	PRINT_ASSERT(n_created,==,(int)particles.size()-size_before);
 	if(verbose && rank0) cout << "#   <E_p> (emit_inner_source_by_bin) = " << avgEp << " erg ("
 			<< n_created << " particles)" << endl;
 }

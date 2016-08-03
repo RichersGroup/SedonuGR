@@ -147,7 +147,7 @@ void Species::set_cdf_to_BB(const double T, const double chempot, CDFArray& emis
 //----------------------------------------------------------------
 double Species::interpolate_importance(double nu, const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,emis.size());
+	PRINT_ASSERT(z_ind,<,(int)emis.size());
 	PRINT_ASSERT(nu,>=,nu_grid.min);
 	PRINT_ASSERT(nu,<=,nu_grid[nu_grid.size()-1]);
 

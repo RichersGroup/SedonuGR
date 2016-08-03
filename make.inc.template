@@ -11,8 +11,8 @@ CXX=mpicxx
 CC=mpicc
 
 F90FLAGS= -O3 #OPTIONAL: (gnu)-fopenmp (intel)-openmp
-CXXFLAGS= -O3 #INTEL: -lifcore  #OPTIONAL: (gnu)-fopenmp (intel)-openmp
-CCFLAGS= -O3
+CXXFLAGS= -O3 -Wall #INTEL: -lifcore  #OPTIONAL: (gnu)-fopenmp (intel)-openmp
+CCFLAGS= -O3 -Wall
 
 #GSL
 GSL_BASE=$(GSL_DIR)

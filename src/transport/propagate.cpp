@@ -39,12 +39,11 @@ void Transport::propagate_particles()
 
 	//--- MOVE THE PARTICLES AROUND ---
 	// particle list is changing size, so must go through repeatedly
-	unsigned start=0, last_start=0, end=0;
+	unsigned start=0, end=0;
 	#pragma omp parallel
 	do{
 		#pragma omp single
 		{
-			last_start = start;
 			start = end;
 			end = particles.size();
 		}
@@ -106,10 +105,8 @@ void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *e
 	PRINT_ASSERT(lh->p_nu(lab), >, 0);
 
 	double d_zone     = numeric_limits<double>::infinity();
-	double d_time     = numeric_limits<double>::infinity();
 	double d_interact = numeric_limits<double>::infinity();
 	double d_boundary = numeric_limits<double>::infinity();
-	double tau_r = NaN;                               // random optical depth
 	PRINT_ASSERT(z_ind, >=, -1);
 
 	if(z_ind >= 0){ //i.e. within the simulation region
@@ -241,7 +238,6 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 
 	// store absorbed lepton number (same in both frames, except for the
 	// factor of this_d which is divided out later
-	double this_l_comoving = 0;
 	if(species_list[lh->p_s()]->lepton_number != 0){
 		to_add /= (lh->p_nu(com)*pc::h);
 		if(species_list[lh->p_s()]->lepton_number == 1){

@@ -155,7 +155,7 @@ double  Grid1DSchwarzschild::zone_min_length(const int z_ind) const
 void Grid1DSchwarzschild::zone_coordinates(const int z_ind, double r[1], const int rsize) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	PRINT_ASSERT(rsize,==,dimensionality());
+	PRINT_ASSERT(rsize,==,(int)dimensionality());
 	r[0] = 0.5*(r_out[z_ind]+r_out.bottom(z_ind));
 	PRINT_ASSERT(r[0],>,0);
 	PRINT_ASSERT(r[0],<,r_out[r_out.size()-1]);
@@ -169,7 +169,7 @@ void Grid1DSchwarzschild::zone_directional_indices(const int z_ind, int dir_ind[
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	PRINT_ASSERT(size,==,dimensionality());
+	PRINT_ASSERT(size,==,(int)dimensionality());
 	dir_ind[0] = z_ind;
 }
 
@@ -199,7 +199,6 @@ void Grid1DSchwarzschild::sample_in_zone
 	// random spatial angles
 	double mu  = 1 - 2.0*rand[1];
 	double phi = 2.0*pc::pi*rand[2];
-	double sin_theta = sqrt(1 - mu*mu);
 
 	// set the double 3-d coordinates
 	x[0] = radius;
@@ -348,7 +347,7 @@ double Grid1DSchwarzschild::zone_radius(const int z_ind) const{
 // Dimensions of the grid
 //-----------------------------
 void Grid1DSchwarzschild::dims(hsize_t dims[1], const int size) const{
-	PRINT_ASSERT(size,==,dimensionality());
+	PRINT_ASSERT(size,==,(int)dimensionality());
 	dims[0] = r_out.size();
 }
 
@@ -427,24 +426,24 @@ double Grid1DSchwarzschild::connection_coefficient(const double xup[4], const in
 void Grid1DSchwarzschild::random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3], double D[3], const int size) const{
 	PRINT_ASSERT(size,==,3);
 
-	double phi_core   = 2*pc::pi*rangen->uniform();
-	double cost_core  = 1 - 2.0*rangen->uniform();
-	double sint_core  = sqrt(1-cost_core*cost_core);
-
-	// pick a random position
-	double a_phot = r_core + r_core*1e-10;
-	x3[0] = r_core * (1.0 + 1e-10);
-	x3[1] = acos(cost_core);
-	x3[2] = phi_core;
-
-	// pick photon propagation direction wtr to local normal
-	double phi_dir = 2*pc::pi*rangen->uniform();
-	double cost_dir = rangen->uniform();
-	double sint_dir = sqrt(1.0 - cost_dir*cost_dir);
-	// local direction vector
-	D[0] = rangen->uniform();
-	D[1] = sint_dir * cos(phi_dir);
-	D[2] = sint_dir * sin(phi_dir);
-	Grid::normalize_Minkowski<3>(D,3);
+//	double phi_core   = 2*pc::pi*rangen->uniform();
+//	double cost_core  = 1 - 2.0*rangen->uniform();
+//	double sint_core  = sqrt(1-cost_core*cost_core);
+//
+//	// pick a random position
+//	double a_phot = r_core + r_core*1e-10;
+//	x3[0] = r_core * (1.0 + 1e-10);
+//	x3[1] = acos(cost_core);
+//	x3[2] = phi_core;
+//
+//	// pick photon propagation direction wtr to local normal
+//	double phi_dir = 2*pc::pi*rangen->uniform();
+//	double cost_dir = rangen->uniform();
+//	double sint_dir = sqrt(1.0 - cost_dir*cost_dir);
+//	// local direction vector
+//	D[0] = rangen->uniform();
+//	D[1] = sint_dir * cos(phi_dir);
+//	D[2] = sint_dir * sin(phi_dir);
+//	Grid::normalize_Minkowski<3>(D,3);
 }
 

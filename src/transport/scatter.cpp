@@ -85,7 +85,7 @@ void Transport::window(LorentzHelper *lh, const int z_ind){
 	// split if too high energy, if enough space, and if in important region
 	double ratio = lh->p_e(com) / max_packet_energy;
 	int n_new = (int)ratio;
-	if(ratio>1.0 && particles.size()+n_new<max_particles && species_list[lh->p_s()]->interpolate_importance(lh->p_nu(com),z_ind)>=1.0){
+	if(ratio>1.0 && (int)particles.size()+n_new<max_particles && species_list[lh->p_s()]->interpolate_importance(lh->p_nu(com),z_ind)>=1.0){
 		lh->scale_p_e( 1.0 / (double)(n_new+1) );
 		for(int i=0; i<n_new; i++){
 			#pragma omp critical
@@ -97,7 +97,7 @@ void Transport::window(LorentzHelper *lh, const int z_ind){
 		PRINT_ASSERT(lh->p_e(com),<,INFINITY);
 		PRINT_ASSERT(lh->p_e(com),>,0);
 	}
-	if(particles.size()>=max_particles && verbose && rank0){
+	if((int)particles.size()>=max_particles && verbose && rank0){
 		cout << "max_particles: " << max_particles << endl;
 		cout << "particles.size(): " << particles.size() << endl;
 		cout << "WARNING: max_particles is too small to allow splitting." << endl;
@@ -115,7 +115,7 @@ void Transport::window(Particle* p, const int z_ind){
 
 	// split if too high energy, if enough space, and if in important region
 	double nu = p->kup[3]*pc::c/pc::h;
-	while(p->e>max_packet_energy && particles.size()<max_particles && species_list[p->s]->interpolate_importance(nu,z_ind)>=1.0){
+	while(p->e>max_packet_energy && (int)particles.size()<max_particles && species_list[p->s]->interpolate_importance(nu,z_ind)>=1.0){
 		p->e /= 2.0;
 		Particle pnew = *p;
 		window(&pnew,z_ind);
@@ -126,7 +126,7 @@ void Transport::window(Particle* p, const int z_ind){
 		PRINT_ASSERT(p->e,<,INFINITY);
 		PRINT_ASSERT(p->e,>,0);
 	}
-	if(particles.size()>=max_particles && verbose && rank0){
+	if((int)particles.size()>=max_particles && verbose && rank0){
 		cout << "max_particles: " << max_particles << endl;
 		cout << "particles.size(): " << particles.size() << endl;
 		cout << "WARNING: max_particles is too small to allow splitting." << endl;

@@ -245,7 +245,7 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	// fill the grid //
 	//===============//
     #pragma omp parallel for
-	for(int z_ind=0; z_ind<z.size(); z_ind++){
+	for(int z_ind=0; z_ind<(int)z.size(); z_ind++){
 
 		// directional indices in Sedonu grid
 		int dir_ind[3];
@@ -471,7 +471,7 @@ void Grid3DCart::zone_directional_indices(const int z_ind, int dir_ind[3], const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	PRINT_ASSERT(size,==,dimensionality());
+	PRINT_ASSERT(size,==,(int)dimensionality());
 
 	dir_ind[0] =  z_ind / (nx[1]*nx[2]);
 	dir_ind[1] = (z_ind % (nx[1]*nx[2])) / nx[2];
@@ -573,7 +573,7 @@ void Grid3DCart::zone_coordinates(const int z_ind, double r[3], const int rsize)
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	PRINT_ASSERT(rsize,==,dimensionality());
+	PRINT_ASSERT(rsize,==,(int)dimensionality());
 	int dir_ind[3];
 	zone_directional_indices(z_ind,dir_ind,3);
 
@@ -771,7 +771,7 @@ double Grid3DCart::zone_radius(const int z_ind) const{
 // Dimensions of the grid
 //-----------------------------
 void Grid3DCart::dims(hsize_t dims[3], const int size) const{
-	PRINT_ASSERT(size,==,dimensionality());
+	PRINT_ASSERT(size,==,(int)dimensionality());
 	for(int i=0; i<3; i++) dims[i] = nx[i];
 }
 

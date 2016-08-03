@@ -171,7 +171,7 @@ double Grid0DIsotropic::zone_radius(const int z_ind) const{
 // Dimensions of the grid
 //-----------------------------
 void Grid0DIsotropic::dims(hsize_t dims[0], const int size) const{
-	PRINT_ASSERT(size,==,dimensionality());
+	PRINT_ASSERT(size,==,(int)dimensionality());
 }
 
 //----------------------------------------------------
