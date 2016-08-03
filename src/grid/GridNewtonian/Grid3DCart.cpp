@@ -688,43 +688,40 @@ void Grid3DCart::write_rays(const int iw) const
 void Grid3DCart::reflect_outer(LorentzHelper *lh) const{
 	const Particle *p = lh->particle_readonly(lab);
 
+	double kup[4], xup[4];
+
+	// initialize the arrays
+	for(int i=0; i<4; i++) xup[i] = lh->p_xup()[i];
+	for(int i=0; i<4; i++) kup[i] = lh->p_kup(lab)[i];
+
 	// assumes particle is placed OUTSIDE of the zones
 	int z_ind = zone_index(p->xup,3);
 	double delta[3];
 	get_deltas(z_ind,delta,3);
 
-	double Dlab[3];
-	lh->p_D(lab,Dlab,3);
-
 	// invert the radial component of the velocity, put the particle just inside the boundary
-	double x3[3], D[3];
 	for(int i=0; i<3; i++){
-		// initialize values
-		x3[i] = lh->p_xup()[i];
-		D[i] = Dlab[i];
-
 		// inner boundary
 		if(p->xup[i] < x0[i]){
-			PRINT_ASSERT(Dlab[i],<,0);
-			D[i] = -Dlab[i];
-			x3[i] = x0[i] + TINY*delta[i];
+			PRINT_ASSERT(kup[i],<,0);
+			kup[i] = -kup[i];
+			xup[i] = x0[i] + TINY*delta[i];
 		}
 
 		// outer boundary
 		if(p->xup[i] > xmax[i]){
-			PRINT_ASSERT(Dlab[i],>,0);
-			D[i] = -Dlab[i];
-			x3[i] = xmax[i] - TINY*delta[i];
+			PRINT_ASSERT(kup[i],>,0);
+			kup[i] = -kup[i];
+			xup[i] = xmax[i] - TINY*delta[i];
 		}
 
 		// double check that the particle is in the boundary
-		PRINT_ASSERT(x3[i],>,x0[i]);
-		PRINT_ASSERT(x3[i],<,xmax[i]);
+		PRINT_ASSERT(xup[i],>,x0[i]);
+		PRINT_ASSERT(xup[i],<,xmax[i]);
 
 		// assign the arrays
-		double xup[4] = {x3[0], x3[1], x3[2], p->xup[3]};
 		lh->set_p_xup(xup,4);
-		lh->set_p_D<lab>(D,3);
+		lh->set_p_kup<lab>(kup,4);
 	}
 }
 
@@ -849,58 +846,57 @@ double Grid3DCart::zone_right_boundary(const unsigned dir, const unsigned dir_in
 //------------------------------------------------------------
 void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
 
-	double D[3], x3[3];
+	double kup[4], xup[4];
 
 	// initialize the arrays
-	for(int i=0; i<3; i++) x3[i] = lh->p_xup()[i];
-	lh->p_D(lab,D,3);
+	for(int i=0; i<4; i++) xup[i] = lh->p_xup()[i];
+	for(int i=0; i<4; i++) kup[i] = lh->p_kup(lab)[i];
 
 	// invert the radial component of the velocity, put the particle just inside the boundary
 	for(int i=0; i<3; i++){
-		if(reflect[i] && x3[i] < x0[i]){
-			PRINT_ASSERT(x0[i]-x3[i],<,TINY*dx[i]);
+		if(reflect[i] && xup[i] < x0[i]){
+			PRINT_ASSERT(x0[i]-xup[i],<,TINY*dx[i]);
 			PRINT_ASSERT(x0[i],==,0);
-			PRINT_ASSERT(D[i],<,0);
-			D[i] = -D[i];
-			x3[i] = x0[i] + TINY*(x1[i]-x0[i]);
+			PRINT_ASSERT(kup[i],<,0);
+			kup[i] = -kup[i];
+			xup[i] = x0[i] + TINY*(x1[i]-x0[i]);
 
 			// double check that the particle is in the boundary
-			PRINT_ASSERT(x3[i],>=,x0[i]);
-			PRINT_ASSERT(x3[i],<=,xmax[i]);
+			PRINT_ASSERT(xup[i],>=,x0[i]);
+			PRINT_ASSERT(xup[i],<=,xmax[i]);
 		}
 	}
 
 	// rotating boundary conditions
 	for(int i=0; i<2; i++){
-		if(x3[i] < x0[i] && (rotate_hemisphere[i] || rotate_quadrant)){
-			PRINT_ASSERT(x0[i]-x3[i],<,TINY*(x1[i]-x0[i]));
+		if(xup[i] < x0[i] && (rotate_hemisphere[i] || rotate_quadrant)){
+			PRINT_ASSERT(x0[i]-xup[i],<,TINY*(x1[i]-x0[i]));
 			PRINT_ASSERT(x0[i],==,0);
-			PRINT_ASSERT(D[i],<,0);
+			PRINT_ASSERT(kup[i],<,0);
 			int other = i==0 ? 1 : 0;
 			
 			if(rotate_hemisphere[i]){
-				for(int j=0; j<2; j++) D[j] = -D[j];
-				x3[i    ] = x0[i] + TINY*(x1[i]-x0[i]);
-				x3[other] = -x3[other];
+				for(int j=0; j<2; j++) kup[j] = -kup[j];
+				xup[i    ] = x0[i] + TINY*(x1[i]-x0[i]);
+				xup[other] = -xup[other];
 			}
 			else if(rotate_quadrant){
-				double tmp = D[i];
-				D[i] = D[other];
-				D[other] = -tmp;
-				x3[i] = x3[other];
-				x3[other] = x0[other] + TINY*(x1[other]-x0[other]);
+				double tmp = kup[i];
+				kup[i] = kup[other];
+				kup[other] = -tmp;
+				xup[i] = xup[other];
+				xup[other] = x0[other] + TINY*(x1[other]-x0[other]);
 			}
 
 			// double check that the particle is in the boundary
 			for(int j=0; j<3; j++){
-				PRINT_ASSERT(x3[j],>=,x0[j]);
-				PRINT_ASSERT(x3[j],<=,xmax[j]);
+				PRINT_ASSERT(xup[j],>=,x0[j]);
+				PRINT_ASSERT(xup[j],<=,xmax[j]);
 			}
 		}
 
 		// assign the arrays
-		double xup[4] = {x3[0], x3[1], x3[2], lh->p_xup()[3]};
 		lh->set_p_xup(xup,4);
-		lh->set_p_D<lab>(D,3);
+		lh->set_p_kup<lab>(kup,4);
 	}
 }

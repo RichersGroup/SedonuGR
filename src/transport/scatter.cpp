@@ -347,7 +347,12 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 		pD[1] = sinphi_rotate*pD_old[0] + cosphi_rotate*pD_old[1];
 	}
 	Grid::normalize_Minkowski<3>(pD,3);
-	lh->set_p_D<com>(pD,3);
+	double kup[4];
+	kup[3] = lh->p_kup(com)[3];
+	kup[0] = kup[3] * pD[0];
+	kup[1] = kup[3] * pD[2];
+	kup[2] = kup[3] * pD[1];
+	lh->set_p_kup<com>(kup,4);
 	//------------------------------------------------------------------------
 
 	// calculate radiation energy in the comoving frame
@@ -363,7 +368,11 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	lhtmp.set_v(lh->velocity(3),3);
 	lhtmp.set_p_nu<com>(lh->p_nu(com));
 	lhtmp.set_p_e<com>(eavg_com);
-	lhtmp.set_p_D<com>(d3com,3);
+	kup[3] = lhtmp.p_kup(com)[3];
+	kup[0] = kup[3] * d3com[0];
+	kup[1] = kup[3] * d3com[2];
+	kup[2] = kup[3] * d3com[1];
+	lhtmp.set_p_kup<com>(kup,4);
 	lhtmp.set_distance<com>(path_length_com);
 
 	double Dlab[3];

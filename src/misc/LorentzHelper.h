@@ -72,8 +72,6 @@ public:
 	template<Frame f>
 	void set_p(const Particle* p);
 	template<Frame f>
-	void set_p_D(const double D[3], const int size);
-	template<Frame f>
 	void set_p_e(const double e);
 	template<Frame f>
 	void set_p_nu(const double nu);

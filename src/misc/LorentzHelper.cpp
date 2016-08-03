@@ -94,16 +94,6 @@ template void LorentzHelper::set_p<lab>(const Particle* p);
 
 // set the particle frame-dependent quantities individually
 template<Frame f>
-void LorentzHelper::set_p_D(const double D[3], const int size) {
-	PRINT_ASSERT(size,==,3);
-	PRINT_ASSERT(p[f].kup[3],>,0);
-	for(int i=0; i<size; i++) p[f].kup[i] = D[i] * p[f].kup[3];
-	if(p[f].e>0) set_p<f>(&(p[f]));
-}
-template void LorentzHelper::set_p_D<com>(const double D[3], const int size);
-template void LorentzHelper::set_p_D<lab>(const double D[3], const int size);
-
-template<Frame f>
 void LorentzHelper::set_p_kup(const double kup[4], const int size) {
 	PRINT_ASSERT(size,==,4);
 	for(int i=0; i<size; i++) p[f].kup[i] = kup[i];
