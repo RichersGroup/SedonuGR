@@ -102,15 +102,6 @@ void LorentzHelper::set_p_kup(const double kup[4], const int size) {
 template void LorentzHelper::set_p_kup<com>(const double kup[4], const int size);
 template void LorentzHelper::set_p_kup<lab>(const double kup[4], const int size);
 
-template<Frame f>
-void LorentzHelper::set_p_e(const double e){
-	PRINT_ASSERT(e,>,0);
-	p[f].e = e;
-	if(p[f].kup[0] > 0)	set_p<f>(&(p[f]));
-}
-template void LorentzHelper::set_p_e<com>(const double e);
-template void LorentzHelper::set_p_e<lab>(const double e);
-
 
 // rescale the particle energies. Does not require performing transformations
 void LorentzHelper::scale_p_e(const double factor){

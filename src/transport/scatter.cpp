@@ -138,18 +138,16 @@ void Transport::re_emit(LorentzHelper *lh, const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
 
-	double Ep = lh->p_e(com);
+	//double Ep = lh->p_e(com);
+	Particle p = lh->particle_copy(com);
 
 	// reset the particle properties
-	int s = sample_zone_species(z_ind,&Ep);
-	double nu = species_list[s]->sample_zone_nu(z_ind,&Ep);
-	double kup[4];
-	grid->isotropic_kup(nu,kup,lh->p_xup(),4,&rangen);
+	p.s = sample_zone_species(z_ind,&p.e);
+	double nu = species_list[p.s]->sample_zone_nu(z_ind,&p.e);
+	grid->isotropic_kup(nu,p.kup,lh->p_xup(),4,&rangen);
 
 	// set the LorentzHelper
-	lh->set_p_kup<com>(kup,4);
-	lh->set_p_e<com>(Ep);
-	lh->set_p_s(s);
+	lh->set_p<com>(&p);
 
 	// tally into zone's emitted energy
 	grid->z[z_ind].e_emit += lh->p_e(com);
@@ -357,7 +355,12 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	// calculate radiation energy in the comoving frame
 	//double e_rad_directional = e_avg * R;
 	//double e_rad_each_bin = e_avg * (distance - R) / (double)(zone->distribution[p->s].phi_dim() * zone->distribution[p->s].mu_dim());
-	double eavg_com = lh->p_e(com) / (path_length_com * lh->abs_opac(com)) * (1.0 - exp(-lh->abs_opac(com) * path_length_com));
+	Particle fake = lh->particle_copy(com);
+	fake.e = lh->p_e(com) / (path_length_com * lh->abs_opac(com)) * (1.0 - exp(-lh->abs_opac(com) * path_length_com));
+	fake.kup[3] = lh->p_kup(com)[3];
+	fake.kup[0] = fake.kup[3] * d3com[0];
+	fake.kup[1] = fake.kup[3] * d3com[2];
+	fake.kup[2] = fake.kup[3] * d3com[1];
 
 	// deposit all radiaton energy into the bin corresponding to the direction of motion.
 	// really, most should be isotropic and some should be in the direction of motion,
@@ -365,12 +368,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	// depositing radiation in every bin would lead to lots of memory contention
 	LorentzHelper lhtmp(false);
 	lhtmp.set_v(lh->velocity(3),3);
-	lhtmp.set_p_e<com>(eavg_com);
-	kup[3] = lh->p_kup(com)[3];
-	kup[0] = kup[3] * d3com[0];
-	kup[1] = kup[3] * d3com[2];
-	kup[2] = kup[3] * d3com[1];
-	lhtmp.set_p_kup<com>(kup,4);
+	lhtmp.set_p<com>(&fake);
 	lhtmp.set_distance<com>(path_length_com);
 
 	double Dlab[3];
