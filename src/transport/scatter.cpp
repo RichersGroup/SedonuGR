@@ -150,7 +150,6 @@ void Transport::re_emit(LorentzHelper *lh, const int z_ind) const{
 	lh->set_p_kup<com>(kup,4);
 	lh->set_p_e<com>(Ep);
 	lh->set_p_s(s);
-	lh->set_p_nu<com>(nu);
 
 	// tally into zone's emitted energy
 	grid->z[z_ind].e_emit += lh->p_e(com);
@@ -366,9 +365,8 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	// depositing radiation in every bin would lead to lots of memory contention
 	LorentzHelper lhtmp(false);
 	lhtmp.set_v(lh->velocity(3),3);
-	lhtmp.set_p_nu<com>(lh->p_nu(com));
 	lhtmp.set_p_e<com>(eavg_com);
-	kup[3] = lhtmp.p_kup(com)[3];
+	kup[3] = lh->p_kup(com)[3];
 	kup[0] = kup[3] * d3com[0];
 	kup[1] = kup[3] * d3com[2];
 	kup[2] = kup[3] * d3com[1];
