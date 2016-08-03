@@ -143,6 +143,8 @@ void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *e
 		else           d_smallest *= (1.0 - TINY); // don't overshoot outward through the inner boundary
 	}
 	lh->set_distance<lab>(d_smallest);
+	PRINT_ASSERT(lh->distance(lab), >=, 0);
+	PRINT_ASSERT(lh->distance(lab), <, INFINITY);
 }
 
 
@@ -289,6 +291,7 @@ void Transport::get_opacity(LorentzHelper *lh, const int z_ind) const{
 		lh->set_opac<com>(0,0);
 	}
 	PRINT_ASSERT(lh->net_opac(lab),>=,0);
+	PRINT_ASSERT(lh->net_opac(lab),<,INFINITY);
 }
 //--------------------------------------------------------
 // Propagate a single monte carlo particle until
@@ -321,7 +324,6 @@ void Transport::propagate(Particle* p)
 
 		// decide which event happens
 		which_event(&lh,z_ind,&event);
-		PRINT_ASSERT(lh.distance(lab), >=, 0);
 
 		// accumulate counts of radiation energy, absorption, etc
 		if(grid->good_zone(z_ind) && z_ind>=0) tally_radiation(&lh,z_ind);

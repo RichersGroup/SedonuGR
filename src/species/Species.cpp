@@ -240,9 +240,11 @@ void Species::get_opacity(const double com_nu, const int z_ind, double* a, doubl
 		// absorption and scattering opacities
 		*a = max(nu_grid.value_at(com_nu, abs_opac[z_ind]),0.0);
 		*s = max(nu_grid.value_at(com_nu,scat_opac[z_ind]),0.0);
-		PRINT_ASSERT(*a,>=,0);
-		PRINT_ASSERT(*s,>=,0);
 	}
+	PRINT_ASSERT(*a,>=,0);
+	PRINT_ASSERT(*s,>=,0);
+	PRINT_ASSERT(*a,<,INFINITY);
+	PRINT_ASSERT(*s,<,INFINITY);
 }
 
 double Species::sum_opacity(const int z_ind, const int group) const{

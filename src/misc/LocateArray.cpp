@@ -175,14 +175,16 @@ double pow_interpolate_between(const double xval, const double xleft, const doub
 	// do power interpolation
 	double exponent = (xval-xleft)/(xright-xleft);
 	double base = (yright/yleft);
-	return yleft * pow(base,exponent);
+	double retval = yleft * pow(base,exponent);
+	return retval;
 }
 double LocateArray::value_at(const double xval, const vector<double>& y) const{
 	int ind = locate(xval);
 	PRINT_ASSERT(ind,>=,0);
 	PRINT_ASSERT(ind,<=,(int)x.size());
 
-	if(interpolation_method == constant) return y[ind];
+	double retval = -1;
+	if(interpolation_method == constant) retval = y[ind];
 	else{
 		int i1, i2;
 		if(ind == 0 || xval<=center(0)){   // If off left side of grid
@@ -208,11 +210,12 @@ double LocateArray::value_at(const double xval, const vector<double>& y) const{
 		double yleft  = y[i1];
 		double yright = y[i2];
 
-
-		if     (interpolation_method == linear     ) return lin_interpolate_between(xval,xleft,xright,yleft,yright);
-		else if(interpolation_method == logarithmic) return log_interpolate_between(xval,xleft,xright,yleft,yright);
-		else{ PRINT_ASSERT(interpolation_method,==,power );return pow_interpolate_between(xval,xleft,xright,yleft,yright);}
+		if     (interpolation_method == linear     ) retval = lin_interpolate_between(xval,xleft,xright,yleft,yright);
+		else if(interpolation_method == logarithmic) retval = log_interpolate_between(xval,xleft,xright,yleft,yright);
+		else{ PRINT_ASSERT(interpolation_method,==,power );retval = pow_interpolate_between(xval,xleft,xright,yleft,yright);}
 	}
+	PRINT_ASSERT(abs(retval),<,INFINITY);
+	return retval;
 }
 
 

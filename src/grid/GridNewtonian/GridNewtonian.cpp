@@ -99,8 +99,8 @@ void GridNewtonian::isotropic_kup(const double nu, double kup[4], const double x
 	double D[3];
 	isotropic_direction(D,3,rangen);
 
-	kup[0] = nu * D[0];
-	kup[1] = nu * D[1];
-	kup[2] = nu * D[2];
-	kup[3] = nu;
+	kup[0] = nu * D[0] * 2.0*pc::pi / pc::c;
+	kup[1] = nu * D[1] * 2.0*pc::pi / pc::c;
+	kup[2] = nu * D[2] * 2.0*pc::pi / pc::c;
+	kup[3] = nu        * 2.0*pc::pi / pc::c;
 }

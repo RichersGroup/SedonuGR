@@ -117,7 +117,7 @@ template<Frame f>
 void LorentzHelper::set_p_e(const double e){
 	PRINT_ASSERT(e,>,0);
 	p[f].e = e;
-	if(p[f].kup[3] > 0)	set_p<f>(&(p[f]));
+	if(p[f].kup[0] > 0)	set_p<f>(&(p[f]));
 }
 template void LorentzHelper::set_p_e<com>(const double e);
 template void LorentzHelper::set_p_e<lab>(const double e);

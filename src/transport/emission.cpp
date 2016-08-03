@@ -289,14 +289,12 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	rand[0] = rangen.uniform();
 	rand[1] = rangen.uniform();
 	rand[2] = rangen.uniform();
-	double xup[4];
-	grid->sample_in_zone(z_ind,rand,3,xup,3);
-	xup[3] = 0;
-	for(int i=0; i<4; i++) pcom.xup[i] = xup[i];
+	grid->sample_in_zone(z_ind,rand,3,pcom.xup,3);
+	pcom.xup[3] = 0;
 
 	// get the velocity
 	double v[3];
-	grid->interpolate_fluid_velocity(xup,3,v,3,z_ind);
+	grid->interpolate_fluid_velocity(pcom.xup,3,v,3,z_ind);
 
 	// species
 	pcom.s = s>=0 ? s : sample_zone_species(z_ind,&pcom.e);
@@ -307,17 +305,12 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	double nu = species_list[pcom.s]->sample_zone_nu(z_ind,&pcom.e,g);
 
 	// emit isotropically in comoving frame
-	double kup[4];
-	grid->isotropic_kup(nu,kup,xup,4,&rangen);
+	grid->isotropic_kup(nu,pcom.kup,pcom.xup,4,&rangen);
 
 	// set up LorentzHelper
 	LorentzHelper lh(exponential_decay);
 	lh.set_v(v,3);
-	lh.set_p_fate(moving);
-	lh.set_p_xup(xup,4);
-	lh.set_p_kup<com>(kup,4);
-	lh.set_p_e<com>(Ep);
-	lh.set_p_s(s);
+	lh.set_p<com>(&pcom);
 
 	// sample tau
 	get_opacity(&lh,z_ind);
