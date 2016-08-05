@@ -249,14 +249,14 @@ void LorentzHelper::transform_cartesian_4vector_c2l(const double v[3], double x[
 	xcom[3] = x[3];
 
 	// time component of lab x
-	x[4] = gamma*xcom[4];
-	for(int i=0; i<3; i++) x[4] -= gamma*vrel[i]/pc::c * xcom[i];
+	x[4] = gamma*xcom[3];
+	for(int i=0; i<3; i++) x[3] -= gamma*vrel[i]/pc::c * xcom[i];
 
 	// spatial components
 	for(int i=0; i<3; i++){
 		x[i] = xcom[i];
 		if(v2 > 0){
-			x[i] -= gamma*vrel[i]/pc::c * xcom[4];
+			x[i] -= gamma*vrel[i]/pc::c * xcom[3];
 			for(int j=0; j<3; j++){
 				x[i] += (gamma-1.0)*vrel[i]*vrel[j]/v2 * xcom[j];
 			}
