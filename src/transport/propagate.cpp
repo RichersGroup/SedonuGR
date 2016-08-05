@@ -306,7 +306,7 @@ void Transport::propagate(Particle* p)
 	{
 		PRINT_ASSERT(lh.p_nu(lab), >, 0);
 
-		int z_ind = grid->zone_index(p->xup,3);
+		int z_ind = grid->zone_index(lh.p_xup(),4);
 		PRINT_ASSERT(z_ind, >=, -1);
 		PRINT_ASSERT(z_ind, <, (int)grid->z.size());
 

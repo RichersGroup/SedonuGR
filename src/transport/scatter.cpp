@@ -243,12 +243,12 @@ void Transport::sample_tau(LorentzHelper *lh){
 void Transport::init_randomwalk_cdf(Lua* lua){
 	int sumN = lua->scalar<int>("randomwalk_sumN");
 	int npoints = lua->scalar<int>("randomwalk_npoints");
-	double max_x = lua->scalar<double>("randomwalk_max_x");
+	randomwalk_max_x = lua->scalar<double>("randomwalk_max_x");
 	double interpolation_order = lua->scalar<double>("randomwalk_interpolation_order");
 
 	randomwalk_diffusion_time.resize(npoints);
 	randomwalk_diffusion_time.interpolation_order = interpolation_order;
-	randomwalk_xaxis.init(0,max_x,npoints, linear);
+	randomwalk_xaxis.init(0,randomwalk_max_x,npoints, linear);
 
 	#pragma omp parallel for
 	for(int i=1; i<=npoints; i++){
@@ -282,7 +282,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 
 	// sample the distance travelled during the random walk
 	double path_length_com = pc::c * Rcom*Rcom / D * randomwalk_diffusion_time.invert(rangen.uniform(),&randomwalk_xaxis,-1);
-	PRINT_ASSERT(path_length_com,>=,Rcom);
+	path_length_com = max(path_length_com,Rcom);
 
 	// deposit fluid quantities (comoving frame)
 	double ratio_deposited = 1.0 - exp(-lh->abs_opac(com) * path_length_com);
