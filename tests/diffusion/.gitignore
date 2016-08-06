@@ -1,3 +1,5 @@
 *.dat
 *.h5
 *~
+*.pdf
+neutron_star.mod

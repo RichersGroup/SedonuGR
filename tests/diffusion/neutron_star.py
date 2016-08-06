@@ -1,7 +1,7 @@
 import sys
 
-dx0 = 0.01
-Rmax = 100
+dx0 = 0.1
+Rmax = 20
 Rmin = 1
 
 Rlist = []

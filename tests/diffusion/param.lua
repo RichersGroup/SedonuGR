@@ -42,15 +42,15 @@ model_file = "neutron_star.mod"
 write_zones_every   = 1
 write_rays_every    = 1
 write_spectra_every = 1
-output_zones_distribution = 0
-output_hdf5 = 0
+output_zones_distribution = 1
+output_hdf5 = 1
 
 -- Particle Creation
 
 max_particles  = 2e7
-n_subcycles = 1
+n_subcycles = 10
 do_emit_by_bin = 0
-n_emit_core    = 1e1
+n_emit_core    = 1e5
 n_emit_therm   = 0
 
 -- Inner Source
