@@ -324,8 +324,8 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	// get the displacement vector polar coordinates
 	// theta_rotate is angle away from z-axis, not from xy-plane
 	Grid::normalize_Minkowski<3>(d3com,3);
-	double costheta_rotate = sqrt(1.0 - d3com[2]*d3com[2]);
-	double sintheta_rotate = d3com[2];
+	double costheta_rotate = d3com[2];
+	double sintheta_rotate = sqrt(1.0 - d3com[2]*d3com[2]);
 
 	if(abs(sintheta_rotate) < TINY) pD[2] *= costheta_rotate>0 ? 1.0 : -1.0;
 	else{
@@ -338,8 +338,8 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 		pD[2] = -sintheta_rotate*pD_old[0] + costheta_rotate*pD_old[2];
 
 		// second rotate around the z axis, away from the x-axis
-		double cosphi_rotate = d3com[0] / sqrt(d3com[0]*d3com[0] + d3com[1]*d3com[1]);
-		double sinphi_rotate = d3com[0] / sqrt(d3com[0]*d3com[0] + d3com[1]*d3com[1]);
+		double cosphi_rotate = d3com[0] / sintheta_rotate;
+		double sinphi_rotate = d3com[1] / sintheta_rotate;
 		Grid::normalize_Minkowski<3>(pD,3);
 		for(int i=0; i<3; i++) pD_old[i] = pD[i];
 		pD[0] = cosphi_rotate*pD_old[0] - sinphi_rotate*pD_old[1];
