@@ -1,0 +1,37 @@
+#Only enable the commented compatability flags if compiling/running fails. Some systems (e.g. Hopper) won't compile with some of them enabled.
+
+export
+#general options
+TARGET=$(CURDIR)/gomc
+BASEDIR=$(CURDIR)
+
+#compiler configuration
+F90=mpif90 -f90=ifort
+CXX=mpicxx -cxx=icpc
+
+F90FLAGS= -O3 -g -openmp
+CXXFLAGS= -O3 -lifcore -g -std=c++0x -openmp #-DNDEBUG
+
+#GSL
+GSL_BASE=$(GSL_DIR)
+GSL_INCL=-I$(GSL_BASE)/include
+GSL_LIBS=-L$(GSL_BASE)/lib -lgsl -lmkl_intel_lp64 -lmkl_core -lmkl_sequential
+
+#LUA
+#LUA_BASE=$(CURDIR)/external/lua-5.2.2/install
+LUA_INCL=-I/usr/include/lua5.2
+LUA_LIBS=-llua5.2
+
+#HDF5
+HDF5_DIR=/usr/local/hdf5-1.8.15-patch1_intel-16.0.0
+HDF5INCS=-I$(HDF5_DIR)/include
+HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5 -lhdf5_fortran -lhdf5_cpp -Wl,-rpath,$(HDF5_DIR)/lib
+
+#NuLib
+NULIB_DIR=$(CURDIR)/external/NuLib/src
+NULIB_LIBS=$(NULIB_DIR)/nulib.a $(NULIB_DIR)/nuc_eos/nuc_eos.a $(NULIB_DIR)/other_eos/helmholtz/helmholtz.o
+HELMHOLTZ_EOS=0
+MODINC="-I ./"
+
+#OTHER
+OTHER_LIBS=
