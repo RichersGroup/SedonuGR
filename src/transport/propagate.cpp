@@ -341,7 +341,6 @@ void Transport::propagate(Particle* p)
 				PRINT_ASSERT(lh.p_nu(lab), >, 0);
 				PRINT_ASSERT(lh.p_e(lab), >, 0);
 			}
-			else PRINT_ASSERT(lh.p_fate()==rouletted, ||, lh.p_fate()==absorbed);
 
 			break;
 

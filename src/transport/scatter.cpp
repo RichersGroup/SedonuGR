@@ -187,13 +187,15 @@ void Transport::scatter(LorentzHelper *lh, int z_ind) const{\
 			// if the optical depth is below our threshold, don't do random walk
 			if(lh->scat_opac(com) * Rcom >= randomwalk_min_optical_depth){
 				random_walk(lh, Rcom, D, z_ind);
+				int new_ind = grid->zone_index(lh->p_xup(),3);
+				if(new_ind==-2) lh->set_p_fate(escaped);
 				did_random_walk = true;
 			}
 		}
 	}
 
 	// isotropic scatter if can't do random walk
-	if(!did_random_walk){
+	if(!did_random_walk && lh->p_fate()==moving){
 		double kup[4];
 		grid->isotropic_kup(lh->p_nu(com),kup,lh->p_xup(),4,&rangen);
 		lh->set_p_kup<com>(kup,4);
@@ -356,7 +358,8 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	//double e_rad_directional = e_avg * R;
 	//double e_rad_each_bin = e_avg * (distance - R) / (double)(zone->distribution[p->s].phi_dim() * zone->distribution[p->s].mu_dim());
 	Particle fake = lh->particle_copy(com);
-	fake.e = lh->p_e(com) / (path_length_com * lh->abs_opac(com)) * (1.0 - exp(-lh->abs_opac(com) * path_length_com));
+	if(lh->abs_opac(com) > 0) fake.e = lh->p_e(com) / (path_length_com * lh->abs_opac(com)) * (1.0 - exp(-lh->abs_opac(com) * path_length_com));
+	else fake.e = lh->p_e(com);
 	fake.kup[3] = lh->p_kup(com)[3];
 	fake.kup[0] = fake.kup[3] * d3com[0];
 	fake.kup[1] = fake.kup[3] * d3com[2];
