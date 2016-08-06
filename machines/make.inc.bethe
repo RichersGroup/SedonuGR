@@ -1,0 +1,37 @@
+#Only enable the commented compatability flags if compiling/running fails. Some systems (e.g. Hopper) won't compile with some of them enabled.
+
+export
+#general options
+TARGET=$(CURDIR)/gomc
+BASEDIR=$(CURDIR)
+
+#compiler configuration
+F90=ifort
+CXX=icpc
+
+F90FLAGS= -O3 -g -qopenmp -static
+CXXFLAGS= -O3 -g -Wall -static -std=c++0x -qopenmp -I/home/cott/opt/mpich-3.2-intel16/include
+
+#GSL
+GSL_BASE=/home/cott/opt/gsl-2.1
+GSL_INCL=-I$(GSL_BASE)/include
+GSL_LIBS=-L$(GSL_BASE)/lib -lgsl -L/opt/intel/lib/intel64 
+
+#LUA
+LUA_BASE=/home/cott/opt/lua-5.3.2
+LUA_INCL=-I$(LUA_BASE)/include
+LUA_LIBS=-L$(LUA_BASE)/lib -llua
+
+#HDF5
+HDF5_DIR=/home/cott/opt/hdf5-1.8.16-intel2016
+HDF5INCS=-I$(HDF5_DIR)/include
+HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5 -lhdf5_fortran -lhdf5 -lhdf5_cpp -lhdf5 -Wl,-rpath,$(HDF5_DIR)/lib -lz -L/home/cott/opt/mpich-3.2-intel16/lib -lmpi -lmpicxx -lifcore -limf -lifport
+
+#NuLib
+NULIB_DIR=$(CURDIR)/external/NuLib/src
+NULIB_LIBS=$(NULIB_DIR)/nulib.a  $(NULIB_DIR)/nuc_eos/nuc_eos.a -lgfortran
+HELMHOLTZ_EOS=0
+MODINC="-I ./"
+
+#OTHER
+OTHER_LIBS=
