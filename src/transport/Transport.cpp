@@ -237,7 +237,7 @@ void Transport::init(Lua* lua)
 
 	}
 	else{
-		if(rank0) cout << "#   Using grey opacity for electron anti/neutrinos (0 chemical potential)" << endl;
+		if(rank0) cout << "#   Using grey opacity (0 chemical potential blackbody)" << endl;
 		num_nut_species = 2;
 	}
 

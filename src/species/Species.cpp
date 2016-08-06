@@ -235,7 +235,10 @@ void Species::get_opacity(const double com_nu, const int z_ind, double* a, doubl
 		*a = 0;
 		*s = 0;
 	}
-
+	else if(grey_opac>0){
+		*a = grey_opac * grey_abs_frac;
+		*s = grey_opac * (1.0 - grey_abs_frac);
+	}
 	else{
 		// absorption and scattering opacities
 		*a = max(nu_grid.value_at(com_nu, abs_opac[z_ind]),0.0);
