@@ -265,16 +265,15 @@ void Grid1DSphere::reflect_outer(LorentzHelper *lh) const{
 	PRINT_ASSERT( fabs(R - r_out[r_out.size()-1]),<,TINY*dr);
 
 	// invert the radial component of the velocity
-	double D[3];
-	D[0] -= 2.*velDotRhat * p->xup[0]/R;
-	D[1] -= 2.*velDotRhat * p->xup[1]/R;
-	D[2] -= 2.*velDotRhat * p->xup[2]/R;
-	normalize_Minkowski<3>(D,3);
+	Dlab[0] -= 2.*velDotRhat * p->xup[0]/R;
+	Dlab[1] -= 2.*velDotRhat * p->xup[1]/R;
+	Dlab[2] -= 2.*velDotRhat * p->xup[2]/R;
+	normalize_Minkowski<3>(Dlab,3);
 	double kup[4];
 	kup[3] = lh->p_kup(lab)[3];
-	kup[0] = kup[3] * D[0];
-	kup[1] = kup[3] * D[1];
-	kup[2] = kup[3] * D[2];
+	kup[0] = kup[3] * Dlab[0];
+	kup[1] = kup[3] * Dlab[1];
+	kup[2] = kup[3] * Dlab[2];
 	lh->set_p_kup<lab>(kup,4);
 
 	// put the particle just inside the boundary
