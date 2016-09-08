@@ -1,0 +1,38 @@
+#zwicky modules: openmpi/1.4.1-gcc gcc/4.5.0
+#Only enable the commented compatability flags if compiling/running fails. Some systems (e.g. Hopper) won't compile with some of them enabled.
+
+export
+#general options
+TARGET=$(CURDIR)/sedonu
+BASEDIR=$(CURDIR)
+
+#compiler configuration
+F90=mpif90
+CXX=mpicxx -std=c++0x
+
+F90FLAGS= -O3 -fopenmp -DNDEBUG
+CXXFLAGS= -O3 -fopenmp -g -Wall# -DNDEBUG
+
+#GSL
+GSL_BASE=$(GSL_DIR)
+GSL_INCL=-I$(GSL_BASE)/include
+GSL_LIBS=-L$(GSL_BASE)/lib -lgsl -lgslcblas
+
+#LUA
+LUA_BASE=$(CURDIR)/external/lua-5.2.3/install
+LUA_INCL=-I$(LUA_BASE)/include
+LUA_LIBS=-L$(LUA_BASE)/lib -llua
+
+#HDF5
+HDF5_DIR=$(CURDIR)/external/hdf5-1.8.17/hdf5_gcc4.5.0
+HDF5INCS=-I$(HDF5_DIR)/include
+HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5 -lhdf5_fortran -lhdf5_cpp -Wl,-rpath,$(HDF5_DIR)/lib
+
+#NuLib
+NULIB_DIR=$(CURDIR)/external/NuLib/src
+NULIB_LIBS=$(NULIB_DIR)/nulib.a -lgfortran $(NULIB_DIR)/nuc_eos/nuc_eos.a $(NULIB_DIR)/other_eos/helmholtz/helmholtz.o
+HELMHOLTZ_EOS=0
+MODINC="-I ./"
+
+#OTHER
+OTHER_LIBS=
