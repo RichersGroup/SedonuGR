@@ -85,7 +85,7 @@ void Grid1DSphere::read_model_file(Lua* lua)
 		PRINT_ASSERT(z[z_ind].T,>=,0);
 		PRINT_ASSERT(z[z_ind].Ye,>=,0);
 		PRINT_ASSERT(z[z_ind].Ye,<=,1.0);
-		PRINT_ASSERT(z[z_ind].u[0]*z[z_ind].u[0] + z[z_ind].u[1]*z[z_ind].u[1] + z[z_ind].u[2]*z[z_ind].u[2] < pc::c*pc::c);
+		PRINT_ASSERT(z[z_ind].u[0]*z[z_ind].u[0] + z[z_ind].u[1]*z[z_ind].u[1] + z[z_ind].u[2]*z[z_ind].u[2],<,pc::c*pc::c);
 	}
 
 	infile.close();
