@@ -100,7 +100,7 @@ int Grid1DSphere::zone_index(const double x[3], const int xsize) const
 	PRINT_ASSERT(z.size(),>,0);
 	PRINT_ASSERT(xsize,==,3);
 	double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
-	PRINT_ASSERT(r,>,0);
+	PRINT_ASSERT(r,>=,0);
 
 	// check if off the boundaries
 	if(r < r_out.min             ) return -1;
