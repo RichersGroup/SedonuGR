@@ -84,7 +84,7 @@ int main(int argc, char* argv[]){
 	// SINGLE LINE PLOTS //
 	//===================//
 
-	nulib_get_eas_arrays(rho, T, ye, nulibID, emis, absopac, scatopac);
+	nulib_get_eas_arrays(rho, T, ye, nulibID, 0, emis, absopac, scatopac);
 	nulib_get_pure_emis (rho, T, ye, nulibID, pure_emis);
 	cout << "e = " << nu_grid.value_at(myfreq, pure_emis) << " erg/cm^3/s/ster/Hz" << endl;
 	cout << "a = " << nu_grid.value_at(myfreq, absopac)   << " 1/cm" << endl;

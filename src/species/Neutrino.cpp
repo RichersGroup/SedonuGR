@@ -39,6 +39,7 @@ Neutrino::Neutrino(){
 	num_species = MAXLIM;
 	nulibID = MAXLIM;
 	cutoff=0;
+	nulib_opac_cutoff = 0;
 }
 
 
@@ -52,6 +53,7 @@ void Neutrino::myInit(Lua* lua)
 	grey_opac     = lua->scalar<double>("grey_opacity");
 	if(grey_opac < 0){
 		nulib_get_nu_grid(nu_grid);
+		nulib_opac_cutoff = lua->scalar<double>("nulib_opac_cutoff");
 
 		// set neutrino's min and max values
 		T_min  =  nulib_get_Tmin();
@@ -130,7 +132,7 @@ void Neutrino::set_eas(int zone_index)
 	double ngroups = (double)emis[zone_index].size();
 
 	if(grey_opac < 0){ // get opacities and emissivity from NuLib
-		nulib_get_eas_arrays(z->rho, z->T, z->Ye, nulibID,
+		nulib_get_eas_arrays(z->rho, z->T, z->Ye, nulibID, nulib_opac_cutoff,
 				emis[zone_index], abs_opac[zone_index], scat_opac[zone_index]);
 
 		// set the biased emissivity

@@ -53,6 +53,7 @@ public:
 	int num_species;
 	int nulibID;
 	double cutoff;
+	double nulib_opac_cutoff;
 
 	// required functions
 	void myInit(Lua* lua);

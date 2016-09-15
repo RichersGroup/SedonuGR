@@ -279,6 +279,7 @@ void nulib_get_eas_arrays(
 		double rho,                     // g/cm^3
 		double temp,                    // K
 		double ye, int nulibID,
+		double nulib_opac_cutoff,      // 1/cm
 		CDFArray& nut_emiss,         // erg/cm^3/s/ster
 		vector<double>& nut_absopac,    // cm^-1
 		vector<double>& nut_scatopac){  // cm^-1
@@ -332,9 +333,16 @@ void nulib_get_eas_arrays(
 		nulibtable_single_species_range_energy_(&rho, &temp_MeV, &ye, &lns,
 				(double*)eas_energy, &ngroups, &nvars);
 		for(int j=0; j<ngroups; j++){
-			nut_emiss.set_value(j, eas_energy[0][j]);
-			nut_absopac [j] =      eas_energy[1][j];
-			nut_scatopac[j] =      eas_energy[2][j];
+			if(eas_energy[1][j] > nulib_opac_cutoff){
+				nut_emiss.set_value(j, eas_energy[0][j]);
+				nut_absopac [j] =      eas_energy[1][j];
+				nut_scatopac[j] =      eas_energy[2][j];
+			}
+			else{
+				nut_emiss.set_value(j, 0);
+				nut_absopac [j] =      0;
+				nut_scatopac[j] =      0;
+			}
 		}
 	}
 	nut_emiss.N = NaN;
