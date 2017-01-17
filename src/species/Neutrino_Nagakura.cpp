@@ -83,25 +83,31 @@ void Neutrino_Nagakura::myInit(Lua* lua)
 	ifstream mugrid_file;
 	mugrid_file.open(mugrid_filename.c_str());
 	mugrid_file >> trash >> minval;
-	PRINT_ASSERT(minval,==,-1);
+	bintops = vector<double>(0);
 	while(mugrid_file >> trash >> tmp){
 		if(bintops.size()>0) PRINT_ASSERT(tmp,>,bintops[bintops.size()-1]);
 		else PRINT_ASSERT(tmp,>,minval);
 		bintops.push_back(tmp);
 	}
-	tmp_mugrid.init(bintops,-1);
+	bintops[bintops.size()-1] = 1.0;
+	PRINT_ASSERT(minval,==,-1);
+	tmp_mugrid.init(bintops,minval);
 
 	string phigrid_filename = lua->scalar<string>("distribution_phigrid_filename");
 	ifstream phigrid_file;
 	phigrid_file.open(phigrid_filename.c_str());
 	phigrid_file >> trash >> minval;
-	PRINT_ASSERT(minval,==,-1);
+	minval -= pc::pi;
+	bintops = vector<double>(0);
 	while(phigrid_file >> trash >> tmp){
+		tmp -= pc::pi;
 		if(bintops.size()>0) PRINT_ASSERT(tmp,>,bintops[bintops.size()-1]);
 		else PRINT_ASSERT(tmp,>,minval);
 		bintops.push_back(tmp);
 	}
-	tmp_phigrid.init(bintops,-1);
+	bintops[bintops.size()-1] = pc::pi;
+	PRINT_ASSERT(minval,==,-pc::pi);
+	tmp_phigrid.init(bintops,minval);
 
 	// use the above to initialize the zone's distribution function
 	SpectrumArray tmp_spectrum;
@@ -110,7 +116,7 @@ void Neutrino_Nagakura::myInit(Lua* lua)
 	//#pragma omp parallel for
 	for(unsigned z_ind=0; z_ind<sim->grid->z.size(); z_ind++){
 		sim->grid->z[z_ind].distribution.push_back(tmp_spectrum);
-		PRINT_ASSERT(sim->grid->z[z_ind].distribution.size(),==,ID);
+		PRINT_ASSERT(sim->grid->z[z_ind].distribution.size(),==,ID+1);
 	}
 
 	//===================================//

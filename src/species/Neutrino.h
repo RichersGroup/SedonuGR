@@ -51,7 +51,6 @@ public:
 	virtual ~Neutrino() {}
 
 	int num_species;
-	double cutoff;
 
 	// virtual functions
 	virtual void set_eas(int zone_index) = 0;

@@ -35,8 +35,6 @@ class Neutrino_NuLib: public Neutrino
 
 protected:
 
-	double nulib_opac_cutoff;
-
 public:
 
 	Neutrino_NuLib();

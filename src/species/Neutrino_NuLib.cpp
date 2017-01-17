@@ -37,7 +37,6 @@ namespace pc = physical_constants;
 
 // constructor
 Neutrino_NuLib::Neutrino_NuLib(){
-	nulib_opac_cutoff = 0;
 }
 
 //----------------------------------------------------------------
@@ -47,7 +46,6 @@ void Neutrino_NuLib::myInit(Lua* lua)
 {
 	// set up the frequency table
 	nulib_get_nu_grid(nu_grid);
-	nulib_opac_cutoff = lua->scalar<double>("nulib_opac_cutoff");
 
 	// set neutrino's min and max values
 	T_min  =  nulib_get_Tmin();
@@ -70,7 +68,7 @@ void Neutrino_NuLib::set_eas(int zone_index)
 	Zone* z = &(sim->grid->z[zone_index]);
 	double ngroups = (double)emis[zone_index].size();
 
-	nulib_get_eas_arrays(z->rho, z->T, z->Ye, ID, nulib_opac_cutoff,
+	nulib_get_eas_arrays(z->rho, z->T, z->Ye, ID, cutoff,
 			emis[zone_index], abs_opac[zone_index], scat_opac[zone_index]);
 
 	// set the biased emissivity

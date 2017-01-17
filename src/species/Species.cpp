@@ -46,6 +46,7 @@ Species::Species(){
 	rho_max = NaN;
 	sim = NULL;
 	ID = MAXLIM;
+	cutoff=0;
 }
 
 void Species::init(Lua* lua, Transport* simulation)
@@ -65,6 +66,8 @@ void Species::init(Lua* lua, Transport* simulation)
 	//========//
 	PRINT_ASSERT(nu_grid.size(),>,0);
 
+	// set up the frequency table
+	cutoff        = lua->scalar<double>("cdf_cutoff");
 
 	// allocate space for the grid eas spectrum containers
 	if(rank0) cout << "#   Setting up the eas arrays...";
@@ -91,18 +94,21 @@ void Species::init(Lua* lua, Transport* simulation)
 	if(rank0) cout << "#   Setting up the distribution function...";
 	LocateArray tmp_mugrid, tmp_phigrid;
 	SpectrumArray tmp_spectrum;
-
 	int n_mu = lua->scalar<int>("distribution_nmu");
 	int n_phi = lua->scalar<int>("distribution_nphi");
-	tmp_mugrid.init(-1,1,n_mu);
-	tmp_phigrid.init(-pc::pi, pc::pi, n_phi);
-	tmp_spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
+	if(n_mu>0 && n_phi>0){
+		tmp_mugrid.init(-1,1,n_mu);
+		tmp_phigrid.init(-pc::pi, pc::pi, n_phi);
+		tmp_spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
+	}
+
 	for(unsigned z_ind=0; z_ind<sim->grid->z.size(); z_ind++){
 		if(sim->grid->z[z_ind].distribution.size() == ID){ // do default
+			PRINT_ASSERT(tmp_spectrum.size(),>,0);
 			sim->grid->z[z_ind].distribution.push_back(tmp_spectrum);
 		}
 		else{
-			PRINT_ASSERT(n_mu,<,0);
+			PRINT_ASSERT(n_mu,<,0); // don't try to both specify grid from child class and from base class
 			PRINT_ASSERT(n_phi,<,0);
 		}
 		PRINT_ASSERT(sim->grid->z[z_ind].distribution.size(),==,ID+1);

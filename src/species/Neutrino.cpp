@@ -37,7 +37,6 @@ namespace pc = physical_constants;
 // constructor
 Neutrino::Neutrino(){
 	num_species = MAXLIM;
-	cutoff=0;
 }
 
 
@@ -46,9 +45,6 @@ Neutrino::Neutrino(){
 //----------------------------------------------------------------
 void Neutrino::myInit(Lua* lua)
 {
-	// set up the frequency table
-	cutoff        = lua->scalar<double>("cdf_cutoff");
-
 	// set lepton number
 	if(ID == 0)   lepton_number =  1;
 	if(ID == 1)   lepton_number = -1;

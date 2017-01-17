@@ -71,6 +71,9 @@ public:
 	// the numbers of species this represents
 	double weight;
 
+	// cutoff for the cdf array
+	double cutoff;
+
 	// this species' spectrum
 	SpectrumArray spectrum;
 
