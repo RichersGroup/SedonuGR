@@ -25,41 +25,24 @@
 //
 */
 
-#ifndef _NEUTRINOS_H
-#define _NEUTRINOS_H
+#ifndef _NEUTRINOS_NAGAKURA_H
+#define _NEUTRINOS_NAGAKURA_H
 
-#include "Species.h"
+#include "Neutrino.h"
 
-// PARAMETERS
-//    Neutrino_cdf_cutoff - cutoff bin value in CDF. Below this value is considered zero. Necessary for some equilibrium problems.
-//    Neutrino_grey_opac - if <0, takes opac/emis from NuLib. Else uses this constant opacity.
-//    Neutrino_grey_abs_frac - (if grey_opac<0) constant absorption fraction
-//    Neutrino_nugrid_start - (if grey_opac<0) bottom of frequency grid
-//    Neutrino_nugrid_stop - (if grey_opac<0) top of freqyency grid
-//    Neutrino_nugrid_n - (if grey_opac<0) number of frequency bins
-//    Neutrino_spec_n_mu - # of mu bins in neutrino escape spectrum
-//    Neutrino_spec_n_phi - # of phi bins in neutrino escape spectrum
-
-class Neutrino: public Species
+class Neutrino_Nagakura: public Neutrino
 {
 
 protected:
 
+	std::string opacity_dir;
+
 public:
 
-	Neutrino();
-	virtual ~Neutrino() {}
+	Neutrino_Nagakura();
 
-	int num_species;
-	double cutoff;
-
-	// virtual functions
-	virtual void set_eas(int zone_index) = 0;
-
-	// required functions
 	void myInit(Lua* lua);
-	double blackbody(const double T, const double chempot, const double nu) const;
-	static double annihilation_rate(const SpectrumArray& nu_dist, const SpectrumArray& nbar_dist, const bool electron_type, const int weight);
+	void set_eas(int zone_index);
 };
 
 #endif

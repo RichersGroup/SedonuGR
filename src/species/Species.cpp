@@ -45,6 +45,7 @@ Species::Species(){
 	rho_min = NaN;
 	rho_max = NaN;
 	sim = NULL;
+	ID = MAXLIM;
 }
 
 void Species::init(Lua* lua, Transport* simulation)
@@ -59,7 +60,11 @@ void Species::init(Lua* lua, Transport* simulation)
 	PRINT_ASSERT(sim->grid->z.size(),>,0);
 
 	// call child's init function
+	//========//
 	myInit(lua);
+	//========//
+	PRINT_ASSERT(nu_grid.size(),>,0);
+
 
 	// allocate space for the grid eas spectrum containers
 	if(rank0) cout << "#   Setting up the eas arrays...";
@@ -69,7 +74,6 @@ void Species::init(Lua* lua, Transport* simulation)
 	biased_emis.resize(sim->grid->z.size());
 
 	// allocate space for each eas spectrum
-	PRINT_ASSERT(nu_grid.size(),>,0);
 	if(sim->n_emit_core>0 || sim->n_emit_core_per_bin>0) core_emis.resize(nu_grid.size());
 	int iorder = lua->scalar<int>("cdf_interpolation_order");
     //#pragma omp parallel for
@@ -85,31 +89,23 @@ void Species::init(Lua* lua, Transport* simulation)
 
     // set up the spectrum in each zone
 	if(rank0) cout << "#   Setting up the distribution function...";
+	LocateArray tmp_mugrid, tmp_phigrid;
+	SpectrumArray tmp_spectrum;
+
 	int n_mu = lua->scalar<int>("distribution_nmu");
 	int n_phi = lua->scalar<int>("distribution_nphi");
-
-	// temporary spectrum to be used for distribution function initialization
-	LocateArray tmp_mugrid, tmp_phigrid;
-	if(n_mu>=0)	tmp_mugrid.init(-1,1,n_mu);
-	else{
-		vector<double> bin_tops = lua->vector<double>("distribution_mugrid_interfaces");
-		bin_tops.push_back(1);
-		tmp_mugrid.init(bin_tops,-1);
-	}
-	if(n_mu>=0)	tmp_phigrid.init(-pc::pi, pc::pi, n_phi);
-	else{
-		vector<double> bin_tops = lua->vector<double>("distribution_phigrid_interfaces");
-		bin_tops.push_back(pc::pi);
-		tmp_phigrid.init(bin_tops,-pc::pi);
-	}
-
-	// use the above to initialize the zone's distribution function
-	SpectrumArray tmp_spectrum;
+	tmp_mugrid.init(-1,1,n_mu);
+	tmp_phigrid.init(-pc::pi, pc::pi, n_phi);
 	tmp_spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
-
-	//#pragma omp parallel for
 	for(unsigned z_ind=0; z_ind<sim->grid->z.size(); z_ind++){
-		sim->grid->z[z_ind].distribution.push_back(tmp_spectrum);
+		if(sim->grid->z[z_ind].distribution.size() == ID){ // do default
+			sim->grid->z[z_ind].distribution.push_back(tmp_spectrum);
+		}
+		else{
+			PRINT_ASSERT(n_mu,<,0);
+			PRINT_ASSERT(n_phi,<,0);
+		}
+		PRINT_ASSERT(sim->grid->z[z_ind].distribution.size(),==,ID+1);
 	}
 	if(rank0) cout << "finished." << endl;
 
@@ -119,6 +115,14 @@ void Species::init(Lua* lua, Transport* simulation)
 	else if(imeth == 1) nu_grid.interpolation_method = linear;
 	else if(imeth == 2) nu_grid.interpolation_method = logarithmic;
 	else				nu_grid.interpolation_method = power;
+
+	// intialize output spectrum
+	PRINT_ASSERT(nu_grid.size(),>,0);
+	int nmu  = lua->scalar<int>("spec_n_mu");
+	int nphi = lua->scalar<int>("spec_n_phi");
+	tmp_mugrid.init( -1     , 1     , nmu );
+	tmp_phigrid.init(-pc::pi, pc::pi, nphi);
+	spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
 }
 
 

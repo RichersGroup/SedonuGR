@@ -37,7 +37,6 @@ namespace pc = physical_constants;
 // constructor
 Neutrino::Neutrino(){
 	num_species = MAXLIM;
-	ID = MAXLIM;
 	cutoff=0;
 }
 
@@ -49,16 +48,6 @@ void Neutrino::myInit(Lua* lua)
 {
 	// set up the frequency table
 	cutoff        = lua->scalar<double>("cdf_cutoff");
-
-	// intialize output spectrum
-	PRINT_ASSERT(nu_grid.size(),>,0);
-	int nmu  = lua->scalar<int>("spec_n_mu");
-	int nphi = lua->scalar<int>("spec_n_phi");
-	SpectrumArray tmp_spectrum;
-	LocateArray tmp_mugrid, tmp_phigrid;
-	tmp_mugrid.init( -1     , 1     , nmu );
-	tmp_phigrid.init(-pc::pi, pc::pi, nphi);
-	spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
 
 	// set lepton number
 	if(ID == 0)   lepton_number =  1;

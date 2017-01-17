@@ -63,6 +63,7 @@ public:
 
 	// name
 	std::string name;
+	int ID;
 
 	// lepton number (the particle property, {-1,0,1})
 	int lepton_number;

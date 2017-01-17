@@ -43,6 +43,7 @@
 #include "Species.h"
 #include "Neutrino.h"
 #include "Neutrino_NuLib.h"
+#include "Neutrino_Nagakura.h"
 #include "Neutrino_grey.h"
 #include "nulib_interface.h"
 #include "global_options.h"
@@ -241,6 +242,10 @@ void Transport::init(Lua* lua)
 		if(rank0) cout << "#   Using grey opacity (0 chemical potential blackbody)" << endl;
 		num_nut_species = 2;
 	}
+	else if(neutrino_type=="Neutrino_Nagakura"){
+		if(rank0) cout << "#   Using Nagakura neutrino opacities, assumed to match the grid" << endl;
+		num_nut_species = 3;
+	}
 	else{
 		cout << "ERROR: invalid neutrino type" << endl;
 		assert(false);
@@ -250,8 +255,9 @@ void Transport::init(Lua* lua)
 	if(rank0) cout << "# Setting up misc. transport tools..." << endl;
 	for(int i=0; i<num_nut_species; i++){
 		Neutrino* neutrinos_tmp;
-		if     (neutrino_type == "Neutrino_NuLib") neutrinos_tmp = new Neutrino_NuLib;
-		else if(neutrino_type == "Neutrino_grey" ) neutrinos_tmp = new Neutrino_grey;
+		if     (neutrino_type == "Neutrino_NuLib")    neutrinos_tmp = new Neutrino_NuLib;
+		else if(neutrino_type == "Neutrino_grey" )    neutrinos_tmp = new Neutrino_grey;
+		else if(neutrino_type == "Neutrino_Nagakura") neutrinos_tmp = new Neutrino_Nagakura;
 		neutrinos_tmp->ID = i;
 		neutrinos_tmp->num_species = num_nut_species;
 		neutrinos_tmp->init(lua, this);
