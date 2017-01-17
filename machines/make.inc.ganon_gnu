@@ -6,11 +6,11 @@ TARGET=$(CURDIR)/gomc
 BASEDIR=$(CURDIR)
 
 #compiler configuration
-F90=mpifort # OMPI_FC=ifort before mpifort
-CXX=mpicxx  # OMPI_CXX=icpc before mpicxx
+F90=mpifort -fc=gfortran # OMPI_FC=ifort before mpifort
+CXX=mpicxx -cxx=g++ # OMPI_CXX=icpc before mpicxx
 
-F90FLAGS= -O3 -g -fopenmp -mavx
-CXXFLAGS= -O3 -g -std=c++0x -fopenmp -mavx #-DNDEBUG
+F90FLAGS= -O3 -g -fopenmp -mavx -static_mpi
+CXXFLAGS= -O3 -g -std=c++0x -fopenmp -mavx -static_mpi #-DNDEBUG
 
 #GSL
 GSL_BASE=$(GSL_DIR)
