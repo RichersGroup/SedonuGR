@@ -43,7 +43,6 @@ public:
 
 	void myInit(Lua* lua);
 	void set_eas(int zone_index);
-	void get_opacity(const double com_nu, const int z_ind, double* abs_opac, double* scat_opac) const;
 };
 
 #endif

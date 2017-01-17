@@ -213,6 +213,25 @@ double Species::integrate_zone_lepton_emis(const int zone_index) const
 	return l_emis * emis[zone_index].N;
 }
 
+//-----------------------------------------------------------------
+// get opacity at the frequency
+//-----------------------------------------------------------------
+void Species::get_opacity(const double com_nu, const int z_ind, double* a, double* s) const
+{
+	PRINT_ASSERT(z_ind,>=,-1);
+	PRINT_ASSERT(com_nu,>,0);
+
+	// absorption and scattering opacities
+	*a = max(nu_grid.value_at(com_nu, abs_opac[z_ind]),0.0);
+	*s = max(nu_grid.value_at(com_nu,scat_opac[z_ind]),0.0);
+
+	PRINT_ASSERT(*a,>=,0);
+	PRINT_ASSERT(*s,>=,0);
+	PRINT_ASSERT(*a,<,INFINITY);
+	PRINT_ASSERT(*s,<,INFINITY);
+}
+
+
 double Species::bin_emis(const int z_ind, const int g) const{
 	return emis[z_ind].get_value(g) * emis[z_ind].N;
 }

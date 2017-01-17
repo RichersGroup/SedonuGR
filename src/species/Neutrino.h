@@ -56,7 +56,6 @@ public:
 
 	// virtual functions
 	virtual void set_eas(int zone_index) = 0;
-	virtual void get_opacity(const double com_nu, const int z_ind, double* abs_opac, double* scat_opac) const = 0;
 
 	// required functions
 	void myInit(Lua* lua);
