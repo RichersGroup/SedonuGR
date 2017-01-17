@@ -51,13 +51,15 @@ public:
 	virtual ~Neutrino() {}
 
 	int num_species;
-	int nulibID;
+	int ID;
 	double cutoff;
-	double nulib_opac_cutoff;
+
+	// virtual functions
+	virtual void set_eas(int zone_index) = 0;
+	virtual void get_opacity(const double com_nu, const int z_ind, double* abs_opac, double* scat_opac) const = 0;
 
 	// required functions
 	void myInit(Lua* lua);
-	void set_eas(int zone_index);
 	double blackbody(const double T, const double chempot, const double nu) const;
 	static double annihilation_rate(const SpectrumArray& nu_dist, const SpectrumArray& nbar_dist, const bool electron_type, const int weight);
 };

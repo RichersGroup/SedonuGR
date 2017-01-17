@@ -37,9 +37,8 @@ namespace pc = physical_constants;
 // constructor
 Neutrino::Neutrino(){
 	num_species = MAXLIM;
-	nulibID = MAXLIM;
+	ID = MAXLIM;
 	cutoff=0;
-	nulib_opac_cutoff = 0;
 }
 
 
@@ -50,36 +49,6 @@ void Neutrino::myInit(Lua* lua)
 {
 	// set up the frequency table
 	cutoff        = lua->scalar<double>("cdf_cutoff");
-	grey_opac     = lua->scalar<double>("grey_opacity");
-	if(grey_opac < 0){
-		nulib_get_nu_grid(nu_grid);
-		nulib_opac_cutoff = lua->scalar<double>("nulib_opac_cutoff");
-
-		// set neutrino's min and max values
-		T_min  =  nulib_get_Tmin();
-		T_max  =  nulib_get_Tmax();
-		Ye_min =  nulib_get_Yemin();
-		Ye_max =  nulib_get_Yemax();
-		rho_min = nulib_get_rhomin();
-		rho_max = nulib_get_rhomax();
-
-	}
-	else{
-		grey_abs_frac = lua->scalar<double>("grey_abs_frac");
-		double nu_start = lua->scalar<double>("nugrid_start");
-		double nu_stop  = lua->scalar<double>("nugrid_stop");
-		PRINT_ASSERT(nu_stop,>,nu_start);
-		int      n_nu   = lua->scalar<int>("nugrid_n");
-		nu_grid.init(nu_start/pc::h_MeV,nu_stop/pc::h_MeV,n_nu);
-
-		// set neutrino's min and max values
-		T_min   =  0.0;
-		T_max   =  numeric_limits<double>::infinity();
-		Ye_min  = 0;
-		Ye_max  = 1;
-		rho_min = -numeric_limits<double>::infinity();
-		rho_max =  numeric_limits<double>::infinity();
-	}
 
 	// intialize output spectrum
 	PRINT_ASSERT(nu_grid.size(),>,0);
@@ -92,79 +61,34 @@ void Neutrino::myInit(Lua* lua)
 	spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
 
 	// set lepton number
-	if(nulibID == 0)   lepton_number =  1;
-	if(nulibID == 1)   lepton_number = -1;
-	if(nulibID >= 2)   lepton_number =  0;
+	if(ID == 0)   lepton_number =  1;
+	if(ID == 1)   lepton_number = -1;
+	if(ID >= 2)   lepton_number =  0;
 
 	// set names and spectrum weight
-	if     (nulibID == 0) {name = "Electron Neutrinos";              weight = 1.0;}
-	else if(nulibID == 1) {name = "Electron Anti-Neutrinos";         weight = 1.0;}
-	else if(nulibID == 2){
+	if     (ID == 0) {name = "Electron Neutrinos";              weight = 1.0;}
+	else if(ID == 1) {name = "Electron Anti-Neutrinos";         weight = 1.0;}
+	else if(ID == 2){
 		if     (num_species == 3) {name = "Mu/Tau Anti/Neutrinos"; weight = 4.0;}
 		else if(num_species == 4) {name = "Mu/Tau Neutrinos";      weight = 2.0;}
 		else if(num_species == 6) {name = "Mu Neutrinos";          weight = 1.0;}
 		else                          {name = "ERROR";                 weight = -1;}}
-	else if(nulibID == 3){
+	else if(ID == 3){
 		if     (num_species == 4) {name = "Mu/Tau Anti-Neutrinos"; weight = 2.0;}
 		else if(num_species == 6) {name = "Mu Antineutrino";       weight = 1.0;}
 		else                          {name = "ERROR";                 weight = -1;}}
-	else if(nulibID == 4){
+	else if(ID == 4){
 		if(num_species == 6)      {name = "Tau Neutrinos";         weight = 1.0;}
 		else                          {name = "ERROR";                 weight = -1;}}
-	else if(nulibID == 5){
+	else if(ID == 5){
 		if(num_species == 6)      {name = "Tau Anti-Neutrinos";    weight = 1.0;}
 		else                          {name = "ERROR";                 weight = -1;}}
 	else{
-		cout << "ERROR: Sedona does not know how to deal with a neutrino ID of " << nulibID << "." << endl;
+		cout << "ERROR: Sedona does not know how to deal with a neutrino ID of " << ID << "." << endl;
 		exit(16);}
 
 
 
-}
-
-
-//-----------------------------------------------------------------
-// set emissivity, abs. opacity, and scat. opacity in zones
-//-----------------------------------------------------------------
-void Neutrino::set_eas(int zone_index)
-{
-	Zone* z = &(sim->grid->z[zone_index]);
-	double ngroups = (double)emis[zone_index].size();
-
-	if(grey_opac < 0){ // get opacities and emissivity from NuLib
-		nulib_get_eas_arrays(z->rho, z->T, z->Ye, nulibID, nulib_opac_cutoff,
-				emis[zone_index], abs_opac[zone_index], scat_opac[zone_index]);
-
-		// set the biased emissivity
-		for(int g=0; g<(int)nu_grid.size(); g++)
-			biased_emis[zone_index].set_value(g, emis[zone_index].get_value(g)
-				* sim->importance(abs_opac[zone_index][g], scat_opac[zone_index][g], sim->grid->zone_min_length(zone_index)));
-	}
-
-	else{ // get emissivity from blackbody and the grey opacity
-		PRINT_ASSERT(grey_abs_frac,>=,0);
-		PRINT_ASSERT(grey_abs_frac,<=,1.0);
-		for(unsigned j=0;j<nu_grid.size();j++)
-		{
-			double nu  = nu_grid.center(j);        // (Hz)
-			double dnu = nu_grid.delta(j);         // (Hz)
-			double bb  = blackbody(z->T,0*pc::MeV_to_ergs,nu)*dnu;  // (erg/s/cm^2/ster)
-
-			double a = grey_opac*z->rho*grey_abs_frac;
-			double s = grey_opac*z->rho*(1.0-grey_abs_frac);
-
-			emis[zone_index].set_value(j,a*bb); // (erg/s/cm^3/ster)
-			abs_opac[zone_index][j] = a;        // (1/cm)
-			scat_opac[zone_index][j] = s;       // (1/cm)
-
-			// set the biased emissivity
-			biased_emis[zone_index].set_value(j, emis[zone_index].get_value(j)
-					* sim->importance(a, s, sim->grid->zone_min_length(zone_index)));
-		}
-	}
-
-	emis[zone_index].normalize(cutoff/(double)ngroups);
-	biased_emis[zone_index].normalize(cutoff/(double)ngroups);
 }
 
 

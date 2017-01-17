@@ -50,10 +50,6 @@ protected:
 	std::vector< std::vector<double> > abs_opac;  // 1/cm
 	std::vector< std::vector<double> > scat_opac; // 1/cm
 
-	// grey opacity and absorption fraction
-	double grey_opac; //(cm^2/g)
-	double grey_abs_frac;       //unitless
-
 	// pointer to the simulation info (one level up)
 	Transport* sim;
 
@@ -104,7 +100,7 @@ public:
 
 	// set the emissivity, absorption opacity, and scattering opacity
 	virtual void set_eas(const int zone_index) = 0;
-	void get_opacity(const double com_nu, const int z_ind, double* abs_opac, double* scat_opac) const;
+	virtual void get_opacity(const double com_nu, const int z_ind, double* abs_opac, double* scat_opac) const = 0;
 	double sum_opacity(const int z_ind, const int group) const;
 	double interpolate_importance(const double nu, const int z_ind) const;
 

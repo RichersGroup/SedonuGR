@@ -42,6 +42,8 @@
 #include "Grid3DCart.h"
 #include "Species.h"
 #include "Neutrino.h"
+#include "Neutrino_NuLib.h"
+#include "Neutrino_grey.h"
 #include "nulib_interface.h"
 #include "global_options.h"
 
@@ -222,9 +224,9 @@ void Transport::init(Lua* lua)
 	//==================//
 	// SET UP TRANSPORT //
 	//==================//
-	double grey_opac = lua->scalar<double>("grey_opacity");
 	int num_nut_species = 0;
-	if(grey_opac < 0){ // get everything from NuLib
+	string neutrino_type = lua->scalar<string>("neutrino_type");
+	if(neutrino_type=="Neutrino_NuLib"){ // get everything from NuLib
 		// read the fortran module into memory
 		if(rank0) cout << "# Initializing NuLib..." << endl;
 		string nulib_table = lua->scalar<string>("nulib_table");
@@ -234,18 +236,23 @@ void Transport::init(Lua* lua)
 		// eos
 		string eos_filename = lua->scalar<string>("nulib_eos");
 		nulib_eos_read_table((char*)eos_filename.c_str());
-
 	}
-	else{
+	else if(neutrino_type=="Neutrino_grey"){
 		if(rank0) cout << "#   Using grey opacity (0 chemical potential blackbody)" << endl;
 		num_nut_species = 2;
+	}
+	else{
+		cout << "ERROR: invalid neutrino type" << endl;
+		assert(false);
 	}
 
 	// create the species arrays
 	if(rank0) cout << "# Setting up misc. transport tools..." << endl;
 	for(int i=0; i<num_nut_species; i++){
-		Neutrino* neutrinos_tmp = new Neutrino;
-		neutrinos_tmp->nulibID = i;
+		Neutrino* neutrinos_tmp;
+		if     (neutrino_type == "Neutrino_NuLib") neutrinos_tmp = new Neutrino_NuLib;
+		else if(neutrino_type == "Neutrino_grey" ) neutrinos_tmp = new Neutrino_grey;
+		neutrinos_tmp->ID = i;
 		neutrinos_tmp->num_species = num_nut_species;
 		neutrinos_tmp->init(lua, this);
 		species_list.push_back(neutrinos_tmp);
