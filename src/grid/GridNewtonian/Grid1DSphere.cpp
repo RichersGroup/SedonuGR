@@ -39,6 +39,84 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 void Grid1DSphere::read_model_file(Lua* lua)
 {
+	std::string model_type = lua->scalar<std::string>("model_type");
+	if(model_type == "Nagakura") read_nagakura_model(lua);
+	else if(model_type == "custom") read_custom_model(lua);
+	else{
+		cout << "ERROR: model type unknown." << endl;
+		exit(8);
+	}
+
+	grid_type = "Grid1DSphere";
+}
+
+void Grid1DSphere::read_nagakura_model(Lua* lua){
+	// verbocity
+	int my_rank;
+	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
+	const int rank0 = (my_rank == 0);
+	vector<double> bintops;
+	double trash, minval, tmp;
+
+	// open the model files
+	if(rank0) cout << "# Reading the model file..." << endl;
+	string model_file = lua->scalar<string>("Grid1DSphere_Nagakura_model_file");
+	ifstream infile;
+	infile.open(model_file.c_str());
+	if(infile.fail()){
+		if(rank0) cout << "Error: can't read the model file." << model_file << endl;
+		exit(4);
+	}
+
+
+	// read in the radial grid
+	string rgrid_filename = lua->scalar<string>("Grid1DSphere_Nagakura_rgrid_file");
+	ifstream rgrid_file;
+	rgrid_file.open(rgrid_filename.c_str());
+	rgrid_file >> trash >> minval;
+	bintops = vector<double>(0);
+	while(rgrid_file >> trash >> tmp){
+		if(bintops.size()>0) PRINT_ASSERT(tmp,>,bintops[bintops.size()-1]);
+		else PRINT_ASSERT(tmp,>,minval);
+		bintops.push_back(tmp);
+	}
+	r_out.init(bintops,minval);
+
+	// write grid properties
+	cout << "#   nr=" << r_out.size() << "\trmin=" << r_out.min << "\trmax=" << r_out[r_out.size()-1] << endl;
+
+	// read the fluid properties
+	z.resize(r_out.size());
+	for(int z_ind=0; z_ind<r_out.size(); z_ind++){
+		double trash;
+
+		// read the contents of a single line
+		infile >> trash; PRINT_ASSERT(trash-1,==,z_ind); // ir
+		infile >> trash; // rbar
+		infile >> z[z_ind].rho; // g/ccm
+		infile >> z[z_ind].Ye;
+		infile >> z[z_ind].T; // MeV
+		infile >> z[z_ind].u[0]; // cm/s
+		infile >> z[z_ind].u[1]; // 1/s
+		infile >> z[z_ind].u[2]; // 1/s
+
+		// get rid of the rest of the line
+		for(int k=9; k<=165; k++) infile >> trash;
+
+		// convert units
+		z[z_ind].u[1] *= r_out.center(z_ind);
+		z[z_ind].u[2] *= r_out.center(z_ind);
+		z[z_ind].T /= pc::k_MeV;
+
+		// sanity checks
+		PRINT_ASSERT(z[z_ind].rho,>=,0.0);
+		PRINT_ASSERT(z[z_ind].T,>=,0.0);
+		PRINT_ASSERT(z[z_ind].Ye,>=,0.0);
+		PRINT_ASSERT(z[z_ind].Ye,<=,1.0);
+	}
+}
+
+void Grid1DSphere::read_custom_model(Lua* lua){
 	// verbocity
 	int my_rank;
 	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );

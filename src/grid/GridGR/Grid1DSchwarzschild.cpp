@@ -61,6 +61,7 @@ void Grid1DSchwarzschild::read_model_file(Lua* lua)
 	if(grid_type != "1D_sphere"){
 		cout << "Error: grid_type parameter disagrees with the model file." << endl;
 	}
+	grid_type="Grid1DSphere";
 
 	// number of zones
 	int n_zones;

@@ -142,26 +142,48 @@ void Neutrino_Nagakura::set_eas(int zone_index)
 	Zone* z = &(sim->grid->z[zone_index]);
 	double ngroups = (double)emis[zone_index].size();
 
-    // get the frequency grid
-    string filename = opacity_dir+string("/opac_r")+to_string(zone_index)+string(".dat");
+	//=======================//
+    // Open the opacity file //
+	//=======================//
+	string filename;
+	if(sim->grid->grid_type == "Grid1DSphere"){
+	    filename = opacity_dir+string("/opac_r")+to_string(zone_index)+string(".dat");
+	}
+	else if(sim->grid->grid_type == "Grid2DSphere"){
+		int dir_ind[2];
+		sim->grid->zone_directional_indices(zone_index, dir_ind, 2);
+		filename = opacity_dir+string("/opac_r")+to_string(dir_ind[0])+"_theta"+to_string(dir_ind[1])+string(".dat");
+		cout << filename << endl;
+		assert(false);
+	}
+	else{
+		cout << "ERROR: Incompatible grid and neutrino types. Hiroki only does spherical coordinates." << endl;
+		cout << sim->grid->grid_type << endl;
+		assert(false);
+	}
     ifstream opac_file;
     opac_file.open(filename);
 
+    //====================//
+    // read the opacities //
+    //====================//
     // ignore the first line
     string line;
     getline(opac_file,line);
 
-    for(int i=0; i<nu_grid.size(); i++){
+    for(int inu=0; inu<nu_grid.size(); inu++){
             int itmp;
-            double dtmp;
+            double e=0, a=0, s=0;
+
             opac_file >> itmp; // group number
-            PRINT_ASSERT(i,==,itmp);
+            PRINT_ASSERT(inu,==,itmp);
+
+            double dtmp;
             if(ID==0){
                     // electron type
-                    opac_file >> dtmp; // emissivity (erg/ccm/s)
-                    emis[zone_index].set_value(i,dtmp);
-                    opac_file >> abs_opac[zone_index][i];
-                    opac_file >> scat_opac[zone_index][i];
+                    opac_file >> e; // emissivity (erg/ccm/s)
+                    opac_file >> a;
+                    opac_file >> s;
 
                     // anti-electron type
                     opac_file >> dtmp;
@@ -180,10 +202,9 @@ void Neutrino_Nagakura::set_eas(int zone_index)
                     opac_file >> dtmp;
 
                     // anti-electron type
-                    opac_file >> dtmp; // emissivity (erg/ccm/s)
-                    emis[zone_index].set_value(i,dtmp);
-                    opac_file >> abs_opac[zone_index][i];
-                    opac_file >> scat_opac[zone_index][i];
+                    opac_file >> e; // emissivity (erg/ccm/s)
+                    opac_file >> a;
+                    opac_file >> s;
 
                     // heavy lepton type
                     opac_file >> dtmp;
@@ -202,16 +223,19 @@ void Neutrino_Nagakura::set_eas(int zone_index)
                     opac_file >> dtmp;
 
                     // heavy lepton type
-                    opac_file >> dtmp; // emissivity (erg/ccm/s)
-                    emis[zone_index].set_value(i,dtmp);
-                    opac_file >> abs_opac[zone_index][i];
-                    opac_file >> scat_opac[zone_index][i];
+                    opac_file >> e; // emissivity (erg/ccm/s)
+                    opac_file >> a;
+                    opac_file >> s;
             }
             else{
                     cout << "ERROR: Neutrino ID not recognized!" << endl;
                     assert(false);
             }
-            biased_emis[zone_index].set_value(i,emis[zone_index].get_value(i));
+            emis[zone_index].set_value(inu,e);
+            abs_opac[zone_index][inu] = a;
+            scat_opac[zone_index][inu] = s;
+
+            biased_emis[zone_index].set_value(inu,emis[zone_index].get_value(inu));
     }
 
     opac_file.close();

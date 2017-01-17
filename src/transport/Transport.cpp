@@ -227,7 +227,7 @@ void Transport::init(Lua* lua)
 	//==================//
 	int num_nut_species = 0;
 	string neutrino_type = lua->scalar<string>("neutrino_type");
-	if(neutrino_type=="Neutrino_NuLib"){ // get everything from NuLib
+	if(neutrino_type=="NuLib"){ // get everything from NuLib
 		// read the fortran module into memory
 		if(rank0) cout << "# Initializing NuLib..." << endl;
 		string nulib_table = lua->scalar<string>("nulib_table");
@@ -238,11 +238,11 @@ void Transport::init(Lua* lua)
 		string eos_filename = lua->scalar<string>("nulib_eos");
 		nulib_eos_read_table((char*)eos_filename.c_str());
 	}
-	else if(neutrino_type=="Neutrino_grey"){
+	else if(neutrino_type=="grey"){
 		if(rank0) cout << "#   Using grey opacity (0 chemical potential blackbody)" << endl;
 		num_nut_species = 2;
 	}
-	else if(neutrino_type=="Neutrino_Nagakura"){
+	else if(neutrino_type=="Nagakura"){
 		if(rank0) cout << "#   Using Nagakura neutrino opacities, assumed to match the grid" << endl;
 		num_nut_species = 3;
 	}
@@ -255,9 +255,9 @@ void Transport::init(Lua* lua)
 	if(rank0) cout << "# Setting up misc. transport tools..." << endl;
 	for(int i=0; i<num_nut_species; i++){
 		Neutrino* neutrinos_tmp;
-		if     (neutrino_type == "Neutrino_NuLib")    neutrinos_tmp = new Neutrino_NuLib;
-		else if(neutrino_type == "Neutrino_grey" )    neutrinos_tmp = new Neutrino_grey;
-		else if(neutrino_type == "Neutrino_Nagakura") neutrinos_tmp = new Neutrino_Nagakura;
+		if     (neutrino_type == "NuLib")    neutrinos_tmp = new Neutrino_NuLib;
+		else if(neutrino_type == "grey" )    neutrinos_tmp = new Neutrino_grey;
+		else if(neutrino_type == "Nagakura") neutrinos_tmp = new Neutrino_Nagakura;
 		neutrinos_tmp->ID = i;
 		neutrinos_tmp->num_species = num_nut_species;
 		neutrinos_tmp->init(lua, this);

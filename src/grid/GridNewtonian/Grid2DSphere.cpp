@@ -540,9 +540,10 @@ void Grid2DSphere::custom_model(Lua* lua)
 
 	// geometry of model
 	infile >> grid_type;
-	if(grid_type != "1D_sphere"){
+	if(grid_type != "2D_sphere"){
 		cout << "Error: grid_type parameter disagrees with the model file." << endl;
 	}
+	grid_type = "Grid2DSphere";
 
 	// number of zones
 	int r_zones,theta_zones;

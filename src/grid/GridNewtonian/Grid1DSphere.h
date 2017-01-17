@@ -46,6 +46,8 @@ public:
 	virtual ~Grid1DSphere() {}
 
 	void read_model_file(Lua* lua);
+	void read_custom_model(Lua* lua);
+	void read_nagakura_model(Lua* lua);
 
 	// required functions
 	int  zone_index               (const double x[3], const int xsize                            ) const;

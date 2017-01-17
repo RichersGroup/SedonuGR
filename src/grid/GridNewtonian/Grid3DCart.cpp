@@ -309,6 +309,7 @@ void Grid3DCart::read_SpEC_file(Lua* lua)
 		cout << "Error: grid_type parameter disagrees with the model file." << endl;
 		exit(4);
 	}
+	grid_type="Grid1DCart";
 
 	// type of system
 	string system;
