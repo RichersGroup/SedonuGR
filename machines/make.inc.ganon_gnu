@@ -6,7 +6,7 @@ TARGET=$(CURDIR)/gomc
 BASEDIR=$(CURDIR)
 
 #compiler configuration
-F90=mpifort -fc=gfortran # OMPI_FC=ifort before mpifort
+F90=mpifc -fc=gfortran # OMPI_FC=ifort before mpifort
 CXX=mpicxx -cxx=g++ # OMPI_CXX=icpc before mpicxx
 
 F90FLAGS= -O3 -g -fopenmp -mavx -static_mpi
