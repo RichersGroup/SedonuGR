@@ -8,6 +8,7 @@ sedonu: #nulib
 
 clean: 
 	$(MAKE) -C src clean
+	rm -rf exe
 
 realclean: clean nulibclean
 	rm -rf exe
