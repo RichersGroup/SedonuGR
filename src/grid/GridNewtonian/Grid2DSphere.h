@@ -50,6 +50,7 @@ private:
 
 public:
 
+	Grid2DSphere();
 	virtual ~Grid2DSphere() {}
 
 	void read_model_file(Lua* lua);

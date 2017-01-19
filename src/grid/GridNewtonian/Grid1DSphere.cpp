@@ -34,6 +34,10 @@
 using namespace std;
 namespace pc = physical_constants;
 
+Grid1DSphere::Grid1DSphere(){
+	grid_type = "Grid1DSphere";
+}
+
 //------------------------------------------------------------
 // initialize the zone geometry from model file
 //------------------------------------------------------------
@@ -60,7 +64,7 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 
 	// open the model files
 	if(rank0) cout << "# Reading the model file..." << endl;
-	string model_file = lua->scalar<string>("Grid1DSphere_Nagakura_model_file");
+	string model_file = lua->scalar<string>("model_file");
 	ifstream infile;
 	infile.open(model_file.c_str());
 	if(infile.fail()){

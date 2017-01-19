@@ -33,6 +33,10 @@
 using namespace std;
 namespace pc = physical_constants;
 
+Grid0DIsotropic::Grid0DIsotropic(){
+	grid_type = "Grid0DIsotropic";
+}
+
 //------------------------------------------------------------
 // initialize the zone geometry from model file
 //------------------------------------------------------------

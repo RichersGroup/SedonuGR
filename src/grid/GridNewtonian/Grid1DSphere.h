@@ -43,6 +43,7 @@ private:
 
 public:
 
+	Grid1DSphere();
 	virtual ~Grid1DSphere() {}
 
 	void read_model_file(Lua* lua);

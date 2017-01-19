@@ -40,6 +40,7 @@ namespace pc = physical_constants;
 // constructor
 //------------
 Grid3DCart::Grid3DCart(){
+	grid_type = "Grid3DCart";
 	for(int i=0; i<3; i++){
 		nx[i]      = -1;
 		dx[i]      = NaN;

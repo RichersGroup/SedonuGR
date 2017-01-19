@@ -38,6 +38,7 @@ class Grid0DIsotropic: public GridNewtonian
 
 public:
 
+	Grid0DIsotropic();
 	virtual ~Grid0DIsotropic() {}
 
 	void read_model_file(Lua* lua);

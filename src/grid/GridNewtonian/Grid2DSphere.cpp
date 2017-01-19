@@ -36,6 +36,10 @@
 using namespace std;
 namespace pc = physical_constants;
 
+Grid2DSphere::Grid2DSphere(){
+	grid_type = "Grid2DSphere";
+}
+
 //------------------------------------------------------------
 // initialize the zone geometry from model file
 //------------------------------------------------------------
@@ -56,9 +60,59 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 	int my_rank;
 	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
 	const int rank0 = (my_rank == 0);
+	double trash=0, minval=0, tmp=0;
+	vector<double> bintops;
 
 	// open the model files
 	if(rank0) cout << "# Reading the model file..." << endl;
+
+	//=========================//
+	// read in the radial grid //
+	//=========================//
+	string rgrid_filename = lua->scalar<string>("Grid2DSphere_Nagakura_rgrid_file");
+	ifstream rgrid_file;
+	rgrid_file.open(rgrid_filename.c_str());
+	rgrid_file >> trash >> minval;
+	bintops = vector<double>(0);
+	while(rgrid_file >> trash >> tmp){
+		if(bintops.size()>0) PRINT_ASSERT(tmp,>,bintops[bintops.size()-1]);
+		else PRINT_ASSERT(tmp,>,minval);
+		bintops.push_back(tmp);
+	}
+	r_out.init(bintops,minval);
+	int nr = r_out.size();
+
+	//========================//
+	// read in the theta grid //
+	//========================//
+	string thetagrid_filename = lua->scalar<string>("Grid2DSphere_Nagakura_thetagrid_file");
+	ifstream thetagrid_file;
+	vector<double> tmp_vector(1,0);
+	thetagrid_file.open(thetagrid_filename.c_str());
+	thetagrid_file >> trash >> tmp_vector[0];
+	while(thetagrid_file >> trash >> tmp) tmp_vector.push_back(tmp);
+
+	// reverse the vector
+	int ntheta = tmp_vector.size()-1;
+	bintops = vector<double>(ntheta,0);
+	minval = 0;
+	for(int i=0; i<ntheta; i++){
+		bintops[i] = tmp_vector[ntheta-1-i];
+		if(i>0) PRINT_ASSERT(bintops[i],>,bintops[i-1]);
+		else PRINT_ASSERT(bintops[i],>,minval);
+	}
+	PRINT_ASSERT(fabs(bintops[ntheta-1]-pc::pi),<,TINY);
+	bintops[ntheta-1] = pc::pi;
+	theta_out.init(bintops,minval);
+
+
+	// write grid properties
+	cout << "#   nr=" << nr << "\trmin=" << r_out.min << "\trmax=" << r_out[nr-1] << endl;
+	cout << "#   nt=" << ntheta << "\ttmin=" << theta_out.min << "\ttmax=" << theta_out[ntheta-1] << endl;
+
+	//===========================//
+	// read the fluid properties //
+	//===========================//
 	string model_file = lua->scalar<string>("model_file");
 	ifstream infile;
 	infile.open(model_file.c_str());
@@ -66,62 +120,24 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 		if(rank0) cout << "Error: can't read the model file." << model_file << endl;
 		exit(4);
 	}
-
-	// get the number of r, theta bins
-	int nr = 0;
-	int ntheta = 0;
-	int nphi = 0;
-	infile >> nr;
-	infile >> ntheta;
-	infile >> nphi;
-	PRINT_ASSERT(nr,>,0);
-	PRINT_ASSERT(ntheta,>,0);
-	PRINT_ASSERT(nphi,==,1);
-	z.resize(nr*ntheta);
-	r_out.resize(nr);
-	theta_out.resize(ntheta);
-
-	// read in the radial grid
-	string rgrid_file = lua->scalar<string>("Grid2DSphere_Nagakura_rgrid_file");
-	ifstream rgrid_infile;
-	rgrid_infile.open(rgrid_file.c_str());
-	rgrid_infile >> r_out.min;
-	for(int i=0; i<nr; i++) rgrid_infile >> r_out[i];
-	rgrid_infile.close();
-
-	// read in the theta grid
-	string thetagrid_file = lua->scalar<string>("Grid2DSphere_Nagakura_thetagrid_file");
-	ifstream thetagrid_infile;
-	thetagrid_infile.open(thetagrid_file.c_str());
-	theta_out.min = 0;
-	theta_out[ntheta-1] = pc::pi;
-	for(int i=1; i<ntheta; i++) thetagrid_infile >> theta_out[ntheta-1-i];
-	thetagrid_infile >> theta_out.min;
-	thetagrid_infile.close();
-
-	// write grid properties
-	cout << "#   nr=" << nr << "\trmin=" << r_out.min << "\trmax=" << r_out[nr-1] << endl;
-	cout << "#   nt=" << ntheta << "\ttmin=" << theta_out.min << "\ttmax=" << theta_out[ntheta-1] << endl;
-
-	// read the fluid properties
+	z.resize(ntheta*nr);
 	for(int itheta=ntheta-1; itheta>=0; itheta--) // Hiroki's theta is backwards
 		for(int ir=0; ir<nr; ir++){
 			unsigned z_ind = zone_index(ir,itheta);
 			double trash;
 
 			// read the contents of a single line
-			infile >> trash; PRINT_ASSERT(trash-1,==,ir); // ir
-			infile >> trash; PRINT_ASSERT(trash-1,==,ntheta-1-itheta); // itheta
-			infile >> trash; // iphi
-			infile >> trash; // rbar
-			infile >> trash; // thetabar
-			infile >> trash; // phibar
+			infile >> trash; // r sin(theta)
+			infile >> trash; // r cos(theta)
 			infile >> z[z_ind].rho; // g/ccm
 			infile >> z[z_ind].Ye;
 			infile >> z[z_ind].T; // MeV
 			infile >> z[z_ind].u[0]; // cm/s
 			infile >> z[z_ind].u[1]; // 1/s
 			infile >> z[z_ind].u[2]; // 1/s
+
+			// skip the rest of the line
+			for(int k=9; k<=165; k++) infile >> trash;
 
 			// convert units
 			z[z_ind].u[1] *= r_out.center(ir);
