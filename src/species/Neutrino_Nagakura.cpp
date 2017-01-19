@@ -164,7 +164,7 @@ void Neutrino_Nagakura::set_eas(int zone_index)
 		assert(false);
 	}
     ifstream opac_file;
-    opac_file.open(filename.str());
+    opac_file.open(filename.str().c_str());
 
     //====================//
     // read the opacities //
