@@ -153,8 +153,6 @@ void Neutrino_Nagakura::set_eas(int zone_index)
 		int dir_ind[2];
 		sim->grid->zone_directional_indices(zone_index, dir_ind, 2);
 		filename = opacity_dir+string("/opac_r")+to_string(dir_ind[0])+"_theta"+to_string(dir_ind[1])+string(".dat");
-		cout << filename << endl;
-		assert(false);
 	}
 	else{
 		cout << "ERROR: Incompatible grid and neutrino types. Hiroki only does spherical coordinates." << endl;
