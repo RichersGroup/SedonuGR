@@ -1,5 +1,4 @@
-#zwicky modules: openmpi/1.4.1-gcc gcc/4.5.0
-#Only enable the commented compatability flags if compiling/running fails. Some systems (e.g. Hopper) won't compile with some of them enabled.
+#zwicky modules: openmpi/1.4.1-gcc intel/16.3.310 gsl/1.16
 
 export
 #general options
@@ -24,13 +23,13 @@ LUA_INCL=-I$(LUA_BASE)/include
 LUA_LIBS=-L$(LUA_BASE)/lib -llua
 
 #HDF5
-HDF5_DIR=$(CURDIR)/external/hdf5-1.8.17/hdf5_gcc4.5.0
+HDF5_DIR=$(CURDIR)/external/hdf5-1.8.17/hdf5_intel16.3.310
 HDF5INCS=-I$(HDF5_DIR)/include
 HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5 -lhdf5_fortran -lhdf5_cpp -Wl,-rpath,$(HDF5_DIR)/lib
 
 #NuLib
 NULIB_DIR=$(CURDIR)/external/NuLib/src
-NULIB_LIBS=$(NULIB_DIR)/nulib.a -lgfortran $(NULIB_DIR)/nuc_eos/nuc_eos.a $(NULIB_DIR)/other_eos/helmholtz/helmholtz.o
+NULIB_LIBS=$(NULIB_DIR)/nulib.a -lgfortran $(NULIB_DIR)/nuc_eos/nuc_eos.a
 HELMHOLTZ_EOS=0
 MODINC="-I ./"
 
