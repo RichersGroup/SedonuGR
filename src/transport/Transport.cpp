@@ -319,14 +319,14 @@ void Transport::init(Lua* lua)
 			vector<double> T_core(species_list.size(),0);
 			vector<double> L_core(species_list.size(),0);
 			vector<double> mu_core(species_list.size(),0);
-			string param;
+			stringstream param;
 			for(unsigned i=0; i<species_list.size(); i++){
-				param = "T" + std::to_string(i) + "_core";
-				T_core[i] = lua->scalar<double>(param.c_str()) / pc::k_MeV; //K
-				param = "L" + std::to_string(i) + "_core";
-				L_core[i] = lua->scalar<double>(param.c_str()); //erg/s
-				param = "mu" + std::to_string(i) + "_core";
-				mu_core[i] = lua->scalar<double>(param.c_str()) * pc::MeV_to_ergs; //erg
+				param.str(""); param << "T" << i << "_core";
+				T_core[i] = lua->scalar<double>(param.str().c_str()) / pc::k_MeV; //K
+				param.str(""); param << "L" << i << "_core";
+				L_core[i] = lua->scalar<double>(param.str().c_str()); //erg/s
+				param.str(""); param << "mu" << i << "_core";
+				mu_core[i] = lua->scalar<double>(param.str().c_str()) * pc::MeV_to_ergs; //erg
 			}
 			init_core(r_core,T_core,mu_core,L_core);
 		}

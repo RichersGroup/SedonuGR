@@ -31,6 +31,8 @@
 #include "Grid.h"
 #include "nulib_interface.h"
 #include <fstream>
+#include <sstream>
+#include <string>
 
 using namespace std;
 namespace pc = physical_constants;
@@ -145,14 +147,16 @@ void Neutrino_Nagakura::set_eas(int zone_index)
 	//=======================//
     // Open the opacity file //
 	//=======================//
-	string filename;
+	stringstream filename;
 	if(sim->grid->grid_type == "Grid1DSphere"){
-	    filename = opacity_dir+string("/opac_r")+to_string(zone_index)+string(".dat");
+		filename.str("");
+	    filename << opacity_dir << "/opac_r" << zone_index << ".dat";
 	}
 	else if(sim->grid->grid_type == "Grid2DSphere"){
 		int dir_ind[2];
 		sim->grid->zone_directional_indices(zone_index, dir_ind, 2);
-		filename = opacity_dir+string("/opac_r")+to_string(dir_ind[0])+"_theta"+to_string(dir_ind[1])+string(".dat");
+		filename.str("");
+		filename << opacity_dir << "/opac_r" << dir_ind[0] << "_theta" << dir_ind[1] << ".dat";
 	}
 	else{
 		cout << "ERROR: Incompatible grid and neutrino types. Hiroki only does spherical coordinates." << endl;
@@ -160,7 +164,7 @@ void Neutrino_Nagakura::set_eas(int zone_index)
 		assert(false);
 	}
     ifstream opac_file;
-    opac_file.open(filename);
+    opac_file.open(filename.str());
 
     //====================//
     // read the opacities //
