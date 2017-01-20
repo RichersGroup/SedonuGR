@@ -4,7 +4,7 @@ SUBDIRS=$(shell find . -not -path '*/\.*' -type d)
 $(shell mkdir -p $(SUBDIRS:%=$(OBJDIR)/%) >/dev/null)
 
 # group together the external libraries that will be linked in
-ALL_LIBS = $(GSL_LIBS) $(LUA_LDFLAGS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS)
+ALL_LIBS = $(GSL_LIBS) $(LUA_LDFLAGS) $(NULIB_LIBS) $(HDF5LIBS) $(LUA_LIBS) $(OTHER_LIBS)
 ALL_INCS = $(GSL_INCL) $(LUA_INCL) $(OTHER_INCL) $(HDF5INCS) $(SUBDIRS:%=-I%)
 
 # list all the executables
