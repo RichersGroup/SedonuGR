@@ -47,6 +47,7 @@ private:
 	// order of zone array: r is increased fastest
 	LocateArray r_out;
 	LocateArray theta_out;
+	int ignore_theta_min_dist;
 
 public:
 
