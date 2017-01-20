@@ -19,8 +19,8 @@ OTHER_SOURCES = $(shell find . -type f -name '*.cpp' ! -path './$(EXE_SRC_DIR)/*
 OTHER_OBJECTS = $(OTHER_SOURCES:./%.cpp=$(OBJDIR)/%.o)
 
 # list of dependencies
-DEPS = $(OTHER_OBJECTS:.o=.d) $(EXE_OBJECTS:.o=.d)
-DEPFLAGS = -MMD -MP -MF $(OBJDIR)/$*.Td
+#DEPS = $(OTHER_OBJECTS:.o=.d) $(EXE_OBJECTS:.o=.d)
+#DEPFLAGS = -MMD -MP -MF $(OBJDIR)/$*.Td
 
 #============================================#
 
@@ -33,15 +33,14 @@ $(EXE_DIR)/%: $(OBJDIR)/$(EXE_SRC_DIR)/%.o $(OTHER_OBJECTS)
 
 # compile all the required objects and their dependencies
 # creating temporary file so no corrupted dependencies on failed make
-$(OBJDIR)/%.o: %.cpp
-$(OBJDIR)/%.o: %.cpp $(OBJDIR)/%.d
-	$(CXX) $(CXXFLAGS) $(DEPFLAGS) -c $< $(ALL_INCS) -IINCLUDES -o $@ 
-	mv -f $(OBJDIR)/$*.Td $(OBJDIR)/$*.d
+$(OBJDIR)/%.o: %.cpp #$(OBJDIR)/%.d
+	$(CXX) $(CXXFLAGS) -c $< $(ALL_INCS) -o $@ #$(DEPFLAGS)
+#	mv -f $(OBJDIR)/$*.Td $(OBJDIR)/$*.d
 
 # include dependency files so recompile if header updates
-$(OBJDIR)/%.d: ;
-.PRECIOUS: $(OBJDIR)/%.d
--include $(DEPS)
+#$(OBJDIR)/%.d: ;
+#.PRECIOUS: $(OBJDIR)/%.d
+#-include $(DEPS)
 
 # remove all compiled files
 clean:

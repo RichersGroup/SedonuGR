@@ -29,6 +29,7 @@
 #include <cmath>
 #include <iostream>
 #include <fstream>
+#include <cstdlib>
 #include "Lua.h"
 #include "Transport.h"
 #include "Species.h"

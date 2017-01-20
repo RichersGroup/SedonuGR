@@ -28,6 +28,7 @@
 #include <mpi.h>
 #include <cmath>
 #include <string>
+#include <cstdlib>
 #include "nulib_interface.h"
 #include "global_options.h"
 
@@ -160,6 +161,7 @@ extern double  __nulibtable_MOD_nulibtable_logitemp_max;
 extern double  __nulibtable_MOD_nulibtable_logieta_min;
 extern double  __nulibtable_MOD_nulibtable_logieta_max;
 extern int     __nulib_MOD_total_eos_variables;
+#elif defined _CRAYC
 #elif defined __PGI
 #else
 #warning "The fortran interface is only configured for Intel and GNU compilers. Attempting default variable names. If this does not work you must modify src/nulib_interface.cpp to get your C++ and Fortran compilers to play nicely together."
@@ -228,7 +230,10 @@ void nulibtable_set_globals(){
 	nulibtable_logIeta_min		   = __nulibtable_MOD_nulibtable_logieta_min;
 	nulibtable_logIeta_max		   = __nulibtable_MOD_nulibtable_logieta_max;
 
-
+#elif defined _CRAYC
+	// do nothing
+#elif defined __PGI
+	// do nothing
 #endif
 }
 void nulib_set_globals(){
@@ -236,6 +241,10 @@ void nulib_set_globals(){
 	nulib_total_eos_variables       = nulib_mp_total_eos_variables_;
 #elif defined __GNUC__
 	nulib_total_eos_variables      = __nulib_MOD_total_eos_variables;
+#elif defined _CRAYC
+	// do nothing
+#elif defined __PGI
+	// do nothing
 #endif
 }
 

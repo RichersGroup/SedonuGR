@@ -27,6 +27,7 @@
 
 #include <cmath>
 #include <algorithm>
+#include <cstdio>
 #include "global_options.h"
 #include "CDFArray.h"
 

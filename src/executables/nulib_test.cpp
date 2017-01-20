@@ -29,6 +29,7 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <cstdlib>
 #include "nulib_interface.h"
 #include "physical_constants.h"
 

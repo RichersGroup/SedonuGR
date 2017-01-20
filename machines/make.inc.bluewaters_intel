@@ -8,11 +8,9 @@ BASEDIR=$(CURDIR)
 #compiler configuration
 F90=ftn
 CXX=CC -std=c++0x
-CC=cc
 
-F90FLAGS= -O3 -openmp #OPTIONAL: (gnu)-fopenmp (intel)-openmp
-CXXFLAGS= -O3 -fopenmp -Wall -lifcore #INTEL: -lifcore  #OPTIONAL: (gnu)-fopenmp (intel)-openmp
-CCFLAGS= -O3 -Wall
+F90FLAGS= -O2 -fopenmp
+CXXFLAGS= -O2 -fopenmp -Wall
 
 #GSL
 GSL_BASE=$(GSL_DIR)
@@ -31,7 +29,7 @@ HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5 -lhdf5_fortran -Wl,-rpath,$(HDF5_DIR)/lib
 
 #NuLib
 NULIB_DIR=$(CURDIR)/external/NuLib
-NULIB_LIBS=$(NULIB_DIR)/src/nulib.a #GNU: -lgfortran
+NULIB_LIBS=$(NULIB_DIR)/src/nulib.a
 
 #OTHER
-OTHER_LIBS= #PGI: -ldl
+OTHER_LIBS= -lifcore #PGI: -ldl

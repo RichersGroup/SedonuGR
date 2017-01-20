@@ -27,6 +27,7 @@
 
 #include "global_options.h"
 #include "nulib_interface.h"
+#include <cstdlib>
 
 namespace pc = physical_constants;
 
