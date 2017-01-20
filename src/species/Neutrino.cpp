@@ -71,9 +71,6 @@ void Neutrino::myInit(Lua* lua)
 	else{
 		cout << "ERROR: Sedona does not know how to deal with a neutrino ID of " << ID << "." << endl;
 		exit(16);}
-
-
-
 }
 
 

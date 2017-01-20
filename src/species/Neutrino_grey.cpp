@@ -46,19 +46,6 @@ Neutrino_grey::Neutrino_grey(){
 void Neutrino_grey::myInit(Lua* lua)
 {
 	grey_abs_frac = lua->scalar<double>("grey_abs_frac");
-	double nu_start = lua->scalar<double>("nugrid_start");
-	double nu_stop  = lua->scalar<double>("nugrid_stop");
-	PRINT_ASSERT(nu_stop,>,nu_start);
-	int      n_nu   = lua->scalar<int>("nugrid_n");
-	nu_grid.init(nu_start/pc::h_MeV,nu_stop/pc::h_MeV,n_nu);
-
-	// set neutrino's min and max values
-	T_min   =  0.0;
-	T_max   =  numeric_limits<double>::infinity();
-	Ye_min  = 0;
-	Ye_max  = 1;
-	rho_min = -numeric_limits<double>::infinity();
-	rho_max =  numeric_limits<double>::infinity();
 
 	// let the base class do the rest
 	Neutrino::myInit(lua);
