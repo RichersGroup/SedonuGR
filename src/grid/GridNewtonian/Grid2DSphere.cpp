@@ -142,8 +142,8 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 			for(int k=9; k<=165; k++) infile >> trash;
 
 			// convert units
-			z[z_ind].u[1] *= r_out.center(ir);
-			z[z_ind].u[2] *= r_out.center(ir);
+			//z[z_ind].u[1] *= r_out.center(ir);
+			//z[z_ind].u[2] *= r_out.center(ir);
 			z[z_ind].T /= pc::k_MeV;
 
 			// sanity checks
