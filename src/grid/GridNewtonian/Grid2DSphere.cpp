@@ -109,8 +109,8 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 
 
 	// write grid properties
-	cout << "#   nr=" << nr << "\trmin=" << r_out.min << "\trmax=" << r_out[nr-1] << endl;
-	cout << "#   nt=" << ntheta << "\ttmin=" << theta_out.min << "\ttmax=" << theta_out[ntheta-1] << endl;
+	if(rank0) cout << "#   nr=" << nr << "\trmin=" << r_out.min << "\trmax=" << r_out[nr-1] << endl;
+	if(rank0) cout << "#   nt=" << ntheta << "\ttmin=" << theta_out.min << "\ttmax=" << theta_out[ntheta-1] << endl;
 
 	//===========================//
 	// read the fluid properties //
