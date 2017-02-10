@@ -104,6 +104,7 @@ Transport::Transport(){
 	randomwalk_max_x = NaN;
 	randomwalk_sumN = -MAXLIM;
 	exponential_decay = -MAXLIM;
+	randomwalk_n_isotropic = -MAXLIM;
 }
 
 
@@ -162,6 +163,7 @@ void Transport::init(Lua* lua)
 	if(randomwalk_sphere_size>0){
 		randomwalk_min_optical_depth = lua->scalar<double>("randomwalk_min_optical_depth");
 		init_randomwalk_cdf(lua);
+		randomwalk_n_isotropic = lua->scalar<int>("randomwalk_n_isotropic");
 	}
 	importance_bias = lua->scalar<double>("importance_bias");
 	if(importance_bias>0) min_importance = lua->scalar<double>("min_importance");

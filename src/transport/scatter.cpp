@@ -355,28 +355,42 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	//------------------------------------------------------------------------
 
 	// calculate radiation energy in the comoving frame
-	//double e_rad_directional = e_avg * R;
-	//double e_rad_each_bin = e_avg * (distance - R) / (double)(zone->distribution[p->s].phi_dim() * zone->distribution[p->s].mu_dim());
-	Particle fake = lh->particle_copy(com);
-	if(lh->abs_opac(com) > 0) fake.e = lh->p_e(com) / (path_length_com * lh->abs_opac(com)) * (1.0 - exp(-lh->abs_opac(com) * path_length_com));
-	else fake.e = lh->p_e(com);
-	fake.kup[3] = lh->p_kup(com)[3];
-	fake.kup[0] = fake.kup[3] * d3com[0];
-	fake.kup[1] = fake.kup[3] * d3com[2];
-	fake.kup[2] = fake.kup[3] * d3com[1];
-
-	// deposit all radiaton energy into the bin corresponding to the direction of motion.
-	// really, most should be isotropic and some should be in the direction of motion,
-	// but this should average out properly over many trajectories.
-	// depositing radiation in every bin would lead to lots of memory contention
+	const double e_avg = lh->abs_opac(com) > 0 ?
+			lh->p_e(com) / (path_length_com * lh->abs_opac(com)) * (1.0 - exp(-lh->abs_opac(com) * path_length_com)) :
+			lh->p_e(com);
+	Particle fakep;
 	LorentzHelper lhtmp(false);
 	lhtmp.set_v(lh->velocity(3),3);
-	lhtmp.set_p<com>(&fake);
-	lhtmp.set_distance<com>(path_length_com);
-
 	double Dlab[3];
-	lh->p_D(lab,Dlab,3);
-	zone->distribution[lh->p_s()].count(Dlab, 3, lhtmp.p_nu(lab), lhtmp.p_e(lab) * lhtmp.distance(lab));
+
+	// deposit amount corresponding to direction actually moved
+	fakep = lh->particle_copy(com);
+	fakep.e = e_avg;
+	fakep.kup[3] = lh->p_kup(com)[3];
+	fakep.kup[0] = fakep.kup[3] * Diso[0]; // Diso set above when choosing where to place particle
+	fakep.kup[1] = fakep.kup[3] * Diso[1];
+	fakep.kup[2] = fakep.kup[3] * Diso[2];
+	lhtmp.set_p<com>(&fakep);
+	lhtmp.set_distance<com>(Rcom);
+	lhtmp.p_D(lab,Dlab,3);
+	zone->distribution[lh->p_s()].count(Dlab, 3, lhtmp.p_nu(com), lhtmp.p_e(lab) * lhtmp.distance(lab));
+
+	// deposit isotropic component
+	PRINT_ASSERT(randomwalk_n_isotropic,>,0);
+	for(int ip=0; ip<randomwalk_n_isotropic; ip++){
+		double Diso_tmp[3];
+		grid->isotropic_direction(Diso_tmp,3,&rangen);
+		fakep = lh->particle_copy(com);
+		fakep.e = e_avg / (double)(randomwalk_n_isotropic);
+		fakep.kup[3] = lh->p_kup(com)[3];
+		fakep.kup[0] = fakep.kup[3] * Diso_tmp[0];
+		fakep.kup[1] = fakep.kup[3] * Diso_tmp[1];
+		fakep.kup[2] = fakep.kup[3] * Diso_tmp[2];
+		lhtmp.set_p<com>(&fakep);
+		lhtmp.set_distance<com>(path_length_com - Rcom);
+		lhtmp.p_D(lab,Dlab,3);
+		zone->distribution[lh->p_s()].count(Dlab, 3, lhtmp.p_nu(com), lhtmp.p_e(lab) * lhtmp.distance(lab));
+	}
 
 	// move the particle to the edge of the sphere
 	double xnew[4];
