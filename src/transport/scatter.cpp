@@ -371,12 +371,14 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	fakep.kup[1] = fakep.kup[3] * Diso[1];
 	fakep.kup[2] = fakep.kup[3] * Diso[2];
 	lhtmp.set_p<com>(&fakep);
-	lhtmp.set_distance<com>(Rcom);
+	if(randomwalk_n_isotropic <= 0)
+		lhtmp.set_distance<com>(path_length_com);
+	else
+		lhtmp.set_distance<com>(Rcom);
 	lhtmp.p_D(lab,Dlab,3);
 	zone->distribution[lh->p_s()].count(Dlab, 3, lhtmp.p_nu(com), lhtmp.p_e(lab) * lhtmp.distance(lab));
 
 	// deposit isotropic component
-	PRINT_ASSERT(randomwalk_n_isotropic,>,0);
 	for(int ip=0; ip<randomwalk_n_isotropic; ip++){
 		double Diso_tmp[3];
 		grid->isotropic_direction(Diso_tmp,3,&rangen);
