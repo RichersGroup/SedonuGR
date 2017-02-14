@@ -95,8 +95,8 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 		double trash;
 
 		// read the contents of a single line
-		infile >> trash; PRINT_ASSERT(trash-1,==,z_ind); // ir
-		infile >> trash; // rbar
+		infile >> trash; // r
+		infile >> trash; // theta
 		infile >> z[z_ind].rho; // g/ccm
 		infile >> z[z_ind].Ye;
 		infile >> z[z_ind].T; // MeV
