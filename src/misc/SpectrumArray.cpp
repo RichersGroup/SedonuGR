@@ -197,7 +197,7 @@ void SpectrumArray::count(const double D[3], const int Dsize, const double nu, c
 	mu = min( 1.0-tiny,mu);
 	double phi = atan2(D[1],D[0]);  // projection into x-y plane
 	if(phi< -pc::pi) phi += 2.0*pc::pi;
-	if(phi>  pc::pi) phi -= 2.0*pc::pi;
+	if(phi>= pc::pi) phi -= 2.0*pc::pi;
 
 	// if off the LEFT of mu/phi grids, just return without counting
 	if ((mu<mu_grid.min) || (phi<phi_grid.min)){
