@@ -336,12 +336,12 @@ double CDFArray::interpolate_pdf_cubic(const double x, const LocateArray* xgrid)
 	double dtdx = h;
 	PRINT_ASSERT(t,>=,0);
 	PRINT_ASSERT(t,<=,1);
-	//double result = yLeft*h00(t) + h*mLeft*h10(t) + yRight*h01(t) + h*mRight*h11(t);
-	double result = dtdx * (yLeft*h00p(t) + h*mLeft*h10p(t) + yRight*h01p(t) + h*mRight*h11p(t));
-	//result = max(yLeft,result);
-	//result = min(yRight,result);
-	//PRINT_ASSERT(yLeft<=result);
-	//PRINT_ASSERT(yRight>=result);
+	double result = yLeft*h00(t) + h*mLeft*h10(t) + yRight*h01(t) + h*mRight*h11(t);
+	//double result = dtdx * (yLeft*h00p(t) + h*mLeft*h10p(t) + yRight*h01p(t) + h*mRight*h11p(t));
+	result = max(yLeft,result);
+	result = min(yRight,result);
+	//PRINT_ASSERT(yLeft,<=,result);
+	//PRINT_ASSERT(yRight,>=,result);
 	return result;
 }
 double CDFArray::interpolate_pdf_linear(const double x, const LocateArray* xgrid) const
