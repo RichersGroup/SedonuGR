@@ -256,9 +256,11 @@ double Species::sample_zone_nu(const int zone_index, double *Ep, const int g) co
 {
 	PRINT_ASSERT(nu_grid.min,>=,0);
 	double nu = sample_nu(biased_emis[zone_index],g);
-	double imp = interpolate_importance(nu,zone_index);
-	PRINT_ASSERT(imp,>,0);
-	*Ep *= 1.0/imp;
+	if(sim->importance_bias>0){
+		double imp = interpolate_importance(nu,zone_index);
+		PRINT_ASSERT(imp,>,0);
+		*Ep *= 1.0/imp;
+	}
 	PRINT_ASSERT(nu,>,0);
 	return nu;
 }
