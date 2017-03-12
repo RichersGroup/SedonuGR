@@ -61,7 +61,15 @@ int main(int argc, char **argv)
 	sim.init(&lua);
 
 	// read in time stepping parameters
-	int max_n_iter  = lua.scalar<int>("max_n_iter");
+	int max_n_iter  = lua.scalar<int>("max_n_iter");\
+	if(max_n_iter < 0){
+		max_n_iter = MAXLIM;
+	}
+	double max_time_hours = lua.scalar<double>("max_time_hours");
+	double max_time_seconds = max_time_hours * 3600.0;
+	if(max_time_seconds < 0){
+		max_time_seconds = INFINITY;
+	}
 	lua.close();
 
 	// initial output
@@ -73,12 +81,17 @@ int main(int argc, char **argv)
 	if (rank0) printf("%12s %12s %12s %12s\n","iteration","t","dt","n_particles");
 	for(int it=1; it<=max_n_iter; it++)
 	{
-		// do transport step
-		sim.step();
+		double time_now = MPI_Wtime();
+		if(rank0) cout << "# Elapsed Time: " << (time_now - proc_time_start) / 60. << " minutes" << endl;
+		if(time_now - proc_time_start <= max_time_seconds){
+			// do transport step
+			sim.step();
 
-		// printout time step
-		sim.write(it);
-		if(rank0) printf("%12d %12d\n",it,sim.total_particles());
+			// printout time step
+			sim.write(it);
+			if(rank0) printf("%12d %12d\n",it,sim.total_particles());
+		}
+		else break;
 	}
 
 	//===================//
