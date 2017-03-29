@@ -743,9 +743,10 @@ void Grid2DSphere::sample_in_zone(const int z_ind, const double rand[3], const i
 
 	// inner and outer coordinates of shell
 	double  r0 =         r_out.bottom(i);
-	double mu0 = cos(theta_out.bottom(j));
+	double mu0 = cos(theta_out[j]);
 	double  r1 =         r_out[i];
-	double mu1 = cos(theta_out[j]);
+	double mu1 = cos(theta_out.bottom(j));
+	PRINT_ASSERT(mu1,>,mu0);
 
 	// sample radial position in shell using a probability integral transform
 	double radius = pow( rand[0]*(r1*r1*r1 - r0*r0*r0) + r0*r0*r0, 1./3.);
