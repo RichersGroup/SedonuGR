@@ -63,6 +63,7 @@ void Neutrino_Nagakura::set_eas(int zone_index)
 	Zone* z = &(sim->grid->z[zone_index]);
 	double ngroups = (double)emis[zone_index].size();
 
+
 	//=======================//
     // Open the opacity file //
 	//=======================//
@@ -73,9 +74,11 @@ void Neutrino_Nagakura::set_eas(int zone_index)
 	}
 	else if(sim->grid->grid_type == "Grid2DSphere"){
 		int dir_ind[2];
+		hsize_t dims[2];
+		sim->grid->dims(dims,2);
 		sim->grid->zone_directional_indices(zone_index, dir_ind, 2);
 		filename.str("");
-		filename << opacity_dir << "/opac_r" << dir_ind[0] << "_theta" << dir_ind[1] << ".dat";
+		filename << opacity_dir << "/opac_r" << dir_ind[0] << "_theta" << (dims[1]-dir_ind[1]) << ".dat"; // Hiroki's theta is backwards
 	}
 	else{
 		cout << "ERROR: Incompatible grid and neutrino types. Hiroki only does spherical coordinates." << endl;
