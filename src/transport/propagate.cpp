@@ -197,8 +197,8 @@ void Transport::distribution_function_basis(const double D[3], const double xyz[
 		phihat[1] =  x/rp;
 		phihat[2] = 0;
 	}
-	D_newbasis[0] = Grid::dot_Minkowski<3>(D,phihat,3);
-	D_newbasis[1] = Grid::dot_Minkowski<3>(D,thetahat,3);
+	D_newbasis[0] = Grid::dot_Minkowski<3>(D,thetahat,3);
+	D_newbasis[1] = Grid::dot_Minkowski<3>(D,phihat,3);
 	D_newbasis[2] = Grid::dot_Minkowski<3>(D,rhat,3);
 }
 void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
