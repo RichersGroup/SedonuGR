@@ -181,7 +181,7 @@ void Transport::scatter(LorentzHelper *lh, int z_ind) const{\
 
 			double Rcom = 0;
 			if(Rlab==0) Rcom = 0;
-			else if(Rlab==INFINITY) Rcom = randomwalk_min_optical_depth / (lh->abs_opac(com)>0 ? lh->abs_opac(com) : lh->scat_opac(com));
+			else if(Rlab==INFINITY) Rcom = randomwalk_sphere_size * randomwalk_min_optical_depth / (lh->abs_opac(com)>0 ? lh->abs_opac(com) : lh->scat_opac(com));
 			else Rcom =  2. * Rlab / gamma / (1. + sqrt(1. + 4.*Rlab*vabs*randomwalk_max_x / (gamma*D) ) );
 
 			// if the optical depth is below our threshold, don't do random walk
