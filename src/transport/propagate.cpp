@@ -112,7 +112,11 @@ void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *e
 	if(z_ind >= 0){ //i.e. within the simulation region
 		// FIND D_ZONE= ====================================================================
 		// maximum step size inside zone
-		d_zone = step_size * grid->zone_min_length(z_ind);
+		double Dlab[3] = {0,0,0};
+		lh->p_D(lab,Dlab,3);
+		double d_zone_min = step_size * grid->zone_min_length(z_ind);
+		double d_zone_boundary = (1.0+TINY) * grid->zone_cell_dist(lh->p_xup(), Dlab, z_ind);
+		d_zone = max(d_zone_min, d_zone_boundary);
 		PRINT_ASSERT(d_zone, >, 0);
 
 		// FIND D_INTERACT =================================================================
