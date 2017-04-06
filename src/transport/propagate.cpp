@@ -112,10 +112,8 @@ void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *e
 	if(z_ind >= 0){ //i.e. within the simulation region
 		// FIND D_ZONE= ====================================================================
 		// maximum step size inside zone
-		double Dlab[3] = {0,0,0};
-		lh->p_D(lab,Dlab,3);
 		double d_zone_min = step_size * grid->zone_min_length(z_ind);
-		double d_zone_boundary = (1.0+TINY) * grid->zone_cell_dist(lh->p_xup(), Dlab, z_ind);
+		double d_zone_boundary = (1.0+TINY) * grid->zone_cell_dist(lh->p_xup(), z_ind);
 		d_zone = max(d_zone_min, d_zone_boundary);
 		PRINT_ASSERT(d_zone, >, 0);
 
@@ -255,7 +253,7 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	}
 }
 
-void Transport::move(LorentzHelper *lh, const int z_ind){
+void Transport::move(LorentzHelper *lh, int *z_ind){
 	PRINT_ASSERT(lh->p_tau(),>=,0);
 	PRINT_ASSERT(lh->distance(lab),>=,0);
 	PRINT_ASSERT(lh->net_opac(lab),>=,0);
@@ -274,8 +272,11 @@ void Transport::move(LorentzHelper *lh, const int z_ind){
 	// appropriately reduce the particle's energy
 	if(exponential_decay){
 		lh->scale_p_e( exp(-lh->abs_opac(lab) * lh->distance(lab)) );
-		window(lh,z_ind);
+		window(lh,*z_ind);
 	}
+
+	// re-evaluate the particle's zone index
+	*z_ind = grid->zone_index(lh->p_xup(),3);
 
 }
 
@@ -329,7 +330,7 @@ void Transport::propagate(Particle* p)
 		if(grid->good_zone(z_ind) && z_ind>=0) tally_radiation(&lh,z_ind);
 
 		// move particle the distance
-		move(&lh, z_ind);
+		move(&lh, &z_ind);
 		if(event != boundary) PRINT_ASSERT(lh.p_tau(), >=, -TINY*(lh.distance(lab) * lh.tau_opac(lab)));
 
 		// do the selected event
@@ -362,9 +363,8 @@ void Transport::propagate(Particle* p)
 					PRINT_ASSERT(tweak_distance,<,2*grid->zone_min_length(z_ind));
 					lh.set_p_tau(lh.p_tau() + tweak_distance*lh.tau_opac(lab) ); // a hack to prevent tau<0
 					lh.set_distance<lab>(tweak_distance);
-					move(&lh, z_ind);
+					move(&lh, &z_ind);
 
-					z_ind = grid->zone_index(lh.p_xup(),3);
 					i++;
 				}
 			}

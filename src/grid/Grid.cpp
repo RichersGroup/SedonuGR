@@ -145,7 +145,7 @@ void Grid::write_zones(const int iw) const
 }
 
 // returning 0 causes the min distance to take over in propagate.cpp::which_event
-double Grid::zone_cell_dist(const double x_up[3], const double Dlab[3], const int z_ind) const{
+double Grid::zone_cell_dist(const double x_up[3], const int z_ind) const{
 	return 0;
 }
 

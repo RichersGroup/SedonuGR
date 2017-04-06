@@ -66,6 +66,7 @@ public:
 	void dims                     (hsize_t dims[1], const int size) const;
 	hsize_t dimensionality() const {return 1;};
 	void write_hdf5_coordinates(H5::H5File file) const;
+	double zone_cell_dist(const double x_up[3], const int z_ind) const;
 };
 
 

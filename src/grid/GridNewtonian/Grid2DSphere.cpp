@@ -604,6 +604,10 @@ void Grid2DSphere::custom_model(Lua* lua)
 	infile.close();
 }
 
+double Grid2DSphere_theta(const double x[3]){
+	return atan2(sqrt(x[0]*x[0] + x[1]*x[1]), x[2]);
+}
+
 //------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
@@ -611,7 +615,7 @@ int Grid2DSphere::zone_index(const double x[3], const int xsize) const
 {
 	PRINT_ASSERT(xsize,==,3);
 	double r  = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
-	double theta = atan2(sqrt(x[0]*x[0] + x[1]*x[1]), x[2]);
+	double theta = Grid2DSphere_theta(x);
 	PRINT_ASSERT(r,>=,0);
 	PRINT_ASSERT(theta,>=,0);
 	if(fabs(theta-pc::pi)<TINY) theta = pc::pi-TINY;
@@ -667,6 +671,29 @@ double Grid2DSphere::zone_lab_volume(const int z_ind) const
 	return vol;
 }
 
+
+// returning 0 causes the min distance to take over in propagate.cpp::which_event
+double Grid2DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const{
+	int dir_ind[2];
+	zone_directional_indices(z_ind,dir_ind,2);
+	const unsigned int i = dir_ind[0];
+	const unsigned int j = dir_ind[1];
+
+	double r = sqrt(dot_Minkowski<3>(x_up,x_up,3));
+	double rhat = sqrt(x_up[0]*x_up[0] + x_up[1]*x_up[1]);
+	double theta = Grid2DSphere_theta(x_up);
+	PRINT_ASSERT(r,<=,r_out[i]);
+	PRINT_ASSERT(r,>=,r_out.bottom(i));
+	PRINT_ASSERT(theta,<=,theta_out[j]);
+	PRINT_ASSERT(theta,>=,theta_out.bottom(j));
+
+	double dthetaL = r * (theta - theta_out.bottom(j));
+	double dthetaR = r * (theta_out[j] - theta);
+	double drL = r - r_out.bottom(i);
+	double drR = r_out[i] - r;
+
+	return min(dthetaL, min(dthetaR, min(drL, drR)));
+}
 
 //------------------------------------------------------------
 // return length of zone

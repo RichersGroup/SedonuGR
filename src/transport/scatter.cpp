@@ -172,9 +172,8 @@ void Transport::scatter(LorentzHelper *lh, int z_ind) const{
 
 		// if the optical depth is below our threshold, don't do random walk
 		// (first pass to avoid doing lots of math)
-		double fakeD[3] = {0,0,0};
 		double Rlab_min = randomwalk_sphere_size * grid->zone_min_length(z_ind);
-		double Rlab_boundary = grid->zone_cell_dist(lh->p_xup(),fakeD,z_ind);
+		double Rlab_boundary = grid->zone_cell_dist(lh->p_xup(),z_ind);
 		double Rlab = max(Rlab_min, Rlab_boundary);
 		if(lh->scat_opac(com) * Rlab >= randomwalk_min_optical_depth){
 			// determine maximum comoving sphere size

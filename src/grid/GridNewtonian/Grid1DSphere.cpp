@@ -215,6 +215,16 @@ double  Grid1DSphere::zone_lab_volume(const int z_ind) const
 	return vol;
 }
 
+double Grid1DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const{
+	double r = sqrt(dot_Minkowski<3>(x_up,x_up,3));
+	PRINT_ASSERT(r,<=,r_out[z_ind]);
+	PRINT_ASSERT(r,>=,r_out.bottom(z_ind));
+
+	double drL = r - r_out.bottom(z_ind);
+	double drR = r_out[z_ind] - r;
+
+	return min(drL, drR);
+}
 
 //------------------------------------------------------------
 // return length of zone

@@ -113,7 +113,7 @@ public:
 
 	// return the smallest length dimension of zone  z_ind
 	virtual double zone_min_length(const int z_ind) const     = 0;
-	virtual double zone_cell_dist(const double p_xup[3], const double Dlab[3], const int z_ind) const;
+	virtual double zone_cell_dist(const double p_xup[3], const int z_ind) const;
 
 	// randomly sample a position within the zone z_ind (PARTICLE COORDINATES)
 	virtual void sample_in_zone(const int z_ind,const double rand[], const int randsize, double x[3], const int xsize) const = 0;
