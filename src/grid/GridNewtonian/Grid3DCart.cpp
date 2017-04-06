@@ -549,7 +549,29 @@ double  Grid3DCart::zone_min_length(const int z_ind) const
 	return min_ds;
 }
 
+// returning 0 causes the min distance to take over in propagate.cpp::which_event
+double Grid3DCart::zone_cell_dist(const double x_up[3], const int z_ind) const{
+	int dir_ind[3];
+	zone_directional_indices(z_ind,dir_ind,3);
+	const unsigned int i = dir_ind[0];
+	const unsigned int j = dir_ind[1];
+	const unsigned int k = dir_ind[2];
+	PRINT_ASSERT(x_up[0],<=,zone_right_boundary(0,i));
+	PRINT_ASSERT(x_up[0],>=,zone_left_boundary(0,i));
+	PRINT_ASSERT(x_up[1],<=,zone_right_boundary(1,j));
+	PRINT_ASSERT(x_up[1],>=,zone_left_boundary(1,j));
+	PRINT_ASSERT(x_up[2],<=,zone_right_boundary(2,k));
+	PRINT_ASSERT(x_up[2],>=,zone_left_boundary(2,k));
 
+	double dxL = x_up[0] - zone_left_boundary(0,i);
+	double dyL = x_up[1] - zone_left_boundary(1,j);
+	double dzL = x_up[2] - zone_left_boundary(2,k);
+	double dxR = zone_right_boundary(0,i) - x_up[0];
+	double dyR = zone_right_boundary(1,j) - x_up[1];
+	double dzR = zone_right_boundary(2,k) - x_up[2];
+
+	return min(dxL, min(dyL, min(dzL, min(dxR, min(dyR, dzR)))));
+}
 
 //------------------------------------------------------------
 // get the velocity vector 
