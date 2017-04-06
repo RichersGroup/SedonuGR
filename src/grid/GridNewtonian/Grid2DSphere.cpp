@@ -687,8 +687,8 @@ double Grid2DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const
 	PRINT_ASSERT(theta,<=,theta_out[j]);
 	PRINT_ASSERT(theta,>=,theta_out.bottom(j));
 
-	double dthetaL = r * (theta - theta_out.bottom(j));
-	double dthetaR = r * (theta_out[j] - theta);
+	double dthetaL = r * sin(theta - theta_out.bottom(j));
+	double dthetaR = r * sin(theta_out[j] - theta);
 	double drL = r - r_out.bottom(i);
 	double drR = r_out[i] - r;
 
@@ -707,7 +707,7 @@ double Grid2DSphere::zone_min_length(const int z_ind) const
 
 	// the 'minimum lengts' are just approximate.
 	const double r_len     = (    r_out[i] -     r_out.bottom(i));
-	const double theta_len = (theta_out[j] - theta_out.bottom(j)) * r_out.bottom(i);
+	const double theta_len = sin(theta_out[j] - theta_out.bottom(j)) * r_out.bottom(i);
 
 	// if r_in is zero, there will be problems, but simulations would not have done this.
 	if(ignore_theta_min_dist>0 || r_out.bottom(i)==0) return r_len;
