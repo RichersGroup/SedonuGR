@@ -29,6 +29,7 @@
 #define _NEUTRINOS_H
 
 #include "Species.h"
+#include <memory>
 
 // PARAMETERS
 //    Neutrino_cdf_cutoff - cutoff bin value in CDF. Below this value is considered zero. Necessary for some equilibrium problems.
@@ -58,7 +59,7 @@ public:
 	// required functions
 	void myInit(Lua* lua);
 	double blackbody(const double T, const double chempot, const double nu) const;
-	static double annihilation_rate(const SpectrumArray& nu_dist, const SpectrumArray& nbar_dist, const bool electron_type, const int weight);
+	static double annihilation_rate(const PolarSpectrumArray* nu_dist, const PolarSpectrumArray* nbar_dist, const bool electron_type, const int weight);
 };
 
 #endif

@@ -123,7 +123,7 @@ void Grid::write_zones(const int iw) const
 		H5::H5File file(filename, H5F_ACC_TRUNC);
 
 		// write coordinates to the hdf5 file (implemented in each grid type)
-		z[0].distribution[0].write_hdf5_coordinates(file);
+		z[0].distribution[0]->write_hdf5_coordinates(file, this);
 		write_hdf5_coordinates(file);
 		write_hdf5_data(file);
 	}
@@ -182,12 +182,8 @@ void Grid::write_header(ofstream& outf) const{
 	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << ++c << "-avg_E"<< s << "(MeV,lab) ";
 	if(output_zones_distribution){
 		for(unsigned s=0; s<z[0].distribution.size(); s++){
-			for(unsigned g=0; g<z[0].distribution[s].size(); g++){
-				int nu_bin = z[0].distribution[s].nu_bin(g);
-				int mu_bin = z[0].distribution[s].mu_bin(g);
-				int phi_bin = z[0].distribution[s].phi_bin(g);
-				outf << ++c << "-s"<<s<<"g"<<nu_bin<<"mu"<<mu_bin<<"phi"<<phi_bin<<"edens(erg/ccm)  ";
-			}
+			outf << ++c << "-s"<<s;
+			z[0].distribution[s]->write_header(outf);
 		}
 	}
 	outf << ++c << "-Edens_invariant(erg/ccm/MeV^3) ";
@@ -283,7 +279,7 @@ void Grid::write_hdf5_data(H5::H5File file) const{
 	for(unsigned z_ind=0; z_ind<z.size(); z_ind++)
 		for(unsigned s=0; s<z[0].distribution.size(); s++){
 			unsigned ind = z_ind*z[0].distribution.size() + s;
-			tmp[ind] = z[z_ind].distribution[s].integrate();
+			tmp[ind] = z[z_ind].distribution[s]->integrate();
 		}
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
@@ -293,7 +289,7 @@ void Grid::write_hdf5_data(H5::H5File file) const{
 	for(unsigned z_ind=0; z_ind<z.size(); z_ind++)
 		for(unsigned s=0; s<z[0].distribution.size(); s++){
 			unsigned ind = z_ind*z[0].distribution.size() + s;
-			tmp[ind] = z[z_ind].distribution[s].average_nu() * pc::h_MeV;
+			tmp[ind] = z[z_ind].distribution[s]->average_nu() * pc::h_MeV;
 		}
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
@@ -301,43 +297,14 @@ void Grid::write_hdf5_data(H5::H5File file) const{
 
 	// write distribution function
 	if(output_zones_distribution){
-
-		// SET UP +4D DATASPACE
-		vector<hsize_t> dims_plus4(dimensionality()+4,0);
-		for(unsigned i=0; i<dimensionality(); i++) dims_plus4[i] = zdims[i];
-		dims_plus4[dimensionality()  ] = z[0].distribution.size();
-		dims_plus4[dimensionality()+1] = z[0].distribution[0].nu_dim();
-		dims_plus4[dimensionality()+2] = z[0].distribution[0].mu_dim();
-		dims_plus4[dimensionality()+3] =z[0].distribution[0].phi_dim();
-		dataspace = H5::DataSpace(dimensionality()+4,&dims_plus4[0]);
-		tmp.resize(z.size() * z[0].distribution.size() * z[0].distribution[0].nu_dim() * z[0].distribution[0].mu_dim() * z[0].distribution[0].phi_dim());
-		dataset = file.createDataSet("distribution(erg|ccm,lab)",H5::PredType::IEEE_F32LE,dataspace);
-
-		// set up subspace properties
-		vector<hsize_t> offset(dims_plus4.size(),0);
-		vector<hsize_t> stride(dims_plus4.size(),1);
-		vector<hsize_t>  block(dims_plus4.size(),1);
-		vector<hsize_t> spectrum_dims(dims_plus4);
-		for(unsigned i=0; i<dimensionality()+1; i++) spectrum_dims[i] = 1;
-
-		for(unsigned z_ind=0; z_ind<z.size(); z_ind++)
+		for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
+			int dir_ind[dimensionality()];
+			zone_directional_indices(z_ind,dir_ind,dimensionality());
 			for(unsigned s=0; s<z[0].distribution.size(); s++){
-				// select the appropriate subspace
-				int dir_ind[dimensionality()];
-				zone_directional_indices(z_ind,dir_ind,dimensionality());
-				for(unsigned i=0; i<dimensionality(); i++) offset[i] = dir_ind[i];
-				offset[dimensionality()  ] = s;
-				offset[dimensionality()+1] = 0;
-				offset[dimensionality()+2] = 0;
-				offset[dimensionality()+3] = 0;
-				dataspace.selectHyperslab(H5S_SELECT_SET,&spectrum_dims[0],&offset[0],&stride[0],&block[0]);
-
-				// write the data
-				z[z_ind].distribution[s].write_hdf5_data(dataset, dataspace);
+				z[z_ind].distribution[s]->write_hdf5_data(file, s, dir_ind, dimensionality());
 			}
-		dataset.close();
+		}
 	}
-	dataspace.close();
 }
 
 void Grid::write_line(ofstream& outf, const int z_ind) const{
@@ -369,8 +336,8 @@ void Grid::write_line(ofstream& outf, const int z_ind) const{
 	if(do_annihilation) outf << z[z_ind].Q_annihil << "\t";
 
 	// integrated energy density and average energy for each species
-	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) outf << z[z_ind].distribution[s].integrate() << "\t";
-	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) outf << z[z_ind].distribution[s].average_nu() * pc::h_MeV << "\t";
+	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) outf << z[z_ind].distribution[s]->integrate() << "\t";
+	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) outf << z[z_ind].distribution[s]->average_nu() * pc::h_MeV << "\t";
 
 	// integrated energy density
 	//double integrated_edens = 0;
@@ -378,9 +345,7 @@ void Grid::write_line(ofstream& outf, const int z_ind) const{
 	//utf << integrated_edens << "\t";
 	if(output_zones_distribution){
 		for(unsigned s=0; s<z[0].distribution.size(); s++){
-			for(unsigned g=0; g<z[0].distribution[s].size(); g++){
-				outf << z[z_ind].distribution[s].get(g) << "\t";
-			}
+			z[z_ind].distribution[s]->write_line(outf);
 		}
 	}
 //	for(unsigned s=0; s<z[z_ind].distribution.size(); s++){
@@ -391,13 +356,13 @@ void Grid::write_line(ofstream& outf, const int z_ind) const{
 //		}
 //	}
 
-	double Binvar = 0;
-	for(unsigned s=0; s<z[z_ind].distribution.size(); s++){
-		for(unsigned i=0; i<z[z_ind].distribution[s].size(); i++){
-			Binvar += z[z_ind].distribution[s].get(i) / pow(z[z_ind].distribution[s].nu_center(i) * pc::h_MeV,3);
-		}
-	}
-	outf << Binvar << "\t";
+//	double Binvar = 0;
+//	for(unsigned s=0; s<z[z_ind].distribution.size(); s++){
+//		for(unsigned i=0; i<z[z_ind].distribution[s]->size(); i++){
+//			Binvar += z[z_ind].distribution[s]->get(i) / pow(z[z_ind].distribution[s]->nu_center(i) * pc::h_MeV,3);
+//		}
+//	}
+//	outf << Binvar << "\t";
 
 	outf << endl;
 }

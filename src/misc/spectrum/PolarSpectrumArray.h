@@ -25,13 +25,15 @@
 //
 */
 
-#ifndef _SPECTRUM_ARRAY_H
-#define _SPECTRUM_ARRAY_H 1
+#ifndef _POLAR_SPECTRUM_ARRAY_H
+#define _POLAR_SPECTRUM_ARRAY_H 1
 
+#include "SpectrumArray.h"
 #include "LocateArray.h"
 #include "H5Cpp.h"
+#include <fstream>
 
-class SpectrumArray {
+class PolarSpectrumArray : public SpectrumArray {
 
 private:
 
@@ -79,8 +81,10 @@ public:
 
 	// Print out
 	void print(const int iw, const int species) const;
-	void write_hdf5_data(H5::DataSet dataset, H5::DataSpace dataspace) const;
-	void write_hdf5_coordinates(H5::H5File file) const;
+	void write_hdf5_data(H5::H5File file, const int s, const int dir_ind[], const hsize_t n_spatial_dims) const;
+	void write_hdf5_coordinates(H5::H5File file, const Grid* grid) const;
+	void write_header(std::ofstream& outf) const;
+	void write_line(std::ofstream& outf) const;
 
 	// Indexing
 	unsigned index(const unsigned nu_bin,const unsigned mu_bin,const unsigned phi_bin) const;

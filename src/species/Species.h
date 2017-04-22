@@ -31,6 +31,7 @@
 #include <vector>
 #include "LorentzHelper.h"
 #include "SpectrumArray.h"
+#include "PolarSpectrumArray.h"
 #include "Lua.h"
 #include "CDFArray.h"
 
@@ -75,7 +76,7 @@ public:
 	double cutoff;
 
 	// this species' spectrum
-	SpectrumArray spectrum;
+	PolarSpectrumArray spectrum;
 
 	// the core emissivity (units of core_emis.N are erg/s)
 	CDFArray core_emis;

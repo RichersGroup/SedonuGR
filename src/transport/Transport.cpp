@@ -491,7 +491,7 @@ void Transport::reset_radiation(){
 		z->Q_annihil = 0;
 
 		for(unsigned s=0; s<species_list.size(); s++){
-			z->distribution[s].wipe();
+			z->distribution[s]->wipe();
 			species_list[s]->set_eas(z_ind);
 		}
 	}
@@ -522,8 +522,8 @@ void Transport::calculate_annihilation() const{
 		double Q_tmp = 0;
 		double vol = grid->zone_lab_volume(z_ind);
 		double zone_annihil_net = 0;
-		Q_tmp = Neutrino::annihilation_rate(grid->z[z_ind].distribution[s_nue],
-				 grid->z[z_ind].distribution[s_nubare],
+		Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_nue],
+				 (PolarSpectrumArray*)grid->z[z_ind].distribution[s_nubare],
 				 true,species_list[s_nue]->weight);
 		zone_annihil_net += Q_tmp;
 		#pragma omp atomic
@@ -532,8 +532,8 @@ void Transport::calculate_annihilation() const{
 
 		if(species_list.size()==3){
 			unsigned s_nux = 2;
-			Q_tmp = Neutrino::annihilation_rate(grid->z[z_ind].distribution[s_nux],
-					grid->z[z_ind].distribution[s_nux],
+			Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_nux],
+					(PolarSpectrumArray*)grid->z[z_ind].distribution[s_nux],
 					false,species_list[s_nux]->weight);
 			zone_annihil_net += 2.0 * Q_tmp;
 			#pragma omp atomic
@@ -544,8 +544,8 @@ void Transport::calculate_annihilation() const{
 			unsigned s_nux = 2;
 			unsigned s_nubarx = 3;
 			PRINT_ASSERT(species_list[s_nux]->weight,==,species_list[s_nubarx]->weight);
-			Q_tmp = Neutrino::annihilation_rate(grid->z[z_ind].distribution[s_nux   ],
-					grid->z[z_ind].distribution[s_nubarx],
+			Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_nux   ],
+					(PolarSpectrumArray*)grid->z[z_ind].distribution[s_nubarx],
 					false,species_list[s_nux]->weight);
 			zone_annihil_net += 2.0 * Q_tmp;
 			#pragma omp atomic
@@ -560,15 +560,15 @@ void Transport::calculate_annihilation() const{
 			unsigned s_nubartau = 5;
 			PRINT_ASSERT(species_list[s_numu]->weight,==,species_list[s_nubarmu]->weight);
 			PRINT_ASSERT(species_list[s_nutau]->weight,==,species_list[s_nubartau]->weight);
-			Q_tmp = Neutrino::annihilation_rate(grid->z[z_ind].distribution[s_numu   ],
-					  grid->z[z_ind].distribution[s_nubarmu],
+			Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_numu   ],
+					(PolarSpectrumArray*)grid->z[z_ind].distribution[s_nubarmu],
 					  false,species_list[s_numu]->weight);
 			zone_annihil_net += Q_tmp;
 			#pragma omp atomic
 			H_nunu_lab[2] += Q_tmp*vol;
 			PRINT_ASSERT(H_nunu_lab[3],==,0);
-			Q_tmp = Neutrino::annihilation_rate(grid->z[z_ind].distribution[s_nutau   ],
-					  grid->z[z_ind].distribution[s_nubartau],
+			Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_nutau   ],
+					(PolarSpectrumArray*)grid->z[z_ind].distribution[s_nubartau],
 					  false,species_list[s_nutau]->weight);
 			zone_annihil_net += Q_tmp;
 			#pragma omp atomic
@@ -634,7 +634,7 @@ void Transport::normalize_radiative_quantities(){
 		z->l_emit   *= inv_mult_four_vol;       // num      --> num/ccm/s
 
 		// erg*dist --> erg/ccm, represents *all* species if nux
-		for(unsigned s=0; s<species_list.size(); s++) z->distribution[s].rescale(inv_mult_four_vol * pc::inv_c);
+		for(unsigned s=0; s<species_list.size(); s++) z->distribution[s]->rescale(inv_mult_four_vol * pc::inv_c);
 
 		// tally heat absorbed from viscosity and neutrinos
 		if(do_visc && grid->good_zone(z_ind)){
@@ -877,7 +877,7 @@ void Transport::reduce_radiation()
 
 		// reduce distribution
 		for(unsigned s=0; s<species_list.size(); s++)
-			for(int i=my_begin; i<my_end; i++) grid->z[i].distribution[s].MPI_average();
+			for(int i=my_begin; i<my_end; i++) grid->z[i].distribution[s]->MPI_average();
 
 		// reduce e_abs
 		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_abs;

@@ -160,14 +160,14 @@ void Species::init(Lua* lua, Transport* simulation)
     // set up the spectrum in each zone //
     //==================================//
 	if(rank0) cout << "#   Setting up the distribution function...";
-	SpectrumArray tmp_spectrum;
+	SpectrumArray* tmp_spectrum = new PolarSpectrumArray;
 	int n_mu = lua->scalar<int>("distribution_nmu");
 	int n_phi = lua->scalar<int>("distribution_nphi");
 
 	if(n_mu>0 && n_phi>0){
 		tmp_mugrid.init(-1,1,n_mu);
 		tmp_phigrid.init(-pc::pi, pc::pi, n_phi);
-		tmp_spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
+		((PolarSpectrumArray*)tmp_spectrum)->init(nu_grid, tmp_mugrid, tmp_phigrid);
 	}
 	else{
 		// mu ---------------
@@ -202,8 +202,8 @@ void Species::init(Lua* lua, Transport* simulation)
 		PRINT_ASSERT(minval,==,-pc::pi);
 		tmp_phigrid.init(bintops,minval);
 	}
-	tmp_spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
-	PRINT_ASSERT(tmp_spectrum.size(),>,0);
+	((PolarSpectrumArray*)tmp_spectrum)->init(nu_grid, tmp_mugrid, tmp_phigrid);
+	PRINT_ASSERT(((PolarSpectrumArray*)tmp_spectrum)->size(),>,0);
 
 	// push a distribution function to each zone
 	for(unsigned z_ind=0; z_ind<sim->grid->z.size(); z_ind++){
@@ -212,6 +212,8 @@ void Species::init(Lua* lua, Transport* simulation)
 		PRINT_ASSERT(sim->grid->z[z_ind].distribution.size(),==,ID+1);
 	}
 	if(rank0) cout << "finished." << endl;
+
+	delete(tmp_spectrum);
 }
 
 

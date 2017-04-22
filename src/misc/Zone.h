@@ -29,7 +29,10 @@
 #define _ZONE_H
 
 #include <vector>
+#include <memory>
 #include "SpectrumArray.h"
+
+class SpectrumArray;
 
 //-------------------------------------------------
 // Class to store properties of one zone
@@ -57,7 +60,7 @@ public:
 	double anue_abs;                      // electron anti-neutrino number deposition density rate (cm^-3 s^-1) (comoving frame)
 	double e_emit;                        // radiation energy emission rate (erg/ccm/s) (comoving frame)
 	double l_emit;						  // lepton number emission rate (cm^-3 s^-1) (comoving frame)
-	std::vector<SpectrumArray> distribution;  // radiation energy density for each species in lab frame (erg/ccm. Integrated over bin frequency and direction)
+	std::vector<SpectrumArray*> distribution;  // radiation energy density for each species in lab frame (erg/ccm. Integrated over bin frequency and direction)
 	double Q_annihil;                     // annihilation energy deposition rate (erg/ccm/s) (lab frame)
 };
 

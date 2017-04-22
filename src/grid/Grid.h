@@ -51,8 +51,10 @@
 #include "Particle.h"
 #include "LorentzHelper.h"
 #include "ThreadRNG.h"
+#include "H5Cpp.h"
 
 class Transport;
+class Zone;
 
 class Grid
 {

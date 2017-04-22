@@ -378,7 +378,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	else
 		lhtmp.set_distance<com>(Rcom);
 	lhtmp.p_D(lab,Dlab,3);
-	zone->distribution[lh->p_s()].count(Dlab, 3, lhtmp.p_nu(com), lhtmp.p_e(lab) * lhtmp.distance(lab));
+	zone->distribution[lh->p_s()]->count(Dlab, 3, lhtmp.p_nu(com), lhtmp.p_e(lab) * lhtmp.distance(lab));
 
 	// deposit isotropic component
 	for(int ip=0; ip<randomwalk_n_isotropic; ip++){
@@ -393,7 +393,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 		lhtmp.set_p<com>(&fakep);
 		lhtmp.set_distance<com>(path_length_com - Rcom);
 		lhtmp.p_D(lab,Dlab,3);
-		zone->distribution[lh->p_s()].count(Dlab, 3, lhtmp.p_nu(com), lhtmp.p_e(lab) * lhtmp.distance(lab));
+		zone->distribution[lh->p_s()]->count(Dlab, 3, lhtmp.p_nu(com), lhtmp.p_e(lab) * lhtmp.distance(lab));
 	}
 
 	// move the particle to the edge of the sphere
