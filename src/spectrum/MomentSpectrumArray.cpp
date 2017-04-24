@@ -132,23 +132,21 @@ void MomentSpectrumArray::count(const double D[3], const int Dsize,
 
 	// locate bin number
 	unsigned nu_bin = nu_grid.locate(nu);
+	if (nu_bin == nu_grid.size()) nu_bin--;
 
 	// increment moments
-	moments[0][0][0] += E;
 	double tmp;
-	for (int inu = 0; inu < moments.size(); inu++) {
-		for (int rank = 0; rank < moments[inu].size(); rank++) {
-			int tensor_indices[rank];
-			for (int r = 0; r < rank; r++)
-				tensor_indices[r] = 0;
-			for (int i = 0; i < moments[inu][rank].size(); i++) {
-				tmp = E;
-				for (int r = 0; r < rank; r++)
-					tmp *= D[tensor_indices[r]];
-#pragma omp atomic
-				moments[inu][rank][i] += tmp;
-				increment_tensor_indices(tensor_indices, rank, 3);
-			}
+	for (int rank = 0; rank<n_ranks(); rank++) {
+		int tensor_indices[rank];
+		for (int r = 0; r<rank; r++) tensor_indices[r] = 0;
+		
+		for (int i = 0; i<n_elements(rank); i++) {
+			tmp = E;
+			for (int r = 0; r<rank; r++) tmp *= D[tensor_indices[r]];
+			increment_tensor_indices(tensor_indices, rank, 3);
+
+			#pragma omp atomic
+			moments[nu_bin][rank][i] += tmp;
 		}
 	}
 }
@@ -156,9 +154,9 @@ void MomentSpectrumArray::count(const double D[3], const int Dsize,
 double MomentSpectrumArray::average_nu() const {
 	double integral_E = 0;
 	double integral_N = 0;
-	for (unsigned nu_bin = 0; nu_bin < nu_grid.size(); nu_bin++) {
-		integral_E += moments[0][0][0];
-		integral_N += moments[0][0][0] / nu_grid.center(nu_bin);
+	for (unsigned nu_bin = 0; nu_bin<n_groups(); nu_bin++) {
+		integral_E += moments[nu_bin][0][0];
+		integral_N += moments[nu_bin][0][0] / nu_grid.center(nu_bin);
 	}
 	double result = integral_E / integral_N;
 	if (result >= 0)
@@ -169,8 +167,8 @@ double MomentSpectrumArray::average_nu() const {
 
 double MomentSpectrumArray::integrate() const {
 	double integral = 0;
-	for (unsigned nu_bin = 0; nu_bin < nu_grid.size(); nu_bin++)
-		integral += moments[0][0][0];
+	for (unsigned nu_bin = 0; nu_bin<n_groups(); nu_bin++)
+		integral += moments[nu_bin][0][0];
 	return integral;
 }
 
@@ -178,7 +176,7 @@ double MomentSpectrumArray::integrate() const {
 void MomentSpectrumArray::integrate_over_direction(
 		vector<double>& integral) const {
 	integral = vector<double>(nu_grid.size(), 0);
-	for (unsigned nu_bin = 0; nu_bin < nu_grid.size(); nu_bin++) {
+	for (unsigned nu_bin = 0; nu_bin<n_groups(); nu_bin++) {
 		integral[nu_bin] = moments[nu_bin][0][0];
 	}
 }
