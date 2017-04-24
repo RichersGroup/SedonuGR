@@ -167,6 +167,7 @@ public:
 	double min_importance;
 	int bias_path_length;
 	double max_path_length_boost;
+	int distribution_polar_basis;
 	void sample_tau(LorentzHelper *lh);
 
 	// items for core emission

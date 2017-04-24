@@ -29,6 +29,7 @@
 #include "Transport.h"
 #include "Species.h"
 #include "Grid.h"
+#include <cstring>
 
 using namespace std;
 namespace pc = physical_constants;
@@ -219,16 +220,18 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	Zone* zone;
 	zone = &(grid->z[z_ind]);
 
+	// get the distribution function basis to use
+	// use rhat, thetahat, phihat as basis functions so rotational symmetries give accurate results (if distribution_polar_basis)
+	double Dlab[3], D_newbasis[3];
+	lh->p_D(lab,Dlab,3);
+	if(distribution_polar_basis) distribution_function_basis(Dlab,lh->p_xup(),D_newbasis);
+	else for(int i=0;i<3;i++) D_newbasis[i] = Dlab[i];
+	Grid::normalize_Minkowski<3>(D_newbasis,3);
+
 	// tally in contribution to zone's distribution function (lab frame)
-	// use rhat, thetahat, phihat as basis functions so rotational symmetries give accurate results
 	if(exponential_decay) to_add = lh->p_e(lab) / lh->abs_opac(lab) * (1.0 - exp(-lh->abs_opac(lab) * lh->distance(lab)));
 	else to_add = lh->p_e(lab) * lh->distance(lab);
 	PRINT_ASSERT(to_add,<,INFINITY);
-	double D_newbasis[3] = {0,0,0};
-	double Dlab[3];
-	lh->p_D(lab,Dlab,3);
-	distribution_function_basis(Dlab,lh->p_xup(),D_newbasis);
-	Grid::normalize_Minkowski<3>(D_newbasis,3);
 	zone->distribution[lh->p_s()]->count(D_newbasis, 3, lh->p_nu(com), to_add);
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
