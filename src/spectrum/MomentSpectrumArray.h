@@ -1,0 +1,90 @@
+/*
+//  Copyright (c) 2015, California Institute of Technology and the Regents
+//  of the University of California, based on research sponsored by the
+//  United States Department of Energy. All rights reserved.
+//
+//  This file is part of Sedonu.
+//
+//  Sedonu is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  Neither the name of the California Institute of Technology (Caltech)
+//  nor the University of California nor the names of its contributors 
+//  may be used to endorse or promote products derived from this software
+//  without specific prior written permission.
+//
+//  Sedonu is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with Sedonu.  If not, see <http://www.gnu.org/licenses/>.
+//
+*/
+
+#ifndef _MOMENT_SPECTRUM_ARRAY_H
+#define _MOMENT_SPECTRUM_ARRAY_H 1
+
+#include "SpectrumArray.h"
+#include "LocateArray.h"
+#include "H5Cpp.h"
+#include <fstream>
+
+using namespace std;
+
+class MomentSpectrumArray : public SpectrumArray {
+
+private:
+
+	// bin arrays
+	// values represent bin upper walls (the single locate_array.min value is the leftmost wall)
+	// underflow is combined into leftmost bin (right of the locate_array.min)
+	// overflow is combined into the rightmost bin (left of locate_array[size-1])
+	LocateArray nu_grid;
+
+	// counting arrays
+	vector< vector< vector<double> > > moments;
+
+	// array size
+	int nranks;
+
+public:
+
+	// Initialize
+	void init(const LocateArray nu_grid, const int order);
+
+	// MPI functions
+	virtual void MPI_average();
+
+	// Count a packets
+	virtual void count(const double D[3], const int Dsize, const double nu, const double E);
+
+	//  void normalize();
+	virtual void rescale(const double);
+	virtual void wipe();
+
+	// integrate over nu,mu,phi
+	virtual double average_nu() const;
+	virtual double integrate() const;
+	virtual void integrate_over_direction(vector<double>& edens) const;
+
+	// Print out
+	virtual void print(const int iw, const int species) const;
+	virtual void write_hdf5_data(H5::H5File file, const int s, const int dir_ind[], const hsize_t n_spatial_dims) const;
+	virtual void write_hdf5_coordinates(H5::H5File file, const Grid* grid) const;
+	virtual void write_header(ofstream& outf) const;
+	virtual void write_line(ofstream& outf) const;
+
+	// energy bin info
+	double nu_bin_center(const unsigned index) const;
+
+	// return sizes
+	unsigned n_groups() const;
+	unsigned n_ranks() const;
+	unsigned n_elements(const int rank) const;
+};
+
+#endif

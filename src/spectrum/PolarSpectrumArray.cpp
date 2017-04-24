@@ -353,7 +353,7 @@ void PolarSpectrumArray::MPI_average()
 void PolarSpectrumArray::write_hdf5_data(H5::H5File file, const int s, const int dir_ind[], const hsize_t n_spatial_dims) const
 {
 	// get the dataset
-	H5::DataSet dataset = file.openDataSet("distribution_frequency_grid(Hz,lab)");
+	H5::DataSet dataset = file.openDataSet("distribution(erg|ccm,lab)");
 
 	// get the dataspace of the dataset
 	H5::DataSpace dataspace = dataset.getSpace();
@@ -361,6 +361,7 @@ void PolarSpectrumArray::write_hdf5_data(H5::H5File file, const int s, const int
 	hsize_t dfunc_dims[n_spatial_dims+4];
 	hsize_t start[n_spatial_dims+4];
 	dataspace.getSelectBounds(start,dfunc_dims);
+	for(int i=0; i<n_total_dims; i++) dfunc_dims[i] += 1;
 	PRINT_ASSERT(dataspace.getSimpleExtentNdims(),==,n_spatial_dims+4);
 	PRINT_ASSERT(dfunc_dims[n_spatial_dims+1],==,nu_grid.size());
 	PRINT_ASSERT(dfunc_dims[n_spatial_dims+2],==,mu_grid.size());
