@@ -38,7 +38,7 @@ namespace pc = physical_constants;
 //---------------------------------------------------
 // increment tensor indices for any symmetric tensor
 //---------------------------------------------------
-void increment_tensor_indices(int tensor_indices[], int rank, int length) {
+void increment_tensor_indices(int tensor_indices[], const int rank, const int length) {
 	PRINT_ASSERT(rank, >=, 0);
 	PRINT_ASSERT(length, >, 0);
 	if (rank == 0)
@@ -136,11 +136,13 @@ void MomentSpectrumArray::count(const double D[3], const int Dsize,
 
 	// increment moments
 	double tmp;
-	for (int rank = 0; rank<n_ranks(); rank++) {
+	const int nranks = n_ranks();
+	for (int rank = 0; rank<nranks; rank++) {
+		const int nelements = n_elements(rank);
 		int tensor_indices[rank];
 		for (int r = 0; r<rank; r++) tensor_indices[r] = 0;
 		
-		for (int i = 0; i<n_elements(rank); i++) {
+		for (int i = 0; i<nelements; i++) {
 			tmp = E;
 			for (int r = 0; r<rank; r++) tmp *= D[tensor_indices[r]];
 			increment_tensor_indices(tensor_indices, rank, 3);
