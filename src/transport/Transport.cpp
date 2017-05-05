@@ -347,7 +347,6 @@ void Transport::init(Lua* lua)
 	L_net_lab.resize(species_list.size());
 	L_net_esc.resize(species_list.size());
 	E_avg_lab.resize(species_list.size());
-	E_avg_esc.resize(species_list.size());
 	N_net_lab.resize(species_list.size());
 	N_net_esc.resize(species_list.size());
 	for(unsigned s=0; s<species_list.size(); s++){
@@ -355,7 +354,6 @@ void Transport::init(Lua* lua)
 		L_net_lab[s] = 0;
 		L_net_esc[s] = 0;
 		E_avg_lab[s] = 0;
-		E_avg_esc[s] = 0;
 		N_net_lab[s] = 0;
 		N_net_esc[s] = 0;
 	}
@@ -475,7 +473,6 @@ void Transport::reset_radiation(){
 		L_net_lab[i] = 0;
 		L_net_esc[i] = 0;
 		E_avg_lab[i] = 0;
-		E_avg_esc[i] = 0;
 		N_net_lab[i] = 0;
 		N_net_esc[i] = 0;
 	}
@@ -649,7 +646,6 @@ void Transport::normalize_radiative_quantities(){
 	for(unsigned s=0; s<species_list.size(); s++){
 		species_list[s]->spectrum.rescale(inv_multiplier); // erg/s in each bin. Assume lab_dt=1.0
 		E_avg_lab[s] /= L_net_lab[s];
-		E_avg_esc[s] /= L_net_esc[s];
 		L_core_lab[s] *= inv_multiplier; // assume lab_dt=1.0
 		L_net_lab[s] *= inv_multiplier; // assume lab_dt=1.0
 		L_net_esc[s] *= inv_multiplier; // assume lab_dt=1.0
@@ -704,7 +700,7 @@ void Transport::normalize_radiative_quantities(){
 		cout << "} MeV E_avg_lab (average lab-frame emitted energy)" << endl;
 
 		cout << "#   { ";
-		for(unsigned s=0; s<E_avg_esc.size(); s++) cout << setw(12) << E_avg_esc[s]*pc::h_MeV << "  ";
+		for(unsigned s=0; s<N_net_esc.size(); s++) cout << setw(12) << L_net_esc[s]/N_net_esc[s]*pc::ergs_to_MeV << "  ";
 		cout << "} MeV E_avg_esc" << endl;
 
 		cout << "#   { ";
@@ -717,14 +713,6 @@ void Transport::normalize_radiative_quantities(){
 
 		double dyedt = -(N_net_esc[0]-N_net_esc[1]) / (grid->total_rest_mass()/pc::m_n);
 		cout << "#   " << dyedt << " 1/s global dYe_dt" << endl;
-
-		// just latex output to make plugging numbers into the paper easier
-		//cout << CmH/1e51 << " & " << dyedt;
-		//for(unsigned s=0; s<species_list.size(); s++) cout << " & " << L_net_lab[s]/1e51;
-		//for(unsigned s=0; s<species_list.size(); s++) cout << " & " << L_net_esc[s]/1e51;
-		//for(unsigned s=0; s<species_list.size(); s++) cout << " & " << E_avg_lab[s]*pc::h_MeV;
-		//for(unsigned s=0; s<species_list.size(); s++) cout << " & " << E_avg_esc[s]*pc::h_MeV;
-		//cout << endl;
 	}
 }
 
@@ -833,10 +821,6 @@ void Transport::reduce_radiation()
 	for(unsigned i=0; i<species_list.size(); i++) send[i] = L_net_lab[i];
 	MPI_Allreduce(&send.front(),&receive.front(),L_net_lab.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
 	for(unsigned i=0; i<species_list.size(); i++) L_net_lab[i] = receive[i]/(double)MPI_nprocs;
-
-	for(unsigned i=0; i<species_list.size(); i++) send[i] = E_avg_esc[i];
-	MPI_Allreduce(&send.front(),&receive.front(),E_avg_esc.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-	for(unsigned i=0; i<species_list.size(); i++) E_avg_esc[i] = receive[i]/(double)MPI_nprocs;
 
 	for(unsigned i=0; i<species_list.size(); i++) send[i] = E_avg_lab[i];
 	MPI_Allreduce(&send.front(),&receive.front(),E_avg_lab.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);

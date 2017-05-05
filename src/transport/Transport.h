@@ -196,7 +196,6 @@ public:
 	std::vector<double> L_net_lab;
 	std::vector<double> L_net_esc;
 	std::vector<double> E_avg_lab;
-	std::vector<double> E_avg_esc;
 	std::vector<double> N_net_lab;
 	std::vector<double> N_net_esc;
 	std::vector<long> n_active;

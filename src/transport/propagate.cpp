@@ -64,8 +64,6 @@ void Transport::propagate_particles()
 				#pragma omp atomic
 				L_net_esc[p->s] += p->e;
 				#pragma omp atomic
-				E_avg_esc[p->s] += nu * p->e;
-				#pragma omp atomic
 				N_net_esc[p->s] += p->e / (nu*pc::h);
 				species_list[p->s]->spectrum.count(D,3, nu, p->e);
 			}
