@@ -105,6 +105,7 @@ Transport::Transport(){
 	randomwalk_sumN = -MAXLIM;
 	exponential_decay = -MAXLIM;
 	randomwalk_n_isotropic = -MAXLIM;
+	distribution_polar_basis = -MAXLIM;
 }
 
 
