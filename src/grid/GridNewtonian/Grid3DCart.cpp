@@ -217,7 +217,7 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	vector<double> velx(dataset_nzones,0.0);
 	vector<double> vely(dataset_nzones,0.0);
 	vector<double> velz(dataset_nzones,0.0);
-	vector<double>  vol(dataset_nzones,0.0);
+	//vector<double>  vol(dataset_nzones,0.0);
 	dataset = file.openDataSet(groupname.str()+"Ye");
 	dataset.read(&Ye[0],H5::PredType::IEEE_F64LE);
 	dataset = file.openDataSet(groupname.str()+"rho");
@@ -230,8 +230,8 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	dataset.read(&(vely[0]),H5::PredType::IEEE_F64LE);
 	dataset = file.openDataSet(groupname.str()+"velz");
 	dataset.read(&(velz[0]),H5::PredType::IEEE_F64LE);
-	dataset = file.openDataSet(groupname.str()+"vol");
-	dataset.read(&(vol[0]),H5::PredType::IEEE_F64LE);
+	//dataset = file.openDataSet(groupname.str()+"vol");
+	//dataset.read(&(vol[0]),H5::PredType::IEEE_F64LE);
 	#pragma omp parallel for
 	for(int i=0; i<dataset_nzones; i++){
 		rho[i] *= convert_density;
