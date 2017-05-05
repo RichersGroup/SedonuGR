@@ -60,14 +60,14 @@ inline std::string trim(const std::string s)
 	return trimmed;
 }
 
-#ifndef DEBUG
+#ifndef NDEBUG
 #define PRINT_ASSERT(a,op,b)                         \
 do {                                                 \
 	if(!(a op b)) std::cout << (a) << " " << (b) << std::endl; \
 	assert(a op b);                                  \
 } while (0)
 #else
-#define PRINT_ASSERT(a,op,b) do {} while 0
+#define PRINT_ASSERT(a,op,b)
 #endif
 
 #endif
