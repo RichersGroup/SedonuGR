@@ -460,7 +460,6 @@ void PolarSpectrumArray::write_hdf5_coordinates(H5::H5File file, const Grid* gri
 	dims_plus4[grid->dimensionality()+2] = mu_dim(); // number of mu bins
 	dims_plus4[grid->dimensionality()+3] = phi_dim(); // number of phi bins
 	dataspace = H5::DataSpace(grid->dimensionality()+4,&dims_plus4[0]);
-	tmp.resize(grid->z.size() * size() * nu_dim() * mu_dim() * phi_dim());
 	dataset = file.createDataSet("distribution(erg|ccm,lab)",H5::PredType::IEEE_F32LE,dataspace);
 }
 
