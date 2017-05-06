@@ -282,7 +282,7 @@ void Transport::move(LorentzHelper *lh, int *z_ind){
 }
 
 void Transport::get_opacity(LorentzHelper *lh, const int z_ind) const{
-	if(grid->good_zone(z_ind) && z_ind>=0){ // avoid handling fluff zones if unnecessary
+	if(z_ind>=0){ // avoid handling fluff zones if unnecessary
 
 		// get local opacity and absorption fraction
 		double a=-1,s=-1;
@@ -328,7 +328,7 @@ void Transport::propagate(Particle* p)
 		which_event(&lh,z_ind,&event);
 
 		// accumulate counts of radiation energy, absorption, etc
-		if(grid->good_zone(z_ind) && z_ind>=0) tally_radiation(&lh,z_ind);
+		if(z_ind>=0) tally_radiation(&lh,z_ind);
 
 		// move particle the distance
 		move(&lh, &z_ind);

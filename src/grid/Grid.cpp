@@ -155,7 +155,7 @@ double Grid::zone_rest_mass(const int z_ind) const{
 
 double Grid::zone_comoving_volume(const int z_ind) const{
 	// assumes v is orthonormal in cm/s
-	if(!good_zone(z_ind)) return 0;
+	if(z_ind<0) return 0;
 	else return zone_lab_volume(z_ind) * LorentzHelper::lorentz_factor(z[z_ind].u,3);
 }
 
@@ -366,16 +366,6 @@ void Grid::write_line(ofstream& outf, const int z_ind) const{
 
 	outf << endl;
 }
-
-bool Grid::good_zone(const int z_ind) const{
-	//const zone* z = &(grid->z[z_ind]);
-	//return (z->rho >= rho_min && z->rho <= rho_max &&
-	//  	    z->Ye  >= Ye_min  && z->Ye  <=  Ye_max &&
-	//        z->T   >=  T_min  && z->T   <=   T_max);
-	if(z_ind < 0) return false;
-	else return true;
-}
-
 
 
 double Grid::total_rest_mass() const{

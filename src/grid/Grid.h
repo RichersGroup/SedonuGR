@@ -110,7 +110,6 @@ public:
 	// return rest mass in cell
 	double zone_rest_mass(const int z_ind) const;
 	double zone_comoving_volume(const int z_ind) const;
-	bool good_zone(const int z_ind) const;
 	double total_rest_mass() const;
 
 	// return the smallest length dimension of zone  z_ind
