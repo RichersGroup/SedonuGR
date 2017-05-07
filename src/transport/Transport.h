@@ -85,7 +85,7 @@ private:
 	void tally_radiation(const LorentzHelper *lh, const int z_ind) const;
 	void reset_radiation();
 	void which_event(LorentzHelper* lh,const int z_ind, ParticleEvent *event) const;
-	void event_boundary(LorentzHelper *lh, const int z_ind) const;
+	void event_boundary(LorentzHelper *lh, int *z_ind) const;
 	void event_interact(LorentzHelper* lh, const int z_ind);
 	void scatter(LorentzHelper *lh, int z_ind) const;
 	void random_walk(LorentzHelper *lh, const double Rcom, const double D, const int z_ind) const;

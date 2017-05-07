@@ -488,6 +488,8 @@ void Transport::reset_radiation(){
 
 		for(unsigned s=0; s<species_list.size(); s++){
 			z->distribution[s]->wipe();
+			z->Edens_com[s] = 0;
+			z->Ndens_com[s] = 0;
 			species_list[s]->set_eas(z_ind);
 		}
 	}
@@ -615,20 +617,18 @@ void Transport::normalize_radiative_quantities(){
 		double inv_mult_four_vol = 1.0/(multiplier * grid->zone_lab_volume(z_ind)); // Lorentz invariant - same in lab and comoving frames. Assume lab_dt=1.0
 		PRINT_ASSERT(inv_mult_four_vol,>=,0);
 
-		PRINT_ASSERT(z->e_abs,==,0.0);
-		PRINT_ASSERT(z->nue_abs,==,0.0);
-		PRINT_ASSERT(z->anue_abs,==,0.0);
-		PRINT_ASSERT(z->e_emit,==,0.0);
-		PRINT_ASSERT(z->l_emit,==,0.0);
-
 		z->e_abs    *= inv_mult_four_vol;       // erg      --> erg/ccm/s
 		z->e_emit   *= inv_mult_four_vol;       // erg      --> erg/ccm/s
 		z->nue_abs  *= inv_mult_four_vol;       // num      --> num/ccm/s
 		z->anue_abs *= inv_mult_four_vol;       // num      --> num/ccm/s
 		z->l_emit   *= inv_mult_four_vol;       // num      --> num/ccm/s
 
-		// erg*dist --> erg/ccm, represents *all* species if nux
-		for(unsigned s=0; s<species_list.size(); s++) z->distribution[s]->rescale(inv_mult_four_vol * pc::inv_c);
+		// represents *all* species if nux
+		for(unsigned s=0; s<species_list.size(); s++){
+		  z->distribution[s]->rescale(inv_mult_four_vol * pc::inv_c);  // erg*dist --> erg/ccm
+		  z->Edens_com[s] *= inv_mult_four_vol *pc::inv_c;             // erg*dist --> erg/ccm
+		  z->Ndens_com[s] *= inv_mult_four_vol *pc::inv_c;             // erg/Hz*dist --> erg/Hz/ccm
+		}
 
 		// tally heat absorbed from viscosity and neutrinos
 		if(do_visc){
@@ -852,8 +852,20 @@ void Transport::reduce_radiation()
 		receive.resize(size);
 
 		// reduce distribution
-		for(unsigned s=0; s<species_list.size(); s++)
-			for(int i=my_begin; i<my_end; i++) grid->z[i].distribution[s]->MPI_average();
+		for(unsigned s=0; s<species_list.size(); s++){
+		  for(int i=my_begin; i<my_end; i++)
+		    grid->z[i].distribution[s]->MPI_average();
+		  
+		  // reduce Edens_com
+		  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].Edens_com[s];
+		  MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		  for(int i=my_begin; i<my_end; i++) grid->z[i].Edens_com[s] = receive[i-my_begin] / (double)MPI_nprocs;
+
+		  // reduce Ndens_com
+		  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].Ndens_com[s];
+		  MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		  for(int i=my_begin; i<my_end; i++) grid->z[i].Ndens_com[s] = receive[i-my_begin] / (double)MPI_nprocs;
+		}
 
 		// reduce e_abs
 		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_abs;

@@ -238,6 +238,8 @@ void Species::init(Lua* lua, Transport* simulation)
 	  
 	  // push a distribution function to each zone
 	  sim->grid->z[z_ind].distribution.push_back(tmp_spectrum);
+	  sim->grid->z[z_ind].Edens_com.push_back(0);
+	  sim->grid->z[z_ind].Ndens_com.push_back(0);
 	  PRINT_ASSERT(sim->grid->z[z_ind].distribution.size(),==,ID+1);
 	}
 	

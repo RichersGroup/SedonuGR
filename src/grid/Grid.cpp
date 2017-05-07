@@ -179,7 +179,7 @@ void Grid::write_header(ofstream& outf) const{
 	outf << ++c << "-dYe_dt_emit(1/s,lab)  ";
 	if(do_annihilation) outf << ++c << "-annihilation_rate(erg/ccm/s,lab)  ";
 	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << ++c << "-e_rad"<< s << "(erg/ccm,lab) ";
-	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << ++c << "-avg_E"<< s << "(MeV,lab) ";
+	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << ++c << "-avg_E"<< s << "(MeV,com) ";
 	if(output_zones_distribution){
 		for(unsigned s=0; s<z[0].distribution.size(); s++){
 			outf << ++c << "-s"<<s;
@@ -285,11 +285,11 @@ void Grid::write_hdf5_data(H5::H5File file) const{
 	dataset.close();
 
 	// write average neutrino energy using contiguous temporary array
-	dataset = file.createDataSet("avg_E(MeV,lab)",H5::PredType::IEEE_F32LE,dataspace);
+	dataset = file.createDataSet("avg_E(MeV,com)",H5::PredType::IEEE_F32LE,dataspace);
 	for(unsigned z_ind=0; z_ind<z.size(); z_ind++)
 		for(unsigned s=0; s<z[0].distribution.size(); s++){
 			unsigned ind = z_ind*z[0].distribution.size() + s;
-			tmp[ind] = z[z_ind].distribution[s]->average_nu() * pc::h_MeV;
+			tmp[ind] = z[z_ind].Edens_com[s] / z[z_ind].Ndens_com[s] * pc::h_MeV;
 		}
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
@@ -337,7 +337,7 @@ void Grid::write_line(ofstream& outf, const int z_ind) const{
 
 	// integrated energy density and average energy for each species
 	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) outf << z[z_ind].distribution[s]->integrate() << "\t";
-	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) outf << z[z_ind].distribution[s]->average_nu() * pc::h_MeV << "\t";
+	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) outf << z[z_ind].Edens_com[s]/z[z_ind].Ndens_com[s] * pc::h_MeV << "\t";
 
 	// integrated energy density
 	//double integrated_edens = 0;
