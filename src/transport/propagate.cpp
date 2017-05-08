@@ -124,7 +124,7 @@ void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *e
 	PRINT_ASSERT(d_boundary, >, 0);
 
 	// find out what event happens (shortest distance) =====================================
-	*event  = pause;
+	*event  = nothing;
 	double d_smallest = d_zone;
 	if( d_interact <= d_smallest ){
 		*event = interact;
