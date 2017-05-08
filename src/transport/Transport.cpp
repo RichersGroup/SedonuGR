@@ -86,7 +86,6 @@ Transport::Transport(){
 	n_emit_zones = -MAXLIM;
 	n_emit_zones_per_bin = -MAXLIM;
 	visc_specific_heat_rate = NaN;
-	reflect_outer = -MAXLIM;
 	n_subcycles = -MAXLIM;
 	do_emit_by_bin = -MAXLIM;
 	write_rays_every = -MAXLIM;
@@ -94,7 +93,7 @@ Transport::Transport(){
 	write_zones_every = -MAXLIM;
 	particle_total_energy = NaN;
 	particle_core_abs_energy = NaN;
-	particle_fluid_abs_energy = NaN;
+	particle_rouletted_energy = NaN;
 	particle_escape_energy = NaN;
 	importance_bias = NaN;
 	min_importance = NaN;
@@ -134,7 +133,6 @@ void Transport::init(Lua* lua)
 	do_visc      = lua->scalar<int>("do_visc");
 	do_relativity = lua->scalar<int>("do_relativity");
 	if(do_visc) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");
-	reflect_outer = lua->scalar<int>("reflect_outer");
 	n_subcycles = lua->scalar<int>("n_subcycles");
 	PRINT_ASSERT(n_subcycles,>=,1);
 	do_emit_by_bin = lua->scalar<int>("do_emit_by_bin");
@@ -357,7 +355,7 @@ void Transport::init(Lua* lua)
 	}
 	particle_total_energy = 0;
 	particle_core_abs_energy = 0;
-	particle_fluid_abs_energy = 0;
+	particle_rouletted_energy = 0;
 	particle_escape_energy = 0;
 }
 
@@ -416,7 +414,7 @@ void Transport::step()
 
 	// emit, propagate, and normalize. steady_state means no propagation time limit.
 	for(int i=0; i<n_subcycles; i++){
-	  if(rank0 && verbose) cout << "#   subcycle " << i+1 << "/" << n_subcycles << endl;
+	  if(rank0 && verbose) cout << "# === Subcycle " << i+1 << "/" << n_subcycles << " ===" << endl;
 		emit_particles();
 		propagate_particles();
 	}
@@ -648,65 +646,60 @@ void Transport::normalize_radiative_quantities(){
 	}
 	particle_total_energy *= inv_multiplier;
 	particle_core_abs_energy *= inv_multiplier;
-	particle_fluid_abs_energy *= inv_multiplier;
+	particle_rouletted_energy *= inv_multiplier;
 	particle_escape_energy *= inv_multiplier;
 
 	// output useful stuff
 	if(rank0 && verbose){
-		unsigned long total_active = 0;
+		int total_active = 0;
+		for(unsigned i=0; i<species_list.size(); i++) total_active += n_active[i];
+		cout << "#   " << total_active << " particles on all ranks" << endl;
+
 		for(unsigned i=0; i<species_list.size(); i++){
 			double per_esc = (100.0*(double)n_escape[i])/(double)n_active[i];
-			total_active += n_active[i];
-			cout << "#   " << n_escape[i] << "/" << n_active[i] << " " << species_list[i]->name << " escaped. (" << per_esc << "%)" << endl;
+			cout << "#     --> " << n_escape[i] << "/" << n_active[i] << " " << species_list[i]->name << " escaped. (" << per_esc << "%)" << endl;
 		}
 
 		// particle information (all lab-frame)
-		cout << "#   " << total_active << " total active particles" << endl;
-		cout << "#   " << particle_total_energy << " ERG/S TOTAL PARTICLE LUMINOSITY " << endl; // assume lab_dt=1.0
-		cout << "#   " << particle_fluid_abs_energy << " ERG/S TOTAL DESTROYED (fluid) PARTICLE ENERGY " << endl; // assume lab_dt=1.0
-		cout << "#   " << particle_core_abs_energy << " ERG/S TOTAL DESTROYED (core)  PARTICLE ENERGY " << endl; // assume lab_dt=1.0
-		cout << "#   " << particle_escape_energy << " ERG/S TOTAL ESCAPED PARTICLE ENERGY " << endl; // assume lab_dt=1.0
+		cout << "#   " << particle_total_energy << " ERG/S TOTAL PARTICLE END ENERGY " << endl; // assume lab_dt=1.0
+		cout << "#     --> " << particle_rouletted_energy << " ERG/S TOTAL ROULETTED PARTICLE ENERGY " << endl; // assume lab_dt=1.0
+		cout << "#     --> " << particle_core_abs_energy << " ERG/S TOTAL PARTICLE ENERGY ABSORBED BY CORE" << endl; // assume lab_dt=1.0
+		cout << "#     --> " << particle_escape_energy << " ERG/S TOTAL ESCAPED PARTICLE ENERGY " << endl; // assume lab_dt=1.0
 
-		if(do_visc) cout << "#   " << net_visc_heating << " erg/s H_visc (comoving sum)" << endl;
-		cout << "#   " << net_neut_heating << " erg/s H_abs (comoving sum)" << endl;
+		if(do_visc){
+			cout << "#   " << net_visc_heating << " erg/s H_visc (comoving sum)" << endl;
+			cout << "#   " << net_neut_heating << " erg/s H_abs (comoving sum)" << endl;
+		}
 
-		cout << "#   SUM OF EMISSIONS: " << L_core_lab[0]+L_core_lab[1]+L_core_lab[2]+L_net_lab[0]+L_net_lab[1]+L_net_lab[2] << endl;
-
-		double CmH = 0;
-		for(unsigned s=0; s<species_list.size(); s++) CmH += L_net_lab[s];
-		CmH -= particle_fluid_abs_energy; // assume lab+dt=1.0
-		cout << "#   " << CmH << " erg/s L_emit-L_abs (lab-frame)" << endl;
-
-		cout << "#   { ";
-		for(unsigned s=0; s<L_core_lab.size(); s++) cout << setw(12) << L_core_lab[s] << "  ";
-		cout << "} erg/s L_core" << endl;
+		if(n_emit_core>0){
+			cout << "#   { ";
+			for(unsigned s=0; s<L_core_lab.size(); s++) cout << setw(12) << L_core_lab[s] << "  ";
+			cout << "} erg/s L_core" << endl;
+		}
 
 		cout << "#   { ";
 		for(unsigned s=0; s<L_net_lab.size(); s++) cout << setw(12) << L_net_lab[s] << "  ";
-		cout << "} erg/s L_emit (lab-frame sum, includes re-emission)" << endl;
+		cout << "} erg/s L_emit (lab, includes re-emission)" << endl;
 
 		cout << "#   { ";
 		for(unsigned s=0; s<L_net_esc.size(); s++) cout << setw(12) << L_net_esc[s] << "  ";
-		cout << "} erg/s L_esc" << endl;
+		cout << "} erg/s L_esc (lab)" << endl;
 
 		cout << "#   { ";
 		for(unsigned s=0; s<L_net_lab.size(); s++) cout << setw(12) << L_net_lab[s]/N_net_lab[s]*pc::ergs_to_MeV << "  ";
-		cout << "} MeV E_avg_lab (average lab-frame emitted energy)" << endl;
+		cout << "} MeV E_avg_lab (lab)" << endl;
 
 		cout << "#   { ";
 		for(unsigned s=0; s<N_net_esc.size(); s++) cout << setw(12) << L_net_esc[s]/N_net_esc[s]*pc::ergs_to_MeV << "  ";
-		cout << "} MeV E_avg_esc" << endl;
+		cout << "} MeV E_avg_esc (lab)" << endl;
 
 		cout << "#   { ";
 		for(unsigned s=0; s<N_net_lab.size(); s++) cout << setw(12) << N_net_lab[s] << "  ";
-		cout << "} 1/s N_lab" << endl;
+		cout << "} 1/s N_emit (lab)" << endl;
 
 		cout << "#   { ";
 		for(unsigned s=0; s<N_net_esc.size(); s++) cout << setw(12) << N_net_esc[s] << "  ";
-		cout << "} 1/s N_esc" << endl;
-
-		double dyedt = -(N_net_esc[0]-N_net_esc[1]) / (grid->total_rest_mass()/pc::m_n);
-		cout << "#   " << dyedt << " 1/s global dYe_dt" << endl;
+		cout << "} 1/s N_esc (lab)" << endl;
 	}
 }
 
@@ -787,9 +780,9 @@ void Transport::reduce_radiation()
 	MPI_Allreduce(&sendsingle,&particle_total_energy,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
 	particle_total_energy /= (double)MPI_nprocs;
 
-	sendsingle = particle_fluid_abs_energy;
-	MPI_Allreduce(&sendsingle,&particle_fluid_abs_energy,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-	particle_fluid_abs_energy /= (double)MPI_nprocs;
+	sendsingle = particle_rouletted_energy;
+	MPI_Allreduce(&sendsingle,&particle_rouletted_energy,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+	particle_rouletted_energy /= (double)MPI_nprocs;
 
 	sendsingle = particle_core_abs_energy;
 	MPI_Allreduce(&sendsingle,&particle_core_abs_energy,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);

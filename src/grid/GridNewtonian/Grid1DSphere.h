@@ -39,6 +39,7 @@ class Grid1DSphere: public GridNewtonian
 private:
 	// store location of the outer edge of the zone.
 	LocateArray r_out;
+	int reflect_outer;
 
 
 public:
@@ -59,7 +60,6 @@ public:
 	void sample_in_zone (const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const;
 	void interpolate_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const;
 	void write_rays               (const int iw                                                  ) const;
-	void reflect_outer            (LorentzHelper *lh                                             ) const;
 	void symmetry_boundaries      (LorentzHelper *lh                                             ) const;
 	double lab_dist_to_boundary   (const LorentzHelper *lh                                       ) const;
 	double zone_radius            (const int z_ind) const;

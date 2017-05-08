@@ -913,42 +913,6 @@ void Grid2DSphere::write_rays(int iw) const
 
 
 //------------------------------------------------------------
-// Reflect off the outer boundary
-//------------------------------------------------------------
-void Grid2DSphere::reflect_outer(LorentzHelper *lh) const{
-	const Particle *p = lh->particle_readonly(lab);
-	double Dlab[3];
-	lh->p_D(lab,Dlab,3);
-
-	PRINT_ASSERT(r_out.size(),>=,1);
-	double r0 = (r_out.size()==1 ? r_out.min : r_out.size()-2);
-	double dr = r_out[r_out.size()-1] - r0;
-	PRINT_ASSERT( fabs(radius(p->xup,3) - r_out[r_out.size()-1]),<,TINY*dr);
-	double x_dot_d = p->xup[0]*Dlab[0] + p->xup[1]*Dlab[1] + p->xup[2]*Dlab[2];
-	double velDotRhat = x_dot_d / radius(p->xup,3);
-
-	// invert the radial component of the velocity
-	for(int i=0; i<3; i++) Dlab[i] -= 2.*velDotRhat * p->xup[i]/radius(p->xup,3);
-	normalize_Minkowski<3>(Dlab,3);
-	double kup[4];
-	kup[3] = lh->p_kup(lab)[3];
-	kup[0] = kup[3] * Dlab[0];
-	kup[1] = kup[3] * Dlab[1];
-	kup[2] = kup[3] * Dlab[2];
-	lh->set_p_kup<lab>(kup,4);
-
-	// put the particle just inside the boundary
-	double newR = r_out[r_out.size()-1] - TINY*dr;
-	double x[4];
-	for(int i=0; i<3; i++) x[i] = p->xup[i]/radius(p->xup,3)*newR;
-	x[3] = p->xup[3];
-	lh->set_p_xup(x,4);
-
-	// must be inside the boundary, or will get flagged as escaped
-	PRINT_ASSERT(zone_index(x,3),>=,0);
-}
-
-//------------------------------------------------------------
 // Reflect off the symmetry boundaries
 //------------------------------------------------------------
 void Grid2DSphere::symmetry_boundaries(LorentzHelper *lh) const{

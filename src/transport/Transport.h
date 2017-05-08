@@ -37,7 +37,7 @@
 class Species;
 class Grid;
 class SpectrumArray;
-enum ParticleEvent {interact, zoneEdge, boundary};
+enum ParticleEvent {interact, pause};
 
 class Transport
 {
@@ -85,7 +85,7 @@ private:
 	void tally_radiation(const LorentzHelper *lh, const int z_ind) const;
 	void reset_radiation();
 	void which_event(LorentzHelper* lh,const int z_ind, ParticleEvent *event) const;
-	void event_boundary(LorentzHelper *lh, int *z_ind) const;
+	void boundary_conditions(LorentzHelper *lh, int *z_ind) const;
 	void event_interact(LorentzHelper* lh, const int z_ind);
 	void scatter(LorentzHelper *lh, int z_ind) const;
 	void random_walk(LorentzHelper *lh, const double Rcom, const double D, const int z_ind) const;
@@ -131,7 +131,7 @@ private:
 
 	// global radiation quantities
 	double particle_total_energy;
-	double particle_fluid_abs_energy;
+	double particle_rouletted_energy;
 	double particle_core_abs_energy;
 	double particle_escape_energy;
 
@@ -200,9 +200,6 @@ public:
 	std::vector<long> n_active;
 	std::vector<long> n_escape;
 
-
-	// reflect off the outer boundary?
-	int reflect_outer;
 
 	// random number generator
 	mutable ThreadRNG rangen;

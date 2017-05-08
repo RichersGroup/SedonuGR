@@ -36,6 +36,7 @@ namespace pc = physical_constants;
 
 Grid1DSphere::Grid1DSphere(){
 	grid_type = "Grid1DSphere";
+	reflect_outer = 0;
 }
 
 //------------------------------------------------------------
@@ -52,6 +53,7 @@ void Grid1DSphere::read_model_file(Lua* lua)
 	}
 
 	grid_type = "Grid1DSphere";
+	reflect_outer = lua->scalar<int>("reflect_outer");
 }
 
 void Grid1DSphere::read_nagakura_model(Lua* lua){
@@ -342,51 +344,47 @@ void Grid1DSphere::write_rays(const int iw) const
 
 
 //------------------------------------------------------------
-// Reflect off the outer boundary
-//------------------------------------------------------------
-void Grid1DSphere::reflect_outer(LorentzHelper *lh) const{
-	const Particle *p = lh->particle_readonly(lab);
-	double Dlab[3];
-	lh->p_D(lab,Dlab,3);
-
-	double r0 = (r_out.size()>1 ? r_out[r_out.size()-2] : r_out.min);
-	double rmax = r_out[r_out.size()-1];
-	double dr = rmax - r0;
-	double R = radius(p->xup,3);
-	double x_dot_d = p->xup[0]*Dlab[0] + p->xup[1]*Dlab[1] + p->xup[2]*Dlab[2];
-	double velDotRhat = x_dot_d / R;
-	PRINT_ASSERT( fabs(R - r_out[r_out.size()-1]),<,TINY*dr);
-
-	// invert the radial component of the velocity
-	Dlab[0] -= 2.*velDotRhat * p->xup[0]/R;
-	Dlab[1] -= 2.*velDotRhat * p->xup[1]/R;
-	Dlab[2] -= 2.*velDotRhat * p->xup[2]/R;
-	normalize_Minkowski<3>(Dlab,3);
-	double kup[4];
-	kup[3] = lh->p_kup(lab)[3];
-	kup[0] = kup[3] * Dlab[0];
-	kup[1] = kup[3] * Dlab[1];
-	kup[2] = kup[3] * Dlab[2];
-	lh->set_p_kup<lab>(kup,4);
-
-	// put the particle just inside the boundary
-	double newR = rmax - TINY*dr;
-	double x[4];
-	x[0] = p->xup[0]/R*newR;
-	x[1] = p->xup[1]/R*newR;
-	x[2] = p->xup[2]/R*newR;
-	x[3] = p->xup[3];
-	lh->set_p_xup(x,4);
-
-	// must be inside the boundary, or will get flagged as escaped
-	PRINT_ASSERT(zone_index(x,3),>=,0);
-}
-
-//------------------------------------------------------------
 // Reflect off symmetry axis
 //------------------------------------------------------------
 void Grid1DSphere::symmetry_boundaries(LorentzHelper *lh) const{
-// not implemented - does nothing
+	// reflect from outer boundary
+	if(reflect_outer && radius(lh->p_xup(),3)>r_out[r_out.size()-1]){
+		const Particle *p = lh->particle_readonly(lab);
+		double Dlab[3];
+		lh->p_D(lab,Dlab,3);
+
+		double r0 = (r_out.size()>1 ? r_out[r_out.size()-2] : r_out.min);
+		double rmax = r_out[r_out.size()-1];
+		double dr = rmax - r0;
+		double R = radius(p->xup,3);
+		double x_dot_d = p->xup[0]*Dlab[0] + p->xup[1]*Dlab[1] + p->xup[2]*Dlab[2];
+		double velDotRhat = x_dot_d / R;
+		PRINT_ASSERT( fabs(R - r_out[r_out.size()-1]),<,TINY*dr);
+
+		// invert the radial component of the velocity
+		Dlab[0] -= 2.*velDotRhat * p->xup[0]/R;
+		Dlab[1] -= 2.*velDotRhat * p->xup[1]/R;
+		Dlab[2] -= 2.*velDotRhat * p->xup[2]/R;
+		normalize_Minkowski<3>(Dlab,3);
+		double kup[4];
+		kup[3] = lh->p_kup(lab)[3];
+		kup[0] = kup[3] * Dlab[0];
+		kup[1] = kup[3] * Dlab[1];
+		kup[2] = kup[3] * Dlab[2];
+		lh->set_p_kup<lab>(kup,4);
+
+		// put the particle just inside the boundary
+		double newR = rmax - TINY*dr;
+		double x[4];
+		x[0] = p->xup[0]/R*newR;
+		x[1] = p->xup[1]/R*newR;
+		x[2] = p->xup[2]/R*newR;
+		x[3] = p->xup[3];
+		lh->set_p_xup(x,4);
+
+		// must be inside the boundary, or will get flagged as escaped
+		PRINT_ASSERT(zone_index(x,3),>=,0);
+	}
 }
 
 //------------------------------------------------------------

@@ -439,48 +439,6 @@ void Grid2DCylinder::write_rays(int iw) const
 //------------------------------------------------------------
 // Reflect off the outer boundary
 //------------------------------------------------------------
-void Grid2DCylinder::reflect_outer(LorentzHelper *lh) const{
-  cout << "Error: cylindrical reflect_outer is not implemented or tested." << endl;
-  exit(1);
-	// PRINT_ASSERT(r_out.size(),>=,1);
-
-	// double rcyl0 = (rcyl_out.size()==1 ? rcyl_out.min : rcyl_out.size()-2);
-	// double z0    = (   z_out.size()==1 ?    z_out.min :    z_out.size()-2);
-	// double drcyl = rcyl_out[rcyl_out.size()-1] - rcyl0;
-	// double dz    =    z_out[   z_out.size()-1] -    z0;
-	// PRINT_ASSERT( fabs(prcyl - rcyl_out[rcyl_out.size()-1]),<,TINY*dr);
-
-	// // invert the radial component of the velocity
-	// if(p->rcyl > rcyl_out[rcyl_out.size()-1]){
-	//   p->D[0] *= -1;
-	//   p->D[1] *= -1;
-	//   double newRcyl = rcyl_out[rcyl_out.size()-1] - TINY*dr;
-	//   for(int i=0; i<2; i++) p->x[i] = p->x[i]/p->rcyl()*newRcyl;
-	// }
-
-	// // invert the z component of the velocity (bottom)
-	// if(p->x[2]<z_out.min){
-	//   PRINT_ASSERT(p->D[2],<,0);
-	//   p->D[2] *= -1;
-	//   p->x[2] = z_out.min + TINY*dz;
-	// }
-
-	// if(p->x[2] > z_out[z_out.size()-1]){
-	//   PRINT_ASSERT(p->D[2],>,0);
-	//   p->D[2] *= -1;
-	//   p->x[2] = z_out[z_out.size()-1] - TINY*dz;
-	// }
-
-	// // normalize the direction vector
-	// transport::normalize(p->D);
-
-	// // must be inside the boundary, or will get flagged as escaped
-	// PRINT_ASSERT(zone_index(p->x),>=,0);
-}
-
-//------------------------------------------------------------
-// Reflect off the outer boundary
-//------------------------------------------------------------
 void Grid2DCylinder::symmetry_boundaries(LorentzHelper *lh) const{
 // does nothing - not implemented
 }

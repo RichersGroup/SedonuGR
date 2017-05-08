@@ -78,7 +78,6 @@ int main(int argc, char **argv)
 	//===========//
 	// TIME LOOP //
 	//===========//
-	if (rank0) printf("%12s %12s %12s %12s\n","iteration","t","dt","n_particles");
 	for(int it=1; it<=max_n_iter; it++)
 	{
 		double time_now = MPI_Wtime();

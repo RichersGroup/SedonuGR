@@ -71,8 +71,8 @@ void Transport::propagate_particles()
 		} //#pragma omp parallel for
 	} while(particles.size()>end);
 
-	double tot=0,core=0,fluid=0,esc=0;
-	#pragma omp parallel for reduction(+:tot,core,fluid,esc)
+	double tot=0,core=0,rouletted=0,esc=0;
+	#pragma omp parallel for reduction(+:tot,core,rouletted,esc)
 	for(unsigned i=0; i<particles.size(); i++){
 		if(particles[i].fate == moving){
 			if(rank0) cout << particles[i].fate << endl;
@@ -81,14 +81,13 @@ void Transport::propagate_particles()
 		}
 		if(particles[i].fate!=rouletted) tot += particles[i].e;
 		if(particles[i].fate==escaped) esc += particles[i].e;
-		if(particles[i].fate==absorbed){
-			if(grid->zone_index(particles[i].xup,3)>=0 ) fluid += particles[i].e;
-			else core += particles[i].e;
-		}
+		if(particles[i].fate==absorbed) core += particles[i].e;
+		if(particles[i].fate==rouletted) rouletted += particles[i].e;
 	}
+
 	particle_total_energy += tot;
 	particle_core_abs_energy += core;
-	particle_fluid_abs_energy += fluid;
+	particle_rouletted_energy += rouletted;
 	particle_escape_energy += esc;
 
 	// remove the dead particles
@@ -125,17 +124,14 @@ void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *e
 	PRINT_ASSERT(d_boundary, >, 0);
 
 	// find out what event happens (shortest distance) =====================================
-	*event  = zoneEdge;
+	*event  = pause;
 	double d_smallest = d_zone;
 	if( d_interact <= d_smallest ){
 		*event = interact;
 		d_smallest = d_interact;
 	}
 	if( d_boundary <= d_smallest ){
-		*event = boundary;
-		d_smallest = d_boundary;
-		if(z_ind >= 0) d_smallest *= (1.0 + TINY); // bump just over the boundary if in simulation domain
-		else           d_smallest *= (1.0 - TINY); // don't overshoot outward through the inner boundary
+		d_smallest = d_boundary * (1.0 + TINY); // bump just over the boundary if in simulation domain
 	}
 	lh->set_distance<lab>(d_smallest);
 	PRINT_ASSERT(lh->distance(lab), >=, 0);
@@ -143,24 +139,15 @@ void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *e
 }
 
 
-void Transport::event_boundary(LorentzHelper *lh, int *z_ind) const{
-	PRINT_ASSERT(*z_ind,<,0);
+void Transport::boundary_conditions(LorentzHelper *lh, int *z_ind) const{
+	PRINT_ASSERT(lh->p_fate(),==,moving);
 
-	if(grid->radius(lh->p_xup(),3) < r_core) lh->set_p_fate(absorbed);
-	else if(reflect_outer){
-		grid->reflect_outer(lh);
-		PRINT_ASSERT(lh->p_fate(), ==, moving);
-		*z_ind = grid->zone_index(lh->p_xup(),3);
-		PRINT_ASSERT(*z_ind, >=, 0);
-		PRINT_ASSERT(*z_ind, <, (int)grid->z.size());
-		PRINT_ASSERT(lh->p_nu(lab), >, 0);
-	}
-	else{
+	if(r_core>0 && grid->radius(lh->p_xup(),3)<r_core) lh->set_p_fate(absorbed);
+	else if(*z_ind<0){
 		grid->symmetry_boundaries(lh);
 		*z_ind = grid->zone_index(lh->p_xup(),3);
+		if(*z_ind < 0) lh->set_p_fate(escaped);
 	}
-
-	if(*z_ind < 0) lh->set_p_fate(escaped);
 }
 
 void Transport::distribution_function_basis(const double D[3], const double xyz[3], double D_newbasis[3]) const{
@@ -324,13 +311,8 @@ void Transport::propagate(Particle* p)
 
 		// move particle the distance
 		move(&lh, &z_ind);
-		if(lh.p_fate() != rouletted){
-			if(grid->radius(lh.p_xup(),3) < r_core) lh.set_p_fate(absorbed);
-			else{
-				if(z_ind<0) event_boundary(&lh, &z_ind);
-				if(event==interact) event_interact(&lh,z_ind);
-			}
-		}
+		if(lh.p_fate()==moving) boundary_conditions(&lh, &z_ind);
+		if(lh.p_fate()==moving && event==interact) event_interact(&lh,z_ind);
 	}
 
 	// copy particle back out of LorentzHelper

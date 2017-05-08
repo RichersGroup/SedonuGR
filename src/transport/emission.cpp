@@ -74,40 +74,37 @@ void Transport::emit_particles()
 //------------------------------------------------------------
 void Transport::emit_inner_source_by_bin(){
 	int size_before = particles.size();
+	int n_attempted = 0;
 
-	double avgEp = 0;
-	#pragma omp parallel for reduction(+:avgEp)
+	#pragma omp parallel for reduction(+:n_attempted)
 	for(unsigned s=0; s<species_list.size(); s++){
+		n_attempted += n_emit_core_per_bin * species_list[s]->core_emis.size();
 		for(unsigned g=0; g<species_list[s]->core_emis.size(); g++){
 			double emis = species_list[s]->core_emis.get_value(g)*species_list[s]->core_emis.N;
-			double bin_Ep = emis/n_emit_core_per_bin * do_emit_by_bin; // assume lab_dt = 1.0
+			double bin_Ep = emis/n_emit_core_per_bin; // assume lab_dt = 1.0
 			if(bin_Ep>0){
 				for(int k=0; k<n_emit_core_per_bin; k++) create_surface_particle(bin_Ep,s,g);
-				avgEp += bin_Ep * n_emit_core_per_bin;
 			}
 		}
 	}
-	int n_created = particles.size()-size_before;
-	avgEp /= (double)n_created;
 
-	PRINT_ASSERT(n_created,==,(int)particles.size()-size_before);
-	if(verbose && rank0) cout << "#   <E_p> (emit_inner_source_by_bin) = " << avgEp << " erg ("
-			<< n_created << " particles)" << endl;
+	int n_created = particles.size()-size_before;
+	if(verbose && rank0) cout << "#   emit_inner_source_by_bin() created = " << n_created << " particles on rank 0 ("
+			<< n_attempted-n_created << " rouletted immediately)" << endl;
 }
 void Transport::emit_inner_source()
 {
+	PRINT_ASSERT(r_core,>,0);
 	PRINT_ASSERT(core_species_luminosity.N,>,0);
 	int size_before = particles.size();
-
 	const double Ep  = core_species_luminosity.N / (double)n_emit_core; // assume lab_dt = 1.0
-	PRINT_ASSERT(Ep,>,0);
-	PRINT_ASSERT(r_core,>,0);
 
 	#pragma omp parallel for
 	for (int i=0; i<n_emit_core; i++) create_surface_particle(Ep);
 
-	if(verbose && rank0) cout << "#   <E_p> (emit_inner_source) = " << Ep << " erg ("
-			<< particles.size()-size_before << " particles)" << endl;
+	int n_created = particles.size()-size_before;
+	if(verbose && rank0) cout << "#   emit_inner_source() created " << particles.size()-size_before << " particles on rank 0 ("
+			<< n_emit_core << " rouletted immediately)" << endl;
 }
 
 
@@ -115,21 +112,20 @@ void Transport::emit_inner_source()
 // emit particles due to viscous heating
 //--------------------------------------------------------------------------
 void Transport::emit_zones_by_bin(){
-	double avgEp = 0;
 	int size_before = particles.size();
+	int n_attempted = 0;
 
-	#pragma omp parallel for reduction(+:avgEp)
+	#pragma omp parallel for reduction(+:n_attempted)
 	for (unsigned z_ind=0; z_ind<grid->z.size(); z_ind++) if(grid->zone_radius(z_ind) >= r_core){
 
 		double com_emit_energy = zone_comoving_therm_emit_energy(z_ind);
 
 		for(unsigned s=0; s<species_list.size(); s++){
+			n_attempted += n_emit_zones_per_bin * species_list[s]->number_of_bins();
 			for(unsigned g=0; g<species_list[s]->number_of_bins(); g++){
 				double bin_Ep = bin_comoving_therm_emit_energy(z_ind, s, g)/n_emit_zones_per_bin;
-				if(bin_Ep>0){
-					for(int k=0; k<n_emit_zones_per_bin; k++) create_thermal_particle(z_ind,bin_Ep,s,g);
-					avgEp += bin_Ep * n_emit_zones_per_bin;
-				}
+				if(bin_Ep>0) for(int k=0; k<n_emit_zones_per_bin; k++)
+					create_thermal_particle(z_ind,bin_Ep,s,g);
 			}
 		}
 
@@ -141,15 +137,13 @@ void Transport::emit_zones_by_bin(){
 	}
 
 	int n_created = particles.size() - size_before;
-	avgEp /= (double)n_created;
-	if(verbose && rank0) cout << "#   <E_p> (emit_zones_by_bin) = " << avgEp << " erg ("
-			<< particles.size()-size_before << " particles)" << endl;
+	if(verbose && rank0) cout << "#   emit_zones_by_bin() created " << n_created << " particles on rank 0 ("
+			<< n_attempted-n_created << " rouletted immediately)" << endl;
 }
 void Transport::emit_zones(){
 	double tmp_net_energy = 0;
 	int size_before = particles.size();
-	double avgEp = 0;
-
+	int n_attempted = 0;
 
 	// determine the net luminosity of each emission type over the whole grid
 	// proper normalization due to frames not physical - just for distributing particles somewhat reasonably
@@ -161,7 +155,7 @@ void Transport::emit_zones(){
 	PRINT_ASSERT(tmp_net_energy,>,0);
 
 	// actually emit the particles in each zone
-	#pragma omp parallel for schedule(guided) reduction(+:avgEp)
+	#pragma omp parallel for schedule(guided) reduction(+:n_attempted)
 	for (unsigned z_ind=0; z_ind<grid->z.size(); z_ind++) if(grid->zone_radius(z_ind) >= r_core)
 	{
 		double com_biased_emit_energy = zone_comoving_biased_therm_emit_energy(z_ind);
@@ -180,7 +174,6 @@ void Transport::emit_zones(){
 			double Ep = com_emit_energy / (double)this_n_emit;
 			if(this_n_emit>0){
 				PRINT_ASSERT(Ep,>,0);
-				avgEp += Ep * (double)this_n_emit;
 
 				// keep emitted energy statistically constant
 				if(this_zones_share<1){
@@ -190,6 +183,7 @@ void Transport::emit_zones(){
 			}
 
 			for (unsigned k=0; k<this_n_emit; k++) create_thermal_particle(z_ind,Ep);
+			n_attempted += this_n_emit;
 		}
 
 		// record emissivity
@@ -200,9 +194,8 @@ void Transport::emit_zones(){
 	}// loop over zones
 
 	int n_created = particles.size() - size_before;
-	avgEp /= (double)n_created;
-	if(verbose && rank0) cout << "#   <E_p> (emit_zones) = " << avgEp << " erg ("
-			<< n_created << " particles)" << endl;
+	if(verbose && rank0) cout << "#   emit_zones() created " << n_created << " particles on rank 0 ("
+			<< n_emit_zones - n_created << " rouletted immediately)" << endl;
 }
 
 

@@ -707,50 +707,6 @@ void Grid3DCart::write_rays(const int iw) const
 
 
 //------------------------------------------------------------
-// Reflect off the outer boundary
-//------------------------------------------------------------
-void Grid3DCart::reflect_outer(LorentzHelper *lh) const{
-	const Particle *p = lh->particle_readonly(lab);
-
-	double kup[4], xup[4];
-
-	// initialize the arrays
-	for(int i=0; i<4; i++) xup[i] = lh->p_xup()[i];
-	for(int i=0; i<4; i++) kup[i] = lh->p_kup(lab)[i];
-
-	// assumes particle is placed OUTSIDE of the zones
-	int z_ind = zone_index(p->xup,3);
-	double delta[3];
-	get_deltas(z_ind,delta,3);
-
-	// invert the radial component of the velocity, put the particle just inside the boundary
-	for(int i=0; i<3; i++){
-		// inner boundary
-		if(p->xup[i] < x0[i]){
-			PRINT_ASSERT(kup[i],<,0);
-			kup[i] = -kup[i];
-			xup[i] = x0[i] + TINY*delta[i];
-		}
-
-		// outer boundary
-		if(p->xup[i] > xmax[i]){
-			PRINT_ASSERT(kup[i],>,0);
-			kup[i] = -kup[i];
-			xup[i] = xmax[i] - TINY*delta[i];
-		}
-
-		// double check that the particle is in the boundary
-		PRINT_ASSERT(xup[i],>,x0[i]);
-		PRINT_ASSERT(xup[i],<,xmax[i]);
-
-		// assign the arrays
-		lh->set_p_xup(xup,4);
-		lh->set_p_kup<lab>(kup,4);
-	}
-}
-
-
-//------------------------------------------------------------
 // Find distance to outer boundary
 //------------------------------------------------------------
 double Grid3DCart::lab_dist_to_boundary(const LorentzHelper *lh) const{
@@ -869,23 +825,24 @@ double Grid3DCart::zone_right_boundary(const unsigned dir, const unsigned dir_in
 // Reflect off revlecting boundary condition
 //------------------------------------------------------------
 void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
-
-	double kup[4], xup[4];
+	PRINT_ASSERT(zone_index(lh->p_xup(),3),<,0);
 
 	// initialize the arrays
+	double kup[4], xup[4];
 	for(int i=0; i<4; i++) xup[i] = lh->p_xup()[i];
 	for(int i=0; i<4; i++) kup[i] = lh->p_kup(lab)[i];
+
 
 	// invert the radial component of the velocity, put the particle just inside the boundary
 	for(int i=0; i<3; i++){
 		if(reflect[i] && xup[i] < x0[i]){
-			PRINT_ASSERT(x0[i]-xup[i],<,TINY*dx[i]);
 			PRINT_ASSERT(x0[i],==,0);
+			PRINT_ASSERT(x0[i]-xup[i],<,TINY*(x1[i]-x0[i]));
 			PRINT_ASSERT(kup[i],<,0);
+			// actual work
 			kup[i] = -kup[i];
 			xup[i] = x0[i] + TINY*(x1[i]-x0[i]);
-
-			// double check that the particle is in the boundary
+			// end actual work
 			PRINT_ASSERT(xup[i],>=,x0[i]);
 			PRINT_ASSERT(xup[i],<=,xmax[i]);
 		}
@@ -913,14 +870,14 @@ void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
 			}
 
 			// double check that the particle is in the boundary
-			for(int j=0; j<3; j++){
-				PRINT_ASSERT(xup[j],>=,x0[j]);
-				PRINT_ASSERT(xup[j],<=,xmax[j]);
-			}
+			PRINT_ASSERT(xup[i],>=,x0[i]);
+			PRINT_ASSERT(xup[i],<=,xmax[i]);
+			PRINT_ASSERT(xup[other],>=,x0[other]);
+			PRINT_ASSERT(xup[other],<=,xmax[other]);
 		}
-
-		// assign the arrays
-		lh->set_p_xup(xup,4);
-		lh->set_p_kup<lab>(kup,4);
 	}
+
+	// assign the arrays
+	lh->set_p_xup(xup,4);
+	lh->set_p_kup<lab>(kup,4);
 }
