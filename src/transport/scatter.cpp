@@ -36,9 +36,9 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 // physics of absorption/scattering
 //------------------------------------------------------------
-void Transport::event_interact(LorentzHelper* lh, const int z_ind){
-	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
+void Transport::event_interact(LorentzHelper* lh, int *z_ind){
+	PRINT_ASSERT(*z_ind,>=,0);
+	PRINT_ASSERT(*z_ind,<,(int)grid->z.size());
 	PRINT_ASSERT(lh->abs_fraction(),>=,0.0);
 	PRINT_ASSERT(lh->abs_fraction(),<=,1.0);
 	PRINT_ASSERT(lh->p_e(com),>,0);
@@ -46,7 +46,7 @@ void Transport::event_interact(LorentzHelper* lh, const int z_ind){
 
 	// absorb the particle and let the fluid re-emit another particle
 	if(radiative_eq){
-		re_emit(lh,z_ind);
+		re_emit(lh,*z_ind);
 		L_net_lab[lh->p_s()] += lh->p_e(lab);
 	}
 
@@ -60,7 +60,7 @@ void Transport::event_interact(LorentzHelper* lh, const int z_ind){
 	if(lh->p_fate()==moving) sample_tau(lh);
 
 	// window the particle
-	if(lh->p_fate()==moving) window(lh,z_ind);
+	if(lh->p_fate()==moving) window(lh,*z_ind);
 
 	// sanity checks
 	if(lh->p_fate()==moving){
@@ -159,7 +159,7 @@ void Transport::re_emit(LorentzHelper *lh, const int z_ind) const{
 }
 
 // choose which type of scattering event to do
-void Transport::scatter(LorentzHelper *lh, int z_ind) const{
+void Transport::scatter(LorentzHelper *lh, int *z_ind) const{
 	PRINT_ASSERT(lh->abs_fraction(),>=,0);
 	PRINT_ASSERT(lh->abs_fraction(),<=,1.0);
 	PRINT_ASSERT(lh->net_opac(com),>=,0);
@@ -172,8 +172,8 @@ void Transport::scatter(LorentzHelper *lh, int z_ind) const{
 
 		// if the optical depth is below our threshold, don't do random walk
 		// (first pass to avoid doing lots of math)
-		double Rlab_min = randomwalk_sphere_size * grid->zone_min_length(z_ind);
-		double Rlab_boundary = grid->zone_cell_dist(lh->p_xup(),z_ind);
+		double Rlab_min = randomwalk_sphere_size * grid->zone_min_length(*z_ind);
+		double Rlab_boundary = grid->zone_cell_dist(lh->p_xup(),*z_ind);
 		double Rlab = max(Rlab_min, Rlab_boundary);
 		if(lh->scat_opac(com) * Rlab >= randomwalk_min_optical_depth){
 			// determine maximum comoving sphere size
@@ -188,9 +188,10 @@ void Transport::scatter(LorentzHelper *lh, int z_ind) const{
 
 			// if the optical depth is below our threshold, don't do random walk
 			if(lh->scat_opac(com) * Rcom >= randomwalk_min_optical_depth){
-				random_walk(lh, Rcom, D, z_ind);
-				int new_ind = grid->zone_index(lh->p_xup(),3);
-				if(new_ind==-2) lh->set_p_fate(escaped);
+				random_walk(lh, Rcom, D, *z_ind);
+				*z_ind = grid->zone_index(lh->p_xup(),3);\
+				boundary_conditions(lh, z_ind);
+				//if(new_ind==-2) lh->set_p_fate(escaped);
 				did_random_walk = true;
 			}
 		}

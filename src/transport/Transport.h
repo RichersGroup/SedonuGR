@@ -86,8 +86,8 @@ private:
 	void reset_radiation();
 	void which_event(LorentzHelper* lh,const int z_ind, ParticleEvent *event) const;
 	void boundary_conditions(LorentzHelper *lh, int *z_ind) const;
-	void event_interact(LorentzHelper* lh, const int z_ind);
-	void scatter(LorentzHelper *lh, int z_ind) const;
+	void event_interact(LorentzHelper* lh, int *z_ind);
+	void scatter(LorentzHelper *lh, int *z_ind) const;
 	void random_walk(LorentzHelper *lh, const double Rcom, const double D, const int z_ind) const;
 	void init_randomwalk_cdf(Lua* lua);
 	void re_emit(LorentzHelper *lh, const int z_ind) const;

@@ -39,7 +39,7 @@ void Transport::propagate_particles()
 	if(verbose && rank0) cout << "# Propagating particles..." << endl;
 
 	//--- MOVE THE PARTICLES AROUND ---
-	// particle list is changing size, so must go through repeatedly
+	// particle list is changing size due to splitting, so must go through repeatedly
 	unsigned start=0, end=0;
 	#pragma omp parallel
 	do{
@@ -109,7 +109,7 @@ void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *e
 
 	// FIND D_ZONE= ====================================================================
 	double d_zone_min = step_size * grid->zone_min_length(z_ind);
-	double d_zone_boundary = (1.0+TINY) * grid->zone_cell_dist(lh->p_xup(), z_ind);
+	double d_zone_boundary = grid->zone_cell_dist(lh->p_xup(), z_ind) + TINY*d_zone_min;
 	d_zone = max(d_zone_min, d_zone_boundary);
 	PRINT_ASSERT(d_zone, >, 0);
 
@@ -121,7 +121,7 @@ void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *e
 
 	// FIND D_BOUNDARY ================================================================
 	d_boundary = grid->lab_dist_to_boundary(lh);
-	PRINT_ASSERT(d_boundary, >, 0);
+	PRINT_ASSERT(d_boundary, >=, 0);
 
 	// find out what event happens (shortest distance) =====================================
 	*event  = nothing;
@@ -131,7 +131,8 @@ void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *e
 		d_smallest = d_interact;
 	}
 	if( d_boundary <= d_smallest ){
-		d_smallest = d_boundary * (1.0 + TINY); // bump just over the boundary if in simulation domain
+		double d_tweak = min(d_zone,d_interact);
+		d_smallest = d_boundary + d_tweak*TINY; // bump just over the boundary
 	}
 	lh->set_distance<lab>(d_smallest);
 	PRINT_ASSERT(lh->distance(lab), >=, 0);
@@ -312,7 +313,7 @@ void Transport::propagate(Particle* p)
 		// move particle the distance
 		move(&lh, &z_ind);
 		if(lh.p_fate()==moving) boundary_conditions(&lh, &z_ind);
-		if(lh.p_fate()==moving && event==interact) event_interact(&lh,z_ind);
+		if(lh.p_fate()==moving && event==interact) event_interact(&lh,&z_ind);
 	}
 
 	// copy particle back out of LorentzHelper

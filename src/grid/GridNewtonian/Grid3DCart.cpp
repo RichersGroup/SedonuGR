@@ -721,8 +721,7 @@ double Grid3DCart::lab_dist_to_boundary(const LorentzHelper *lh) const{
 	if(inside){
 		double dist[3] = {-1,-1,-1};
 		for(int i=0; i<3; i++){
-			dist[i] = (Dlab[i]>0 ? xmax[i]-p->xup[i] : p->xup[i]-x0[i]);
-			dist[i] /= fabs(Dlab[i]);
+			dist[i] = min(xmax[i]-p->xup[i], p->xup[i]-x0[i]);
 			PRINT_ASSERT(dist[i],>=,0);
 		}
 
@@ -835,13 +834,12 @@ void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
 
 	// invert the radial component of the velocity, put the particle just inside the boundary
 	for(int i=0; i<3; i++){
-		if(reflect[i] && xup[i] < x0[i]){
+		if(reflect[i] && xup[i]<0){
 			PRINT_ASSERT(x0[i],==,0);
-			PRINT_ASSERT(x0[i]-xup[i],<,TINY*(x1[i]-x0[i]));
-			PRINT_ASSERT(kup[i],<,0);
+			PRINT_ASSERT(-xup[i],<,dx[i]);
 			// actual work
 			kup[i] = -kup[i];
-			xup[i] = x0[i] + TINY*(x1[i]-x0[i]);
+			xup[i] = -xup[i];
 			// end actual work
 			PRINT_ASSERT(xup[i],>=,x0[i]);
 			PRINT_ASSERT(xup[i],<=,xmax[i]);
@@ -850,30 +848,34 @@ void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
 
 	// rotating boundary conditions
 	for(int i=0; i<2; i++){
-		if(xup[i] < x0[i] && (rotate_hemisphere[i] || rotate_quadrant)){
-			PRINT_ASSERT(x0[i]-xup[i],<,TINY*(x1[i]-x0[i]));
+		if(xup[i]<0 && (rotate_hemisphere[i] || rotate_quadrant)){
 			PRINT_ASSERT(x0[i],==,0);
-			PRINT_ASSERT(kup[i],<,0);
-			int other = i==0 ? 1 : 0;
+			PRINT_ASSERT(-xup[i],<,dx[i]);
 			
 			if(rotate_hemisphere[i]){
-				for(int j=0; j<2; j++) kup[j] = -kup[j];
-				xup[i    ] = x0[i] + TINY*(x1[i]-x0[i]);
-				xup[other] = -xup[other];
+				for(int j=0; j<2; j++){
+					kup[j] = -kup[j];
+					xup[j] = -xup[j];
+				}
 			}
 			else if(rotate_quadrant){
-				double tmp = kup[i];
-				kup[i] = kup[other];
-				kup[other] = -tmp;
-				xup[i] = xup[other];
-				xup[other] = x0[other] + TINY*(x1[other]-x0[other]);
+				int other = i==0 ? 1 : 0;
+				if(xup[other]>=0){
+					double tmp;
+					tmp=kup[i];	kup[i]=kup[other]; kup[other]=-tmp;
+					tmp=xup[i];	xup[i]=xup[other]; xup[other]=-tmp;
+				}
+				else for(int j=0; j<2; j++){
+					kup[j] = -kup[j];
+					xup[j] = -xup[j];
+				}
 			}
 
 			// double check that the particle is in the boundary
-			PRINT_ASSERT(xup[i],>=,x0[i]);
-			PRINT_ASSERT(xup[i],<=,xmax[i]);
-			PRINT_ASSERT(xup[other],>=,x0[other]);
-			PRINT_ASSERT(xup[other],<=,xmax[other]);
+			PRINT_ASSERT(xup[0],>=,x0[0]);
+			PRINT_ASSERT(xup[1],>=,x0[1]);
+			PRINT_ASSERT(xup[0],<=,xmax[0]);
+			PRINT_ASSERT(xup[1],<=,xmax[1]);
 		}
 	}
 

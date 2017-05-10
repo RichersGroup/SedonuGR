@@ -44,8 +44,8 @@ void RadialMomentSpectrumArray::init(const LocateArray wg, const int max_rank) {
 	nu_grid.copy(wg);
 
 	// initialize the moments
-	moments.resize(nu_grid.size() * max_rank);
-	nranks = max_rank;
+	nranks = max_rank + 1;
+	moments.resize(nu_grid.size() * nranks);
 	
 	// clear the data
 	wipe();
