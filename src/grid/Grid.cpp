@@ -397,7 +397,7 @@ double Grid::dot_Minkowski(const double a[], const double b[], const int size){
 	PRINT_ASSERT(size,>=,3);
 	PRINT_ASSERT(size,<=,4);
 	double product = 0;
-	for(unsigned i=0; i<size; i++) product += a[i]*b[i];
+	for(unsigned i=0; i<3; i++) product += a[i]*b[i];
 	if(s==4) product -= a[3]*b[3];
 	return product;
 }
@@ -414,11 +414,10 @@ template void Grid::normalize_Minkowski<4>(vector<double>& a);
 
 template<int s>
 void Grid::normalize_Minkowski(double a[],const int size){
-	PRINT_ASSERT(size,>=,3);
-	PRINT_ASSERT(size,<=,4);
-	double inv_magnitude = 1./sqrt(abs( dot_Minkowski<s>(a,a,size) ));
+	PRINT_ASSERT(size,==,s);
+	double inv_magnitude = 1./sqrt(abs( dot_Minkowski<s>(a,a,s) ));
 	PRINT_ASSERT(inv_magnitude,<,INFINITY);
-	for(unsigned i=0; i<size; i++) a[i] *= inv_magnitude;
+	for(unsigned i=0; i<s; i++) a[i] *= inv_magnitude;
 }
 template void Grid::normalize_Minkowski<3>(double a[], const int size);
 template void Grid::normalize_Minkowski<4>(double a[], const int size);
