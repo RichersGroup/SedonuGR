@@ -153,7 +153,7 @@ void Transport::boundary_conditions(LorentzHelper *lh, int *z_ind) const{
 
 void Transport::distribution_function_basis(const double D[3], const double xyz[3], double D_newbasis[3]) const{
 	double x=xyz[0], y=xyz[1], z=xyz[2];
-	double r = sqrt(Grid::dot_Minkowski<3>(xyz,xyz,3));
+	double inv_r = 1.0 / sqrt(Grid::dot_Minkowski<3>(xyz,xyz,3));
 	double rp = sqrt(x*x + y*y);
 	double rhat[3]     = {0,0,0};
 	double thetahat[3] = {0,0,0};
@@ -164,14 +164,15 @@ void Transport::distribution_function_basis(const double D[3], const double xyz[
 	    phihat[0] = 1;
 	}
 	else{
-		rhat[0] = x/r;
-		rhat[1] = y/r;
-		rhat[2] = z/r;
-		thetahat[0] = z/r * x/rp;
-		thetahat[1] = z/r * y/rp;
-		thetahat[2] = -rp / r;
-		phihat[0] = -y/rp;
-		phihat[1] =  x/rp;
+		double inv_rp = 1.0/rp;
+		rhat[0] = x*inv_r;
+		rhat[1] = y*inv_r;
+		rhat[2] = z*inv_r;
+		thetahat[0] = z*inv_r * x*inv_rp;
+		thetahat[1] = z*inv_r * y*inv_rp;
+		thetahat[2] = -rp * inv_r;
+		phihat[0] = -y*inv_rp;
+		phihat[1] =  x*inv_rp;
 		phihat[2] = 0;
 	}
 	D_newbasis[0] = Grid::dot_Minkowski<3>(D,thetahat,3);
