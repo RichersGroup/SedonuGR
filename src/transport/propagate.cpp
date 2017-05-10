@@ -49,7 +49,7 @@ void Transport::propagate_particles()
 			end = particles.size();
 		}
 
-		#pragma omp for schedule(guided)
+		#pragma omp for schedule(dynamic)
 		for(unsigned i=start; i<end; i++){
 			Particle* p = &particles[i];
 			#pragma omp atomic
