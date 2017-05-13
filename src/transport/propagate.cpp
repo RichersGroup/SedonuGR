@@ -190,6 +190,8 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	PRINT_ASSERT(lh->distance(com), >=, 0);
 	PRINT_ASSERT(lh->net_opac(com), >=, 0);
 	double to_add = 0;
+	double decay_factor = 1.0 - exp(-lh->abs_opac(lab) * lh->distance(lab)); //same in both frames
+
 
 	// set pointer to the current zone
 	Zone* zone;
@@ -204,9 +206,10 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	Grid::normalize_Minkowski<3>(D_newbasis,3);
 
 	// tally in contribution to zone's distribution function (lab frame)
-	if(exponential_decay) to_add = lh->p_e(lab) / lh->abs_opac(lab) * (1.0 - exp(-lh->abs_opac(lab) * lh->distance(lab)));
+	if(exponential_decay && lh->abs_opac(lab)>0) to_add = lh->p_e(lab) / lh->abs_opac(lab) * decay_factor;
 	else to_add = lh->p_e(lab) * lh->distance(lab);
 	PRINT_ASSERT(to_add,<,INFINITY);
+
 	zone->distribution[lh->p_s()]->count(D_newbasis, 3, lh->p_nu(com), to_add);
 	#pragma omp atomic
 	zone->Edens_com[lh->p_s()] += to_add;
@@ -214,11 +217,12 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	zone->Ndens_com[lh->p_s()] += to_add / lh->p_nu(com);
 	
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
-	if(exponential_decay) to_add = lh->p_e(com) * (1.0 - exp(-lh->abs_opac(com) * lh->distance(com)));
-	else to_add = lh->p_e(com) * lh->distance(com) * (lh->abs_opac(com));
+	if(exponential_decay) to_add = lh->p_e(com) * decay_factor;
+	else to_add = lh->p_e(com) * lh->distance(com) * lh->abs_opac(com);
+	PRINT_ASSERT(to_add,>=,0);
+
 	#pragma omp atomic
 	zone->e_abs += to_add;
-	PRINT_ASSERT(zone->e_abs, >=, 0);
 
 	// store absorbed lepton number (same in both frames, except for the
 	// factor of this_d which is divided out later

@@ -261,12 +261,12 @@ void Transport::init_randomwalk_cdf(Lua* lua){
 		double x = randomwalk_xaxis.x[i];
 
 		for(int n=1; n<=sumN; n++){
-			double tmp = 2.0/(double)n * exp(-x * (n*pc::pi)*(n*pc::pi));
+			double tmp = 2.0 * exp(-x * (n*pc::pi)*(n*pc::pi)/3.0);
 			if(n%2 == 0) tmp *= -1;
 			sum += tmp;
 	    }
 
-		randomwalk_diffusion_time.set(i,sum);
+		randomwalk_diffusion_time.set(i,1.0-sum);
 	}
 	randomwalk_diffusion_time.normalize(0);
 }
@@ -284,39 +284,27 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	Zone* zone;
 	zone = &(grid->z[z_ind]);
 
-
 	// sample the distance travelled during the random walk
 	double path_length_com = pc::c * Rcom*Rcom / D * randomwalk_diffusion_time.invert(rangen.uniform(),&randomwalk_xaxis,-1);
-	path_length_com = max(path_length_com,Rcom);
+	PRINT_ASSERT(path_length_com,>=,Rcom);
 
-	// deposit fluid quantities (comoving frame)
-	double ratio_deposited = 1.0 - exp(-lh->abs_opac(com) * path_length_com);
-	#pragma omp atomic
-	zone->e_abs += lh->p_e(com) * ratio_deposited;
-	double this_l_comoving = 0;
-	if(species_list[lh->p_s()]->lepton_number != 0){
-		this_l_comoving = lh->p_e(com)/(lh->p_nu(com)*pc::h);
-		double to_add = this_l_comoving * ratio_deposited;
-		if(species_list[lh->p_s()]->lepton_number == 1){
-            #pragma omp atomic
-			zone->nue_abs += to_add;
-		}
-		else if(species_list[lh->p_s()]->lepton_number == -1){
-            #pragma omp atomic
-			zone->anue_abs += to_add;
-		}
-	}
-
-	// randomly place the particle somewhere on the sphere (comoving frame)
-	double Diso[3];
+	//=================================//
+	// pick a random direction to move //
+	//=================================//
+	double Diso[3], xnew[4];
 	grid->isotropic_direction(Diso,3,&rangen);
 	double displacement4[4] = {Rcom*Diso[0], Rcom*Diso[1], Rcom*Diso[2], path_length_com};
 	double d3com[3] = {displacement4[0], displacement4[1], displacement4[2]};
 	LorentzHelper::transform_cartesian_4vector_c2l(zone->u, displacement4);
 	double d3lab[3] = {displacement4[0], displacement4[1], displacement4[2]};
+	xnew[0] = lh->p_xup()[0] + d3lab[0];
+	xnew[1] = lh->p_xup()[1] + d3lab[1];
+	xnew[2] = lh->p_xup()[2] + d3lab[2];
+	xnew[3] = lh->p_xup()[3] + lh->distance(lab);
 
-	//------------------------------------------------------------------------
-	// pick a random outward direction, starting distribution pointing along z (comoving frame)
+	//===============================//
+	// pick a random final direction //
+	//===============================//
 	double pD[3];
 	double outward_phi = 2*pc::pi * rangen.uniform();
 	double outward_mu = rangen.uniform();
@@ -349,58 +337,58 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 		pD[1] = sinphi_rotate*pD_old[0] + cosphi_rotate*pD_old[1];
 	}
 	Grid::normalize_Minkowski<3>(pD,3);
-	double kup[4];
-	kup[3] = lh->p_kup(com)[3];
-	kup[0] = kup[3] * pD[0];
-	kup[1] = kup[3] * pD[2];
-	kup[2] = kup[3] * pD[1];
-	lh->set_p_kup<com>(kup,4);
-	//------------------------------------------------------------------------
+	double kup_new[4];
+	kup_new[3] = lh->p_kup(com)[3];
+	kup_new[0] = kup_new[3] * pD[0];
+	kup_new[1] = kup_new[3] * pD[2];
+	kup_new[2] = kup_new[3] * pD[1];
 
-	// calculate radiation energy in the comoving frame
-	const double e_avg = lh->abs_opac(com) > 0 ?
-			lh->p_e(com) / (path_length_com * lh->abs_opac(com)) * (1.0 - exp(-lh->abs_opac(com) * path_length_com)) :
-			lh->p_e(com);
-	Particle fakep;
-	LorentzHelper lhtmp(false);
-	lhtmp.set_v(lh->velocity(3),3);
-	double Dlab[3];
+	//==============================//
+	// setup for radiation tallying //
+	//==============================//
+	LorentzHelper lhtmp = *lh;
+	lhtmp.exponential_decay = true;
+	lhtmp.set_distance<com>(path_length_com);
+	Particle fakeP = lh->particle_copy(com);
 
-	// deposit amount corresponding to direction actually moved
-	fakep = lh->particle_copy(com);
-	fakep.e = e_avg;
-	fakep.kup[3] = lh->p_kup(com)[3];
-	fakep.kup[0] = fakep.kup[3] * Diso[0]; // Diso set above when choosing where to place particle
-	fakep.kup[1] = fakep.kup[3] * Diso[1];
-	fakep.kup[2] = fakep.kup[3] * Diso[2];
-	lhtmp.set_p<com>(&fakep);
-	if(randomwalk_n_isotropic <= 0)
-		lhtmp.set_distance<com>(path_length_com);
-	else
-		lhtmp.set_distance<com>(Rcom);
-	lhtmp.p_D(lab,Dlab,3);
-	zone->distribution[lh->p_s()]->count(Dlab, 3, lhtmp.p_nu(com), lhtmp.p_e(lab) * lhtmp.distance(lab));
+	//===============================//
+	// DEPOSIT DIRECTIONAL COMPONENT //
+	//===============================//
 
-	// deposit isotropic component
-	for(int ip=0; ip<randomwalk_n_isotropic; ip++){
-		double Diso_tmp[3];
-		grid->isotropic_direction(Diso_tmp,3,&rangen);
-		fakep = lh->particle_copy(com);
-		fakep.e = e_avg / (double)(randomwalk_n_isotropic);
-		fakep.kup[3] = lh->p_kup(com)[3];
-		fakep.kup[0] = fakep.kup[3] * Diso_tmp[0];
-		fakep.kup[1] = fakep.kup[3] * Diso_tmp[1];
-		fakep.kup[2] = fakep.kup[3] * Diso_tmp[2];
-		lhtmp.set_p<com>(&fakep);
-		lhtmp.set_distance<com>(path_length_com - Rcom);
-		lhtmp.p_D(lab,Dlab,3);
-		zone->distribution[lh->p_s()]->count(Dlab, 3, lhtmp.p_nu(com), lhtmp.p_e(lab) * lhtmp.distance(lab));
+	fakeP.e = lh->p_e(com);
+	if(randomwalk_n_isotropic >= 0)
+		fakeP.e *= (path_length_com - Rcom) / path_length_com;
+	fakeP.kup[0] = fakeP.kup[3] * Diso[0]; // Diso set above when choosing where to place particle
+	fakeP.kup[1] = fakeP.kup[3] * Diso[1];
+	fakeP.kup[2] = fakeP.kup[3] * Diso[2];
+	lhtmp.set_p<com>(&fakeP);
+	tally_radiation(&lhtmp,z_ind);
+
+	//=============================//
+	// DEPOSIT ISOTROPIC COMPONENT //
+	//=============================//
+
+	if(randomwalk_n_isotropic > 0){
+		fakeP.e = lh->p_e(com) * Rcom/path_length_com / (double)randomwalk_n_isotropic;
+		for(int ip=0; ip<randomwalk_n_isotropic; ip++){
+			// select a random direction
+			double Diso_tmp[3];
+			grid->isotropic_direction(Diso_tmp,3,&rangen);
+			fakeP.kup[0] = fakeP.kup[3] * Diso_tmp[0];
+			fakeP.kup[1] = fakeP.kup[3] * Diso_tmp[1];
+			fakeP.kup[2] = fakeP.kup[3] * Diso_tmp[2];
+
+			// tally the contribution
+			lhtmp.set_p<com>(&fakeP);
+			tally_radiation(&lhtmp,z_ind);
+
+		}
 	}
 
-	// move the particle to the edge of the sphere
-	double xnew[4];
-	for(int i=0; i<3; i++) xnew[i] = lh->p_xup()[i] + d3lab[i];
-	xnew[3] = lh->p_xup()[3] + lh->distance(lab);
+	//=============================================//
+	// move the particle to the edge of the sphere //
+	//=============================================//
 	lh->set_p_xup(xnew,4);
-	if(ratio_deposited > 0) lh->scale_p_e( 1.0 - ratio_deposited );
+	lh->set_p_kup<com>(kup_new,4);
+	lh->scale_p_e( exp(-lh->abs_opac(com) * path_length_com) );
 }

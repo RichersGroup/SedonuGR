@@ -774,6 +774,7 @@ void Transport::reduce_radiation()
 	for(unsigned i=0; i<species_list.size(); i++) species_list[i]->spectrum.MPI_average();
 
 	// reduce the global radiation scalars
+	if(verbose && rank0) cout << "#   global scalars" << endl;
 	double sendsingle = 0;
 
 	sendsingle = particle_total_energy;
@@ -792,8 +793,6 @@ void Transport::reduce_radiation()
 	MPI_Allreduce(&sendsingle,&particle_escape_energy,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
 	particle_escape_energy /= (double)MPI_nprocs;
 
-	// reduce the global radiation counters
-	if(verbose && rank0) cout << "#   global scalars" << endl;
 	vector<double> send(species_list.size(),0);
 	vector<double> receive(species_list.size(),0);
 
