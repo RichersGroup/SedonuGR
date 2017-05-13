@@ -70,7 +70,7 @@ void Neutrino_Nagakura::set_eas(int zone_index)
 	stringstream filename;
 	if(sim->grid->grid_type == "Grid1DSphere"){
 		filename.str("");
-	    filename << opacity_dir << "/opac_r" << zone_index << ".dat";
+	    filename << opacity_dir << "/opac_r" << zone_index << "_theta0.dat";
 	}
 	else if(sim->grid->grid_type == "Grid2DSphere"){
 		int dir_ind[2];
