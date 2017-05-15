@@ -82,7 +82,7 @@ public:
 	std::vector<Zone> z;
 
 	// set everything up
-	void init(Lua* lua);
+	virtual void init(Lua* lua);
 
 	// write out zone information
 	void write_zones(const int iw) const;
