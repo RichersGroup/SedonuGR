@@ -29,6 +29,7 @@
 #include <mpi.h>
 #include <omp.h>
 #include "ThreadRNG.h"
+#include "global_options.h"
 
 //-----------------------------------------------------------------
 // initialize the RNG system
@@ -42,23 +43,22 @@ void ThreadRNG::init(){
 	const gsl_rng_type* TypeR = gsl_rng_default;
 	gsl_rng_env_setup();
 
-    #pragma omp parallel default(none) shared(my_mpiID,TypeR,gsl_rng_default_seed)
-	{
-        #ifdef _OPENMP
-		const int nthreads = omp_get_num_threads();
-		const int my_ompID = omp_get_thread_num();
-		#else
-		const int nthreads = 1;
-		const int my_ompID = 0;
-		#endif
 
-		// assign a unique RNG to each thread
-        #pragma omp single
-		generators.resize(nthreads);
-		for(int i=0; i<nthreads; i++){
-			gsl_rng_default_seed = (unsigned int)time(NULL) + my_mpiID*nthreads + my_ompID;
-			generators[i] = gsl_rng_alloc (TypeR);
-		}
+	int nthreads=-1;
+	#pragma omp parallel
+	{
+		#ifdef _OPENMP
+		nthreads = omp_get_num_threads();
+		#else
+		nthreads = 1;
+		#endif
+	}
+
+	// assign a unique RNG to each thread
+	generators.resize(nthreads);
+	for(int i=0; i<nthreads; i++){
+		gsl_rng_default_seed = (unsigned int)time(NULL) + my_mpiID*nthreads + i;
+		generators[i] = gsl_rng_alloc (TypeR)
 	}
 }
 
