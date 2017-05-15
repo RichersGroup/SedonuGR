@@ -36,7 +36,7 @@
 class Grid1DSphere: public GridNewtonian
 {
 
-private:
+protected:
 	// store location of the outer edge of the zone.
 	LocateArray r_out;
 	int reflect_outer;
