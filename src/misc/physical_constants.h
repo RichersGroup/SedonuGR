@@ -30,7 +30,7 @@
 
 namespace physical_constants
 {
-const double pi    = 3.14159;         // just pi
+const double pi    = 3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798;         // just pi
 const double c     = 2.99792458e10;   // speed of light (cm/s)
 const double inv_c = 1./c;
 const double h     = 6.6260755e-27;   // plancks constant (ergs s)
