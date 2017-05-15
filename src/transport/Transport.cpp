@@ -40,9 +40,11 @@
 #include "Grid2DSphere.h"
 #include "Grid2DCylinder.h"
 #include "Grid3DCart.h"
+#include "GridGR1D.h"
 #include "Species.h"
 #include "Neutrino.h"
 #include "Neutrino_NuLib.h"
+#include "Neutrino_GR1D.h"
 #include "Neutrino_Nagakura.h"
 #include "Neutrino_grey.h"
 #include "nulib_interface.h"
@@ -190,6 +192,7 @@ void Transport::init(Lua* lua)
 	else if(grid_type == "Grid2DCylinder"     ) grid = new Grid2DCylinder;
 	else if(grid_type == "Grid3DCart"         ) grid = new Grid3DCart;
 	else if(grid_type == "Grid1DSchwarzschild") grid = new Grid1DSchwarzschild;
+	else if(grid_type == "GridGR1D"           ) cout << "#   Using GridGR1D" << endl; // already set up in GR1Dinterface.cpp
 	else{
 		if(rank0) std::cout << "# ERROR: the requested grid type is not implemented." << std::endl;
 		exit(3);}
@@ -248,6 +251,10 @@ void Transport::init(Lua* lua)
 		if(rank0) cout << "#   Using Nagakura neutrino opacities, assumed to match the grid" << endl;
 		num_nut_species = 3;
 	}
+	else if(neutrino_type=="GR1D"){
+		if(rank0) cout << "#   Using GR1D neutrino opacities, assumed to match the grid" << endl;
+		num_nut_species = 3;
+	}
 	else{
 		cout << "ERROR: invalid neutrino type" << endl;
 		assert(false);
@@ -260,6 +267,7 @@ void Transport::init(Lua* lua)
 		if     (neutrino_type == "NuLib")    neutrinos_tmp = new Neutrino_NuLib;
 		else if(neutrino_type == "grey" )    neutrinos_tmp = new Neutrino_grey;
 		else if(neutrino_type == "Nagakura") neutrinos_tmp = new Neutrino_Nagakura;
+		else if(neutrino_type == "GR1D")     neutrinos_tmp = new Neutrino_GR1D;
 		neutrinos_tmp->ID = i;
 		neutrinos_tmp->num_species = num_nut_species;
 		neutrinos_tmp->init(lua, this);
