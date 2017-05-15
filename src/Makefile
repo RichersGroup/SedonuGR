@@ -27,9 +27,12 @@ OTHER_OBJECTS = $(OTHER_SOURCES:./%.cpp=$(OBJDIR)/%.o)
 .PHONY: all clean
 
 # link the executables
-all: $(EXECUTABLES)
+all: $(EXECUTABLES) $(EXE_DIR)/sedonu.a
 $(EXE_DIR)/%: $(OBJDIR)/$(EXE_SRC_DIR)/%.o $(OTHER_OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(ALL_LIBS)
+
+$(EXE_DIR)/sedonu.a: $(OTHER_OBJECTS)
+	ar rcs $@ $^
 
 # compile all the required objects and their dependencies
 # creating temporary file so no corrupted dependencies on failed make
