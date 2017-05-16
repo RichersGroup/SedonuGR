@@ -202,7 +202,7 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	Grid::normalize_Minkowski<3>(D_newbasis,3);
 
 	// tally in contribution to zone's distribution function (lab frame)
-	if(exponential_decay && lh->abs_opac(lab)>0) to_add = lh->p_e(lab) / lh->abs_opac(lab) * decay_factor;
+	if(lh->exponential_decay && lh->abs_opac(lab)>0) to_add = lh->p_e(lab) / lh->abs_opac(lab) * decay_factor;
 	else to_add = lh->p_e(lab) * lh->distance(lab);
 	PRINT_ASSERT(to_add,<,INFINITY);
 
@@ -213,7 +213,7 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	zone->Ndens_com[lh->p_s()] += to_add / lh->p_nu(com);
 	
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
-	if(exponential_decay) to_add = lh->p_e(com) * decay_factor;
+	if(lh->exponential_decay) to_add = lh->p_e(com) * decay_factor;
 	else to_add = lh->p_e(com) * lh->distance(com) * lh->abs_opac(com);
 	PRINT_ASSERT(to_add,>=,0);
 
