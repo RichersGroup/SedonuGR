@@ -357,7 +357,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 
 	fakeP.e = lh->p_e(com);
 	if(randomwalk_n_isotropic >= 0)
-		fakeP.e *= (path_length_com - Rcom) / path_length_com;
+		fakeP.e *= Rcom / path_length_com;
 	fakeP.kup[0] = fakeP.kup[3] * Diso[0]; // Diso set above when choosing where to place particle
 	fakeP.kup[1] = fakeP.kup[3] * Diso[1];
 	fakeP.kup[2] = fakeP.kup[3] * Diso[2];
@@ -369,7 +369,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	//=============================//
 
 	if(randomwalk_n_isotropic > 0){
-		fakeP.e = lh->p_e(com) * Rcom/path_length_com / (double)randomwalk_n_isotropic;
+		fakeP.e = lh->p_e(com) * (path_length_com - Rcom)/path_length_com / (double)randomwalk_n_isotropic;
 		for(int ip=0; ip<randomwalk_n_isotropic; ip++){
 			// select a random direction
 			double Diso_tmp[3];
