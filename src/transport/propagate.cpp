@@ -41,15 +41,11 @@ void Transport::propagate_particles()
 	//--- MOVE THE PARTICLES AROUND ---
 	// particle list is changing size due to splitting, so must go through repeatedly
 	unsigned start=0, end=0;
-	#pragma omp parallel
 	do{
-		#pragma omp single
-		{
-			start = end;
-			end = particles.size();
-		}
+	  start = end;
+	  end = particles.size();
 
-		#pragma omp for schedule(dynamic)
+		#pragma omp parallel for schedule(dynamic)
 		for(unsigned i=start; i<end; i++){
 			Particle* p = &particles[i];
 			#pragma omp atomic
