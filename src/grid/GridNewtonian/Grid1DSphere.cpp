@@ -89,7 +89,8 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 	r_out.init(bintops,minval);
 
 	// write grid properties
-	cout << "#   nr=" << r_out.size() << "\trmin=" << r_out.min << "\trmax=" << r_out[r_out.size()-1] << endl;
+	if(rank0)
+	  cout << "#   nr=" << r_out.size() << "\trmin=" << r_out.min << "\trmax=" << r_out[r_out.size()-1] << endl;
 
 	// read the fluid properties
 	z.resize(r_out.size());
