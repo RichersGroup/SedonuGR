@@ -853,8 +853,8 @@ void Transport::reduce_radiation()
 
 		// reduce distribution
 		for(unsigned s=0; s<species_list.size(); s++){
-		  for(int i=my_begin; i<my_end; i++)
-		    grid->z[i].distribution[s]->MPI_average();
+		  //for(int i=my_begin; i<my_end; i++)
+		  grid->z[i].distribution[s]->MPI_average();
 		  
 		  // reduce Edens_com
 		  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].Edens_com[s];
