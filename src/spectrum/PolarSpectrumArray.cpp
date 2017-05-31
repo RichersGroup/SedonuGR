@@ -330,20 +330,27 @@ void  PolarSpectrumArray::rescale(double r)
 // MPI average the spectrum contents
 //--------------------------------------------------------------
 // only process 0 gets the reduced spectrum to print
-void PolarSpectrumArray::MPI_average()
+void PolarSpectrumArray::MPI_average(const int proc)
 {
+	int myID, mpi_procs;
+	MPI_Comm_size( MPI_COMM_WORLD, &mpi_procs);
+	MPI_Comm_rank( MPI_COMM_WORLD, &myID);
+	MPI_Request request;
 	const unsigned n_elements = nu_grid.size()*mu_grid.size()*phi_grid.size();
-
+	const int tag = 0;
+	
 	// average the flux (receive goes out of scope after section)
 	vector<double> receive;
 	receive.resize(n_elements);
-	MPI_Allreduce(&flux.front(), &receive.front(), n_elements, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Reduce(&flux.front(), &receive.front(), n_elements, MPI_DOUBLE, MPI_SUM, proc, MPI_COMM_WORLD);
+	if(proc>0){
+	  if(myID==0) MPI_Irecv(&receive.front(), n_elements, MPI_DOUBLE, proc, tag, MPI_COMM_WORLD, &request);
+	  if(myID==proc) MPI_Isend(&receive.front(), n_elements, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD, &request);
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
 	for(unsigned i=0; i<flux.size(); i++) flux[i] = receive[i];//flux.swap(receive);
 
 	// only have the receiving ID do the division
-	int myID, mpi_procs;
-	MPI_Comm_size( MPI_COMM_WORLD, &mpi_procs );
-	MPI_Comm_rank( MPI_COMM_WORLD, &myID      );
 	rescale(1./(double)mpi_procs);
 }
 

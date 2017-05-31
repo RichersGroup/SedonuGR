@@ -42,7 +42,7 @@ public:
 	virtual ~SpectrumArray() {}
 
 	// MPI functions
-	virtual void MPI_average() = 0;
+	virtual void MPI_average(const int proc) = 0;
 
 	// Count a packets
 	virtual void count(const double D[3], const int Dsize, const double nu, const double E) = 0;

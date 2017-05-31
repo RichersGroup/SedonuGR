@@ -55,7 +55,7 @@ public:
 	void init(const std::vector<double> nu_grid, const int n_mu, const int n_phi);
 
 	// MPI functions
-	void MPI_average();
+	void MPI_average(const int proc);
 
 	// Count a packets
 	void count(const double D[3], const int Dsize, const double nu, const double E);

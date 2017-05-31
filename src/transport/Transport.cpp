@@ -772,133 +772,145 @@ int Transport::sample_zone_species(const int zone_index, double *Ep) const
 // from all processors using MPI reduce
 // after this, radiation quantities on all procs match
 //------------------------------------------------------------
+void hierarchical_reduce(const int MPI_myID, const int proc, double* send, double* receive, const int size){
+  const int tag=0;
+  MPI_Request request;
+  MPI_Reduce(send, receive, size, MPI_DOUBLE, MPI_SUM, proc, MPI_COMM_WORLD);
+  if(proc>0){
+    if(MPI_myID==0) MPI_Irecv(receive, size, MPI_DOUBLE, proc, tag, MPI_COMM_WORLD, &request);
+    if(MPI_myID==proc) MPI_Isend(receive, size, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD, &request);
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
+}
+
 void Transport::reduce_radiation()
 {
 	if(verbose && rank0) cout << "# Reducing Radiation" << endl;
-	int my_begin, my_end, size;
-
-	// reduce the spectra
-	if(verbose && rank0) cout << "#   spectra" << endl;
-	for(unsigned i=0; i<species_list.size(); i++) species_list[i]->spectrum.MPI_average();
 
 	// reduce the global radiation scalars
 	if(verbose && rank0) cout << "#   global scalars" << endl;
 	double sendsingle = 0;
-
+	const double invNprocs = 1.0 / (double)MPI_nprocs;
+	const int proc=0;
+	
 	sendsingle = particle_total_energy;
-	MPI_Allreduce(&sendsingle,&particle_total_energy,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-	particle_total_energy /= (double)MPI_nprocs;
-
+	hierarchical_reduce(MPI_myID, proc, &sendsingle, &particle_total_energy, 1);
+	particle_total_energy *= invNprocs;
+	
 	sendsingle = particle_rouletted_energy;
-	MPI_Allreduce(&sendsingle,&particle_rouletted_energy,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-	particle_rouletted_energy /= (double)MPI_nprocs;
-
+	hierarchical_reduce(MPI_myID, proc, &sendsingle, &particle_rouletted_energy,1);
+	particle_rouletted_energy *= invNprocs;
+	
 	sendsingle = particle_core_abs_energy;
-	MPI_Allreduce(&sendsingle,&particle_core_abs_energy,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-	particle_core_abs_energy /= (double)MPI_nprocs;
-
+	hierarchical_reduce(MPI_myID, proc,&sendsingle,&particle_core_abs_energy,1);
+	particle_core_abs_energy *= invNprocs;
+	
 	sendsingle = particle_escape_energy;
-	MPI_Allreduce(&sendsingle,&particle_escape_energy,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-	particle_escape_energy /= (double)MPI_nprocs;
-
+	hierarchical_reduce(MPI_myID, proc,&sendsingle,&particle_escape_energy,1);
+	particle_escape_energy *= invNprocs;
+	
 	vector<double> send(species_list.size(),0);
 	vector<double> receive(species_list.size(),0);
-
+	
 	for(unsigned i=0; i<species_list.size(); i++) send[i] = L_net_esc[i];
-	MPI_Allreduce(&send.front(),&receive.front(),L_net_esc.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-	for(unsigned i=0; i<species_list.size(); i++) L_net_esc[i] = receive[i]/(double)MPI_nprocs;
-
+	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),L_net_esc.size());
+	for(unsigned i=0; i<species_list.size(); i++) L_net_esc[i] = receive[i] * invNprocs;
+	
 	for(unsigned i=0; i<species_list.size(); i++) send[i] = L_core_lab[i];
-	MPI_Allreduce(&send.front(),&receive.front(),L_core_lab.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-	for(unsigned i=0; i<species_list.size(); i++) L_core_lab[i] = receive[i]/(double)MPI_nprocs;
-
+	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),L_core_lab.size());
+	for(unsigned i=0; i<species_list.size(); i++) L_core_lab[i] = receive[i] * invNprocs;
+	
 	for(unsigned i=0; i<species_list.size(); i++) send[i] = L_net_lab[i];
-	MPI_Allreduce(&send.front(),&receive.front(),L_net_lab.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-	for(unsigned i=0; i<species_list.size(); i++) L_net_lab[i] = receive[i]/(double)MPI_nprocs;
-
+	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),L_net_lab.size());
+	for(unsigned i=0; i<species_list.size(); i++) L_net_lab[i] = receive[i] * invNprocs;
+	
 	for(unsigned i=0; i<species_list.size(); i++) send[i] = N_net_esc[i];
-	MPI_Allreduce(&send.front(),&receive.front(),N_net_esc.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-	for(unsigned i=0; i<species_list.size(); i++) N_net_esc[i] = receive[i]/(double)MPI_nprocs;
-
+	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),N_net_esc.size());
+	for(unsigned i=0; i<species_list.size(); i++) N_net_esc[i] = receive[i] * invNprocs;
+	
 	for(unsigned i=0; i<species_list.size(); i++) send[i] = N_net_lab[i];
-	MPI_Allreduce(&send.front(),&receive.front(),N_net_lab.size(),MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-	for(unsigned i=0; i<species_list.size(); i++) N_net_lab[i] = receive[i]/(double)MPI_nprocs;
-
-
+	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),N_net_lab.size());
+	for(unsigned i=0; i<species_list.size(); i++) N_net_lab[i] = receive[i] * invNprocs;
+	
+	// reduce the spectra
+	if(verbose && rank0) cout << "#   spectra" << endl;
+	for(unsigned i=0; i<species_list.size(); i++)
+	  species_list[i]->spectrum.MPI_average(proc);
+	  
 	// reduce the numbers of particles active/escaped
 	if(verbose && rank0) cout << "#   particle numbers" << endl;
 	vector<long> sendint(species_list.size(),0);
 	vector<long> receiveint(species_list.size(),0);
-
+	
 	for(unsigned i=0; i<species_list.size(); i++) sendint[i] = n_escape[i];
-	MPI_Allreduce(&sendint.front(), &receiveint.front(), n_escape.size(), MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Reduce(&sendint.front(), &receiveint.front(), n_escape.size(), MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
 	for(unsigned i=0; i<species_list.size(); i++) n_escape[i] = receiveint[i];
-
+	
 	for(unsigned i=0; i<species_list.size(); i++) sendint[i] = n_active[i];
-	MPI_Allreduce(&sendint.front(), &receiveint.front(), n_active.size(), MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Reduce(&sendint.front(), &receiveint.front(), n_active.size(), MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
 	for(unsigned i=0; i<species_list.size(); i++) n_active[i] = receiveint[i];
-
+	
 	//-- EACH PROCESSOR GETS THE REDUCTION INFORMATION IT NEEDS
 	if(verbose && rank0) cout << "#   fluid" << endl;
-	//for(int proc=0; proc<MPI_nprocs; proc++){
+	
+	for(int proc=0; proc<MPI_nprocs; proc++){
 
-		// set the begin and end indices so a process covers range [begin,end)
-		my_begin = 0;
-		my_end = grid->z.size();
+	  int my_begin = ( proc==0 ? 0 : my_zone_end[proc-1] );
+	  int my_end = my_zone_end[proc];
+	  int size = my_end - my_begin;
+ 	  	  
+	  // set the computation size and create the send/receive vectors
+	  send.resize(size);
+	  receive.resize(size);
+	  
+	  // reduce distribution
+	  for(unsigned s=0; s<species_list.size(); s++){
+	    for(int i=my_begin; i<my_end; i++)
+	      grid->z[i].distribution[s]->MPI_average(proc);
 
-		// set the computation size and create the send/receive vectors
-		size = my_end - my_begin;
-		send.resize(size);
-		receive.resize(size);
+	    // reduce Edens_com
+	    for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].Edens_com[s];
+	    hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
+	    for(int i=my_begin; i<my_end; i++) grid->z[i].Edens_com[s] = receive[i-my_begin] * invNprocs;
 
-		// reduce distribution
-		for(unsigned s=0; s<species_list.size(); s++){
-		  //for(int i=my_begin; i<my_end; i++)
-		  grid->z[i].distribution[s]->MPI_average();
-		  
-		  // reduce Edens_com
-		  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].Edens_com[s];
-		  MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-		  for(int i=my_begin; i<my_end; i++) grid->z[i].Edens_com[s] = receive[i-my_begin] / (double)MPI_nprocs;
+	    // reduce Ndens_com
+	    for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].Ndens_com[s];
+	    hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
+	    for(int i=my_begin; i<my_end; i++) grid->z[i].Ndens_com[s] = receive[i-my_begin] * invNprocs;
+	  }
+	  
+	  // reduce e_abs
+	  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_abs;
+	  hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
+	  for(int i=my_begin; i<my_end; i++) grid->z[i].e_abs = receive[i-my_begin] * invNprocs;
+	  
+	  // reduce nue_abs
+	  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].nue_abs;
+	  hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
+	  for(int i=my_begin; i<my_end; i++) grid->z[i].nue_abs = receive[i-my_begin] * invNprocs;
+	  
+	  // reduce anue_abs
+	  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].anue_abs;
+	  hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
+	  for(int i=my_begin; i<my_end; i++) grid->z[i].anue_abs = receive[i-my_begin] * invNprocs;
+	  
+	  // reduce e_emit
+	  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_emit;
+	  hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
+	  for(int i=my_begin; i<my_end; i++) grid->z[i].e_emit = receive[i-my_begin] * invNprocs;
 
-		  // reduce Ndens_com
-		  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].Ndens_com[s];
-		  MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-		  for(int i=my_begin; i<my_end; i++) grid->z[i].Ndens_com[s] = receive[i-my_begin] / (double)MPI_nprocs;
-		}
+	  // reduce l_emit
+	  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].l_emit;
+	  hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
+	  for(int i=my_begin; i<my_end; i++) grid->z[i].l_emit = receive[i-my_begin] * invNprocs;
 
-		// reduce e_abs
-		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_abs;
-		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-		for(int i=my_begin; i<my_end; i++) grid->z[i].e_abs = receive[i-my_begin] / (double)MPI_nprocs;
-
-		// reduce nue_abs
-		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].nue_abs;
-		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-		for(int i=my_begin; i<my_end; i++) grid->z[i].nue_abs = receive[i-my_begin] / (double)MPI_nprocs;
-
-		// reduce anue_abs
-		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].anue_abs;
-		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-		for(int i=my_begin; i<my_end; i++) grid->z[i].anue_abs = receive[i-my_begin] / (double)MPI_nprocs;
-
-		// reduce e_emit
-		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_emit;
-		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-		for(int i=my_begin; i<my_end; i++) grid->z[i].e_emit = receive[i-my_begin] / (double)MPI_nprocs;
-
-		// reduce l_emit
-		for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].l_emit;
-		MPI_Allreduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-		for(int i=my_begin; i<my_end; i++) grid->z[i].l_emit = receive[i-my_begin] / (double)MPI_nprocs;
-
-		// format for single reduce
-		//my_begin = ( proc==0 ? 0 : my_zone_end[proc-1] );
-		//my_end = my_zone_end[proc];
-		//for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].l_emit;
-		//MPI_Reduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, proc, MPI_COMM_WORLD);
-		//for(int i=my_begin; i<my_end; i++) grid->z[i].l_emit = receive[i-my_begin] / (double)MPI_nprocs;
-	//}
+	  // format for single reduce
+	  //my_begin = ( proc==0 ? 0 : my_zone_end[proc-1] );
+	  //my_end = my_zone_end[proc];
+	  //for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].l_emit;
+	  //MPI_Reduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, proc, MPI_COMM_WORLD);
+	  //for(int i=my_begin; i<my_end; i++) grid->z[i].l_emit = receive[i-my_begin] / (double)MPI_nprocs;
+	}
 }
 
 // after this, only the processor's chunk of radiation quantities
