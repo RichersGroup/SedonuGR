@@ -241,7 +241,6 @@ void MomentSpectrumArray::MPI_average(const int proc) {
 	int myID, mpi_procs;
 	MPI_Comm_size( MPI_COMM_WORLD, &mpi_procs);
 	MPI_Comm_rank( MPI_COMM_WORLD, &myID);
-	MPI_Request request;
 	vector<double> receive;
 	const int tag=0;
 
@@ -251,10 +250,10 @@ void MomentSpectrumArray::MPI_average(const int proc) {
 			MPI_Reduce(&moments[group][rank].front(), &receive.front(),
 				   n_elements(rank), MPI_DOUBLE, MPI_SUM, proc, MPI_COMM_WORLD);
 			if(proc>0){
-			  if(myID==0) MPI_Irecv(&receive.front(), n_elements(rank), MPI_DOUBLE, proc, tag, MPI_COMM_WORLD, &request);
-			  if(myID==proc) MPI_Isend(&receive.front(), n_elements(rank), MPI_DOUBLE, 0, tag, MPI_COMM_WORLD, &request);
+				cout << "Sending " << n_elements(rank) << endl;
+				if(myID==0) MPI_Recv(&receive.front(), n_elements(rank), MPI_DOUBLE, proc, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				if(myID==proc) MPI_Send(&receive.front(), n_elements(rank), MPI_DOUBLE, 0, tag, MPI_COMM_WORLD);
 			}
-			MPI_Barrier(MPI_COMM_WORLD);
 			for (unsigned i = 0; i < n_elements(rank); i++)
 				moments[group][rank][i] = receive[i]; //flux.swap(receive);
 		}

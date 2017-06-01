@@ -773,14 +773,12 @@ int Transport::sample_zone_species(const int zone_index, double *Ep) const
 // after this, radiation quantities on all procs match
 //------------------------------------------------------------
 void hierarchical_reduce(const int MPI_myID, const int proc, double* send, double* receive, const int size){
-  const int tag=0;
-  MPI_Request request;
-  MPI_Reduce(send, receive, size, MPI_DOUBLE, MPI_SUM, proc, MPI_COMM_WORLD);
-  if(proc>0){
-    if(MPI_myID==0) MPI_Irecv(receive, size, MPI_DOUBLE, proc, tag, MPI_COMM_WORLD, &request);
-    if(MPI_myID==proc) MPI_Isend(receive, size, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD, &request);
-  }
-  MPI_Barrier(MPI_COMM_WORLD);
+	const int tag=0;
+	MPI_Reduce(send, receive, size, MPI_DOUBLE, MPI_SUM, proc, MPI_COMM_WORLD);
+	if(proc>0){
+		if(MPI_myID==0) MPI_Recv(receive, size, MPI_DOUBLE, proc, tag, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+		if(MPI_myID==proc) MPI_Send(receive, size, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD);
+	}
 }
 
 void Transport::reduce_radiation()
