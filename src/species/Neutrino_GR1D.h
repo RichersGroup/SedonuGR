@@ -37,11 +37,13 @@ protected:
 
 public:
 
+	int ghosts1;
+	int n_GR1D_zones;
 	Neutrino_GR1D();
 
 	void myInit(Lua* lua);
 	void set_eas(int zone_index);
-	void set_eas_external(const double* easarray, const int nzones, const int ngroups, const int nspecies);
+	void set_eas_external(const double* easarray);
 };
 
 #endif

@@ -38,6 +38,8 @@ namespace pc = physical_constants;
 
 // constructor
 Neutrino_GR1D::Neutrino_GR1D(){
+	ghosts1 = -1;
+	n_GR1D_zones = -1;
 }
 
 //----------------------------------------------------------------
@@ -66,7 +68,7 @@ void Neutrino_GR1D::myInit(Lua* lua)
 	dataset.close();
 	file.close();
 	nu_grid.min = 0;
-	for(int i=0; i<nu_grid.size(); i++) nu_grid[i] /= pc::h_MeV;
+	for(int i=0; i<nu_grid.size(); i++)	nu_grid[i] /= pc::h_MeV;
 
 	// let the base class do the rest
 	Neutrino::myInit(lua);
@@ -81,22 +83,29 @@ void Neutrino_GR1D::set_eas(int zone_index)
 }
 
 
-void Neutrino_GR1D::set_eas_external(const double* easarray, const int nzones, const int ngroups, const int nspecies){
-	PRINT_ASSERT(nzones,==,emis.size());
-	PRINT_ASSERT(ngroups,==,emis[0].size());
+void Neutrino_GR1D::set_eas_external(const double* easarray){
+	PRINT_ASSERT(ghosts1,>=,0);
+	PRINT_ASSERT(n_GR1D_zones,>=,emis[0].size());
+	const int ngroups=emis[0].size();
+	const int nspecies = sim->species_list.size();
 
-	for(int z_ind=0; z_ind<nzones; z_ind++){
+	for(int z_ind=0; z_ind<emis.size(); z_ind++){
 		for(int inu=0; inu<ngroups; inu++){
 			// indexed as eas(zone,species,group,e/a/s). The leftmost one varies fastest.
-			int eind = z_ind + ID*nzones + inu*nspecies*nzones + 0*ngroups*nspecies*nzones;
-			int aind = z_ind + ID*nzones + inu*nspecies*nzones + 1*ngroups*nspecies*nzones;
-			int sind = z_ind + ID*nzones + inu*nspecies*nzones + 2*ngroups*nspecies*nzones;
+			int eind = (z_ind+ghosts1) + ID*n_GR1D_zones + inu*nspecies*n_GR1D_zones + 0*ngroups*nspecies*n_GR1D_zones;
+			int aind = (z_ind+ghosts1) + ID*n_GR1D_zones + inu*nspecies*n_GR1D_zones + 1*ngroups*nspecies*n_GR1D_zones;
+			int sind = (z_ind+ghosts1) + ID*n_GR1D_zones + inu*nspecies*n_GR1D_zones + 2*ngroups*nspecies*n_GR1D_zones;
+
+			PRINT_ASSERT(easarray[eind],>=,0);
+			PRINT_ASSERT(easarray[aind],>=,0);
+			PRINT_ASSERT(easarray[sind],>=,0);
 
 			emis[z_ind].set_value(inu,easarray[eind]);
 			abs_opac[z_ind][inu] = easarray[aind];
 			scat_opac[z_ind][inu] = easarray[sind];
 			biased_emis[z_ind].set_value(inu,emis[z_ind].get_value(inu));
 		}
+		emis[z_ind].normalize(0);
 	}
 }
 

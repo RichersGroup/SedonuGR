@@ -36,6 +36,7 @@ namespace pc = physical_constants;
 
 GridGR1D::GridGR1D(){
 	grid_type = "GridGR1D";
+	ghosts1=-1;
 }
 
 //------------------------------------------------------------
@@ -57,15 +58,18 @@ void GridGR1D::symmetry_boundaries(LorentzHelper *lh) const{
 	// NONE - just flow out of outer boundary
 }
 
-void GridGR1D::set_fluid(const double* rho, const double* T, const double* Ye, const double* vr, const double* vphi, const int n_zones){
-	PRINT_ASSERT(n_zones,==,z.size());
-	for(int z_ind=0; z_ind<n_zones; z_ind++)
+void GridGR1D::set_fluid(const double* rho, const double* T, const double* Ye, const double* vr){
+	cout << "rho: " << rho[0] << endl;
+	cout << "T: " << T[0] << endl;
+	cout << "Ye: " << Ye[0] << endl;
+	cout << "vr: " << vr[0] << endl;
+	for(int z_ind=0; z_ind<z.size(); z_ind++)
 	{
-		z[z_ind].rho = rho[z_ind];
-		z[z_ind].T = T[z_ind];
-		z[z_ind].Ye = Ye[z_ind];
-		z[z_ind].u[0] = vr[z_ind];
-		z[z_ind].u[1] = vphi[z_ind];
+		z[z_ind].rho  = rho[z_ind+ghosts1];
+		z[z_ind].T    =   T[z_ind+ghosts1];
+		z[z_ind].Ye   =  Ye[z_ind+ghosts1];
+		z[z_ind].u[0] =  vr[z_ind+ghosts1];
+		z[z_ind].u[1] = 0;//vphi[z_ind];
 		z[z_ind].u[2] = 0;
 
 		z[z_ind].H_vis = 0;
@@ -78,16 +82,17 @@ void GridGR1D::set_fluid(const double* rho, const double* T, const double* Ye, c
 	}
 }
 
-void GridGR1D::initialize_grid(const double* rarray, const int n_zones){
+void GridGR1D::initialize_grid(const double* rarray, const int n_zones, const int nghost){
+	ghosts1 = nghost;
 	z.resize(n_zones);
 	r_out.resize(n_zones);
 	r_out.min = 0;
 	for(int z_ind=0; z_ind<n_zones; z_ind++){
-		r_out[z_ind] = rarray[z_ind];
+		r_out[z_ind] = rarray[z_ind + ghosts1+1];
 		if(z_ind==0) PRINT_ASSERT(r_out[z_ind],>,0);
 		else PRINT_ASSERT(r_out[z_ind],>,r_out[z_ind-1]);
 	}
 
 	cout << "#   Sedonu grid has "<< z.size() << " zones." << endl;
-	cout << "#   Sedonu outer boundary is at "<< r_out[n_zones-1] << " km" << endl;
+	cout << "#   Sedonu outer boundary is at "<< r_out[n_zones-1] << " cm" << endl;
 }

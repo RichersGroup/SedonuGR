@@ -39,7 +39,7 @@ class GridGR1D: public Grid1DSphere
 private:
 	// store location of the outer edge of the zone.
 	//LocateArray r_out;
-
+	int ghosts1;
 
 public:
 
@@ -53,8 +53,8 @@ public:
 	void init(Lua* lua);
 
 	// GR1D-specific functions
-	void initialize_grid(const double* x, const int length);
-	void set_fluid(const double* rho, const double* T, const double* Ye, const double* vr, const double* vphi, const int length);
+	void initialize_grid(const double* x, const int length, const int nghost);
+	void set_fluid(const double* rho, const double* T, const double* Ye, const double* vr);
 };
 
 

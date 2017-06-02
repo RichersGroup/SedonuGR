@@ -1,14 +1,13 @@
 #include "Transport.h"
 #include "GridGR1D.h"
+#include "Neutrino_GR1D.h"
 #include "mpi.h"
 #include <iostream>
 
 using namespace std;
 
 extern "C"
-void initialize_gr1d_sedonu_(const double *x1i, const int* M1_imaxradii, const int* ghosts1,
-		const double* nulibtable_ebottom, const double* nulibtable_etop, const int* nulibtable_number_groups,
-		const int* nulibtable_number_species, Transport* sim){
+void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const int* M1_imaxradii, const int* ghosts1, Transport** sim){
 
 	// initialize MPI parallelism
 	int my_rank,n_procs;
@@ -19,42 +18,44 @@ void initialize_gr1d_sedonu_(const double *x1i, const int* M1_imaxradii, const i
 
 
 	int c_M1_imaxradii = *M1_imaxradii-1;
-	cout << "M1_imaxradii = " << c_M1_imaxradii << endl;
-	cout << "ghosts1 = " << *ghosts1 << endl;
-	cout << "nulibtable_number_groups = " << *nulibtable_number_groups << endl;
-	cout << "number_species_to_evolve = " << *nulibtable_number_species << endl;
-	cout << "radius range: " << x1i[*ghosts1] << " - " << x1i[c_M1_imaxradii+1] << endl;
-	cout << "next lowest radius: " << x1i[c_M1_imaxradii] << endl;
+	cout << "#   M1_imaxradii = " << c_M1_imaxradii << endl;
+	cout << "#   ghosts1 = " << *ghosts1 << endl;
+	cout << "#   n_GR1D_zones = " << *n_GR1D_zones << endl;
+	cout << "#   radius range: " << x1i[*ghosts1] << " - " << x1i[c_M1_imaxradii+1] << endl;
+	cout << "#   next lowest radius: " << x1i[c_M1_imaxradii] << endl;
 
 	// declare the transport class and save it to the fortran module
-	sim = new Transport;
+	*sim = new Transport;
 
 	// open up the lua parameter file
-	cout << "=== WORKING ON LUA ===" << endl;
 	Lua lua("param.lua");
 
 	// set up the grid
-	cout << "=== WORKING ON GRID ===" << endl;
 	const int nzones = *M1_imaxradii - *ghosts1;
 	GridGR1D* grid = new GridGR1D;
-	grid->initialize_grid(&(x1i[*ghosts1+1]),nzones);
-	sim->grid = grid;
+	grid->initialize_grid(x1i,nzones,*ghosts1);
+	(*sim)->grid = grid;
 
 	// set up the transport module (includes the grid)
-	cout << "=== WORKING ON TRANSPORT ===" << endl;
-	sim->init(&lua);
-
-	exit(0);
+	(*sim)->init(&lua);
+	for(int s=0; s<(*sim)->species_list.size(); s++){
+		Neutrino_GR1D* tmpSpecies =static_cast<Neutrino_GR1D*>((*sim)->species_list[s]);
+		tmpSpecies->ghosts1 = *ghosts1;
+		tmpSpecies->n_GR1D_zones = *n_GR1D_zones;
+	}
 }
 
 extern "C"
-void calculate_mc_closure_(double* q_M1, double* q_M1_extra, const double* eas, const double* v1, const double* vphi1, const int* iter, Transport* sim){
+void calculate_mc_closure_(double* q_M1, double* q_M1_extra, const double* eas,
+		const double* rho, const double* T, const double* Ye, const double* v1,
+		const int* iter, Transport** sim){
 
 	// set velocities and opacities
+	static_cast<GridGR1D*>((*sim)->grid)->set_fluid(rho, T, Ye, v1);
+
+	for(int s=0; s<(*sim)->species_list.size(); s++)
+		static_cast<Neutrino_GR1D*>((*sim)->species_list[s])->set_eas_external(eas);
 
 	// do MC calculation
-	sim->step();
-
-	std::cout << "ASDFASDFASDFASDFASDFASDF" << std::endl;
-	exit(0);
+	(*sim)->step();
 }
