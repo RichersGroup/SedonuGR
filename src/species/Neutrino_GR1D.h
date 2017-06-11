@@ -35,6 +35,11 @@ class Neutrino_GR1D: public Neutrino
 
 protected:
 
+	const double nulib_emissivity_gf = 5.59424238e-55/(6.77140812e-6 * 6.77140812e-06 * 6.77140812e-06 * 2.03001708e5);
+	const double nulib_opacity_gf = 1.0/6.77140812e-6;
+	const double nulib_energy_gf = 1.60217733e-6*5.59424238e-55;
+	const double nulib_kernel_gf = 6.77140812e-6*6.77140812e-6*6.77140812e-6/2.03001708e5;
+
 public:
 
 	int ghosts1;

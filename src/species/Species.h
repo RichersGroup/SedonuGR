@@ -42,9 +42,6 @@ class Species
 
 protected:
 
-	// the frequency grid for emissivity/opacity (Hz)
-	LocateArray nu_grid;
-
 	// the zone eas variables
 	std::vector< CDFArray      > emis;
 	std::vector< CDFArray      > biased_emis;
@@ -61,6 +58,9 @@ public:
 
 	Species();
 	virtual ~Species() {}
+
+	// the frequency grid for emissivity/opacity (Hz)
+	LocateArray nu_grid;
 
 	// name
 	std::string name;

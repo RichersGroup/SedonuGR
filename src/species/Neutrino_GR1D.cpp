@@ -64,11 +64,11 @@ void Neutrino_GR1D::myInit(Lua* lua)
 	hsize_t dims[1];
 	dataspace.getSimpleExtentDims(dims);
 	nu_grid.resize(dims[0]);
-	dataset.read(&(nu_grid[0]),H5::PredType::IEEE_F64LE);
+	dataset.read(&(nu_grid.x[0]),H5::PredType::IEEE_F64LE);
 	dataset.close();
 	file.close();
 	nu_grid.min = 0;
-	for(int i=0; i<nu_grid.size(); i++)	nu_grid[i] /= pc::h_MeV;
+	for(int i=0; i<nu_grid.size(); i++)	nu_grid.x[i] /= pc::h_MeV;
 
 	// let the base class do the rest
 	Neutrino::myInit(lua);
@@ -85,7 +85,7 @@ void Neutrino_GR1D::set_eas(int zone_index)
 
 void Neutrino_GR1D::set_eas_external(const double* easarray){
 	PRINT_ASSERT(ghosts1,>=,0);
-	PRINT_ASSERT(n_GR1D_zones,>=,emis[0].size());
+	PRINT_ASSERT(n_GR1D_zones,>=,emis.size());
 	const int ngroups=emis[0].size();
 	const int nspecies = sim->species_list.size();
 
@@ -100,9 +100,9 @@ void Neutrino_GR1D::set_eas_external(const double* easarray){
 			PRINT_ASSERT(easarray[aind],>=,0);
 			PRINT_ASSERT(easarray[sind],>=,0);
 
-			emis[z_ind].set_value(inu,easarray[eind]);
-			abs_opac[z_ind][inu] = easarray[aind];
-			scat_opac[z_ind][inu] = easarray[sind];
+			emis[z_ind].set_value(inu,easarray[eind] / nulib_emissivity_gf);
+			abs_opac[z_ind][inu] = easarray[aind] / nulib_opacity_gf;
+			scat_opac[z_ind][inu] = easarray[sind] / nulib_opacity_gf;
 			biased_emis[z_ind].set_value(inu,emis[z_ind].get_value(inu));
 		}
 		emis[z_ind].normalize(0);

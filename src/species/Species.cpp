@@ -33,6 +33,7 @@
 #include "PolarSpectrumArray.h"
 #include "MomentSpectrumArray.h"
 #include "RadialMomentSpectrumArray.h"
+#include "GR1DSpectrumArray.h"
 #include "Transport.h"
 #include "Grid.h"
 
@@ -228,6 +229,12 @@ void Species::init(Lua* lua, Transport* simulation)
 	    int order = lua->scalar<int>("distribution_moment_order");
 	    tmp_spectrum = new RadialMomentSpectrumArray;
 	    ((RadialMomentSpectrumArray*)tmp_spectrum)->init(nu_grid, order);
+	  }
+
+	  //-- RADIAL MOMENT SPECTRUM --------------------
+	  else if(distribution_type == "GR1D"){
+	    tmp_spectrum = new GR1DSpectrumArray;
+	    ((GR1DSpectrumArray*)tmp_spectrum)->init(nu_grid);
 	  }
 
 	  //-- CATCH ------------------

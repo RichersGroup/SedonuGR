@@ -59,10 +59,6 @@ void GridGR1D::symmetry_boundaries(LorentzHelper *lh) const{
 }
 
 void GridGR1D::set_fluid(const double* rho, const double* T, const double* Ye, const double* vr){
-	cout << "rho: " << rho[0] << endl;
-	cout << "T: " << T[0] << endl;
-	cout << "Ye: " << Ye[0] << endl;
-	cout << "vr: " << vr[0] << endl;
 	for(int z_ind=0; z_ind<z.size(); z_ind++)
 	{
 		z[z_ind].rho  = rho[z_ind+ghosts1];
