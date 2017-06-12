@@ -4,9 +4,13 @@
 #include "Neutrino_GR1D.h"
 #include "mpi.h"
 #include "omp.h"
+#include "global_options.h"
 #include <iostream>
 
 using namespace std;
+
+double smoothing_timescale;
+const double time_gf = 2.03001708e5;
 
 extern "C"
 void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const int* M1_imaxradii, const int* ghosts1, Transport** sim){
@@ -31,6 +35,7 @@ void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const i
 
 	// open up the lua parameter file
 	Lua lua("param.lua");
+	smoothing_timescale = lua.scalar<double>("smoothing_timescale");
 
 	// set up the grid
 	const int nzones = *M1_imaxradii - *ghosts1;
@@ -53,13 +58,16 @@ extern "C"
 void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m,
 		double* q_M1_extra, double* q_M1_extrap, double* q_M1_extram,
 		const double* eas, const double* rho, const double* T, const double* Ye, const double* v1,
-		const double* metricX, const int* iter, Transport** sim){
+		const double* metricX, const int* iter, const double* dt, Transport** sim){
 
 	const int nr_GR1D     = static_cast<Neutrino_GR1D*>((*sim)->species_list[0])->n_GR1D_zones;
 	const int nghost_GR1D = static_cast<Neutrino_GR1D*>((*sim)->species_list[0])->ghosts1;
 	const int nr = (*sim)->grid->z.size();
 	const int ns = (*sim)->species_list.size();
 	const int ne = (*sim)->species_list[0]->nu_grid.size();
+	const double fsmooth = *dt/time_gf / smoothing_timescale;
+	PRINT_ASSERT(fsmooth,<=,1.0);
+	PRINT_ASSERT(fsmooth,>=,0.0);
 
 	// set velocities and opacities
 	static_cast<GridGR1D*>((*sim)->grid)->set_fluid(rho, T, Ye, v1);
@@ -100,10 +108,10 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m,
 				int indexChi_pm = inde + 0*indlast + 0*ne*ns*nr_GR1D*1;
 
 				// load up new arrays
-				double Prr  = tmpSpectrum->moments[tmpSpectrum->index(ie,2)];
-				double Ptt  = tmpSpectrum->moments[tmpSpectrum->index(ie,3)];
-				double Wrrr = tmpSpectrum->moments[tmpSpectrum->index(ie,4)];
-				double Wttr = tmpSpectrum->moments[tmpSpectrum->index(ie,5)];
+				double Prr  = tmpSpectrum->moments[tmpSpectrum->index(ie,2)];//q_M1[indexPrr];//
+				double Ptt  = tmpSpectrum->moments[tmpSpectrum->index(ie,3)];//q_M1_extra[indexPtt];//
+				double Wrrr = tmpSpectrum->moments[tmpSpectrum->index(ie,4)];//q_M1_extra[indexWrrr];//
+				double Wttr = tmpSpectrum->moments[tmpSpectrum->index(ie,5)];//q_M1_extra[indexWttr];//
 
 				// enforce local GR consistency
 				double P_constraint = Prr/X/X + 2.*Ptt;
@@ -166,10 +174,10 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m,
 				}
 
 				// temporal smoothing
-				Prr_E   = 0.1*Prr_E   + 0.9*q_M1[indexPrr];
-				Ptt_E   = 0.1*Ptt_E   + 0.9*q_M1_extra[indexPtt];
-				double Wrrr = 0.1*Wrrr_Fr*q_M1[indexFr] + 0.9*q_M1_extra[indexWrrr];
-				double Wttr = 0.1*Wttr_Fr*q_M1[indexFr] + 0.9*q_M1_extra[indexWttr];
+				Prr_E       = fsmooth*Prr_E                 + (1.-fsmooth)*q_M1[indexPrr];
+				Ptt_E       = fsmooth*Ptt_E                 + (1.-fsmooth)*q_M1_extra[indexPtt];
+				double Wrrr = fsmooth*Wrrr_Fr*q_M1[indexFr] + (1.-fsmooth)*q_M1_extra[indexWrrr];
+				double Wttr = fsmooth*Wttr_Fr*q_M1[indexFr] + (1.-fsmooth)*q_M1_extra[indexWttr];
 
 				// make consistent with GR again
 				double P_constraint = Prr_E/X/X + 2.*Ptt_E;

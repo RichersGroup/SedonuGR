@@ -193,12 +193,12 @@ void GR1DSpectrumArray::MPI_average(const int proc)
 	// average the flux (receive goes out of scope after section)
 	vector<double> receive;
 	receive.resize(n_elements);
-	MPI_Reduce(&moments.front(), &receive.front(), n_elements, MPI_DOUBLE, MPI_SUM, proc, MPI_COMM_WORLD);
-	if(proc>0){
-	  if(myID==0) MPI_Irecv(&receive.front(), n_elements, MPI_DOUBLE, proc, tag, MPI_COMM_WORLD, &request);
-	  if(myID==proc) MPI_Isend(&receive.front(), n_elements, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD, &request);
-	}
-	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Allreduce(&moments.front(), &receive.front(), n_elements, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	//if(proc>0){
+	//  if(myID==0) MPI_Irecv(&receive.front(), n_elements, MPI_DOUBLE, proc, tag, MPI_COMM_WORLD, &request);
+	//  if(myID==proc) MPI_Isend(&receive.front(), n_elements, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD, &request);
+	//}
+	//MPI_Barrier(MPI_COMM_WORLD);
 	for(unsigned i=0; i<moments.size(); i++) moments[i] = receive[i];//flux.swap(receive);
 
 	// only have the receiving ID do the division

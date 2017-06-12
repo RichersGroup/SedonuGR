@@ -116,9 +116,9 @@ void Transport::emit_zones_by_bin(){
 	int n_attempted = 0;
 
 	#pragma omp parallel for reduction(+:n_attempted)
-	for (unsigned z_ind=0; z_ind<grid->z.size(); z_ind++) if(grid->zone_radius(z_ind) >= r_core){
+	for (unsigned z_ind=MPI_myID; z_ind<grid->z.size(); z_ind+=MPI_nprocs) if(grid->zone_radius(z_ind) >= r_core){
 
-		double com_emit_energy = zone_comoving_therm_emit_energy(z_ind);
+		double com_emit_energy = zone_comoving_therm_emit_energy(z_ind) * MPI_nprocs;
 
 		for(unsigned s=0; s<species_list.size(); s++){
 			n_attempted += n_emit_zones_per_bin * species_list[s]->number_of_bins();
@@ -133,7 +133,7 @@ void Transport::emit_zones_by_bin(){
 		#pragma omp atomic
 		grid->z[z_ind].e_emit += com_emit_energy;
 		#pragma omp atomic
-		grid->z[z_ind].l_emit += zone_comoving_therm_emit_leptons(z_ind);
+		grid->z[z_ind].l_emit += zone_comoving_therm_emit_leptons(z_ind) * MPI_nprocs;
 	}
 
 	int n_created = particles.size() - size_before;
