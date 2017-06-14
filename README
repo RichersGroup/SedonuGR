@@ -4,6 +4,13 @@ beginning of each file. If anyone would like to contribute to
 development of Sedonu, please let me know or send me a pull request on 
 BitBucket.
 
+This version of Sedonu (used in Richers et al. 2017) is rather
+different than the previous version
+(2962e1aa226f28cd3f188ac3fda933a0ecefdf17 used in Richers et
+al. 2015). The tests and parameter descriptions are a bit out of
+date. If you have questions before I manage to clean it up, send an
+email.
+
 REREQUISITES
 ==============================
 To clone the repository, execute
