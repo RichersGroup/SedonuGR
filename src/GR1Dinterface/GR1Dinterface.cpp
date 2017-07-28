@@ -10,6 +10,7 @@
 using namespace std;
 
 double smoothing_timescale;
+int GR1D_recalc_every;
 const double time_gf = 2.03001708e5;
 
 extern "C"
@@ -17,18 +18,20 @@ void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const i
 
 	// initialize MPI parallelism
 	int my_rank,n_procs;
-	MPI_Init(NULL,NULL);
+	//MPI_Init(NULL,NULL);
 	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
 	MPI_Comm_size( MPI_COMM_WORLD, &n_procs);
 	const int rank0 = (my_rank == 0);
 
 
 	int c_M1_imaxradii = *M1_imaxradii-1;
-	cout << "#   M1_imaxradii = " << c_M1_imaxradii << endl;
-	cout << "#   ghosts1 = " << *ghosts1 << endl;
-	cout << "#   n_GR1D_zones = " << *n_GR1D_zones << endl;
-	cout << "#   radius range: " << x1i[*ghosts1] << " - " << x1i[c_M1_imaxradii+1] << endl;
-	cout << "#   next lowest radius: " << x1i[c_M1_imaxradii] << endl;
+	if(rank0){
+		cout << "#   M1_imaxradii = " << c_M1_imaxradii << endl;
+		cout << "#   ghosts1 = " << *ghosts1 << endl;
+		cout << "#   n_GR1D_zones = " << *n_GR1D_zones << endl;
+		cout << "#   radius range: " << x1i[*ghosts1] << " - " << x1i[c_M1_imaxradii+1] << endl;
+		cout << "#   next lowest radius: " << x1i[c_M1_imaxradii] << endl;
+	}
 
 	// declare the transport class and save it to the fortran module
 	*sim = new Transport;
@@ -36,6 +39,7 @@ void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const i
 	// open up the lua parameter file
 	Lua lua("param.lua");
 	smoothing_timescale = lua.scalar<double>("smoothing_timescale");
+	GR1D_recalc_every = lua.scalar<int>("GR1D_recalc_every");
 
 	// set up the grid
 	const int nzones = *M1_imaxradii - *ghosts1;
@@ -50,7 +54,7 @@ void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const i
 		tmpSpecies->ghosts1 = *ghosts1;
 		tmpSpecies->n_GR1D_zones = *n_GR1D_zones;
 	}
-	omp_set_dynamic(true);
+	//omp_set_dynamic(true);
 	omp_set_num_threads(1);
 }
 
@@ -77,7 +81,7 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m,
 
 	// do MC calculation
 	omp_set_num_threads(std::stoi(std::getenv("OMP_NUM_THREADS")));
-	if(*iter%1 == 0) (*sim)->step();
+	if(*iter%GR1D_recalc_every == 0) (*sim)->step();
 	omp_set_num_threads(1);
 
 	// create array for new values so they can be smoothed
@@ -118,7 +122,7 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m,
 				double inv_P_constraint = 1.0 / P_constraint;
 				new_Prr_E[z_ind][s][ie] = inv_P_constraint<INFINITY ? Prr * inv_P_constraint : X*X;
 				new_Ptt_E[z_ind][s][ie] = inv_P_constraint<INFINITY ? Ptt * inv_P_constraint : 0.0;
-				if(inv_P_constraint == INFINITY && z_ind<150) cout << "warning - inv_P_constraint==INFINITY ir=" << z_ind << " s=" << s << " ie=" << ie << endl;
+				//if(inv_P_constraint == INFINITY && z_ind<150) cout << "warning - inv_P_constraint==INFINITY ir=" << z_ind << " s=" << s << " ie=" << ie << endl;
 
 				double W_constraint = X*X*Wrrr + 2.*Wttr;
 				double inv_W_constraint = 1.0 / W_constraint;
@@ -126,7 +130,7 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m,
 				double Wttr_Fr = abs(W_constraint)>0 ? Wttr / W_constraint : 0.0;
 				new_Wrrr_Fr[z_ind][s][ie] = abs(inv_W_constraint)<INFINITY ? Wrrr * inv_W_constraint : 1./X/X;
 				new_Wttr_Fr[z_ind][s][ie] = abs(inv_W_constraint)<INFINITY ? Wttr * inv_W_constraint : 0.0;
-				if(abs(inv_W_constraint) == INFINITY && z_ind<150) cout << "warning - inv_W_constraint==INFINITY ir=" << z_ind << " s=" << s << " ie=" << ie << endl;
+				//if(abs(inv_W_constraint) == INFINITY && z_ind<150) cout << "warning - inv_W_constraint==INFINITY ir=" << z_ind << " s=" << s << " ie=" << ie << endl;
 			}
 		}
 	}

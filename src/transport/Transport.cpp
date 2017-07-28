@@ -788,7 +788,7 @@ void Transport::reduce_radiation()
 	// reduce the global radiation scalars
 	if(verbose && rank0) cout << "#   global scalars" << endl;
 	double sendsingle = 0;
-	const double invNprocs = 1.0 / (double)MPI_nprocs;
+	const double invNprocs = 1.0 ;// / (double)MPI_nprocs;
 	const int proc=0;
 	
 	sendsingle = particle_total_energy;
