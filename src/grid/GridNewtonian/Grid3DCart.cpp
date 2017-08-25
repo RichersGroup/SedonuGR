@@ -73,9 +73,9 @@ void Grid3DCart::read_model_file(Lua* lua)
 void Grid3DCart::read_THC_file(Lua* lua)
 {
 	// verbocity
-	int my_rank;
-	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-	const int rank0 = (my_rank == 0);
+	int MPI_myID;
+	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
+	const int rank0 = (MPI_myID == 0);
 
 	// conversion factors
 	double convert_length = 147690.2071535873; // code --> cm
@@ -285,8 +285,8 @@ void Grid3DCart::read_THC_file(Lua* lua)
 void Grid3DCart::read_SpEC_file(Lua* lua)
 {
 	// get mpi rank
-	int my_rank;
-	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank  );
+	int MPI_myID;
+	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID  );
 
 	// remember which axes were truncated
 	vector<bool> truncate = vector<bool>(3,false);
@@ -410,11 +410,11 @@ void Grid3DCart::read_SpEC_file(Lua* lua)
 			}
 
 	// adjust x0,y0,z0 to indicate new, reflected lower boundary
-	if(my_rank==0) cout << "# (zmin,zmax) before adjusting: (" << x0[2] << "," << xmax[2] << ")" << endl;
+	if(MPI_myID==0) cout << "# (zmin,zmax) before adjusting: (" << x0[2] << "," << xmax[2] << ")" << endl;
 	for(int i=0; i<3; i++) if(truncate[i]) x0[i] = x0[i] - (xmax[i]-x0[i]);
 
 	// debugging some output
-	if(my_rank==0){
+	if(MPI_myID==0){
 		cout << "#   nx=" << nx[0] << endl << "# ny=" << nx[1] << endl << "# nz=" << nx[2] << endl;
 		cout << "#   number of zones:" << z.size() << endl;
 		cout << "#   minima:{" << x0[0] << ", " << x0[1] << ", " << x0[2] << "}" << endl;

@@ -58,9 +58,9 @@ void Grid1DSphere::read_model_file(Lua* lua)
 
 void Grid1DSphere::read_nagakura_model(Lua* lua){
 	// verbocity
-	int my_rank;
-	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-	const int rank0 = (my_rank == 0);
+	int MPI_myID;
+	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
+	const int rank0 = (MPI_myID == 0);
 	vector<double> bintops;
 	double trash, minval, tmp;
 
@@ -125,9 +125,9 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 
 void Grid1DSphere::read_custom_model(Lua* lua){
 	// verbocity
-	int my_rank;
-	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-	const int rank0 = (my_rank == 0);
+	int MPI_myID;
+	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
+	const int rank0 = (MPI_myID == 0);
 	if(rank0) cout << "#   Reading 1D model file" << endl;
 
 	// open up the model file, complaining if it fails to open

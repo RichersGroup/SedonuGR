@@ -41,9 +41,9 @@ namespace pc = physical_constants;
 void Grid2DCylinder::read_model_file(Lua* lua)
 {
     	// verbocity
-    	int my_rank;
-    	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-    	const int rank0 = (my_rank == 0);
+    	int MPI_myID;
+    	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
+    	const int rank0 = (MPI_myID == 0);
 
     	// generalHDF5 variables
     	H5::DataSet dataset;

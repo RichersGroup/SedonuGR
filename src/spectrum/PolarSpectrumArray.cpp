@@ -332,9 +332,8 @@ void  PolarSpectrumArray::rescale(double r)
 // only process 0 gets the reduced spectrum to print
 void PolarSpectrumArray::MPI_average(const int proc)
 {
-	int myID, mpi_procs;
-	MPI_Comm_size( MPI_COMM_WORLD, &mpi_procs);
-	MPI_Comm_rank( MPI_COMM_WORLD, &myID);
+	int MPI_myID;
+	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID);
 	MPI_Request request;
 	const unsigned n_elements = nu_grid.size()*mu_grid.size()*phi_grid.size();
 	const int tag = 0;
@@ -344,14 +343,11 @@ void PolarSpectrumArray::MPI_average(const int proc)
 	receive.resize(n_elements);
 	MPI_Reduce(&flux.front(), &receive.front(), n_elements, MPI_DOUBLE, MPI_SUM, proc, MPI_COMM_WORLD);
 	if(proc>0){
-	  if(myID==0) MPI_Irecv(&receive.front(), n_elements, MPI_DOUBLE, proc, tag, MPI_COMM_WORLD, &request);
-	  if(myID==proc) MPI_Isend(&receive.front(), n_elements, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD, &request);
+	  if(MPI_myID==0) MPI_Irecv(&receive.front(), n_elements, MPI_DOUBLE, proc, tag, MPI_COMM_WORLD, &request);
+	  if(MPI_myID==proc) MPI_Isend(&receive.front(), n_elements, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD, &request);
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 	for(unsigned i=0; i<flux.size(); i++) flux[i] = receive[i];//flux.swap(receive);
-
-	// only have the receiving ID do the division
-	rescale(1./(double)mpi_procs);
 }
 
 //--------------------------------------------------------------

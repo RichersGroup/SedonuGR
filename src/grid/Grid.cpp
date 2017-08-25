@@ -45,10 +45,9 @@ namespace pc = physical_constants;
 void Grid::init(Lua* lua)
 {
 	// MPI stuff
-	int my_rank,n_procs;
-	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-	MPI_Comm_size( MPI_COMM_WORLD, &n_procs);
-	bool rank0 = (my_rank==0);
+	int MPI_myID;
+	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
+	bool rank0 = (MPI_myID==0);
 
 	// read the model file or fill in custom model
 	read_model_file(lua);

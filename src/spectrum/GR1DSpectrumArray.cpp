@@ -182,10 +182,9 @@ void GR1DSpectrumArray::rescale(double r) {
 // only process 0 gets the reduced spectrum to print
 void GR1DSpectrumArray::MPI_average(const int proc)
 {
-	int myID, mpi_procs;
-	MPI_Comm_size( MPI_COMM_WORLD, &mpi_procs );
-	MPI_Comm_rank( MPI_COMM_WORLD, &myID      );
-	MPI_Request request;
+	//int MPI_myID;
+	//MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID      );
+	//MPI_Request request;
 
 	const unsigned n_elements = moments.size();
 	const int tag=0;
@@ -200,9 +199,6 @@ void GR1DSpectrumArray::MPI_average(const int proc)
 	//}
 	//MPI_Barrier(MPI_COMM_WORLD);
 	for(unsigned i=0; i<moments.size(); i++) moments[i] = receive[i];//flux.swap(receive);
-
-	// only have the receiving ID do the division
-	//rescale(1./(double)mpi_procs);
 }
 
 

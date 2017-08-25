@@ -92,11 +92,10 @@ int main(int argc, char **argv)
 	// INITIALIZE //
 	//============//
 	// initialize MPI parallelism
-	int my_rank,n_procs;
+	int MPI_myID;
 	MPI_Init( &argc, &argv );
-	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-	MPI_Comm_size( MPI_COMM_WORLD, &n_procs);
-	const int rank0 = (my_rank == 0);
+	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
+	const int rank0 = (MPI_myID == 0);
 
 	// read command line input
 	double max_logrho, min_logrho, rho0;

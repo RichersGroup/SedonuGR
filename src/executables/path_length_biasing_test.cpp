@@ -35,10 +35,7 @@ using namespace std;
 int main(int argc, char **argv)
 {
 	// set up MPI
-	int my_rank,n_procs;
 	MPI_Init( &argc, &argv );
-	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-	MPI_Comm_size( MPI_COMM_WORLD, &n_procs);
 
 	// set up the transport module (includes the grid)
 	int nbins = 0, nsamples = 0,niter = 0;

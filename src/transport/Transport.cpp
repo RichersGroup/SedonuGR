@@ -788,47 +788,37 @@ void Transport::reduce_radiation()
 	// reduce the global radiation scalars
 	if(verbose && rank0) cout << "#   global scalars" << endl;
 	double sendsingle = 0;
-	const double invNprocs = 1.0 ;// / (double)MPI_nprocs;
 	const int proc=0;
 	
 	sendsingle = particle_total_energy;
 	hierarchical_reduce(MPI_myID, proc, &sendsingle, &particle_total_energy, 1);
-	particle_total_energy *= invNprocs;
 	
 	sendsingle = particle_rouletted_energy;
 	hierarchical_reduce(MPI_myID, proc, &sendsingle, &particle_rouletted_energy,1);
-	particle_rouletted_energy *= invNprocs;
 	
 	sendsingle = particle_core_abs_energy;
 	hierarchical_reduce(MPI_myID, proc,&sendsingle,&particle_core_abs_energy,1);
-	particle_core_abs_energy *= invNprocs;
 	
 	sendsingle = particle_escape_energy;
 	hierarchical_reduce(MPI_myID, proc,&sendsingle,&particle_escape_energy,1);
-	particle_escape_energy *= invNprocs;
 	
 	vector<double> send(species_list.size(),0);
 	vector<double> receive(species_list.size(),0);
 	
 	for(unsigned i=0; i<species_list.size(); i++) send[i] = L_net_esc[i];
 	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),L_net_esc.size());
-	for(unsigned i=0; i<species_list.size(); i++) L_net_esc[i] = receive[i] * invNprocs;
 	
 	for(unsigned i=0; i<species_list.size(); i++) send[i] = L_core_lab[i];
 	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),L_core_lab.size());
-	for(unsigned i=0; i<species_list.size(); i++) L_core_lab[i] = receive[i] * invNprocs;
 	
 	for(unsigned i=0; i<species_list.size(); i++) send[i] = L_net_lab[i];
 	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),L_net_lab.size());
-	for(unsigned i=0; i<species_list.size(); i++) L_net_lab[i] = receive[i] * invNprocs;
 	
 	for(unsigned i=0; i<species_list.size(); i++) send[i] = N_net_esc[i];
 	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),N_net_esc.size());
-	for(unsigned i=0; i<species_list.size(); i++) N_net_esc[i] = receive[i] * invNprocs;
-	
+
 	for(unsigned i=0; i<species_list.size(); i++) send[i] = N_net_lab[i];
 	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),N_net_lab.size());
-	for(unsigned i=0; i<species_list.size(); i++) N_net_lab[i] = receive[i] * invNprocs;
 	
 	// reduce the spectra
 	if(verbose && rank0) cout << "#   spectra" << endl;
@@ -869,38 +859,31 @@ void Transport::reduce_radiation()
 	    // reduce Edens_com
 	    for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].Edens_com[s];
 	    hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
-	    for(int i=my_begin; i<my_end; i++) grid->z[i].Edens_com[s] = receive[i-my_begin] * invNprocs;
 
 	    // reduce Ndens_com
 	    for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].Ndens_com[s];
 	    hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
-	    for(int i=my_begin; i<my_end; i++) grid->z[i].Ndens_com[s] = receive[i-my_begin] * invNprocs;
 	  }
 	  
 	  // reduce e_abs
 	  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_abs;
 	  hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
-	  for(int i=my_begin; i<my_end; i++) grid->z[i].e_abs = receive[i-my_begin] * invNprocs;
 	  
 	  // reduce nue_abs
 	  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].nue_abs;
 	  hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
-	  for(int i=my_begin; i<my_end; i++) grid->z[i].nue_abs = receive[i-my_begin] * invNprocs;
 	  
 	  // reduce anue_abs
 	  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].anue_abs;
 	  hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
-	  for(int i=my_begin; i<my_end; i++) grid->z[i].anue_abs = receive[i-my_begin] * invNprocs;
 	  
 	  // reduce e_emit
 	  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_emit;
 	  hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
-	  for(int i=my_begin; i<my_end; i++) grid->z[i].e_emit = receive[i-my_begin] * invNprocs;
 
 	  // reduce l_emit
 	  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].l_emit;
 	  hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
-	  for(int i=my_begin; i<my_end; i++) grid->z[i].l_emit = receive[i-my_begin] * invNprocs;
 
 	  // format for single reduce
 	  //my_begin = ( proc==0 ? 0 : my_zone_end[proc-1] );

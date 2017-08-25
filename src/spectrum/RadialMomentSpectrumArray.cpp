@@ -185,9 +185,8 @@ void RadialMomentSpectrumArray::rescale(double r) {
 // only process 0 gets the reduced spectrum to print
 void RadialMomentSpectrumArray::MPI_average(const int proc)
 {
-	int myID, mpi_procs;
-	MPI_Comm_size( MPI_COMM_WORLD, &mpi_procs );
-	MPI_Comm_rank( MPI_COMM_WORLD, &myID      );
+	int MPI_myID;
+	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID      );
 	MPI_Request request;
 
 	const unsigned n_elements = moments.size();
@@ -198,14 +197,11 @@ void RadialMomentSpectrumArray::MPI_average(const int proc)
 	receive.resize(n_elements);
 	MPI_Reduce(&moments.front(), &receive.front(), n_elements, MPI_DOUBLE, MPI_SUM, proc, MPI_COMM_WORLD);
 	if(proc>0){
-	  if(myID==0) MPI_Irecv(&receive.front(), n_elements, MPI_DOUBLE, proc, tag, MPI_COMM_WORLD, &request);
-	  if(myID==proc) MPI_Isend(&receive.front(), n_elements, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD, &request);
+	  if(MPI_myID==0) MPI_Irecv(&receive.front(), n_elements, MPI_DOUBLE, proc, tag, MPI_COMM_WORLD, &request);
+	  if(MPI_myID==proc) MPI_Isend(&receive.front(), n_elements, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD, &request);
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 	for(unsigned i=0; i<moments.size(); i++) moments[i] = receive[i];//flux.swap(receive);
-
-	// only have the receiving ID do the division
-	rescale(1./(double)mpi_procs);
 }
 
 

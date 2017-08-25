@@ -238,9 +238,8 @@ void MomentSpectrumArray::rescale(double r) {
 //--------------------------------------------------------------
 // only process 0 gets the reduced spectrum to print
 void MomentSpectrumArray::MPI_average(const int proc) {
-	int myID, mpi_procs;
-	MPI_Comm_size( MPI_COMM_WORLD, &mpi_procs);
-	MPI_Comm_rank( MPI_COMM_WORLD, &myID);
+	int MPI_myID;
+	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID);
 	vector<double> receive;
 	const int tag=0;
 
@@ -251,15 +250,12 @@ void MomentSpectrumArray::MPI_average(const int proc) {
 				   n_elements(rank), MPI_DOUBLE, MPI_SUM, proc, MPI_COMM_WORLD);
 			if(proc>0){
 				cout << "Sending " << n_elements(rank) << endl;
-				if(myID==0) MPI_Recv(&receive.front(), n_elements(rank), MPI_DOUBLE, proc, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-				if(myID==proc) MPI_Send(&receive.front(), n_elements(rank), MPI_DOUBLE, 0, tag, MPI_COMM_WORLD);
+				if(MPI_myID==0) MPI_Recv(&receive.front(), n_elements(rank), MPI_DOUBLE, proc, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				if(MPI_myID==proc) MPI_Send(&receive.front(), n_elements(rank), MPI_DOUBLE, 0, tag, MPI_COMM_WORLD);
 			}
 			for (unsigned i = 0; i < n_elements(rank); i++)
 				moments[group][rank][i] = receive[i]; //flux.swap(receive);
 		}
-
-	// only have the receiving ID do the division
-	rescale(1. / (double) mpi_procs);
 }
 
 //--------------------------------------------------------------

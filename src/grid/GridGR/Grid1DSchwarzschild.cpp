@@ -42,9 +42,9 @@ void Grid1DSchwarzschild::read_model_file(Lua* lua)
 	r_sch = lua->scalar<double>("Grid1DSchwarzschild_r_sch");
 
 	// verbocity
-	int my_rank;
-	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-	const int rank0 = (my_rank == 0);
+	int MPI_myID;
+	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
+	const int rank0 = (MPI_myID == 0);
 	if(rank0) cout << "#   Reading 1D model file" << endl;
 
 	// open up the model file, complaining if it fails to open

@@ -59,9 +59,9 @@ void Grid2DSphere::read_model_file(Lua* lua)
 void Grid2DSphere::read_nagakura_file(Lua* lua)
 {
 	// verbocity
-	int my_rank;
-	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-	const int rank0 = (my_rank == 0);
+	int MPI_myID;
+	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
+	const int rank0 = (MPI_myID == 0);
 	double trash=0, minval=0, tmp=0;
 	vector<double> bintops;
 
@@ -157,9 +157,9 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 void Grid2DSphere::read_flash_file(Lua* lua)
 {
 	// verbocity
-	int my_rank;
-	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-	const int rank0 = (my_rank == 0);
+	int MPI_myID;
+	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
+	const int rank0 = (MPI_myID == 0);
 
 	// generalHDF5 variables
 	H5::DataSet dataset;
@@ -542,9 +542,9 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 void Grid2DSphere::custom_model(Lua* lua)
 {
 	// verbocity
-	int my_rank;
-	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-	const int rank0 = (my_rank == 0);
+	int MPI_myID;
+	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
+	const int rank0 = (MPI_myID == 0);
 	if(rank0) cout << "#   Reading 1D model file, mapping to 2D" << endl;
 
 	// open up the model file, complaining if it fails to open

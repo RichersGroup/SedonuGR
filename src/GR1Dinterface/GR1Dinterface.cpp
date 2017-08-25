@@ -17,11 +17,11 @@ extern "C"
 void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const int* M1_imaxradii, const int* ghosts1, Transport** sim){
 
 	// initialize MPI parallelism
-	int my_rank,n_procs;
+	int MPI_myID,MPI_nprocs;
 	//MPI_Init(NULL,NULL);
-	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-	MPI_Comm_size( MPI_COMM_WORLD, &n_procs);
-	const int rank0 = (my_rank == 0);
+	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
+	MPI_Comm_size( MPI_COMM_WORLD, &MPI_nprocs);
+	const int rank0 = (MPI_myID == 0);
 
 
 	int c_M1_imaxradii = *M1_imaxradii-1;

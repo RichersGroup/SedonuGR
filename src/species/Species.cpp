@@ -57,9 +57,9 @@ Species::Species(){
 void Species::init(Lua* lua, Transport* simulation)
 {
 	// initialize MPI parallelism
-	int my_rank;
-	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-	const int rank0 = (my_rank == 0);
+	int MPI_myID;
+	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
+	const int rank0 = (MPI_myID == 0);
 
 	// set the pointer to see the simulation info
 	sim = simulation;
