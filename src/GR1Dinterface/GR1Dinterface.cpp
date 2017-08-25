@@ -80,7 +80,11 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m,
 		static_cast<Neutrino_GR1D*>((*sim)->species_list[s])->set_eas_external(eas);
 
 	// do MC calculation
-	omp_set_num_threads(std::stoi(std::getenv("OMP_NUM_THREADS")));
+	char* OMP_NUM_THREADS = std::getenv("OMP_NUM_THREADS");
+	int nthreads=-1;
+	if(OMP_NUM_THREADS!=NULL) nthreads = std::stoi(OMP_NUM_THREADS);
+	else nthreads = omp_get_max_threads();
+	omp_set_num_threads(nthreads);
 	if(*iter%GR1D_recalc_every == 0) (*sim)->step();
 	omp_set_num_threads(1);
 
