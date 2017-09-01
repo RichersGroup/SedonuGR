@@ -13,10 +13,11 @@ equilibrium_Ye = 0
 
 -- Opacity and Emissivity
 
+neutrino_type = "NuLib"
 grey_opacity  = -1
 grey_abs_frac = -1
-nulib_table = "/home/srichers/software/NuLib/NuLib_full_nokernel.h5"
-nulib_eos = "/home/srichers/software/sedonu-devel/external/tables/EOS/SFHo.h5"
+nulib_table = "NuLib_full_nokernel.h5"
+nulib_eos = "/mnt/scratch/tables/EOS/SFHo.h5"
 opac_interp_method = 3
 cdf_interpolation_order = 1
 cdf_cutoff    = 0
@@ -28,8 +29,11 @@ spec_n_phi      = 1
 
 -- Distribution Function
 
+distribution_type = "RadialMoments"
+distribution_moment_order = 0
 distribution_nmu = 50
 distribution_nphi = 100
+distribution_polar_basis = 0
 
 -- Grid and Model
 
@@ -85,6 +89,7 @@ exponential_decay = 0
 -- Random Walk
 
 randomwalk_sphere_size = 0.4
+randomwalk_n_isotropic = 10
 randomwalk_max_x = 2
 randomwalk_sumN = 1000
 randomwalk_npoints = 200

@@ -47,7 +47,7 @@ string = "mpirun -np 2 -env OMP_NUM_THREADS 2 ../../exe/therm_shell_test param.l
          str(min_logT  ) + " " + str(max_logT  ) + " " + str(T0  ) + " " + str(n_T  ) + " " + \
          str(min_ye    ) + " " + str(max_ye    ) + " " + str(ye0 ) + " " + str(n_ye ) + " " + \
          eosfile
-print string
+print(string)
 os.system(string)
 
 plot(rho0,T0,ye0)
