@@ -244,6 +244,9 @@ verbose = [0,1] Print detailed information to stdout?
 max_n_iter = [int>=0] stop after this many iterations (1 iteration
 	   is a emit-propagate-solve cycle)
 
+max_time_hours = [float>0] maximum walltime. After this, sedonu will
+	       stop iterating, but will finish current iteration
+
 step_size = [float>0] maximum fraction of a zone length a particle is
 	  allowed to travel before updating opacity information
 
