@@ -13,10 +13,9 @@ equilibrium_Ye = 0
 
 -- Opacity and Emissivity
 
-grey_opacity  = -1
-grey_abs_frac = -1
-nulib_table = "/home/srichers/software/sedonu-devel/external/tables/NuLib/NuLib_noscat.h5"
-nulib_eos = "/home/srichers/software/sedonu-devel/external/tables/EOS/SFHo.h5"
+neutrino_type = "NuLib"
+nulib_table = "NuLib.h5"
+nulib_eos = "LS220.h5"
 opac_interp_method = 0
 cdf_interpolation_order = 1
 cdf_cutoff    = 0
@@ -28,12 +27,15 @@ spec_n_phi      = 1
 
 -- Distribution Function
 
+distribution_type = "Polar"
 distribution_nmu = 2
 distribution_nphi = 2
+distribution_polar_basis = 0
 
 -- Grid and Model
 
 grid_type = "Grid1DSphere"
+model_type = "custom"
 model_file = "empty_sphere.mod"
 
 -- Output
@@ -51,6 +53,7 @@ n_subcycles = 1
 do_emit_by_bin = 1
 n_emit_core_per_bin    = 1000
 n_emit_therm_per_bin   = 0
+max_time_hours = -1
 
 -- Inner Source
 
@@ -72,8 +75,6 @@ importance_bias = 0
 bias_path_length = 0
 min_packet_energy = 1e24
 max_packet_energy = 1e99
-max_path_length_boost = 2
-min_importance = 1e-4
 exponential_decay = 0
 
 -- Random Walk

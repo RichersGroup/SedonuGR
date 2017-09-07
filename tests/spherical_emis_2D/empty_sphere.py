@@ -9,6 +9,6 @@ rho = 0
 temp = 0
 
 
-print '1D_sphere', nx,r_in
-print R, rho, temp, 0.5
+print('1D_sphere', nx,r_in)
+print(R, rho, temp, 0.5,0,0,0)
 

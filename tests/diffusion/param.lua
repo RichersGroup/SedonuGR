@@ -13,7 +13,8 @@ equilibrium_Ye = 0
 
 -- Opacity and Emissivity
 
-grey_opacity  = 2000
+neutrino_type = "grey"
+grey_opac  = 200
 grey_abs_frac = 0
 nugrid_start = 0
 nugrid_stop = 500
@@ -29,11 +30,15 @@ spec_n_phi      = 1
 
 -- Distribution Function
 
-distribution_nmu = 100
-distribution_nphi = 2
+distribution_type = "RadialMoments"
+distribution_polar_basis = 1
+distribution_moment_order = 2
+--distribution_nmu = 100
+--distribution_nphi = 2
 
 -- Grid and Model
 
+model_type = "custom"
 grid_type = "Grid1DSphere"
 model_file = "neutron_star.mod"
 
@@ -65,7 +70,8 @@ core_lum_multiplier = 1.0
 
 verbose       = 1
 max_n_iter =  1
-step_size = 0.4
+step_size = 0.001
+max_time_hours = -1
 
 -- Biasing
 
@@ -73,8 +79,6 @@ importance_bias = 0
 bias_path_length = 0
 min_packet_energy = 1e0
 max_packet_energy = 1e99
-max_path_length_boost = 2
-min_importance = 1e-4
 exponential_decay = 0
 
 -- Random Walk
@@ -85,3 +89,4 @@ randomwalk_sumN = 1000
 randomwalk_npoints = 200
 randomwalk_min_optical_depth = 100
 randomwalk_interpolation_order = 1
+randomwalk_n_isotropic = 0
