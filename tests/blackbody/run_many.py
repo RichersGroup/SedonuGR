@@ -4,9 +4,9 @@ from scipy.integrate import quad
 import numpy as np
 
 # INPUTS
-eosfile   = "/data/tables/EOS/HShen.h5" #ignored if compiled for helmholtz eos
+eosfile   = "SFHo.h5" #ignored if compiled for helmholtz eos
 
-vx = 2.5e10 # cm/s
+vx = 0 #2.5e10 # cm/s
 vy = 0      # cm/s
 vz = 0      # cm/s
 
@@ -77,7 +77,7 @@ string = "mpirun -np 1 -env OMP_NUM_THREADS=4 ../../exe/blackbody_test param.lua
           str(min_logT  ) + " " + str(max_logT  ) + " " + str(T0  ) + " " + str(n_T  ) + " " + \
           str(min_ye    ) + " " + str(max_ye    ) + " " + str(ye0 ) + " " + str(n_ye ) + " " + \
           eosfile         + " " + str(vx        ) + " " + str(vy  ) + " " + str(vz   )
-print string
+print(string)
 os.system(string)
 
 results = np.loadtxt("results.dat",usecols=(0,2,3,4))
