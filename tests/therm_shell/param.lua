@@ -18,8 +18,9 @@ equilibrium_tolerance = 1e-10
 
 grey_opacity  = -1 --1e-12
 grey_abs_frac = -1 --1 ---1
-nulib_table = "/home/srichers/software/sedonu-devel/external/tables/NuLib/NuLib_simple.h5"
-nulib_eos = "/home/srichers/software/sedonu-devel/external/tables/EOS/SFHo.h5"
+neutrino_type = "NuLib"
+nulib_table = "NuLib.h5"
+nulib_eos = "SFHo.h5"
 --nugrid_start = 1
 --nugrid_stop = 100
 --nugrid_n = 30
@@ -34,12 +35,15 @@ spec_n_phi      = 1
 
 -- Distribution Function
 
+distribution_type = "Polar"
+distribution_polar_basis = 1
 distribution_nmu = 2
 distribution_nphi = 2
 
 -- Grid and Model
 
 grid_type = "Grid1DSphere"
+model_type = "custom"
 model_file = "shell.mod"
 
 -- Output
@@ -70,16 +74,14 @@ core_lum_multiplier = 1.0
 
 verbose       = 1
 max_n_iter = 1
-step_size = 0.4
+step_size = 0.01
 
 -- Biasing
 
 importance_bias = 0
-bias_path_length = 1
+bias_path_length = 0
 min_packet_energy = 1e24
 max_packet_energy = 1e99
-max_path_length_boost = 2
-min_importance = 1e-4
 exponential_decay = 0
 
 -- Random Walk

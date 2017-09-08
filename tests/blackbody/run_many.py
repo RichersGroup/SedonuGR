@@ -4,7 +4,7 @@ from scipy.integrate import quad
 import numpy as np
 
 # INPUTS
-eosfile   = "/data/tables/EOS/HShen.h5" #ignored if compiled for helmholtz eos
+eosfile   = "SFHo.h5" #ignored if compiled for helmholtz eos
 
 vx = 0 #2.5e10 # cm/s
 vy = 0      # cm/s

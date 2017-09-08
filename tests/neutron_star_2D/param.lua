@@ -16,10 +16,9 @@ equilibrium_tolerance = 1e-5
 
 -- Opacity and Emissivity
 
-grey_opacity  = -1
-grey_abs_frac = -1
-nulib_table = "/home/srichers/software/sedonu-devel/external/tables/NuLib/NuLib_noscat.h5"
-nulib_eos = "/home/srichers/software/sedonu-devel/external/tables/EOS/SFHo.h5"
+neutrino_type = "NuLib"
+nulib_table = "NuLib.h5"
+nulib_eos = "SFHo.h5"
 opac_interp_method = 0
 cdf_interpolation_order = 1
 cdf_cutoff    = 0
@@ -31,6 +30,8 @@ spec_n_phi      = 1
 
 -- Distribution Function
 
+distribution_type = "Polar"
+distribution_polar_basis = 1
 distribution_nmu = 2
 distribution_nphi = 2
 
@@ -39,7 +40,7 @@ distribution_nphi = 2
 grid_type = "Grid2DSphere"
 model_type = "custom"
 model_file = "neutron_star.mod"
-
+Grid2DSphere_ignore_theta_min_dist = 0
 
 -- Output
 
@@ -69,7 +70,8 @@ core_lum_multiplier = 1.0
 
 verbose       = 1
 max_n_iter =  20
-step_size = 0.4
+step_size = 0.01
+max_time_hours = -1
 
 -- Biasing
 
@@ -77,8 +79,6 @@ importance_bias = 0
 bias_path_length = 0
 min_packet_energy = 1e24
 max_packet_energy = 1e99
-max_path_length_boost = 2
-min_importance = 1e-4
 exponential_decay = 0
 
 -- Random Walk

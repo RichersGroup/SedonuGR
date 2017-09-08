@@ -46,6 +46,7 @@ Neutrino_grey::Neutrino_grey(){
 void Neutrino_grey::myInit(Lua* lua)
 {
 	grey_abs_frac = lua->scalar<double>("grey_abs_frac");
+	grey_opac     = lua->scalar<double>("grey_opac");
 
 	// let the base class do the rest
 	Neutrino::myInit(lua);

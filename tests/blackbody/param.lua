@@ -4,7 +4,6 @@ do_visc       = 0
 do_relativity = 1
 do_annihilation = 0
 radiative_eq  = 0
-reflect_outer = 0
 
 -- Equilibrium Solving
 
@@ -14,11 +13,9 @@ equilibrium_Ye = 0
 -- Opacity and Emissivity
 
 neutrino_type = "NuLib"
-grey_opacity  = -1
-grey_abs_frac = -1
-nulib_table = "NuLib_full_nokernel.h5"
-nulib_eos = "/mnt/scratch/tables/EOS/SFHo.h5"
-opac_interp_method = 3
+nulib_table = "NuLib.h5"
+nulib_eos = "SFHo.h5"
+opac_interp_method = 0
 cdf_interpolation_order = 1
 cdf_cutoff    = 0
 
@@ -29,16 +26,14 @@ spec_n_phi      = 1
 
 -- Distribution Function
 
-distribution_type = "RadialMoments"
-distribution_moment_order = 0
-distribution_nmu = 50
-distribution_nphi = 100
+distribution_type = "Polar"
+distribution_nmu = 2
+distribution_nphi = 2
 distribution_polar_basis = 0
 
 -- Grid and Model
 
 grid_type = "Grid0DIsotropic"
-model_file = ""
 Grid0DIsotropic_rho = 0
 Grid0DIsotropic_T   = 0
 Grid0DIsotropic_Ye  = 0
@@ -65,16 +60,11 @@ n_emit_therm   = 54000
 -- Inner Source
 
 r_core = 0
-core_emit_method = 1
-T_core = 0
-core_nue_chem_pot = 0
-core_lum_multiplier = 0.0
 
 -- General Controls
 
 verbose       = 1
-max_n_iter = 1
-step_size = 0.4
+step_size = 0.01
 
 -- Biasing
 
@@ -82,16 +72,14 @@ importance_bias = 0
 bias_path_length = 0
 min_packet_energy = 1e18
 max_packet_energy = 1e99
-max_path_length_boost = 2
-min_importance = 1e-4
-exponential_decay = 0
+exponential_decay = 1
 
 -- Random Walk
 
-randomwalk_sphere_size = 0.4
-randomwalk_n_isotropic = 10
+randomwalk_sphere_size = 1.0
 randomwalk_max_x = 2
 randomwalk_sumN = 1000
 randomwalk_npoints = 200
 randomwalk_min_optical_depth = 100
 randomwalk_interpolation_order = 1
+randomwalk_n_isotropic=0

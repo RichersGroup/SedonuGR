@@ -11,8 +11,8 @@ rho = 3e9
 temp = 5*MeV
 ye = 0.3
 
-print '1D_sphere',nx,R_min
+print('1D_sphere',nx,R_min)
 
 for i  in range(1,nx+1):
     R = R_min + i*dx
-    print R, rho, temp, ye
+    print(R, rho, temp, ye,0,0,0)

@@ -8,15 +8,14 @@ from pylab import *
 from matplotlib.ticker import AutoMinorLocator
 import h5py
 
-sigma = 2000
+sigma = 200
 
 # read in data
 filename = "fluid_00001.h5"
 f = h5py.File(filename, "r")
-nue_distribution = np.array(f.get("distribution(erg|ccm,lab)")[:,0,0,:,:]) # r, mu, phi
-nr = len(nue_distribution)
-nmu = len(nue_distribution[0])
-nphi = len(nue_distribution[0][0])
+edens = np.array(f.get("distribution(erg|ccm,lab)")[:,0,0,0]) # r, s, e, moment
+flux  = np.array(f.get("distribution(erg|ccm,lab)")[:,0,0,1]) # r, s, e, moment
+nr = len(edens)
 
 # set up the grid
 rgrid = f.get("r(cm)")
@@ -27,36 +26,21 @@ for i in range(nr):
     rcenter[i] = 0.5 * (rgrid[i] + rgrid[i+1])
 for i in range(nr-1):
     rcenter2[i] = 0.5 * (rcenter[i] + rcenter[i+1])
-for i in range(nr-2):
-    rcenter3[i] = 0.5 * (rcenter2[i] + rcenter2[i+1])
-
-mugrid = f.get("distribution_costheta_grid(lab)")
-mucenter = np.zeros(nmu)
-for i in range(nmu):
-    mucenter[i] = 0.5 * (mugrid[i] + mugrid[i+1])
-
-# calculate the energy density and flux arrays
-edens = np.zeros(nr)
-flux = np.zeros(nr)
-for i in range(nr):
-    for mu in range(nmu):
-        for phi in range(nphi):
-            edens[i] += nue_distribution[i][mu][phi]
-            flux[i]  += nue_distribution[i][mu][phi] * mucenter[mu]
+#for i in range(nr-2):
+#    rcenter3[i] = 0.5 * (rcenter2[i] + rcenter2[i+1])
 
 # calculate the gradient of the energy density
-r2ddr = np.zeros(nr-1)
-gradE = np.zeros(nr-2)
+gradE = np.zeros(nr-1)
 for i in range(nr-1):
     r = rcenter2[i]
     dr     = rcenter[i+1] - rcenter[i]
     dedens =   edens[i+1] -   edens[i]
-    r2ddr[i] = r**2 * dedens / dr
-for i in range(nr-2):
-    r = rcenter3[i]
-    dr     = rcenter2[i+1] - rcenter2[i]
-    dderiv =    r2ddr[i+1] -    r2ddr[i]
-    gradE[i] = 1./r * dderiv / dr
+    gradE[i] = dedens / dr
+#for i in range(nr-2):
+#    r = rcenter3[i]
+#    dr     = rcenter2[i+1] - rcenter2[i]
+#    dderiv =    r2ddr[i+1] -    r2ddr[i]
+#gradE[i] = 1./r * dderiv / dr
 
 # evaluate Fick's law
 fick_flux = -gradE / (3.0 * sigma)
@@ -69,13 +53,6 @@ rect0 = [left, bottom, width, height*panelheight]
 fig = plt.figure()#figsize=(11., 12.))
 font = 20
 
-#rcParams['xtick.major.size'] = 13
-#rcParams['xtick.major.pad']  = 8
-#rcParams['xtick.minor.size'] = 6
-#rcParams['ytick.major.size'] = 13
-#rcParams['ytick.major.pad']  = 8
-#rcParams['ytick.minor.size'] = 6
-
 # annotation text
 fig.gca().get_xaxis().set_visible(False)
 fig.gca().get_yaxis().set_visible(False)
@@ -86,7 +63,7 @@ min2 = min(fick_flux)
 max1 = max(flux)
 max2 = max(fick_flux)
 ax0 = fig.add_axes(rect0)
-ax0.axis([min(rgrid), max(rgrid), -1e20, 1e20])#min(min1,min2), max(max1,max2)])
+ax0.axis([min(rgrid), max(rgrid), 0, 4e22])#min(min1,min2), max(max1,max2)])
 
 minorLocator = AutoMinorLocator()
 
@@ -94,20 +71,11 @@ minorLocator = AutoMinorLocator()
 plist = []
 p, = ax0.plot(rcenter,flux, color="k", linewidth=1)
 plist.append(p)
-p, = ax0.plot(rcenter3,fick_flux, color="b", linewidth=1)
+p, = ax0.plot(rcenter2,fick_flux, color="b", linewidth=1)
 plist.append(p)
-
-#ax0.xaxis.set_minor_locator(minorLocator)
-
-#rc('legend', fontsize=font)
 
 ax0.legend(plist, ["$\mathrm{Flux}\,[\mathrm{erg/ccm}]$",r"$-\nabla E / 3\sigma\,[\mathrm{erg/ccm}]$"],
            loc=(0.5,0.8),).draw_frame(0)
-
-#labels = getp(ax0, 'xticklabels')
-#setp(labels, size=font)
-#labels = getp(ax0, 'yticklabels')
-#setp(labels, size=font)
 
 ## For some reason, this has to go after the plots
 xlabelx = 0.5
