@@ -23,9 +23,15 @@ void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const i
 	MPI_Comm_size( MPI_COMM_WORLD, &MPI_nprocs);
 	const int rank0 = (MPI_myID == 0);
 
-
 	int c_M1_imaxradii = *M1_imaxradii-1;
 	if(rank0){
+		cout << "# Initializing transport..." << endl;
+		cout << "#   Using " << MPI_nprocs << " MPI ranks" << endl;
+            #ifdef _OPENMP
+		    #pragma omp parallel
+		    #pragma omp single
+		    cout << "#   Using " << omp_get_num_threads()  << " threads on each MPI rank." << endl;
+            #endif
 		cout << "#   M1_imaxradii = " << c_M1_imaxradii << endl;
 		cout << "#   ghosts1 = " << *ghosts1 << endl;
 		cout << "#   n_GR1D_zones = " << *n_GR1D_zones << endl;
