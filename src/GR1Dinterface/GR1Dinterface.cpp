@@ -212,4 +212,5 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m,
 			}
 		}
 	}
+	cout.flush();
 }
