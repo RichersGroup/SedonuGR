@@ -372,8 +372,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 
 	if(randomwalk_n_isotropic > 0){
 		fakeP.e = lh->p_e(com) * (path_length_com - Rcom)/path_length_com / (double)randomwalk_n_isotropic;
-		PRINT_ASSERT(fakeP.e,>=,0);
-		for(int ip=0; ip<randomwalk_n_isotropic; ip++){
+		if(fakeP.e > 0) for(int ip=0; ip<randomwalk_n_isotropic; ip++){
 			// select a random direction
 			double Diso_tmp[3];
 			grid->isotropic_direction(Diso_tmp,3,&rangen);
@@ -384,7 +383,6 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 			// tally the contribution
 			lhtmp.set_p<com>(&fakeP);
 			tally_radiation(&lhtmp,z_ind);
-
 		}
 	}
 
