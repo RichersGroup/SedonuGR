@@ -57,12 +57,20 @@ void nulibtable_single_species_range_energy_(
 		int*);   //number of easvariables(3)
 void nulibtable_epannihil_single_species_range_energy_(
 		double* temp,  // MeV
-		double* eta,
-		int* lns,
-		double* eas,
+		double* eta,   // mu/kT
+		int* lns,      // species number
+		double* phi,   // phi[legendre-p/a index][this_group][anti-group]
 		int* ngroups1,
 		int* ngroups2,
 		int* n_phis);
+void nulibtable_inelastic_single_species_range_energy_(
+		double* temp,  // MeV
+		double* eta,   // mu/kT
+		int* lns,      // species number
+		double* phi,   // phi[legendre index][out group][in group]
+		int* ngroups1, // ng in
+		int* ngroups2, // ng out (should be same as eas_n1)
+		int* n_phis);   // number of legendre terms (=2)
 
 void nulibtable_reader_(char*,int*,int*,int);
 
@@ -563,5 +571,65 @@ void nulib_get_epannihil_kernels(const double rho,                    /* g/ccm *
 				phi_annihilation[l][j][i] = eas[2*l+1][j][i];
 			}
 		}
+	}
+}
+
+/********************************/
+/* Inelastic scattering kernels */
+/********************************/
+void nulib_get_iscatter_kernels(
+		const double rho, // g/ccm
+		const double temp, // K
+		const double ye,
+		const int nulibID,
+		vector<double>& opac, // 1/cm   opac[group in]
+		vector<CDFArray>& normalized_phi, // normalized over group in  phi[group in][group out]
+		vector< vector<double> >& phi1_phi0){  // phi1/phi0   [group_in][group_out]
+
+	PRINT_ASSERT(temp,<=,pow(10.0,nulibtable_logItemp_max));
+	PRINT_ASSERT(temp,>=,pow(10.0,nulibtable_logItemp_min));
+	PRINT_ASSERT(nulibID,>=,0);
+
+	// fetch the relevant table from nulib. NuLib only accepts doubles.
+	double temp_MeV = temp * pc::k_MeV; // MeV
+	int lns = nulibID+1;                // fortran array indices start with 1
+
+	// get the chemical potential
+	double munue = nulib_eos_munue(rho,temp,ye); // MeV
+	double eta = munue/temp_MeV;
+	PRINT_ASSERT(eta,>=,pow(10.0,nulibtable_logIeta_min));
+	PRINT_ASSERT(eta,<=,pow(10.0,nulibtable_logIeta_max));
+
+	// apparently it's valid to declare array sizes at runtime like this... if it breaks, use malloc
+	int n_legendre_coefficients = 2;
+	int ngroups = nulibtable_number_groups;
+	double phi[n_legendre_coefficients][ngroups][ngroups]; //[a][j][i] = legendre index a, out group i, and in group j (ccm/s)
+
+	// read the kernels from nulib
+	nulibtable_inelastic_single_species_range_energy_(&temp_MeV, &eta, &lns, (double*)phi,
+			&ngroups, &ngroups, &n_legendre_coefficients);
+
+	// generate the coefficient array
+	double constants = pc::h*pc::h*pc::h * pc::c*pc::c*pc::c*pc::c / (4.*pc::pi);
+	vector<double> coeff = vector<double>(nulibtable_number_groups,0);
+	for(int ig=0; ig<nulibtable_number_groups; ig++){
+		double E1 = nulibtable_ebottom[ig] * pc::MeV_to_ergs;
+		double E2 = nulibtable_etop[   ig] * pc::MeV_to_ergs;
+		double dE3 = E2*E2*E2 - E1*E1*E1;
+		coeff[ig] = constants / (dE3 / 3.0);
+	}
+
+	// set the arrays
+	normalized_phi.resize(nulibtable_number_groups);
+	phi1_phi0.resize(nulibtable_number_groups);
+	for(int igin=0; igin<nulibtable_number_groups; igin++){
+		normalized_phi[igin].resize(nulibtable_number_groups);
+		phi1_phi0[igin].resize(nulibtable_number_groups);
+		for(int igout=0; igout<nulibtable_number_groups; igout++){
+			normalized_phi[igin].set(igout,phi[0][igout][igin] * coeff[igout]);
+			phi1_phi0[igin][igout] = phi[1][igout][igin] / phi[0][igout][igin];
+		}
+		normalized_phi[igin].normalize(0);
+		opac[igin] = normalized_phi[igin].N;
 	}
 }
