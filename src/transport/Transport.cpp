@@ -409,6 +409,8 @@ void Transport::check_parameters() const{
 		cout << "ERROR: Emitting particles at beginning of timestep AND re-emitting them is inconsistent." << endl;
 		exit(10);
 	}
+	if(use_scattering_kernels && randomwalk_sphere_size>0)
+		cout << "WARNING: Assumptions in random walk approximation are incompatible with inelastic scattering." << endl;
 }
 
 //------------------------------------------------------------
