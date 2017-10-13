@@ -145,6 +145,8 @@ void Species::init(Lua* lua, Transport* simulation)
 	scat_opac.resize(sim->grid->z.size());
 	emis.resize(sim->grid->z.size());
 	biased_emis.resize(sim->grid->z.size());
+	normalized_phi0.resize(sim->grid->z.size());
+	phi1_phi0.resize(sim->grid->z.size());
 
 	// allocate space for each eas spectrum
 	if(sim->n_emit_core>0 || sim->n_emit_core_per_bin>0) core_emis.resize(nu_grid.size());

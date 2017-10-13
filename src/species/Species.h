@@ -48,6 +48,10 @@ protected:
 	std::vector< std::vector<double> > abs_opac;  // 1/cm
 	std::vector< std::vector<double> > scat_opac; // 1/cm
 
+	// inelastic scattering specific
+	std::vector< std::vector< CDFArray > > normalized_phi0; // for sampling scattering outgoing energy [z_ind,Ein,Eout]
+	std::vector< std::vector< std::vector<double> > > phi1_phi0; // phi1/phi0 for sampling outgoing direction [z_ind,Ein,Eout]
+
 	// pointer to the simulation info (one level up)
 	Transport* sim;
 
