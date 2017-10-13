@@ -114,6 +114,7 @@ private:
 	int    radiative_eq;
 	int    rank0;
 	int    exponential_decay;
+	int    use_scattering_kernels;
 
 	// random walk parameters
 	CDFArray randomwalk_diffusion_time;

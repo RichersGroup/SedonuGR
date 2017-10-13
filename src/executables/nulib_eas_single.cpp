@@ -49,7 +49,7 @@ int main(int argc, char* argv[]){
 	//read in the nulib table
 	cout << "initializing nulib" << endl;
 	string filename = argv[1];
-	nulib_init(filename);
+	nulib_init(filename,0);
 
 	// grids
 	LocateArray nu_grid; // Hz
@@ -85,7 +85,9 @@ int main(int argc, char* argv[]){
 	// SINGLE LINE PLOTS //
 	//===================//
 
-	nulib_get_eas_arrays(rho, T, ye, nulibID, 0, emis, absopac, scatopac);
+	vector<CDFArray> normalized_phi0;
+	vector< vector<double> > phi1_phi0;
+	nulib_get_eas_arrays(rho, T, ye, nulibID, 0, emis, absopac, scatopac,normalized_phi0, phi1_phi0);
 	nulib_get_pure_emis (rho, T, ye, nulibID, pure_emis);
 	cout << "e = " << nu_grid.value_at(myfreq, pure_emis) << " erg/cm^3/s/ster/Hz" << endl;
 	cout << "a = " << nu_grid.value_at(myfreq, absopac)   << " 1/cm" << endl;
