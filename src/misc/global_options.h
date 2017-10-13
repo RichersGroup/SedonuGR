@@ -37,6 +37,7 @@
 #include <string>
 #include <iostream>
 #include "physical_constants.h"
+#include "H5Cpp.h"
 
 //using real = float; // or float
 //const MPI_Datatype MPI_real = ( sizeof(real)==4 ? MPI_FLOAT : MPI_DOUBLE );
@@ -60,6 +61,33 @@ inline std::string trim(const std::string s)
 	return trimmed;
 }
 
+inline bool hdf5_dataset_exists(const char* filename, const char* datasetname){
+	bool exists = true;
+
+	// Temporarily turn off error printing
+	H5E_auto2_t func;
+	void* client_data;
+	H5::Exception::getAutoPrint(func,&client_data);
+	H5::Exception::dontPrint();
+
+	// See if dataset exists
+	H5::H5File file(filename, H5F_ACC_RDONLY);
+	H5::DataSet dataset;
+	try{
+		dataset = file.openDataSet(datasetname);
+	}
+	catch(H5::FileIException& exception){
+		exists = false;
+	}
+
+	// Turn error printing back on
+	H5::Exception::setAutoPrint(func,client_data);
+	file.close();
+
+	return exists;
+}
+
+
 #ifndef NDEBUG
 #define PRINT_ASSERT(a,op,b)                         \
 do {                                                 \
@@ -69,6 +97,7 @@ do {                                                 \
 #else
 #define PRINT_ASSERT(a,op,b)
 #endif
+
 
 #endif
 
