@@ -114,7 +114,6 @@ private:
 	int    radiative_eq;
 	int    rank0;
 	int    exponential_decay;
-	int    use_scattering_kernels;
 
 	// random walk parameters
 	CDFArray randomwalk_diffusion_time;
@@ -184,6 +183,7 @@ public:
 	// items for zone emission
 	int do_visc;
 	int do_relativity;
+	int use_scattering_kernels;
 	int n_emit_zones;
 	int n_emit_zones_per_bin;
 	double visc_specific_heat_rate;
