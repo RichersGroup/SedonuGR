@@ -442,6 +442,12 @@ double Grid::dot(const double a[4], const double b[4], const int size, const int
 	return dot(a,b,size,xup);
 }
 
+double Grid::dot3(const double a[4], const double b[4], const int size, const int z_ind) const{
+	double xup[4];
+	zone_coordinates(z_ind,xup,4);
+	return dot3(a,b,size,xup);
+}
+
 
 // isotropic scatter, done in COMOVING frame
 void Grid::isotropic_direction(double D[3], const int size, ThreadRNG *rangen) const

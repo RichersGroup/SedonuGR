@@ -72,6 +72,14 @@ double GridGR::dot(const double a[4], const double b[4], const int size, const d
 		product += a[mu] * b[nu] * g_down(xup,mu,nu);
 	return product;
 }
+double GridGR::dot3(const double a[3], const double b[3], const int size, const double xup[4]) const{
+	PRINT_ASSERT(size,==,3);
+
+	double product = 0;
+	for(int mu=0; mu<3; mu++) for(int nu=0; nu<3; nu++)
+		product += a[mu] * b[nu] * g_down(xup,mu,nu);
+	return product;
+}
 void GridGR::normalize(double a[4], const int size, const double xup[4]) const{
 	PRINT_ASSERT(size,==,4);
 

@@ -82,6 +82,9 @@ void GridNewtonian::random_core_x_D(const double r_core, ThreadRNG *rangen, doub
 double GridNewtonian::dot(const double a[], const double b[], const int size, const double xup[]) const{
 	return dot_Minkowski<4>(a,b,size);
 }
+double GridNewtonian::dot3(const double a[], const double b[], const int size, const double xup[]) const{
+	return dot_Minkowski<3>(a,b,size);
+}
 void GridNewtonian::normalize(double a[], const int size, const double xup[]) const{
 	normalize_Minkowski<4>(a,size);
 }
