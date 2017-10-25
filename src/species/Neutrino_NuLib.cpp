@@ -70,7 +70,7 @@ void Neutrino_NuLib::set_eas(int zone_index)
 
 	nulib_get_eas_arrays(z->rho, z->T, z->Ye, ID, cutoff,
 			emis[zone_index], abs_opac[zone_index],
-			scat_opac[zone_index], normalized_phi0[zone_index], phi1_phi0[zone_index]);
+			scat_opac[zone_index], normalized_phi0[zone_index], scattering_delta[zone_index]);
 
 	// set the biased emissivity
 	for(int g=0; g<(int)nu_grid.size(); g++)

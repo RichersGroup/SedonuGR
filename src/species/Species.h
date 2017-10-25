@@ -50,7 +50,7 @@ protected:
 
 	// inelastic scattering specific
 	std::vector< std::vector< CDFArray > > normalized_phi0; // for sampling scattering outgoing energy [z_ind,Ein,Eout]
-	std::vector< std::vector< std::vector<double> > > phi1_phi0; // phi1/phi0 for sampling outgoing direction [z_ind,Ein,Eout]
+	std::vector< std::vector< std::vector<double> > > scattering_delta; // phi1/phi0 for sampling outgoing direction [z_ind,Ein,Eout]
 
 	// pointer to the simulation info (one level up)
 	Transport* sim;
@@ -106,6 +106,9 @@ public:
 	double sample_core_nu(const int g=-1) const;
 	double sample_nu(const CDFArray& input_emis, const int g=-1) const;
 	double sample_zone_nu(const int zone_index, double *Ep, const int g=-1) const;
+
+	// scattering kernel sampling
+	void sample_scattering_final_state(const int z_ind, LorentzHelper& lh, const double cosTheta) const;
 
 	// set the emissivity, absorption opacity, and scattering opacity
 	virtual void set_eas(const int zone_index) = 0;
