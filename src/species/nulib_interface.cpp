@@ -369,9 +369,7 @@ void nulib_get_iscatter_kernels(
 					inelastic_phi1 += nut_scatopac[igin] * scattering_delta[igin][igin] / 3.0; // scattering_delta set in nulib_get_eas_arrays
 			}
 			phi0Tilde[igin].set_value(igout, inelastic_phi0);
-			scattering_delta[igin][igout] = 3. * inelastic_phi1 / inelastic_phi0;
-			scattering_delta[igin][igout] = min( 2.9,scattering_delta[igin][igout]); // NEED TO DELETE THIS! (once the large deltas are figured out)
-			scattering_delta[igin][igout] = max(-2.9,scattering_delta[igin][igout]); // NEED TO DELETE THIS! (once the large deltas are figured out)
+			scattering_delta[igin][igout] = (inelastic_phi0==0 ? 0 : 3. * inelastic_phi1 / inelastic_phi0);
 			PRINT_ASSERT(abs(scattering_delta[igin][igout]),<=,3.0);
 		}
 		phi0Tilde[igin].normalize();
