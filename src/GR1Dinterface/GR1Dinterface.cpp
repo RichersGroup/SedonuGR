@@ -75,7 +75,7 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m,
 	const int nr = (*sim)->grid->z.size();
 	const int ns = (*sim)->species_list.size();
 	const int ne = (*sim)->species_list[0]->nu_grid.size();
-	const double fsmooth = *dt/time_gf / smoothing_timescale;
+	const double fsmooth = *dt*GR1D_recalc_every/time_gf / smoothing_timescale;
 	PRINT_ASSERT(fsmooth,<=,1.0);
 	PRINT_ASSERT(fsmooth,>=,0.0);
 
