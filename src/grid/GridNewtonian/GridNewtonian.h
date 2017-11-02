@@ -50,6 +50,7 @@ public:
 
 	// vector functions
 	double dot(const double a[], const double b[], const int size, const double xup[]) const;
+	double dot3(const double a[], const double b[], const int size, const double xup[]) const;
 	void normalize(double a[], const int size, const double xup[]) const;
 	void normalize_null(double a[], const int size, const double xup[]) const;
 	void isotropic_kup(const double nu, double kup[4], const double xup[4], const int size, ThreadRNG *rangen) const;

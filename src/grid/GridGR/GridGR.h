@@ -53,6 +53,7 @@ public:
 
 	// vector quantities
 	double dot(const double a[], const double b[], const int size, const double xup[]) const;
+	double dot3(const double a[], const double b[], const int size, const double xup[]) const;
 	void normalize(double a[], const int size, const double xup[]) const;
 	void normalize_null(double a[], const int size, const double xup[]) const;
 

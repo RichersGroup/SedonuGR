@@ -104,10 +104,18 @@ template void LorentzHelper::set_p_kup<lab>(const double kup[4], const int size)
 
 
 // rescale the particle energies. Does not require performing transformations
-void LorentzHelper::scale_p_e(const double factor){
+void LorentzHelper::scale_p_number(const double factor){
 	PRINT_ASSERT(factor,>=,0);
 	p[lab].e *= factor;
 	p[com].e *= factor;
+}
+void LorentzHelper::scale_p_energy(const double factor){
+	PRINT_ASSERT(factor,>=,0);
+	for(int i=0; i<4; i++){
+		p[lab].kup[i] *= factor;
+		p[com].kup[i] *= factor;
+	}
+	scale_p_number(factor);
 }
 
 

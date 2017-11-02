@@ -142,7 +142,9 @@ public:
 	template<int s>
 	static void normalize_null_Minkowski(double a[], const int size);
 	virtual double dot(const double a[], const double b[], const int size, const double xup[]) const = 0;
+	virtual double dot3(const double a[], const double b[], const int size, const double xup[]) const = 0;
 	double dot(const double a[], const double b[], const int size, const int z_ind) const;
+	double dot3(const double a[], const double b[], const int size, const int z_ind) const;
 	virtual void normalize(double a[], const int size, const double xup[]) const = 0;
 	virtual void normalize_null(double a[], const int size, const double xup[]) const = 0;
 

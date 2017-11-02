@@ -107,6 +107,7 @@ Transport::Transport(){
 	exponential_decay = -MAXLIM;
 	randomwalk_n_isotropic = -MAXLIM;
 	distribution_polar_basis = -MAXLIM;
+	use_scattering_kernels = -MAXLIM;
 }
 
 
@@ -149,6 +150,7 @@ void Transport::init(Lua* lua)
 
 	// read simulation parameters
 	exponential_decay = lua->scalar<int>("exponential_decay");
+	use_scattering_kernels = lua->scalar<int>("use_scattering_kernels");
 	verbose      = lua->scalar<int>("verbose");
 	do_annihilation = lua->scalar<int>("do_annihilation");
 	radiative_eq = lua->scalar<int>("radiative_eq");
@@ -236,7 +238,7 @@ void Transport::init(Lua* lua)
 		// read the fortran module into memory
 		if(rank0) cout << "# Initializing NuLib..." << endl;
 		string nulib_table = lua->scalar<string>("nulib_table");
-		nulib_init(nulib_table);
+		nulib_init(nulib_table,use_scattering_kernels);
 		num_nut_species = nulib_get_nspecies();
 
 		// eos
@@ -407,6 +409,8 @@ void Transport::check_parameters() const{
 		cout << "ERROR: Emitting particles at beginning of timestep AND re-emitting them is inconsistent." << endl;
 		exit(10);
 	}
+	if(use_scattering_kernels && randomwalk_sphere_size>0)
+		cout << "WARNING: Assumptions in random walk approximation are incompatible with inelastic scattering." << endl;
 }
 
 //------------------------------------------------------------

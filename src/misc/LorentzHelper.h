@@ -75,7 +75,8 @@ public:
 	template<Frame f>
 	void set_p_kup(const double x[4], const int size);
 
-	void scale_p_e(const double e);
+	void scale_p_number(const double e);
+	void scale_p_energy(const double k);
 	void set_p_tau(const double tau);
 	void set_p_fate(const ParticleFate fate);
 	void set_p_s(const int s);

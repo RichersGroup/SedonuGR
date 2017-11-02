@@ -145,6 +145,18 @@ void Species::init(Lua* lua, Transport* simulation)
 	scat_opac.resize(sim->grid->z.size());
 	emis.resize(sim->grid->z.size());
 	biased_emis.resize(sim->grid->z.size());
+	if(sim->use_scattering_kernels==1){
+		normalized_phi0.resize(sim->grid->z.size());
+		scattering_delta.resize(sim->grid->z.size());
+		for(int z_ind=0; z_ind<sim->grid->z.size(); z_ind++){
+			normalized_phi0[z_ind].resize(nu_grid.size());
+			scattering_delta[z_ind].resize(nu_grid.size());
+			for(int igin=0; igin<nu_grid.size(); igin++){
+				normalized_phi0[z_ind][igin].resize(nu_grid.size());
+				scattering_delta[z_ind][igin].resize(nu_grid.size(),0);
+			}
+		}
+	}
 
 	// allocate space for each eas spectrum
 	if(sim->n_emit_core>0 || sim->n_emit_core_per_bin>0) core_emis.resize(nu_grid.size());
@@ -376,4 +388,45 @@ unsigned Species::number_of_bins(){
 
 double Species::sum_opacity(const int z_ind, const int group) const{
 	return abs_opac[z_ind][group] + scat_opac[z_ind][group];
+}
+
+//-------------------------------------------------------------
+// Sample outgoing neutrino direction and energy
+//-------------------------------------------------------------
+void Species::sample_scattering_final_state(const int z_ind, LorentzHelper &lh, const double cosTheta) const{
+	PRINT_ASSERT(sim->use_scattering_kernels,>,0);
+	PRINT_ASSERT(scattering_delta.size(),>,0);
+	PRINT_ASSERT(normalized_phi0.size(),>,0);
+
+	// get ingoing energy index
+	int igin = nu_grid.locate(lh.p_nu(com));
+
+	// get outgoing energy
+	double out_nu = normalized_phi0[z_ind][igin].invert(sim->rangen.uniform(),&nu_grid);
+	lh.scale_p_energy(out_nu/lh.p_nu(com));
+
+	// get outgoing energy index
+	int igout = nu_grid.locate(out_nu);
+
+	// bias outgoing direction to be isotropic. Very inefficient for large values of delta.
+	double delta = scattering_delta[z_ind][igin][igout];
+	PRINT_ASSERT(fabs(delta),<,3.0);
+	if(fabs(delta)<=1.0) lh.scale_p_number(1.0 + delta*cosTheta);
+	else{
+		double b = 2.*fabs(delta) / (3.-fabs(delta));
+		if(delta>1.0) lh.scale_p_number( pow(1.+cosTheta, b) );
+		else          lh.scale_p_number( pow(1.-cosTheta, b) );
+	}
+
+
+	// sample outgoing direction
+	//double U = sim->rangen.uniform();
+	//double tiny = 1.e-4;
+	//if(abs(delta)<1.e-4) // isotropic
+	//	*outCosTheta = 2.*U - 1.;
+	//else{
+	//	double b2m4ac = sqrt(1. - delta*(2.-delta-4.*U));
+	//	double sgn = (delta<0 ? -1.0 : 1.0);
+	//	*outCosTheta = 1./delta * (-1. + sgn*b2m4ac);
+	//}
 }

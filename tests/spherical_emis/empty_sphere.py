@@ -6,7 +6,7 @@ r_in = 0
 
 R = 10*km
 rho = 10
-temp = 10
+temp = 10*MeV
 Ye = 0.5
 v0 = 0
 v1 = 0

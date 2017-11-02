@@ -52,7 +52,7 @@ void Transport::event_interact(LorentzHelper* lh, int *z_ind){
 
 	// absorb part of the packet
 	else{
-		if(!exponential_decay) lh->scale_p_e(1.0 - lh->abs_fraction());
+		if(!exponential_decay) lh->scale_p_number(1.0 - lh->abs_fraction());
 		scatter(lh, z_ind);
 	}
 
@@ -78,7 +78,7 @@ void Transport::window(LorentzHelper *lh, const int z_ind){
 	// Roulette if too low energy
 	while(lh->p_e(com)<=min_packet_energy && lh->p_fate()==moving){
 		if(rangen.uniform() < 0.5) lh->set_p_fate(rouletted);
-		else lh->scale_p_e(2.0);
+		else lh->scale_p_number(2.0);
 	}
 	if(lh->p_fate()==moving) PRINT_ASSERT(lh->p_e(com),>=,min_packet_energy);
 
@@ -86,7 +86,7 @@ void Transport::window(LorentzHelper *lh, const int z_ind){
 	double ratio = lh->p_e(com) / max_packet_energy;
 	int n_new = (int)ratio;
 	if(ratio>1.0 && (int)particles.size()+n_new<max_particles && species_list[lh->p_s()]->interpolate_importance(lh->p_nu(com),z_ind)>=1.0){
-		lh->scale_p_e( 1.0 / (double)(n_new+1) );
+		lh->scale_p_number( 1.0 / (double)(n_new+1) );
 		for(int i=0; i<n_new; i++){
 			#pragma omp critical
 			particles.push_back(lh->particle_copy(lab));
@@ -199,9 +199,23 @@ void Transport::scatter(LorentzHelper *lh, int *z_ind) const{
 
 	// isotropic scatter if can't do random walk
 	if(!did_random_walk && lh->p_fate()==moving){
+		// store the old direction
+		double kup_old[3];
+		kup_old[0] = lh->p_kup(com)[0];
+		kup_old[1] = lh->p_kup(com)[1];
+		kup_old[2] = lh->p_kup(com)[2];
+
+		// sample new direction
 		double kup[4];
 		grid->isotropic_kup(lh->p_nu(com),kup,lh->p_xup(),4,&rangen);
 		lh->set_p_kup<com>(kup,4);
+
+		// get the dot product between the old and new directions
+		double cosTheta = grid->dot3(kup,kup_old,3,lh->p_xup()) / (lh->p_nu(com) * lh->p_nu(com) * 4. * pc::pi * pc::pi / (pc::c * pc::c));
+		PRINT_ASSERT(fabs(cosTheta),<=,1.0);
+
+		// sample outgoing energy and set the post-scattered state
+		if(use_scattering_kernels) species_list[lh->p_s()]->sample_scattering_final_state(*z_ind,*lh,cosTheta);
 	}
 }
 
@@ -226,7 +240,7 @@ void Transport::sample_tau(LorentzHelper *lh){
 	do{ // don't allow tau to be infinity
 		lh->set_p_tau( -taubar*log(rangen.uniform()) );
 	} while(lh->p_tau() >= INFINITY);
-	if(taubar != 1.0) lh->scale_p_e( taubar * exp(-lh->p_tau() * (1.0 - 1.0/taubar)) );
+	if(taubar != 1.0) lh->scale_p_number( taubar * exp(-lh->p_tau() * (1.0 - 1.0/taubar)) );
 	if(lh->p_e(lab)==0) lh->set_p_fate(rouletted);
 	PRINT_ASSERT(lh->p_e(lab),>=,0);
 
@@ -391,5 +405,5 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	//=============================================//
 	lh->set_p_xup(xnew,4);
 	lh->set_p_kup<com>(kup_new,4);
-	lh->scale_p_e( exp(-lh->abs_opac(com) * path_length_com) );
+	lh->scale_p_number( exp(-lh->abs_opac(com) * path_length_com) );
 }

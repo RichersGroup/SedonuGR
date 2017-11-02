@@ -31,6 +31,7 @@
 #include <cstdlib>
 #include "nulib_interface.h"
 #include "global_options.h"
+#include "H5Cpp.h"
 
 using namespace std;
 namespace pc = physical_constants;
@@ -57,14 +58,22 @@ void nulibtable_single_species_range_energy_(
 		int*);   //number of easvariables(3)
 void nulibtable_epannihil_single_species_range_energy_(
 		double* temp,  // MeV
-		double* eta,
-		int* lns,
-		double* eas,
+		double* eta,   // mu/kT
+		int* lns,      // species number
+		double* phi,   // phi[legendre-p/a index][this_group][anti-group]
 		int* ngroups1,
 		int* ngroups2,
 		int* n_phis);
+void nulibtable_inelastic_single_species_range_energy_(
+		double* temp,  // MeV
+		double* eta,   // mu/kT
+		int* lns,      // species number
+		double* phi,   // phi[legendre index][out group][in group]
+		int* ngroups1, // ng in
+		int* ngroups2, // ng out (should be same as eas_n1)
+		int* n_phis);   // number of legendre terms (=2)
 
-void nulibtable_reader_(char*,int*,int*,int);
+void nulibtable_reader_(char*,int*,int*,int*,int);
 
 void read_eos_table_(char* filename);
 
@@ -99,6 +108,11 @@ double  nulibtable_logItemp_max;
 double  nulibtable_logIeta_min;
 double  nulibtable_logIeta_max;
 int     nulib_total_eos_variables;
+int     read_Ielectron;
+int     read_epannihil;
+int     read_delta;
+int     output_scattering_kernels;
+int     output_epannihil_kernels;
 
 // The format of the fortran variables the fortran compiler provides
 // assumes C and Fortran compilers are the same
@@ -259,10 +273,24 @@ int nulib_get_nspecies(){
 /**************/
 /* nulib_init */
 /**************/
-void nulib_init(string filename){
-	int include_Ielectron = 0;//false;
-	int include_epannihil_kernels = 0;//false;
-	nulibtable_reader_((char*)filename.c_str(), &include_Ielectron, &include_epannihil_kernels, filename.length());
+void nulib_init(string filename, int use_scattering_kernels){
+	read_Ielectron = 0;
+	read_epannihil = 0;
+	read_delta = 0;
+	output_scattering_kernels = use_scattering_kernels;
+	output_epannihil_kernels = 0; // I haven't implemented this
+    if(use_scattering_kernels == 0) {
+    	// you should be using transport opacities with isotropic scattering
+    	PRINT_ASSERT(hdf5_dataset_exists(filename.c_str(),"/scattering_delta"),==,false);
+    	// if inelastic kernels exist in the NuLib file, you should be using them.
+    	PRINT_ASSERT(hdf5_dataset_exists(filename.c_str(),"/inelastic_phi0"),==,false);
+    }
+    else{
+    	if(hdf5_dataset_exists(filename.c_str(),"/scattering_delta")) read_delta = 1;
+    	if(hdf5_dataset_exists(filename.c_str(),"/inelastic_phi0"))   read_Ielectron = 1;
+    }
+
+	nulibtable_reader_((char*)filename.c_str(), &read_Ielectron, &read_epannihil, &read_delta, filename.length());
 	nulibtable_set_globals();
 
 	// output some facts about the table
@@ -273,11 +301,79 @@ void nulib_init(string filename){
 		cout << "#   T   range: {" << nulib_get_Tmin()*pc::k_MeV << "," << nulib_get_Tmax()*pc::k_MeV << "} MeV" << endl;
 		cout << "#   Ye  range: {" << nulib_get_Yemin() << "," << nulib_get_Yemax() << "}" << endl;
 		cout << "#   E   range: {" << nulibtable_ebottom[0] << "," << nulibtable_etop[nulibtable_number_groups-1] << "} MeV" << endl;
-		cout << "#   n_rho = " << nulibtable_nrho << endl;
-		cout << "#   n_T   = " << nulibtable_ntemp << endl;
-		cout << "#   n_Ye  = " << nulibtable_nye << endl;
-		cout << "#   n_E   = " << nulibtable_number_groups << endl;
+		cout << "#   n_rho   = " << nulibtable_nrho << endl;
+		cout << "#   n_T     = " << nulibtable_ntemp << endl;
+		cout << "#   n_Ye    = " << nulibtable_nye << endl;
+		cout << "#   n_E     = " << nulibtable_number_groups << endl;
+		cout << "#   n_Ieta  = " << nulibtable_nIeta << endl;
+		cout << "#   n_Itemp = " << nulibtable_nItemp << endl;
 //	}
+}
+
+
+/********************************/
+/* Inelastic scattering kernels */
+/********************************/
+void nulib_get_iscatter_kernels(
+		const double rho, // g/ccm
+		const double temp, // K
+		const double ye,
+		const int nulibID,
+		vector<double>& nut_scatopac, // 1/cm   opac[group in] Input AND output
+		vector< CDFArray >& phi0Tilde, // 2pi h^-3 c^-4 phi0 delta(E^3/3) [group in][group out] units 1/cm Output.
+		vector< vector<double> >& scattering_delta){  // 3.*phi1/phi0   [group_in][group_out] Input AND output.
+
+	// fetch the relevant table from nulib. NuLib only accepts doubles.
+	double temp_MeV = temp * pc::k_MeV; // MeV
+	int lns = nulibID+1;                // fortran array indices start with 1
+
+	//PRINT_ASSERT(nulibtable_nIeta,>,0);
+	//PRINT_ASSERT(nulibtable_nItemp,>,0);
+	PRINT_ASSERT(nulibID,>=,0);
+
+	// get the chemical potential
+	double munue = nulib_eos_munue(rho,temp,ye); // MeV
+	double eta = munue/temp_MeV;
+	eta = max(eta,pow(10.0,nulibtable_logIeta_min));
+	PRINT_ASSERT(eta,<=,pow(10.0,nulibtable_logIeta_max));
+
+	int n_legendre_coefficients = 2;
+	int ngroups = nulibtable_number_groups;
+	double phi[n_legendre_coefficients][ngroups][ngroups]; //[a][j][i] = legendre index a, out group i, and in group j (ccm/s)
+
+	// read the kernels from nulib
+	if(read_Ielectron>0){
+		PRINT_ASSERT(temp_MeV,<=,pow(10.0,nulibtable_logItemp_max));
+		PRINT_ASSERT(temp_MeV,>=,pow(10.0,nulibtable_logItemp_min));
+		nulibtable_inelastic_single_species_range_energy_(&temp_MeV, &eta, &lns, (double*)phi,
+				&ngroups, &ngroups, &n_legendre_coefficients);
+	}
+
+	// set the arrays.
+	double constants = pc::h*pc::h*pc::h * pc::c*pc::c*pc::c*pc::c / (4.*pc::pi);
+	for(int igin=0; igin<nulibtable_number_groups; igin++){
+		for(int igout=0; igout<nulibtable_number_groups; igout++){
+			double E1 = nulibtable_ebottom[igout] * pc::MeV_to_ergs;
+			double E2 = nulibtable_etop[   igout] * pc::MeV_to_ergs;
+			double dE3 = E2*E2*E2 - E1*E1*E1;
+			double coeff = constants / (dE3/3.0);
+
+			double inelastic_phi0=0, inelastic_phi1=0;
+			if(read_Ielectron){
+				inelastic_phi0 = phi[0][igout][igin] * coeff;
+				inelastic_phi1 = phi[1][igout][igin] * coeff / 9.;
+			}
+			if(igin == igout){
+				inelastic_phi0 += nut_scatopac[igin];
+				if(nulibtable_number_easvariables==4)
+					inelastic_phi1 += nut_scatopac[igin] * scattering_delta[igin][igin] / 3.0; // scattering_delta set in nulib_get_eas_arrays
+			}
+			phi0Tilde[igin].set_value(igout, inelastic_phi0);
+			scattering_delta[igin][igout] = (inelastic_phi0==0 ? 0 : 3. * inelastic_phi1 / inelastic_phi0);
+			PRINT_ASSERT(abs(scattering_delta[igin][igout]),<=,3.0);
+		}
+		phi0Tilde[igin].normalize();
+	}
 }
 
 /**********************/
@@ -291,7 +387,9 @@ void nulib_get_eas_arrays(
 		double nulib_opac_cutoff,      // 1/cm
 		CDFArray& nut_emiss,         // erg/cm^3/s/ster
 		vector<double>& nut_absopac,    // cm^-1
-		vector<double>& nut_scatopac){  // cm^-1
+		vector<double>& nut_scatopac,   // cm^-1
+		vector< CDFArray >& phiTilde, // 2pi h^-3 c^-4 phi0 delta(E^3/3) [group in][group out] units 1/cm
+		vector< vector<double> >& scattering_delta){
 
 	PRINT_ASSERT(rho,>=,0);
 	PRINT_ASSERT(temp,>=,0);
@@ -310,14 +408,9 @@ void nulib_get_eas_arrays(
 	//[2][*] = scattering opacity (1/cm)
 
 	//check sizes match and we are within the table boundaries
-	if(nvars != 3){
-		cout << "ERROR: nulibtable has different number of eas variables than 3" << endl;
-		exit(EXIT_FAILURE);
-	}
-	if(ngroups != (int)nut_absopac.size()){
-		cout << "ERROR: nulibtable has different number of energies than the eas arrays." << endl;
-		exit(EXIT_FAILURE);
-	}
+	if(read_delta) PRINT_ASSERT(nvars,==,4);
+	else           PRINT_ASSERT(nvars,==,3);
+	PRINT_ASSERT(ngroups,==,(int)nut_absopac.size());
 
 	// fetch the relevant table from nulib. NuLib only accepts doubles.
 	double temp_MeV = temp * pc::k_MeV; // MeV
@@ -342,19 +435,26 @@ void nulib_get_eas_arrays(
 		nulibtable_single_species_range_energy_(&rho, &temp_MeV, &ye, &lns,
 				(double*)eas_energy, &ngroups, &nvars);
 		for(int j=0; j<ngroups; j++){
-			if(eas_energy[1][j] > nulib_opac_cutoff){
-				nut_emiss.set_value(j, eas_energy[0][j]);
-				nut_absopac [j] =      eas_energy[1][j];
-				nut_scatopac[j] =      eas_energy[2][j];
-			}
-			else{
-				nut_emiss.set_value(j, 0);
-				nut_absopac [j] =      0;
-				nut_scatopac[j] =      0;
-			}
+			nut_emiss.set_value(j,       eas_energy[0][j]);
+			nut_absopac [j] =            eas_energy[1][j];
+			nut_scatopac[j] =        eas_energy[2][j];
+			if(nulibtable_number_easvariables==4)
+				scattering_delta[j][j] = eas_energy[3][j];
+ 		}
+
+		// set inelastic kernels if they exist in the table
+		if(output_scattering_kernels!=0)
+			nulib_get_iscatter_kernels(rho,temp,ye,nulibID,nut_scatopac,phiTilde,scattering_delta);
+		if(output_epannihil_kernels > 0){
+			cout << "ERROR - annihilation kernels not implemented" << endl;
+			exit(1);
 		}
 	}
 	nut_emiss.N = NaN;
+
+	// how are we organizing the data?
+	bool use_scattering_kernels = true;
+
 }
 
 
@@ -565,3 +665,4 @@ void nulib_get_epannihil_kernels(const double rho,                    /* g/ccm *
 		}
 	}
 }
+

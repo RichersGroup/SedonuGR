@@ -253,7 +253,7 @@ void Transport::move(LorentzHelper *lh, int *z_ind){
 
 	// appropriately reduce the particle's energy
 	if(exponential_decay){
-		lh->scale_p_e( exp(-lh->abs_opac(lab) * lh->distance(lab)) );
+		lh->scale_p_number( exp(-lh->abs_opac(lab) * lh->distance(lab)) );
 		window(lh,*z_ind);
 	}
 

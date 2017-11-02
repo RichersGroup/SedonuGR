@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 			sim.sample_tau(&lh);
 			while(lh.p_e(com)<=sim.min_packet_energy && lh.p_fate()==moving){
 				if(sim.rangen.uniform() < 0.5) lh.set_p_fate(rouletted);
-				else lh.scale_p_e(2.0);
+				else lh.scale_p_number(2.0);
 			}
 		}
 
