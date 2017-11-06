@@ -203,12 +203,25 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m,
 				Wttr_Fr = abs(W_constraint)>0 ? Wttr / W_constraint : 0.0;
 
 				// write out the variables
+				if(Prr_E>X*X and (Prr_E-X*X)/(X*X)<1e-3) Prr_E=X*X;
+				if(X*X*Wrrr_Fr>1 and (X*X*Wrrr_Fr-1)<1e-3) Wrrr_Fr=1./X/X;
 				q_M1[indexPrr]       = Prr_E;
 				q_M1_extra[indexPtt] = Ptt_E;
 				q_M1p[indexPrr_pm]   = Prr_E;
 				q_M1m[indexPrr_pm]   = Prr_E;
 				q_M1_extra[indexWrrr] = Wrrr_Fr * q_M1[indexFr];
 				q_M1_extra[indexWttr] = Wttr_Fr * q_M1[indexFr];
+
+				// check that the results are reasonable
+				PRINT_ASSERT(q_M1[indexPrr],>=,0);
+				PRINT_ASSERT(q_M1[indexPrr]-1,<=,X*X-1);
+				PRINT_ASSERT(q_M1_extra[indexPtt],>=,0);
+				PRINT_ASSERT(q_M1_extra[indexPtt]-1,<=,0);
+				PRINT_ASSERT(q_M1p[indexPrr_pm],>=,0);
+				PRINT_ASSERT(q_M1p[indexPrr_pm]-1,<=,X*X-1);
+				PRINT_ASSERT(q_M1m[indexPrr_pm],>=,0);
+				PRINT_ASSERT(q_M1m[indexPrr_pm]-1,<=,X*X-1);
+
 			}
 		}
 	}
