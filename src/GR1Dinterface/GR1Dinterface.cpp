@@ -5,6 +5,7 @@
 #include "mpi.h"
 #include "omp.h"
 #include "global_options.h"
+#include <cmath>
 #include <iostream>
 
 using namespace std;
@@ -12,6 +13,7 @@ using namespace std;
 double smoothing_timescale;
 int GR1D_recalc_every;
 const double time_gf = 2.03001708e5;
+double GR1D_tau_crit;
 
 extern "C"
 void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const int* M1_imaxradii, const int* ghosts1, Transport** sim){
@@ -47,6 +49,10 @@ void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const i
 	smoothing_timescale = lua.scalar<double>("smoothing_timescale");
 	GR1D_recalc_every = lua.scalar<int>("GR1D_recalc_every");
 
+	GR1D_tau_crit = lua.scalar<int>("GR1D_tau_crit");
+	if(GR1D_tau_crit < 0) GR1D_tau_crit = INFINITY;
+	PRINT_ASSERT(GR1D_tau_crit,>,1);
+
 	// set up the grid
 	const int nzones = *M1_imaxradii - *ghosts1;
 	GridGR1D* grid = new GridGR1D;
@@ -65,10 +71,10 @@ void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const i
 }
 
 extern "C"
-void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m,
-		double* q_M1_extra, double* q_M1_extrap, double* q_M1_extram,
+void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q_M1_extra,
+		double* q_M1_2mom, double* q_M1p_2mom, double* q_M1m_2mom, double* q_M1_extra_2mom,
 		const double* eas, const double* rho, const double* T, const double* Ye, const double* v1,
-		const double* metricX, const int* iter, const double* dt, Transport** sim){
+		const double* metricX, const int* iter, const double* dt, const double* rshock, Transport** sim){
 
 	const int nr_GR1D     = static_cast<Neutrino_GR1D*>((*sim)->species_list[0])->n_GR1D_zones;
 	const int nghost_GR1D = static_cast<Neutrino_GR1D*>((*sim)->species_list[0])->ghosts1;
@@ -82,8 +88,9 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m,
 	// set velocities and opacities
 	static_cast<GridGR1D*>((*sim)->grid)->set_fluid(rho, T, Ye, v1);
 
+	bool extract_MC[nr][ns][ne];
 	for(int s=0; s<(*sim)->species_list.size(); s++)
-		static_cast<Neutrino_GR1D*>((*sim)->species_list[s])->set_eas_external(eas);
+		static_cast<Neutrino_GR1D*>((*sim)->species_list[s])->set_eas_external(eas,GR1D_tau_crit,&(extract_MC[0][0][0]),*rshock);
 
 	// do MC calculation
 	char* OMP_NUM_THREADS = std::getenv("OMP_NUM_THREADS");
@@ -110,37 +117,39 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m,
 			int inds = indr + s*nr_GR1D;
 			GR1DSpectrumArray* tmpSpectrum = static_cast<GR1DSpectrumArray*>((*sim)->grid->z[z_ind].distribution[s]);
 			for(int ie=0; ie<ne; ie++){
-				int inde = inds + ie*ns*nr_GR1D;
-				int indexE    = inde + 0*indlast;
-				int indexFr   = inde + 1*indlast;
-				int indexPrr  = inde + 2*indlast;
-				int indexPtt  = inde + 0*indlast;
-				int indexWrrr = inde + 1*indlast;
-				int indexWttr = inde + 2*indlast;
-				//int indexChi  = inde + 3*indlast;
-				int indexPrr_pm = inde + 2*indlast + 0*ne*ns*nr_GR1D*3;
-				int indexChi_pm = inde + 0*indlast + 0*ne*ns*nr_GR1D*1;
+				if(extract_MC[z_ind][s][ie]){
+					int inde = inds + ie*ns*nr_GR1D;
+					int indexE    = inde + 0*indlast;
+					int indexFr   = inde + 1*indlast;
+					int indexPrr  = inde + 2*indlast;
+					int indexPtt  = inde + 0*indlast;
+					int indexWrrr = inde + 1*indlast;
+					int indexWttr = inde + 2*indlast;
+					//int indexChi  = inde + 3*indlast;
+					int indexPrr_pm = inde + 2*indlast + 0*ne*ns*nr_GR1D*3;
+					int indexChi_pm = inde + 0*indlast + 0*ne*ns*nr_GR1D*1;
 
-				// load up new arrays
-				double Prr  = tmpSpectrum->moments[tmpSpectrum->index(ie,2)];//q_M1[indexPrr];//
-				double Ptt  = tmpSpectrum->moments[tmpSpectrum->index(ie,3)];//q_M1_extra[indexPtt];//
-				double Wrrr = tmpSpectrum->moments[tmpSpectrum->index(ie,4)];//q_M1_extra[indexWrrr];//
-				double Wttr = tmpSpectrum->moments[tmpSpectrum->index(ie,5)];//q_M1_extra[indexWttr];//
+					// load up new arrays
+					double Prr  = tmpSpectrum->moments[tmpSpectrum->index(ie,2)];//q_M1[indexPrr];//
+					double Ptt  = tmpSpectrum->moments[tmpSpectrum->index(ie,3)];//q_M1_extra[indexPtt];//
+					double Wrrr = tmpSpectrum->moments[tmpSpectrum->index(ie,4)];//q_M1_extra[indexWrrr];//
+					double Wttr = tmpSpectrum->moments[tmpSpectrum->index(ie,5)];//q_M1_extra[indexWttr];//
 
-				// enforce local GR consistency
-				double P_constraint = Prr/X/X + 2.*Ptt;
-				double inv_P_constraint = 1.0 / P_constraint;
-				new_Prr_E[z_ind][s][ie] = inv_P_constraint<INFINITY ? Prr * inv_P_constraint : X*X;
-				new_Ptt_E[z_ind][s][ie] = inv_P_constraint<INFINITY ? Ptt * inv_P_constraint : 0.0;
-				//if(inv_P_constraint == INFINITY && z_ind<150) cout << "warning - inv_P_constraint==INFINITY ir=" << z_ind << " s=" << s << " ie=" << ie << endl;
+					// enforce local GR consistency
+					double P_constraint = Prr/X/X + 2.*Ptt;
+					double inv_P_constraint = 1.0 / P_constraint;
+					new_Prr_E[z_ind][s][ie] = inv_P_constraint<INFINITY ? Prr * inv_P_constraint : X*X;
+					new_Ptt_E[z_ind][s][ie] = inv_P_constraint<INFINITY ? Ptt * inv_P_constraint : 0.0;
+					//if(inv_P_constraint == INFINITY && z_ind<150) cout << "warning - inv_P_constraint==INFINITY ir=" << z_ind << " s=" << s << " ie=" << ie << endl;
 
-				double W_constraint = X*X*Wrrr + 2.*Wttr;
-				double inv_W_constraint = 1.0 / W_constraint;
-				double Wrrr_Fr = abs(W_constraint)>0 ? Wrrr / W_constraint : 1./X/X;
-				double Wttr_Fr = abs(W_constraint)>0 ? Wttr / W_constraint : 0.0;
-				new_Wrrr_Fr[z_ind][s][ie] = abs(inv_W_constraint)<INFINITY ? Wrrr * inv_W_constraint : 1./X/X;
-				new_Wttr_Fr[z_ind][s][ie] = abs(inv_W_constraint)<INFINITY ? Wttr * inv_W_constraint : 0.0;
-				//if(abs(inv_W_constraint) == INFINITY && z_ind<150) cout << "warning - inv_W_constraint==INFINITY ir=" << z_ind << " s=" << s << " ie=" << ie << endl;
+					double W_constraint = X*X*Wrrr + 2.*Wttr;
+					double inv_W_constraint = 1.0 / W_constraint;
+					double Wrrr_Fr = abs(W_constraint)>0 ? Wrrr / W_constraint : 1./X/X;
+					double Wttr_Fr = abs(W_constraint)>0 ? Wttr / W_constraint : 0.0;
+					new_Wrrr_Fr[z_ind][s][ie] = abs(inv_W_constraint)<INFINITY ? Wrrr * inv_W_constraint : 1./X/X;
+					new_Wttr_Fr[z_ind][s][ie] = abs(inv_W_constraint)<INFINITY ? Wttr * inv_W_constraint : 0.0;
+					//if(abs(inv_W_constraint) == INFINITY && z_ind<150) cout << "warning - inv_W_constraint==INFINITY ir=" << z_ind << " s=" << s << " ie=" << ie << endl;
+				}
 			}
 		}
 	}
@@ -162,55 +171,46 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m,
 				int indexPrr_pm = inde + 2*indlast + 0*ne*ns*nr_GR1D*3;
 				int indexChi_pm = inde + 0*indlast + 0*ne*ns*nr_GR1D*1;
 
-				// spatial smoothing
-				double Prr_E   =   new_Prr_E[z_ind][s][ie];
-				double Ptt_E   =   new_Ptt_E[z_ind][s][ie];
-				double Wrrr_Fr = new_Wrrr_Fr[z_ind][s][ie];
-				double Wttr_Fr = new_Wttr_Fr[z_ind][s][ie];
+				if(extract_MC[z_ind][s][ie]){
+					// spatial smoothing
+					double Prr_E   =   new_Prr_E[z_ind][s][ie];
+					double Ptt_E   =   new_Ptt_E[z_ind][s][ie];
+					double Wrrr_Fr = new_Wrrr_Fr[z_ind][s][ie];
+					double Wttr_Fr = new_Wttr_Fr[z_ind][s][ie];
 
-				if(z_ind==0){
-					Prr_E   = 0.5*(  new_Prr_E[z_ind][s][ie] +   new_Prr_E[z_ind+1][s][ie]);
-					Ptt_E   = 0.5*(  new_Ptt_E[z_ind][s][ie] +   new_Ptt_E[z_ind+1][s][ie]);
-					Wrrr_Fr = 0.5*(new_Wrrr_Fr[z_ind][s][ie] + new_Wrrr_Fr[z_ind+1][s][ie]);
-					Wttr_Fr = 0.5*(new_Wttr_Fr[z_ind][s][ie] + new_Wttr_Fr[z_ind+1][s][ie]);
-				}
-				else if(z_ind==nr-1){
-					Prr_E   = 0.5*(  new_Prr_E[z_ind][s][ie] +   new_Prr_E[z_ind-1][s][ie]);
-					Ptt_E   = 0.5*(  new_Ptt_E[z_ind][s][ie] +   new_Ptt_E[z_ind-1][s][ie]);
-					Wrrr_Fr = 0.5*(new_Wrrr_Fr[z_ind][s][ie] + new_Wrrr_Fr[z_ind-1][s][ie]);
-					Wttr_Fr = 0.5*(new_Wttr_Fr[z_ind][s][ie] + new_Wttr_Fr[z_ind-1][s][ie]);
+					// temporal smoothing
+					Prr_E       = fsmooth*Prr_E                 + (1.-fsmooth)*q_M1[indexPrr];
+					Ptt_E       = fsmooth*Ptt_E                 + (1.-fsmooth)*q_M1_extra[indexPtt];
+					double Wrrr = fsmooth*Wrrr_Fr*q_M1[indexFr] + (1.-fsmooth)*q_M1_extra[indexWrrr];
+					double Wttr = fsmooth*Wttr_Fr*q_M1[indexFr] + (1.-fsmooth)*q_M1_extra[indexWttr];
+
+					// make consistent with GR again
+					double P_constraint = Prr_E/X/X + 2.*Ptt_E;
+					Prr_E = P_constraint>0 ? Prr_E / P_constraint : X*X;
+					Ptt_E = P_constraint>0 ? Ptt_E / P_constraint : 0.0;
+					if(Prr_E>X*X and (Prr_E-X*X)/(X*X)<1e-3) Prr_E=X*X;
+
+					double W_constraint = X*X*Wrrr + 2.*Wttr;
+					Wrrr_Fr = abs(W_constraint)>0 ? Wrrr / W_constraint : 1./X/X;
+					Wttr_Fr = abs(W_constraint)>0 ? Wttr / W_constraint : 0.0;
+					if(X*X*Wrrr_Fr>1 and (X*X*Wrrr_Fr-1)<1e-3) Wrrr_Fr=1./X/X;
+
+					// write out the variables
+					q_M1[indexPrr]       = Prr_E;
+					q_M1_extra[indexPtt] = Ptt_E;
+					q_M1p[indexPrr_pm]   = Prr_E;
+					q_M1m[indexPrr_pm]   = Prr_E;
+					q_M1_extra[indexWrrr]  = Wrrr;
+					q_M1_extra[indexWttr]  = Wttr;
 				}
 				else{
-					Prr_E   = 0.25*(  new_Prr_E[z_ind+1][s][ie] +   2.*new_Prr_E[z_ind][s][ie] +   new_Prr_E[z_ind-1][s][ie]);
-					Ptt_E   = 0.25*(  new_Ptt_E[z_ind+1][s][ie] +   2.*new_Ptt_E[z_ind][s][ie] +   new_Ptt_E[z_ind-1][s][ie]);
-					Wrrr_Fr = 0.25*(new_Wrrr_Fr[z_ind+1][s][ie] + 2.*new_Wrrr_Fr[z_ind][s][ie] + new_Wrrr_Fr[z_ind-1][s][ie]);
-					Wttr_Fr = 0.25*(new_Wttr_Fr[z_ind+1][s][ie] + 2.*new_Wttr_Fr[z_ind][s][ie] + new_Wttr_Fr[z_ind-1][s][ie]);
+					q_M1[indexPrr]        = q_M1_2mom[indexPrr];
+					q_M1_extra[indexPtt]  = q_M1_extra_2mom[indexPtt];
+					q_M1p[indexPrr_pm]    = q_M1p_2mom[indexPrr_pm];
+					q_M1m[indexPrr_pm]    = q_M1m_2mom[indexPrr_pm];
+					q_M1_extra[indexWrrr] = q_M1_extra_2mom[indexWrrr];
+					q_M1_extra[indexWttr] = q_M1_extra_2mom[indexWttr];
 				}
-
-				// temporal smoothing
-				Prr_E       = fsmooth*Prr_E                 + (1.-fsmooth)*q_M1[indexPrr];
-				Ptt_E       = fsmooth*Ptt_E                 + (1.-fsmooth)*q_M1_extra[indexPtt];
-				double Wrrr = fsmooth*Wrrr_Fr*q_M1[indexFr] + (1.-fsmooth)*q_M1_extra[indexWrrr];
-				double Wttr = fsmooth*Wttr_Fr*q_M1[indexFr] + (1.-fsmooth)*q_M1_extra[indexWttr];
-
-				// make consistent with GR again
-				double P_constraint = Prr_E/X/X + 2.*Ptt_E;
-				Prr_E = P_constraint>0 ? Prr_E / P_constraint : X*X;
-				Ptt_E = P_constraint>0 ? Ptt_E / P_constraint : 0.0;
-
-				double W_constraint = X*X*Wrrr + 2.*Wttr;
-				Wrrr_Fr = abs(W_constraint)>0 ? Wrrr / W_constraint : 1./X/X;
-				Wttr_Fr = abs(W_constraint)>0 ? Wttr / W_constraint : 0.0;
-
-				// write out the variables
-				if(Prr_E>X*X and (Prr_E-X*X)/(X*X)<1e-3) Prr_E=X*X;
-				if(X*X*Wrrr_Fr>1 and (X*X*Wrrr_Fr-1)<1e-3) Wrrr_Fr=1./X/X;
-				q_M1[indexPrr]       = Prr_E;
-				q_M1_extra[indexPtt] = Ptt_E;
-				q_M1p[indexPrr_pm]   = Prr_E;
-				q_M1m[indexPrr_pm]   = Prr_E;
-				q_M1_extra[indexWrrr] = Wrrr_Fr * q_M1[indexFr];
-				q_M1_extra[indexWttr] = Wttr_Fr * q_M1[indexFr];
 
 				// check that the results are reasonable
 				PRINT_ASSERT(q_M1[indexPrr],>=,0);

@@ -44,11 +44,12 @@ public:
 
 	int ghosts1;
 	int n_GR1D_zones;
+	int GR1D_emit_outside_shock;
 	Neutrino_GR1D();
 
 	void myInit(Lua* lua);
 	void set_eas(int zone_index);
-	void set_eas_external(const double* easarray);
+	void set_eas_external(const double* easarray, const double GR1D_tau_crit, bool* extract_MC, const double rshock);
 };
 
 #endif
