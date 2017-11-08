@@ -90,7 +90,7 @@ void Transport::emit_inner_source_by_bin(){
 
 	int n_created = particles.size()-size_before;
 	if(verbose && rank0) cout << "#   emit_inner_source_by_bin() created = " << n_created << " particles on rank 0 ("
-			<< n_attempted-n_created << " rouletted immediately)" << endl;
+			<< n_attempted-n_created << " rouletted during emission)" << endl;
 }
 void Transport::emit_inner_source()
 {
