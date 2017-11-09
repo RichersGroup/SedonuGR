@@ -27,6 +27,7 @@ OTHER_OBJECTS = $(OTHER_SOURCES:./%.cpp=$(OBJDIR)/%.o)
 .PHONY: all clean
 
 # link the executables
+sedonu:$(EXE_DIR)/sedonu.a $(EXE_DIR)/sedonu
 all: $(EXECUTABLES) $(EXE_DIR)/sedonu.a
 $(EXE_DIR)/%: $(OBJDIR)/$(EXE_SRC_DIR)/%.o $(OTHER_OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(ALL_LIBS)

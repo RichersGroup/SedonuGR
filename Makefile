@@ -6,6 +6,11 @@ sedonu: #nulib
 	$(MAKE) -C src
 	ln -sf exe/sedonu
 
+all: #nulib
+	mkdir -p exe
+	$(MAKE) all -C src
+	ln -sf exe/sedonu
+
 clean: 
 	$(MAKE) -C src clean
 	rm -rf exe
