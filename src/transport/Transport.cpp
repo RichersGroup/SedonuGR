@@ -418,7 +418,7 @@ void Transport::check_parameters() const{
 //------------------------------------------------------------
 void Transport::step()
 {
-	assert(particles.empty());
+	//assert(particles.empty());
 
 	// reset radiation quantities
 	if(rank0 && verbose) cout << "# Clearing radiation..." << endl;

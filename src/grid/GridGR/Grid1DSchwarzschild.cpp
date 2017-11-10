@@ -395,33 +395,34 @@ double Grid1DSchwarzschild::g_down(const double xup[4], const int mu, const int 
 	default: return NaN;
 	}
 }
-double Grid1DSchwarzschild::d_g_down(const double xup[4], const int mu, const int nu, const int eta) const {
-	double retval = 0;
 
-	if(mu==nu){
-		if(eta==0){
-			switch(mu){
-			case 3: retval = - r_sch / (xup[0]*xup[0]); break;
-			case 0: retval = - r_sch / ((xup[0]-r_sch)*(xup[0]-r_sch)); break;
-			case 1: retval = 2.0 * xup[0]; break;
-			case 2: retval = 2.0 * xup[0] * sin(xup[1]) * sin(xup[1]); break;
-			default: retval = NaN; break;
-			}
-		}
-		else if(eta==1 && mu==2) retval = xup[0]*xup[0] * 2.0 * sin(xup[1]) * cos(xup[1]);
+double Grid1DSchwarzschild::connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const{
+	if(a==0){
+		if     (mu==3 && nu==3) return  0.5*r_sch * (xup[0]-r_sch) / (xup[0]*xup[0]*xup[0]);
+		else if(mu==0 && nu==0) return -0.5*r_sch / (xup[0] * (xup[0]-r_sch));
+		else if(mu==1 && nu==1) return -(xup[0] - r_sch);
+		else if(mu==2 && nu==2) return -(xup[0] - r_sch) * sin(xup[1])*sin(xup[1]);
+		else return 0;
 	}
-
-	PRINT_ASSERT(retval,==,retval);
-	return retval;
-}
-
-double Grid1DSchwarzschild::connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const{ // Gamma^alhpa_mu_nu
-	double gamma = 0;
-
-	double ginv = 1.0 / g_down(xup,a,a);
-	gamma += 0.5 * ginv * (d_g_down(xup,mu,a,nu) + d_g_down(xup,a,nu,mu) - d_g_down(xup,mu,nu,a));
-
-	return gamma;
+	else if(a==1){
+		if((mu==0 && nu==1) || (mu==1 && nu==0))
+			return 1./xup[0];
+		else if(mu==2 && nu==2) return -sin(xup[1])*cos(xup[1]);
+		else return 0;
+	}
+	else if(a==2){
+		if((mu==0 && nu==2) || (mu==2 && nu==0))
+			return 1./xup[0];
+		else if((mu==1 && nu==2) || (mu==2 && nu==1))
+			return cos(xup[1])/sin(xup[1]);
+		else return 0;
+	}
+	else if(a==3){
+		if((mu==3 && nu==0) || (mu==0 && nu==3))
+			return 0.5 * r_sch / (xup[0] * (xup[0] - r_sch));
+		else return 0;
+	}
+	else return NaN;
 }
 
 void Grid1DSchwarzschild::random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3], double D[3], const int size) const{

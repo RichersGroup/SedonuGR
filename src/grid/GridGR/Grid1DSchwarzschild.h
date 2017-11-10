@@ -67,8 +67,7 @@ public:
 
 	// GR stuff
 	double g_down(const double xup[4], const int mu, const int nu) const;
-	double connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const; // Gamma^alhpa_mu_nu
-	double d_g_down(const double xup[4], const int mu, const int nu, const int eta) const;
+	double connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const;
 
 	// particle creation help
 	void random_core_x_D(const double r_core, ThreadRNG *random, double x3[3], double D[3], const int size) const;

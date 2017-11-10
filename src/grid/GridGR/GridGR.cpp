@@ -40,6 +40,8 @@ using namespace std;
 namespace pc = physical_constants;
 
 void GridGR::integrate_geodesic(LorentzHelper *lh) const{
+	lh->particle_copy(lab).print();
+
 	double lambda = lh->distance(lab) * pc::c / (2.0*pc::pi * lh->p_nu(lab));
 
 	double dk_dlambda[4];
@@ -58,6 +60,9 @@ void GridGR::integrate_geodesic(LorentzHelper *lh) const{
 	// get new x
 	double xnew[4];
 	for(int i=0; i<4; i++) xnew[i] = lh->p_xup()[i] + lambda * 0.5 * (lh->p_kup(lab)[i] + knew[i]);
+
+	// make vector null again
+	normalize_null(knew,4,xnew);
 
 	// actually change the values
 	lh->set_p_xup(xnew,4);
