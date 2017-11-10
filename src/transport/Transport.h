@@ -42,7 +42,7 @@ enum ParticleEvent {interact, nothing};
 class Transport
 {
 
-private:
+protected:
 
 	// this species' list of particles
 	std::vector<Particle> particles;
