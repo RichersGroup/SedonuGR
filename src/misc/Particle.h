@@ -61,7 +61,7 @@ public:
 
 	void print() const
 	{
-		printf("%10.3e %10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e %i %i\n",
+		printf("%10.3e %10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e %10.3e | %10.3e %10.3e %i %i\n",
 				xup[0],xup[1],xup[2],xup[3],kup[0],kup[1],kup[2],kup[3],e,tau,s,fate);
 	}
 
