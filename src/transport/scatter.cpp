@@ -215,7 +215,13 @@ void Transport::scatter(LorentzHelper *lh, int *z_ind) const{
 		PRINT_ASSERT(fabs(cosTheta),<=,1.0);
 
 		// sample outgoing energy and set the post-scattered state
-		if(use_scattering_kernels) species_list[lh->p_s()]->sample_scattering_final_state(*z_ind,*lh,cosTheta);
+		if(use_scattering_kernels){
+			double tmp_E = lh->p_e(com);
+			species_list[lh->p_s()]->sample_scattering_final_state(*z_ind,*lh,cosTheta);
+			double dep_energy = tmp_E - lh->p_e(com);
+			if(dep_energy>0) grid->z[*z_ind].e_abs  += dep_energy;
+			else             grid->z[*z_ind].e_emit -= dep_energy;
+		}
 	}
 }
 
