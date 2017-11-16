@@ -25,39 +25,49 @@
 //
 */
 
-#ifndef _GRID_0D_ISOTROPIC_H
-#define _GRID_0D_ISOTROPIC_H 1
+#ifndef _GRID_2D_CYLINDER_H
+#define _GRID_2D_CYLINDER_H 1
 
-#include "GridNewtonian.h"
+#include "Grid.h"
 
 //*******************************************
-// 0-Dimensional Isotropic geometry
+// 2-Dimensional Cylindrical geometry
 //*******************************************
-class Grid0DIsotropic: public GridNewtonian
+class Grid2DCylinder: public Grid
 {
+
+private:
+	// store location of the outer edges of the zone.
+	// order of zone array: r is increased fastest
+	LocateArray rcyl_out;
+	LocateArray zcyl_out;
 
 public:
 
-	Grid0DIsotropic();
-	virtual ~Grid0DIsotropic() {}
+	virtual ~Grid2DCylinder() {}
 
 	void read_model_file(Lua* lua);
 
 	// required functions
-	int  zone_index               (const double x[3], const int xsize                        ) const;
-	double zone_lab_volume        (const int z_ind                                           ) const;
-	double zone_min_length        (const int z_ind                                           ) const;
-	void zone_coordinates         (const int z_ind, double r[0], const int rsize             ) const;
-	void zone_directional_indices (const int z_ind, int dir_ind[0], const int size           ) const;
+	int    zone_index             (const double x[3], const int xsize                            ) const;
+	int    zone_index             (const int i, const int j                                      ) const;
+	double zone_lab_volume        (const int z_ind                                               ) const;
+	double zone_min_length        (const int z_ind                                               ) const;
+	void zone_coordinates         (const int z_ind, double r[2], const int rsize                 ) const;
+	void zone_directional_indices (const int z_ind, int dir_ind[2], const int size               ) const;
 	void sample_in_zone (const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const;
 	void interpolate_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const;
-	void write_rays               (const int iw                                              ) const;
-	void symmetry_boundaries      (LorentzHelper *lh                                         ) const;
-	double lab_dist_to_boundary   (const LorentzHelper *lh                                   ) const;
+	void write_rays               (const int iw                                                  ) const;
+	void symmetry_boundaries      (LorentzHelper *lh                                             ) const;
+	double lab_dist_to_boundary   (const LorentzHelper *lh                                       ) const;
 	double zone_radius            (const int z_ind) const;
-	void dims                     (hsize_t dims[0], const int size) const;
-	hsize_t dimensionality() const {return 0;};
+	void dims                     (hsize_t dims[2], const int size) const;
+	hsize_t dimensionality() const {return 2;};
 	void write_hdf5_coordinates(H5::H5File file) const;
+
+	// GR functions
+	double g_down(const double xup[4], const int mu, const int nu) const;
+	double connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const; // Gamma^alhpa_mu_nu
 };
 
 

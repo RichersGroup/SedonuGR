@@ -53,6 +53,7 @@ void Grid::init(Lua* lua)
 	read_model_file(lua);
 
 	// read some parameters
+	do_GR = lua->scalar<int>("do_GR");
 	int do_relativity = lua->scalar<int>("do_relativity");
 	int write_zones_every = lua->scalar<int>("write_zones_every");
 	if(write_zones_every>0){
@@ -462,5 +463,212 @@ void Grid::isotropic_direction(double D[3], const int size, ThreadRNG *rangen) c
 	D[0] = smu*cos(phi);
 	D[1] = smu*sin(phi);
 	D[2] = mu;
+	Grid::normalize_Minkowski<3>(D,3);
+}
+
+void Grid::integrate_geodesic(LorentzHelper *lh) const{
+	if(do_GR){
+		lh->particle_copy(lab).print();
+
+		double lambda = lh->distance(lab) * pc::c / (2.0*pc::pi * lh->p_nu(lab));
+
+		double dk_dlambda[4];
+		for(int a=0; a<4; a++){
+			dk_dlambda[a] = 0;
+			for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++){
+				dk_dlambda[a] -= connection_coefficient(lh->p_xup(),a,mu,nu) * lh->p_kup(lab)[mu] * lh->p_kup(lab)[nu];
+			}
+			dk_dlambda[a] *= 2.0*pc::pi * lh->p_nu(lab) / pc::c;
+		}
+
+		// get new k
+		double knew[4];
+		for(int i=0; i<4; i++) knew[i] = lh->p_kup(lab)[i] + dk_dlambda[i]*lambda;
+
+		// get new x
+		double xnew[4];
+		for(int i=0; i<4; i++) xnew[i] = lh->p_xup()[i] + lambda * 0.5 * (lh->p_kup(lab)[i] + knew[i]);
+
+		// make vector null again
+		normalize_null(knew,4,xnew);
+
+		// actually change the values
+		lh->set_p_xup(xnew,4);
+		lh->set_p_kup<lab>(knew,4);
+	}
+	else{
+		double xnew[4];
+		double Dlab[3];
+		lh->p_D(lab,Dlab,3);
+		for(int i=0; i<3; i++) xnew[i] = lh->p_xup()[i] + lh->distance(lab) * Dlab[i];
+		xnew[3] = lh->p_xup()[3] + lh->distance(lab);
+		lh->set_p_xup(xnew,4);
+	}
+}
+
+double Grid::dot(const double a[], const double b[], const int size, const double xup[]) const{
+	PRINT_ASSERT(size,==,4);
+	double product = 0;
+	if(do_GR){
+		for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++)
+			product += a[mu] * b[nu] * g_down(xup,mu,nu);
+	}
+	else product = dot_Minkowski<4>(a,b,size);
+	return product;
+}
+double Grid::dot3(const double a[], const double b[], const int size, const double xup[]) const{
+	PRINT_ASSERT(size,==,3);
+
+	double product = 0;
+	if(do_GR){
+		for(int mu=0; mu<3; mu++) for(int nu=0; nu<3; nu++)
+			product += a[mu] * b[nu] * g_down(xup,mu,nu);
+	}
+	else product = dot_Minkowski<3>(a,b,size);
+	return product;
+}
+void Grid::normalize(double a[], const int size, const double xup[]) const{
+	PRINT_ASSERT(size,==,4);
+
+	double inv_norm = 0;
+	if(do_GR){
+		for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++)
+			inv_norm += a[mu] * a[nu] * g_down(xup,mu,nu);
+		inv_norm = 1.0 / sqrt(inv_norm);
+
+		for(int mu=0; mu<4; mu++) a[mu] *= inv_norm;
+	}
+	else normalize_Minkowski<4>(a,size);
+}
+void Grid::normalize_null(double a[], const int size, const double xup[]) const{
+	PRINT_ASSERT(size,==,4);
+
+	if(do_GR){
+		double A = g_down(xup,3,3);
+
+		double B = 0;
+		for(int i=0; i<3; i++) B += a[i] * g_down(xup,i,3);
+		B *= 2.0;
+
+		double C = 0;
+		for(int i=0; i<3; i++) for(int j=0; j<3; j++) C += a[i] * a[j] * g_down(xup,i,j);
+
+		a[3] = (-B - sqrt(abs( B*B - 4.0*A*C )) ) / (2.0*A);
+	}
+	else normalize_null_Minkowski<4>(a,size);
+}
+
+void Grid::isotropic_kup(const double nu, double kup[4], const double xup[4], const int size, ThreadRNG *rangen) const
+{
+	PRINT_ASSERT(size,==,4);
+
+	double D[3];
+	isotropic_direction(D,3,rangen);
+
+	kup[0] = nu * D[0] * 2.0*pc::pi / pc::c;
+	kup[1] = nu * D[1] * 2.0*pc::pi / pc::c;
+	kup[2] = nu * D[2] * 2.0*pc::pi / pc::c;
+	kup[3] = nu        * 2.0*pc::pi / pc::c;
+
+	if(do_GR){
+		// move from tetrad frame to comoving frame
+		double v[3];
+		interpolate_fluid_velocity(xup,4,v,3);
+		double u[4];
+		double gamma = LorentzHelper::lorentz_factor(v,3);
+		u[0] = gamma * v[0];
+		u[1] = gamma * v[1];
+		u[2] = gamma * v[2];
+		u[3] = gamma * pc::c;
+		tetrad_to_coord(xup, u, kup, 4);
+	}
+}
+
+void Grid::orthogonalize(double v[4], const double e[4], const double xup[4], const int size) const{
+	PRINT_ASSERT(abs(dot(e,e,size,xup)-1.0),<,TINY); // assume the basis vector is normalized
+	PRINT_ASSERT(size,==,4);
+	PRINT_ASSERT(do_GR,==,true);
+
+	double projection = dot(v,e,4,xup);
+	for(int mu=0; mu<4; mu++) v[mu] -= projection * v[mu];
+}
+void Grid::tetrad_to_coord(const double xup[4], const double u[4], double kup_tetrad[4], const int size) const{
+	PRINT_ASSERT(size,==,4);
+	PRINT_ASSERT(do_GR,==,true);
+	double e[4][4];
+
+	// normalize four-velocity to get timelike vector
+	for(int mu=0; mu<4; mu++) e[3][mu] = u[mu];
+	normalize(e[3], 4, xup);
+
+	// use x0 as a trial vector
+	e[0][0] = 1.0;
+	e[0][1] = 0;
+	e[0][2] = 0;
+	e[0][3] = 0;
+	orthogonalize(e[0],e[3],xup,4);
+	normalize(e[0],4,xup);
+
+	// use x1 as a trial vector
+	e[1][0] = 0;
+	e[1][1] = 1.0;
+	e[1][2] = 0;
+	e[1][3] = 0;
+	orthogonalize(e[1],e[3],xup,4);
+	orthogonalize(e[1],e[0],xup,4);
+	normalize(e[1],4,xup);
+
+	// use x2 as a trial vector
+	e[2][0] = 0;
+	e[2][1] = 0;
+	e[2][2] = 1.0;
+	e[2][3] = 0;
+	orthogonalize(e[2],e[3],xup,4);
+	orthogonalize(e[2],e[0],xup,4);
+	orthogonalize(e[2],e[1],xup,4);
+	normalize(e[2],4,xup);
+
+	// sanity checks
+	PRINT_ASSERT(abs(dot(e[0],e[1],4,xup)),<,TINY);
+	PRINT_ASSERT(abs(dot(e[0],e[2],4,xup)),<,TINY);
+	PRINT_ASSERT(abs(dot(e[0],e[3],4,xup)),<,TINY);
+	PRINT_ASSERT(abs(dot(e[1],e[2],4,xup)),<,TINY);
+	PRINT_ASSERT(abs(dot(e[1],e[3],4,xup)),<,TINY);
+	PRINT_ASSERT(abs(dot(e[2],e[3],4,xup)),<,TINY);
+
+	// transform to coordinate frame
+	double kup[4];
+	for(int mu=0; mu<4; mu++) kup[mu] = dot(kup_tetrad,e[mu],4,xup);
+	for(int mu=0; mu<4; mu++) kup_tetrad[mu] = kup[mu];
+}
+
+void Grid::random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3], double D[3], const int size) const{
+	PRINT_ASSERT(size,==,3);
+	PRINT_ASSERT(do_GR,==,false);
+
+	double phi_core   = 2*pc::pi*rangen->uniform();
+	double cosp_core  = cos(phi_core);
+	double sinp_core  = sin(phi_core);
+	double cost_core  = 1 - 2.0*rangen->uniform();
+	double sint_core  = sqrt(1-cost_core*cost_core);
+
+	double a_phot = r_core + r_core*1e-10;
+	x3[0] = a_phot*sint_core*cosp_core;
+	x3[1] = a_phot*sint_core*sinp_core;
+	x3[2] = a_phot*cost_core;
+
+	// pick photon propagation direction wtr to local normal
+	double phi_loc = 2*pc::pi*rangen->uniform();
+	// choose sqrt(R) to get outward, cos(theta) emission
+	double cost_loc  = sqrt(rangen->uniform());
+	double sint_loc  = sqrt(1 - cost_loc*cost_loc);
+	// local direction vector
+	double D_xl = sint_loc*cos(phi_loc);
+	double D_yl = sint_loc*sin(phi_loc);
+	double D_zl = cost_loc;
+	// apply rotation matrix to convert D vector into overall frame
+	D[0] = cost_core*cosp_core*D_xl-sinp_core*D_yl+sint_core*cosp_core*D_zl;
+	D[1] = cost_core*sinp_core*D_xl+cosp_core*D_yl+sint_core*sinp_core*D_zl;
+	D[2] = -sint_core*D_xl+cost_core*D_zl;
 	Grid::normalize_Minkowski<3>(D,3);
 }

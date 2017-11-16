@@ -68,9 +68,14 @@ protected:
 	int output_zones_distribution;
 	int output_hdf5;
 	int do_annihilation;
+	int do_GR;
 
 	// get the coordinates at the center of the zone z_ind (GRID COORDINATES)
 	virtual void zone_coordinates(const int z_ind, double r[], const int rsize) const = 0;
+
+	// GR functions
+	virtual double g_down(const double xup[4], const int mu, const int nu) const = 0;
+	virtual double connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const = 0; // Gamma^alhpa_mu_nu
 
 public:
 
@@ -141,21 +146,24 @@ public:
 	static void normalize_Minkowski(double a[], const int size);
 	template<int s>
 	static void normalize_null_Minkowski(double a[], const int size);
-	virtual double dot(const double a[], const double b[], const int size, const double xup[]) const = 0;
-	virtual double dot3(const double a[], const double b[], const int size, const double xup[]) const = 0;
+	double dot(const double a[], const double b[], const int size, const double xup[]) const;
+	double dot3(const double a[], const double b[], const int size, const double xup[]) const;
 	double dot(const double a[], const double b[], const int size, const int z_ind) const;
 	double dot3(const double a[], const double b[], const int size, const int z_ind) const;
-	virtual void normalize(double a[], const int size, const double xup[]) const = 0;
-	virtual void normalize_null(double a[], const int size, const double xup[]) const = 0;
+	void normalize(double a[], const int size, const double xup[]) const;
+	void normalize_null(double a[], const int size, const double xup[]) const;
 
 	// move the particle
-	virtual void integrate_geodesic(LorentzHelper *lh) const = 0;
+	void integrate_geodesic(LorentzHelper *lh) const;
 
 	// help with spawning particles
-	virtual void random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3], double D[3], const int size) const = 0;
-	virtual void isotropic_kup(const double nu, double kup[4], const double xup[4], const int size, ThreadRNG *rangen) const = 0;
+	void random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3], double D[3], const int size) const;
+	void isotropic_kup(const double nu, double kup[4], const double xup[4], const int size, ThreadRNG *rangen) const;
 	void isotropic_direction(double D[3], const int size, ThreadRNG *rangen) const;
 
+	// GR functions
+	void orthogonalize(double v[4], const double e[4], const double xup[4], const int size) const;
+	void tetrad_to_coord(const double xup[4], const double u[4], double kup[4], const int size) const;
 };
 
 

@@ -25,28 +25,39 @@
 //
 */
 
-#ifndef _GRID_2D_CYLINDER_H
-#define _GRID_2D_CYLINDER_H 1
+#ifndef _GRID_2D_SPHERE_H
+#define _GRID_2D_SPHERE_H 1
 
-#include "GridNewtonian.h"
+#include "Grid.h"
+
+// PARAMETERS
+//    Grid2DSphere_Flash_rgrid_file
+//    Grid2DSphere_Flash_thetagrid_file
+//    Grid2DSphere_Nagakura_xcoords_file
+//    Grid2DSphere_Nagakura_ycoords_file
 
 //*******************************************
-// 2-Dimensional Cylindrical geometry
+// 1-Dimensional Spherical geometry
 //*******************************************
-class Grid2DCylinder: public GridNewtonian
+class Grid2DSphere: public Grid
 {
 
 private:
 	// store location of the outer edges of the zone.
 	// order of zone array: r is increased fastest
-	LocateArray rcyl_out;
-	LocateArray zcyl_out;
+	LocateArray r_out;
+	LocateArray theta_out;
+	int ignore_theta_min_dist;
 
 public:
 
-	virtual ~Grid2DCylinder() {}
+	Grid2DSphere();
+	virtual ~Grid2DSphere() {}
 
 	void read_model_file(Lua* lua);
+	void read_flash_file(Lua* lua);
+	void read_nagakura_file(Lua* lua);
+	void custom_model(Lua* lua);
 
 	// required functions
 	int    zone_index             (const double x[3], const int xsize                            ) const;
@@ -64,6 +75,11 @@ public:
 	void dims                     (hsize_t dims[2], const int size) const;
 	hsize_t dimensionality() const {return 2;};
 	void write_hdf5_coordinates(H5::H5File file) const;
+	double zone_cell_dist(const double x_up[3], const int z_ind) const;
+
+	// GR functions
+	double g_down(const double xup[4], const int mu, const int nu) const;
+	double connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const; // Gamma^alhpa_mu_nu
 };
 
 

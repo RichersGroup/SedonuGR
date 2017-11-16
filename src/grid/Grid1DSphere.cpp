@@ -471,3 +471,12 @@ void Grid1DSphere::write_hdf5_coordinates(H5::H5File file) const
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 }
+
+double Grid1DSphere::g_down(const double xup[4], const int mu, const int nu) const{
+	cout << "g_down not implemented" << endl;
+	exit(1);
+}
+double Grid1DSphere::connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const{
+	cout << "g_down not implemented" << endl;
+	exit(1);
+}

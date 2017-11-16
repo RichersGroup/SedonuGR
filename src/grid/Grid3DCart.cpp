@@ -883,3 +883,12 @@ void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
 	lh->set_p_xup(xup,4);
 	lh->set_p_kup<lab>(kup,4);
 }
+
+double Grid3DCart::g_down(const double xup[4], const int mu, const int nu) const{
+	cout << "g_down not implemented" << endl;
+	exit(1);
+}
+double Grid3DCart::connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const{
+	cout << "g_down not implemented" << endl;
+	exit(1);
+}

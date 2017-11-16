@@ -25,52 +25,44 @@
 //
 */
 
-#ifndef _GRID_1D_SCHWARZ_H
-#define _GRID_1D_SCHWARZ_H 1
+#ifndef _GRID_0D_ISOTROPIC_H
+#define _GRID_0D_ISOTROPIC_H 1
 
-#include "GridGR.h"
+#include "Grid.h"
 
 //*******************************************
-// 1-Dimensional Spherical geometry
+// 0-Dimensional Isotropic geometry
 //*******************************************
-class Grid1DSchwarzschild: public GridGR
+class Grid0DIsotropic: public Grid
 {
-
-private:
-	// store location of the outer edge of the zone.
-	LocateArray r_out;
-
-	double r_sch;
 
 public:
 
-	virtual ~Grid1DSchwarzschild() {}
+	Grid0DIsotropic();
+	virtual ~Grid0DIsotropic() {}
 
 	void read_model_file(Lua* lua);
 
 	// required functions
-	int  zone_index               (const double x[3], const int xsize                            ) const;
-	double zone_lab_volume        (const int z_ind                                               ) const;
-	double zone_min_length        (const int z_ind                                               ) const;
-	void zone_coordinates         (const int z_ind, double r[1], const int rsize                 ) const;
-	void zone_directional_indices (const int z_ind, int dir_ind[1], const int size               ) const;
+	int  zone_index               (const double x[3], const int xsize                        ) const;
+	double zone_lab_volume        (const int z_ind                                           ) const;
+	double zone_min_length        (const int z_ind                                           ) const;
+	void zone_coordinates         (const int z_ind, double r[0], const int rsize             ) const;
+	void zone_directional_indices (const int z_ind, int dir_ind[0], const int size           ) const;
 	void sample_in_zone (const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const;
 	void interpolate_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const;
-	void write_rays               (const int iw                                                  ) const;
-	void reflect_outer            (LorentzHelper *lh                                             ) const;
-	void symmetry_boundaries      (LorentzHelper *lh                                             ) const;
-	double lab_dist_to_boundary   (const LorentzHelper *lh                                       ) const;
+	void write_rays               (const int iw                                              ) const;
+	void symmetry_boundaries      (LorentzHelper *lh                                         ) const;
+	double lab_dist_to_boundary   (const LorentzHelper *lh                                   ) const;
 	double zone_radius            (const int z_ind) const;
-	void dims                     (hsize_t dims[1], const int size) const;
-	hsize_t dimensionality() const {return 1;};
+	void dims                     (hsize_t dims[0], const int size) const;
+	hsize_t dimensionality() const {return 0;};
 	void write_hdf5_coordinates(H5::H5File file) const;
 
-	// GR stuff
+	// GR functions
 	double g_down(const double xup[4], const int mu, const int nu) const;
-	double connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const;
+	double connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const; // Gamma^alhpa_mu_nu
 
-	// particle creation help
-	void random_core_x_D(const double r_core, ThreadRNG *random, double x3[3], double D[3], const int size) const;
 };
 
 
