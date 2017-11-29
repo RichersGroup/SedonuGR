@@ -185,7 +185,10 @@ double LocateArray::value_at(const double xval, const vector<double>& y) const{
 	PRINT_ASSERT(ind,<=,(int)x.size());
 
 	double retval = -1;
-	if(interpolation_method == constant) retval = y[ind];
+	if(interpolation_method == constant){
+		if(ind==x.size()) ind -= 1;
+		retval = y[ind];
+	}
 	else{
 		int i1, i2;
 		if(ind == 0 || xval<=center(0)){   // If off left side of grid
