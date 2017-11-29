@@ -884,11 +884,13 @@ void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
 	lh->set_p_kup<lab>(kup,4);
 }
 
-double Grid3DCart::g_down(const double xup[4], const int mu, const int nu) const{
-	cout << "g_down not implemented" << endl;
-	exit(1);
+void Grid3DCart::g_down(const double xup[4], double g[4][4]) const{
+	const double z_ind = zone_index(xup,4);
+	for(int i=0; i<4; i++) for(int j=0; j<4; j++)
+		g[i][j] = metric[z_ind].g[i][j];
 }
-double Grid3DCart::connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const{
-	cout << "g_down not implemented" << endl;
-	exit(1);
+void Grid3DCart::connection_coefficients(const double xup[4], double gamma[4][4][4]) const{
+	const double z_ind = zone_index(xup,4);
+	for(int i=0; i<4; i++) for(int j=0; j<4; j++) for(int k=0; k<4; k++)
+		gamma[i][j][k] = metric[z_ind].gamma[i][j][k];
 }

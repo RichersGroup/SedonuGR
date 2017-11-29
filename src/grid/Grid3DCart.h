@@ -54,6 +54,12 @@ private:
 	int    rotate_hemisphere[2];
 	int    rotate_quadrant;
 
+	struct CartesianMetric{
+		double g[4][4];
+		double gamma[4][4][4];
+	};
+	std::vector<CartesianMetric> metric;
+
 public:
 
 	Grid3DCart();
@@ -87,8 +93,8 @@ public:
 	double zone_cell_dist(const double x_up[3], const int z_ind) const;
 
 	// GR functions
-	double g_down(const double xup[4], const int mu, const int nu) const;
-	double connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const; // Gamma^alhpa_mu_nu
+	void g_down(const double xup[4], double g[4][4]) const;
+	void connection_coefficients(const double xup[4], double gamma[4][4][4]) const; // Gamma^alhpa_mu_nu
 };
 
 

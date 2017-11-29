@@ -561,11 +561,11 @@ void Grid2DCylinder::write_hdf5_coordinates(H5::H5File file) const
 	dataset.close();
 }
 
-double Grid2DCylinder::g_down(const double xup[4], const int mu, const int nu) const{
+void Grid2DCylinder::g_down(const double xup[4], double g[4][4]) const{
 	cout << "g_down not implemented" << endl;
 	exit(1);
 }
-double Grid2DCylinder::connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const{
+void Grid2DCylinder::connection_coefficients(const double xup[4], double gamma[4][4][4]) const{
 	cout << "g_down not implemented" << endl;
 	exit(1);
 }

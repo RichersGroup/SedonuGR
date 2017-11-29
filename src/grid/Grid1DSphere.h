@@ -30,6 +30,8 @@
 
 #include "Grid.h"
 
+using std::vector;
+
 //*******************************************
 // 1-Dimensional Spherical geometry
 //*******************************************
@@ -41,6 +43,53 @@ protected:
 	LocateArray r_out;
 	int reflect_outer;
 
+	// ds^2 = -alpha dt^2 + X^2 dr^2 + dOmega^2
+	class Metric{
+	private:
+		int array_len = 0;
+		vector<double> alpha;
+		vector<double> X;
+		vector<double> dadr;
+		vector<double> dXdr;
+
+	public:
+
+		int size() const {
+			PRINT_ASSERT(alpha.size(),==,array_len);
+			PRINT_ASSERT(X.size()    ,==,array_len);
+			PRINT_ASSERT(dadr.size() ,==,array_len);
+			PRINT_ASSERT(dXdr.size() ,==,array_len);
+			return array_len;
+		}
+		void resize(const int len){
+			alpha.resize(len);
+			X.resize(len);
+			dadr.resize(len);
+			dXdr.resize(len);
+			array_len = len;
+		}
+		void set_metric(const vector<double>& tmp_alpha, const vector<double>& tmp_X,
+				const vector<double>& tmp_dadr, const vector<double>& tmp_dXdr){
+			PRINT_ASSERT(tmp_alpha.size(),==,array_len);
+			PRINT_ASSERT(tmp_X.size()    ,==,array_len);
+			PRINT_ASSERT(tmp_dadr.size() ,==,array_len);
+			PRINT_ASSERT(tmp_dXdr.size() ,==,array_len);
+
+			this->alpha = tmp_alpha;
+			this->X     = tmp_X;
+			this->dadr  = tmp_dadr;
+			this->dXdr  = tmp_dXdr;
+		}
+		double get_alpha(const int z_ind, const double r, const LocateArray& r_out)const {
+			return alpha[z_ind] + dadr[z_ind] * (r-r_out.center(z_ind));}
+		double get_X(    const int z_ind, const double r, const LocateArray& r_out) const {
+			return     X[z_ind] + dXdr[z_ind] * (r-r_out.center(z_ind));}
+		double get_dadr( const int z_ind) const {
+			return  dadr[z_ind];}
+		double get_dXdr( const int z_ind) const {
+			return  dXdr[z_ind];}
+	};
+	Metric metric;
 
 public:
 
@@ -69,8 +118,8 @@ public:
 	double zone_cell_dist(const double x_up[3], const int z_ind) const;
 
 	// GR functions
-	double g_down(const double xup[4], const int mu, const int nu) const;
-	double connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const; // Gamma^alhpa_mu_nu
+	void g_down(const double xup[4], double g[4][4]) const;
+	void connection_coefficients(const double xup[4], double gamma[4][4][4]) const; // Gamma^alhpa_mu_nu
 };
 
 

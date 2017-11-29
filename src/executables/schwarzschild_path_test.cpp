@@ -40,48 +40,6 @@
 using namespace std;
 namespace pc = physical_constants;
 
-double run_test(const int nsteps, const bool rank0, const double rho, const double T_MeV, const double target_ye, Transport& sim, ofstream& outf){
-	if(rank0) cout << endl << "Currently running: rho=" << rho << "g/ccm T_core=" << T_MeV << "MeV Ye=" << target_ye << endl;
-
-	// set the fluid properties
-	sim.grid->z[0].rho = rho;
-	double error = 1.2;
-	if(sim.equilibrium_T>0 ) sim.grid->z[0].T  = min(T_MeV/pc::k_MeV*error,sim.T_max);
-	else               sim.grid->z[0].T  = T_MeV/pc::k_MeV;
-	if(sim.equilibrium_Ye>0) sim.grid->z[0].Ye = min(target_ye*error,sim.Ye_max);
-	else               sim.grid->z[0].Ye = target_ye;
-
-	sim.grid->z[0].T = T_MeV/pc::k_MeV; //min(T_MeV/pc::k_MeV*1.1,100/pc::k_MeV);
-	sim.grid->z[0].Ye = target_ye; //min(target_ye*1.1,0.55);
-	double T_core = T_MeV/pc::k_MeV;
-
-	// reconfigure the core
-	double munue = nulib_eos_munue(rho,T_core,target_ye);
-	sim.init_core(sim.r_core,T_core,munue);
-	PRINT_ASSERT(sim.core_species_luminosity.N,>,0);
-
-	// check max optical depth
-	double max_opac = 0;
-	for(unsigned z_ind=0; z_ind<sim.grid->z.size(); z_ind++){
-		for(unsigned s=0; s<sim.species_list.size(); s++){
-			for(unsigned g=0; g<sim.species_list[s]->number_of_bins(); g++){
-				double opac = sim.species_list[s]->sum_opacity(z_ind,g);
-				if(opac>max_opac) max_opac = opac;
-			}
-		}
-	}
-	double optical_depth = max_opac * sim.grid->zone_min_length(0);
-	if(rank0) cout << " Optical Depth: " << optical_depth << endl;
-
-	// do the transport step
-	for(int i=0; i<nsteps; i++) sim.step();
-
-	// write the data out to file
-	outf << rho << "\t" << T_MeV << "\t" << target_ye << "\t" << munue*pc::ergs_to_MeV << "\t";
-	if(rank0) sim.grid->write_line(outf,0);
-	return optical_depth;
-}
-
 //--------------------------------------------------------
 // The main code
 // The user writes this for their own needs
@@ -108,7 +66,10 @@ int main(int argc, char **argv)
 		void set_particle(Particle p){
 			particles.resize(1);
 			particles[0] = p;
-			particles[0].print();
+		}
+		void move(LorentzHelper *lh, int *z_ind){
+			lh->particle_readonly(lab)->print();
+			Transport::move(lh,z_ind);
 		}
 	};
 
@@ -118,17 +79,20 @@ int main(int argc, char **argv)
 
 	// start only one neutrino
 	Particle p;
-	double r0 = 1.5*r_sch;
+
+	vector<double> xup,kup;
+	xup.resize(4);
+	kup.resize(4);
+	xup = lua.vector<double>("initial_xup");
+	kup = lua.vector<double>("initial_kup");
+	for(int i=0; i<4; i++){
+		p.xup[i] = xup[i];
+		p.kup[i] = kup[i];
+	}
+
 	p.s = 0;
 	p.e = 1;
-	p.xup[0] = r0;
-	p.xup[1] = M_PI/2.0;
-	p.xup[2] = 0;
-	p.xup[3] = 0;
-	p.kup[0] = (1.0 - r_sch/r0);
-	p.kup[1] = 0;
-	p.kup[2] = 0;
-	p.kup[3] = 1;
+	sim.grid->normalize_null(p.kup,4,p.xup);
 	p.tau = INFINITY;
 	p.fate = moving;
 	sim.set_particle(p);

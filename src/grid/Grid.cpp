@@ -50,10 +50,10 @@ void Grid::init(Lua* lua)
 	bool rank0 = (MPI_myID==0);
 
 	// read the model file or fill in custom model
+	do_GR = lua->scalar<int>("do_GR");
 	read_model_file(lua);
 
 	// read some parameters
-	do_GR = lua->scalar<int>("do_GR");
 	int do_relativity = lua->scalar<int>("do_relativity");
 	int write_zones_every = lua->scalar<int>("write_zones_every");
 	if(write_zones_every>0){
@@ -468,26 +468,29 @@ void Grid::isotropic_direction(double D[3], const int size, ThreadRNG *rangen) c
 
 void Grid::integrate_geodesic(LorentzHelper *lh) const{
 	if(do_GR){
-		lh->particle_copy(lab).print();
+		const double* kold = lh->p_kup(lab);
+		const double* xold = lh->p_xup();
 
-		double lambda = lh->distance(lab) * pc::c / (2.0*pc::pi * lh->p_nu(lab));
+		// get connection coefficients
+		double gamma[4][4][4];
+		connection_coefficients(xold,gamma);
 
-		double dk_dlambda[4];
+		double lambda = lh->distance(lab);
+
+		double dk_dlambda[4] = {0,0,0,0};
+		double dx_dlambda[4] = {0,0,0,0};
 		for(int a=0; a<4; a++){
-			dk_dlambda[a] = 0;
-			for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++){
-				dk_dlambda[a] -= connection_coefficient(lh->p_xup(),a,mu,nu) * lh->p_kup(lab)[mu] * lh->p_kup(lab)[nu];
-			}
-			dk_dlambda[a] *= 2.0*pc::pi * lh->p_nu(lab) / pc::c;
+			for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++)
+				dk_dlambda[a] -= gamma[a][mu][nu] * kold[mu] * kold[nu] / kold[3];
+			dx_dlambda[a]  = kold[a] / kold[3];
 		}
 
-		// get new k
-		double knew[4];
-		for(int i=0; i<4; i++) knew[i] = lh->p_kup(lab)[i] + dk_dlambda[i]*lambda;
-
-		// get new x
-		double xnew[4];
-		for(int i=0; i<4; i++) xnew[i] = lh->p_xup()[i] + lambda * 0.5 * (lh->p_kup(lab)[i] + knew[i]);
+		// get new x,k
+		double knew[4],xnew[4];
+		for(int i=0; i<4; i++){
+			knew[i] = lh->p_kup(lab)[i] + dk_dlambda[i]*lambda;
+			xnew[i] = lh->p_xup(   )[i] + dx_dlambda[i]*lambda;
+		}
 
 		// make vector null again
 		normalize_null(knew,4,xnew);
@@ -510,8 +513,10 @@ double Grid::dot(const double a[], const double b[], const int size, const doubl
 	PRINT_ASSERT(size,==,4);
 	double product = 0;
 	if(do_GR){
+		double g[4][4];
+		g_down(xup,g);
 		for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++)
-			product += a[mu] * b[nu] * g_down(xup,mu,nu);
+			product += a[mu] * b[nu] * g[mu][nu];
 	}
 	else product = dot_Minkowski<4>(a,b,size);
 	return product;
@@ -521,8 +526,10 @@ double Grid::dot3(const double a[], const double b[], const int size, const doub
 
 	double product = 0;
 	if(do_GR){
+		double g[4][4];
+		g_down(xup,g);
 		for(int mu=0; mu<3; mu++) for(int nu=0; nu<3; nu++)
-			product += a[mu] * b[nu] * g_down(xup,mu,nu);
+			product += a[mu] * b[nu] * g[mu][nu];
 	}
 	else product = dot_Minkowski<3>(a,b,size);
 	return product;
@@ -532,8 +539,10 @@ void Grid::normalize(double a[], const int size, const double xup[]) const{
 
 	double inv_norm = 0;
 	if(do_GR){
+		double g[4][4];
+		g_down(xup,g);
 		for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++)
-			inv_norm += a[mu] * a[nu] * g_down(xup,mu,nu);
+			inv_norm += a[mu] * a[nu] * g[mu][nu];
 		inv_norm = 1.0 / sqrt(inv_norm);
 
 		for(int mu=0; mu<4; mu++) a[mu] *= inv_norm;
@@ -544,16 +553,22 @@ void Grid::normalize_null(double a[], const int size, const double xup[]) const{
 	PRINT_ASSERT(size,==,4);
 
 	if(do_GR){
-		double A = g_down(xup,3,3);
+		double g[4][4];
+		g_down(xup,g);
+		double A = g[3][3];
+		double B=0, C=0;
 
-		double B = 0;
-		for(int i=0; i<3; i++) B += a[i] * g_down(xup,i,3);
-		B *= 2.0;
+		for(int i=0; i<3; i++){
+			B += a[i] * g[i][3] / A;
 
-		double C = 0;
-		for(int i=0; i<3; i++) for(int j=0; j<3; j++) C += a[i] * a[j] * g_down(xup,i,j);
+			for(int j=0; j<3; j++)
+				C += a[i] * a[j] * g[i][j] / A;
+		}
 
-		a[3] = (-B - sqrt(abs( B*B - 4.0*A*C )) ) / (2.0*A);
+		double result = 0.5 * (B + sqrt(B*B - 4.*C));
+		PRINT_ASSERT(result,>,0);
+
+		a[3] = result;
 	}
 	else normalize_null_Minkowski<4>(a,size);
 }

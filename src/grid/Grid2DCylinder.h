@@ -66,8 +66,8 @@ public:
 	void write_hdf5_coordinates(H5::H5File file) const;
 
 	// GR functions
-	double g_down(const double xup[4], const int mu, const int nu) const;
-	double connection_coefficient(const double xup[4], const int a, const int mu, const int nu) const; // Gamma^alhpa_mu_nu
+	void g_down(const double xup[4], double g[4][4]) const;
+	void connection_coefficients(const double xup[4], double gamma[4][4][4]) const; // Gamma^alhpa_mu_nu
 };
 
 
