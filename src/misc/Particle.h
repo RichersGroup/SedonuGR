@@ -53,7 +53,7 @@ public:
 	}
 
 	double xup[4];          // x,y,z,ct position (cm)
-	double kup[4];          // momentum 4-vector (ergs/c)
+	double kup[4];          // 4-wavevector (2pi nu/c)
 	double       e;         // total energy in ergs of packet
 	double     tau;         // remaining optical depth
 	int          s;         // species number
