@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 
 	// open up the lua parameter file
 	Lua lua;
-	string script_file = string("param.lua");
+	string script_file = string(argv[1]);
 	lua.init( script_file );
 	double r_sch = lua.scalar<double>("Grid1DSchwarzschild_r_sch");
 
@@ -70,6 +70,7 @@ int main(int argc, char **argv)
 		void move(LorentzHelper *lh, int *z_ind){
 			lh->particle_readonly(lab)->print();
 			Transport::move(lh,z_ind);
+			if(lh->p_xup()[0]<0 and lh->p_xup()[1]<0) lh->set_p_fate(absorbed);
 		}
 	};
 
