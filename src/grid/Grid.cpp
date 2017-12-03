@@ -150,13 +150,13 @@ double Grid::zone_cell_dist(const double x_up[3], const int z_ind) const{
 }
 
 double Grid::zone_rest_mass(const int z_ind) const{
-	return z[z_ind].rho*zone_comoving_volume(z_ind);
+	return z[z_ind].rho * zone_lab_volume(z_ind) * LorentzHelper::lorentz_factor(z[z_ind].u,3);
 }
 
 double Grid::zone_comoving_volume(const int z_ind) const{
 	// assumes v is orthonormal in cm/s
 	if(z_ind<0) return 0;
-	else return zone_lab_volume(z_ind) * LorentzHelper::lorentz_factor(z[z_ind].u,3);
+	else return zone_rest_mass(z_ind) / z[z_ind].rho;
 }
 
 void Grid::write_header(ofstream& outf) const{
