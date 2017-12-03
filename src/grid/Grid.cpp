@@ -86,7 +86,7 @@ void Grid::init(Lua* lua)
 
 		// sanity checks
 		PRINT_ASSERT(z[z_ind].rho,>=,0.0);
-		PRINT_ASSERT(zone_comoving_volume(z_ind),>=,0.0);
+		PRINT_ASSERT(zone_comoving_3volume(z_ind),>=,0.0);
 		PRINT_ASSERT(rest_mass,>=,0);
 
 		// calculating totals and averages
@@ -153,7 +153,7 @@ double Grid::zone_rest_mass(const int z_ind) const{
 	return z[z_ind].rho * zone_lab_volume(z_ind) * LorentzHelper::lorentz_factor(z[z_ind].u,3);
 }
 
-double Grid::zone_comoving_volume(const int z_ind) const{
+double Grid::zone_comoving_3volume(const int z_ind) const{
 	// assumes v is orthonormal in cm/s
 	if(z_ind<0) return 0;
 	else return zone_rest_mass(z_ind) / z[z_ind].rho;
@@ -203,7 +203,7 @@ void Grid::write_hdf5_data(H5::H5File file) const{
 
 	// write comoving volume, assumes last index varies fastest.
 	dataset = file.createDataSet("comoving_volume(ccm)",H5::PredType::IEEE_F32LE,dataspace);
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = zone_comoving_volume(z_ind);
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = zone_comoving_3volume(z_ind);
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 
@@ -313,7 +313,7 @@ void Grid::write_line(ofstream& outf, const int z_ind) const{
 
 	for(unsigned i=0; i<dimensionality(); i++) outf << r[i] << " ";
 
-	outf << zone_comoving_volume(z_ind) << "\t";
+	outf << zone_comoving_3volume(z_ind) << "\t";
 	outf << z[z_ind].rho   << "\t";
 	outf << z[z_ind].T*pc::k_MeV << "\t";
 	outf << z[z_ind].Ye    << "\t";

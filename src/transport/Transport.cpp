@@ -639,7 +639,7 @@ void Transport::normalize_radiative_quantities(){
 		// tally heat absorbed from viscosity and neutrinos
 		if(do_visc){
 			net_visc_heating += zone_comoving_visc_heat_rate(z_ind);      // erg/s
-			net_neut_heating += z->e_abs * grid->zone_comoving_volume(z_ind);
+			net_neut_heating += z->e_abs * grid->zone_comoving_3volume(z_ind);
 		}
 	}
 
@@ -939,8 +939,8 @@ void Transport::synchronize_gas()
 
 // rate at which viscosity energizes the fluid (erg/s)
 double Transport::zone_comoving_visc_heat_rate(const int z_ind) const{
-	if(visc_specific_heat_rate >= 0) return visc_specific_heat_rate * grid->z[z_ind].rho * grid->zone_comoving_volume(z_ind);
-	else                             return grid->z[z_ind].H_vis    * grid->z[z_ind].rho * grid->zone_comoving_volume(z_ind);
+	if(visc_specific_heat_rate >= 0) return visc_specific_heat_rate * grid->zone_rest_mass(z_ind);
+	else                             return grid->z[z_ind].H_vis    * grid->zone_rest_mass(z_ind);
 }
 
 
