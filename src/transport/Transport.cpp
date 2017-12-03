@@ -37,7 +37,6 @@
 #include "Grid0DIsotropic.h"
 #include "Grid1DSphere.h"
 #include "Grid2DSphere.h"
-#include "Grid2DCylinder.h"
 #include "Grid3DCart.h"
 #include "GridGR1D.h"
 #include "Species.h"
@@ -190,7 +189,6 @@ void Transport::init(Lua* lua)
 	if     (grid_type == "Grid0DIsotropic"    ) grid = new Grid0DIsotropic;
 	else if(grid_type == "Grid1DSphere"       ) grid = new Grid1DSphere;
 	else if(grid_type == "Grid2DSphere"       ) grid = new Grid2DSphere;
-	else if(grid_type == "Grid2DCylinder"     ) grid = new Grid2DCylinder;
 	else if(grid_type == "Grid3DCart"         ) grid = new Grid3DCart;
 	else if(grid_type == "GridGR1D"           ) cout << "#   Using GridGR1D" << endl; // already set up in GR1Dinterface.cpp
 	else{
