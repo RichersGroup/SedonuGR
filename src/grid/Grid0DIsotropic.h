@@ -45,7 +45,8 @@ public:
 
 	// required functions
 	int  zone_index               (const double x[3], const int xsize                        ) const;
-	double zone_lab_volume        (const int z_ind                                           ) const;
+	double zone_lab_3volume       (const int z_ind                                           ) const;
+	double zone_lapse             (const int z_ind                                           ) const;
 	double zone_min_length        (const int z_ind                                           ) const;
 	void zone_coordinates         (const int z_ind, double r[0], const int rsize             ) const;
 	void zone_directional_indices (const int z_ind, int dir_ind[0], const int size           ) const;

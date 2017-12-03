@@ -524,7 +524,7 @@ void Transport::calculate_annihilation() const{
 		unsigned s_nubare = 1;
 		PRINT_ASSERT(species_list[s_nue]->weight,==,species_list[s_nubare]->weight);
 		double Q_tmp = 0;
-		double vol = grid->zone_lab_volume(z_ind);
+		double vol = grid->zone_4volume(z_ind);
 		double zone_annihil_net = 0;
 		Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_nue],
 				 (PolarSpectrumArray*)grid->z[z_ind].distribution[s_nubare],
@@ -620,7 +620,7 @@ void Transport::normalize_radiative_quantities(){
 	for(unsigned z_ind=0;z_ind<grid->z.size();z_ind++)
 	{
 		Zone *z = &(grid->z[z_ind]);
-		double inv_mult_four_vol = 1.0/(multiplier * grid->zone_lab_volume(z_ind)); // Lorentz invariant - same in lab and comoving frames. Assume lab_dt=1.0
+		double inv_mult_four_vol = 1.0/(multiplier * grid->zone_4volume(z_ind)); // Lorentz invariant - same in lab and comoving frames. Assume lab_dt=1.0
 		PRINT_ASSERT(inv_mult_four_vol,>=,0);
 
 		z->e_abs    *= inv_mult_four_vol;       // erg      --> erg/ccm/s
@@ -639,7 +639,7 @@ void Transport::normalize_radiative_quantities(){
 		// tally heat absorbed from viscosity and neutrinos
 		if(do_visc){
 			net_visc_heating += zone_comoving_visc_heat_rate(z_ind);      // erg/s
-			net_neut_heating += z->e_abs * grid->zone_comoving_3volume(z_ind);
+			net_neut_heating += z->e_abs * grid->zone_4volume(z_ind);
 		}
 	}
 

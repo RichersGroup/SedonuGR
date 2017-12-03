@@ -45,14 +45,12 @@ protected:
 
 	// ds^2 = -alpha dt^2 + X^2 dr^2 + dOmega^2
 	class Metric{
-	private:
+	public:
 		int array_len = 0;
 		vector<double> alpha;
 		vector<double> X;
 		vector<double> dadr;
 		vector<double> dXdr;
-
-	public:
 
 		int size() const {
 			PRINT_ASSERT(alpha.size(),==,array_len);
@@ -102,7 +100,8 @@ public:
 
 	// required functions
 	int  zone_index               (const double x[3], const int xsize                            ) const;
-	double zone_lab_volume        (const int z_ind                                               ) const;
+	double zone_lab_3volume       (const int z_ind                                               ) const;
+	double zone_lapse             (const int z_ind                                               ) const;
 	double zone_min_length        (const int z_ind                                               ) const;
 	void zone_coordinates         (const int z_ind, double r[1], const int rsize                 ) const;
 	void zone_directional_indices (const int z_ind, int dir_ind[1], const int size               ) const;

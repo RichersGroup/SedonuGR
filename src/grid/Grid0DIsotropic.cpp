@@ -70,7 +70,7 @@ int Grid0DIsotropic::zone_index(const double x[3], const int xsize) const
 //------------------------------------------------------------
 // return volume of zone z_ind
 //------------------------------------------------------------
-double  Grid0DIsotropic::zone_lab_volume(const int z_ind) const
+double  Grid0DIsotropic::zone_lab_3volume(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,==,0);
 	return 1.0;
@@ -195,5 +195,9 @@ void Grid0DIsotropic::g3_down(const double xup[4], double gproj[4][4], int z_ind
 }
 void Grid0DIsotropic::connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind) const {
 	cout << "g_down not implemented" << endl;
+	exit(1);
+}
+double Grid0DIsotropic::zone_lapse(const int z_ind) const{
+	cout << "zone_lapse not implemented" << endl;
 	exit(1);
 }

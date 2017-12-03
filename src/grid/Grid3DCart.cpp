@@ -489,15 +489,15 @@ void Grid3DCart::zone_directional_indices(const int z_ind, int dir_ind[3], const
 //------------------------------------------------------------
 // return volume of zone (precomputed)
 //------------------------------------------------------------
-double Grid3DCart::zone_lab_volume(const int z_ind) const
+double Grid3DCart::zone_lab_3volume(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	int dir_ind[3];
-	zone_directional_indices(z_ind,dir_ind,3);
 	double delta[3];
 	get_deltas(z_ind,delta,3);
-	return delta[0] * delta[1] * delta[2];
+	double result = delta[0] * delta[1] * delta[2];
+	if(do_GR) result *= metric[z_ind].sqrtdetg3;
+	return result;
 }
 
 
@@ -902,4 +902,7 @@ void Grid3DCart::connection_coefficients(const double xup[4], double gamma[4][4]
 	if(z_ind<0) z_ind = zone_index(xup,4);
 	for(int i=0; i<4; i++) for(int j=0; j<4; j++) for(int k=0; k<4; k++)
 		gamma[i][j][k] = metric[z_ind].gamma[i][j][k];
+}
+double Grid3DCart::zone_lapse(const int z_ind) const{
+	return metric[z_ind].alpha;
 }

@@ -165,7 +165,7 @@ double temp_eq_function(double T, void *params)
 
 	// total energy absorbed in zone
 	double E_absorbed = sim->grid->z[z_ind].e_abs; // + sim->grid->z[z_ind].Q_annihil;
-	if(sim->do_visc) E_absorbed += sim->zone_comoving_visc_heat_rate(z_ind) / sim->grid->zone_comoving_3volume(z_ind);
+	if(sim->do_visc) E_absorbed += sim->zone_comoving_visc_heat_rate(z_ind) / sim->grid->zone_4volume(z_ind);
 
 	// total energy emitted (to be calculated based on emissivities)
 	double E_emitted = 0.;

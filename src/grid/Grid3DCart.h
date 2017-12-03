@@ -59,6 +59,7 @@ private:
 		double beta[3];
 		double g3[3][3];
 		double gamma[4][4][4];
+		double sqrtdetg3;
 	};
 	std::vector<CartesianMetric> metric;
 
@@ -79,7 +80,8 @@ public:
 	// required functions
 	int    zone_index               (const double x[3], const int xsize                            ) const;
 	int    zone_index               (const int i, const int j, const int k                         ) const;
-	double zone_lab_volume          (const int z_ind                                               ) const;
+	double zone_lab_3volume         (const int z_ind                                               ) const;
+	double zone_lapse               (const int z_ind                                               ) const;
 	double zone_min_length          (const int z_ind                                               ) const;
 	void   zone_coordinates         (const int z_ind, double r[3], const int rsize                 ) const;
 	void   zone_directional_indices (const int z_ind, int dir_ind[3], const int size               ) const;

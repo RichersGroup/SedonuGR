@@ -95,7 +95,7 @@ void Grid::init(Lua* lua)
 		Yebar           += z[z_ind].Ye * rest_mass;
 		total_KE        += (LorentzHelper::lorentz_factor(z[z_ind].u,3) - 1.0) * rest_mass * pc::c*pc::c;
 		total_TE        += rest_mass   / pc::m_n * pc::k * z[z_ind].T;
-		if(do_visc) total_hvis += z[z_ind].H_vis * z[z_ind].rho * zone_lab_volume(z_ind);
+		if(do_visc) total_hvis += z[z_ind].H_vis * z[z_ind].rho * zone_comoving_3volume(z_ind);
 	}
 
 	// write out useful info about the grid
@@ -150,13 +150,13 @@ double Grid::zone_cell_dist(const double x_up[3], const int z_ind) const{
 }
 
 double Grid::zone_rest_mass(const int z_ind) const{
-	return z[z_ind].rho * zone_lab_volume(z_ind) * LorentzHelper::lorentz_factor(z[z_ind].u,3);
+	return z[z_ind].rho * zone_comoving_3volume(z_ind);
 }
 
 double Grid::zone_comoving_3volume(const int z_ind) const{
 	// assumes v is orthonormal in cm/s
 	if(z_ind<0) return 0;
-	else return zone_rest_mass(z_ind) / z[z_ind].rho;
+	else return zone_lab_3volume(z_ind) * LorentzHelper::lorentz_factor(z[z_ind].u,3);
 }
 
 void Grid::write_header(ofstream& outf) const{
@@ -710,4 +710,8 @@ void Grid::g_down(const double xup[4], double g[4][4], const int z_ind) const{
 	}
 	g[3][3] = -alpha*alpha + beta_dot_beta;
 	PRINT_ASSERT(g[3][3],<,0);
+}
+
+double Grid::zone_4volume(const int z_ind) const{
+	return zone_lab_3volume(z_ind) * zone_lapse(z_ind);
 }

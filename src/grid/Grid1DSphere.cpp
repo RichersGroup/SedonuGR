@@ -271,12 +271,13 @@ int Grid1DSphere::zone_index(const double x[3], const int xsize) const
 //------------------------------------------------------------
 // return volume of zone z_ind
 //------------------------------------------------------------
-double  Grid1DSphere::zone_lab_volume(const int z_ind) const
+double  Grid1DSphere::zone_lab_3volume(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 	double r0 = (z_ind==0 ? r_out.min : r_out[z_ind-1]);
 	double vol = 4.0*pc::pi/3.0*(r_out[z_ind]*r_out[z_ind]*r_out[z_ind] - r0*r0*r0);
+	if(do_GR) vol *= metric.X[z_ind];
 	PRINT_ASSERT(vol,>=,0);
 	return vol;
 }
@@ -591,4 +592,8 @@ void Grid1DSphere::connection_coefficients(const double xup[4], double gamma[4][
 
 		gamma[a][mu][nu] = result;
 	}
+}
+
+double Grid1DSphere::zone_lapse(const int z_ind) const{
+	return metric.alpha[z_ind];
 }

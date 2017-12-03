@@ -115,7 +115,9 @@ public:
 	virtual int zone_index(const double x[3], const int size) const   = 0;
 
 	// return volume of zone z_ind
-	virtual double zone_lab_volume(const int z_ind) const         = 0;
+	virtual double zone_lab_3volume(const int z_ind) const = 0;
+	virtual double zone_lapse(const int z_ind) const = 0;
+	double zone_4volume(const int z_ind) const;
 
 	// return rest mass in cell
 	double zone_rest_mass(const int z_ind) const;

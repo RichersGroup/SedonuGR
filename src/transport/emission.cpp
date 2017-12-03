@@ -208,7 +208,7 @@ double Transport::zone_comoving_therm_emit_energy(const int z_ind) const{
 	else if(grid->zone_radius(z_ind) < r_core) return 0; // don't emit within core
 	else{
 		double H=0;
-		double four_vol = grid->zone_lab_volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
+		double four_vol = grid->zone_4volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
 		for(unsigned i=0; i<species_list.size(); i++){
 			double species_lum = species_list[i]->integrate_zone_emis(z_ind) * 4*pc::pi * four_vol;
 			PRINT_ASSERT(species_lum,>=,0);
@@ -223,7 +223,7 @@ double Transport::zone_comoving_biased_therm_emit_energy(const int z_ind) const{
 	else if(grid->zone_radius(z_ind) < r_core) return 0; // don't emit within core
 	else{
 		double H=0;
-		double four_vol = grid->zone_lab_volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
+		double four_vol = grid->zone_4volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
 		for(unsigned i=0; i<species_list.size(); i++){
 			double species_lum = species_list[i]->integrate_zone_biased_emis(z_ind) * 4*pc::pi * four_vol;
 			PRINT_ASSERT(species_lum,>=,0);
@@ -237,7 +237,7 @@ double Transport::bin_comoving_therm_emit_energy(const int z_ind, const int s, c
 	if(z_ind<0) return 0;
 	else if(grid->zone_radius(z_ind) < r_core) return 0; // don't emit within core
 	else{
-		double four_vol = grid->zone_lab_volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
+		double four_vol = grid->zone_4volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
 		double H = species_list[s]->bin_emis(z_ind,g) * 4*pc::pi * four_vol;
 		PRINT_ASSERT(H,>=,0);
 		return H;
@@ -250,7 +250,7 @@ double Transport::zone_comoving_therm_emit_leptons(const int z_ind) const{
 	if(z_ind<0) return 0;
 	else{
 		double L=0;
-		double four_vol = grid->zone_lab_volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
+		double four_vol = grid->zone_4volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
 		for(unsigned i=0; i<species_list.size(); i++){
 			double species_lum = species_list[i]->integrate_zone_lepton_emis(z_ind) * 4*pc::pi * four_vol;
 			L += species_lum;
