@@ -535,34 +535,40 @@ void Grid1DSphere::write_hdf5_coordinates(H5::H5File file) const
 	dataset.close();
 }
 
-void Grid1DSphere::g_down(const double xup[4], double g[4][4]) const{
-	const int z_ind = zone_index(xup,3);
-	const double r = radius(xup,3);
-	const double alpha = metric.get_alpha(z_ind, r, r_out); // sqrt(1. - 1./r);
-	if(alpha==0){
-		double a = 3;// do nothing
-	}
-	const double X = metric.get_X(z_ind,r, r_out); // 1./alpha;
-
-	for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++){
-		double result = 0;
-		if(mu==3 and nu==3) result = -alpha*alpha;
-		if(mu<3 and nu<3){
-			result = xup[mu] * xup[nu] * (X*X-1.0) / (r*r);
-			if(mu==nu) result += 1.0;
-		}
-		g[mu][nu] = result;
-	}
-	PRINT_ASSERT(g[3][3],<,0);
+double Grid1DSphere::lapse(const double xup[4], int z_ind) const{
+	double r = radius(xup,3);
+	if(z_ind<0) z_ind = zone_index(xup,3);
+	return metric.get_alpha(z_ind, r, r_out);
 }
 
-void Grid1DSphere::connection_coefficients(const double xup[4], double gamma[4][4][4]) const{
-	const int z_ind = zone_index(xup,3);
+void Grid1DSphere::shiftup(double betaup[4], const double xup[4], int z_ind) const{
+	for(int i=0; i<4; i++) betaup[i] = 0;
+}
+
+void Grid1DSphere::g3_down(const double xup[4], double gproj[4][4], int z_ind) const{
+	const double r = radius(xup,3);
+	if(z_ind<0) z_ind = zone_index(xup,3);
+	const double X = metric.get_X(z_ind,r, r_out);
+	for(int i=0; i<3; i++){
+		for(int j=0; j<3; j++) gproj[i][j] = xup[i] * xup[j] * (X*X-1.0) / (r*r);
+		gproj[i][i] += 1.0;
+	}
+}
+
+void Grid1DSphere::connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind) const{
+	if(z_ind<0) z_ind = zone_index(xup,3);
 	const double r = radius(xup,3);
 	const double X = metric.get_X(z_ind, r, r_out); // 1.0/alpha;
 	const double alpha = metric.get_alpha(z_ind, r, r_out); // sqrt(1.0 - 1.0/r);
 	const double dadr = metric.get_dadr(z_ind); // 0.5/(r*r) * X;
 	const double dXdr = metric.get_dXdr(z_ind); // -0.5/(r*r) * X*X*X;
+
+	// t mu nu
+	gamma[3][3][3] = 0;
+	for(int i=0; i<3; i++){
+		for(int j=0; j<3; j++) gamma[3][i][j] = 0;
+		gamma[3][i][3] = gamma[3][3][i] = dadr / (r*alpha) * xup[i];
+	}
 
 	for(int a=0; a<4; a++) for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++){
 		double result=0.;

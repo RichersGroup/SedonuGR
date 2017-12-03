@@ -181,11 +181,19 @@ void Grid0DIsotropic::write_hdf5_coordinates(H5::H5File file) const
 	assert(0);
 }
 
-void Grid0DIsotropic::g_down(const double xup[4], double g[4][4]) const{
+double Grid0DIsotropic::lapse(const double xup[4], int z_ind) const {
 	cout << "g_down not implemented" << endl;
 	exit(1);
 }
-void Grid0DIsotropic::connection_coefficients(const double xup[4], double gamma[4][4][4]) const{
+void Grid0DIsotropic::shiftup(double betaup[4], const double xup[4], int z_ind) const {
+	cout << "g_down not implemented" << endl;
+	exit(1);
+}
+void Grid0DIsotropic::g3_down(const double xup[4], double gproj[4][4], int z_ind) const {
+	cout << "g_down not implemented" << endl;
+	exit(1);
+}
+void Grid0DIsotropic::connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind) const {
 	cout << "g_down not implemented" << endl;
 	exit(1);
 }

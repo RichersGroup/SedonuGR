@@ -55,7 +55,9 @@ private:
 	int    rotate_quadrant;
 
 	struct CartesianMetric{
-		double g[4][4];
+		double alpha;
+		double beta[3];
+		double g3[3][3];
 		double gamma[4][4][4];
 	};
 	std::vector<CartesianMetric> metric;
@@ -93,9 +95,10 @@ public:
 	double zone_cell_dist(const double x_up[3], const int z_ind) const;
 
 	// GR functions
-	void g_down(const double xup[4], double g[4][4]) const;
-	void connection_coefficients(const double xup[4], double gamma[4][4][4]) const; // Gamma^alhpa_mu_nu
+	double lapse(const double xup[4], int z_ind=-1) const;
+	void shiftup(double betaup[4], const double xup[4], int z_ind=-1) const;
+	void g3_down(const double xup[4], double gproj[4][4], int z_ind=-1) const;
+	void connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind=-1) const; // Gamma^alhpa_mu_nu
 };
-
 
 #endif

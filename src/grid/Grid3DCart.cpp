@@ -884,13 +884,22 @@ void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
 	lh->set_p_kup<lab>(kup,4);
 }
 
-void Grid3DCart::g_down(const double xup[4], double g[4][4]) const{
-	const double z_ind = zone_index(xup,4);
-	for(int i=0; i<4; i++) for(int j=0; j<4; j++)
-		g[i][j] = metric[z_ind].g[i][j];
+double Grid3DCart::lapse(const double xup[4], int z_ind) const {
+	if(z_ind<0) z_ind = zone_index(xup,4);
+	return metric[z_ind].alpha;
 }
-void Grid3DCart::connection_coefficients(const double xup[4], double gamma[4][4][4]) const{
-	const double z_ind = zone_index(xup,4);
+void Grid3DCart::shiftup(double betaup[4], const double xup[4], int z_ind) const {
+	if(z_ind<0) z_ind = zone_index(xup,4);
+	betaup[3] = 0;
+	for(int i=0; i<3; i++) betaup[i] = metric[z_ind].beta[i];
+}
+void Grid3DCart::g3_down(const double xup[4], double gproj[4][4], int z_ind) const {
+	if(z_ind<0) z_ind = zone_index(xup,4);
+	for(int i=0; i<3; i++) for(int j=0; j<3; j++)
+		gproj[i][j] = metric[z_ind].g3[i][j];
+}
+void Grid3DCart::connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind) const{
+	if(z_ind<0) z_ind = zone_index(xup,4);
 	for(int i=0; i<4; i++) for(int j=0; j<4; j++) for(int k=0; k<4; k++)
 		gamma[i][j][k] = metric[z_ind].gamma[i][j][k];
 }

@@ -1024,11 +1024,19 @@ void Grid2DSphere::write_hdf5_coordinates(H5::H5File file) const
 	dataset.close();
 }
 
-void Grid2DSphere::g_down(const double xup[4], double g[4][4]) const{
+double Grid2DSphere::lapse(const double xup[4], int z_ind) const {
 	cout << "g_down not implemented" << endl;
 	exit(1);
 }
-void Grid2DSphere::connection_coefficients(const double xup[4], double gamma[4][4][4]) const{
+void Grid2DSphere::shiftup(double betaup[4], const double xup[4], int z_ind) const {
+	cout << "g_down not implemented" << endl;
+	exit(1);
+}
+void Grid2DSphere::g3_down(const double xup[4], double gproj[4][4], int z_ind) const {
+	cout << "g_down not implemented" << endl;
+	exit(1);
+}
+void Grid2DSphere::connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind) const {
 	cout << "g_down not implemented" << endl;
 	exit(1);
 }

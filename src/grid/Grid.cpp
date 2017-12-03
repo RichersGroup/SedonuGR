@@ -687,3 +687,27 @@ void Grid::random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3],
 	D[2] = -sint_core*D_xl+cost_core*D_zl;
 	Grid::normalize_Minkowski<3>(D,3);
 }
+
+double Grid::n_dot(const double invec[4], const double xup[4], const int z_ind) const{
+	return -lapse(xup,z_ind) * invec[3];
+}
+
+void Grid::g_down(const double xup[4], double g[4][4], const int z_ind) const{
+	g3_down(xup,g,z_ind);
+
+	double alpha = lapse(xup,z_ind);
+
+	double betaup[4];
+	shiftup(betaup,xup,z_ind);
+
+	// betaup[3] is zero by definition
+	double beta_dot_beta=0;
+	for(int i=0; i<3; i++){
+		double betadowni = 0;
+		for(int j=0; j<3; j++) betadowni += betaup[j] * g[i][j];
+		beta_dot_beta += betaup[i] * betadowni;
+		g[3][i] = g[i][3] = betadowni;
+	}
+	g[3][3] = -alpha*alpha + beta_dot_beta;
+	PRINT_ASSERT(g[3][3],<,0);
+}

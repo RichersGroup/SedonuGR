@@ -78,8 +78,10 @@ public:
 	double zone_cell_dist(const double x_up[3], const int z_ind) const;
 
 	// GR functions
-	void g_down(const double xup[4], double g[4][4]) const;
-	void connection_coefficients(const double xup[4], double gamma[4][4][4]) const; // Gamma^alhpa_mu_nu
+	double lapse(const double xup[4], int z_ind=-1) const;
+	void shiftup(double betaup[4], const double xup[4], int z_ind=-1) const;
+	void g3_down(const double xup[4], double gproj[4][4], int z_ind=-1) const;
+	void connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind=-1) const; // Gamma^alhpa_mu_nu
 };
 
 

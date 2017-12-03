@@ -74,8 +74,13 @@ protected:
 	virtual void zone_coordinates(const int z_ind, double r[], const int rsize) const = 0;
 
 	// GR functions
-	virtual void g_down(const double xup[4], double g[4][4]) const = 0;
-	virtual void connection_coefficients(const double xup[4], double gamma[4][4][4]) const = 0; // Gamma^alhpa_mu_nu
+	virtual double lapse(const double xup[4], int z_ind=-1) const = 0;
+	virtual void shiftup(double betaup[4], const double xup[4], int z_ind=-1) const = 0;
+	virtual void g3_down(const double xup[4], double gproj[4][4], int z_ind=-1) const = 0;
+	virtual void connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind=-1) const = 0; // Gamma^alhpa_mu_nu
+	void g_down(const double xup[4], double g[4][4], int z_ind=-1) const;
+	double n_dot(const double invec[4], const double xup[4], int z_ind=-1) const;
+
 
 public:
 
