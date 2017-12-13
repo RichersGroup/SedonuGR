@@ -64,10 +64,10 @@ void SpectrumArray::rotate_basis(double D[3], const double xyz[3]){
 	for(int i=0; i<3; i++) D[i] = Dout[i];
 }
 
-void SpectrumArray::rotate_and_count(const double kup[4], const double xup[4], const double nu, const double E){
+void SpectrumArray::rotate_and_count(const double kup[4], const double xup[4], const double nu, const double weight){
 	double D[3] = {kup[0], kup[1], kup[2]};
-	Grid::normalize_Minkowski<3>(D,3);
-
 	if(rotated_basis) rotate_basis(D,xup);
-	count(D, nu, E);
+
+	Grid::normalize_Minkowski<3>(D,3);
+	count(D, nu, weight);
 }
