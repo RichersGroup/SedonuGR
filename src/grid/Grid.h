@@ -80,6 +80,7 @@ protected:
 	virtual void connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind=-1) const = 0; // Gamma^alhpa_mu_nu
 	void g_down(const double xup[4], double g[4][4], int z_ind=-1) const;
 	double n_dot(const double invec[4], const double xup[4], int z_ind=-1) const;
+	void orthogonalize(double v[4], const double e[4], const double xup[4]) const;
 
 
 public:
@@ -95,82 +96,68 @@ public:
 	virtual void init(Lua* lua);
 
 	// write out zone information
-	void write_zones(const int iw) const;
-	void write_header(std::ofstream& outf) const;
-	void write_line(std::ofstream& outf, const int z_ind) const;
+	void         write_zones(const int iw) const;
+	void         write_header(std::ofstream& outf) const;
+	void         write_line(std::ofstream& outf, const int z_ind) const;
 	virtual void write_rays(const int iw) const = 0;
-	void write_hdf5_data(H5::H5File file) const;
-	virtual void write_hdf5_coordinates(H5::H5File file) const = 0;
+	void         write_hdf5_data       (H5::H5File file) const;
+	virtual void write_hdf5_coordinates(H5::H5File file) const=0;
 
-	//****** virtual functions (geometry specific)
+	// radius using naieve coord transformation
+	static double radius(const double xup[4]);
 
 	// get directional indices from the zone index
-	virtual void zone_directional_indices(const int z_ind, int dir_ind[], const int size) const = 0;
-	virtual void dims(hsize_t dims[], const int size) const = 0;
-	virtual hsize_t dimensionality() const = 0;
+	virtual void    zone_directional_indices(const int z_ind, int dir_ind[], int size) const=0;
+	virtual void    dims                    (hsize_t dims[], const int size) const=0;
+	virtual hsize_t dimensionality          () const=0;
 
-	double radius(const double x[3], const int size) const;
+	// describe zone
+	virtual int    zone_index      (const double xup[4])                    const=0;
+	virtual double zone_lab_3volume(const int z_ind)                        const=0;
+	virtual double zone_lapse      (const int z_ind)                        const=0;
+	virtual double zone_min_length (const int z_ind)                        const=0;
+	virtual double zone_radius     (const int z_ind)                        const=0;
+	virtual double zone_cell_dist  (const double p_xup[3], const int z_ind) const;
+	double         zone_com_3volume(const int z_ind)                        const;
+	double         zone_4volume    (const int z_ind)                        const;
+	double         zone_rest_mass  (const int z_ind)                        const;
 
-	// get zone index from x,y,z position
-	virtual int zone_index(const double x[3], const int size) const   = 0;
-
-	// return volume of zone z_ind
-	virtual double zone_lab_3volume(const int z_ind) const = 0;
-	virtual double zone_lapse(const int z_ind) const = 0;
-	double zone_4volume(const int z_ind) const;
-
-	// return rest mass in cell
-	double zone_rest_mass(const int z_ind) const;
-	double zone_comoving_3volume(const int z_ind) const;
+	// global functions
 	double total_rest_mass() const;
 
-	// return the smallest length dimension of zone  z_ind
-	virtual double zone_min_length(const int z_ind) const     = 0;
-	virtual double zone_cell_dist(const double p_xup[3], const int z_ind) const;
-
-	// randomly sample a position within the zone z_ind (PARTICLE COORDINATES)
-	virtual void sample_in_zone(const int z_ind,const double rand[], const int randsize, double x[3], const int xsize) const = 0;
-
 	// give the velocity vector at this point (PARTICLE COORDINATES)
-	virtual void interpolate_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind=-1) const = 0;
+	virtual void interpolate_fluid_velocity(const double xup[4], double v[3], int z_ind=-1) const = 0;
 
-	virtual double zone_radius(const int z_ind) const = 0;
 
 	// boundary conditions
-	virtual double lab_dist_to_boundary(const LorentzHelper *lh) const = 0;
-	virtual void symmetry_boundaries(LorentzHelper *lh) const = 0;
+	virtual double lab_dist_to_boundary(const LorentzHelper *lh) const=0;
+	virtual void   symmetry_boundaries (LorentzHelper *lh)       const=0;
 
 	// vector operations
-	template<int s>
-	static double dot_Minkowski(const std::vector<double>& a, const std::vector<double>& b);
-	template<int s>
-	static double dot_Minkowski(const std::vector<double>& a, const double b[], const int size);
-	template<int s>
-	static double dot_Minkowski(const double a[], const double b[], const int size);
-	template<int s>
-	static void normalize_Minkowski(std::vector<double>& a);
-	template<int s>
-	static void normalize_Minkowski(double a[], const int size);
-	template<int s>
-	static void normalize_null_Minkowski(double a[], const int size);
-	double dot(const double a[], const double b[], const int size, const double xup[]) const;
-	double dot3(const double a[], const double b[], const int size, const double xup[]) const;
-	double dot(const double a[], const double b[], const int size, const int z_ind) const;
-	double dot3(const double a[], const double b[], const int size, const int z_ind) const;
-	void normalize(double a[], const int size, const double xup[]) const;
-	void normalize_null(double a[], const int size, const double xup[]) const;
+	template<int s> static double dot_Minkowski(const std::vector<double>& aup, const std::vector<double>& bup);
+	template<int s> static double dot_Minkowski(const std::vector<double>& aup, const double bup[]);
+	template<int s>	static double dot_Minkowski(const double aup[],             const double bup[]);
+	template<int s>	static void   normalize_Minkowski     (std::vector<double>& a);
+	template<int s>	static void   normalize_Minkowski     (double aup[]);
+	template<int s>	static void   normalize_null_Minkowski(double aup[]);
+	double dot (const double aup[4], const double bup[4], const double xup[4]) const;
+	double dot3(const double aup[3], const double bup[3], const double xup[4]) const;
+	double dot (const double aup[4], const double bup[4], const int z_ind)    const;
+	double dot3(const double aup[3], const double bup[3], const int z_ind)    const;
+	void normalize     (double aup[4], const double xup[4]) const;
+	void normalize_null(double aup[4], const double xup[4]) const;
 
 	// move the particle
 	void integrate_geodesic(LorentzHelper *lh) const;
 
 	// help with spawning particles
-	void random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3], double D[3], const int size) const;
-	void isotropic_kup(const double nu, double kup[4], const double xup[4], const int size, ThreadRNG *rangen) const;
-	void isotropic_direction(double D[3], const int size, ThreadRNG *rangen) const;
+	void random_core_x_D(const double r_core, ThreadRNG *rangen, double xup[4], double D[3]) const;
+	void isotropic_kup(const double nu, double kup[4], const double xup[4], ThreadRNG *rangen) const;
+	void isotropic_direction(double D[3], ThreadRNG *rangen) const;
+	virtual void sample_in_zone(const int z_ind, ThreadRNG *rangen, double xup[3]) const = 0;
 
 	// GR functions
-	void orthogonalize(double v[4], const double e[4], const double xup[4], const int size) const;
-	void tetrad_to_coord(const double xup[4], const double u[4], double kup[4], const int size) const;
+	void tetrad_to_coord(const double xup[4], const double u[4], double kup[4]) const;
 };
 
 

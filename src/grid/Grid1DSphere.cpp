@@ -243,10 +243,9 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 //------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
-int Grid1DSphere::zone_index(const double x[3], const int xsize) const
+int Grid1DSphere::zone_index(const double x[3]) const
 {
 	PRINT_ASSERT(z.size(),>,0);
-	PRINT_ASSERT(xsize,==,3);
 	double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 	PRINT_ASSERT(r,>=,0);
 
@@ -283,7 +282,7 @@ double  Grid1DSphere::zone_lab_3volume(const int z_ind) const
 }
 
 double Grid1DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const{
-	double r = sqrt(dot_Minkowski<3>(x_up,x_up,3));
+	double r = sqrt(dot_Minkowski<3>(x_up,x_up));
 	PRINT_ASSERT(r,<=,r_out[z_ind]);
 	PRINT_ASSERT(r,>=,r_out.bottom(z_ind));
 
@@ -335,13 +334,15 @@ void Grid1DSphere::zone_directional_indices(const int z_ind, int dir_ind[1], con
 //------------------------------------------------------------
 // sample a random position within the spherical shell
 //------------------------------------------------------------
-void Grid1DSphere::sample_in_zone
-(const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const
+void Grid1DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3]) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	PRINT_ASSERT(randsize,==,3);
-	PRINT_ASSERT(xsize,==,3);
+
+	double rand[3];
+	rand[0] = rangen->uniform();
+	rand[1] = rangen->uniform();
+	rand[2] = rangen->uniform();
 
 	// inner and outer radii of shell
 	double r0 = (z_ind==0 ? r_out.min : r_out[z_ind-1]);
@@ -369,16 +370,14 @@ void Grid1DSphere::sample_in_zone
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void Grid1DSphere::interpolate_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
+void Grid1DSphere::interpolate_fluid_velocity(const double x[3], double v[3], int z_ind) const
 {
-	PRINT_ASSERT(xsize,==,3);
-	PRINT_ASSERT(vsize,==,3);
-	if(z_ind < 0) z_ind = zone_index(x,xsize);
+	if(z_ind < 0) z_ind = zone_index(x);
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 
 	// radius in zone
-	double r = sqrt(dot_Minkowski<3>(x,x,xsize));
+	double r = sqrt(dot_Minkowski<3>(x,x));
 
 	// assuming radial velocity (may want to interpolate here)
 	// (the other two components are ignored and mean nothing)
@@ -394,7 +393,7 @@ void Grid1DSphere::interpolate_fluid_velocity(const double x[3], const int xsize
 		v[2] = 0;
 	}
 
-	PRINT_ASSERT(dot_Minkowski<3>(v,v,vsize),<=,pc::c*pc::c);
+	PRINT_ASSERT(dot_Minkowski<3>(v,v),<=,pc::c*pc::c);
 }
 
 
@@ -413,7 +412,7 @@ void Grid1DSphere::write_rays(const int iw) const
 //------------------------------------------------------------
 void Grid1DSphere::symmetry_boundaries(LorentzHelper *lh) const{
 	// reflect from outer boundary
-	if(reflect_outer && radius(lh->p_xup(),3)>r_out[r_out.size()-1]){
+	if(reflect_outer && radius(lh->p_xup())>r_out[r_out.size()-1]){
 		const Particle *p = lh->particle_readonly(lab);
 		double Dlab[3];
 		lh->p_D(lab,Dlab,3);
@@ -421,7 +420,7 @@ void Grid1DSphere::symmetry_boundaries(LorentzHelper *lh) const{
 		double r0 = (r_out.size()>1 ? r_out[r_out.size()-2] : r_out.min);
 		double rmax = r_out[r_out.size()-1];
 		double dr = rmax - r0;
-		double R = radius(p->xup,3);
+		double R = radius(p->xup);
 		double x_dot_d = p->xup[0]*Dlab[0] + p->xup[1]*Dlab[1] + p->xup[2]*Dlab[2];
 		double velDotRhat = x_dot_d / R;
 		PRINT_ASSERT( fabs(R - r_out[r_out.size()-1]),<,TINY*dr);
@@ -430,7 +429,7 @@ void Grid1DSphere::symmetry_boundaries(LorentzHelper *lh) const{
 		Dlab[0] -= 2.*velDotRhat * p->xup[0]/R;
 		Dlab[1] -= 2.*velDotRhat * p->xup[1]/R;
 		Dlab[2] -= 2.*velDotRhat * p->xup[2]/R;
-		normalize_Minkowski<3>(Dlab,3);
+		normalize_Minkowski<3>(Dlab);
 		double kup[4];
 		kup[3] = lh->p_kup(lab)[3];
 		kup[0] = kup[3] * Dlab[0];
@@ -448,7 +447,7 @@ void Grid1DSphere::symmetry_boundaries(LorentzHelper *lh) const{
 		lh->set_p_xup(x,4);
 
 		// must be inside the boundary, or will get flagged as escaped
-		PRINT_ASSERT(zone_index(x,3),>=,0);
+		PRINT_ASSERT(zone_index(x),>=,0);
 	}
 }
 
@@ -465,13 +464,13 @@ double Grid1DSphere::lab_dist_to_boundary(const LorentzHelper *lh) const{
 	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
 	double Rout  = r_out[r_out.size()-1];
 	double Rin   = r_out.min;
-	double r  = radius(p->xup,3);
+	double r  = radius(p->xup);
 	double x_dot_d = p->xup[0]*Dlab[0] + p->xup[1]*Dlab[1] + p->xup[2]*Dlab[2];
 	double mu = x_dot_d / r;
 	double d_outer_boundary = numeric_limits<double>::infinity();
 	double d_inner_boundary = numeric_limits<double>::infinity();
 	PRINT_ASSERT(r,<,Rout);
-	PRINT_ASSERT(zone_index(p->xup,3),>=,-1);
+	PRINT_ASSERT(zone_index(p->xup),>=,-1);
 
 	// distance to inner boundary
 	if(r >= Rin){
@@ -537,8 +536,8 @@ void Grid1DSphere::write_hdf5_coordinates(H5::H5File file) const
 }
 
 double Grid1DSphere::lapse(const double xup[4], int z_ind) const{
-	double r = radius(xup,3);
-	if(z_ind<0) z_ind = zone_index(xup,3);
+	double r = radius(xup);
+	if(z_ind<0) z_ind = zone_index(xup);
 	return metric.get_alpha(z_ind, r, r_out);
 }
 
@@ -547,8 +546,8 @@ void Grid1DSphere::shiftup(double betaup[4], const double xup[4], int z_ind) con
 }
 
 void Grid1DSphere::g3_down(const double xup[4], double gproj[4][4], int z_ind) const{
-	const double r = radius(xup,3);
-	if(z_ind<0) z_ind = zone_index(xup,3);
+	const double r = radius(xup);
+	if(z_ind<0) z_ind = zone_index(xup);
 	const double X = metric.get_X(z_ind,r, r_out);
 	for(int i=0; i<3; i++){
 		for(int j=0; j<3; j++) gproj[i][j] = xup[i] * xup[j] * (X*X-1.0) / (r*r);
@@ -557,8 +556,8 @@ void Grid1DSphere::g3_down(const double xup[4], double gproj[4][4], int z_ind) c
 }
 
 void Grid1DSphere::connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind) const{
-	if(z_ind<0) z_ind = zone_index(xup,3);
-	const double r = radius(xup,3);
+	if(z_ind<0) z_ind = zone_index(xup);
+	const double r = radius(xup);
 	const double X = metric.get_X(z_ind, r, r_out); // 1.0/alpha;
 	const double alpha = metric.get_alpha(z_ind, r, r_out); // sqrt(1.0 - 1.0/r);
 	const double dadr = metric.get_dadr(z_ind); // 0.5/(r*r) * X;

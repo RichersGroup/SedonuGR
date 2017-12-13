@@ -144,7 +144,7 @@ void Transport::re_emit(LorentzHelper *lh, const int z_ind) const{
 	// reset the particle properties
 	p.s = sample_zone_species(z_ind,&p.N);
 	double nu = species_list[p.s]->sample_zone_nu(z_ind,&p.N);
-	grid->isotropic_kup(nu,p.kup,lh->p_xup(),4,&rangen);
+	grid->isotropic_kup(nu,p.kup,lh->p_xup(),&rangen);
 
 	// set the LorentzHelper
 	lh->set_p<com>(&p);
@@ -178,7 +178,7 @@ void Transport::scatter(LorentzHelper *lh, int *z_ind) const{
 		if(lh->scat_opac(com) * Rlab >= randomwalk_min_optical_depth){
 			// determine maximum comoving sphere size
 			const double* v = lh->velocity(3);
-			double vabs = sqrt(Grid::dot_Minkowski<3>(v,v,3));
+			double vabs = sqrt(Grid::dot_Minkowski<3>(v,v));
 			double gamma = LorentzHelper::lorentz_factor(v,3);
 
 			double Rcom = 0;
@@ -189,7 +189,7 @@ void Transport::scatter(LorentzHelper *lh, int *z_ind) const{
 			// if the optical depth is below our threshold, don't do random walk
 			if(lh->scat_opac(com) * Rcom >= randomwalk_min_optical_depth){
 				random_walk(lh, Rcom, D, *z_ind);
-				*z_ind = grid->zone_index(lh->p_xup(),3);\
+				*z_ind = grid->zone_index(lh->p_xup());\
 				boundary_conditions(lh, z_ind);
 				//if(new_ind==-2) lh->set_p_fate(escaped);
 				did_random_walk = true;
@@ -207,11 +207,11 @@ void Transport::scatter(LorentzHelper *lh, int *z_ind) const{
 
 		// sample new direction
 		double kup[4];
-		grid->isotropic_kup(lh->p_nu(com),kup,lh->p_xup(),4,&rangen);
+		grid->isotropic_kup(lh->p_nu(com),kup,lh->p_xup(),&rangen);
 		lh->set_p_kup<com>(kup,4);
 
 		// get the dot product between the old and new directions
-		double cosTheta = grid->dot3(kup,kup_old,3,lh->p_xup()) / (lh->p_nu(com) * lh->p_nu(com) * 4. * pc::pi * pc::pi / (pc::c * pc::c));
+		double cosTheta = grid->dot3(kup,kup_old,lh->p_xup()) / (lh->p_nu(com) * lh->p_nu(com) * 4. * pc::pi * pc::pi / (pc::c * pc::c));
 		PRINT_ASSERT(fabs(cosTheta),<=,1.0);
 
 		// sample outgoing energy and set the post-scattered state
@@ -313,7 +313,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	// pick a random direction to move //
 	//=================================//
 	double Diso[3], xnew[4];
-	grid->isotropic_direction(Diso,3,&rangen);
+	grid->isotropic_direction(Diso,&rangen);
 	double displacement4[4] = {Rcom*Diso[0], Rcom*Diso[1], Rcom*Diso[2], path_length_com};
 	double d3com[3] = {displacement4[0], displacement4[1], displacement4[2]};
 	LorentzHelper::transform_cartesian_4vector_c2l(zone->u, displacement4);
@@ -335,7 +335,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 
 	// get the displacement vector polar coordinates
 	// theta_rotate is angle away from z-axis, not from xy-plane
-	Grid::normalize_Minkowski<3>(d3com,3);
+	Grid::normalize_Minkowski<3>(d3com);
 	double costheta_rotate = d3com[2];
 	double sintheta_rotate = sqrt(1.0 - d3com[2]*d3com[2]);
 
@@ -343,7 +343,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	else{
 
 		// first rotate away from the z axis along y=0 (move it toward x=0)
-		Grid::normalize_Minkowski<3>(pD,3);
+		Grid::normalize_Minkowski<3>(pD);
 		double pD_old[3];
 		for(int i=0; i<3; i++) pD_old[i] = pD[i];
 		pD[0] =  costheta_rotate*pD_old[0] + sintheta_rotate*pD_old[2];
@@ -352,12 +352,12 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 		// second rotate around the z axis, away from the x-axis
 		double cosphi_rotate = d3com[0] / sintheta_rotate;
 		double sinphi_rotate = d3com[1] / sintheta_rotate;
-		Grid::normalize_Minkowski<3>(pD,3);
+		Grid::normalize_Minkowski<3>(pD);
 		for(int i=0; i<3; i++) pD_old[i] = pD[i];
 		pD[0] = cosphi_rotate*pD_old[0] - sinphi_rotate*pD_old[1];
 		pD[1] = sinphi_rotate*pD_old[0] + cosphi_rotate*pD_old[1];
 	}
-	Grid::normalize_Minkowski<3>(pD,3);
+	Grid::normalize_Minkowski<3>(pD);
 	double kup_new[4];
 	kup_new[3] = lh->p_kup(com)[3];
 	kup_new[0] = kup_new[3] * pD[0];
@@ -395,7 +395,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 		if(fakeP.N > 0) for(int ip=0; ip<randomwalk_n_isotropic; ip++){
 			// select a random direction
 			double Diso_tmp[3];
-			grid->isotropic_direction(Diso_tmp,3,&rangen);
+			grid->isotropic_direction(Diso_tmp,&rangen);
 			fakeP.kup[0] = fakeP.kup[3] * Diso_tmp[0];
 			fakeP.kup[1] = fakeP.kup[3] * Diso_tmp[1];
 			fakeP.kup[2] = fakeP.kup[3] * Diso_tmp[2];

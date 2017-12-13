@@ -276,16 +276,12 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	double e = Ep;
 
 	// random sample position in zone
-	double rand[3];
-	rand[0] = rangen.uniform();
-	rand[1] = rangen.uniform();
-	rand[2] = rangen.uniform();
-	grid->sample_in_zone(z_ind,rand,3,pcom.xup,3);
+	grid->sample_in_zone(z_ind,&rangen,pcom.xup);
 	pcom.xup[3] = 0;
 
 	// get the velocity
 	double v[3];
-	grid->interpolate_fluid_velocity(pcom.xup,3,v,3,z_ind);
+	grid->interpolate_fluid_velocity(pcom.xup,v,z_ind);
 
 	// species
 	pcom.s = s>=0 ? s : sample_zone_species(z_ind,&e);
@@ -297,7 +293,7 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	pcom.N = e / (nu*pc::h);
 
 	// emit isotropically in comoving frame
-	grid->isotropic_kup(nu,pcom.kup,pcom.xup,4,&rangen);
+	grid->isotropic_kup(nu,pcom.kup,pcom.xup,&rangen);
 
 	// set up LorentzHelper
 	LorentzHelper lh(exponential_decay);
@@ -340,11 +336,11 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 
 	// pick initial position on photosphere
 	double D[3];
-	grid->random_core_x_D(r_core,&rangen,plab.xup,D,3);
+	grid->random_core_x_D(r_core,&rangen,plab.xup,D);
 	plab.xup[3] = 0;
 
 	// get index of current zone
-	const int z_ind = grid->zone_index(plab.xup, 3);
+	const int z_ind = grid->zone_index(plab.xup);
 	PRINT_ASSERT(z_ind,>=,0);
 
 	// sample the species
@@ -361,7 +357,7 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	// set up LorentzHelper
 	LorentzHelper lh(exponential_decay);
 	double v[3];
-	grid->interpolate_fluid_velocity(plab.xup,3,v,3,z_ind);
+	grid->interpolate_fluid_velocity(plab.xup,v,z_ind);
 	lh.set_v(v,3);
 	lh.set_p<lab>(&plab);
 

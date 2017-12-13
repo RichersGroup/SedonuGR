@@ -78,15 +78,15 @@ public:
 	double zone_right_boundary(const unsigned dir, const unsigned dir_ind) const;
 
 	// required functions
-	int    zone_index               (const double x[3], const int xsize                            ) const;
+	int    zone_index               (const double x[3]                            ) const;
 	int    zone_index               (const int i, const int j, const int k                         ) const;
 	double zone_lab_3volume         (const int z_ind                                               ) const;
 	double zone_lapse               (const int z_ind                                               ) const;
 	double zone_min_length          (const int z_ind                                               ) const;
 	void   zone_coordinates         (const int z_ind, double r[3], const int rsize                 ) const;
 	void   zone_directional_indices (const int z_ind, int dir_ind[3], const int size               ) const;
-	void   sample_in_zone (const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const;
-	void   interpolate_fluid_velocity(const double x[3], const int sxize, double v[3], const int vsize, int z_ind) const;
+	void   sample_in_zone (const int z_ind, ThreadRNG* rangen, double x[3]) const;
+	void   interpolate_fluid_velocity(const double x[3], double v[3], int z_ind) const;
 	void   write_rays               (const int iw                                                  ) const;
 	void   symmetry_boundaries      (LorentzHelper *lh                                             ) const;
 	double lab_dist_to_boundary     (const LorentzHelper *lh                                       ) const;

@@ -595,9 +595,8 @@ double Grid2DSphere_theta(const double x[3]){
 //------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
-int Grid2DSphere::zone_index(const double x[3], const int xsize) const
+int Grid2DSphere::zone_index(const double x[3]) const
 {
-	PRINT_ASSERT(xsize,==,3);
 	double r  = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 	double theta = Grid2DSphere_theta(x);
 	PRINT_ASSERT(r,>=,0);
@@ -664,7 +663,7 @@ double Grid2DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const
 	const unsigned int i = dir_ind[0];
 	const unsigned int j = dir_ind[1];
 
-	double r = sqrt(dot_Minkowski<3>(x_up,x_up,3));
+	double r = sqrt(dot_Minkowski<3>(x_up,x_up));
 	double rhat = sqrt(x_up[0]*x_up[0] + x_up[1]*x_up[1]);
 	double theta = Grid2DSphere_theta(x_up);
 	PRINT_ASSERT(r,<=,r_out[i]);
@@ -740,12 +739,15 @@ void Grid2DSphere::zone_directional_indices(const int z_ind, int dir_ind[2], con
 //------------------------------------------------------------
 // sample a random cartesian position within the spherical shell
 //------------------------------------------------------------
-void Grid2DSphere::sample_in_zone(const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const
+void Grid2DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3]) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	PRINT_ASSERT(randsize,==,3);
-	PRINT_ASSERT(xsize,==,3);
+
+	double rand[3];
+	rand[0] = rangen->uniform();
+	rand[1] = rangen->uniform();
+	rand[2] = rangen->uniform();
 
 	// radius and theta indices
 	int dir_ind[2];
@@ -788,11 +790,9 @@ void Grid2DSphere::sample_in_zone(const int z_ind, const double rand[3], const i
 //------------------------------------------------------------
 // get the cartesian velocity vector (cm/s)
 //------------------------------------------------------------
-void Grid2DSphere::interpolate_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
+void Grid2DSphere::interpolate_fluid_velocity(const double x[3], double v[3], int z_ind) const
 {
-	PRINT_ASSERT(xsize,==,3);
-	PRINT_ASSERT(vsize,==,3);
-	if(z_ind < 0) z_ind = zone_index(x,xsize);
+	if(z_ind < 0) z_ind = zone_index(x);
 	PRINT_ASSERT(z_ind,>=,-1);
 
 	// if within inner sphere, z_ind=-1. Leave velocity at 0.
@@ -916,13 +916,13 @@ double Grid2DSphere::lab_dist_to_boundary(const LorentzHelper *lh) const{
 	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
 	double Rout  = r_out[r_out.size()-1];
 	double Rin   = r_out.min;
-	double r  = radius(p->xup,3);
+	double r  = radius(p->xup);
 	double x_dot_d = p->xup[0]*Dlab[0] + p->xup[1]*Dlab[1] + p->xup[2]*Dlab[2];
 	double mu = x_dot_d / r;
 	double d_outer_boundary = numeric_limits<double>::infinity();
 	double d_inner_boundary = numeric_limits<double>::infinity();
 	PRINT_ASSERT(r,<,Rout);
-	PRINT_ASSERT(zone_index(p->xup,3),>=,-1);
+	PRINT_ASSERT(zone_index(p->xup),>=,-1);
 
 	// distance to inner boundary
 	if(r >= Rin){

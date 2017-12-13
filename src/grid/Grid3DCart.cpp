@@ -427,10 +427,8 @@ void Grid3DCart::read_SpEC_file(Lua* lua)
 //------------------------------------------------------------
 // Overly simple search to find zone
 //------------------------------------------------------------
-int Grid3DCart::zone_index(const double x[3], const int xsize) const
+int Grid3DCart::zone_index(const double x[3]) const
 {
-	PRINT_ASSERT(xsize,==,3);
-
 	// check for off grid
 	for(int i=0; i<3; i++) if (x[i]<x0[i] || x[i]>xmax[i]) return -2;
 
@@ -504,12 +502,15 @@ double Grid3DCart::zone_lab_3volume(const int z_ind) const
 //------------------------------------------------------------
 // sample a random position within the cubical cell
 //------------------------------------------------------------
-void Grid3DCart::sample_in_zone
-(const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const
+void Grid3DCart::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3]) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	PRINT_ASSERT(xsize,==,3);
+
+	double rand[3];
+	rand[0] = rangen->uniform();
+	rand[1] = rangen->uniform();
+	rand[2] = rangen->uniform();
 
 	// zone directional indices
 	int dir_ind[3];
@@ -576,16 +577,14 @@ double Grid3DCart::zone_cell_dist(const double x_up[3], const int z_ind) const{
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void Grid3DCart::interpolate_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
+void Grid3DCart::interpolate_fluid_velocity(const double x[3], double v[3], int z_ind) const
 {
-	PRINT_ASSERT(xsize,==,3);
-	PRINT_ASSERT(vsize,==,3);
-	if(z_ind<0) z_ind = zone_index(x,xsize);
+	if(z_ind<0) z_ind = zone_index(x);
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 
 	// may want to interpolate here?
-	for(int i=0; i<vsize; i++) v[i] = z[z_ind].u[i];
+	for(int i=0; i<3; i++) v[i] = z[z_ind].u[i];
 
 	PRINT_ASSERT(v[0]*v[0] + v[1]*v[1] + v[2]*v[2],<=,pc::c*pc::c);
 }
@@ -620,7 +619,7 @@ void Grid3DCart::write_rays(const int iw) const
 
 	// get the origin coordinates
 	double origin[3] = {0,0,0};
-	z_ind = zone_index(origin,3);
+	z_ind = zone_index(origin);
 	int iorigin[3] = {0,0,0};
 	zone_directional_indices(z_ind,iorigin,3);
 
@@ -740,7 +739,7 @@ double Grid3DCart::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 	double r[3];
 	zone_coordinates(z_ind,r,3);
-	return sqrt(dot_Minkowski<3>(r,r,3));
+	return sqrt(dot_Minkowski<3>(r,r));
 }
 
 //-----------------------------
@@ -824,7 +823,7 @@ double Grid3DCart::zone_right_boundary(const unsigned dir, const unsigned dir_in
 // Reflect off revlecting boundary condition
 //------------------------------------------------------------
 void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
-	PRINT_ASSERT(zone_index(lh->p_xup(),3),<,0);
+	PRINT_ASSERT(zone_index(lh->p_xup()),<,0);
 
 	// initialize the arrays
 	double kup[4], xup[4];
@@ -885,21 +884,21 @@ void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
 }
 
 double Grid3DCart::lapse(const double xup[4], int z_ind) const {
-	if(z_ind<0) z_ind = zone_index(xup,4);
+	if(z_ind<0) z_ind = zone_index(xup);
 	return metric[z_ind].alpha;
 }
 void Grid3DCart::shiftup(double betaup[4], const double xup[4], int z_ind) const {
-	if(z_ind<0) z_ind = zone_index(xup,4);
+	if(z_ind<0) z_ind = zone_index(xup);
 	betaup[3] = 0;
 	for(int i=0; i<3; i++) betaup[i] = metric[z_ind].beta[i];
 }
 void Grid3DCart::g3_down(const double xup[4], double gproj[4][4], int z_ind) const {
-	if(z_ind<0) z_ind = zone_index(xup,4);
+	if(z_ind<0) z_ind = zone_index(xup);
 	for(int i=0; i<3; i++) for(int j=0; j<3; j++)
 		gproj[i][j] = metric[z_ind].g3[i][j];
 }
 void Grid3DCart::connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind) const{
-	if(z_ind<0) z_ind = zone_index(xup,4);
+	if(z_ind<0) z_ind = zone_index(xup);
 	for(int i=0; i<4; i++) for(int j=0; j<4; j++) for(int k=0; k<4; k++)
 		gamma[i][j][k] = metric[z_ind].gamma[i][j][k];
 }

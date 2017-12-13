@@ -99,14 +99,14 @@ public:
 	void read_nagakura_model(Lua* lua);
 
 	// required functions
-	int  zone_index               (const double x[3], const int xsize                            ) const;
+	int  zone_index               (const double x[3]                                             ) const;
 	double zone_lab_3volume       (const int z_ind                                               ) const;
 	double zone_lapse             (const int z_ind                                               ) const;
 	double zone_min_length        (const int z_ind                                               ) const;
 	void zone_coordinates         (const int z_ind, double r[1], const int rsize                 ) const;
 	void zone_directional_indices (const int z_ind, int dir_ind[1], const int size               ) const;
-	void sample_in_zone (const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const;
-	void interpolate_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const;
+	void sample_in_zone (const int z_ind, ThreadRNG* rangen, double x[3]) const;
+	void interpolate_fluid_velocity(const double x[3], double v[3], int z_ind) const;
 	void write_rays               (const int iw                                                  ) const;
 	void symmetry_boundaries      (LorentzHelper *lh                                             ) const;
 	double lab_dist_to_boundary   (const LorentzHelper *lh                                       ) const;

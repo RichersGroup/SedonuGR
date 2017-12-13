@@ -61,7 +61,7 @@ void Grid0DIsotropic::read_model_file(Lua* lua)
 //------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
-int Grid0DIsotropic::zone_index(const double x[3], const int xsize) const
+int Grid0DIsotropic::zone_index(const double x[3]) const
 {
 	return 0;
 }
@@ -109,11 +109,9 @@ void Grid0DIsotropic::zone_directional_indices(const int z_ind, int dir_ind[0], 
 //------------------------------------------------------------
 // sample a random position within the spherical shell
 //------------------------------------------------------------
-void Grid0DIsotropic::sample_in_zone
-(const int z_ind, const double rand[3], const int randsize, double x[3], const int xsize) const
+void Grid0DIsotropic::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3]) const
 {
 	PRINT_ASSERT(z_ind,==,0);
-	PRINT_ASSERT(xsize,==,3);
 
 	// set the double 3-d coordinates
 	x[0] = 0;
@@ -125,13 +123,11 @@ void Grid0DIsotropic::sample_in_zone
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void Grid0DIsotropic::interpolate_fluid_velocity(const double x[3], const int xsize, double v[3], const int vsize, int z_ind) const
+void Grid0DIsotropic::interpolate_fluid_velocity(const double x[3], double v[3], int z_ind) const
 {
 	PRINT_ASSERT(z_ind,==,0);
-	PRINT_ASSERT(xsize,==,3);
-	PRINT_ASSERT(vsize,==,3);
-	for(int i=0; i<vsize; i++) v[i] = z[z_ind].u[i];
-	PRINT_ASSERT(dot_Minkowski<3>(v,v,vsize),<=,pc::c*pc::c);
+	for(int i=0; i<3; i++) v[i] = z[z_ind].u[i];
+	PRINT_ASSERT(dot_Minkowski<3>(v,v),<=,pc::c*pc::c);
 }
 
 

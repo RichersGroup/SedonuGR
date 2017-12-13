@@ -54,7 +54,7 @@ void Transport::propagate_particles()
 			if(p->fate == escaped){
 				const double nu = p->kup[3]/(2.0*pc::pi) * pc::c;
 				double D[3] = {p->kup[0], p->kup[1], p->kup[2]};
-				Grid::normalize_Minkowski<3>(D,3);
+				Grid::normalize_Minkowski<3>(D);
 				#pragma omp atomic
 				n_escape[p->s]++;
 				#pragma omp atomic
@@ -141,10 +141,10 @@ void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *e
 void Transport::boundary_conditions(LorentzHelper *lh, int *z_ind) const{
 	PRINT_ASSERT(lh->p_fate(),==,moving);
 
-	if(r_core>0 && grid->radius(lh->p_xup(),3)<r_core) lh->set_p_fate(absorbed);
+	if(r_core>0 && grid->radius(lh->p_xup())<r_core) lh->set_p_fate(absorbed);
 	else if(*z_ind<0){
 		grid->symmetry_boundaries(lh);
-		*z_ind = grid->zone_index(lh->p_xup(),3);
+		*z_ind = grid->zone_index(lh->p_xup());
 		if(*z_ind < 0) lh->set_p_fate(escaped);
 	}
 }
@@ -232,7 +232,7 @@ void Transport::move(LorentzHelper *lh, int *z_ind){
 	}
 
 	// re-evaluate the particle's zone index
-	*z_ind = grid->zone_index(lh->p_xup(),3);
+	*z_ind = grid->zone_index(lh->p_xup());
 
 }
 
@@ -267,13 +267,13 @@ void Transport::propagate(Particle* p)
 	{
 		PRINT_ASSERT(lh.p_nu(lab), >, 0);
 
-		int z_ind = grid->zone_index(lh.p_xup(),3);
+		int z_ind = grid->zone_index(lh.p_xup());
 		PRINT_ASSERT(z_ind, >=, 0);
 		PRINT_ASSERT(z_ind, <, (int)grid->z.size());
 
 		// set up the LorentzHelper
 		double v[3];
-		grid->interpolate_fluid_velocity(lh.p_xup(),3,v,3,z_ind);
+		grid->interpolate_fluid_velocity(lh.p_xup(),v,z_ind);
 		lh.set_v(v,3);
 
 		// get all the opacities
