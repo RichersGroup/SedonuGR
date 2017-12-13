@@ -52,16 +52,16 @@ void Transport::propagate_particles()
 			n_active[p->s]++;
 			if(p->fate == moving) propagate(p);
 			if(p->fate == escaped){
-				double nu = p->kup[3]/(2.0*pc::pi) * pc::c;
+				const double nu = p->kup[3]/(2.0*pc::pi) * pc::c;
 				double D[3] = {p->kup[0], p->kup[1], p->kup[2]};
 				Grid::normalize_Minkowski<3>(D,3);
 				#pragma omp atomic
 				n_escape[p->s]++;
 				#pragma omp atomic
-				L_net_esc[p->s] += p->e;
+				L_net_esc[p->s] += p->N * nu*pc::h;
 				#pragma omp atomic
-				N_net_esc[p->s] += p->e / (nu*pc::h);
-				species_list[p->s]->spectrum.count(D, nu, p->e);
+				N_net_esc[p->s] += p->N;
+				species_list[p->s]->spectrum.count(D, nu, p->N * nu*pc::h);
 			}
 			PRINT_ASSERT(p->fate, !=, moving);
 		} //#pragma omp parallel for
@@ -75,10 +75,12 @@ void Transport::propagate_particles()
 			if(rank0) cout << i << endl;
 			PRINT_ASSERT(particles[i].fate,!=,moving);
 		}
-		if(particles[i].fate!=rouletted) tot += particles[i].e;
-		if(particles[i].fate==escaped) esc += particles[i].e;
-		if(particles[i].fate==absorbed) core += particles[i].e;
-		if(particles[i].fate==rouletted) rouletted += particles[i].e;
+		const double nu = particles[i].kup[3]/(2.0*pc::pi) * pc::c;
+		const double e  = particles[i].N * nu*pc::h;
+		if(particles[i].fate!=rouletted) tot       += e;
+		if(particles[i].fate==escaped  ) esc       += e;
+		if(particles[i].fate==absorbed ) core      += e;
+		if(particles[i].fate==rouletted) rouletted += e;
 	}
 
 	particle_total_energy += tot;
@@ -95,7 +97,7 @@ void Transport::propagate_particles()
 //--------------------------------------------------------
 void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *event) const{
 	PRINT_ASSERT(lh->net_opac(lab), >=, 0);
-	PRINT_ASSERT(lh->p_e(lab), >, 0);
+	PRINT_ASSERT(lh->p_N(), >, 0);
 	PRINT_ASSERT(lh->p_nu(lab), >, 0);
 	PRINT_ASSERT(z_ind,>=,0);
 
@@ -153,7 +155,7 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	PRINT_ASSERT(lh->distance(lab), >=, 0);
 	PRINT_ASSERT(lh->abs_fraction(), >=, 0);
 	PRINT_ASSERT(lh->abs_fraction(), <=, 1);
-	PRINT_ASSERT(lh->p_e(com), >, 0);
+	PRINT_ASSERT(lh->p_N(), >, 0);
 	PRINT_ASSERT(lh->p_nu(com), >, 0);
 	PRINT_ASSERT(lh->distance(com), >=, 0);
 	PRINT_ASSERT(lh->net_opac(com), >=, 0);
@@ -172,19 +174,21 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 
 
 	// tally in contribution to zone's distribution function (lab frame)
-	if(lh->exponential_decay && lh->abs_opac(lab)>0) to_add = lh->p_e(lab) / lh->abs_opac(lab) * decay_factor;
-	else to_add = lh->p_e(lab) * lh->distance(lab);
+	if(lh->exponential_decay && lh->abs_opac(lab)>0) to_add = lh->p_N() / lh->abs_opac(lab) * decay_factor;
+	else to_add = lh->p_N() * lh->distance(lab);
+	to_add *= lh->p_nu(lab)*pc::h;
 	PRINT_ASSERT(to_add,<,INFINITY);
 
 	zone->distribution[lh->p_s()]->rotate_and_count(Dlab, lh->p_xup(), lh->p_nu(com), to_add);
 	#pragma omp atomic
 	zone->Edens_com[lh->p_s()] += to_add;
 	#pragma omp atomic
-	zone->Ndens_com[lh->p_s()] += to_add / lh->p_nu(com);
+	zone->Ndens_com[lh->p_s()] += to_add / (lh->p_nu(com)*pc::h);
 	
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
-	if(lh->exponential_decay) to_add = lh->p_e(com) * decay_factor;
-	else to_add = lh->p_e(com) * lh->distance(com) * lh->abs_opac(com);
+	if(lh->exponential_decay) to_add = lh->p_N() * decay_factor;
+	else to_add = lh->p_N() * lh->distance(com) * lh->abs_opac(com);
+	to_add *=  lh->p_nu(com)*pc::h;
 	PRINT_ASSERT(to_add,>=,0);
 
 	#pragma omp atomic

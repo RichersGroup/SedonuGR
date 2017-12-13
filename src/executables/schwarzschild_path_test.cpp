@@ -92,7 +92,7 @@ int main(int argc, char **argv)
 	}
 
 	p.s = 0;
-	p.e = 1;
+	p.N = 1;
 	sim.grid->normalize_null(p.kup,4,p.xup);
 	p.tau = INFINITY;
 	p.fate = moving;

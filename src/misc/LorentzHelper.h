@@ -62,7 +62,7 @@ public:
 	const Particle* particle_readonly(const Frame f) const;
 
 	int p_s() const;
-	double p_e (const Frame f) const;
+	double p_N () const;
 	double p_nu(const Frame f) const;
 	double p_tau() const;
 	ParticleFate p_fate() const;

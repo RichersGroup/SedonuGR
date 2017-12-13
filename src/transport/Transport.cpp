@@ -70,8 +70,8 @@ Transport::Transport(){
 	max_particles = -MAXLIM;
 	step_size = NaN;
 	randomwalk_sphere_size = NaN;
-	min_packet_energy = NaN;
-	max_packet_energy = NaN;
+	min_packet_number = NaN;
+	max_packet_number = NaN;
 	do_annihilation = -MAXLIM;
 	radiative_eq = -MAXLIM;
 	rank0 = -MAXLIM;
@@ -169,8 +169,8 @@ void Transport::init(Lua* lua)
 	if(importance_bias>0) min_importance = lua->scalar<double>("min_importance");
 	bias_path_length = lua->scalar<int>("bias_path_length");
 	if(bias_path_length) max_path_length_boost = lua->scalar<double>("max_path_length_boost");
-	min_packet_energy = lua->scalar<double>("min_packet_energy");
-	max_packet_energy = lua->scalar<double>("max_packet_energy");
+	min_packet_number = lua->scalar<double>("min_packet_number");
+	max_packet_number = lua->scalar<double>("max_packet_number");
 
 	// output parameters
 	write_zones_every   = lua->scalar<double>("write_zones_every");

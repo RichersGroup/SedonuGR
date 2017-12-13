@@ -29,8 +29,10 @@
 #include <algorithm>
 #include "Transport.h"
 #include "global_options.h"
+#include "physical_constants.h"
 
 using namespace std;
+namespace pc = physical_constants;
 
 int main(int argc, char **argv)
 {
@@ -53,7 +55,7 @@ int main(int argc, char **argv)
 	sscanf(argv[5], "%d",  &niter);
 	sim.bias_path_length=1;
 	sim.max_path_length_boost = INFINITY;
-	sim.min_packet_energy = 1e-6;
+	sim.min_packet_number = 1e-6;
 
 	// set up the data vectors
 	vector<double> grid             = vector<double>(nbins,0);
@@ -83,7 +85,7 @@ int main(int argc, char **argv)
 	for(int i=0; i<nsamples; i++){
 		{
 			Particle p;
-			p.e = 1.0;
+			p.N = 1.0;
 			p.fate = moving;
 			double rand[3];
 			rand[0] = sim.rangen.uniform();
@@ -105,7 +107,7 @@ int main(int argc, char **argv)
 		}
 		for(int j=0; j<niter; j++) if(lh.p_fate()==moving){
 			sim.sample_tau(&lh);
-			while(lh.p_e(com)<=sim.min_packet_energy && lh.p_fate()==moving){
+			while(lh.p_N()<=sim.min_packet_number && lh.p_fate()==moving){
 				if(sim.rangen.uniform() < 0.5) lh.set_p_fate(rouletted);
 				else lh.scale_p_number(2.0);
 			}
@@ -115,16 +117,16 @@ int main(int argc, char **argv)
 		int ind = upper_bound(grid.begin(), grid.end(), lh.p_tau()) - grid.begin();
 		if(ind<(int)grid.size()){
 			packets[ind]++;
-			energy[ind] += lh.p_e(com);
-			avg_e += lh.p_e(com);
+			energy[ind] += lh.p_N() * lh.p_nu(com)*pc::h;
+			avg_e += lh.p_N() * lh.p_nu(com)*pc::h;
 		}
 		else{
 			n_above ++;
-			e_above += lh.p_e(com);
+			e_above += lh.p_N() * lh.p_nu(com)*pc::h;
 		}
-		if(lh.p_e(com)==0) n_zero++;
+		if(lh.p_N()==0) n_zero++;
 		if(lh.p_fate()!=moving) n_dead++;
-		else PRINT_ASSERT(lh.p_e(com), >=, sim.min_packet_energy);
+		else PRINT_ASSERT(lh.p_N(), >=, sim.min_packet_number);
 	}
 
 	// calculate energy variance

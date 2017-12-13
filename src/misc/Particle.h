@@ -46,7 +46,7 @@ public:
 			xup[i] = NaN;
 			kup[i] = NaN;
 		}
-		e = NaN;
+		N = NaN;
 		tau = NaN;
 		s = -1;
 		fate = moving;
@@ -54,7 +54,7 @@ public:
 
 	double xup[4];          // x,y,z,ct position (cm)
 	double kup[4];          // 4-wavevector (2pi nu/c)
-	double       e;         // total energy in ergs of packet
+	double       N;         // total number of neutrinos in packet
 	double     tau;         // remaining optical depth
 	int          s;         // species number
 	ParticleFate fate;
@@ -62,7 +62,7 @@ public:
 	void print() const
 	{
 		printf("%10.3e %10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e %10.3e | %10.3e %10.3e %i %i\n",
-				xup[0],xup[1],xup[2],xup[3],kup[0],kup[1],kup[2],kup[3],e,tau,s,fate);
+				xup[0],xup[1],xup[2],xup[3],kup[0],kup[1],kup[2],kup[3],N,tau,s,fate);
 	}
 
 };

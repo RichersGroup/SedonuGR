@@ -54,7 +54,7 @@ void LorentzHelper::set_v(const double v_in[3], const int size){
 	// set the relativistic quantities to be used later
 	for(int i=0; i<3; i++) v[i] = v_in[i];
 
-	if(p[lab].e>=0 && p[lab].kup[3]>=0) set_p<lab>(&(p[lab]));
+	if(p[lab].N>=0 && p[lab].kup[3]>=0) set_p<lab>(&(p[lab]));
 }
 
 // get the velocity vector back out
@@ -97,7 +97,7 @@ template<Frame f>
 void LorentzHelper::set_p_kup(const double kup[4], const int size) {
 	PRINT_ASSERT(size,==,4);
 	for(int i=0; i<size; i++) p[f].kup[i] = kup[i];
-	if(p[f].e>0) set_p<f>(&(p[f]));
+	if(p[f].N>0) set_p<f>(&(p[f]));
 }
 template void LorentzHelper::set_p_kup<com>(const double kup[4], const int size);
 template void LorentzHelper::set_p_kup<lab>(const double kup[4], const int size);
@@ -106,8 +106,8 @@ template void LorentzHelper::set_p_kup<lab>(const double kup[4], const int size)
 // rescale the particle energies. Does not require performing transformations
 void LorentzHelper::scale_p_number(const double factor){
 	PRINT_ASSERT(factor,>=,0);
-	p[lab].e *= factor;
-	p[com].e *= factor;
+	p[lab].N *= factor;
+	p[com].N *= factor;
 }
 void LorentzHelper::scale_p_energy(const double factor){
 	PRINT_ASSERT(factor,>=,0);
@@ -144,7 +144,10 @@ void LorentzHelper::set_p_s(const int s){
 
 
 // get the particle properties
-double LorentzHelper::p_e(const Frame f) const {return p[f].e;}
+double LorentzHelper::p_N() const {
+	PRINT_ASSERT(p[com].N,==,p[lab].N);
+	return p[com].N;
+}
 double LorentzHelper::p_nu(const Frame f) const {return p[f].kup[3] * pc::c / (2.0*pc::pi);}
 int    LorentzHelper::p_s() const {
 	PRINT_ASSERT(p[lab].s,==,p[com].s);
@@ -303,7 +306,7 @@ void LorentzHelper::lorentz_transform_particle(Particle* p, const double v[3], c
 	PRINT_ASSERT(vsize,==,3);
 	PRINT_ASSERT(p->kup[3],>,0);
 	PRINT_ASSERT(p->kup[3],<,INFINITY);
-	PRINT_ASSERT(p->e,>=,0);
+	PRINT_ASSERT(p->N,>=,0);
 
 	// calculate the doppler shift, v dot D, and lorentz factors
 	double D[3];
@@ -317,8 +320,7 @@ void LorentzHelper::lorentz_transform_particle(Particle* p, const double v[3], c
 	PRINT_ASSERT(D[0],<,INFINITY);
 	double dshift = doppler_shift(v, D, vsize);
 
-	// transform the 0th component (energy and frequency)
-	p->e  *= dshift;
+	// transform the 0th component (frequency)
 	p->kup[3] *= dshift;
 
 	// transform the 1-3 components (direction)
@@ -331,7 +333,7 @@ void LorentzHelper::lorentz_transform_particle(Particle* p, const double v[3], c
 	for(int i=0; i<3; i++) p->kup[i] = D[i] * p->kup[3];
 
 	// sanity checks
-	PRINT_ASSERT(p->e,>=,0);
+	PRINT_ASSERT(p->N,>=,0);
 	PRINT_ASSERT(p->kup[3],>=,0);
 	PRINT_ASSERT(dshift,>,0);
 }

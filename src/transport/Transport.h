@@ -161,8 +161,8 @@ public:
 
 	// biasing
 	// minimum neutrino packet energy
-	double min_packet_energy;
-	double max_packet_energy;
+	double min_packet_number;
+	double max_packet_number;
 	double importance_bias;
 	double min_importance;
 	int bias_path_length;

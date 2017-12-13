@@ -273,7 +273,7 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 
 	Particle pcom;
 	pcom.fate = moving;
-	pcom.e = Ep;
+	double e = Ep;
 
 	// random sample position in zone
 	double rand[3];
@@ -288,12 +288,13 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	grid->interpolate_fluid_velocity(pcom.xup,3,v,3,z_ind);
 
 	// species
-	pcom.s = s>=0 ? s : sample_zone_species(z_ind,&pcom.e);
+	pcom.s = s>=0 ? s : sample_zone_species(z_ind,&e);
 	PRINT_ASSERT(pcom.s,>=,0);
 	PRINT_ASSERT(pcom.s,<,(int)species_list.size());
 
 	// frequency
-	double nu = species_list[pcom.s]->sample_zone_nu(z_ind,&pcom.e,g);
+	double nu = species_list[pcom.s]->sample_zone_nu(z_ind,&e,g);
+	pcom.N = e / (nu*pc::h);
 
 	// emit isotropically in comoving frame
 	grid->isotropic_kup(nu,pcom.kup,pcom.xup,4,&rangen);
@@ -311,16 +312,16 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	// add to particle vector
 	if(lh.p_fate() == moving){
 		PRINT_ASSERT(particles.size(),<,particles.capacity());
-		PRINT_ASSERT(lh.p_e(lab),>,0);
+		PRINT_ASSERT(lh.p_N(),>,0);
 		PRINT_ASSERT(lh.p_tau(),>,0);
 		#pragma omp critical
 		particles.push_back(lh.particle_copy(lab));
 
 		// count up the emitted energy in each zone
 		#pragma omp atomic
-		L_net_lab[lh.p_s()] += lh.p_e(lab);
+		L_net_lab[lh.p_s()] += lh.p_N() * lh.p_nu(lab)*pc::h;
 		#pragma omp atomic
-		N_net_lab[lh.p_s()] += lh.p_e(lab) / (lh.p_nu(lab) * pc::h);
+		N_net_lab[lh.p_s()] += lh.p_N();
 	}
 }
 
@@ -335,7 +336,7 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 
 	Particle plab;
 	plab.fate = moving;
-	plab.e = Ep;
+	double e = Ep;
 
 	// pick initial position on photosphere
 	double D[3];
@@ -352,8 +353,10 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	PRINT_ASSERT(plab.s,<,(int)species_list.size());
 
 	// sample the frequency
-	plab.kup[3] = species_list[plab.s]->sample_core_nu(g) / pc::c * 2.0*pc::pi;
+	const double nu = species_list[plab.s]->sample_core_nu(g);
+	plab.kup[3] = nu / pc::c * 2.0*pc::pi;
 	for(int i=0; i<3; i++) plab.kup[i] = D[i] * plab.kup[3];
+	plab.N = e / (nu*pc::h);
 
 	// set up LorentzHelper
 	LorentzHelper lh(exponential_decay);
@@ -373,6 +376,6 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	    #pragma omp critical
 		particles.push_back(lh.particle_copy(lab));
 	    #pragma omp atomic
-		L_core_lab[lh.p_s()] += lh.p_e(lab);
+		L_core_lab[lh.p_s()] += lh.p_N() * lh.p_nu(lab)*pc::h;
 	}
 }

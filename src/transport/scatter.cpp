@@ -41,13 +41,13 @@ void Transport::event_interact(LorentzHelper* lh, int *z_ind){
 	PRINT_ASSERT(*z_ind,<,(int)grid->z.size());
 	PRINT_ASSERT(lh->abs_fraction(),>=,0.0);
 	PRINT_ASSERT(lh->abs_fraction(),<=,1.0);
-	PRINT_ASSERT(lh->p_e(com),>,0);
+	PRINT_ASSERT(lh->p_N(),>,0);
 	PRINT_ASSERT(lh->p_fate(),==,moving);
 
 	// absorb the particle and let the fluid re-emit another particle
 	if(radiative_eq){
 		re_emit(lh,*z_ind);
-		L_net_lab[lh->p_s()] += lh->p_e(lab);
+		L_net_lab[lh->p_s()] += lh->p_N() * lh->p_nu(lab)*pc::h;
 	}
 
 	// absorb part of the packet
@@ -72,18 +72,18 @@ void Transport::event_interact(LorentzHelper* lh, int *z_ind){
 
 // decide whether to kill a particle
 void Transport::window(LorentzHelper *lh, const int z_ind){
-	PRINT_ASSERT(lh->p_e(com),>=,0);
+	PRINT_ASSERT(lh->p_N(),>=,0);
 	PRINT_ASSERT(lh->p_fate(),!=,rouletted);
 
 	// Roulette if too low energy
-	while(lh->p_e(com)<=min_packet_energy && lh->p_fate()==moving){
+	while(lh->p_N()<=min_packet_number && lh->p_fate()==moving){
 		if(rangen.uniform() < 0.5) lh->set_p_fate(rouletted);
 		else lh->scale_p_number(2.0);
 	}
-	if(lh->p_fate()==moving) PRINT_ASSERT(lh->p_e(com),>=,min_packet_energy);
+	if(lh->p_fate()==moving) PRINT_ASSERT(lh->p_N(),>=,min_packet_number);
 
 	// split if too high energy, if enough space, and if in important region
-	double ratio = lh->p_e(com) / max_packet_energy;
+	double ratio = lh->p_N() / max_packet_number;
 	int n_new = (int)ratio;
 	if(ratio>1.0 && (int)particles.size()+n_new<max_particles && species_list[lh->p_s()]->interpolate_importance(lh->p_nu(com),z_ind)>=1.0){
 		lh->scale_p_number( 1.0 / (double)(n_new+1) );
@@ -94,8 +94,8 @@ void Transport::window(LorentzHelper *lh, const int z_ind){
 	}
 
 	if(lh->p_fate() == moving){
-		PRINT_ASSERT(lh->p_e(com),<,INFINITY);
-		PRINT_ASSERT(lh->p_e(com),>,0);
+		PRINT_ASSERT(lh->p_N(),<,INFINITY);
+		PRINT_ASSERT(lh->p_N(),>,0);
 	}
 	if((int)particles.size()>=max_particles && verbose && rank0){
 		cout << "max_particles: " << max_particles << endl;
@@ -107,24 +107,24 @@ void Transport::window(Particle* p, const int z_ind){
 	PRINT_ASSERT(p->fate,!=,rouletted);
 
 	// Roulette if too low energy
-	while(p->e<=min_packet_energy && p->fate==moving){
+	while(p->N<=min_packet_number && p->fate==moving){
 		if(rangen.uniform() < 0.5) p->fate = rouletted;
-		else p->e *= 2.0;
+		else p->N *= 2.0;
 	}
-	if(p->fate==moving) PRINT_ASSERT(p->e,>=,min_packet_energy);
+	if(p->fate==moving) PRINT_ASSERT(p->N,>=,min_packet_number);
 
 	// split if too high energy, if enough space, and if in important region
 	double nu = p->kup[3]*pc::c/pc::h;
-	while(p->e>max_packet_energy && (int)particles.size()<max_particles && species_list[p->s]->interpolate_importance(nu,z_ind)>=1.0){
-		p->e /= 2.0;
+	while(p->N>max_packet_number && (int)particles.size()<max_particles && species_list[p->s]->interpolate_importance(nu,z_ind)>=1.0){
+		p->N /= 2.0;
 		Particle pnew = *p;
 		window(&pnew,z_ind);
 		#pragma omp critical
 		particles.push_back(pnew);
 	}
 	if(p->fate == moving){
-		PRINT_ASSERT(p->e,<,INFINITY);
-		PRINT_ASSERT(p->e,>,0);
+		PRINT_ASSERT(p->N,<,INFINITY);
+		PRINT_ASSERT(p->N,>,0);
 	}
 	if((int)particles.size()>=max_particles && verbose && rank0){
 		cout << "max_particles: " << max_particles << endl;
@@ -142,15 +142,15 @@ void Transport::re_emit(LorentzHelper *lh, const int z_ind) const{
 	Particle p = lh->particle_copy(com);
 
 	// reset the particle properties
-	p.s = sample_zone_species(z_ind,&p.e);
-	double nu = species_list[p.s]->sample_zone_nu(z_ind,&p.e);
+	p.s = sample_zone_species(z_ind,&p.N);
+	double nu = species_list[p.s]->sample_zone_nu(z_ind,&p.N);
 	grid->isotropic_kup(nu,p.kup,lh->p_xup(),4,&rangen);
 
 	// set the LorentzHelper
 	lh->set_p<com>(&p);
 
 	// tally into zone's emitted energy
-	grid->z[z_ind].e_emit += lh->p_e(com);
+	grid->z[z_ind].e_emit += lh->p_N() * lh->p_nu(com)*pc::h;
 
 	// sanity checks
 	PRINT_ASSERT(lh->p_nu(com),>,0);
@@ -216,9 +216,9 @@ void Transport::scatter(LorentzHelper *lh, int *z_ind) const{
 
 		// sample outgoing energy and set the post-scattered state
 		if(use_scattering_kernels){
-			double tmp_E = lh->p_e(com);
+			const double tmp_nu = lh->p_nu(com);
 			species_list[lh->p_s()]->sample_scattering_final_state(*z_ind,*lh,cosTheta);
-			double dep_energy = tmp_E - lh->p_e(com);
+			double dep_energy = (tmp_nu - lh->p_nu(com)) * lh->p_N()*pc::h;
 			if(dep_energy>0) grid->z[*z_ind].e_abs  += dep_energy;
 			else             grid->z[*z_ind].e_emit -= dep_energy;
 		}
@@ -247,14 +247,14 @@ void Transport::sample_tau(LorentzHelper *lh){
 		lh->set_p_tau( -taubar*log(rangen.uniform()) );
 	} while(lh->p_tau() >= INFINITY);
 	if(taubar != 1.0) lh->scale_p_number( taubar * exp(-lh->p_tau() * (1.0 - 1.0/taubar)) );
-	if(lh->p_e(lab)==0) lh->set_p_fate(rouletted);
-	PRINT_ASSERT(lh->p_e(lab),>=,0);
+	if(lh->p_N()==0) lh->set_p_fate(rouletted);
+	PRINT_ASSERT(lh->p_N(),>=,0);
 
 	// make sure nothing crazy happened
 	if(lh->p_fate()==moving){
 		PRINT_ASSERT(lh->p_tau(),>=,0);
-		PRINT_ASSERT(lh->p_e(lab),>,0);
-		PRINT_ASSERT(lh->p_e(lab),<,INFINITY);
+		PRINT_ASSERT(lh->p_N(),>,0);
+		PRINT_ASSERT(lh->p_N(),<,INFINITY);
 		PRINT_ASSERT(lh->p_tau(),<,INFINITY);
 	}
 	else PRINT_ASSERT(lh->p_fate(),==,rouletted);
@@ -297,7 +297,7 @@ void Transport::init_randomwalk_cdf(Lua* lua){
 void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D, const int z_ind) const{
 	PRINT_ASSERT(lh->scat_opac(com),>,0);
 	PRINT_ASSERT(lh->abs_opac(com),>=,0);
-	PRINT_ASSERT(lh->p_e(com),>=,0);
+	PRINT_ASSERT(lh->p_N(),>=,0);
 	PRINT_ASSERT(lh->p_nu(com),>=,0);
 
 	// set pointer to the current zone
@@ -376,10 +376,10 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	// DEPOSIT DIRECTIONAL COMPONENT //
 	//===============================//
 
-	fakeP.e = lh->p_e(com);
+	fakeP.N = lh->p_N();
 	if(randomwalk_n_isotropic > 0)
-		fakeP.e *= Rcom / path_length_com;
-	PRINT_ASSERT(fakeP.e,>=,0);
+		fakeP.N *= Rcom / path_length_com;
+	PRINT_ASSERT(fakeP.N,>=,0);
 	fakeP.kup[0] = fakeP.kup[3] * Diso[0]; // Diso set above when choosing where to place particle
 	fakeP.kup[1] = fakeP.kup[3] * Diso[1];
 	fakeP.kup[2] = fakeP.kup[3] * Diso[2];
@@ -391,8 +391,8 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	//=============================//
 
 	if(randomwalk_n_isotropic > 0){
-		fakeP.e = lh->p_e(com) * (path_length_com - Rcom)/path_length_com / (double)randomwalk_n_isotropic;
-		if(fakeP.e > 0) for(int ip=0; ip<randomwalk_n_isotropic; ip++){
+		fakeP.N = lh->p_N() * (path_length_com - Rcom)/path_length_com / (double)randomwalk_n_isotropic;
+		if(fakeP.N > 0) for(int ip=0; ip<randomwalk_n_isotropic; ip++){
 			// select a random direction
 			double Diso_tmp[3];
 			grid->isotropic_direction(Diso_tmp,3,&rangen);
