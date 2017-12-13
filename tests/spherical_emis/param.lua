@@ -1,8 +1,10 @@
 -- Included Physics
 
+do_GR         = 0
 do_visc       = 0
 do_relativity = 0
 do_annihilation = 0
+use_scattering_kernels = 1
 radiative_eq  = 1
 reflect_outer = 0
 
@@ -73,8 +75,8 @@ step_size = 0.4
 
 importance_bias = 0
 bias_path_length = 0
-min_packet_energy = 1e24
-max_packet_energy = 1e99
+min_packet_number = 0
+max_packet_number = 1e99
 exponential_decay = 0
 
 -- Random Walk
