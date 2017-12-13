@@ -104,7 +104,6 @@ Transport::Transport(){
 	randomwalk_sumN = -MAXLIM;
 	exponential_decay = -MAXLIM;
 	randomwalk_n_isotropic = -MAXLIM;
-	distribution_polar_basis = -MAXLIM;
 	use_scattering_kernels = -MAXLIM;
 }
 
@@ -172,7 +171,6 @@ void Transport::init(Lua* lua)
 	if(bias_path_length) max_path_length_boost = lua->scalar<double>("max_path_length_boost");
 	min_packet_energy = lua->scalar<double>("min_packet_energy");
 	max_packet_energy = lua->scalar<double>("max_packet_energy");
-	distribution_polar_basis = lua->scalar<int>("distribution_polar_basis");
 
 	// output parameters
 	write_zones_every   = lua->scalar<double>("write_zones_every");

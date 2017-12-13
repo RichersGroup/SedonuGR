@@ -187,9 +187,8 @@ unsigned PolarSpectrumArray::size() const{
 //--------------------------------------------------------------
 // count a particle
 ////--------------------------------------------------------------
-void PolarSpectrumArray::count(const double D[3], const int Dsize, const double nu, const double E)
+void PolarSpectrumArray::count(const double D[3], const double nu, const double E)
 {
-	PRINT_ASSERT(Dsize,==,3);
 	PRINT_ASSERT(E,>=,0);
 	const double tiny = 1e-8;
 	double mu  = D[2];           // component along z axis

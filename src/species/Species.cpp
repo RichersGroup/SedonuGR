@@ -254,6 +254,8 @@ void Species::init(Lua* lua, Transport* simulation)
 	    cout << "Distribution type not found." << endl;
 	    assert(0);
 	  }
+	  int distribution_polar_basis = lua->scalar<int>("distribution_polar_basis");
+	  tmp_spectrum->rotated_basis = distribution_polar_basis;
 	  
 	  // push a distribution function to each zone
 	  sim->grid->z[z_ind].distribution.push_back(tmp_spectrum);

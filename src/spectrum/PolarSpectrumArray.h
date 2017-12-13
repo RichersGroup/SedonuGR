@@ -58,7 +58,7 @@ public:
 	void MPI_average(const int proc);
 
 	// Count a packets
-	void count(const double D[3], const int Dsize, const double nu, const double E);
+	void count(const double D[3], const double nu, const double E);
 
 	//  void normalize();
 	void rescale(const double);

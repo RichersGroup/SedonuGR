@@ -124,9 +124,7 @@ unsigned MomentSpectrumArray::n_elements(const int rank) const {
 //--------------------------------------------------------------
 // count a particle
 ////--------------------------------------------------------------
-void MomentSpectrumArray::count(const double D[3], const int Dsize,
-		const double nu, const double E) {
-	PRINT_ASSERT(Dsize, ==, 3);
+void MomentSpectrumArray::count(const double D[3], const double nu, const double E) {
 	PRINT_ASSERT(E, >=, 0);
 	PRINT_ASSERT(E, <, INFINITY);
 

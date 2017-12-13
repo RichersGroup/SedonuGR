@@ -25,5 +25,49 @@
 //
 */
 
+#include "SpectrumArray.h"
+#include "global_options.h"
 
+SpectrumArray::SpectrumArray(){
+	rotated_basis = -MAXLIM;
+}
 
+void SpectrumArray::rotate_basis(double D[3], const double xyz[3]){
+	double x=xyz[0], y=xyz[1], z=xyz[2];
+	double inv_r = 1.0 / sqrt(Grid::dot_Minkowski<3>(xyz,xyz,3));
+	double rp = sqrt(x*x + y*y);
+	double rhat[3]     = {0,0,0};
+	double thetahat[3] = {0,0,0};
+	double phihat[3]   = {0,0,0};
+	if(rp==0){
+		rhat[2] = z>0 ? -1.0 : 1.0;
+	    thetahat[1] = 1;
+	    phihat[0] = 1;
+	}
+	else{
+		double inv_rp = 1.0/rp;
+		rhat[0] = x*inv_r;
+		rhat[1] = y*inv_r;
+		rhat[2] = z*inv_r;
+		thetahat[0] = z*inv_r * x*inv_rp;
+		thetahat[1] = z*inv_r * y*inv_rp;
+		thetahat[2] = -rp * inv_r;
+		phihat[0] = -y*inv_rp;
+		phihat[1] =  x*inv_rp;
+		phihat[2] = 0;
+	}
+
+	double Dout[3];
+	Dout[0] = Grid::dot_Minkowski<3>(D,thetahat,3);
+	Dout[1] = Grid::dot_Minkowski<3>(D,phihat,3);
+	Dout[2] = Grid::dot_Minkowski<3>(D,rhat,3);
+	for(int i=0; i<3; i++) D[i] = Dout[i];
+}
+
+void SpectrumArray::rotate_and_count(const double kup[4], const double xup[4], const double nu, const double E){
+	double D[3] = {kup[0], kup[1], kup[2]};
+	Grid::normalize_Minkowski<3>(D,3);
+
+	if(rotated_basis) rotate_basis(D,xup);
+	count(D, nu, E);
+}

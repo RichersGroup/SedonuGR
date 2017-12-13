@@ -81,7 +81,6 @@ protected:
 	void propagate_particles();
 	void propagate(Particle* p);
 	virtual void move(LorentzHelper *lh, int *z_ind);
-	void distribution_function_basis(const double D[3], const double xyz[3], double D_newbasis[3]) const;
 	void tally_radiation(const LorentzHelper *lh, const int z_ind) const;
 	void reset_radiation();
 	void which_event(LorentzHelper* lh,const int z_ind, ParticleEvent *event) const;
@@ -168,7 +167,6 @@ public:
 	double min_importance;
 	int bias_path_length;
 	double max_path_length_boost;
-	int distribution_polar_basis;
 	void sample_tau(LorentzHelper *lh);
 
 	// items for core emission

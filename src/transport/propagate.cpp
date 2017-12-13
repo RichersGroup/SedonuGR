@@ -61,7 +61,7 @@ void Transport::propagate_particles()
 				L_net_esc[p->s] += p->e;
 				#pragma omp atomic
 				N_net_esc[p->s] += p->e / (nu*pc::h);
-				species_list[p->s]->spectrum.count(D,3, nu, p->e);
+				species_list[p->s]->spectrum.count(D, nu, p->e);
 			}
 			PRINT_ASSERT(p->fate, !=, moving);
 		} //#pragma omp parallel for
@@ -147,34 +147,6 @@ void Transport::boundary_conditions(LorentzHelper *lh, int *z_ind) const{
 	}
 }
 
-void Transport::distribution_function_basis(const double D[3], const double xyz[3], double D_newbasis[3]) const{
-	double x=xyz[0], y=xyz[1], z=xyz[2];
-	double inv_r = 1.0 / sqrt(Grid::dot_Minkowski<3>(xyz,xyz,3));
-	double rp = sqrt(x*x + y*y);
-	double rhat[3]     = {0,0,0};
-	double thetahat[3] = {0,0,0};
-	double phihat[3]   = {0,0,0};
-	if(rp==0){
-		rhat[2] = z>0 ? -1.0 : 1.0;
-	    thetahat[1] = 1;
-	    phihat[0] = 1;
-	}
-	else{
-		double inv_rp = 1.0/rp;
-		rhat[0] = x*inv_r;
-		rhat[1] = y*inv_r;
-		rhat[2] = z*inv_r;
-		thetahat[0] = z*inv_r * x*inv_rp;
-		thetahat[1] = z*inv_r * y*inv_rp;
-		thetahat[2] = -rp * inv_r;
-		phihat[0] = -y*inv_rp;
-		phihat[1] =  x*inv_rp;
-		phihat[2] = 0;
-	}
-	D_newbasis[0] = Grid::dot_Minkowski<3>(D,thetahat,3);
-	D_newbasis[1] = Grid::dot_Minkowski<3>(D,phihat,3);
-	D_newbasis[2] = Grid::dot_Minkowski<3>(D,rhat,3);
-}
 void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	PRINT_ASSERT(z_ind, >=, 0);
 	PRINT_ASSERT(z_ind, <, (int)grid->z.size());
@@ -195,18 +167,16 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 
 	// get the distribution function basis to use
 	// use rhat, thetahat, phihat as basis functions so rotational symmetries give accurate results (if distribution_polar_basis)
-	double Dlab[3], D_newbasis[3];
+	double Dlab[3];
 	lh->p_D(lab,Dlab,3);
-	if(distribution_polar_basis) distribution_function_basis(Dlab,lh->p_xup(),D_newbasis);
-	else for(int i=0;i<3;i++) D_newbasis[i] = Dlab[i];
-	Grid::normalize_Minkowski<3>(D_newbasis,3);
+
 
 	// tally in contribution to zone's distribution function (lab frame)
 	if(lh->exponential_decay && lh->abs_opac(lab)>0) to_add = lh->p_e(lab) / lh->abs_opac(lab) * decay_factor;
 	else to_add = lh->p_e(lab) * lh->distance(lab);
 	PRINT_ASSERT(to_add,<,INFINITY);
 
-	zone->distribution[lh->p_s()]->count(D_newbasis, 3, lh->p_nu(com), to_add);
+	zone->distribution[lh->p_s()]->rotate_and_count(Dlab, lh->p_xup(), lh->p_nu(com), to_add);
 	#pragma omp atomic
 	zone->Edens_com[lh->p_s()] += to_add;
 	#pragma omp atomic

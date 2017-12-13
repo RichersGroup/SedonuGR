@@ -77,9 +77,7 @@ unsigned GR1DSpectrumArray::index(const int nu_bin, const int rank) const {
 //--------------------------------------------------------------
 // count a particle
 ////--------------------------------------------------------------
-void GR1DSpectrumArray::count(const double D[3], const int Dsize,
-		const double nu, const double E) {
-	PRINT_ASSERT(Dsize, ==, 3);
+void GR1DSpectrumArray::count(const double D[3], const double nu, const double E) {
 	PRINT_ASSERT(E, >=, 0);
 	PRINT_ASSERT(E, <, INFINITY);
 

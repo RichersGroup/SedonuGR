@@ -37,15 +37,24 @@ class Grid;
 
 class SpectrumArray {
 
+protected:
+
+	// rotate to polar basis
+	static void rotate_basis(double D[3], const double xyz[3]);
+	virtual void count(const double D[3], const double nu, const double E) = 0;
+
 public:
 
+	int rotated_basis; // 0-no rotation, cartesian basis. 1-rotate to polar basis w/ simple transformation
+
 	virtual ~SpectrumArray() {}
+	SpectrumArray();
 
 	// MPI functions
 	virtual void MPI_average(const int proc) = 0;
 
 	// Count a packets
-	virtual void count(const double D[3], const int Dsize, const double nu, const double E) = 0;
+	void rotate_and_count(const double D[3], const double xup[3], const double nu, const double E);
 
 	//  void normalize();
 	virtual void rescale(const double) = 0;

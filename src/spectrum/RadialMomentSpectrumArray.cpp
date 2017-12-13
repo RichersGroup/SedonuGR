@@ -78,9 +78,7 @@ unsigned RadialMomentSpectrumArray::index(const int nu_bin, const int rank) cons
 //--------------------------------------------------------------
 // count a particle
 ////--------------------------------------------------------------
-void RadialMomentSpectrumArray::count(const double D[3], const int Dsize,
-		const double nu, const double E) {
-	PRINT_ASSERT(Dsize, ==, 3);
+void RadialMomentSpectrumArray::count(const double D[3], const double nu, const double E) {
 	PRINT_ASSERT(E, >=, 0);
 	PRINT_ASSERT(E, <, INFINITY);
 
