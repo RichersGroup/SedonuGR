@@ -52,7 +52,7 @@ void Transport::propagate_particles()
 			n_active[p->s]++;
 			if(p->fate == moving) propagate(p);
 			if(p->fate == escaped){
-				const double nu = p->kup[3]/(2.0*pc::pi) * pc::c;
+				const double nu = p->kup[3]/(2.0*pc::pi) * pc::c; // assumes metric is essentially Minkowski
 				double D[3] = {p->kup[0], p->kup[1], p->kup[2]};
 				Grid::normalize_Minkowski<3>(D);
 				#pragma omp atomic

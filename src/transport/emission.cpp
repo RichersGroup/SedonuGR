@@ -315,8 +315,6 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 
 		// count up the emitted energy in each zone
 		#pragma omp atomic
-		L_net_lab[lh.p_s()] += lh.p_N() * lh.p_nu(lab)*pc::h;
-		#pragma omp atomic
 		N_net_lab[lh.p_s()] += lh.p_N();
 	}
 }
@@ -372,6 +370,6 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	    #pragma omp critical
 		particles.push_back(lh.particle_copy(lab));
 	    #pragma omp atomic
-		L_core_lab[lh.p_s()] += lh.p_N() * lh.p_nu(lab)*pc::h;
+		N_core_lab[lh.p_s()] += lh.p_N();
 	}
 }

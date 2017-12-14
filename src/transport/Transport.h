@@ -192,11 +192,10 @@ public:
 	int do_emit_by_bin;
 
 	// global radiation quantities
-	std::vector<double> L_core_lab;
-	std::vector<double> L_net_lab;
-	std::vector<double> L_net_esc;
+	std::vector<double> N_core_lab;
 	std::vector<double> N_net_lab;
 	std::vector<double> N_net_esc;
+	std::vector<double> L_net_esc;
 	std::vector<long> n_active;
 	std::vector<long> n_escape;
 

@@ -47,7 +47,7 @@ void Transport::event_interact(LorentzHelper* lh, int *z_ind){
 	// absorb the particle and let the fluid re-emit another particle
 	if(radiative_eq){
 		re_emit(lh,*z_ind);
-		L_net_lab[lh->p_s()] += lh->p_N() * lh->p_nu(lab)*pc::h;
+		N_net_lab[lh->p_s()] += lh->p_N();
 	}
 
 	// absorb part of the packet

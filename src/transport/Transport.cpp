@@ -345,14 +345,12 @@ void Transport::init(Lua* lua)
 	if(rank0) cout << "finished." << endl;
 
 	// explicitly set global radiation quantities to 0
-	L_core_lab.resize(species_list.size());
-	L_net_lab.resize(species_list.size());
+	N_core_lab.resize(species_list.size());
 	L_net_esc.resize(species_list.size());
 	N_net_lab.resize(species_list.size());
 	N_net_esc.resize(species_list.size());
 	for(unsigned s=0; s<species_list.size(); s++){
-		L_core_lab[s] = 0;
-		L_net_lab[s] = 0;
+		N_core_lab[s] = 0;
 		L_net_esc[s] = 0;
 		N_net_lab[s] = 0;
 		N_net_esc[s] = 0;
@@ -471,8 +469,7 @@ void Transport::reset_radiation(){
 		species_list[i]->spectrum.wipe();
 		n_active[i] = 0;
 		n_escape[i] = 0;
-		L_core_lab[i] = 0;
-		L_net_lab[i] = 0;
+		N_core_lab[i] = 0;
 		L_net_esc[i] = 0;
 		N_net_lab[i] = 0;
 		N_net_esc[i] = 0;
@@ -644,8 +641,7 @@ void Transport::normalize_radiative_quantities(){
 	// normalize global quantities
 	for(unsigned s=0; s<species_list.size(); s++){
 		species_list[s]->spectrum.rescale(inv_multiplier); // erg/s in each bin. Assume lab_dt=1.0
-		L_core_lab[s] *= inv_multiplier; // assume lab_dt=1.0
-		L_net_lab[s] *= inv_multiplier; // assume lab_dt=1.0
+		N_core_lab[s] *= inv_multiplier; // assume lab_dt=1.0
 		L_net_esc[s] *= inv_multiplier; // assume lab_dt=1.0
 		N_net_lab[s] *= inv_multiplier; // assume lab_dt=1.0
 		N_net_esc[s] *= inv_multiplier; // assume lab_dt=1.0
@@ -679,21 +675,13 @@ void Transport::normalize_radiative_quantities(){
 
 		if(n_emit_core>0){
 			cout << "#   { ";
-			for(unsigned s=0; s<L_core_lab.size(); s++) cout << setw(12) << L_core_lab[s] << "  ";
-			cout << "} erg/s L_core" << endl;
+			for(unsigned s=0; s<N_core_lab.size(); s++) cout << setw(12) << N_core_lab[s] << "  ";
+			cout << "} 1/s N_core" << endl;
 		}
-
-		cout << "#   { ";
-		for(unsigned s=0; s<L_net_lab.size(); s++) cout << setw(12) << L_net_lab[s] << "  ";
-		cout << "} erg/s L_emit (lab, includes re-emission)" << endl;
 
 		cout << "#   { ";
 		for(unsigned s=0; s<L_net_esc.size(); s++) cout << setw(12) << L_net_esc[s] << "  ";
 		cout << "} erg/s L_esc (lab)" << endl;
-
-		cout << "#   { ";
-		for(unsigned s=0; s<L_net_lab.size(); s++) cout << setw(12) << L_net_lab[s]/N_net_lab[s]*pc::ergs_to_MeV << "  ";
-		cout << "} MeV E_avg_lab (lab)" << endl;
 
 		cout << "#   { ";
 		for(unsigned s=0; s<N_net_esc.size(); s++) cout << setw(12) << L_net_esc[s]/N_net_esc[s]*pc::ergs_to_MeV << "  ";
@@ -806,11 +794,8 @@ void Transport::reduce_radiation()
 	for(unsigned i=0; i<species_list.size(); i++) send[i] = L_net_esc[i];
 	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),L_net_esc.size());
 	
-	for(unsigned i=0; i<species_list.size(); i++) send[i] = L_core_lab[i];
-	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),L_core_lab.size());
-	
-	for(unsigned i=0; i<species_list.size(); i++) send[i] = L_net_lab[i];
-	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),L_net_lab.size());
+	for(unsigned i=0; i<species_list.size(); i++) send[i] = N_core_lab[i];
+	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),N_core_lab.size());
 	
 	for(unsigned i=0; i<species_list.size(); i++) send[i] = N_net_esc[i];
 	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),N_net_esc.size());
