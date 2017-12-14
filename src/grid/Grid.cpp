@@ -585,10 +585,7 @@ void Grid::orthogonalize(double v[4], const double e[4], const double xup[4]) co
 	double projection = dot(v,e,xup);
 	for(int mu=0; mu<4; mu++) v[mu] -= projection * v[mu];
 }
-void Grid::tetrad_to_coord(const double xup[4], const double u[4], double kup_tetrad[4]) const{
-	PRINT_ASSERT(do_GR,==,true);
-	double e[4][4];
-
+void Grid::tetrad_basis(const double xup[4], const double u[4], double e[4][4]) const{
 	// normalize four-velocity to get timelike vector
 	for(int mu=0; mu<4; mu++) e[3][mu] = u[mu];
 	normalize(e[3], xup);
@@ -627,11 +624,26 @@ void Grid::tetrad_to_coord(const double xup[4], const double u[4], double kup_te
 	PRINT_ASSERT(abs(dot(e[1],e[2],xup)),<,TINY);
 	PRINT_ASSERT(abs(dot(e[1],e[3],xup)),<,TINY);
 	PRINT_ASSERT(abs(dot(e[2],e[3],xup)),<,TINY);
+}
+void Grid::coord_to_tetrad(const double xup[4], const double u[4], double kup[4]) const{
+	double e[4][4];
+	tetrad_basis(xup, u, e);
 
 	// transform to coordinate frame
-	double kup[4];
-	for(int mu=0; mu<4; mu++) kup[mu] = dot(kup_tetrad,e[mu],xup);
-	for(int mu=0; mu<4; mu++) kup_tetrad[mu] = kup[mu];
+	double kup_tmp[4];
+	for(int mu=0; mu<4; mu++) kup_tmp[mu] = dot(kup,e[mu],xup);
+	for(int mu=0; mu<4; mu++) kup[mu] = kup_tmp[mu];
+}
+void Grid::tetrad_to_coord(const double xup[4], const double u[4], double kup[4]) const{
+	double e[4][4];
+	tetrad_basis(xup, u, e);
+
+	// transform to coordinate frame
+	double kup_tmp[4] = {0,0,0,0};
+	for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++)
+		kup_tmp[mu] += kup[nu] * e[nu][mu];
+	for(int mu=0; mu<4; mu++)
+		kup[mu] = kup_tmp[mu];
 }
 
 void Grid::random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3], double D[3]) const{

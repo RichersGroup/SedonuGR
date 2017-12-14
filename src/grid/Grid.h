@@ -81,7 +81,7 @@ protected:
 	void g_down(const double xup[4], double g[4][4], int z_ind=-1) const;
 	double n_dot(const double invec[4], const double xup[4], int z_ind=-1) const;
 	void orthogonalize(double v[4], const double e[4], const double xup[4]) const;
-
+	void tetrad_basis(const double x[4], const double u[4], double e[4][4]) const;
 
 public:
 
@@ -157,6 +157,7 @@ public:
 
 	// GR functions
 	void tetrad_to_coord(const double xup[4], const double u[4], double kup[4]) const;
+	void coord_to_tetrad(const double xup[4], const double u[4], double kup[4]) const;
 };
 
 
