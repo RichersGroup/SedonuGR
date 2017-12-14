@@ -148,7 +148,9 @@ double LorentzHelper::p_N() const {
 	PRINT_ASSERT(p[com].N,==,p[lab].N);
 	return p[com].N;
 }
-double LorentzHelper::p_nu(const Frame f) const {return p[f].kup[3] * pc::c / (2.0*pc::pi);}
+double LorentzHelper::p_nu() const {
+	return p[com].kup[3] * pc::c / (2.0*pc::pi);
+}
 int    LorentzHelper::p_s() const {
 	PRINT_ASSERT(p[lab].s,==,p[com].s);
 	return p[lab].s;

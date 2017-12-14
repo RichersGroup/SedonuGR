@@ -401,11 +401,11 @@ void Species::sample_scattering_final_state(const int z_ind, LorentzHelper &lh, 
 	PRINT_ASSERT(normalized_phi0.size(),>,0);
 
 	// get ingoing energy index
-	int igin = nu_grid.locate(lh.p_nu(com));
+	int igin = nu_grid.locate(lh.p_nu());
 
 	// get outgoing energy
 	double out_nu = normalized_phi0[z_ind][igin].invert(sim->rangen.uniform(),&nu_grid);
-	lh.scale_p_energy(out_nu/lh.p_nu(com));
+	lh.scale_p_energy(out_nu/lh.p_nu());
 
 	// get outgoing energy index
 	int igout = nu_grid.locate(out_nu);

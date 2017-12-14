@@ -117,12 +117,12 @@ int main(int argc, char **argv)
 		int ind = upper_bound(grid.begin(), grid.end(), lh.p_tau()) - grid.begin();
 		if(ind<(int)grid.size()){
 			packets[ind]++;
-			energy[ind] += lh.p_N() * lh.p_nu(com)*pc::h;
-			avg_e += lh.p_N() * lh.p_nu(com)*pc::h;
+			energy[ind] += lh.p_N() * lh.p_nu()*pc::h;
+			avg_e += lh.p_N() * lh.p_nu()*pc::h;
 		}
 		else{
 			n_above ++;
-			e_above += lh.p_N() * lh.p_nu(com)*pc::h;
+			e_above += lh.p_N() * lh.p_nu()*pc::h;
 		}
 		if(lh.p_N()==0) n_zero++;
 		if(lh.p_fate()!=moving) n_dead++;

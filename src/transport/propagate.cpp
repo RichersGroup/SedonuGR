@@ -98,7 +98,7 @@ void Transport::propagate_particles()
 void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *event) const{
 	PRINT_ASSERT(lh->net_opac(lab), >=, 0);
 	PRINT_ASSERT(lh->p_N(), >, 0);
-	PRINT_ASSERT(lh->p_nu(lab), >, 0);
+	PRINT_ASSERT(lh->p_nu(), >, 0);
 	PRINT_ASSERT(z_ind,>=,0);
 
 	double d_zone     = numeric_limits<double>::infinity();
@@ -156,7 +156,7 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	PRINT_ASSERT(lh->abs_fraction(), >=, 0);
 	PRINT_ASSERT(lh->abs_fraction(), <=, 1);
 	PRINT_ASSERT(lh->p_N(), >, 0);
-	PRINT_ASSERT(lh->p_nu(com), >, 0);
+	PRINT_ASSERT(lh->p_nu(), >, 0);
 	PRINT_ASSERT(lh->distance(com), >=, 0);
 	PRINT_ASSERT(lh->net_opac(com), >=, 0);
 	double to_add = 0;
@@ -176,19 +176,19 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	// tally in contribution to zone's distribution function (lab frame)
 	if(lh->exponential_decay && lh->abs_opac(lab)>0) to_add = lh->p_N() / lh->abs_opac(lab) * decay_factor;
 	else to_add = lh->p_N() * lh->distance(lab);
-	to_add *= lh->p_nu(lab)*pc::h;
+	to_add *= lh->p_nu()*pc::h;
 	PRINT_ASSERT(to_add,<,INFINITY);
 
-	zone->distribution[lh->p_s()]->rotate_and_count(Dlab, lh->p_xup(), lh->p_nu(com), to_add);
+	zone->distribution[lh->p_s()]->rotate_and_count(Dlab, lh->p_xup(), lh->p_nu(), to_add);
 	#pragma omp atomic
 	zone->Edens_com[lh->p_s()] += to_add;
 	#pragma omp atomic
-	zone->Ndens_com[lh->p_s()] += to_add / (lh->p_nu(com)*pc::h);
+	zone->Ndens_com[lh->p_s()] += to_add / (lh->p_nu()*pc::h);
 	
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
 	if(lh->exponential_decay) to_add = lh->p_N() * decay_factor;
 	else to_add = lh->p_N() * lh->distance(com) * lh->abs_opac(com);
-	to_add *=  lh->p_nu(com)*pc::h;
+	to_add *=  lh->p_nu()*pc::h;
 	PRINT_ASSERT(to_add,>=,0);
 
 	#pragma omp atomic
@@ -197,7 +197,7 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	// store absorbed lepton number (same in both frames, except for the
 	// factor of this_d which is divided out later
 	if(species_list[lh->p_s()]->lepton_number != 0){
-		to_add /= (lh->p_nu(com)*pc::h);
+		to_add /= (lh->p_nu()*pc::h);
 		if(species_list[lh->p_s()]->lepton_number == 1){
             #pragma omp atomic
 			zone->nue_abs += to_add;
@@ -241,7 +241,7 @@ void Transport::get_opacity(LorentzHelper *lh, const int z_ind) const{
 
 		// get local opacity and absorption fraction
 		double a=-1,s=-1;
-		species_list[lh->p_s()]->get_opacity(lh->p_nu(com), z_ind, &a, &s);
+		species_list[lh->p_s()]->get_opacity(lh->p_nu(), z_ind, &a, &s);
 		lh->set_opac<com>(a,s);
 	}
 	else{
@@ -265,7 +265,7 @@ void Transport::propagate(Particle* p)
 
 	while (lh.p_fate() == moving)
 	{
-		PRINT_ASSERT(lh.p_nu(lab), >, 0);
+		PRINT_ASSERT(lh.p_nu(), >, 0);
 
 		int z_ind = grid->zone_index(lh.p_xup());
 		PRINT_ASSERT(z_ind, >=, 0);

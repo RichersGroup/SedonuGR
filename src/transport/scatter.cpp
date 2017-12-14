@@ -64,8 +64,8 @@ void Transport::event_interact(LorentzHelper* lh, int *z_ind){
 
 	// sanity checks
 	if(lh->p_fate()==moving){
-		PRINT_ASSERT(lh->p_nu(com),>,0);
-		PRINT_ASSERT(lh->p_nu(com),>,0);
+		PRINT_ASSERT(lh->p_nu(),>,0);
+		PRINT_ASSERT(lh->p_nu(),>,0);
 	}
 }
 
@@ -85,7 +85,7 @@ void Transport::window(LorentzHelper *lh, const int z_ind){
 	// split if too high energy, if enough space, and if in important region
 	double ratio = lh->p_N() / max_packet_number;
 	int n_new = (int)ratio;
-	if(ratio>1.0 && (int)particles.size()+n_new<max_particles && species_list[lh->p_s()]->interpolate_importance(lh->p_nu(com),z_ind)>=1.0){
+	if(ratio>1.0 && (int)particles.size()+n_new<max_particles && species_list[lh->p_s()]->interpolate_importance(lh->p_nu(),z_ind)>=1.0){
 		lh->scale_p_number( 1.0 / (double)(n_new+1) );
 		for(int i=0; i<n_new; i++){
 			#pragma omp critical
@@ -150,10 +150,10 @@ void Transport::re_emit(LorentzHelper *lh, const int z_ind) const{
 	lh->set_p<com>(&p);
 
 	// tally into zone's emitted energy
-	grid->z[z_ind].e_emit += lh->p_N() * lh->p_nu(com)*pc::h;
+	grid->z[z_ind].e_emit += lh->p_N() * lh->p_nu()*pc::h;
 
 	// sanity checks
-	PRINT_ASSERT(lh->p_nu(com),>,0);
+	PRINT_ASSERT(lh->p_nu(),>,0);
 	PRINT_ASSERT(lh->p_s(),>=,0);
 	PRINT_ASSERT(lh->p_s(),<,(int)species_list.size());
 }
@@ -207,18 +207,18 @@ void Transport::scatter(LorentzHelper *lh, int *z_ind) const{
 
 		// sample new direction
 		double kup[4];
-		grid->isotropic_kup(lh->p_nu(com),kup,lh->p_xup(),&rangen);
+		grid->isotropic_kup(lh->p_nu(),kup,lh->p_xup(),&rangen);
 		lh->set_p_kup<com>(kup,4);
 
 		// get the dot product between the old and new directions
-		double cosTheta = grid->dot3(kup,kup_old,lh->p_xup()) / (lh->p_nu(com) * lh->p_nu(com) * 4. * pc::pi * pc::pi / (pc::c * pc::c));
+		double cosTheta = grid->dot3(kup,kup_old,lh->p_xup()) / (lh->p_nu() * lh->p_nu() * 4. * pc::pi * pc::pi / (pc::c * pc::c));
 		PRINT_ASSERT(fabs(cosTheta),<=,1.0);
 
 		// sample outgoing energy and set the post-scattered state
 		if(use_scattering_kernels){
-			const double tmp_nu = lh->p_nu(com);
+			const double tmp_nu = lh->p_nu();
 			species_list[lh->p_s()]->sample_scattering_final_state(*z_ind,*lh,cosTheta);
-			double dep_energy = (tmp_nu - lh->p_nu(com)) * lh->p_N()*pc::h;
+			double dep_energy = (tmp_nu - lh->p_nu()) * lh->p_N()*pc::h;
 			if(dep_energy>0) grid->z[*z_ind].e_abs  += dep_energy;
 			else             grid->z[*z_ind].e_emit -= dep_energy;
 		}
@@ -298,7 +298,7 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	PRINT_ASSERT(lh->scat_opac(com),>,0);
 	PRINT_ASSERT(lh->abs_opac(com),>=,0);
 	PRINT_ASSERT(lh->p_N(),>=,0);
-	PRINT_ASSERT(lh->p_nu(com),>=,0);
+	PRINT_ASSERT(lh->p_nu(),>=,0);
 
 	// set pointer to the current zone
 	Zone* zone;
