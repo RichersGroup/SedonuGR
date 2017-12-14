@@ -904,57 +904,6 @@ void Grid2DSphere::symmetry_boundaries(LorentzHelper *lh) const{
 // not implemented - does nothing
 }
 
-//------------------------------------------------------------
-// Find distance to outer boundary
-//------------------------------------------------------------
-double Grid2DSphere::lab_dist_to_boundary(const LorentzHelper *lh) const{
-	const Particle *p = lh->particle_readonly(lab);
-	double Dlab[3];
-	lh->p_D(lab,Dlab,3);
-
-	// Theta = angle between radius vector and direction (Pi if outgoing)
-	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
-	double Rout  = r_out[r_out.size()-1];
-	double Rin   = r_out.min;
-	double r  = radius(p->xup);
-	double x_dot_d = p->xup[0]*Dlab[0] + p->xup[1]*Dlab[1] + p->xup[2]*Dlab[2];
-	double mu = x_dot_d / r;
-	double d_outer_boundary = numeric_limits<double>::infinity();
-	double d_inner_boundary = numeric_limits<double>::infinity();
-	PRINT_ASSERT(r,<,Rout);
-	PRINT_ASSERT(zone_index(p->xup),>=,-1);
-
-	// distance to inner boundary
-	if(r >= Rin){
-		double radical = r*r*(mu*mu-1.0) + Rin*Rin;
-		if(Rin>0 && mu<0 && radical>=0){
-			d_inner_boundary = -r*mu - sqrt(radical);
-			PRINT_ASSERT(d_inner_boundary,<=,sqrt(Rout*Rout-Rin*Rin)*(1.0+TINY));
-		}
-	}
-	else{
-		d_inner_boundary = -r*mu + sqrt(r*r*(mu*mu-1.0) + Rin*Rin);
-		PRINT_ASSERT(d_inner_boundary,<=,2.*Rin);
-	}
-	if(d_inner_boundary<0 && fabs(d_inner_boundary/Rin)<TINY*(r_out[0]-Rin)) d_inner_boundary = TINY*(r_out[0]-Rin);
-	PRINT_ASSERT(d_inner_boundary,>=,0);
-
-	// distance to outer boundary
-	d_outer_boundary = -r*mu + sqrt(r*r*(mu*mu-1.0) + Rout*Rout);
-	if(d_outer_boundary<=0 && fabs(d_outer_boundary/Rin)<TINY*(Rout-r_out[r_out.size()-1])) d_outer_boundary = TINY*(Rout-r_out[r_out.size()-1]);
-	PRINT_ASSERT(d_outer_boundary,>,0);
-	PRINT_ASSERT(d_outer_boundary,<=,2.*Rout);
-
-	// distances to the theta boundaries - NOT IMPLEMENTED THETA BOUNDARIES
-	PRINT_ASSERT( fabs((theta_out[theta_out.size()-1] - theta_out.min) - pc::pi),<,TINY);
-	double theta_dist = INFINITY;
-
-	// make sure the particle ends up in a reasonable place
-	const double r_dist = min(d_inner_boundary, d_outer_boundary);
-	return min(r_dist,theta_dist);
-}
-
-
 double Grid2DSphere::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());

@@ -705,34 +705,6 @@ void Grid3DCart::write_rays(const int iw) const
 }
 
 
-//------------------------------------------------------------
-// Find distance to outer boundary
-//------------------------------------------------------------
-double Grid3DCart::lab_dist_to_boundary(const LorentzHelper *lh) const{
-	const Particle *p = lh->particle_readonly(lab);
-	double Dlab[3];
-	lh->p_D(lab,Dlab,3);
-
-	bool inside = true;
-	for(int i=0; i<3; i++) inside = inside && (p->xup[i] >= x0[i]) && (p->xup[i] <= xmax[i]);
-
-	// case: particle is inside the boundaries
-	if(inside){
-		double dist[3] = {-1,-1,-1};
-		for(int i=0; i<3; i++){
-			dist[i] = min(xmax[i]-p->xup[i], p->xup[i]-x0[i]);
-			PRINT_ASSERT(dist[i],>=,0);
-		}
-
-		double final_dist = min(min(dist[0],dist[1]),dist[2]);
-		PRINT_ASSERT(final_dist,<=,sqrt((xmax[0]-x0[0])*(xmax[0]-x0[0]) + (xmax[1]-x0[1])*(xmax[1]-x0[1]) + (xmax[2]-x0[2])*(xmax[2]-x0[2])) );
-		return final_dist;
-	}
-
-	// case: particle is outside the boundaries.
-	else return numeric_limits<double>::infinity();
-}
-
 
 double Grid3DCart::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);

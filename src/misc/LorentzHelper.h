@@ -66,7 +66,6 @@ public:
 	double p_nu() const; // comoving frame
 	double p_tau() const;
 	ParticleFate p_fate() const;
-	void p_D(const Frame f, double D[3], const int size) const;
 	const double* p_xup() const;
 	const double* p_kup(const Frame f) const;
 

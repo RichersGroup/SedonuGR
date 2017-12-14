@@ -103,7 +103,6 @@ void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *e
 
 	double d_zone     = numeric_limits<double>::infinity();
 	double d_interact = numeric_limits<double>::infinity();
-	double d_boundary = numeric_limits<double>::infinity();
 
 	// FIND D_ZONE= ====================================================================
 	double d_zone_min = step_size * grid->zone_min_length(z_ind);
@@ -117,20 +116,12 @@ void Transport::which_event(LorentzHelper *lh, const int z_ind, ParticleEvent *e
 	else                       d_interact = static_cast<double>(lh->p_tau() / relevant_opacity);
 	PRINT_ASSERT(d_interact,>=,0);
 
-	// FIND D_BOUNDARY ================================================================
-	d_boundary = grid->lab_dist_to_boundary(lh);
-	PRINT_ASSERT(d_boundary, >=, 0);
-
 	// find out what event happens (shortest distance) =====================================
 	*event  = nothing;
 	double d_smallest = d_zone;
 	if( d_interact <= d_smallest ){
 		*event = interact;
 		d_smallest = d_interact;
-	}
-	if( d_boundary <= d_smallest ){
-		double d_tweak = min(d_zone,d_interact);
-		d_smallest = d_boundary + d_tweak*TINY; // bump just over the boundary
 	}
 	lh->set_distance<lab>(d_smallest);
 	PRINT_ASSERT(lh->distance(lab), >=, 0);
@@ -167,19 +158,13 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	Zone* zone;
 	zone = &(grid->z[z_ind]);
 
-	// get the distribution function basis to use
-	// use rhat, thetahat, phihat as basis functions so rotational symmetries give accurate results (if distribution_polar_basis)
-	double Dlab[3];
-	lh->p_D(lab,Dlab,3);
-
-
 	// tally in contribution to zone's distribution function (lab frame)
 	if(lh->exponential_decay && lh->abs_opac(lab)>0) to_add = lh->p_N() / lh->abs_opac(lab) * decay_factor;
 	else to_add = lh->p_N() * lh->distance(lab);
 	to_add *= lh->p_nu()*pc::h;
 	PRINT_ASSERT(to_add,<,INFINITY);
 
-	zone->distribution[lh->p_s()]->rotate_and_count(Dlab, lh->p_xup(), lh->p_nu(), to_add);
+	zone->distribution[lh->p_s()]->rotate_and_count(lh->p_kup(lab), lh->p_xup(), lh->p_nu(), to_add);
 	#pragma omp atomic
 	zone->Edens_com[lh->p_s()] += to_add;
 	#pragma omp atomic

@@ -166,12 +166,6 @@ ParticleFate LorentzHelper::p_fate() const{
 const double* LorentzHelper::p_xup() const {
 	return p[lab].xup;
 }
-void LorentzHelper::p_D(const Frame f, double D[3], const int size) const{
-	PRINT_ASSERT(size,==,3);
-	PRINT_ASSERT(p[f].kup[3],>,0);
-	for(int i=0; i<3; i++) D[i] = p[f].kup[i];
-	Grid::normalize_Minkowski<3>(D);
-}
 const double* LorentzHelper::p_kup(const Frame f) const {
 	return p[f].kup;
 }

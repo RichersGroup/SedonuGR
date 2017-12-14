@@ -281,17 +281,6 @@ double  Grid1DSphere::zone_lab_3volume(const int z_ind) const
 	return vol;
 }
 
-double Grid1DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const{
-	double r = sqrt(dot_Minkowski<3>(x_up,x_up));
-	PRINT_ASSERT(r,<=,r_out[z_ind]);
-	PRINT_ASSERT(r,>=,r_out.bottom(z_ind));
-
-	double drL = r - r_out.bottom(z_ind);
-	double drR = r_out[z_ind] - r;
-
-	return min(drL, drR);
-}
-
 //------------------------------------------------------------
 // return length of zone
 //------------------------------------------------------------
@@ -414,28 +403,25 @@ void Grid1DSphere::symmetry_boundaries(LorentzHelper *lh) const{
 	// reflect from outer boundary
 	if(reflect_outer && radius(lh->p_xup())>r_out[r_out.size()-1]){
 		const Particle *p = lh->particle_readonly(lab);
-		double Dlab[3];
-		lh->p_D(lab,Dlab,3);
 
 		double r0 = (r_out.size()>1 ? r_out[r_out.size()-2] : r_out.min);
 		double rmax = r_out[r_out.size()-1];
 		double dr = rmax - r0;
 		double R = radius(p->xup);
-		double x_dot_d = p->xup[0]*Dlab[0] + p->xup[1]*Dlab[1] + p->xup[2]*Dlab[2];
-		double velDotRhat = x_dot_d / R;
 		PRINT_ASSERT( fabs(R - r_out[r_out.size()-1]),<,TINY*dr);
 
+		double kr;
+		for(int i=0; i<3; i++) kr += p->xup[i]/R * p->kup[i];
+
 		// invert the radial component of the velocity
-		Dlab[0] -= 2.*velDotRhat * p->xup[0]/R;
-		Dlab[1] -= 2.*velDotRhat * p->xup[1]/R;
-		Dlab[2] -= 2.*velDotRhat * p->xup[2]/R;
-		normalize_Minkowski<3>(Dlab);
-		double kup[4];
-		kup[3] = lh->p_kup(lab)[3];
-		kup[0] = kup[3] * Dlab[0];
-		kup[1] = kup[3] * Dlab[1];
-		kup[2] = kup[3] * Dlab[2];
-		lh->set_p_kup<lab>(kup,4);
+		double knew[3];
+		knew[3] = lh->p_kup(lab)[3];
+		knew[0] -= 2.*kr * p->xup[0]/R;
+		knew[1] -= 2.*kr * p->xup[1]/R;
+		knew[2] -= 2.*kr * p->xup[2]/R;
+		normalize_null(knew,p->xup);
+
+		lh->set_p_kup<lab>(knew,4);
 
 		// put the particle just inside the boundary
 		double newR = rmax - TINY*dr;
@@ -451,50 +437,15 @@ void Grid1DSphere::symmetry_boundaries(LorentzHelper *lh) const{
 	}
 }
 
-//------------------------------------------------------------
-// Find distance to outer boundary (less a TINY bit)
-// negative distance means inner boundary
-//------------------------------------------------------------
-double Grid1DSphere::lab_dist_to_boundary(const LorentzHelper *lh) const{
-	const Particle *p = lh->particle_readonly(lab);
-	double Dlab[3];
-	lh->p_D(lab,Dlab,3);
+double Grid1DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const{
+	double r = sqrt(dot_Minkowski<3>(x_up,x_up));
+	PRINT_ASSERT(r,<=,r_out[z_ind]);
+	PRINT_ASSERT(r,>=,r_out.bottom(z_ind));
 
-	// Theta = angle between radius vector and direction (Pi if outgoing)
-	// Phi   = Pi - Theta (angle on the triangle) (0 if outgoing)
-	double Rout  = r_out[r_out.size()-1];
-	double Rin   = r_out.min;
-	double r  = radius(p->xup);
-	double x_dot_d = p->xup[0]*Dlab[0] + p->xup[1]*Dlab[1] + p->xup[2]*Dlab[2];
-	double mu = x_dot_d / r;
-	double d_outer_boundary = numeric_limits<double>::infinity();
-	double d_inner_boundary = numeric_limits<double>::infinity();
-	PRINT_ASSERT(r,<,Rout);
-	PRINT_ASSERT(zone_index(p->xup),>=,-1);
+	double drL = r - r_out.bottom(z_ind);
+	double drR = r_out[z_ind] - r;
 
-	// distance to inner boundary
-	if(r >= Rin){
-		double radical = r*r*(mu*mu-1.0) + Rin*Rin;
-		if(Rin>0 && mu<0 && radical>=0){
-			d_inner_boundary = -r*mu - sqrt(radical);
-			PRINT_ASSERT(d_inner_boundary,<=,sqrt(Rout*Rout-Rin*Rin)*(1.0+TINY));
-		}
-	}
-	else{
-		d_inner_boundary = -r*mu + sqrt(r*r*(mu*mu-1.0) + Rin*Rin);
-		PRINT_ASSERT(d_inner_boundary,<=,2.*Rin);
-	}
-	if(d_inner_boundary<=0 && fabs(d_inner_boundary/Rin)<TINY*(r_out[0]-Rin)) d_inner_boundary = TINY*(r_out[0]-Rin);
-	PRINT_ASSERT(d_inner_boundary,>,0);
-
-	// distance to outer boundary
-	d_outer_boundary = -r*mu + sqrt(r*r*(mu*mu-1.0) + Rout*Rout);
-	if(d_outer_boundary<=0 && fabs(d_outer_boundary/Rin)<TINY*(Rout-r_out[r_out.size()-1])) d_outer_boundary = TINY*(Rout-r_out[r_out.size()-1]);
-	PRINT_ASSERT(d_outer_boundary,>,0);
-	PRINT_ASSERT(d_outer_boundary,<=,2.*Rout);
-
-	// make sure the particle ends up in a reasonable place
-	return min(d_inner_boundary, d_outer_boundary);
+	return min(drL, drR);
 }
 
 double Grid1DSphere::zone_radius(const int z_ind) const{

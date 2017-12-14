@@ -130,7 +130,6 @@ public:
 
 
 	// boundary conditions
-	virtual double lab_dist_to_boundary(const LorentzHelper *lh) const=0;
 	virtual void   symmetry_boundaries (LorentzHelper *lh)       const=0;
 
 	// vector operations

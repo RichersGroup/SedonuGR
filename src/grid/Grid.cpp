@@ -466,14 +466,14 @@ void Grid::integrate_geodesic(LorentzHelper *lh) const{
 		double gamma[4][4][4];
 		connection_coefficients(xold,gamma);
 
-		double lambda = lh->distance(lab);
+		double lambda = lh->distance(lab) * (-n_dot(kold,xold));
 
 		double dk_dlambda[4] = {0,0,0,0};
 		double dx_dlambda[4] = {0,0,0,0};
 		for(int a=0; a<4; a++){
 			for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++)
-				dk_dlambda[a] -= gamma[a][mu][nu] * kold[mu] * kold[nu] / kold[3];
-			dx_dlambda[a]  = kold[a] / kold[3];
+				dk_dlambda[a] -= gamma[a][mu][nu] * kold[mu] * kold[nu];
+			dx_dlambda[a]  = kold[a];
 		}
 
 		// get new x,k
@@ -492,9 +492,7 @@ void Grid::integrate_geodesic(LorentzHelper *lh) const{
 	}
 	else{
 		double xnew[4];
-		double Dlab[3];
-		lh->p_D(lab,Dlab,3);
-		for(int i=0; i<3; i++) xnew[i] = lh->p_xup()[i] + lh->distance(lab) * Dlab[i];
+		for(int i=0; i<3; i++) xnew[i] = lh->p_xup()[i] + lh->distance(lab) * lh->p_kup(lab)[i] / lh->p_kup(lab)[3];
 		xnew[3] = lh->p_xup()[3] + lh->distance(lab);
 		lh->set_p_xup(xnew,4);
 	}

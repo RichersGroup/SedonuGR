@@ -109,7 +109,6 @@ public:
 	void interpolate_fluid_velocity(const double x[3], double v[3], int z_ind) const;
 	void write_rays               (const int iw                                                  ) const;
 	void symmetry_boundaries      (LorentzHelper *lh                                             ) const;
-	double lab_dist_to_boundary   (const LorentzHelper *lh                                       ) const;
 	double zone_radius            (const int z_ind) const;
 	void dims                     (hsize_t dims[1], const int size) const;
 	hsize_t dimensionality() const {return 1;};

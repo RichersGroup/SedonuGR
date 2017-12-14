@@ -148,14 +148,6 @@ void Grid0DIsotropic::symmetry_boundaries(LorentzHelper *lh) const{
 	// does nothing - no boundary
 }
 
-//------------------------------------------------------------
-// Find distance to outer boundary (less a tiny bit)
-// negative distance means inner boundary
-//------------------------------------------------------------
-double Grid0DIsotropic::lab_dist_to_boundary(const LorentzHelper *lh) const{
-	return INFINITY;
-}
-
 double Grid0DIsotropic::zone_radius(const int z_ind) const{
 	return 0;
 }
