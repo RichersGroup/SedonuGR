@@ -555,14 +555,14 @@ void Grid::normalize_null(double a[], const double xup[]) const{
 	else normalize_null_Minkowski<4>(a);
 }
 
-void Grid::isotropic_kup(const double nu, double kup[4], const double xup[4], ThreadRNG *rangen) const{
+void Grid::isotropic_kup_tet(const double nu, double kup_tet[4], const double xup[4], ThreadRNG *rangen) const{
 	double D[3];
 	isotropic_direction(D,rangen);
 
-	kup[0] = nu * D[0] * 2.0*pc::pi / pc::c;
-	kup[1] = nu * D[1] * 2.0*pc::pi / pc::c;
-	kup[2] = nu * D[2] * 2.0*pc::pi / pc::c;
-	kup[3] = nu        * 2.0*pc::pi / pc::c;
+	kup_tet[0] = nu * D[0] * 2.0*pc::pi / pc::c;
+	kup_tet[1] = nu * D[1] * 2.0*pc::pi / pc::c;
+	kup_tet[2] = nu * D[2] * 2.0*pc::pi / pc::c;
+	kup_tet[3] = nu        * 2.0*pc::pi / pc::c;
 
 	if(do_GR){
 		// move from tetrad frame to comoving frame
@@ -574,7 +574,6 @@ void Grid::isotropic_kup(const double nu, double kup[4], const double xup[4], Th
 		u[1] = gamma * v[1];
 		u[2] = gamma * v[2];
 		u[3] = gamma * pc::c;
-		tetrad_to_coord(xup, u, kup);
 	}
 }
 
@@ -625,25 +624,23 @@ void Grid::tetrad_basis(const double xup[4], const double u[4], double e[4][4]) 
 	PRINT_ASSERT(abs(dot(e[1],e[3],xup)),<,TINY);
 	PRINT_ASSERT(abs(dot(e[2],e[3],xup)),<,TINY);
 }
-void Grid::coord_to_tetrad(const double xup[4], const double u[4], double kup[4]) const{
+void Grid::coord_to_tetrad(const double xup[4], const double u[4], const double kup_coord[4], double kup_tet[4]) const{
 	double e[4][4];
 	tetrad_basis(xup, u, e);
 
 	// transform to coordinate frame
-	double kup_tmp[4];
-	for(int mu=0; mu<4; mu++) kup_tmp[mu] = dot(kup,e[mu],xup);
-	for(int mu=0; mu<4; mu++) kup[mu] = kup_tmp[mu];
+	for(int mu=0; mu<4; mu++) kup_tet[mu] = dot(kup_coord,e[mu],xup);
 }
-void Grid::tetrad_to_coord(const double xup[4], const double u[4], double kup[4]) const{
+void Grid::tetrad_to_coord(const double xup[4], const double u[4], const double kup_tet[4], double kup_coord[4]) const{
 	double e[4][4];
 	tetrad_basis(xup, u, e);
 
 	// transform to coordinate frame
-	double kup_tmp[4] = {0,0,0,0};
-	for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++)
-		kup_tmp[mu] += kup[nu] * e[nu][mu];
-	for(int mu=0; mu<4; mu++)
-		kup[mu] = kup_tmp[mu];
+	for(int mu=0; mu<4; mu++){
+		kup_coord[mu] = 0;
+		for(int nu=0; nu<4; nu++)
+			kup_coord[mu] += kup_tet[nu] * e[nu][mu];
+	}
 }
 
 void Grid::random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3], double D[3]) const{

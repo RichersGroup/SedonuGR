@@ -293,7 +293,7 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	pcom.N = e / (nu*pc::h);
 
 	// emit isotropically in comoving frame
-	grid->isotropic_kup(nu,pcom.kup,pcom.xup,&rangen);
+	grid->isotropic_kup_tet(nu,pcom.kup,pcom.xup,&rangen);
 
 	// set up LorentzHelper
 	LorentzHelper lh(exponential_decay);

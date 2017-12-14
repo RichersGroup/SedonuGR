@@ -151,13 +151,13 @@ public:
 
 	// help with spawning particles
 	void random_core_x_D(const double r_core, ThreadRNG *rangen, double xup[4], double D[3]) const;
-	void isotropic_kup(const double nu, double kup[4], const double xup[4], ThreadRNG *rangen) const;
+	void isotropic_kup_tet(const double nu, double kup_tet[4], const double xup[4], ThreadRNG *rangen) const;
 	void isotropic_direction(double D[3], ThreadRNG *rangen) const;
 	virtual void sample_in_zone(const int z_ind, ThreadRNG *rangen, double xup[3]) const = 0;
 
 	// GR functions
-	void tetrad_to_coord(const double xup[4], const double u[4], double kup[4]) const;
-	void coord_to_tetrad(const double xup[4], const double u[4], double kup[4]) const;
+	void tetrad_to_coord(const double xup[4], const double u[4], const double kup_tet[4], double kup_coord[4]) const;
+	void coord_to_tetrad(const double xup[4], const double u[4], const double kup_coord[4], double kup_tet[4]) const;
 };
 
 

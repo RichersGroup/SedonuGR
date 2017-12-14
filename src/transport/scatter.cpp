@@ -144,7 +144,7 @@ void Transport::re_emit(LorentzHelper *lh, const int z_ind) const{
 	// reset the particle properties
 	p.s = sample_zone_species(z_ind,&p.N);
 	double nu = species_list[p.s]->sample_zone_nu(z_ind,&p.N);
-	grid->isotropic_kup(nu,p.kup,lh->p_xup(),&rangen);
+	grid->isotropic_kup_tet(nu,p.kup,lh->p_xup(),&rangen);
 
 	// set the LorentzHelper
 	lh->set_p<com>(&p);
@@ -207,7 +207,7 @@ void Transport::scatter(LorentzHelper *lh, int *z_ind) const{
 
 		// sample new direction
 		double kup[4];
-		grid->isotropic_kup(lh->p_nu(),kup,lh->p_xup(),&rangen);
+		grid->isotropic_kup_tet(lh->p_nu(),kup,lh->p_xup(),&rangen);
 		lh->set_p_kup<com>(kup,4);
 
 		// get the dot product between the old and new directions
