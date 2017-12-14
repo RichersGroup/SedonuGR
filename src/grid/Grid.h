@@ -133,18 +133,13 @@ public:
 	virtual void symmetry_boundaries(LorentzHelper *lh, const double step_size) const=0;
 
 	// vector operations
-	template<int s> static double dot_Minkowski(const std::vector<double>& aup, const std::vector<double>& bup);
-	template<int s> static double dot_Minkowski(const std::vector<double>& aup, const double bup[]);
-	template<int s>	static double dot_Minkowski(const double aup[],             const double bup[]);
-	template<int s>	static void   normalize_Minkowski     (std::vector<double>& a);
-	template<int s>	static void   normalize_Minkowski     (double aup[]);
-	template<int s>	static void   normalize_null_Minkowski(double aup[]);
-	double dot (const double aup[4], const double bup[4], const double xup[4]) const;
-	double dot3(const double aup[3], const double bup[3], const double xup[4]) const;
-	double dot (const double aup[4], const double bup[4], const int z_ind)    const;
-	double dot3(const double aup[3], const double bup[3], const int z_ind)    const;
-	void normalize     (double aup[4], const double xup[4]) const;
-	void normalize_null(double aup[4], const double xup[4]) const;
+	template<int s>	static double dot_Minkowski(const double aup[], const double bup[]);
+	template<int s>	static void normalize_Minkowski(double aup[]);
+	static void normalize_null_Minkowski(double aup[4]);
+	double dot (const double aup[4], const double bup[4], const double xup[4], const int z_ind=-1) const;
+	double dot3(const double aup[3], const double bup[3], const double xup[4], const int z_ind=-1) const;
+	void normalize     (double aup[4], const double xup[4], const int z_ind=-1) const;
+	void normalize_null(double aup[4], const double xup[4], const int z_ind=-1) const;
 
 	// move the particle
 	void integrate_geodesic(LorentzHelper *lh) const;

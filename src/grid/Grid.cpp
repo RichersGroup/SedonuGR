@@ -377,21 +377,6 @@ double Grid::total_rest_mass() const{
 
 // vector operations
 template<int s>
-double Grid::dot_Minkowski(const vector<double>& a, const vector<double>& b){
-	PRINT_ASSERT(a.size(),==,b.size());
-	return dot_Minkowski<s>(a.data(), b.data());
-}
-template double Grid::dot_Minkowski<3>(const vector<double>& a, const vector<double>& b);
-template double Grid::dot_Minkowski<4>(const vector<double>& a, const vector<double>& b);
-
-template<int s>
-double Grid::dot_Minkowski(const vector<double>& a, const double b[]){
-	return dot_Minkowski<s>(a.data(), b);
-}
-template double Grid::dot_Minkowski<3>(const vector<double>& a, const double b[]);
-template double Grid::dot_Minkowski<4>(const vector<double>& a, const double b[]);
-
-template<int s>
 double Grid::dot_Minkowski(const double a[], const double b[]){
 	double product = 0;
 	for(unsigned i=0; i<3; i++) product += a[i]*b[i];
@@ -403,58 +388,20 @@ template double Grid::dot_Minkowski<4>(const double a[], const double b[]);
 
 // normalize a vector
 template<int s>
-void Grid::normalize_Minkowski(vector<double>& a){
-	normalize_Minkowski<s>(&(a[0]));
-}
-template void Grid::normalize_Minkowski<3>(vector<double>& a);
-template void Grid::normalize_Minkowski<4>(vector<double>& a);
-
-template<int s>
 void Grid::normalize_Minkowski(double a[]){
 	double inv_magnitude = 1./sqrt(abs( dot_Minkowski<s>(a,a) ));
 	PRINT_ASSERT(inv_magnitude,<,INFINITY);
 	for(unsigned i=0; i<s; i++) a[i] *= inv_magnitude;
 }
-template void Grid::normalize_Minkowski<3>(double a[]);
-template void Grid::normalize_Minkowski<4>(double a[]);
 
-template<int s>
-void Grid::normalize_null_Minkowski(double a[]){
+void Grid::normalize_null_Minkowski(double a[4]){
 	double spatial_norm = dot_Minkowski<3>(a,a);
 	a[3] = sqrt(spatial_norm);
 }
-template void Grid::normalize_null_Minkowski<4>(double a[]);
 
 // radius given coordinates
 double Grid::radius(const double x[4]){
 	return sqrt(dot_Minkowski<3>(x,x));
-}
-
-double Grid::dot(const double a[4], const double b[4], const int z_ind) const{
-	double xup[4];
-	zone_coordinates(z_ind,xup,4);
-	return dot(a,b,xup);
-}
-
-double Grid::dot3(const double a[4], const double b[4], const int z_ind) const{
-	double xup[4];
-	zone_coordinates(z_ind,xup,4);
-	return dot3(a,b,xup);
-}
-
-
-// isotropic scatter, done in COMOVING frame
-void Grid::isotropic_direction(double D[3], ThreadRNG *rangen) const
-{
-	// Randomly generate new direction isotropically in comoving frame
-	double mu  = 1 - 2.0*rangen->uniform();
-	double phi = 2.0*pc::pi*rangen->uniform();
-	double smu = sqrt(1 - mu*mu);
-
-	D[0] = smu*cos(phi);
-	D[1] = smu*sin(phi);
-	D[2] = mu;
-	Grid::normalize_Minkowski<3>(D);
 }
 
 void Grid::integrate_geodesic(LorentzHelper *lh) const{
@@ -498,33 +445,36 @@ void Grid::integrate_geodesic(LorentzHelper *lh) const{
 	}
 }
 
-double Grid::dot(const double a[], const double b[], const double xup[]) const{
+
+// dot products
+double Grid::dot(const double a[], const double b[], const double xup[], const int z_ind) const{
 	double product = 0;
 	if(do_GR){
 		double g[4][4];
-		g_down(xup,g);
+		g_down(xup,g,z_ind);
 		for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++)
 			product += a[mu] * b[nu] * g[mu][nu];
 	}
 	else product = dot_Minkowski<4>(a,b);
 	return product;
 }
-double Grid::dot3(const double a[], const double b[], const double xup[]) const{
+
+double Grid::dot3(const double a[], const double b[], const double xup[], const int z_ind) const{
 	double product = 0;
 	if(do_GR){
 		double g[4][4];
-		g_down(xup,g);
+		g_down(xup,g,z_ind);
 		for(int mu=0; mu<3; mu++) for(int nu=0; nu<3; nu++)
 			product += a[mu] * b[nu] * g[mu][nu];
 	}
 	else product = dot_Minkowski<3>(a,b);
 	return product;
 }
-void Grid::normalize(double a[], const double xup[]) const{
+void Grid::normalize(double a[], const double xup[], const int z_ind) const{
 	double inv_norm = 0;
 	if(do_GR){
 		double g[4][4];
-		g_down(xup,g);
+		g_down(xup,g,z_ind);
 		for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++)
 			inv_norm += a[mu] * a[nu] * g[mu][nu];
 		inv_norm = 1.0 / sqrt(inv_norm);
@@ -533,10 +483,10 @@ void Grid::normalize(double a[], const double xup[]) const{
 	}
 	else normalize_Minkowski<4>(a);
 }
-void Grid::normalize_null(double a[], const double xup[]) const{
+void Grid::normalize_null(double a[], const double xup[], const int z_ind) const{
 	if(do_GR){
 		double g[4][4];
-		g_down(xup,g);
+		g_down(xup,g,z_ind);
 		double A = g[3][3];
 		double B=0, C=0;
 
@@ -552,7 +502,21 @@ void Grid::normalize_null(double a[], const double xup[]) const{
 
 		a[3] = result;
 	}
-	else normalize_null_Minkowski<4>(a);
+	else normalize_null_Minkowski(a);
+}
+
+// isotropic scatter, done in COMOVING frame
+void Grid::isotropic_direction(double D[3], ThreadRNG *rangen) const
+{
+	// Randomly generate new direction isotropically in comoving frame
+	double mu  = 1 - 2.0*rangen->uniform();
+	double phi = 2.0*pc::pi*rangen->uniform();
+	double smu = sqrt(1 - mu*mu);
+
+	D[0] = smu*cos(phi);
+	D[1] = smu*sin(phi);
+	D[2] = mu;
+	Grid::normalize_Minkowski<3>(D);
 }
 
 void Grid::isotropic_kup_tet(const double nu, double kup_tet[4], const double xup[4], ThreadRNG *rangen) const{
