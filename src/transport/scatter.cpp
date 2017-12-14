@@ -57,7 +57,7 @@ void Transport::event_interact(LorentzHelper* lh, int *z_ind){
 	}
 
 	// resample the path length
-	if(lh->p_fate()==moving) sample_tau(lh);
+	if(lh->p_fate()==moving) lh->set_p_tau(sample_tau(&rangen));
 
 	// window the particle
 	if(lh->p_fate()==moving) window(lh,*z_ind);
@@ -230,34 +230,14 @@ void Transport::scatter(LorentzHelper *lh, int *z_ind) const{
 //---------------------------------------------------------------------
 // Randomly select an optical depth through which a particle will move.
 //---------------------------------------------------------------------
-void Transport::sample_tau(LorentzHelper *lh){
-	PRINT_ASSERT(bias_path_length,>=,0);
-	PRINT_ASSERT(lh->p_fate(),==,moving);
+double Transport::sample_tau(ThreadRNG* rangen){
+	double tau;
 
-	// tweak distribution if biasing path length
-	// this is probably computed more times than necessary. OPTIMIZE
-	double taubar = 1.0;
-	if(bias_path_length && lh->abs_fraction()<1.0){
-		taubar = 1.0/(1.0-lh->abs_fraction());
-		taubar = min(taubar,max_path_length_boost);
-	}
+	do{
+		tau = -log(rangen->uniform());
+	} while(tau >= INFINITY);
 
-	// sample the distribution and modify the energy
-	do{ // don't allow tau to be infinity
-		lh->set_p_tau( -taubar*log(rangen.uniform()) );
-	} while(lh->p_tau() >= INFINITY);
-	if(taubar != 1.0) lh->scale_p_number( taubar * exp(-lh->p_tau() * (1.0 - 1.0/taubar)) );
-	if(lh->p_N()==0) lh->set_p_fate(rouletted);
-	PRINT_ASSERT(lh->p_N(),>=,0);
-
-	// make sure nothing crazy happened
-	if(lh->p_fate()==moving){
-		PRINT_ASSERT(lh->p_tau(),>=,0);
-		PRINT_ASSERT(lh->p_N(),>,0);
-		PRINT_ASSERT(lh->p_N(),<,INFINITY);
-		PRINT_ASSERT(lh->p_tau(),<,INFINITY);
-	}
-	else PRINT_ASSERT(lh->p_fate(),==,rouletted);
+	return tau;
 }
 
 

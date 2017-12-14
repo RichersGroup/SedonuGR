@@ -165,9 +165,7 @@ public:
 	double max_packet_number;
 	double importance_bias;
 	double min_importance;
-	int bias_path_length;
-	double max_path_length_boost;
-	void sample_tau(LorentzHelper *lh);
+	static double sample_tau(ThreadRNG* rangen);
 
 	// items for core emission
 	double r_core;

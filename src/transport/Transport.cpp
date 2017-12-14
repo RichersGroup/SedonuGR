@@ -97,8 +97,6 @@ Transport::Transport(){
 	particle_escape_energy = NaN;
 	importance_bias = NaN;
 	min_importance = NaN;
-	bias_path_length = -MAXLIM;
-	max_path_length_boost = NaN;
 	randomwalk_min_optical_depth = NaN;
 	randomwalk_max_x = NaN;
 	randomwalk_sumN = -MAXLIM;
@@ -167,8 +165,6 @@ void Transport::init(Lua* lua)
 	}
 	importance_bias = lua->scalar<double>("importance_bias");
 	if(importance_bias>0) min_importance = lua->scalar<double>("min_importance");
-	bias_path_length = lua->scalar<int>("bias_path_length");
-	if(bias_path_length) max_path_length_boost = lua->scalar<double>("max_path_length_boost");
 	min_packet_number = lua->scalar<double>("min_packet_number");
 	max_packet_number = lua->scalar<double>("max_packet_number");
 

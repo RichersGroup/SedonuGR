@@ -302,7 +302,7 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 
 	// sample tau
 	get_opacity(&lh,z_ind);
-	sample_tau(&lh);
+	lh.set_p_tau(sample_tau(&rangen));
 	window(&lh,z_ind);
 
 	// add to particle vector
@@ -361,7 +361,7 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 
 	// sample the optical depth
 	get_opacity(&lh,z_ind);
-	sample_tau(&lh);
+	lh.set_p_tau(sample_tau(&rangen));
 	window(&lh,z_ind);
 
 	// add to particle vector
