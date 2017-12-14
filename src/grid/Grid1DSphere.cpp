@@ -399,7 +399,7 @@ void Grid1DSphere::write_rays(const int iw) const
 //------------------------------------------------------------
 // Reflect off symmetry axis
 //------------------------------------------------------------
-void Grid1DSphere::symmetry_boundaries(LorentzHelper *lh) const{
+void Grid1DSphere::symmetry_boundaries(LorentzHelper *lh, const double tolerance) const{
 	// reflect from outer boundary
 	if(reflect_outer && radius(lh->p_xup())>r_out[r_out.size()-1]){
 		const Particle *p = lh->particle_readonly(lab);
@@ -408,7 +408,7 @@ void Grid1DSphere::symmetry_boundaries(LorentzHelper *lh) const{
 		double rmax = r_out[r_out.size()-1];
 		double dr = rmax - r0;
 		double R = radius(p->xup);
-		PRINT_ASSERT( fabs(R - r_out[r_out.size()-1]),<,TINY*dr);
+		PRINT_ASSERT( fabs(R - r_out[r_out.size()-1]),<,tolerance*dr);
 
 		double kr;
 		for(int i=0; i<3; i++) kr += p->xup[i]/R * p->kup[i];

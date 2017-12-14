@@ -794,7 +794,7 @@ double Grid3DCart::zone_right_boundary(const unsigned dir, const unsigned dir_in
 //------------------------------------------------------------
 // Reflect off revlecting boundary condition
 //------------------------------------------------------------
-void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
+void Grid3DCart::symmetry_boundaries(LorentzHelper *lh, const double tolerance) const{
 	PRINT_ASSERT(zone_index(lh->p_xup()),<,0);
 
 	// initialize the arrays
@@ -821,7 +821,7 @@ void Grid3DCart::symmetry_boundaries(LorentzHelper *lh) const{
 	for(int i=0; i<2; i++){
 		if(xup[i]<0 && (rotate_hemisphere[i] || rotate_quadrant)){
 			PRINT_ASSERT(x0[i],==,0);
-			PRINT_ASSERT(-xup[i],<,dx[i]);
+			PRINT_ASSERT(-xup[i],<,dx[i]*tolerance);
 			
 			if(rotate_hemisphere[i]){
 				for(int j=0; j<2; j++){

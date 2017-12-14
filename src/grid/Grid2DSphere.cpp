@@ -900,7 +900,7 @@ void Grid2DSphere::write_rays(int iw) const
 //------------------------------------------------------------
 // Reflect off the symmetry boundaries
 //------------------------------------------------------------
-void Grid2DSphere::symmetry_boundaries(LorentzHelper *lh) const{
+void Grid2DSphere::symmetry_boundaries(LorentzHelper *lh, const double tolerance) const{
 // not implemented - does nothing
 }
 

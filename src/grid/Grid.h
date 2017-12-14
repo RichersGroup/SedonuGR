@@ -130,7 +130,7 @@ public:
 
 
 	// boundary conditions
-	virtual void   symmetry_boundaries (LorentzHelper *lh)       const=0;
+	virtual void symmetry_boundaries(LorentzHelper *lh, const double step_size) const=0;
 
 	// vector operations
 	template<int s> static double dot_Minkowski(const std::vector<double>& aup, const std::vector<double>& bup);

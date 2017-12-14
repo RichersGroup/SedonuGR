@@ -134,7 +134,7 @@ void Transport::boundary_conditions(LorentzHelper *lh, int *z_ind) const{
 
 	if(r_core>0 && grid->radius(lh->p_xup())<r_core) lh->set_p_fate(absorbed);
 	else if(*z_ind<0){
-		grid->symmetry_boundaries(lh);
+		grid->symmetry_boundaries(lh, step_size);
 		*z_ind = grid->zone_index(lh->p_xup());
 		if(*z_ind < 0) lh->set_p_fate(escaped);
 	}

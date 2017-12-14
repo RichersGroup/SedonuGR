@@ -88,7 +88,7 @@ public:
 	void   sample_in_zone (const int z_ind, ThreadRNG* rangen, double x[3]) const;
 	void   interpolate_fluid_velocity(const double x[3], double v[3], int z_ind) const;
 	void   write_rays               (const int iw                                                  ) const;
-	void   symmetry_boundaries      (LorentzHelper *lh                                             ) const;
+	void   symmetry_boundaries      (LorentzHelper *lh, const double tolerance                     ) const;
 	double zone_radius              (const int z_ind) const;
 	void dims                       (hsize_t dims[3], const int size) const;
 	hsize_t dimensionality() const {return 3;};

@@ -144,7 +144,7 @@ void Grid0DIsotropic::write_rays(const int iw) const
 //------------------------------------------------------------
 // Reflect off symmetry plane
 //------------------------------------------------------------
-void Grid0DIsotropic::symmetry_boundaries(LorentzHelper *lh) const{
+void Grid0DIsotropic::symmetry_boundaries(LorentzHelper *lh, const double tolerance) const{
 	// does nothing - no boundary
 }
 
