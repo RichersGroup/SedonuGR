@@ -64,7 +64,7 @@ public:
 	virtual ~Species() {}
 
 	// the frequency grid for emissivity/opacity (Hz)
-	LocateArray nu_grid;
+	LocateArray* nu_grid;
 
 	// name
 	std::string name;

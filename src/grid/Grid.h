@@ -91,6 +91,7 @@ public:
 
 	// vector of zones
 	std::vector<Zone> z;
+	LocateArray nu_grid;
 
 	// set everything up
 	virtual void init(Lua* lua);

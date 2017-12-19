@@ -64,12 +64,12 @@ void Neutrino_GR1D::myInit(Lua* lua)
 	PRINT_ASSERT(dataspace.getSimpleExtentNdims(),==,1);
 	hsize_t dims[1];
 	dataspace.getSimpleExtentDims(dims);
-	nu_grid.resize(dims[0]);
-	dataset.read(&(nu_grid.x[0]),H5::PredType::IEEE_F64LE);
+	nu_grid->resize(dims[0]);
+	dataset.read(&(nu_grid->x[0]),H5::PredType::IEEE_F64LE);
 	dataset.close();
 	file.close();
-	nu_grid.min = 0;
-	for(int i=0; i<nu_grid.size(); i++)	nu_grid.x[i] /= pc::h_MeV;
+	nu_grid->min = 0;
+	for(int i=0; i<nu_grid->size(); i++)	nu_grid->x[i] /= pc::h_MeV;
 
 	// emit outside shock?
 	GR1D_emit_outside_shock = lua->scalar<int>("GR1D_emit_outside_shock");

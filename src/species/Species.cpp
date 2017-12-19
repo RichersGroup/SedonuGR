@@ -52,6 +52,7 @@ Species::Species(){
 	sim = NULL;
 	ID = MAXLIM;
 	cutoff=0;
+	nu_grid=NULL;
 }
 
 void Species::init(Lua* lua, Transport* simulation)
@@ -64,6 +65,7 @@ void Species::init(Lua* lua, Transport* simulation)
 	// set the pointer to see the simulation info
 	sim = simulation;
 	PRINT_ASSERT(sim->grid->z.size(),>,0);
+	nu_grid = &(sim->grid->nu_grid);
 
 	// basic parameters
 	cutoff = lua->scalar<double>("cdf_cutoff");
@@ -91,13 +93,13 @@ void Species::init(Lua* lua, Transport* simulation)
     vector<double> bintops = vector<double>(0);
 
     // get the frequency grid
-    if(nu_grid.size()==0){
+    if(nu_grid->size()==0){
     	int n_nu   = lua->scalar<int>("nugrid_n");
     	if(n_nu>0){
     		double nu_start = lua->scalar<double>("nugrid_start");
     		double nu_stop  = lua->scalar<double>("nugrid_stop");
     		PRINT_ASSERT(nu_stop,>,nu_start);
-    		nu_grid.init(nu_start/pc::h_MeV,nu_stop/pc::h_MeV,n_nu);
+    		nu_grid->init(nu_start/pc::h_MeV,nu_stop/pc::h_MeV,n_nu);
     	}
     	else{
     		string nugrid_filename = lua->scalar<string>("nugrid_filename");
@@ -112,17 +114,17 @@ void Species::init(Lua* lua, Transport* simulation)
     			bintops.push_back(tmp);
     		}
     		nugrid_file.close();
-            nu_grid.init(bintops,minval,nu_grid.interpolation_method);
+            nu_grid->init(bintops,minval,nu_grid->interpolation_method);
     	}
 	}
-	PRINT_ASSERT(nu_grid.size(),>,0);
+	PRINT_ASSERT(nu_grid->size(),>,0);
 
     // set the interpolation method
     int imeth  = lua->scalar<int>("opac_interp_method");
-	if     (imeth == 0) nu_grid.interpolation_method = constant;
-	else if(imeth == 1) nu_grid.interpolation_method = linear;
-	else if(imeth == 2) nu_grid.interpolation_method = logarithmic;
-	else				nu_grid.interpolation_method = power;
+	if     (imeth == 0) nu_grid->interpolation_method = constant;
+	else if(imeth == 1) nu_grid->interpolation_method = linear;
+	else if(imeth == 2) nu_grid->interpolation_method = logarithmic;
+	else				nu_grid->interpolation_method = power;
 
     //===========================//
 	// intialize output spectrum // only if child didn't
@@ -133,7 +135,7 @@ void Species::init(Lua* lua, Transport* simulation)
 		int nphi = lua->scalar<int>("spec_n_phi");
 		tmp_mugrid.init( -1     , 1     , nmu );
 		tmp_phigrid.init(-pc::pi, pc::pi, nphi);
-		spectrum.init(nu_grid, tmp_mugrid, tmp_phigrid);
+		spectrum.init(*nu_grid, tmp_mugrid, tmp_phigrid);
 	}
 	PRINT_ASSERT(spectrum.size(),>,0);
 
@@ -149,25 +151,25 @@ void Species::init(Lua* lua, Transport* simulation)
 		normalized_phi0.resize(sim->grid->z.size());
 		scattering_delta.resize(sim->grid->z.size());
 		for(int z_ind=0; z_ind<sim->grid->z.size(); z_ind++){
-			normalized_phi0[z_ind].resize(nu_grid.size());
-			scattering_delta[z_ind].resize(nu_grid.size());
-			for(int igin=0; igin<nu_grid.size(); igin++){
-				normalized_phi0[z_ind][igin].resize(nu_grid.size());
-				scattering_delta[z_ind][igin].resize(nu_grid.size(),0);
+			normalized_phi0[z_ind].resize(nu_grid->size());
+			scattering_delta[z_ind].resize(nu_grid->size());
+			for(int igin=0; igin<nu_grid->size(); igin++){
+				normalized_phi0[z_ind][igin].resize(nu_grid->size());
+				scattering_delta[z_ind][igin].resize(nu_grid->size(),0);
 			}
 		}
 	}
 
 	// allocate space for each eas spectrum
-	if(sim->n_emit_core>0 || sim->n_emit_core_per_bin>0) core_emis.resize(nu_grid.size());
+	if(sim->n_emit_core>0 || sim->n_emit_core_per_bin>0) core_emis.resize(nu_grid->size());
 	int iorder = lua->scalar<int>("cdf_interpolation_order");
     //#pragma omp parallel for
 	for(unsigned i=0; i<abs_opac.size();  i++){
-		abs_opac[i].resize(nu_grid.size());
-		scat_opac[i].resize(nu_grid.size());
-		emis[i].resize(nu_grid.size());
+		abs_opac[i].resize(nu_grid->size());
+		scat_opac[i].resize(nu_grid->size());
+		emis[i].resize(nu_grid->size());
 		emis[i].interpolation_order = iorder;
-		biased_emis[i].resize(nu_grid.size());
+		biased_emis[i].resize(nu_grid->size());
 		biased_emis[i].interpolation_order = iorder;
 	}
 	if(rank0) cout << "finished." << endl;
@@ -189,7 +191,7 @@ void Species::init(Lua* lua, Transport* simulation)
 	    if(n_mu>0 && n_phi>0){
 	      tmp_mugrid.init(-1,1,n_mu);
 	      tmp_phigrid.init(-pc::pi, pc::pi, n_phi);
-	      ((PolarSpectrumArray*)tmp_spectrum)->init(nu_grid, tmp_mugrid, tmp_phigrid);
+	      ((PolarSpectrumArray*)tmp_spectrum)->init(*nu_grid, tmp_mugrid, tmp_phigrid);
 	    }
 	    else{
 	      // mu ---------------
@@ -224,7 +226,7 @@ void Species::init(Lua* lua, Transport* simulation)
 	      PRINT_ASSERT(minval,==,-pc::pi);
 	      tmp_phigrid.init(bintops,minval);
 	    }
-	    ((PolarSpectrumArray*)tmp_spectrum)->init(nu_grid, tmp_mugrid, tmp_phigrid);
+	    ((PolarSpectrumArray*)tmp_spectrum)->init(*nu_grid, tmp_mugrid, tmp_phigrid);
 	    PRINT_ASSERT(((PolarSpectrumArray*)tmp_spectrum)->size(),>,0);
 	    
 	  }
@@ -233,20 +235,20 @@ void Species::init(Lua* lua, Transport* simulation)
 	  else if(distribution_type == "Moments"){
 	    int order = lua->scalar<int>("distribution_moment_order");
 	    tmp_spectrum = new MomentSpectrumArray;
-	    ((MomentSpectrumArray*)tmp_spectrum)->init(nu_grid, order);
+	    ((MomentSpectrumArray*)tmp_spectrum)->init(*nu_grid, order);
 	  }
 
 	  //-- RADIAL MOMENT SPECTRUM --------------------
 	  else if(distribution_type == "RadialMoments"){
 	    int order = lua->scalar<int>("distribution_moment_order");
 	    tmp_spectrum = new RadialMomentSpectrumArray;
-	    ((RadialMomentSpectrumArray*)tmp_spectrum)->init(nu_grid, order);
+	    ((RadialMomentSpectrumArray*)tmp_spectrum)->init(*nu_grid, order);
 	  }
 
 	  //-- RADIAL MOMENT SPECTRUM --------------------
 	  else if(distribution_type == "GR1D"){
 	    tmp_spectrum = new GR1DSpectrumArray;
-	    ((GR1DSpectrumArray*)tmp_spectrum)->init(nu_grid);
+	    ((GR1DSpectrumArray*)tmp_spectrum)->init(*nu_grid);
 	  }
 
 	  //-- CATCH ------------------
@@ -274,10 +276,10 @@ void Species::init(Lua* lua, Transport* simulation)
 //-----------------------------------------------------
 void Species::set_cdf_to_BB(const double T, const double chempot, CDFArray& emis){
     #pragma omp parallel for ordered
-	for(unsigned j=0;j<nu_grid.size();j++)
+	for(unsigned j=0;j<nu_grid->size();j++)
 	{
-		double nu  = nu_grid.center(j);
-		double dnu = nu_grid.delta(j);
+		double nu  = nu_grid->center(j);
+		double dnu = nu_grid->delta(j);
         #pragma omp ordered
 		emis.set_value(j, blackbody(T,chempot,nu)*dnu);
 	}
@@ -292,22 +294,22 @@ void Species::set_cdf_to_BB(const double T, const double chempot, CDFArray& emis
 double Species::interpolate_importance(double nu, const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)emis.size());
-	PRINT_ASSERT(nu,>=,nu_grid.min);
-	PRINT_ASSERT(nu,<=,nu_grid[nu_grid.size()-1]);
+	PRINT_ASSERT(nu,>=,nu_grid->min);
+	PRINT_ASSERT(nu,<=,(*nu_grid)[nu_grid->size()-1]);
 
 	// frequency-integrated biasing already taken care of in emit_zones by changing average particle
 	// energy depending on the luminosity of the zone and the number of particles emitted from it.
-	double result = biased_emis[z_ind].interpolate_pdf(nu,&nu_grid)/**biased_emis[z_ind].N*/ / (emis[z_ind].interpolate_pdf(nu,&nu_grid)/**emis[z_ind].N*/);
+	double result = biased_emis[z_ind].interpolate_pdf(nu,nu_grid)/**biased_emis[z_ind].N*/ / (emis[z_ind].interpolate_pdf(nu,nu_grid)/**emis[z_ind].N*/);
 	return result;
 }
 double Species::sample_core_nu(const int g) const
 {
-	PRINT_ASSERT(nu_grid.min,>=,0);
+	PRINT_ASSERT(nu_grid->min,>=,0);
 	return sample_nu(core_emis);
 }
 double Species::sample_zone_nu(const int zone_index, double *Ep, const int g) const
 {
-	PRINT_ASSERT(nu_grid.min,>=,0);
+	PRINT_ASSERT(nu_grid->min,>=,0);
 	double nu = sample_nu(biased_emis[zone_index],g);
 	if(sim->importance_bias>0){
 		double imp = interpolate_importance(nu,zone_index);
@@ -322,9 +324,9 @@ double Species::sample_nu(const CDFArray& input_emis, const int g) const{
 	double rand = sim->rangen.uniform();
 
 	// make sure we don't get a zero frequency
-	if(rand==0 && nu_grid.min==0) while(rand==0) rand = sim->rangen.uniform();
+	if(rand==0 && nu_grid->min==0) while(rand==0) rand = sim->rangen.uniform();
 
-	return input_emis.invert(rand,&nu_grid,g);
+	return input_emis.invert(rand,nu_grid,g);
 }
 
 //----------------------------------------------------------------
@@ -349,14 +351,14 @@ double Species::integrate_zone_biased_emis(const int zone_index) const{
 
 //----------------------------------------------------------------
 // return the lepton emissivity integrated over nu for a zone (#/s/ster/cm^3)
-// ASSUMES linear cdf sampling
+// ASSUMES linear cdf sampling*
 //----------------------------------------------------------------
 double Species::integrate_zone_lepton_emis(const int zone_index) const
 {
 	double l_emis = 0;
 	for(unsigned i=0; i<emis[zone_index].size(); i++)
 	{
-		l_emis += lepton_number * emis[zone_index].get_value(i) / (pc::h*nu_grid.x[i]);
+		l_emis += lepton_number * emis[zone_index].get_value(i) / (pc::h*nu_grid->x[i]);
 	}
 	return l_emis * emis[zone_index].N;
 }
@@ -370,8 +372,8 @@ void Species::get_opacity(const double com_nu, const int z_ind, double* a, doubl
 	PRINT_ASSERT(com_nu,>,0);
 
 	// absorption and scattering opacities
-	*a = max(nu_grid.value_at(com_nu, abs_opac[z_ind]),0.0);
-	*s = max(nu_grid.value_at(com_nu,scat_opac[z_ind]),0.0);
+	*a = max(nu_grid->value_at(com_nu, abs_opac[z_ind]),0.0);
+	*s = max(nu_grid->value_at(com_nu,scat_opac[z_ind]),0.0);
 
 	PRINT_ASSERT(*a,>=,0);
 	PRINT_ASSERT(*s,>=,0);
@@ -385,7 +387,7 @@ double Species::bin_emis(const int z_ind, const int g) const{
 }
 
 unsigned Species::number_of_bins(){
-	return nu_grid.size();
+	return nu_grid->size();
 }
 
 double Species::sum_opacity(const int z_ind, const int group) const{
@@ -401,15 +403,15 @@ void Species::sample_scattering_final_state(const int z_ind, LorentzHelper &lh, 
 	PRINT_ASSERT(normalized_phi0.size(),>,0);
 
 	// get ingoing energy index
-	int igin = nu_grid.locate(lh.p_nu());
-	if(igin == nu_grid.size()) igin--;
+	int igin = nu_grid->locate(lh.p_nu());
+	if(igin == nu_grid->size()) igin--;
 
 	// get outgoing energy
-	double out_nu = normalized_phi0[z_ind][igin].invert(sim->rangen.uniform(),&nu_grid);
+	double out_nu = normalized_phi0[z_ind][igin].invert(sim->rangen.uniform(),nu_grid);
 	lh.scale_p_energy(out_nu/lh.p_nu());
 
 	// get outgoing energy index
-	int igout = nu_grid.locate(out_nu);
+	int igout = nu_grid->locate(out_nu);
 
 	// bias outgoing direction to be isotropic. Very inefficient for large values of delta.
 	double delta = scattering_delta[z_ind][igin][igout];

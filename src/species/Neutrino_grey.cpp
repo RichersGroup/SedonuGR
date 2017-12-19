@@ -63,10 +63,10 @@ void Neutrino_grey::set_eas(int zone_index)
 
 	PRINT_ASSERT(grey_abs_frac,>=,0);
 	PRINT_ASSERT(grey_abs_frac,<=,1.0);
-	for(unsigned j=0;j<nu_grid.size();j++)
+	for(unsigned j=0;j<nu_grid->size();j++)
 	{
-		double nu  = nu_grid.center(j);        // (Hz)
-		double dnu = nu_grid.delta(j);         // (Hz)
+		double nu  = nu_grid->center(j);        // (Hz)
+		double dnu = nu_grid->delta(j);         // (Hz)
 		double bb  = blackbody(z->T,0*pc::MeV_to_ergs,nu)*dnu;  // (erg/s/cm^2/ster)
 
 		double a = grey_opac*z->rho*grey_abs_frac;
