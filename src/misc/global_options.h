@@ -98,6 +98,18 @@ do {                                                 \
 #define PRINT_ASSERT(a,op,b)
 #endif
 
+//=======//
+// TUPLE //
+//=======//
+template<typename T, unsigned int len>
+class Tuple{
+public:
+  T vals[len];
+  const T& operator[](const unsigned int i) const {return vals[i];}
+  T& operator[](const unsigned int i){return vals[i];}
+  unsigned int size() const{return size;}
+};
+
 
 #endif
 
