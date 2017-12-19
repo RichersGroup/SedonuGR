@@ -68,7 +68,7 @@ void Neutrino_NuLib::set_eas(int zone_index)
 	Zone* z = &(sim->grid->z[zone_index]);
 	double ngroups = (double)emis[zone_index].size();
 
-	nulib_get_eas_arrays(z->rho, z->T, z->Ye, ID, cutoff,
+	nulib_get_eas_arrays(z->rho, z->T, z->Ye, ID,
 			emis[zone_index], abs_opac[zone_index],
 			scat_opac[zone_index], normalized_phi0[zone_index], scattering_delta[zone_index]);
 
@@ -77,6 +77,6 @@ void Neutrino_NuLib::set_eas(int zone_index)
 		biased_emis[zone_index].set_value(g, emis[zone_index].get_value(g)
 				* sim->importance(abs_opac[zone_index][g], scat_opac[zone_index][g], sim->grid->zone_min_length(zone_index)));
 
-	emis[zone_index].normalize(cutoff/(double)ngroups);
-	biased_emis[zone_index].normalize(cutoff/(double)ngroups);
+	emis[zone_index].normalize();
+	biased_emis[zone_index].normalize();
 }

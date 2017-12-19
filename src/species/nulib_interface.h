@@ -35,7 +35,7 @@
 // returns everything in standard CGS units (i.e. ergs, s, cm, K, Hz)
 
 void nulib_init(std::string filename, int include_Ielectron);
-void nulib_get_eas_arrays(double rho, double temp, double ye, int nulibID, double nulib_opac_cutoff,
+void nulib_get_eas_arrays(double rho, double temp, double ye, int nulibID,
 		CDFArray& nut_emiss, std::vector<double>& nut_absopac, std::vector<double>& nut_scatopac,
 		std::vector<CDFArray>& normalized_phi, std::vector< std::vector<double> >& phi1_phi0);
 void nulib_get_epannihil_kernels(double rho, double temp, double ye, int nulibID,

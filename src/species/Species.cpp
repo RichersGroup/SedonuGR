@@ -51,7 +51,6 @@ Species::Species(){
 	rho_max = NaN;
 	sim = NULL;
 	ID = MAXLIM;
-	cutoff=0;
 	nu_grid=NULL;
 }
 
@@ -66,9 +65,6 @@ void Species::init(Lua* lua, Transport* simulation)
 	sim = simulation;
 	PRINT_ASSERT(sim->grid->z.size(),>,0);
 	nu_grid = &(sim->grid->nu_grid);
-
-	// basic parameters
-	cutoff = lua->scalar<double>("cdf_cutoff");
 
 	//===================================//
     // set neutrino's min and max values //

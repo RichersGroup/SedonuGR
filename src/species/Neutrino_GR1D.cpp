@@ -135,7 +135,7 @@ void Neutrino_GR1D::set_eas_external(const double* easarray, const double GR1D_t
 			emis[z_ind].set_value(inu,tmp_emis);
 			biased_emis[z_ind].set_value(inu,emis[z_ind].get_value(inu));
 		}
-		emis[z_ind].normalize(0);
+		emis[z_ind].normalize();
 	}
 }
 

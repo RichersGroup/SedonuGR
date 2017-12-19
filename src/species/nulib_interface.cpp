@@ -384,7 +384,6 @@ void nulib_get_eas_arrays(
 		double rho,                     // g/cm^3
 		double temp,                    // K
 		double ye, int nulibID,
-		double nulib_opac_cutoff,      // 1/cm
 		CDFArray& nut_emiss,         // erg/cm^3/s/ster
 		vector<double>& nut_absopac,    // cm^-1
 		vector<double>& nut_scatopac,   // cm^-1

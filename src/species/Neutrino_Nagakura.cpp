@@ -165,6 +165,6 @@ void Neutrino_Nagakura::set_eas(int zone_index)
     opac_file.close();
 
 
-	emis[zone_index].normalize(cutoff/(double)ngroups);
-	biased_emis[zone_index].normalize(cutoff/(double)ngroups);
+	emis[zone_index].normalize();
+	biased_emis[zone_index].normalize();
 }

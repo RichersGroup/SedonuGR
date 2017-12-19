@@ -268,7 +268,7 @@ void Transport::init_randomwalk_cdf(Lua* lua){
 
 		randomwalk_diffusion_time.set(i,1.0-sum);
 	}
-	randomwalk_diffusion_time.normalize(0);
+	randomwalk_diffusion_time.normalize();
 }
 
 //----------------------

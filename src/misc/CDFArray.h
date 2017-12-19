@@ -75,7 +75,7 @@ public:
 
 	double interpolate_pdf(const double x, const LocateArray* xgrid) const;          // interpolate the CDF to get the CDF value at the x value
 
-	void   normalize(double cutoff=0.0);         // normalize the cdf, so that final value = 1. Sets N.
+	void   normalize();         // normalize the cdf, so that final value = 1. Sets N.
 	double invert(const double z, const LocateArray* xgrid, const int i_in=-1) const;
 	int    get_index(const double z) const;    // sample index from the CDF, when passed a random #
 	void   print() const;

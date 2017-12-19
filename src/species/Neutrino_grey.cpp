@@ -81,8 +81,8 @@ void Neutrino_grey::set_eas(int zone_index)
 				* sim->importance(a, s, sim->grid->zone_min_length(zone_index)));
 	}
 
-	emis[zone_index].normalize(cutoff/(double)ngroups);
-	biased_emis[zone_index].normalize(cutoff/(double)ngroups);
+	emis[zone_index].normalize();
+	biased_emis[zone_index].normalize();
 }
 
 //-----------------------------------------------------------------

@@ -69,7 +69,7 @@ void CDFArray::set_value(const int i, const double f)
 //------------------------------------------------------
 // Normalize such that the last entry is 1.0
 //------------------------------------------------------
-void CDFArray::normalize(double cutoff)
+void CDFArray::normalize()
 {
 	// check for zero array, set to all constant
 	if (y.back() == 0){
@@ -82,18 +82,6 @@ void CDFArray::normalize(double cutoff)
 		PRINT_ASSERT(N,>,0);
 		double N_inv = 1.0/N;
 		for(unsigned i=0;i<y.size();i++)   y[i] *= N_inv;
-	}
-
-	// set values below cutoff to 0
-	if(cutoff>0){
-		for(unsigned i=0; i<y.size(); i++){
-			double val = get_value(i);
-			if(val < cutoff) set_value(i,0);
-			else set_value(i,val);
-		}
-		double tmp=N;
-		normalize();
-		N *= tmp;
 	}
 }
 
