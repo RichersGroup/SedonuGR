@@ -44,9 +44,6 @@ Neutrino_NuLib::Neutrino_NuLib(){
 //----------------------------------------------------------------
 void Neutrino_NuLib::myInit(Lua* lua)
 {
-	// set up the frequency table
-	nulib_get_nu_grid(*nu_grid);
-
 	// set neutrino's min and max values
 	T_min  =  nulib_get_Tmin();
 	T_max  =  nulib_get_Tmax();

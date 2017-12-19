@@ -50,6 +50,7 @@ public:
 	void myInit(Lua* lua);
 	void set_eas(int zone_index);
 	void set_eas_external(const double* easarray, const double GR1D_tau_crit, bool* extract_MC, const double rshock);
+	static void set_nu_grid(Lua* lua, LocateArray* nu_grid);
 };
 
 #endif

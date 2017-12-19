@@ -56,6 +56,14 @@ void Neutrino_GR1D::myInit(Lua* lua)
 	rho_min = 0;
 	rho_max = INFINITY;
 
+	// emit outside shock?
+	GR1D_emit_outside_shock = lua->scalar<int>("GR1D_emit_outside_shock");
+
+	// let the base class do the rest
+	Neutrino::myInit(lua);
+}
+
+void Neutrino_GR1D::set_nu_grid(Lua* lua, LocateArray* nu_grid){
 	// get nugrid from nulib file
 	string nulibfilename = lua->scalar<string>("nulib_file");
 	H5::H5File file( nulibfilename.c_str(), H5F_ACC_RDONLY );
@@ -70,12 +78,6 @@ void Neutrino_GR1D::myInit(Lua* lua)
 	file.close();
 	nu_grid->min = 0;
 	for(int i=0; i<nu_grid->size(); i++)	nu_grid->x[i] /= pc::h_MeV;
-
-	// emit outside shock?
-	GR1D_emit_outside_shock = lua->scalar<int>("GR1D_emit_outside_shock");
-
-	// let the base class do the rest
-	Neutrino::myInit(lua);
 }
 
 //-----------------------------------------------------------------

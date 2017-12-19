@@ -81,40 +81,6 @@ void Species::init(Lua* lua, Transport* simulation)
 	//============================//
 	myInit(lua);
 
-    //==========================//
-    // setup for frequency grid // only if child didn't
-    //==========================//
-    double minval = 0;
-    double trash, tmp=0;
-    vector<double> bintops = vector<double>(0);
-
-    // get the frequency grid
-    if(nu_grid->size()==0){
-    	int n_nu   = lua->scalar<int>("nugrid_n");
-    	if(n_nu>0){
-    		double nu_start = lua->scalar<double>("nugrid_start");
-    		double nu_stop  = lua->scalar<double>("nugrid_stop");
-    		PRINT_ASSERT(nu_stop,>,nu_start);
-    		nu_grid->init(nu_start/pc::h_MeV,nu_stop/pc::h_MeV,n_nu);
-    	}
-    	else{
-    		string nugrid_filename = lua->scalar<string>("nugrid_filename");
-    		ifstream nugrid_file;
-    		nugrid_file.open(nugrid_filename.c_str());
-    		nugrid_file >> trash >> minval;
-    		minval /= pc::h_MeV;
-    		while(nugrid_file >> trash >> tmp){
-    			tmp /= pc::h_MeV;
-    			if(bintops.size()>0) PRINT_ASSERT(tmp,>,bintops[bintops.size()-1]);
-    			else PRINT_ASSERT(tmp,>,minval);
-    			bintops.push_back(tmp);
-    		}
-    		nugrid_file.close();
-            nu_grid->init(bintops,minval,nu_grid->interpolation_method);
-    	}
-	}
-	PRINT_ASSERT(nu_grid->size(),>,0);
-
     // set the interpolation method
     int imeth  = lua->scalar<int>("opac_interp_method");
 	if     (imeth == 0) nu_grid->interpolation_method = constant;
@@ -169,6 +135,10 @@ void Species::init(Lua* lua, Transport* simulation)
 		biased_emis[i].interpolation_order = iorder;
 	}
 	if(rank0) cout << "finished." << endl;
+
+    double minval = 0;
+    double trash, tmp=0;
+    vector<double> bintops = vector<double>(0);
 
     //==================================//
     // set up the spectrum in each zone //
