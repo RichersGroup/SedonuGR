@@ -1,3 +1,6 @@
+#ifndef _MULTIDARRAY_H
+#define _MULTIDARRAY_H 1
+
 #include <vector>
 #include "global_options.h"
 #include "Axis.h"
@@ -113,3 +116,5 @@ public:
 		}
 	}
 };
+
+#endif

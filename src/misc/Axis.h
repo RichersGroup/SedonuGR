@@ -1,3 +1,6 @@
+#ifndef _AXIS_H
+#define _AXIS_H 1
+
 #include <vector>
 #include <algorithm>
 #include "global_options.h"
@@ -38,3 +41,5 @@ public:
 		}
 	}
 };
+
+#endif
