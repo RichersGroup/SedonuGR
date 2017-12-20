@@ -67,7 +67,7 @@ void Neutrino_grey::set_eas(int zone_index)
 	{
 		double nu  = nu_grid->center(j);        // (Hz)
 		double dnu = nu_grid->delta(j);         // (Hz)
-		double bb  = blackbody(z->T,0*pc::MeV_to_ergs,nu)*dnu;  // (erg/s/cm^2/ster)
+		double bb  = Transport::blackbody(z->T,0*pc::MeV_to_ergs,nu)*dnu;  // (erg/s/cm^2/ster)
 
 		double a = grey_opac*z->rho*grey_abs_frac;
 		double s = grey_opac*z->rho*(1.0-grey_abs_frac);

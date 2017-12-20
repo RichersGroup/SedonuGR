@@ -84,9 +84,6 @@ public:
 	// set everything up
 	void init(Lua* lua, Transport* sim);
 
-	// this species' blackbody function (erg/cm^2/s/ster/Hz)
-	virtual double blackbody(const double T, const double chempot, const double nu) const = 0;
-
 	// set a CDF to blackbody distribution
 	void set_cdf_to_BB(const double T, const double chempot, CDFArray& emis);
 

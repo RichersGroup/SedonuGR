@@ -229,7 +229,7 @@ void Species::set_cdf_to_BB(const double T, const double chempot, CDFArray& emis
 		double nu  = nu_grid->center(j);
 		double dnu = nu_grid->delta(j);
         #pragma omp ordered
-		emis.set_value(j, blackbody(T,chempot,nu)*dnu);
+		emis.set_value(j, Transport::blackbody(T,chempot,nu)*dnu);
 	}
 	emis.normalize();
 }

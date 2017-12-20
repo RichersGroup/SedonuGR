@@ -928,3 +928,14 @@ string Transport::filename(const char* filebase, const int iw, const char* suffi
 double Transport::mean_mass(const double Ye){
 	return 1.0 / (Ye/pc::m_p + (1.0-Ye)/pc::m_n);
 }
+
+//-----------------------------------------------------------------
+// Calculate the fermi-dirac blackbody function (erg/s/cm^2/Hz/ster)
+//-----------------------------------------------------------------
+double Transport::blackbody(const double T /*K*/, const double chem_pot /*erg*/, const double nu /*Hz*/){
+	double zeta = (pc::h*nu - chem_pot)/pc::k/T;
+	double nu_c = nu*pc::inv_c;
+	double bb = (pc::h*nu) * nu_c * nu_c / (exp(zeta) + 1.0);
+	PRINT_ASSERT(bb,>=,0);
+	return bb;
+}

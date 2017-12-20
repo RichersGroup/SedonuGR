@@ -58,7 +58,6 @@ public:
 
 	// required functions
 	void myInit(Lua* lua);
-	double blackbody(const double T, const double chempot, const double nu) const;
 	static double annihilation_rate(const PolarSpectrumArray* nu_dist, const PolarSpectrumArray* nbar_dist, const bool electron_type, const int weight);
 };
 

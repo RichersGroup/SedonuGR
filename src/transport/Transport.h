@@ -187,6 +187,9 @@ public:
 	// random number generator
 	mutable ThreadRNG rangen;
 
+	// blackbody function (erg/cm^2/s/ster/Hz)
+	static double blackbody(const double T, const double chempot, const double nu);
+
 	// set things up
 	void   init(Lua* lua);
 

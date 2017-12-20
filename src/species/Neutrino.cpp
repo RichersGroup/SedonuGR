@@ -74,17 +74,7 @@ void Neutrino::myInit(Lua* lua)
 }
 
 
-//-----------------------------------------------------------------
-// Calculate the fermi-dirac blackbody function (erg/s/cm^2/Hz/ster)
-//-----------------------------------------------------------------
-double Neutrino::blackbody(const double T /*K*/, const double chem_pot /*erg*/, const double nu /*Hz*/) const
-{
-	double zeta = (pc::h*nu - chem_pot)/pc::k/T;
-	double nu_c = nu*pc::inv_c;
-	double bb = (pc::h*nu) * nu_c * nu_c / (exp(zeta) + 1.0);
-	PRINT_ASSERT(bb,>=,0);
-	return bb;
-}
+
 
 //-------------------------------------------------------------------------------------------------------------
 // Calculate the neutrino anti-neutrino annihilation rate (erg/ccm/s) from the distribution functions (erg/ccm)
