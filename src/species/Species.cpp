@@ -273,10 +273,6 @@ double Species::bin_emis(const int z_ind, const int g) const{
 	return emis[z_ind].get_value(g) * emis[z_ind].N;
 }
 
-unsigned Species::number_of_bins(){
-	return nu_grid->size();
-}
-
 double Species::sum_opacity(const int z_ind, const int group) const{
 	return abs_opac[z_ind][group] + scat_opac[z_ind][group];
 }

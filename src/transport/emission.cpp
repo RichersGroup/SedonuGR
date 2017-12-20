@@ -41,7 +41,7 @@ void Transport::emit_particles()
 {
 	// complain if we're out of room for particles
 	assert(n_emit_core_per_bin>0 || n_emit_zones_per_bin>=0);
-	int n_emit = (n_emit_core_per_bin + n_emit_zones_per_bin*grid->z.size()) * species_list.size()*number_of_bins();
+	int n_emit = (n_emit_core_per_bin + n_emit_zones_per_bin*grid->z.size()) * species_list.size()*grid->nu_grid_axis.size();
 	if (total_particles() + n_emit > max_particles){
 		if(rank0){
 			cout << "Total particles: " << total_particles() << endl;
@@ -95,8 +95,8 @@ void Transport::emit_zones_by_bin(){
 	for (unsigned z_ind=MPI_myID; z_ind<grid->z.size(); z_ind+=MPI_nprocs) if(grid->zone_radius(z_ind) >= r_core){
 
 		for(unsigned s=0; s<species_list.size(); s++){
-			n_attempted += n_emit_zones_per_bin * species_list[s]->number_of_bins();
-			for(unsigned g=0; g<species_list[s]->number_of_bins(); g++){
+			n_attempted += n_emit_zones_per_bin * grid->nu_grid_axis.size();
+			for(unsigned g=0; g<grid->nu_grid_axis.size(); g++){
 				for(int k=0; k<n_emit_zones_per_bin; k++)
 					create_thermal_particle(z_ind,weight,s,g);
 			}

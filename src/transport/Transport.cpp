@@ -927,9 +927,3 @@ string Transport::filename(const char* filebase, const int iw, const char* suffi
 double Transport::mean_mass(const double Ye){
 	return 1.0 / (Ye/pc::m_p + (1.0-Ye)/pc::m_n);
 }
-
-int Transport::number_of_bins() const{
-	int number_energy_bins = 0;
-	for(unsigned s = 0; s<species_list.size(); s++) number_energy_bins += species_list[s]->number_of_bins();
-	return number_energy_bins;
-}

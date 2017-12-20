@@ -131,9 +131,6 @@ protected:
 	// check parameters
 	void check_parameters() const;
 
-	// check quality
-	int number_of_bins() const;
-
 public:
 
 	Transport();

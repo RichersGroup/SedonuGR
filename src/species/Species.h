@@ -100,7 +100,6 @@ public:
 
 	// minimum zone emissivity
 	double bin_emis(const int zone_index, const int g) const;
-	unsigned number_of_bins();
 
 	// min and max values for the Brent solver
 	double T_min,  T_max; //(K)
