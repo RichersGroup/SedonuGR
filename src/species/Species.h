@@ -44,7 +44,6 @@ protected:
 
 	// the zone eas variables
 	std::vector< CDFArray      > emis;
-	std::vector< CDFArray      > biased_emis;
 	std::vector< std::vector<double> > abs_opac;  // 1/cm
 	std::vector< std::vector<double> > scat_opac; // 1/cm
 
@@ -97,7 +96,6 @@ public:
 	// return the emissivity integrated over frequency at a zone
 	double integrate_zone_emis(const int zone_index) const;        //(erg/s/cm^3/ster)
 	double integrate_zone_lepton_emis(const int zone_index) const; //unitless
-	double integrate_zone_biased_emis(const int zone_index) const; //(erg/s/cm^3/ster)
 
 	// return the frequency of a particle emitted from the core or a zone (Hz)
 	double sample_core_nu(const int g=-1) const;
@@ -111,7 +109,6 @@ public:
 	virtual void set_eas(const int zone_index) = 0;
 	void get_opacity(const double com_nu, const int z_ind, double* abs_opac, double* scat_opac) const;
 	double sum_opacity(const int z_ind, const int group) const;
-	double interpolate_importance(const double nu, const int z_ind) const;
 
 	// minimum zone emissivity
 	double bin_emis(const int zone_index, const int g) const;

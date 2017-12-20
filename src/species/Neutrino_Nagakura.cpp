@@ -158,13 +158,8 @@ void Neutrino_Nagakura::set_eas(int zone_index)
             emis[zone_index].set_value(inu,e);
             abs_opac[zone_index][inu] = a;
             scat_opac[zone_index][inu] = s;
-
-            biased_emis[zone_index].set_value(inu,emis[zone_index].get_value(inu));
     }
-
     opac_file.close();
 
-
 	emis[zone_index].normalize();
-	biased_emis[zone_index].normalize();
 }

@@ -225,7 +225,7 @@ double Transport::zone_comoving_biased_therm_emit_energy(const int z_ind) const{
 		double H=0;
 		double four_vol = grid->zone_4volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
 		for(unsigned i=0; i<species_list.size(); i++){
-			double species_lum = species_list[i]->integrate_zone_biased_emis(z_ind) * 4*pc::pi * four_vol;
+			double species_lum = species_list[i]->integrate_zone_emis(z_ind) * 4*pc::pi * four_vol;
 			PRINT_ASSERT(species_lum,>=,0);
 			H += species_lum;
 		}

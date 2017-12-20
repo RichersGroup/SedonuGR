@@ -85,7 +85,7 @@ void Transport::window(LorentzHelper *lh, const int z_ind){
 	// split if too high energy, if enough space, and if in important region
 	double ratio = lh->p_N() / max_packet_number;
 	int n_new = (int)ratio;
-	if(ratio>1.0 && (int)particles.size()+n_new<max_particles && species_list[lh->p_s()]->interpolate_importance(lh->p_nu(),z_ind)>=1.0){
+	if(ratio>1.0 && (int)particles.size()+n_new<max_particles){
 		lh->scale_p_number( 1.0 / (double)(n_new+1) );
 		for(int i=0; i<n_new; i++){
 			#pragma omp critical
@@ -96,35 +96,6 @@ void Transport::window(LorentzHelper *lh, const int z_ind){
 	if(lh->p_fate() == moving){
 		PRINT_ASSERT(lh->p_N(),<,INFINITY);
 		PRINT_ASSERT(lh->p_N(),>,0);
-	}
-	if((int)particles.size()>=max_particles && verbose && rank0){
-		cout << "max_particles: " << max_particles << endl;
-		cout << "particles.size(): " << particles.size() << endl;
-		cout << "WARNING: max_particles is too small to allow splitting." << endl;
-	}
-}
-void Transport::window(Particle* p, const int z_ind){
-	PRINT_ASSERT(p->fate,!=,rouletted);
-
-	// Roulette if too low energy
-	while(p->N<=min_packet_number && p->fate==moving){
-		if(rangen.uniform() < 0.5) p->fate = rouletted;
-		else p->N *= 2.0;
-	}
-	if(p->fate==moving) PRINT_ASSERT(p->N,>=,min_packet_number);
-
-	// split if too high energy, if enough space, and if in important region
-	double nu = p->kup[3]*pc::c/pc::h;
-	while(p->N>max_packet_number && (int)particles.size()<max_particles && species_list[p->s]->interpolate_importance(nu,z_ind)>=1.0){
-		p->N /= 2.0;
-		Particle pnew = *p;
-		window(&pnew,z_ind);
-		#pragma omp critical
-		particles.push_back(pnew);
-	}
-	if(p->fate == moving){
-		PRINT_ASSERT(p->N,<,INFINITY);
-		PRINT_ASSERT(p->N,>,0);
 	}
 	if((int)particles.size()>=max_particles && verbose && rank0){
 		cout << "max_particles: " << max_particles << endl;

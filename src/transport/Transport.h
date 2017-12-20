@@ -91,7 +91,6 @@ protected:
 	void init_randomwalk_cdf(Lua* lua);
 	void re_emit(LorentzHelper *lh, const int z_ind) const;
 	void window(LorentzHelper *lh, const int z_ind);
-	void window(Particle *p, const int z_ind);
 
 	// solve for temperature and Ye (if steady_state)
 	double equilibrium_damping;
@@ -163,8 +162,6 @@ public:
 	// minimum neutrino packet energy
 	double min_packet_number;
 	double max_packet_number;
-	double importance_bias;
-	double min_importance;
 	static double sample_tau(ThreadRNG* rangen);
 
 	// items for core emission
@@ -211,7 +208,6 @@ public:
 	void write_rays(const int it);
 	static std::string filename(const char* filebase, const int iw, const char* suffix);
 	static double mean_mass(const double Ye);
-	double importance(const double abs_opac, const double scat_opac, const double dx) const;
 
 
 	// per-zone luminosity functions

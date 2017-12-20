@@ -69,11 +69,5 @@ void Neutrino_NuLib::set_eas(int zone_index)
 			emis[zone_index], abs_opac[zone_index],
 			scat_opac[zone_index], normalized_phi0[zone_index], scattering_delta[zone_index]);
 
-	// set the biased emissivity
-	for(int g=0; g<(int)nu_grid->size(); g++)
-		biased_emis[zone_index].set_value(g, emis[zone_index].get_value(g)
-				* sim->importance(abs_opac[zone_index][g], scat_opac[zone_index][g], sim->grid->zone_min_length(zone_index)));
-
 	emis[zone_index].normalize();
-	biased_emis[zone_index].normalize();
 }

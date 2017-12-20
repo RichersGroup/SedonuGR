@@ -75,14 +75,9 @@ void Neutrino_grey::set_eas(int zone_index)
 		emis[zone_index].set_value(j,a*bb); // (erg/s/cm^3/ster)
 		abs_opac[zone_index][j] = a;        // (1/cm)
 		scat_opac[zone_index][j] = s;       // (1/cm)
-
-		// set the biased emissivity
-		biased_emis[zone_index].set_value(j, emis[zone_index].get_value(j)
-				* sim->importance(a, s, sim->grid->zone_min_length(zone_index)));
 	}
 
 	emis[zone_index].normalize();
-	biased_emis[zone_index].normalize();
 }
 
 //-----------------------------------------------------------------

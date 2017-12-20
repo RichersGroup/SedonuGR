@@ -135,7 +135,6 @@ void Neutrino_GR1D::set_eas_external(const double* easarray, const double GR1D_t
 			if(do_emit) tmp_emis = easarray[eind] / nulib_emissivity_gf;
 			//else cout << "z_ind=" << z_ind << " ie=" << inu << " turned off. tau=" << sqrt(abs_opac[z_ind][inu]*(abs_opac[z_ind][inu]+scat_opac[z_ind][inu])) * sim->grid->zone_min_length(z_ind) << endl;
 			emis[z_ind].set_value(inu,tmp_emis);
-			biased_emis[z_ind].set_value(inu,emis[z_ind].get_value(inu));
 		}
 		emis[z_ind].normalize();
 	}

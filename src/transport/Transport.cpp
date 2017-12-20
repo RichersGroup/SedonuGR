@@ -95,8 +95,6 @@ Transport::Transport(){
 	particle_core_abs_energy = NaN;
 	particle_rouletted_energy = NaN;
 	particle_escape_energy = NaN;
-	importance_bias = NaN;
-	min_importance = NaN;
 	randomwalk_min_optical_depth = NaN;
 	randomwalk_max_x = NaN;
 	randomwalk_sumN = -MAXLIM;
@@ -163,8 +161,6 @@ void Transport::init(Lua* lua)
 		init_randomwalk_cdf(lua);
 		randomwalk_n_isotropic = lua->scalar<int>("randomwalk_n_isotropic");
 	}
-	importance_bias = lua->scalar<double>("importance_bias");
-	if(importance_bias>0) min_importance = lua->scalar<double>("min_importance");
 	min_packet_number = lua->scalar<double>("min_packet_number");
 	max_packet_number = lua->scalar<double>("max_packet_number");
 
@@ -741,7 +737,7 @@ int Transport::sample_zone_species(const int zone_index, double *Ep) const
 	// set values and normalize
 	for(unsigned i=0; i<species_list.size(); i++)
 	{
-		integrated_emis = species_list[i]->integrate_zone_biased_emis(zone_index);
+		integrated_emis = species_list[i]->integrate_zone_emis(zone_index);
 		species_cdf.set_value(i,integrated_emis);
 	}
 	species_cdf.normalize();
@@ -750,7 +746,6 @@ int Transport::sample_zone_species(const int zone_index, double *Ep) const
 	// randomly sample the species
 	double z = rangen.uniform();
 	double s = species_cdf.get_index(z);
-	if(importance_bias>0) *Ep *= species_list[s]->integrate_zone_emis(zone_index) / species_list[s]->integrate_zone_biased_emis(zone_index);
 	PRINT_ASSERT(*Ep,>,0);
 	PRINT_ASSERT(*Ep,<,INFINITY);
 	return s;
@@ -986,11 +981,4 @@ int Transport::number_of_bins() const{
 	int number_energy_bins = 0;
 	for(unsigned s = 0; s<species_list.size(); s++) number_energy_bins += species_list[s]->number_of_bins();
 	return number_energy_bins;
-}
-
-double Transport::importance(const double abs_opac, const double scat_opac, const double dx) const{
-	if(importance_bias<=0) return 1.0;
-	double taubar = (abs_opac + scat_opac) * dx;
-	double result = (importance_bias*taubar<=1.0 ? 1.0 : exp(1.0 - importance_bias * taubar));
-	return max(result,min_importance);
 }

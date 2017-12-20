@@ -108,7 +108,6 @@ void Species::init(Lua* lua, Transport* simulation)
 	abs_opac.resize(sim->grid->z.size());
 	scat_opac.resize(sim->grid->z.size());
 	emis.resize(sim->grid->z.size());
-	biased_emis.resize(sim->grid->z.size());
 	if(sim->use_scattering_kernels==1){
 		normalized_phi0.resize(sim->grid->z.size());
 		scattering_delta.resize(sim->grid->z.size());
@@ -131,8 +130,6 @@ void Species::init(Lua* lua, Transport* simulation)
 		scat_opac[i].resize(nu_grid->size());
 		emis[i].resize(nu_grid->size());
 		emis[i].interpolation_order = iorder;
-		biased_emis[i].resize(nu_grid->size());
-		biased_emis[i].interpolation_order = iorder;
 	}
 	if(rank0) cout << "finished." << endl;
 
@@ -257,17 +254,6 @@ void Species::set_cdf_to_BB(const double T, const double chempot, CDFArray& emis
 // return a randomly sampled frequency
 // for a particle emitted from the core or zone
 //----------------------------------------------------------------
-double Species::interpolate_importance(double nu, const int z_ind) const{
-	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)emis.size());
-	PRINT_ASSERT(nu,>=,nu_grid->min);
-	PRINT_ASSERT(nu,<=,(*nu_grid)[nu_grid->size()-1]);
-
-	// frequency-integrated biasing already taken care of in emit_zones by changing average particle
-	// energy depending on the luminosity of the zone and the number of particles emitted from it.
-	double result = biased_emis[z_ind].interpolate_pdf(nu,nu_grid)/**biased_emis[z_ind].N*/ / (emis[z_ind].interpolate_pdf(nu,nu_grid)/**emis[z_ind].N*/);
-	return result;
-}
 double Species::sample_core_nu(const int g) const
 {
 	PRINT_ASSERT(nu_grid->min,>=,0);
@@ -276,12 +262,7 @@ double Species::sample_core_nu(const int g) const
 double Species::sample_zone_nu(const int zone_index, double *Ep, const int g) const
 {
 	PRINT_ASSERT(nu_grid->min,>=,0);
-	double nu = sample_nu(biased_emis[zone_index],g);
-	if(sim->importance_bias>0){
-		double imp = interpolate_importance(nu,zone_index);
-		PRINT_ASSERT(imp,>,0);
-		*Ep *= 1.0/imp;
-	}
+	double nu = sample_nu(emis[zone_index],g);
 	PRINT_ASSERT(nu,>,0);
 	return nu;
 }
@@ -309,9 +290,6 @@ double Species::integrate_core_emis() const
 double Species::integrate_zone_emis(const int zone_index) const
 {
 	return emis[zone_index].N;
-}
-double Species::integrate_zone_biased_emis(const int zone_index) const{
-	return biased_emis[zone_index].N;
 }
 
 
