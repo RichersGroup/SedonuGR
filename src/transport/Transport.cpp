@@ -173,6 +173,21 @@ void Transport::init(Lua* lua)
 	write_rays_every    = lua->scalar<double>("write_rays_every");
 	write_spectra_every = lua->scalar<double>("write_spectra_every");
 
+
+	// set up nulib table
+	string neutrino_type = lua->scalar<string>("neutrino_type");
+	if(neutrino_type=="NuLib"){ // get everything from NuLib
+		// read the fortran module into memory
+		if(rank0) cout << "# Initializing NuLib..." << endl;
+		string nulib_table = lua->scalar<string>("nulib_table");
+		nulib_init(nulib_table,use_scattering_kernels);
+
+		// eos
+		string eos_filename = lua->scalar<string>("nulib_eos");
+		nulib_eos_read_table((char*)eos_filename.c_str());
+	}
+
+
 	//=================//
 	// SET UP THE GRID //
 	//=================//
@@ -223,20 +238,9 @@ void Transport::init(Lua* lua)
 	// SET UP TRANSPORT //
 	//==================//
 	int num_nut_species = 0;
-	string neutrino_type = lua->scalar<string>("neutrino_type");
 	if(neutrino_type=="NuLib"){ // get everything from NuLib
-		// read the fortran module into memory
-		if(rank0) cout << "# Initializing NuLib..." << endl;
-		string nulib_table = lua->scalar<string>("nulib_table");
-		nulib_init(nulib_table,use_scattering_kernels);
+		if(rank0) cout << "#   Using NuLib neutrino opacities" << endl;
 		num_nut_species = nulib_get_nspecies();
-
-		// set up the frequency table
-		nulib_get_nu_grid(grid->nu_grid);
-
-		// eos
-		string eos_filename = lua->scalar<string>("nulib_eos");
-		nulib_eos_read_table((char*)eos_filename.c_str());
 	}
 	else if(neutrino_type=="grey"){
 		if(rank0) cout << "#   Using grey opacity (0 chemical potential blackbody)" << endl;
@@ -249,7 +253,6 @@ void Transport::init(Lua* lua)
 	else if(neutrino_type=="GR1D"){
 		if(rank0) cout << "#   Using GR1D neutrino opacities, assumed to match the grid" << endl;
 		num_nut_species = 3;
-		Neutrino_GR1D::set_nu_grid(lua,&grid->nu_grid);
 	}
 	else{
 		cout << "ERROR: invalid neutrino type" << endl;
@@ -270,37 +273,6 @@ void Transport::init(Lua* lua)
 		species_list.push_back(neutrinos_tmp);
 	}
 
-    // setup for frequency grid if not already done
-    double minval = 0;
-    double trash, tmp=0;
-    vector<double> bintops = vector<double>(0);
-
-    // get the frequency grid
-    if(grid->nu_grid.size()==0){
-    	int n_nu   = lua->scalar<int>("nugrid_n");
-    	if(n_nu>0){
-    		double nu_start = lua->scalar<double>("nugrid_start");
-    		double nu_stop  = lua->scalar<double>("nugrid_stop");
-    		PRINT_ASSERT(nu_stop,>,nu_start);
-    		grid->nu_grid.init(nu_start/pc::h_MeV,nu_stop/pc::h_MeV,n_nu);
-    	}
-    	else{
-    		string nugrid_filename = lua->scalar<string>("nugrid_filename");
-    		ifstream nugrid_file;
-    		nugrid_file.open(nugrid_filename.c_str());
-    		nugrid_file >> trash >> minval;
-    		minval /= pc::h_MeV;
-    		while(nugrid_file >> trash >> tmp){
-    			tmp /= pc::h_MeV;
-    			if(bintops.size()>0) PRINT_ASSERT(tmp,>,bintops[bintops.size()-1]);
-    			else PRINT_ASSERT(tmp,>,minval);
-    			bintops.push_back(tmp);
-    		}
-    		nugrid_file.close();
-            grid->nu_grid.init(bintops,minval,grid->nu_grid.interpolation_method);
-    	}
-	}
-	PRINT_ASSERT(grid->nu_grid.size(),>,0);
 
 	// complain if we're not simulating anything
 	n_active.resize(species_list.size(),0);

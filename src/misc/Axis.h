@@ -20,6 +20,10 @@ public:
 		this->mid = mid;
 	}
 
+	Axis() {
+		min = NaN;
+	}
+
 	int size() const {return top.size();}
 
 	int bin(const double x) const{

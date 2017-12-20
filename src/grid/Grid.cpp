@@ -35,6 +35,7 @@
 #include "global_options.h"
 #include "Transport.h"
 #include "H5Cpp.h"
+#include "Neutrino_GR1D.h"
 
 using namespace std;
 namespace pc = physical_constants;
@@ -107,6 +108,45 @@ void Grid::init(Lua* lua)
 		cout << "#   TE = " << total_TE << " erg" << endl;
 		if(do_visc) cout << "#   hvis(nonrel) = " << total_hvis << " erg/s" << endl;
 	}
+
+    // get the frequency grid
+	string neutrino_type = lua->scalar<string>("neutrino_type");
+	if(neutrino_type=="NuLib") nulib_get_nu_grid(nu_grid);
+	else if(neutrino_type=="GR1D") Neutrino_GR1D::set_nu_grid(lua,&nu_grid);
+	else{
+        double minval = 0;
+        double trash, tmp=0;
+        vector<double> bintops = vector<double>(0);
+    	int n_nu   = lua->scalar<int>("nugrid_n");
+    	if(n_nu>0){
+    		double nu_start = lua->scalar<double>("nugrid_start");
+    		double nu_stop  = lua->scalar<double>("nugrid_stop");
+    		PRINT_ASSERT(nu_stop,>,nu_start);
+    		nu_grid.init(nu_start/pc::h_MeV,nu_stop/pc::h_MeV,n_nu);
+    	}
+    	else{
+    		string nugrid_filename = lua->scalar<string>("nugrid_filename");
+    		ifstream nugrid_file;
+    		nugrid_file.open(nugrid_filename.c_str());
+    		nugrid_file >> trash >> minval;
+    		minval /= pc::h_MeV;
+    		while(nugrid_file >> trash >> tmp){
+    			tmp /= pc::h_MeV;
+    			if(bintops.size()>0) PRINT_ASSERT(tmp,>,bintops[bintops.size()-1]);
+    			else PRINT_ASSERT(tmp,>,minval);
+    			bintops.push_back(tmp);
+    		}
+    		nugrid_file.close();
+            nu_grid.init(bintops,minval,nu_grid.interpolation_method);
+    	}
+	}
+	PRINT_ASSERT(nu_grid.size(),>,0);
+
+	// TEMPORARY // set up the axis
+	vector<double> mid(nu_grid.size());
+	for(int i=0; i<nu_grid.size(); i++) mid[i] = nu_grid.center(i);
+	nu_grid_axis = Axis(nu_grid.min, nu_grid.x, mid);
+
 }
 
 //------------------------------------------------------------

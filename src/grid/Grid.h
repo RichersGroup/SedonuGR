@@ -52,6 +52,7 @@
 #include "LorentzHelper.h"
 #include "ThreadRNG.h"
 #include "H5Cpp.h"
+#include "Axis.h"
 
 class Transport;
 class Zone;
@@ -92,6 +93,7 @@ public:
 	// vector of zones
 	std::vector<Zone> z;
 	LocateArray nu_grid;
+	Axis nu_grid_axis;
 
 	// set everything up
 	virtual void init(Lua* lua);
