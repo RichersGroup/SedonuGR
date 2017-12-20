@@ -251,32 +251,6 @@ void Species::set_cdf_to_BB(const double T, const double chempot, CDFArray& emis
 
 
 //----------------------------------------------------------------
-// return a randomly sampled frequency
-// for a particle emitted from the core or zone
-//----------------------------------------------------------------
-double Species::sample_core_nu(const int g) const
-{
-	PRINT_ASSERT(nu_grid->min,>=,0);
-	return sample_nu(core_emis);
-}
-double Species::sample_zone_nu(const int zone_index, const int g) const
-{
-	PRINT_ASSERT(nu_grid->min,>=,0);
-	double nu = sample_nu(emis[zone_index],g);
-	PRINT_ASSERT(nu,>,0);
-	return nu;
-}
-double Species::sample_nu(const CDFArray& input_emis, const int g) const{
-	// randomly pick a frequency
-	double rand = sim->rangen.uniform();
-
-	// make sure we don't get a zero frequency
-	if(rand==0 && nu_grid->min==0) while(rand==0) rand = sim->rangen.uniform();
-
-	return input_emis.invert(rand,nu_grid,g);
-}
-
-//----------------------------------------------------------------
 // return the emissivity integrated over nu for the core (erg/s)
 //----------------------------------------------------------------
 double Species::integrate_core_emis() const

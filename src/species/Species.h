@@ -97,11 +97,6 @@ public:
 	double integrate_zone_emis(const int zone_index) const;        //(erg/s/cm^3/ster)
 	double integrate_zone_lepton_emis(const int zone_index) const; //unitless
 
-	// return the frequency of a particle emitted from the core or a zone (Hz)
-	double sample_core_nu(const int g=-1) const;
-	double sample_nu(const CDFArray& input_emis, const int g=-1) const;
-	double sample_zone_nu(const int zone_index, const int g=-1) const;
-
 	// scattering kernel sampling
 	void sample_scattering_final_state(const int z_ind, LorentzHelper& lh, const double cosTheta) const;
 

@@ -66,7 +66,7 @@ protected:
 
 	// what kind of particle to create?
 	void create_surface_particle(const double Ep, const int s, const int g);
-	void create_thermal_particle(const int zone_index, const int s, const int g);
+	void create_thermal_particle(const int zone_index, const double weight, const int s, const int g);
 
 	// species sampling functions
 	int sample_core_species() const;

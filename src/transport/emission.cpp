@@ -67,16 +67,13 @@ void Transport::emit_particles()
 void Transport::emit_inner_source_by_bin(){
 	int size_before = particles.size();
 	int n_attempted = 0;
+	double weight = 1./((double)n_emit_core_per_bin);
 
 	#pragma omp parallel for reduction(+:n_attempted)
 	for(unsigned s=0; s<species_list.size(); s++){
 		n_attempted += n_emit_core_per_bin * species_list[s]->core_emis.size();
 		for(unsigned g=0; g<species_list[s]->core_emis.size(); g++){
-			double emis = species_list[s]->core_emis.get_value(g)*species_list[s]->core_emis.N;
-			double bin_Ep = emis/n_emit_core_per_bin; // assume lab_dt = 1.0
-			if(bin_Ep>0){
-				for(int k=0; k<n_emit_core_per_bin; k++) create_surface_particle(bin_Ep,s,g);
-			}
+			for(int k=0; k<n_emit_core_per_bin; k++) create_surface_particle(weight,s,g);
 		}
 	}
 
@@ -92,6 +89,7 @@ void Transport::emit_inner_source_by_bin(){
 void Transport::emit_zones_by_bin(){
 	int size_before = particles.size();
 	int n_attempted = 0;
+	double weight = 1./((double)n_emit_zones_per_bin);
 
 	#pragma omp parallel for reduction(+:n_attempted)
 	for (unsigned z_ind=MPI_myID; z_ind<grid->z.size(); z_ind+=MPI_nprocs) if(grid->zone_radius(z_ind) >= r_core){
@@ -100,7 +98,7 @@ void Transport::emit_zones_by_bin(){
 			n_attempted += n_emit_zones_per_bin * species_list[s]->number_of_bins();
 			for(unsigned g=0; g<species_list[s]->number_of_bins(); g++){
 				for(int k=0; k<n_emit_zones_per_bin; k++)
-					create_thermal_particle(z_ind,s,g);
+					create_thermal_particle(z_ind,weight,s,g);
 			}
 		}
 
@@ -119,7 +117,7 @@ void Transport::emit_zones_by_bin(){
 // Useful for thermal radiation emitted all througout
 // the grid
 //------------------------------------------------------------
-void Transport::create_thermal_particle(const int z_ind,const int s, const int g)
+void Transport::create_thermal_particle(const int z_ind,const double weight, const int s, const int g)
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
@@ -141,8 +139,10 @@ void Transport::create_thermal_particle(const int z_ind,const int s, const int g
 	PRINT_ASSERT(pcom.s,<,(int)species_list.size());
 
 	// frequency
-	double nu = species_list[pcom.s]->sample_zone_nu(z_ind,g);
-	pcom.N = species_list[pcom.s]->emis[z_ind].get_value(g) / (nu*pc::h);
+	double nu_min = grid->nu_grid_axis.bottom(g);
+	double nu_max = grid->nu_grid_axis.top[g];
+	double nu = rangen.uniform(nu_min, nu_max);
+	pcom.N = species_list[pcom.s]->emis[z_ind].get_value(g) * species_list[pcom.s]->emis[z_ind].N / (nu*pc::h) * (nu_max-nu_min) * weight;
 
 	// emit isotropically in comoving frame
 	grid->isotropic_kup_tet(nu,pcom.kup,pcom.xup,&rangen);
@@ -180,13 +180,13 @@ void Transport::create_thermal_particle(const int z_ind,const int s, const int g
 // General function to create a particle on the surface
 // emitted isotropically outward in the comoving frame. 
 //------------------------------------------------------------
-void Transport::create_surface_particle(const double Ep, const int s, const int g)
+void Transport::create_surface_particle(const double weight, const int s, const int g)
 {
-	PRINT_ASSERT(Ep,>,0);
+	PRINT_ASSERT(weight,>,0);
+	PRINT_ASSERT(weight,!=,INFINITY);
 
 	Particle plab;
 	plab.fate = moving;
-	double e = Ep;
 
 	// pick initial position on photosphere
 	double D[3];
@@ -203,10 +203,18 @@ void Transport::create_surface_particle(const double Ep, const int s, const int 
 	PRINT_ASSERT(plab.s,<,(int)species_list.size());
 
 	// sample the frequency
-	const double nu = species_list[plab.s]->sample_core_nu(g);
+	double nu_min = grid->nu_grid_axis.bottom(g);
+	double nu_max = grid->nu_grid_axis.top[g];
+	double nu = rangen.uniform(nu_min, nu_max);
+	if(!(nu>0)){
+		cout << nu << endl;
+		cout << nu_min << endl;
+		cout << nu_max << endl;
+	}
+	PRINT_ASSERT(nu,>,0);
+	plab.N = species_list[plab.s]->core_emis.get_value(g) / (nu*pc::h) * species_list[plab.s]->core_emis.N * weight;
 	plab.kup[3] = nu / pc::c * 2.0*pc::pi;
 	for(int i=0; i<3; i++) plab.kup[i] = D[i] * plab.kup[3];
-	plab.N = e / (nu*pc::h);
 
 	// set up LorentzHelper
 	LorentzHelper lh(exponential_decay);
