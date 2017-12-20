@@ -65,11 +65,8 @@ protected:
 	void emit_zones_by_bin();
 
 	// what kind of particle to create?
-	void create_surface_particle(const double Ep, const int s, const int g);
-	void create_thermal_particle(const int zone_index, const double weight, const int s, const int g);
-
-	// species sampling functions
-	int sample_core_species() const;
+	void create_surface_particle(const double Ep, const unsigned int s, const unsigned int g);
+	void create_thermal_particle(const int zone_index, const double weight, const unsigned int s, const unsigned int g);
 
 	// transformation functions
 	void get_opacity(LorentzHelper *lh, const int z_ind) const;
@@ -163,10 +160,7 @@ public:
 	double r_core;
 	int n_emit_core_per_bin;
 	double core_lum_multiplier;
-	int core_emit_method;
-	CDFArray core_species_luminosity;
 	void init_core(const double r_core, const double T_core, const double munue_core);
-	void init_core(const double r_core, const std::vector<double>& T_core, const std::vector<double>& mu_core, const std::vector<double>& L_core);
 
 	// items for zone emission
 	int do_visc;
@@ -190,8 +184,8 @@ public:
 	// random number generator
 	mutable ThreadRNG rangen;
 
-	// blackbody function (erg/cm^2/s/ster/Hz)
-	static double blackbody(const double T, const double chempot, const double nu);
+	// blackbody function (#/cm^2/s/ster/Hz^3)
+	static double number_blackbody(const double T, const double chempot, const double nu);
 	void set_cdf_to_BB(const double T, const double chempot, CDFArray& emis);
 
 	// set things up

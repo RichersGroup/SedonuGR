@@ -71,8 +71,8 @@ void Transport::emit_inner_source_by_bin(){
 
 	#pragma omp parallel for reduction(+:n_attempted)
 	for(unsigned s=0; s<species_list.size(); s++){
-		n_attempted += n_emit_core_per_bin * species_list[s]->core_emis.size();
-		for(unsigned g=0; g<species_list[s]->core_emis.size(); g++){
+		n_attempted += n_emit_core_per_bin * grid->nu_grid_axis.size();
+		for(unsigned g=0; g<grid->nu_grid_axis.size(); g++){
 			for(int k=0; k<n_emit_core_per_bin; k++) create_surface_particle(weight,s,g);
 		}
 	}
@@ -117,7 +117,7 @@ void Transport::emit_zones_by_bin(){
 // Useful for thermal radiation emitted all througout
 // the grid
 //------------------------------------------------------------
-void Transport::create_thermal_particle(const int z_ind,const double weight, const int s, const int g)
+void Transport::create_thermal_particle(const int z_ind,const double weight, const unsigned int s, const unsigned int g)
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
@@ -180,7 +180,7 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 // General function to create a particle on the surface
 // emitted isotropically outward in the comoving frame. 
 //------------------------------------------------------------
-void Transport::create_surface_particle(const double weight, const int s, const int g)
+void Transport::create_surface_particle(const double weight, const unsigned int s, const unsigned int g)
 {
 	PRINT_ASSERT(weight,>,0);
 	PRINT_ASSERT(weight,!=,INFINITY);
@@ -198,7 +198,7 @@ void Transport::create_surface_particle(const double weight, const int s, const 
 	PRINT_ASSERT(z_ind,>=,0);
 
 	// sample the species
-	plab.s = ( s>=0 ? s : sample_core_species() );
+	plab.s = s;
 	PRINT_ASSERT(plab.s,>=,0);
 	PRINT_ASSERT(plab.s,<,(int)species_list.size());
 
@@ -206,13 +206,8 @@ void Transport::create_surface_particle(const double weight, const int s, const 
 	double nu_min = grid->nu_grid_axis.bottom(g);
 	double nu_max = grid->nu_grid_axis.top[g];
 	double nu = rangen.uniform(nu_min, nu_max);
-	if(!(nu>0)){
-		cout << nu << endl;
-		cout << nu_min << endl;
-		cout << nu_max << endl;
-	}
 	PRINT_ASSERT(nu,>,0);
-	plab.N = species_list[plab.s]->core_emis.get_value(g) / (nu*pc::h) * species_list[plab.s]->core_emis.N * weight;
+	plab.N = grid->core_emis[plab.s]->interpolate(&nu,&g) * weight * grid->nu_grid_axis.delta3(g)/3.0;
 	plab.kup[3] = nu / pc::c * 2.0*pc::pi;
 	for(int i=0; i<3; i++) plab.kup[i] = D[i] * plab.kup[3];
 

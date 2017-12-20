@@ -48,6 +48,9 @@ public:
 	double delta(const int i) const{
 		return top[i] - bottom(i);
 	}
+	double delta3(const int i) const{
+		return top[i]*top[i]*top[i] - bottom(i)*bottom(i)*bottom(i);
+	}
 };
 
 #endif

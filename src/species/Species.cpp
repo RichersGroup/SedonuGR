@@ -107,7 +107,6 @@ void Species::init(Lua* lua, Transport* simulation)
 	}
 
 	// allocate space for each eas spectrum
-	if(sim->n_emit_core_per_bin>0) core_emis.resize(nu_grid->size());
 	int iorder = lua->scalar<int>("cdf_interpolation_order");
     //#pragma omp parallel for
 	for(unsigned i=0; i<abs_opac.size();  i++){

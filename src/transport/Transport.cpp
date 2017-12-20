@@ -76,7 +76,6 @@ Transport::Transport(){
 	rank0 = -MAXLIM;
 	grid = NULL;
 	r_core = NaN;
-	core_emit_method=-MAXLIM;
 	n_emit_core_per_bin = -MAXLIM;
 	core_lum_multiplier = NaN;
 	do_visc = -MAXLIM;
@@ -297,34 +296,10 @@ void Transport::init(Lua* lua)
 	if(rank0) cout << "# Initializing the core...";
 	r_core = lua->scalar<double>("r_core");   // cm
 	if(n_emit_core_per_bin>0){
-		core_emit_method = lua->scalar<int>("core_emit_method");
-		PRINT_ASSERT(core_emit_method==1,||,core_emit_method==2);
-		int iorder = lua->scalar<int>("cdf_interpolation_order");
-		core_species_luminosity.interpolation_order = iorder;
-		for(unsigned s=0; s<species_list.size(); s++) species_list[s]->core_emis.interpolation_order = iorder;
-
-		if(core_emit_method==1){ // give temperature, mu, multiplier
-			core_lum_multiplier = lua->scalar<double>("core_lum_multiplier");
-			double T_core = lua->scalar<double>("T_core") / pc::k_MeV;    // K
-			double munue_core = lua->scalar<double>("core_nue_chem_pot") * pc::MeV_to_ergs; // erg
-			init_core(r_core, T_core, munue_core);
-		}
-		if(core_emit_method==2){ // give temperature, mu, luminosity
-			PRINT_ASSERT(species_list.size(),==,3);
-			vector<double> T_core(species_list.size(),0);
-			vector<double> L_core(species_list.size(),0);
-			vector<double> mu_core(species_list.size(),0);
-			stringstream param;
-			for(unsigned i=0; i<species_list.size(); i++){
-				param.str(""); param << "T" << i << "_core";
-				T_core[i] = lua->scalar<double>(param.str().c_str()) / pc::k_MeV; //K
-				param.str(""); param << "L" << i << "_core";
-				L_core[i] = lua->scalar<double>(param.str().c_str()); //erg/s
-				param.str(""); param << "mu" << i << "_core";
-				mu_core[i] = lua->scalar<double>(param.str().c_str()) * pc::MeV_to_ergs; //erg
-			}
-			init_core(r_core,T_core,mu_core,L_core);
-		}
+		core_lum_multiplier = lua->scalar<double>("core_lum_multiplier");
+		double T_core = lua->scalar<double>("T_core") / pc::k_MeV;    // K
+		double munue_core = lua->scalar<double>("core_nue_chem_pot") * pc::MeV_to_ergs; // erg
+		init_core(r_core, T_core, munue_core);
 	}
 	if(rank0) cout << "finished." << endl;
 
@@ -350,23 +325,6 @@ void Transport::init(Lua* lua)
 	particle_escape_energy = 0;
 }
 
-//-----------------------------------
-// set up core (without reading lua)
-//-----------------------------------
-void Transport::init_core(const double r_core /*cm*/, const vector<double>& T_core /*K*/, const vector<double>& mu_core /*erg*/, const vector<double>& L_core /*erg/s*/){
-	PRINT_ASSERT(n_emit_core_per_bin,>,0);
-	PRINT_ASSERT(r_core,>,0);
-	PRINT_ASSERT(species_list.size(),>,0);
-
-	// set up core emission spectrum function (erg/s)
-	core_species_luminosity.resize(species_list.size());
-	for(unsigned s=0; s<species_list.size(); s++){
-		set_cdf_to_BB(T_core[s],mu_core[s],species_list[s]->core_emis);
-		species_list[s]->core_emis.N = L_core[s]; //erg/s
-		core_species_luminosity.set_value(s,species_list[s]->core_emis.N);
-	}
-	core_species_luminosity.normalize();
-}
 void Transport::init_core(const double r_core /*cm*/, const double T_core /*K*/, const double munue_core /*erg*/){
 	PRINT_ASSERT(n_emit_core_per_bin,>,0);
 	PRINT_ASSERT(r_core,>,0);
@@ -374,14 +332,23 @@ void Transport::init_core(const double r_core /*cm*/, const double T_core /*K*/,
 	PRINT_ASSERT(species_list.size(),>,0);
 
 	// set up core emission spectrum function (erg/s)
-	core_species_luminosity.resize(species_list.size());
+	grid->core_emis.resize(species_list.size());
+	vector<Axis*> axes({&grid->nu_grid_axis});
 	for(unsigned s=0; s<species_list.size(); s++){
+		grid->core_emis[s] = new MultiDArray<1>(axes);
 		double chempot = munue_core * (double)species_list[s]->lepton_number; // erg
-		set_cdf_to_BB(T_core, chempot, species_list[s]->core_emis);
-		species_list[s]->core_emis.N *= pc::pi * (4.0*pc::pi*r_core*r_core) * species_list[s]->weight * core_lum_multiplier; // erg/s
-		core_species_luminosity.set_value(s, species_list[s]->core_emis.N);
+		for(unsigned g=0; g<grid->nu_grid.size(); g++){
+			double nu = grid->nu_grid_axis.mid[g];
+			double nu3L = pow(grid->nu_grid_axis.bottom(g),3);
+			double nu3R = pow(grid->nu_grid_axis.top[g],3);
+			double dnu3_3 = (nu3R-nu3L)/3.0;
+			double integrated_bb = number_blackbody(T_core,chempot,nu);
+			integrated_bb *= (4.0*pc::pi*r_core*r_core);                    // surface area
+			integrated_bb *= species_list[s]->weight * core_lum_multiplier; // scaling overall luminosity
+			integrated_bb *= pc::pi;                                        // steradians
+			grid->core_emis[s]->set(&g, integrated_bb);
+		}
 	}
-	core_species_luminosity.normalize();
 }
 
 
@@ -691,19 +658,6 @@ int Transport::total_particles() const{
 }
 
 
-//----------------------------------------------------------------------------
-// randomly sample the nu-integrated emissivities of all
-// species to determine the species of a new particle
-// emitted from the core
-//----------------------------------------------------------------------------
-int Transport::sample_core_species() const
-{
-	// randomly sample the species (precomputed CDF)
-	double z = rangen.uniform();
-	return core_species_luminosity.get_index(z);
-}
-
-
 //------------------------------------------------------------
 // Combine the radiation tallies in all zones
 // from all processors using MPI reduce
@@ -930,12 +884,11 @@ double Transport::mean_mass(const double Ye){
 }
 
 //-----------------------------------------------------------------
-// Calculate the fermi-dirac blackbody function (erg/s/cm^2/Hz/ster)
+// Calculate the fermi-dirac blackbody function (#/s/cm^2/ster/(Hz^3/3))
 //-----------------------------------------------------------------
-double Transport::blackbody(const double T /*K*/, const double chem_pot /*erg*/, const double nu /*Hz*/){
+double Transport::number_blackbody(const double T /*K*/, const double chem_pot /*erg*/, const double nu /*Hz*/){
 	double zeta = (pc::h*nu - chem_pot)/pc::k/T;
-	double nu_c = nu*pc::inv_c;
-	double bb = (pc::h*nu) * nu_c * nu_c / (exp(zeta) + 1.0);
+	double bb = pc::inv_c*pc::inv_c / (exp(zeta) + 1.0);
 	PRINT_ASSERT(bb,>=,0);
 	return bb;
 }
@@ -943,7 +896,7 @@ double Transport::blackbody(const double T /*K*/, const double chem_pot /*erg*/,
 
 //-----------------------------------------------------
 // set cdf to blackbody distribution
-// units of emis.N: erg/s/cm^2/ster
+// units of emis.N: #/s/cm^2/ster
 //-----------------------------------------------------
 void Transport::set_cdf_to_BB(const double T, const double chempot, CDFArray& emis){
     #pragma omp parallel for ordered
@@ -952,7 +905,7 @@ void Transport::set_cdf_to_BB(const double T, const double chempot, CDFArray& em
 		double nu  = grid->nu_grid_axis.mid[j];
 		double dnu = grid->nu_grid_axis.delta(j);
         #pragma omp ordered
-		emis.set_value(j, Transport::blackbody(T,chempot,nu)*dnu);
+		emis.set_value(j, Transport::number_blackbody(T,chempot,nu)*dnu);
 	}
 	emis.normalize();
 }

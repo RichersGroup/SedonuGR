@@ -65,14 +65,14 @@ void Neutrino_grey::set_eas(int zone_index)
 	PRINT_ASSERT(grey_abs_frac,<=,1.0);
 	for(unsigned j=0;j<nu_grid->size();j++)
 	{
-		double nu  = nu_grid->center(j);        // (Hz)
-		double dnu = nu_grid->delta(j);         // (Hz)
-		double bb  = Transport::blackbody(z->T,0*pc::MeV_to_ergs,nu)*dnu;  // (erg/s/cm^2/ster)
+		double nu  = sim->grid->nu_grid_axis.mid[j];        // (Hz)
+		double dnu3 = sim->grid->nu_grid_axis.delta3(j);         // (Hz)
+		double bb  = Transport::number_blackbody(z->T,0*pc::MeV_to_ergs,nu)*dnu3/3.0;  // (#/s/cm^2/ster)
 
 		double a = grey_opac*z->rho*grey_abs_frac;
 		double s = grey_opac*z->rho*(1.0-grey_abs_frac);
 
-		emis[zone_index].set_value(j,a*bb); // (erg/s/cm^3/ster)
+		emis[zone_index].set_value(j,a*bb); // (#/s/cm^3/ster)
 		abs_opac[zone_index][j] = a;        // (1/cm)
 		scat_opac[zone_index][j] = s;       // (1/cm)
 	}

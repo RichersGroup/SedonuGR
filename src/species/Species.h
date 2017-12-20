@@ -78,9 +78,6 @@ public:
 	// this species' spectrum
 	PolarSpectrumArray spectrum;
 
-	// the core emissivity (units of core_emis.N are erg/s)
-	CDFArray core_emis;
-
 	// set everything up
 	void init(Lua* lua, Transport* sim);
 
