@@ -69,7 +69,7 @@ void GridGR1D::set_fluid(const double* rho, const double* T, const double* Ye, c
 		z[z_ind].u[2] = 0;
 
 		z[z_ind].H_vis = 0;
-		PRINT_ASSERT(r_out[z_ind],>,(z_ind==0 ? r_out.min : r_out[z_ind-1]));
+		PRINT_ASSERT(rAxis.top[z_ind],>,(z_ind==0 ? rAxis.min : rAxis.top[z_ind-1]));
 		PRINT_ASSERT(z[z_ind].rho,>=,0);
 		PRINT_ASSERT(z[z_ind].T,>=,0);
 		PRINT_ASSERT(z[z_ind].Ye,>=,0);
@@ -81,14 +81,16 @@ void GridGR1D::set_fluid(const double* rho, const double* T, const double* Ye, c
 void GridGR1D::initialize_grid(const double* rarray, const int n_zones, const int nghost){
 	ghosts1 = nghost;
 	z.resize(n_zones);
-	r_out.resize(n_zones);
-	r_out.min = 0;
+	vector<double> rtop(n_zones), rmid(n_zones);
+	double rmin=0;
 	for(int z_ind=0; z_ind<n_zones; z_ind++){
-		r_out[z_ind] = rarray[z_ind + ghosts1+1];
-		if(z_ind==0) PRINT_ASSERT(r_out[z_ind],>,0);
-		else PRINT_ASSERT(r_out[z_ind],>,r_out[z_ind-1]);
+		rtop[z_ind] = rarray[z_ind + ghosts1+1];
+		double last = z_ind==0 ? rmin : rtop[z_ind-1];
+		PRINT_ASSERT(rtop[z_ind],>,last);
+		rmid[z_ind] = 0.5 * (rtop[z_ind] + last);
 	}
+	rAxis = Axis(rmin, rtop, rmid);
 
 	cout << "#   Sedonu grid has "<< z.size() << " zones." << endl;
-	cout << "#   Sedonu outer boundary is at "<< r_out[n_zones-1] << " cm" << endl;
+	cout << "#   Sedonu outer boundary is at "<< rAxis.top[n_zones-1] << " cm" << endl;
 }

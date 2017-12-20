@@ -62,7 +62,7 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 	int MPI_myID;
 	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
 	const int rank0 = (MPI_myID == 0);
-	vector<double> bintops;
+	vector<double> bintops, binmid;
 	double trash, minval, tmp;
 
 	// open the model files
@@ -82,20 +82,24 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 	rgrid_file.open(rgrid_filename.c_str());
 	rgrid_file >> trash >> minval;
 	bintops = vector<double>(0);
+	binmid = vector<double>(0);
 	while(rgrid_file >> trash >> tmp){
 		if(bintops.size()>0) PRINT_ASSERT(tmp,>,bintops[bintops.size()-1]);
 		else PRINT_ASSERT(tmp,>,minval);
 		bintops.push_back(tmp);
+		double last = bintops.size()==1 ? minval : bintops[bintops.size()-2];
+		double midpoint = 0.5 * (bintops[bintops.size()-1] + last);
+		binmid.push_back(midpoint);
 	}
-	r_out.init(bintops,minval);
+	rAxis = Axis(minval, bintops, binmid);
 
 	// write grid properties
 	if(rank0)
-	  cout << "#   nr=" << r_out.size() << "\trmin=" << r_out.min << "\trmax=" << r_out[r_out.size()-1] << endl;
+	  cout << "#   nr=" << rAxis.size() << "\trmin=" << rAxis.min << "\trmax=" << rAxis.top[rAxis.size()-1] << endl;
 
 	// read the fluid properties
-	z.resize(r_out.size());
-	for(int z_ind=0; z_ind<r_out.size(); z_ind++){
+	z.resize(rAxis.size());
+	for(int z_ind=0; z_ind<rAxis.size(); z_ind++){
 		double trash;
 
 		// read the contents of a single line
@@ -112,8 +116,8 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 		for(int k=9; k<=165; k++) infile >> trash;
 
 		// convert units
-		z[z_ind].u[1] *= r_out.center(z_ind);
-		z[z_ind].u[2] *= r_out.center(z_ind);
+		z[z_ind].u[1] *= rAxis.mid[z_ind];
+		z[z_ind].u[2] *= rAxis.mid[z_ind];
 		z[z_ind].T /= pc::k_MeV;
 
 		// sanity checks
@@ -151,18 +155,19 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 	infile >> n_zones;
 	PRINT_ASSERT(n_zones,>,0);
 	z.resize(n_zones);
-	r_out.resize(n_zones);
+	vector<double> rtop(n_zones), rmid(n_zones);
+	double rmin;
 	metric.resize(n_zones);
 
 	// read zone properties
 	vector<double> tmp_alpha = vector<double>(n_zones,0);
 	vector<double> tmp_X = vector<double>(n_zones,0);
-	infile >> r_out.min;
-	PRINT_ASSERT(r_out.min,>=,0);
+	infile >> rmin;
+	PRINT_ASSERT(rmin,>=,0);
 	for(int z_ind=0; z_ind<n_zones; z_ind++)
 	{
 		double alpha, x;
-		infile >> r_out[z_ind];
+		infile >> rtop[z_ind];
 		infile >> z[z_ind].rho;
 		infile >> z[z_ind].T;
 		infile >> z[z_ind].Ye;
@@ -173,7 +178,9 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 		infile >> tmp_alpha[z_ind];
 		infile >> tmp_X[z_ind];
 
-		PRINT_ASSERT(r_out[z_ind],>,(z_ind==0 ? r_out.min : r_out[z_ind-1]));
+		double last = z_ind==0 ? rmin : rtop[z_ind-1];
+		rmid[z_ind] = 0.5 * (rtop[z_ind] + last);
+		PRINT_ASSERT(rtop[z_ind],>,(z_ind==0 ? rmin : rtop[z_ind-1]));
 		PRINT_ASSERT(z[z_ind].rho,>=,0);
 		PRINT_ASSERT(z[z_ind].T,>=,0);
 		PRINT_ASSERT(z[z_ind].Ye,>=,0);
@@ -182,6 +189,8 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 		PRINT_ASSERT(tmp_alpha[z_ind],<=,1.0);
 		PRINT_ASSERT(tmp_X[z_ind],>=,1.0);
 	}
+	rAxis = Axis(rmin, rtop, rmid);
+
 
 	// set the christoffel symbol coefficients
 	vector<double> tmp_dadr = vector<double>(n_zones,0);
@@ -250,18 +259,12 @@ int Grid1DSphere::zone_index(const double x[3]) const
 	PRINT_ASSERT(r,>=,0);
 
 	// check if off the boundaries
-	if(r < r_out.min             ) return -1;
-	if(r >= r_out[r_out.size()-1] ) return -2;
+	if(r < rAxis.min             ) return -1;
+	if(r >= rAxis.top[rAxis.size()-1] ) return -2;
 
 	// find in zone array using stl algorithm upper_bound and subtracting iterators
-	int z_ind = r_out.locate(r);
+	int z_ind = rAxis.bin(r);
 	PRINT_ASSERT(z_ind,>=,0);
-	if(z_ind>=(int)z.size()){
-		cout << z_ind << endl;
-		cout << z.size() << endl;
-		cout << r << endl;
-		cout << r_out[0] << endl;
-	}
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 	return z_ind;
 }
@@ -274,8 +277,8 @@ double  Grid1DSphere::zone_lab_3volume(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	double r0 = (z_ind==0 ? r_out.min : r_out[z_ind-1]);
-	double vol = 4.0*pc::pi/3.0*(r_out[z_ind]*r_out[z_ind]*r_out[z_ind] - r0*r0*r0);
+	double r0 = (z_ind==0 ? rAxis.min : rAxis.top[z_ind-1]);
+	double vol = 4.0*pc::pi/3.0*( pow(rAxis.top[z_ind],3) - pow(r0,3) );
 	if(do_GR) vol *= metric.X[z_ind];
 	PRINT_ASSERT(vol,>=,0);
 	return vol;
@@ -288,8 +291,8 @@ double  Grid1DSphere::zone_min_length(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	double r0 = (z_ind==0 ? r_out.min : r_out[z_ind-1]);
-	double min_len = r_out[z_ind] - r0;
+	double r0 = (z_ind==0 ? rAxis.min : rAxis.top[z_ind-1]);
+	double min_len = rAxis.top[z_ind] - r0;
 	PRINT_ASSERT(min_len,>=,0);
 	return min_len;
 }
@@ -302,9 +305,9 @@ void Grid1DSphere::zone_coordinates(const int z_ind, double r[1], const int rsiz
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 	PRINT_ASSERT(rsize,==,(int)dimensionality());
-	r[0] = 0.5*(r_out[z_ind]+r_out.bottom(z_ind));
+	r[0] = 0.5*(rAxis.top[z_ind]+rAxis.bottom(z_ind));
 	PRINT_ASSERT(r[0],>,0);
-	PRINT_ASSERT(r[0],<,r_out[r_out.size()-1]);
+	PRINT_ASSERT(r[0],<,rAxis.top[rAxis.size()-1]);
 }
 
 
@@ -334,8 +337,8 @@ void Grid1DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3
 	rand[2] = rangen->uniform();
 
 	// inner and outer radii of shell
-	double r0 = (z_ind==0 ? r_out.min : r_out[z_ind-1]);
-	double r1 = r_out[z_ind];
+	double r0 = (z_ind==0 ? rAxis.min : rAxis.top[z_ind-1]);
+	double r1 = rAxis.top[z_ind];
 
 	// sample radial position in shell using a probability integral transform
 	double radius = pow( rand[0]*(r1*r1*r1 - r0*r0*r0) + r0*r0*r0, 1./3.);
@@ -401,14 +404,14 @@ void Grid1DSphere::write_rays(const int iw) const
 //------------------------------------------------------------
 void Grid1DSphere::symmetry_boundaries(LorentzHelper *lh, const double tolerance) const{
 	// reflect from outer boundary
-	if(reflect_outer && radius(lh->p_xup())>r_out[r_out.size()-1]){
+	if(reflect_outer && radius(lh->p_xup())>rAxis.top[rAxis.size()-1]){
 		const Particle *p = lh->particle_readonly(lab);
 
-		double r0 = (r_out.size()>1 ? r_out[r_out.size()-2] : r_out.min);
-		double rmax = r_out[r_out.size()-1];
+		double r0 = (rAxis.size()>1 ? rAxis.top[rAxis.size()-2] : rAxis.min);
+		double rmax = rAxis.top[rAxis.size()-1];
 		double dr = rmax - r0;
 		double R = radius(p->xup);
-		PRINT_ASSERT( fabs(R - r_out[r_out.size()-1]),<,tolerance*dr);
+		PRINT_ASSERT( fabs(R - rAxis.top[rAxis.size()-1]),<,tolerance*dr);
 
 		double kr;
 		for(int i=0; i<3; i++) kr += p->xup[i]/R * p->kup[i];
@@ -439,11 +442,11 @@ void Grid1DSphere::symmetry_boundaries(LorentzHelper *lh, const double tolerance
 
 double Grid1DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const{
 	double r = sqrt(dot_Minkowski<3>(x_up,x_up));
-	PRINT_ASSERT(r,<=,r_out[z_ind]);
-	PRINT_ASSERT(r,>=,r_out.bottom(z_ind));
+	PRINT_ASSERT(r,<=,rAxis.top[z_ind]);
+	PRINT_ASSERT(r,>=,rAxis.bottom(z_ind));
 
-	double drL = r - r_out.bottom(z_ind);
-	double drR = r_out[z_ind] - r;
+	double drL = r - rAxis.bottom(z_ind);
+	double drR = rAxis.top[z_ind] - r;
 
 	return min(drL, drR);
 }
@@ -451,7 +454,7 @@ double Grid1DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const
 double Grid1DSphere::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	return r_out[z_ind];
+	return rAxis.top[z_ind];
 }
 
 //-----------------------------
@@ -459,7 +462,7 @@ double Grid1DSphere::zone_radius(const int z_ind) const{
 //-----------------------------
 void Grid1DSphere::dims(hsize_t dims[1], const int size) const{
 	PRINT_ASSERT(size,==,(int)dimensionality());
-	dims[0] = r_out.size();
+	dims[0] = rAxis.size();
 }
 
 //----------------------------------------------------
@@ -470,7 +473,7 @@ void Grid1DSphere::write_hdf5_coordinates(H5::H5File file) const
 	// useful quantities
 	H5::DataSet dataset;
 	H5::DataSpace dataspace;
-	float tmp[r_out.size()+1];
+	float tmp[rAxis.size()+1];
 
 	// get dimensions
 	hsize_t coord_dims[1];
@@ -480,8 +483,8 @@ void Grid1DSphere::write_hdf5_coordinates(H5::H5File file) const
 	// write coordinates
 	dataspace = H5::DataSpace(1,&coord_dims[0]);
 	dataset = file.createDataSet("r(cm)",H5::PredType::IEEE_F32LE,dataspace);
-	tmp[0] = r_out.min;
-	for(unsigned i=1; i<r_out.size()+1; i++) tmp[i] = r_out[i-1];
+	tmp[0] = rAxis.min;
+	for(unsigned i=1; i<rAxis.size()+1; i++) tmp[i] = rAxis.top[i-1];
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 }
@@ -489,7 +492,7 @@ void Grid1DSphere::write_hdf5_coordinates(H5::H5File file) const
 double Grid1DSphere::lapse(const double xup[4], int z_ind) const{
 	double r = radius(xup);
 	if(z_ind<0) z_ind = zone_index(xup);
-	return metric.get_alpha(z_ind, r, r_out);
+	return 1.0;//metric.get_alpha(z_ind, r, rAxis);
 }
 
 void Grid1DSphere::shiftup(double betaup[4], const double xup[4], int z_ind) const{
@@ -499,7 +502,7 @@ void Grid1DSphere::shiftup(double betaup[4], const double xup[4], int z_ind) con
 void Grid1DSphere::g3_down(const double xup[4], double gproj[4][4], int z_ind) const{
 	const double r = radius(xup);
 	if(z_ind<0) z_ind = zone_index(xup);
-	const double X = metric.get_X(z_ind,r, r_out);
+	const double X = 1.0;//metric.get_X(z_ind,r, rAxis);
 	for(int i=0; i<3; i++){
 		for(int j=0; j<3; j++) gproj[i][j] = xup[i] * xup[j] * (X*X-1.0) / (r*r);
 		gproj[i][i] += 1.0;
@@ -509,10 +512,10 @@ void Grid1DSphere::g3_down(const double xup[4], double gproj[4][4], int z_ind) c
 void Grid1DSphere::connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind) const{
 	if(z_ind<0) z_ind = zone_index(xup);
 	const double r = radius(xup);
-	const double X = metric.get_X(z_ind, r, r_out); // 1.0/alpha;
-	const double alpha = metric.get_alpha(z_ind, r, r_out); // sqrt(1.0 - 1.0/r);
-	const double dadr = metric.get_dadr(z_ind); // 0.5/(r*r) * X;
-	const double dXdr = metric.get_dXdr(z_ind); // -0.5/(r*r) * X*X*X;
+	const double X = 1.0;//metric.get_X(z_ind, r, rAxis); // 1.0/alpha;
+	const double alpha = 1.0;//metric.get_alpha(z_ind, r, rAxis); // sqrt(1.0 - 1.0/r);
+	const double dadr = 0.0;//metric.get_dadr(z_ind); // 0.5/(r*r) * X;
+	const double dXdr = 0.0;//metric.get_dXdr(z_ind); // -0.5/(r*r) * X*X*X;
 
 	// t mu nu
 	gamma[3][3][3] = 0;

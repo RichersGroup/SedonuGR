@@ -40,7 +40,7 @@ class Grid1DSphere: public Grid
 
 protected:
 	// store location of the outer edge of the zone.
-	LocateArray r_out;
+	Axis rAxis;
 	int reflect_outer;
 
 	// ds^2 = -alpha dt^2 + X^2 dr^2 + dOmega^2
