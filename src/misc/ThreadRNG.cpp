@@ -76,3 +76,15 @@ double ThreadRNG::uniform(){
 
 	return gsl_rng_uniform(generators[my_ompID]);
 }
+
+double ThreadRNG::uniform(const double min, const double max){
+	double delta = max-min;
+	return min + delta*uniform();
+}
+
+int ThreadRNG::uniform_discrete(const int min, const int max){
+	int result = uniform((double)min, (double)(max+1));
+	PRINT_ASSERT(result,>=,min);
+	PRINT_ASSERT(result,<=,max);
+	return result;
+}

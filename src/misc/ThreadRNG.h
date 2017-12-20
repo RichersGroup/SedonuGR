@@ -44,6 +44,8 @@ public:
 
 	void   init();
 	double uniform();
+	double uniform(const double min, const double max);
+	int    uniform_discrete(const int    min, const int    max);
 };
 
 #endif
