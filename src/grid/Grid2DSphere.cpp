@@ -63,7 +63,7 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
 	const int rank0 = (MPI_myID == 0);
 	double trash=0, minval=0, tmp=0;
-	vector<double> bintops;
+	vector<double> bintops, binmid;
 
 	// open the model files
 	if(rank0) cout << "# Reading the model file..." << endl;
@@ -80,9 +80,11 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 		if(bintops.size()>0) PRINT_ASSERT(tmp,>,bintops[bintops.size()-1]);
 		else PRINT_ASSERT(tmp,>,minval);
 		bintops.push_back(tmp);
+		double last = bintops.size()==1 ? minval : bintops[bintops.size()-2];
+		binmid.push_back(0.5 * (last + bintops[bintops.size()-1]));
 	}
-	r_out.init(bintops,minval);
-	int nr = r_out.size();
+	rAxis = Axis(minval, bintops, binmid);
+	int nr = rAxis.size();
 
 	//========================//
 	// read in the theta grid //
@@ -97,20 +99,23 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 	// reverse the vector
 	int ntheta = tmp_vector.size()-1;
 	bintops = vector<double>(ntheta,0);
+	binmid = vector<double>(ntheta,0);
 	minval = 0;
 	for(int i=0; i<ntheta; i++){
 		bintops[i] = tmp_vector[ntheta-1-i];
-		if(i>0) PRINT_ASSERT(bintops[i],>,bintops[i-1]);
-		else PRINT_ASSERT(bintops[i],>,minval);
+		double last = i==0 ? minval : bintops[i-1];
+		binmid[i] = 0.5 * (last + bintops[i]);
+		PRINT_ASSERT(bintops[i],>,last);
 	}
 	PRINT_ASSERT(fabs(bintops[ntheta-1]-pc::pi),<,TINY);
 	bintops[ntheta-1] = pc::pi;
-	theta_out.init(bintops,minval);
+	binmid[ntheta-1] = 0.5 * (bintops[ntheta-1] + bintops[ntheta-2]);
+	thetaAxis = Axis(minval, bintops, binmid);
 
 
 	// write grid properties
-	if(rank0) cout << "#   nr=" << nr << "\trmin=" << r_out.min << "\trmax=" << r_out[nr-1] << endl;
-	if(rank0) cout << "#   nt=" << ntheta << "\ttmin=" << theta_out.min << "\ttmax=" << theta_out[ntheta-1] << endl;
+	if(rank0) cout << "#   nr=" << nr << "\trmin=" << rAxis.min << "\trmax=" << rAxis.top[nr-1] << endl;
+	if(rank0) cout << "#   nt=" << ntheta << "\ttmin=" << thetaAxis.min << "\ttmax=" << thetaAxis.top[ntheta-1] << endl;
 
 	//===========================//
 	// read the fluid properties //
@@ -325,30 +330,38 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	PRINT_ASSERT(y_linecount,==,jprocs*nyb+2*nghost);
 
 	// read x (r) coordinates
-	r_out.resize(nr);
+	vector<double> bintop(nr), binmid(nr);
+	double minval;
 	xCoords_file.clear();                                   // clear bad state from EOF
 	xCoords_file.seekg(0);                                  // seek back to beginning of the file
 	for(int i=0; i<nghost; i++) getline(xCoords_file,line); // trash the first four lines (ghost points)
 	for(int i=0; i<nr; i++){
-		if(i==0) xCoords_file >> r_out.min;
+		if(i==0) xCoords_file >> minval;
 		else xCoords_file >> trash;
 		xCoords_file >> trash;
-		xCoords_file >> r_out[i];
+		xCoords_file >> bintop[i];
 		xCoords_file >> trash;
+		double last = i==0 ? minval : bintop[i-1];
+		binmid[i] = 0.5 * (last + bintop[i]);
 	}
+	rAxis = Axis(minval, bintop, binmid);
 
 	// read the y (theta) coordinates
-	theta_out.resize(ntheta);
+	bintop.resize(ntheta);
+	binmid.resize(ntheta);
 	yCoords_file.clear();  // clear bad state from EOF
 	yCoords_file.seekg(0); // seek back to beginning of the file
 	for(int i=0; i<nghost; i++) getline(yCoords_file,line); // trash the first four lines (ghost points)
 	for(int i=0; i<ntheta; i++){
-		if(i==0) yCoords_file >> theta_out.min;
+		if(i==0) yCoords_file >> minval;
 		else yCoords_file >> trash;
 		yCoords_file >> trash;
-		yCoords_file >> theta_out[i];
+		yCoords_file >> bintop[i];
 		yCoords_file >> trash;
+		double last = i==0 ? minval : bintop[i-1];
+		binmid[i] = 0.5 * (last + bintop[i]);
 	}
+	thetaAxis = Axis(minval, bintop, binmid);
 
 
 	//===============//
@@ -445,7 +458,7 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 			//double m_zone = z[z_ind].rho * zone_lab_volume(z_ind)*gamma;
 			//double t_lep = 1.0/z_gamn[z_ind];
 			//double t_therm = m_zone*pc::k*z[z_ind].T/z_ncfn[z_ind];
-			if(z_ind%theta_out.size() == 0) outf << endl;
+			if(z_ind%thetaAxis.size() == 0) outf << endl;
 			outf << setw(width) << r[0];
 			outf << setw(width) << r[1];
 			outf << setw(width) << z_gamn[z_ind];
@@ -503,7 +516,7 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 			double zbar = abar * (z_prot[z_ind] + 2.0*z_alfa[z_ind]/4.0);
 			double ye_calculated  = zbar/abar;//total_protons / total_nucleons;
 
-			if(z_ind%theta_out.size() == 0) outf << endl;
+			if(z_ind%thetaAxis.size() == 0) outf << endl;
 			outf << setw(width) << r[0];
 			outf << setw(width) << r[1];
 			outf << setw(width) << z_atms[z_ind];
@@ -553,18 +566,27 @@ void Grid2DSphere::custom_model(Lua* lua)
 	infile >> r_zones;
 	PRINT_ASSERT(r_zones,>,0);
 	z.resize(r_zones*theta_zones);
-	r_out.resize(r_zones);
-	theta_out.resize(theta_zones);
+	vector<double> rtop(r_zones), rmid(r_zones);
+	vector<double> thetatop(theta_zones), thetamid(theta_zones);
+	double rmin, thetamin;
 
 	// read zone properties
-	infile >> r_out.min;
-	PRINT_ASSERT(r_out.min,>=,0);
-	theta_out.min = 0;
-	for(int j=0; j<theta_zones; j++) theta_out[j] = theta_out.min + (double)(j+1) * pc::pi / (double)theta_zones;
+	infile >> rmin;
+	PRINT_ASSERT(rmin,>=,0);
+	thetamin = 0;
+	for(int j=0; j<theta_zones; j++){
+		thetatop[j] = thetamin + (double)(j+1) * pc::pi / (double)theta_zones;
+		double last = j==0 ? thetamin : thetatop[j-1];
+		thetamid[j] = 0.5 * (last + thetatop[j]);
+	}
+	thetaAxis = Axis(thetamin, thetatop, thetamid);
+
 	for(int i=0; i<r_zones; i++)
 	{
-		infile >> r_out[i];
-		PRINT_ASSERT(r_out[i],>,(i==0 ? r_out.min : r_out[i-1]));
+		infile >> rtop[i];
+		double last = i==0 ? rmin : rtop[i-1];
+		rmid[i] = 0.5 * (last + rtop[i]);
+		PRINT_ASSERT(rtop[i],>,(i==0 ? rmin : rtop[i-1]));
 
 		int base_ind = zone_index(i,0);
 		infile >> z[base_ind].rho;
@@ -584,6 +606,7 @@ void Grid2DSphere::custom_model(Lua* lua)
 			z[z_ind] = z[base_ind];
 		}
 	}
+	rAxis = Axis(rmin, rtop, rmid);
 
 	infile.close();
 }
@@ -605,14 +628,14 @@ int Grid2DSphere::zone_index(const double x[3]) const
 	PRINT_ASSERT(theta,<=,pc::pi);
 
 	// check if off the boundaries
-	if(r     <  r_out.min                    ) return -1;
-	if(r     >= r_out[r_out.size()-1]        ) return -2;
-	if(theta <  theta_out.min                ) return -2;
-	if(theta >= theta_out[theta_out.size()-1]) return -2;
+	if(r     <  rAxis.min                    ) return -1;
+	if(r     >= rAxis.top[rAxis.size()-1]        ) return -2;
+	if(theta <  thetaAxis.min                ) return -2;
+	if(theta >= thetaAxis.top[thetaAxis.size()-1]) return -2;
 
 	// find in zone array using stl algorithm upper_bound and subtracting iterators
-	const int i =     r_out.locate(r    );
-	const int j = theta_out.locate(theta);
+	const int i =     rAxis.bin(r    );
+	const int j = thetaAxis.bin(theta);
 	const int z_ind = zone_index(i,j);
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
@@ -626,9 +649,9 @@ int Grid2DSphere::zone_index(const int i, const int j) const
 {
 	PRINT_ASSERT(i,>=,0);
 	PRINT_ASSERT(j,>=,0);
-	PRINT_ASSERT(i,<,(int)r_out.size());
-	PRINT_ASSERT(j,<,(int)theta_out.size());
-	const int z_ind = i*theta_out.size() + j;
+	PRINT_ASSERT(i,<,(int)rAxis.size());
+	PRINT_ASSERT(j,<,(int)thetaAxis.size());
+	const int z_ind = i*thetaAxis.size() + j;
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 	return z_ind;
 }
@@ -646,10 +669,10 @@ double Grid2DSphere::zone_lab_3volume(const int z_ind) const
 	zone_directional_indices(z_ind,dir_ind,2);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
-	const double r0     =     r_out.bottom(i);
-	const double theta0 = theta_out.bottom(j);
-	const double r1     =     r_out[i];
-	const double theta1 = theta_out[j];
+	const double r0     =     rAxis.bottom(i);
+	const double theta0 = thetaAxis.bottom(j);
+	const double r1     =     rAxis.top[i];
+	const double theta1 = thetaAxis.top[j];
 	const double vol = 2.0*pc::pi/3.0 * (cos(theta0) - cos(theta1)) * (r1*r1*r1 - r0*r0*r0);
 	PRINT_ASSERT(vol,>=,0);
 	return vol;
@@ -666,15 +689,15 @@ double Grid2DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const
 	double r = sqrt(dot_Minkowski<3>(x_up,x_up));
 	double rhat = sqrt(x_up[0]*x_up[0] + x_up[1]*x_up[1]);
 	double theta = Grid2DSphere_theta(x_up);
-	PRINT_ASSERT(r,<=,r_out[i]);
-	PRINT_ASSERT(r,>=,r_out.bottom(i));
-	PRINT_ASSERT(theta,<=,theta_out[j]);
-	PRINT_ASSERT(theta,>=,theta_out.bottom(j));
+	PRINT_ASSERT(r,<=,rAxis.top[i]);
+	PRINT_ASSERT(r,>=,rAxis.bottom(i));
+	PRINT_ASSERT(theta,<=,thetaAxis.top[j]);
+	PRINT_ASSERT(theta,>=,thetaAxis.bottom(j));
 
-	double dthetaL = r * sin(theta - theta_out.bottom(j));
-	double dthetaR = r * sin(theta_out[j] - theta);
-	double drL = r - r_out.bottom(i);
-	double drR = r_out[i] - r;
+	double dthetaL = r * sin(theta - thetaAxis.bottom(j));
+	double dthetaR = r * sin(thetaAxis.top[j] - theta);
+	double drL = r - rAxis.bottom(i);
+	double drR = rAxis.top[i] - r;
 
 	return min(dthetaL, min(dthetaR, min(drL, drR)));
 }
@@ -690,11 +713,11 @@ double Grid2DSphere::zone_min_length(const int z_ind) const
 	const unsigned j = dir_ind[1];
 
 	// the 'minimum lengts' are just approximate.
-	const double r_len     = (    r_out[i] -     r_out.bottom(i));
-	const double theta_len = sin(theta_out[j] - theta_out.bottom(j)) * r_out.bottom(i);
+	const double r_len     = (    rAxis.top[i] -     rAxis.bottom(i));
+	const double theta_len = sin(thetaAxis.top[j] - thetaAxis.bottom(j)) * rAxis.bottom(i);
 
 	// if r_in is zero, there will be problems, but simulations would not have done this.
-	if(ignore_theta_min_dist>0 || r_out.bottom(i)==0) return r_len;
+	if(ignore_theta_min_dist>0 || rAxis.bottom(i)==0) return r_len;
 	else return min(r_len, theta_len);
 }
 
@@ -704,7 +727,7 @@ double Grid2DSphere::zone_min_length(const int z_ind) const
 void Grid2DSphere::zone_coordinates(const int z_ind, double r[2], const int rsize) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)(r_out.size()*theta_out.size()));
+	PRINT_ASSERT(z_ind,<,(int)(rAxis.size()*thetaAxis.size()));
 	PRINT_ASSERT(rsize,==,2);
 
 	int dir_ind[2];
@@ -712,10 +735,10 @@ void Grid2DSphere::zone_coordinates(const int z_ind, double r[2], const int rsiz
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 
-	const double r0     =     r_out.bottom(i);
-	const double theta0 = theta_out.bottom(j);
-	r[0] = 0.5 * (r0     +     r_out[i]);
-	r[1] = 0.5 * (theta0 + theta_out[j]);
+	const double r0     =     rAxis.bottom(i);
+	const double theta0 = thetaAxis.bottom(j);
+	r[0] = 0.5 * (r0     +     rAxis.top[i]);
+	r[1] = 0.5 * (theta0 + thetaAxis.top[j]);
 }
 
 
@@ -727,12 +750,12 @@ void Grid2DSphere::zone_directional_indices(const int z_ind, int dir_ind[2], con
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 	PRINT_ASSERT(size,==,2);
-	dir_ind[0] = z_ind / theta_out.size(); // r index
-	dir_ind[1] = z_ind % theta_out.size(); // theta index
+	dir_ind[0] = z_ind / thetaAxis.size(); // r index
+	dir_ind[1] = z_ind % thetaAxis.size(); // theta index
 	PRINT_ASSERT(dir_ind[0],>=,0);
 	PRINT_ASSERT(dir_ind[1],>=,0);
-	PRINT_ASSERT(dir_ind[0],<,(int)    r_out.size());
-	PRINT_ASSERT(dir_ind[1],<,(int)theta_out.size());
+	PRINT_ASSERT(dir_ind[0],<,(int)    rAxis.size());
+	PRINT_ASSERT(dir_ind[1],<,(int)thetaAxis.size());
 }
 
 
@@ -756,10 +779,10 @@ void Grid2DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3
 	int j = dir_ind[1];
 
 	// inner and outer coordinates of shell
-	double  r0 =         r_out.bottom(i);
-	double mu0 = cos(theta_out[j]);
-	double  r1 =         r_out[i];
-	double mu1 = cos(theta_out.bottom(j));
+	double  r0 =         rAxis.bottom(i);
+	double mu0 = cos(thetaAxis.top[j]);
+	double  r1 =         rAxis.top[i];
+	double mu1 = cos(thetaAxis.bottom(j));
 	PRINT_ASSERT(mu1,>,mu0);
 
 	// sample radial position in shell using a probability integral transform
@@ -852,7 +875,7 @@ void Grid2DSphere::write_rays(int iw) const
 	outf.open(filename.c_str());
 	write_header(outf);
 	j = 0;
-	for(i=0; i<r_out.size(); i++){
+	for(i=0; i<rAxis.size(); i++){
 		int z_ind = zone_index(i,j);
 		zone_coordinates(z_ind,r,2);
 		write_line(outf,z_ind);
@@ -863,8 +886,8 @@ void Grid2DSphere::write_rays(int iw) const
 	filename = Transport::filename("ray_t.5",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
-	j = theta_out.size()/2;
-	for(i=0; i<r_out.size(); i++){
+	j = thetaAxis.size()/2;
+	for(i=0; i<rAxis.size(); i++){
 		int z_ind = zone_index(i,j);
 		zone_coordinates(z_ind,r,2);
 		write_line(outf,z_ind);
@@ -875,8 +898,8 @@ void Grid2DSphere::write_rays(int iw) const
 	filename = Transport::filename("ray_t1",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
-	j = theta_out.size()-1;
-	for(i=0; i<r_out.size(); i++){
+	j = thetaAxis.size()-1;
+	for(i=0; i<rAxis.size(); i++){
 		int z_ind = zone_index(i,j);
 		zone_coordinates(z_ind,r,2);
 		write_line(outf,z_ind);
@@ -887,8 +910,8 @@ void Grid2DSphere::write_rays(int iw) const
 	filename = Transport::filename("ray_r.5",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
-	i = r_out.size()/2;
-	for(j=0; j<theta_out.size(); j++){
+	i = rAxis.size()/2;
+	for(j=0; j<thetaAxis.size(); j++){
 		int z_ind = zone_index(i,j);
 		zone_coordinates(z_ind,r,2);
 		write_line(outf,z_ind);
@@ -913,7 +936,7 @@ double Grid2DSphere::zone_radius(const int z_ind) const{
 	zone_directional_indices(z_ind,dir_ind,2);
 	int i = dir_ind[0];
 
-	return r_out[i];
+	return rAxis.top[i];
 }
 
 //-----------------------------
@@ -921,8 +944,8 @@ double Grid2DSphere::zone_radius(const int z_ind) const{
 //-----------------------------
 void Grid2DSphere::dims(hsize_t dims[2], const int size) const{
 	PRINT_ASSERT(size,==,(int)dimensionality());
-	dims[0] = r_out.size();
-	dims[1] = theta_out.size();
+	dims[0] = rAxis.size();
+	dims[1] = thetaAxis.size();
 }
 
 //----------------------------------------------------
@@ -943,8 +966,8 @@ void Grid2DSphere::write_hdf5_coordinates(H5::H5File file) const
 	float tmp0[coord_dims[0]];
 	dataspace = H5::DataSpace(1,&coord_dims[0]);
 	dataset = file.createDataSet("grid_r(cm)",H5::PredType::IEEE_F32LE,dataspace);
-	tmp0[0] = r_out.min;
-	for(unsigned i=1; i<r_out.size()+1; i++) tmp0[i] = r_out[i-1];
+	tmp0[0] = rAxis.min;
+	for(unsigned i=1; i<rAxis.size()+1; i++) tmp0[i] = rAxis.top[i-1];
 	dataset.write(&tmp0[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 
@@ -952,8 +975,8 @@ void Grid2DSphere::write_hdf5_coordinates(H5::H5File file) const
 	float tmp1[coord_dims[1]];
 	dataspace = H5::DataSpace(1,&coord_dims[1]);
 	dataset = file.createDataSet("grid_theta(radians)",H5::PredType::IEEE_F32LE,dataspace);
-	tmp1[0] = theta_out.min;
-	for(unsigned i=1; i<theta_out.size()+1; i++) tmp1[i] = theta_out[i-1];
+	tmp1[0] = thetaAxis.min;
+	for(unsigned i=1; i<thetaAxis.size()+1; i++) tmp1[i] = thetaAxis.top[i-1];
 	dataset.write(&tmp1[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 }

@@ -45,8 +45,8 @@ class Grid2DSphere: public Grid
 private:
 	// store location of the outer edges of the zone.
 	// order of zone array: r is increased fastest
-	LocateArray r_out;
-	LocateArray theta_out;
+	Axis rAxis;
+	Axis thetaAxis;
 	int ignore_theta_min_dist;
 
 public:
