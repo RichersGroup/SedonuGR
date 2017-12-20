@@ -75,6 +75,10 @@ public:
 	// the numbers of species this represents
 	double weight;
 
+	// core properties
+	double T_core, mu_core;
+	double core_lum_multiplier;
+
 	// this species' spectrum
 	PolarSpectrumArray spectrum;
 

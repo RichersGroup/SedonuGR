@@ -61,9 +61,9 @@ max_time_hours = -1
 
 r_core = 9.99999e5
 core_emit_method = 1
-T_core = 10
-core_nue_chem_pot = 10
-core_lum_multiplier = 1.0
+T_core = {10,10,10}
+core_chem_pot = {10,-10,0}
+core_lum_multiplier = {1.0,1.0,1.0}
 
 -- General Controls
 

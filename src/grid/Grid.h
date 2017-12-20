@@ -96,7 +96,6 @@ public:
 	LocateArray nu_grid;
 
 	Axis nu_grid_axis;
-	vector<MultiDInterface*> core_emis;
 
 	// set everything up
 	virtual void init(Lua* lua);

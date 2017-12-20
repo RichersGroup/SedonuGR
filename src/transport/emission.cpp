@@ -203,13 +203,25 @@ void Transport::create_surface_particle(const double weight, const unsigned int 
 	PRINT_ASSERT(plab.s,<,(int)species_list.size());
 
 	// sample the frequency
-	double nu_min = grid->nu_grid_axis.bottom(g);
-	double nu_max = grid->nu_grid_axis.top[g];
-	double nu = rangen.uniform(nu_min, nu_max);
-	PRINT_ASSERT(nu,>,0);
-	plab.N = grid->core_emis[plab.s]->interpolate(&nu,&g) * weight * grid->nu_grid_axis.delta3(g)/3.0;
+	double nu3_min = pow(grid->nu_grid_axis.bottom(g), 3);
+	double nu3_max = pow(grid->nu_grid_axis.top[g],    3);
+	double nu3 = rangen.uniform(nu3_min, nu3_max);
+	double nu = pow(nu3, 1./3.);
 	plab.kup[3] = nu / pc::c * 2.0*pc::pi;
 	for(int i=0; i<3; i++) plab.kup[i] = D[i] * plab.kup[3];
+
+	//get the number of neutrinos in the particle
+	double T = species_list[s]->T_core;
+	double mu = species_list[s]->mu_core;
+	double multiplier = species_list[s]->core_lum_multiplier * species_list[s]->weight;
+	PRINT_ASSERT(nu,>,0);
+	plab.N = number_blackbody(T,mu,nu)   // #/s/cm^2/sr/(Hz^3/3)
+			* 1                          //   s
+			* (4.0*pc::pi*r_core*r_core) //     cm^2
+			* pc::pi                     //          sr
+			* grid->nu_grid_axis.delta3(g)/3.0 //        Hz^3/3
+			* multiplier                 // overall scaling
+			* weight;                    // 1/number of samples
 
 	// set up LorentzHelper
 	LorentzHelper lh(exponential_decay);

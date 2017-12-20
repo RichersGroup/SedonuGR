@@ -46,6 +46,9 @@ Species::Species(){
 	sim = NULL;
 	ID = MAXLIM;
 	nu_grid=NULL;
+	T_core = NaN;
+	mu_core = NaN;
+	core_lum_multiplier = NaN;
 }
 
 void Species::init(Lua* lua, Transport* simulation)

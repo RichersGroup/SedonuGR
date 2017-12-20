@@ -77,7 +77,6 @@ Transport::Transport(){
 	grid = NULL;
 	r_core = NaN;
 	n_emit_core_per_bin = -MAXLIM;
-	core_lum_multiplier = NaN;
 	do_visc = -MAXLIM;
 	do_relativity = -MAXLIM;
 	n_emit_zones_per_bin = -MAXLIM;
@@ -296,10 +295,17 @@ void Transport::init(Lua* lua)
 	if(rank0) cout << "# Initializing the core...";
 	r_core = lua->scalar<double>("r_core");   // cm
 	if(n_emit_core_per_bin>0){
-		core_lum_multiplier = lua->scalar<double>("core_lum_multiplier");
-		double T_core = lua->scalar<double>("T_core") / pc::k_MeV;    // K
-		double munue_core = lua->scalar<double>("core_nue_chem_pot") * pc::MeV_to_ergs; // erg
-		init_core(r_core, T_core, munue_core);
+		vector<double> core_lum_multiplier = lua->vector<double>("core_lum_multiplier");
+		vector<double> T_core = lua->vector<double>("T_core");
+		vector<double> mu_core = lua->vector<double>("core_chem_pot");
+		PRINT_ASSERT(core_lum_multiplier.size(),==,species_list.size());
+		PRINT_ASSERT(T_core.size(),==,species_list.size());
+		PRINT_ASSERT(mu_core.size(),==,species_list.size());
+		for(unsigned s=0; s<species_list.size(); s++){
+			species_list[s]->core_lum_multiplier = core_lum_multiplier[s];
+			species_list[s]->T_core = T_core[s] / pc::k_MeV;    // K;
+			species_list[s]->mu_core = mu_core[s] * pc::MeV_to_ergs; // erg;
+		}
 	}
 	if(rank0) cout << "finished." << endl;
 
@@ -324,33 +330,6 @@ void Transport::init(Lua* lua)
 	particle_rouletted_energy = 0;
 	particle_escape_energy = 0;
 }
-
-void Transport::init_core(const double r_core /*cm*/, const double T_core /*K*/, const double munue_core /*erg*/){
-	PRINT_ASSERT(n_emit_core_per_bin,>,0);
-	PRINT_ASSERT(r_core,>,0);
-	PRINT_ASSERT(T_core,>,0);
-	PRINT_ASSERT(species_list.size(),>,0);
-
-	// set up core emission spectrum function (erg/s)
-	grid->core_emis.resize(species_list.size());
-	vector<Axis*> axes({&grid->nu_grid_axis});
-	for(unsigned s=0; s<species_list.size(); s++){
-		grid->core_emis[s] = new MultiDArray<1>(axes);
-		double chempot = munue_core * (double)species_list[s]->lepton_number; // erg
-		for(unsigned g=0; g<grid->nu_grid.size(); g++){
-			double nu = grid->nu_grid_axis.mid[g];
-			double nu3L = pow(grid->nu_grid_axis.bottom(g),3);
-			double nu3R = pow(grid->nu_grid_axis.top[g],3);
-			double dnu3_3 = (nu3R-nu3L)/3.0;
-			double integrated_bb = number_blackbody(T_core,chempot,nu);
-			integrated_bb *= (4.0*pc::pi*r_core*r_core);                    // surface area
-			integrated_bb *= species_list[s]->weight * core_lum_multiplier; // scaling overall luminosity
-			integrated_bb *= pc::pi;                                        // steradians
-			grid->core_emis[s]->set(&g, integrated_bb);
-		}
-	}
-}
-
 
 void Transport::check_parameters() const{
 	if(use_scattering_kernels && randomwalk_sphere_size>0)
