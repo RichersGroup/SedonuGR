@@ -168,25 +168,7 @@ double temp_eq_function(double T, void *params)
 	if(sim->do_visc) E_absorbed += sim->zone_comoving_visc_heat_rate(z_ind) / sim->grid->zone_4volume(z_ind);
 
 	// total energy emitted (to be calculated based on emissivities)
-	double E_emitted = 0.;
-
-	// set the zone temperature
-	sim->grid->z[z_ind].T = T;
-
-	// include the emission from all species
-	for(unsigned i=0; i<sim->species_list.size(); i++)
-	{
-		// reset the eas variables in this zone
-		// TODO OPTIMIZE - only set the emissivity variable
-		sim->species_list[i]->set_eas(z_ind);
-
-		// integrate emission over frequency (angle
-		// integration gives the 4*PI) to get total
-		// radiation energy emitted. Opacities are
-		// held constant for this (assumed not to change
-		// much from the last time step).
-		E_emitted += 4.0*pc::pi * sim->species_list[i]->integrate_zone_emis(z_ind);
-	}
+	double E_emitted = sim->grid->z[z_ind].e_emit;
 
 	// radiative equillibrium condition: "emission equals absorbtion"
 	// return to Brent function to iterate this to zero
@@ -217,26 +199,7 @@ double Ye_eq_function(double Ye, void *params)
 	// total energy absorbed in zone
 	double l_absorbed = sim->grid->z[z_ind].nue_abs - sim->grid->z[z_ind].anue_abs;
 	// total energy emitted (to be calculated)
-	double l_emitted = 0.;
-
-	// set the zone temperature
-	sim->grid->z[z_ind].Ye = Ye;
-
-	// include the emission from all species
-	for(unsigned i=0; i<sim->species_list.size(); i++) if(sim->species_list[i]->lepton_number!=0)
-	{
-		// reset the eas variables in this zone
-		// OPTIMIZE - only set the emissivity variable
-		sim->species_list[i]->set_eas(z_ind);
-
-		// integrate emissison over frequency (angle
-		// integration gives the 4*PI) to get total
-		// radiation energy emitted. Opacities are
-		// held constant for this (assumed not to change
-		// much from the last time step).
-		// minus sign since integrate_zone_lepton_emis will return a negative number
-		l_emitted += 4.0*pc::pi * sim->species_list[i]->integrate_zone_lepton_emis(z_ind);
-	}
+	double l_emitted = sim->grid->z[z_ind].l_emit;
 
 	// radiative equillibrium condition: "emission equals absorbtion"
 	// return to Brent function to iterate this to zero

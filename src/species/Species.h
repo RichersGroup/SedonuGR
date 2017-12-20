@@ -90,13 +90,6 @@ public:
 	// set a CDF to blackbody distribution
 	void set_cdf_to_BB(const double T, const double chempot, CDFArray& emis);
 
-	// return the emissivity integrated over frequency at the core
-	double integrate_core_emis() const; //(erg/s)
-
-	// return the emissivity integrated over frequency at a zone
-	double integrate_zone_emis(const int zone_index) const;        //(erg/s/cm^3/ster)
-	double integrate_zone_lepton_emis(const int zone_index) const; //unitless
-
 	// scattering kernel sampling
 	void sample_scattering_final_state(const int z_ind, LorentzHelper& lh, const double cosTheta) const;
 

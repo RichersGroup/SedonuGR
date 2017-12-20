@@ -250,37 +250,6 @@ void Species::set_cdf_to_BB(const double T, const double chempot, CDFArray& emis
 }
 
 
-//----------------------------------------------------------------
-// return the emissivity integrated over nu for the core (erg/s)
-//----------------------------------------------------------------
-double Species::integrate_core_emis() const
-{
-	return core_emis.N;
-}
-
-//----------------------------------------------------------------
-// return the emissivity integrated over nu for a zone (erg/s/ster/cm^3)
-//----------------------------------------------------------------
-double Species::integrate_zone_emis(const int zone_index) const
-{
-	return emis[zone_index].N;
-}
-
-
-//----------------------------------------------------------------
-// return the lepton emissivity integrated over nu for a zone (#/s/ster/cm^3)
-// ASSUMES linear cdf sampling*
-//----------------------------------------------------------------
-double Species::integrate_zone_lepton_emis(const int zone_index) const
-{
-	double l_emis = 0;
-	for(unsigned i=0; i<emis[zone_index].size(); i++)
-	{
-		l_emis += lepton_number * emis[zone_index].get_value(i) / (pc::h*nu_grid->x[i]);
-	}
-	return l_emis * emis[zone_index].N;
-}
-
 //-----------------------------------------------------------------
 // get opacity at the frequency
 //-----------------------------------------------------------------

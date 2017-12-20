@@ -362,7 +362,7 @@ void Transport::init_core(const double r_core /*cm*/, const vector<double>& T_co
 	for(unsigned s=0; s<species_list.size(); s++){
 		species_list[s]->set_cdf_to_BB(T_core[s],mu_core[s],species_list[s]->core_emis);
 		species_list[s]->core_emis.N = L_core[s]; //erg/s
-		core_species_luminosity.set_value(s,species_list[s]->integrate_core_emis());
+		core_species_luminosity.set_value(s,species_list[s]->core_emis.N);
 	}
 	core_species_luminosity.normalize();
 }
@@ -378,7 +378,7 @@ void Transport::init_core(const double r_core /*cm*/, const double T_core /*K*/,
 		double chempot = munue_core * (double)species_list[s]->lepton_number; // erg
 		species_list[s]->set_cdf_to_BB(T_core, chempot, species_list[s]->core_emis);
 		species_list[s]->core_emis.N *= pc::pi * (4.0*pc::pi*r_core*r_core) * species_list[s]->weight * core_lum_multiplier; // erg/s
-		core_species_luminosity.set_value(s, species_list[s]->integrate_core_emis());
+		core_species_luminosity.set_value(s, species_list[s]->core_emis.N);
 	}
 	core_species_luminosity.normalize();
 }
