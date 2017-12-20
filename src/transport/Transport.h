@@ -61,18 +61,15 @@ protected:
 	void emit_particles();
 
 	// emit from where?
-	void emit_inner_source();
-	void emit_zones();
 	void emit_inner_source_by_bin();
 	void emit_zones_by_bin();
 
 	// what kind of particle to create?
-	void create_surface_particle(const double Ep, const int s=-1, const int g=-1);
-	void create_thermal_particle(const int zone_index, const double Ep, const int s=-1, const int g=-1);
+	void create_surface_particle(const double Ep, const int s, const int g);
+	void create_thermal_particle(const int zone_index, const int s, const int g);
 
 	// species sampling functions
 	int sample_core_species() const;
-	int sample_zone_species(const int zone_index, double *Ep) const;
 
 	// transformation functions
 	void get_opacity(LorentzHelper *lh, const int z_ind) const;
@@ -89,7 +86,6 @@ protected:
 	void scatter(LorentzHelper *lh, int *z_ind) const;
 	void random_walk(LorentzHelper *lh, const double Rcom, const double D, const int z_ind) const;
 	void init_randomwalk_cdf(Lua* lua);
-	void re_emit(LorentzHelper *lh, const int z_ind) const;
 	void window(LorentzHelper *lh, const int z_ind);
 
 	// solve for temperature and Ye (if steady_state)
@@ -109,7 +105,6 @@ protected:
 	// simulation parameters
 	double step_size;
 	int    do_annihilation;
-	int    radiative_eq;
 	int    rank0;
 	int    exponential_decay;
 
@@ -166,7 +161,6 @@ public:
 
 	// items for core emission
 	double r_core;
-	int n_emit_core;
 	int n_emit_core_per_bin;
 	double core_lum_multiplier;
 	int core_emit_method;
@@ -178,13 +172,11 @@ public:
 	int do_visc;
 	int do_relativity;
 	int use_scattering_kernels;
-	int n_emit_zones;
 	int n_emit_zones_per_bin;
 	double visc_specific_heat_rate;
 
 	// how many times do we emit+propagate each timestep?
 	int n_subcycles;
-	int do_emit_by_bin;
 
 	// global radiation quantities
 	std::vector<double> N_core_lab;
@@ -212,11 +204,6 @@ public:
 
 	// per-zone luminosity functions
 	double zone_comoving_visc_heat_rate(const int zone_index) const;
-	double zone_comoving_therm_emit_energy (const int zone_index) const;
-	double zone_comoving_therm_emit_leptons(const int zone_index) const;
-	double zone_comoving_biased_therm_emit_energy(const int z_ind) const;
-	double bin_comoving_therm_emit_energy(const int z_ind, const int s, const int g) const;
-
 };
 
 #endif

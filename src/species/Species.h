@@ -40,7 +40,7 @@ class Transport;
 class Species
 {
 
-protected:
+public:
 
 	// the zone eas variables
 	std::vector< CDFArray      > emis;
@@ -100,7 +100,7 @@ public:
 	// return the frequency of a particle emitted from the core or a zone (Hz)
 	double sample_core_nu(const int g=-1) const;
 	double sample_nu(const CDFArray& input_emis, const int g=-1) const;
-	double sample_zone_nu(const int zone_index, double *Ep, const int g=-1) const;
+	double sample_zone_nu(const int zone_index, const int g=-1) const;
 
 	// scattering kernel sampling
 	void sample_scattering_final_state(const int z_ind, LorentzHelper& lh, const double cosTheta) const;

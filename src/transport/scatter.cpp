@@ -44,17 +44,9 @@ void Transport::event_interact(LorentzHelper* lh, int *z_ind){
 	PRINT_ASSERT(lh->p_N(),>,0);
 	PRINT_ASSERT(lh->p_fate(),==,moving);
 
-	// absorb the particle and let the fluid re-emit another particle
-	if(radiative_eq){
-		re_emit(lh,*z_ind);
-		N_net_lab[lh->p_s()] += lh->p_N();
-	}
-
 	// absorb part of the packet
-	else{
-		if(!exponential_decay) lh->scale_p_number(1.0 - lh->abs_fraction());
-		scatter(lh, z_ind);
-	}
+	if(!exponential_decay) lh->scale_p_number(1.0 - lh->abs_fraction());
+	scatter(lh, z_ind);
 
 	// resample the path length
 	if(lh->p_fate()==moving) lh->set_p_tau(sample_tau(&rangen));
@@ -102,31 +94,6 @@ void Transport::window(LorentzHelper *lh, const int z_ind){
 		cout << "particles.size(): " << particles.size() << endl;
 		cout << "WARNING: max_particles is too small to allow splitting." << endl;
 	}
-}
-
-// re-emission, done in COMOVING frame
-void Transport::re_emit(LorentzHelper *lh, const int z_ind) const{
-	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
-
-	//double Ep = lh->p_e(com);
-	Particle p = lh->particle_copy(com);
-
-	// reset the particle properties
-	p.s = sample_zone_species(z_ind,&p.N);
-	double nu = species_list[p.s]->sample_zone_nu(z_ind,&p.N);
-	grid->isotropic_kup_tet(nu,p.kup,lh->p_xup(),&rangen);
-
-	// set the LorentzHelper
-	lh->set_p<com>(&p);
-
-	// tally into zone's emitted energy
-	grid->z[z_ind].e_emit += lh->p_N() * lh->p_nu()*pc::h;
-
-	// sanity checks
-	PRINT_ASSERT(lh->p_nu(),>,0);
-	PRINT_ASSERT(lh->p_s(),>=,0);
-	PRINT_ASSERT(lh->p_s(),<,(int)species_list.size());
 }
 
 // choose which type of scattering event to do

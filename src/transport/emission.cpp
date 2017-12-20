@@ -40,10 +40,8 @@ namespace pc = physical_constants;
 void Transport::emit_particles()
 {
 	// complain if we're out of room for particles
-	assert(n_emit_core  >= 0 || n_emit_zones >= 0 || n_emit_core_per_bin>0 || n_emit_zones_per_bin>=0);
-	int n_emit = do_emit_by_bin ?
-			(n_emit_core_per_bin + n_emit_zones_per_bin*grid->z.size()) * species_list.size()*number_of_bins() :
-			n_emit_core + n_emit_zones;
+	assert(n_emit_core_per_bin>0 || n_emit_zones_per_bin>=0);
+	int n_emit = (n_emit_core_per_bin + n_emit_zones_per_bin*grid->z.size()) * species_list.size()*number_of_bins();
 	if (total_particles() + n_emit > max_particles){
 		if(rank0){
 			cout << "Total particles: " << total_particles() << endl;
@@ -57,14 +55,8 @@ void Transport::emit_particles()
 
 	// emit from the core and/or the zones
 	if(verbose && rank0) cout << "# Emitting particles..." << endl;
-	if(do_emit_by_bin){
-		if(n_emit_core_per_bin>0)  emit_inner_source_by_bin();
-		if(n_emit_zones_per_bin>0) emit_zones_by_bin();
-	}
-	else{
-		if(n_emit_core>0)  emit_inner_source();
-		if(n_emit_zones>0) emit_zones();
-	}
+	if(n_emit_core_per_bin>0)  emit_inner_source_by_bin();
+	if(n_emit_zones_per_bin>0) emit_zones_by_bin();
 }
 
 //------------------------------------------------------------
@@ -92,20 +84,6 @@ void Transport::emit_inner_source_by_bin(){
 	if(verbose && rank0) cout << "#   emit_inner_source_by_bin() created = " << n_created << " particles on rank 0 ("
 			<< n_attempted-n_created << " rouletted during emission)" << endl;
 }
-void Transport::emit_inner_source()
-{
-	PRINT_ASSERT(r_core,>,0);
-	PRINT_ASSERT(core_species_luminosity.N,>,0);
-	int size_before = particles.size();
-	const double Ep  = core_species_luminosity.N / (double)n_emit_core; // assume lab_dt = 1.0
-
-	#pragma omp parallel for
-	for (int i=0; i<n_emit_core; i++) create_surface_particle(Ep);
-
-	int n_created = particles.size()-size_before;
-	if(verbose && rank0) cout << "#   emit_inner_source() created " << particles.size()-size_before << " particles on rank 0 ("
-			<< n_emit_core << " rouletted immediately)" << endl;
-}
 
 
 //--------------------------------------------------------------------------
@@ -121,143 +99,19 @@ void Transport::emit_zones_by_bin(){
 		for(unsigned s=0; s<species_list.size(); s++){
 			n_attempted += n_emit_zones_per_bin * species_list[s]->number_of_bins();
 			for(unsigned g=0; g<species_list[s]->number_of_bins(); g++){
-				double bin_Ep = bin_comoving_therm_emit_energy(z_ind, s, g)/n_emit_zones_per_bin;
-				if(bin_Ep>0) for(int k=0; k<n_emit_zones_per_bin; k++)
-					create_thermal_particle(z_ind,bin_Ep,s,g);
+				for(int k=0; k<n_emit_zones_per_bin; k++)
+					create_thermal_particle(z_ind,s,g);
 			}
 		}
 
 		// record emissivity
-		#pragma omp atomic
-		grid->z[z_ind].e_emit += zone_comoving_therm_emit_energy(z_ind);
-		#pragma omp atomic
-		grid->z[z_ind].l_emit += zone_comoving_therm_emit_leptons(z_ind);
 	}
 
 	int n_created = particles.size() - size_before;
 	if(verbose && rank0) cout << "#   emit_zones_by_bin() created " << n_created << " particles on rank 0 ("
 			<< n_attempted-n_created << " rouletted immediately)" << endl;
 }
-void Transport::emit_zones(){
-	double tmp_net_energy = 0;
-	int size_before = particles.size();
-	int n_attempted = 0;
 
-	// determine the net luminosity of each emission type over the whole grid
-	// proper normalization due to frames not physical - just for distributing particles somewhat reasonably
-	#pragma omp parallel for reduction(+:tmp_net_energy)
-	for(unsigned z_ind=0; z_ind<grid->z.size(); z_ind++){
-		double com_biased_emit_energy = zone_comoving_biased_therm_emit_energy(z_ind);
-		tmp_net_energy += com_biased_emit_energy;
-	}
-	PRINT_ASSERT(tmp_net_energy,>,0);
-
-	// actually emit the particles in each zone
-	#pragma omp parallel for schedule(guided) reduction(+:n_attempted)
-	for (unsigned z_ind=0; z_ind<grid->z.size(); z_ind++) if(grid->zone_radius(z_ind) >= r_core)
-	{
-		double com_biased_emit_energy = zone_comoving_biased_therm_emit_energy(z_ind);
-		double com_emit_energy = zone_comoving_biased_therm_emit_energy(z_ind);
-
-		// how much this zone emits. Always emits correct energy even if number of particles doesn't add up.
-		// randomly emit additional particle based on remainder of allocation after emitting an integer number of packets
-		if(com_biased_emit_energy>0){
-			double this_zones_share = (double)n_emit_zones * (com_biased_emit_energy / tmp_net_energy);
-			unsigned this_n_emit = (unsigned)this_zones_share; // truncate.
-			double remainder = this_zones_share - (double)this_n_emit;
-			PRINT_ASSERT(remainder,<,1.0);
-			PRINT_ASSERT(remainder,>=,0.0);
-
-			if(rangen.uniform()<remainder) this_n_emit += 1;
-			double Ep = com_emit_energy / (double)this_n_emit;
-			if(this_n_emit>0){
-				PRINT_ASSERT(Ep,>,0);
-
-				// keep emitted energy statistically constant
-				if(this_zones_share<1){
-					PRINT_ASSERT(this_n_emit,==,1);
-					Ep /= this_zones_share;
-				}
-			}
-
-			for (unsigned k=0; k<this_n_emit; k++) create_thermal_particle(z_ind,Ep);
-			n_attempted += this_n_emit;
-		}
-
-		// record emissivity
-		#pragma omp atomic
-		grid->z[z_ind].e_emit += com_biased_emit_energy;
-		#pragma omp atomic
-		grid->z[z_ind].l_emit += zone_comoving_therm_emit_leptons(z_ind);
-	}// loop over zones
-
-	int n_created = particles.size() - size_before;
-	if(verbose && rank0) cout << "#   emit_zones() created " << n_created << " particles on rank 0 ("
-			<< n_emit_zones - n_created << " rouletted immediately)" << endl;
-}
-
-
-
-//----------------------------------------------------------------------------------------
-// Helper functions for emit_zones
-//----------------------------------------------------------------------------------------
-
-// return the cell's luminosity from thermal emission (erg/s, comoving frame)
-double Transport::zone_comoving_therm_emit_energy(const int z_ind) const{
-	if(z_ind<0) return 0;
-	else if(grid->zone_radius(z_ind) < r_core) return 0; // don't emit within core
-	else{
-		double H=0;
-		double four_vol = grid->zone_4volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
-		for(unsigned i=0; i<species_list.size(); i++){
-			double species_lum = species_list[i]->integrate_zone_emis(z_ind) * 4*pc::pi * four_vol;
-			PRINT_ASSERT(species_lum,>=,0);
-			H += species_lum;
-		}
-		PRINT_ASSERT(H,>=,0);
-		return H;
-	}
-}
-double Transport::zone_comoving_biased_therm_emit_energy(const int z_ind) const{
-	if(z_ind<0) return 0;
-	else if(grid->zone_radius(z_ind) < r_core) return 0; // don't emit within core
-	else{
-		double H=0;
-		double four_vol = grid->zone_4volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
-		for(unsigned i=0; i<species_list.size(); i++){
-			double species_lum = species_list[i]->integrate_zone_emis(z_ind) * 4*pc::pi * four_vol;
-			PRINT_ASSERT(species_lum,>=,0);
-			H += species_lum;
-		}
-		PRINT_ASSERT(H,>=,0);
-		return H;
-	}
-}
-double Transport::bin_comoving_therm_emit_energy(const int z_ind, const int s, const int g) const{
-	if(z_ind<0) return 0;
-	else if(grid->zone_radius(z_ind) < r_core) return 0; // don't emit within core
-	else{
-		double four_vol = grid->zone_4volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
-		double H = species_list[s]->bin_emis(z_ind,g) * 4*pc::pi * four_vol;
-		PRINT_ASSERT(H,>=,0);
-		return H;
-	}
-
-}
-
-// return the cell's luminosity from thermal emission (erg/s, comoving frame)
-double Transport::zone_comoving_therm_emit_leptons(const int z_ind) const{
-	if(z_ind<0) return 0;
-	else{
-		double L=0;
-		double four_vol = grid->zone_4volume(z_ind); //relativistic invariant - same in comoving frame. Assume lab_dt=1.0
-		for(unsigned i=0; i<species_list.size(); i++){
-			double species_lum = species_list[i]->integrate_zone_lepton_emis(z_ind) * 4*pc::pi * four_vol;
-			L += species_lum;
-		}
-		return L;
-	}
-}
 
 //------------------------------------------------------------
 // General function to create a particle in zone i
@@ -265,15 +119,13 @@ double Transport::zone_comoving_therm_emit_leptons(const int z_ind) const{
 // Useful for thermal radiation emitted all througout
 // the grid
 //------------------------------------------------------------
-void Transport::create_thermal_particle(const int z_ind, const double Ep, const int s, const int g)
+void Transport::create_thermal_particle(const int z_ind,const int s, const int g)
 {
-	PRINT_ASSERT(Ep,>,0);
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
 
 	Particle pcom;
 	pcom.fate = moving;
-	double e = Ep;
 
 	// random sample position in zone
 	grid->sample_in_zone(z_ind,&rangen,pcom.xup);
@@ -284,13 +136,13 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 	grid->interpolate_fluid_velocity(pcom.xup,v,z_ind);
 
 	// species
-	pcom.s = s>=0 ? s : sample_zone_species(z_ind,&e);
+	pcom.s = s;
 	PRINT_ASSERT(pcom.s,>=,0);
 	PRINT_ASSERT(pcom.s,<,(int)species_list.size());
 
 	// frequency
-	double nu = species_list[pcom.s]->sample_zone_nu(z_ind,&e,g);
-	pcom.N = e / (nu*pc::h);
+	double nu = species_list[pcom.s]->sample_zone_nu(z_ind,g);
+	pcom.N = species_list[pcom.s]->emis[z_ind].get_value(g) / (nu*pc::h);
 
 	// emit isotropically in comoving frame
 	grid->isotropic_kup_tet(nu,pcom.kup,pcom.xup,&rangen);
@@ -316,6 +168,10 @@ void Transport::create_thermal_particle(const int z_ind, const double Ep, const 
 		// count up the emitted energy in each zone
 		#pragma omp atomic
 		N_net_lab[lh.p_s()] += lh.p_N();
+		#pragma omp atomic
+		grid->z[z_ind].e_emit += lh.p_N() * pc::k*lh.p_nu();
+		#pragma omp atomic
+		grid->z[z_ind].l_emit += lh.p_N();
 	}
 }
 

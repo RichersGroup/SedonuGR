@@ -122,7 +122,7 @@ void Species::init(Lua* lua, Transport* simulation)
 	}
 
 	// allocate space for each eas spectrum
-	if(sim->n_emit_core>0 || sim->n_emit_core_per_bin>0) core_emis.resize(nu_grid->size());
+	if(sim->n_emit_core_per_bin>0) core_emis.resize(nu_grid->size());
 	int iorder = lua->scalar<int>("cdf_interpolation_order");
     //#pragma omp parallel for
 	for(unsigned i=0; i<abs_opac.size();  i++){
@@ -259,7 +259,7 @@ double Species::sample_core_nu(const int g) const
 	PRINT_ASSERT(nu_grid->min,>=,0);
 	return sample_nu(core_emis);
 }
-double Species::sample_zone_nu(const int zone_index, double *Ep, const int g) const
+double Species::sample_zone_nu(const int zone_index, const int g) const
 {
 	PRINT_ASSERT(nu_grid->min,>=,0);
 	double nu = sample_nu(emis[zone_index],g);

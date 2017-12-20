@@ -73,21 +73,17 @@ Transport::Transport(){
 	min_packet_number = NaN;
 	max_packet_number = NaN;
 	do_annihilation = -MAXLIM;
-	radiative_eq = -MAXLIM;
 	rank0 = -MAXLIM;
 	grid = NULL;
 	r_core = NaN;
 	core_emit_method=-MAXLIM;
-	n_emit_core = -MAXLIM;
 	n_emit_core_per_bin = -MAXLIM;
 	core_lum_multiplier = NaN;
 	do_visc = -MAXLIM;
 	do_relativity = -MAXLIM;
-	n_emit_zones = -MAXLIM;
 	n_emit_zones_per_bin = -MAXLIM;
 	visc_specific_heat_rate = NaN;
 	n_subcycles = -MAXLIM;
-	do_emit_by_bin = -MAXLIM;
 	write_rays_every = -MAXLIM;
 	write_spectra_every = -MAXLIM;
 	write_zones_every = -MAXLIM;
@@ -131,22 +127,14 @@ void Transport::init(Lua* lua)
 	if(do_visc) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");
 	n_subcycles = lua->scalar<int>("n_subcycles");
 	PRINT_ASSERT(n_subcycles,>=,1);
-	do_emit_by_bin = lua->scalar<int>("do_emit_by_bin");
-	if(do_emit_by_bin){
-		n_emit_zones_per_bin = lua->scalar<int>("n_emit_therm_per_bin");
-		n_emit_core_per_bin  = lua->scalar<int>("n_emit_core_per_bin");
-	}
-	else{
-		n_emit_zones = lua->scalar<int>("n_emit_therm");
-		n_emit_core  = lua->scalar<int>("n_emit_core");
-	}
+	n_emit_zones_per_bin = lua->scalar<int>("n_emit_therm_per_bin");
+	n_emit_core_per_bin  = lua->scalar<int>("n_emit_core_per_bin");
 
 	// read simulation parameters
 	exponential_decay = lua->scalar<int>("exponential_decay");
 	use_scattering_kernels = lua->scalar<int>("use_scattering_kernels");
 	verbose      = lua->scalar<int>("verbose");
 	do_annihilation = lua->scalar<int>("do_annihilation");
-	radiative_eq = lua->scalar<int>("radiative_eq");
 	equilibrium_T       = lua->scalar<int>("equilibrium_T");
 	equilibrium_Ye      = lua->scalar<int>("equilibrium_Ye");
 	if(equilibrium_T || equilibrium_Ye){
@@ -307,7 +295,7 @@ void Transport::init(Lua* lua)
 	//=================//
 	if(rank0) cout << "# Initializing the core...";
 	r_core = lua->scalar<double>("r_core");   // cm
-	if(n_emit_core>0 || n_emit_core_per_bin>0){
+	if(n_emit_core_per_bin>0){
 		core_emit_method = lua->scalar<int>("core_emit_method");
 		PRINT_ASSERT(core_emit_method==1,||,core_emit_method==2);
 		int iorder = lua->scalar<int>("cdf_interpolation_order");
@@ -365,7 +353,7 @@ void Transport::init(Lua* lua)
 // set up core (without reading lua)
 //-----------------------------------
 void Transport::init_core(const double r_core /*cm*/, const vector<double>& T_core /*K*/, const vector<double>& mu_core /*erg*/, const vector<double>& L_core /*erg/s*/){
-	PRINT_ASSERT(n_emit_core>0,||,n_emit_core_per_bin>0);
+	PRINT_ASSERT(n_emit_core_per_bin,>,0);
 	PRINT_ASSERT(r_core,>,0);
 	PRINT_ASSERT(species_list.size(),>,0);
 
@@ -379,7 +367,7 @@ void Transport::init_core(const double r_core /*cm*/, const vector<double>& T_co
 	core_species_luminosity.normalize();
 }
 void Transport::init_core(const double r_core /*cm*/, const double T_core /*K*/, const double munue_core /*erg*/){
-	PRINT_ASSERT(n_emit_core>0,||,n_emit_core_per_bin>0);
+	PRINT_ASSERT(n_emit_core_per_bin,>,0);
 	PRINT_ASSERT(r_core,>,0);
 	PRINT_ASSERT(T_core,>,0);
 	PRINT_ASSERT(species_list.size(),>,0);
@@ -397,10 +385,6 @@ void Transport::init_core(const double r_core /*cm*/, const double T_core /*K*/,
 
 
 void Transport::check_parameters() const{
-	if(n_emit_zones>0 && radiative_eq){
-		cout << "ERROR: Emitting particles at beginning of timestep AND re-emitting them is inconsistent." << endl;
-		exit(10);
-	}
 	if(use_scattering_kernels && randomwalk_sphere_size>0)
 		cout << "WARNING: Assumptions in random walk approximation are incompatible with inelastic scattering." << endl;
 }
@@ -673,7 +657,7 @@ void Transport::normalize_radiative_quantities(){
 			cout << "#   " << net_neut_heating << " erg/s H_abs (comoving sum)" << endl;
 		}
 
-		if(n_emit_core>0){
+		if(n_emit_core_per_bin>0){
 			cout << "#   { ";
 			for(unsigned s=0; s<N_core_lab.size(); s++) cout << setw(12) << N_core_lab[s] << "  ";
 			cout << "} 1/s N_core" << endl;
@@ -716,39 +700,6 @@ int Transport::sample_core_species() const
 	// randomly sample the species (precomputed CDF)
 	double z = rangen.uniform();
 	return core_species_luminosity.get_index(z);
-}
-
-
-
-//----------------------------------------------------------------------------
-// randomly sample the nu-integrated emissivities of all
-// species to determine the species of a new particle
-// emitted from a zone
-//----------------------------------------------------------------------------
-// note: could store a zone_species_cdf structure in transport,
-// but this would use more memory. Here, trading CPU cycles for 
-// memory. If we are CPU limited, we could change this
-int Transport::sample_zone_species(const int zone_index, double *Ep) const
-{
-	CDFArray species_cdf;
-	double integrated_emis;
-	species_cdf.resize(species_list.size());
-
-	// set values and normalize
-	for(unsigned i=0; i<species_list.size(); i++)
-	{
-		integrated_emis = species_list[i]->integrate_zone_emis(zone_index);
-		species_cdf.set_value(i,integrated_emis);
-	}
-	species_cdf.normalize();
-	PRINT_ASSERT(species_cdf.N,>=,0);
-
-	// randomly sample the species
-	double z = rangen.uniform();
-	double s = species_cdf.get_index(z);
-	PRINT_ASSERT(*Ep,>,0);
-	PRINT_ASSERT(*Ep,<,INFINITY);
-	return s;
 }
 
 
