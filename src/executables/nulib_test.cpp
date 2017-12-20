@@ -128,7 +128,7 @@ int main(int argc, char* argv[]){
 	double mu_mdm = (chempot-1.29) * pc::MeV_to_ergs;
 	if(nulibID==1) mu *= -1;
 	if(nulibID>1) mu = 0;
-	nulib_get_eas_arrays(rho, T, ye, nulibID, 0, emis, absopac, scatopac, normalized_phi0, phi1_phi0);
+	nulib_get_eas_arrays(rho, T, ye, nulibID, emis, absopac, scatopac, normalized_phi0, phi1_phi0);
 	e = emis.get(nu_grid.size()-1);                               // erg/s/cm^3/ster
 	for(unsigned j=0; j<nu_grid.size(); j++){
 		a = nu_grid.value_at(nu_grid.center(j), absopac);
@@ -157,7 +157,7 @@ int main(int argc, char* argv[]){
 	eas_rho << "# T(MeV):" << T*pc::k_MeV << " ye:" << ye << " E(MeV):" << myenergy << endl;
 	eas_rho << setw(25) << "# rho(g/cm^3)" << setw(25) << "emis(int)(erg/cm^3/s/ster)" << setw(25) << "absopac(cm^2/g)"<< setw(25) <<"scatopac(cm^2/g)" << endl;
 	for(int j=0; j<nrho; j++){
-		nulib_get_eas_arrays(rho_grid[j], T, ye, nulibID, 0, emis, absopac, scatopac, normalized_phi0, phi1_phi0);
+		nulib_get_eas_arrays(rho_grid[j], T, ye, nulibID, emis, absopac, scatopac, normalized_phi0, phi1_phi0);
 		e = emis.get(nu_grid.size()-1);
 		a = nu_grid.value_at(myfreq, absopac);
 		s = nu_grid.value_at(myfreq, scatopac);
@@ -170,7 +170,7 @@ int main(int argc, char* argv[]){
 	eas_T << "# rho(g/cm^3):" << rho << " ye:" << ye << " E(MeV):" << myenergy << endl;
 	eas_T << setw(25) << "# T(MeV)" << setw(25) << "emis(int)(erg/cm^3/s/ster)" << setw(25) << "absopac(cm^2/g)" <<setw(25) << "scatopac(cm^2/g)" << endl;
 	for(int j=0; j<nT; j++){
-		nulib_get_eas_arrays(rho, T_grid[j], ye, nulibID, 0, emis, absopac, scatopac, normalized_phi0, phi1_phi0);
+		nulib_get_eas_arrays(rho, T_grid[j], ye, nulibID, emis, absopac, scatopac, normalized_phi0, phi1_phi0);
 		e = emis.get(nu_grid.size()-1);
 		a = nu_grid.value_at(myfreq, absopac);
 		s = nu_grid.value_at(myfreq, scatopac);
@@ -183,7 +183,7 @@ int main(int argc, char* argv[]){
 	eas_ye << "# rho(g/cm^3):" << rho << " T(MeV):" << T*pc::k_MeV << " E(MeV):" << myenergy << endl;
 	eas_ye << setw(25) << "# ye" << setw(25) << "emis(int)(erg/cm^3/s/ster)" << setw(25) << "absopac(cm^2/g)" << setw(25) << "scatopac(cm^2/g)" << endl;
 	for(int j=0; j<nye; j++){
-		nulib_get_eas_arrays(rho, T, ye_grid[j], nulibID, 0, emis, absopac, scatopac, normalized_phi0, phi1_phi0);
+		nulib_get_eas_arrays(rho, T, ye_grid[j], nulibID, emis, absopac, scatopac, normalized_phi0, phi1_phi0);
 		e = emis.get(nu_grid.size()-1);
 		a = nu_grid.value_at(myfreq, absopac);
 		s = nu_grid.value_at(myfreq, scatopac);
@@ -205,7 +205,7 @@ int main(int argc, char* argv[]){
 	eas_E_rho << setw(25) << "# rho(g/cm^3)" << setw(25) << "E(MeV)" << setw(25) << "emis(erg/cm^3/s/ster/Hz)" << setw(25) << "absopac(cm^2/g)" << setw(25) << "scatopac(cm^2/g)" << endl;
 
 	for(unsigned i=0; i<rho_grid.size(); i++){
-		nulib_get_eas_arrays(rho_grid[i], T, ye, nulibID, 0, emis, absopac, scatopac, normalized_phi0, phi1_phi0);
+		nulib_get_eas_arrays(rho_grid[i], T, ye, nulibID, emis, absopac, scatopac, normalized_phi0, phi1_phi0);
 		nulib_get_pure_emis (rho_grid[i], T, ye, nulibID, pure_emis);
 		for(unsigned j=0; j<nu_grid.size(); j++){
 			e = pure_emis[j];
@@ -227,7 +227,7 @@ int main(int argc, char* argv[]){
 	eas_E_T << setw(25) << "# T(MeV)" << setw(25) << "E(MeV)" << setw(25) << "emis(erg/cm^3/s/ster/Hz)" << setw(25) << "absopac(cm^2/g)" << setw(25) << "scatopac(cm^2/g)" << endl;
 
 	for(unsigned i=0; i<T_grid.size(); i++){
-		nulib_get_eas_arrays(rho, T_grid[i], ye, nulibID, 0, emis, absopac, scatopac, normalized_phi0, phi1_phi0);
+		nulib_get_eas_arrays(rho, T_grid[i], ye, nulibID, emis, absopac, scatopac, normalized_phi0, phi1_phi0);
 		nulib_get_pure_emis (rho_grid[i], T, ye, nulibID, pure_emis);
 		for(unsigned j=0; j<nu_grid.size(); j++){
 			e = pure_emis[j];
@@ -249,7 +249,7 @@ int main(int argc, char* argv[]){
 	eas_E_ye << setw(25) << "# ye" << setw(25) << "E(MeV)" << setw(25) << "emis(erg/cm^3/s/ster/Hz)" << setw(25) << "absopac(cm^2/g)" << setw(25) << "scatopac(cm^2/g)" << endl;
 
 	for(unsigned i=0; i<ye_grid.size(); i++){
-		nulib_get_eas_arrays(rho, T, ye_grid[i], nulibID, 0, emis, absopac, scatopac, normalized_phi0, phi1_phi0);
+		nulib_get_eas_arrays(rho, T, ye_grid[i], nulibID, emis, absopac, scatopac, normalized_phi0, phi1_phi0);
 		nulib_get_pure_emis (rho_grid[i], T, ye, nulibID, pure_emis);
 		for(unsigned j=0; j<nu_grid.size(); j++){
 			e = pure_emis[j];

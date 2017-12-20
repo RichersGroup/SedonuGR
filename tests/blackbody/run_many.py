@@ -12,17 +12,17 @@ vz = 0      # cm/s
 
 min_logrho = 6  #g/ccm
 max_logrho = 15 #g/ccm
-n_rho = 50
+n_rho = 20
 center_logrho = 10
 
 min_logT = -1 #MeV
 max_logT = 2  #MeV
-n_T = 50
+n_T = 2
 center_logT = 0.5
 
 min_ye = 0.05
 max_ye = 0.55
-n_ye = 50
+n_ye = 2
 center_ye = 0.3
 
 

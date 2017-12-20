@@ -64,8 +64,10 @@ double run_test(const int nsteps, const bool rank0, const double rho, const doub
 	double max_opac = 0;
 	for(unsigned z_ind=0; z_ind<sim.grid->z.size(); z_ind++){
 		for(unsigned s=0; s<sim.species_list.size(); s++){
-			for(unsigned g=0; g<sim.species_list[s]->number_of_bins(); g++){
-				double opac = sim.species_list[s]->sum_opacity(z_ind,g);
+			for(unsigned g=0; g<sim.grid->nu_grid_axis.size(); g++){
+				double abs_opac = sim.species_list[s]->abs_opac[z_ind][g];
+				double scat_opac = sim.species_list[s]->scat_opac[z_ind][g];
+				double opac = abs_opac + scat_opac;
 				if(opac>max_opac) max_opac = opac;
 			}
 		}

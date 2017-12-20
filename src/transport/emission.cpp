@@ -142,7 +142,7 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 	double nu_min = grid->nu_grid_axis.bottom(g);
 	double nu_max = grid->nu_grid_axis.top[g];
 	double nu = rangen.uniform(nu_min, nu_max);
-	pcom.N = species_list[pcom.s]->emis[z_ind].get_value(g) * species_list[pcom.s]->emis[z_ind].N / (nu*pc::h) * (nu_max-nu_min) * weight;
+	pcom.N = species_list[pcom.s]->emis[z_ind].get_value(g) * species_list[pcom.s]->emis[z_ind].N / (nu*pc::h) * weight * 4.*pc::pi;
 
 	// emit isotropically in comoving frame
 	grid->isotropic_kup_tet(nu,pcom.kup,pcom.xup,&rangen);
@@ -169,7 +169,7 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 		#pragma omp atomic
 		N_net_lab[lh.p_s()] += lh.p_N();
 		#pragma omp atomic
-		grid->z[z_ind].e_emit += lh.p_N() * pc::k*lh.p_nu();
+		grid->z[z_ind].e_emit += lh.p_N() * pc::h*lh.p_nu();
 		#pragma omp atomic
 		grid->z[z_ind].l_emit += lh.p_N();
 	}

@@ -56,8 +56,8 @@ output_hdf5 = 0
 max_particles  = 2e6
 n_subcycles = 10
 do_emit_by_bin = 0
-n_emit_core    = 0
-n_emit_therm   = 54000
+n_emit_core_per_bin    = 0
+n_emit_therm_per_bin   = 500
 
 -- Inner Source
 
