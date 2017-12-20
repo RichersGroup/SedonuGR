@@ -57,8 +57,14 @@ double run_test(const int nsteps, const bool rank0, const double rho, const doub
 
 	// reconfigure the core
 	double munue = nulib_eos_munue(rho,T_core,target_ye);
-	sim.init_core(sim.r_core,T_core,munue);
-	PRINT_ASSERT(sim.core_species_luminosity.N,>,0);
+	PRINT_ASSERT(sim.species_list.size(),==,3);
+	for(int s=0; s<3; s++){
+		sim.species_list[s]->T_core = T_core;
+		sim.species_list[s]->core_lum_multiplier = 1.0;
+	}
+	sim.species_list[0]->mu_core =  munue;
+	sim.species_list[1]->mu_core = -munue;
+	sim.species_list[2]->mu_core = 0;
 
 	// check max optical depth
 	double max_opac = 0;
