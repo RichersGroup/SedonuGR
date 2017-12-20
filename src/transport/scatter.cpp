@@ -155,7 +155,7 @@ void Transport::scatter(LorentzHelper *lh, int *z_ind) const{
 		// sample outgoing energy and set the post-scattered state
 		if(use_scattering_kernels){
 			const double tmp_nu = lh->p_nu();
-			species_list[lh->p_s()]->sample_scattering_final_state(*z_ind,*lh,cosTheta);
+			sample_scattering_final_state(*z_ind,*lh,cosTheta);
 			double dep_energy = (tmp_nu - lh->p_nu()) * lh->p_N()*pc::h;
 			if(dep_energy>0) grid->z[*z_ind].e_abs  += dep_energy;
 			else             grid->z[*z_ind].e_emit -= dep_energy;
@@ -330,4 +330,46 @@ void Transport::random_walk(LorentzHelper *lh, const double Rcom, const double D
 	lh->set_p_xup(xnew,4);
 	lh->set_p_kup<com>(kup_new,4);
 	lh->scale_p_number( exp(-lh->abs_opac(com) * path_length_com) );
+}
+
+//-------------------------------------------------------------
+// Sample outgoing neutrino direction and energy
+//-------------------------------------------------------------
+void Transport::sample_scattering_final_state(const int z_ind, LorentzHelper &lh, const double cosTheta) const{
+	PRINT_ASSERT(use_scattering_kernels,>,0);
+	PRINT_ASSERT(species_list[lh.p_s()]->scattering_delta.size(),>,0);
+	PRINT_ASSERT(species_list[lh.p_s()]->normalized_phi0.size(),>,0);
+
+	// get ingoing energy index
+	int igin = grid->nu_grid.locate(lh.p_nu());
+	if(igin == grid->nu_grid.size()) igin--;
+
+	// get outgoing energy
+	double out_nu = species_list[lh.p_s()]->normalized_phi0[z_ind][igin].invert(rangen.uniform(),&grid->nu_grid);
+	lh.scale_p_energy(out_nu/lh.p_nu());
+
+	// get outgoing energy index
+	int igout = grid->nu_grid.locate(out_nu);
+
+	// bias outgoing direction to be isotropic. Very inefficient for large values of delta.
+	double delta = species_list[lh.p_s()]->scattering_delta[z_ind][igin][igout];
+	PRINT_ASSERT(fabs(delta),<,3.0);
+	if(fabs(delta)<=1.0) lh.scale_p_number(1.0 + delta*cosTheta);
+	else{
+		double b = 2.*fabs(delta) / (3.-fabs(delta));
+		if(delta>1.0) lh.scale_p_number( pow(1.+cosTheta, b) );
+		else          lh.scale_p_number( pow(1.-cosTheta, b) );
+	}
+
+
+	// sample outgoing direction
+	//double U = sim->rangen.uniform();
+	//double tiny = 1.e-4;
+	//if(abs(delta)<1.e-4) // isotropic
+	//	*outCosTheta = 2.*U - 1.;
+	//else{
+	//	double b2m4ac = sqrt(1. - delta*(2.-delta-4.*U));
+	//	double sgn = (delta<0 ? -1.0 : 1.0);
+	//	*outCosTheta = 1./delta * (-1. + sgn*b2m4ac);
+	//}
 }

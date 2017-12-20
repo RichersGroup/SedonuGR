@@ -87,6 +87,9 @@ protected:
 	void random_walk(LorentzHelper *lh, const double Rcom, const double D, const int z_ind) const;
 	void init_randomwalk_cdf(Lua* lua);
 	void window(LorentzHelper *lh, const int z_ind);
+	void sample_scattering_final_state(const int z_ind, LorentzHelper& lh, const double cosTheta) const;
+
+
 
 	// solve for temperature and Ye (if steady_state)
 	double equilibrium_damping;

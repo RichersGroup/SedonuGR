@@ -218,23 +218,6 @@ void Species::init(Lua* lua, Transport* simulation)
 }
 
 
-//-----------------------------------------------------
-// set cdf to blackbody distribution
-// units of emis.N: erg/s/cm^2/ster
-//-----------------------------------------------------
-void Species::set_cdf_to_BB(const double T, const double chempot, CDFArray& emis){
-    #pragma omp parallel for ordered
-	for(unsigned j=0;j<nu_grid->size();j++)
-	{
-		double nu  = nu_grid->center(j);
-		double dnu = nu_grid->delta(j);
-        #pragma omp ordered
-		emis.set_value(j, Transport::blackbody(T,chempot,nu)*dnu);
-	}
-	emis.normalize();
-}
-
-
 //-----------------------------------------------------------------
 // get opacity at the frequency
 //-----------------------------------------------------------------
@@ -253,53 +236,3 @@ void Species::get_opacity(const double com_nu, const int z_ind, double* a, doubl
 	PRINT_ASSERT(*s,<,INFINITY);
 }
 
-
-double Species::bin_emis(const int z_ind, const int g) const{
-	return emis[z_ind].get_value(g) * emis[z_ind].N;
-}
-
-double Species::sum_opacity(const int z_ind, const int group) const{
-	return abs_opac[z_ind][group] + scat_opac[z_ind][group];
-}
-
-//-------------------------------------------------------------
-// Sample outgoing neutrino direction and energy
-//-------------------------------------------------------------
-void Species::sample_scattering_final_state(const int z_ind, LorentzHelper &lh, const double cosTheta) const{
-	PRINT_ASSERT(sim->use_scattering_kernels,>,0);
-	PRINT_ASSERT(scattering_delta.size(),>,0);
-	PRINT_ASSERT(normalized_phi0.size(),>,0);
-
-	// get ingoing energy index
-	int igin = nu_grid->locate(lh.p_nu());
-	if(igin == nu_grid->size()) igin--;
-
-	// get outgoing energy
-	double out_nu = normalized_phi0[z_ind][igin].invert(sim->rangen.uniform(),nu_grid);
-	lh.scale_p_energy(out_nu/lh.p_nu());
-
-	// get outgoing energy index
-	int igout = nu_grid->locate(out_nu);
-
-	// bias outgoing direction to be isotropic. Very inefficient for large values of delta.
-	double delta = scattering_delta[z_ind][igin][igout];
-	PRINT_ASSERT(fabs(delta),<,3.0);
-	if(fabs(delta)<=1.0) lh.scale_p_number(1.0 + delta*cosTheta);
-	else{
-		double b = 2.*fabs(delta) / (3.-fabs(delta));
-		if(delta>1.0) lh.scale_p_number( pow(1.+cosTheta, b) );
-		else          lh.scale_p_number( pow(1.-cosTheta, b) );
-	}
-
-
-	// sample outgoing direction
-	//double U = sim->rangen.uniform();
-	//double tiny = 1.e-4;
-	//if(abs(delta)<1.e-4) // isotropic
-	//	*outCosTheta = 2.*U - 1.;
-	//else{
-	//	double b2m4ac = sqrt(1. - delta*(2.-delta-4.*U));
-	//	double sgn = (delta<0 ? -1.0 : 1.0);
-	//	*outCosTheta = 1./delta * (-1. + sgn*b2m4ac);
-	//}
-}
