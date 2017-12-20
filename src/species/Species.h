@@ -84,19 +84,12 @@ public:
 	// set everything up
 	void init(Lua* lua, Transport* sim);
 
-	// set a CDF to blackbody distribution
-	void set_cdf_to_BB(const double T, const double chempot, CDFArray& emis);
-
 	// scattering kernel sampling
 	void sample_scattering_final_state(const int z_ind, LorentzHelper& lh, const double cosTheta) const;
 
 	// set the emissivity, absorption opacity, and scattering opacity
 	virtual void set_eas(const int zone_index) = 0;
 	void get_opacity(const double com_nu, const int z_ind, double* abs_opac, double* scat_opac) const;
-	double sum_opacity(const int z_ind, const int group) const;
-
-	// minimum zone emissivity
-	double bin_emis(const int zone_index, const int g) const;
 };
 
 

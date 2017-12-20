@@ -44,6 +44,10 @@ public:
 	double bottom(const int i) const{
 		return i==0 ? min : top[i-1];
 	}
+
+	double delta(const int i) const{
+		return top[i] - bottom(i);
+	}
 };
 
 #endif

@@ -189,6 +189,7 @@ public:
 
 	// blackbody function (erg/cm^2/s/ster/Hz)
 	static double blackbody(const double T, const double chempot, const double nu);
+	void set_cdf_to_BB(const double T, const double chempot, CDFArray& emis);
 
 	// set things up
 	void   init(Lua* lua);
