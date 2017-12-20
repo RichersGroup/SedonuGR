@@ -43,12 +43,6 @@ namespace pc = physical_constants;
 Species::Species(){
 	weight = NaN;
 	lepton_number = MAXLIM;
-	T_min = NaN;
-	T_max = NaN;
-	Ye_min = NaN;
-	Ye_max = NaN;
-	rho_min = NaN;
-	rho_max = NaN;
 	sim = NULL;
 	ID = MAXLIM;
 	nu_grid=NULL;
@@ -66,15 +60,6 @@ void Species::init(Lua* lua, Transport* simulation)
 	PRINT_ASSERT(sim->grid->z.size(),>,0);
 	nu_grid = &(sim->grid->nu_grid);
 
-	//===================================//
-    // set neutrino's min and max values //
-	//===================================//
-    T_min   =  0.0;
-    T_max   =  numeric_limits<double>::infinity();
-    Ye_min  = 0;
-    Ye_max  = 1;
-    rho_min = -numeric_limits<double>::infinity();
-    rho_max =  numeric_limits<double>::infinity();
 
 	//============================//
 	// CALL CHILD'S INIT FUNCTION //

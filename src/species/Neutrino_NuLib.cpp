@@ -44,14 +44,6 @@ Neutrino_NuLib::Neutrino_NuLib(){
 //----------------------------------------------------------------
 void Neutrino_NuLib::myInit(Lua* lua)
 {
-	// set neutrino's min and max values
-	T_min  =  nulib_get_Tmin();
-	T_max  =  nulib_get_Tmax();
-	Ye_min =  nulib_get_Yemin();
-	Ye_max =  nulib_get_Yemax();
-	rho_min = nulib_get_rhomin();
-	rho_max = nulib_get_rhomax();
-
 	// let the base class do the rest
 	Neutrino::myInit(lua);
 }

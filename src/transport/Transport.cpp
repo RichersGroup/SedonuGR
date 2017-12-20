@@ -158,6 +158,16 @@ void Transport::init(Lua* lua)
 	write_spectra_every = lua->scalar<double>("write_spectra_every");
 
 
+	//===================================//
+    // set neutrino's min and max values //
+	//===================================//
+    T_min   =  0.0;
+    T_max   =  numeric_limits<double>::infinity();
+    Ye_min  = 0;
+    Ye_max  = 1;
+    rho_min = -numeric_limits<double>::infinity();
+    rho_max =  numeric_limits<double>::infinity();
+
 	// set up nulib table
 	string neutrino_type = lua->scalar<string>("neutrino_type");
 	if(neutrino_type=="NuLib"){ // get everything from NuLib
@@ -169,6 +179,14 @@ void Transport::init(Lua* lua)
 		// eos
 		string eos_filename = lua->scalar<string>("nulib_eos");
 		nulib_eos_read_table((char*)eos_filename.c_str());
+
+		// set neutrino's min and max values
+		T_min  =  nulib_get_Tmin();
+		T_max  =  nulib_get_Tmax();
+		Ye_min =  nulib_get_Yemin();
+		Ye_max =  nulib_get_Yemax();
+		rho_min = nulib_get_rhomin();
+		rho_max = nulib_get_rhomax();
 	}
 
 
@@ -265,23 +283,6 @@ void Transport::init(Lua* lua)
 	{
 		if(rank0) cout << "ERROR: you must simulate at least one species of particle." << endl;
 		exit(7);
-	}
-
-	// set global min/max values (make range infinite to catch errors)
-	T_min   =  numeric_limits<double>::infinity();
-	T_max   = -numeric_limits<double>::infinity();
-	Ye_min  =  numeric_limits<double>::infinity();
-	Ye_max  = -numeric_limits<double>::infinity();
-	rho_min =  numeric_limits<double>::infinity();
-	rho_max = -numeric_limits<double>::infinity();
-	for(unsigned i=0; i<species_list.size(); i++)
-	{
-		if(species_list[i]->T_min   < T_min  ) T_min   = species_list[i]->T_min;
-		if(species_list[i]->T_max   > T_max  ) T_max   = species_list[i]->T_max;
-		if(species_list[i]->Ye_min  < Ye_min ) Ye_min  = species_list[i]->Ye_min;
-		if(species_list[i]->Ye_max  > Ye_max ) Ye_max  = species_list[i]->Ye_max;
-		if(species_list[i]->rho_min < rho_min) rho_min = species_list[i]->rho_min;
-		if(species_list[i]->rho_max > rho_max) rho_max = species_list[i]->rho_max;
 	}
 
 	PRINT_ASSERT(T_min,>=,0);

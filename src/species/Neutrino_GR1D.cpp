@@ -48,14 +48,6 @@ Neutrino_GR1D::Neutrino_GR1D(){
 //----------------------------------------------------------------
 void Neutrino_GR1D::myInit(Lua* lua)
 {
-	// set neutrino's min and max values
-	T_min  =  0;
-	T_max  =  INFINITY;
-	Ye_min =  0;
-	Ye_max =  1.0;
-	rho_min = 0;
-	rho_max = INFINITY;
-
 	// emit outside shock?
 	GR1D_emit_outside_shock = lua->scalar<int>("GR1D_emit_outside_shock");
 
