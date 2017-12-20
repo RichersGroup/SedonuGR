@@ -45,11 +45,6 @@ class Grid3DCart: public Grid
 private:
 	// specifics to this geometry
 
-	int    nx[3]; // number of zones in each dimension
-	double dx[3]; // length of each zone in each dimension
-	double x0[3]; // leftmost points
-	double x1[3]; // next-to leftmost points
-	double xmax[3];
 	int    reflect[3];
 	int    rotate_hemisphere[2];
 	int    rotate_quadrant;
@@ -62,6 +57,8 @@ private:
 		double sqrtdetg3;
 	};
 	std::vector<CartesianMetric> metric;
+
+	vector<Axis> xAxes;
 
 public:
 

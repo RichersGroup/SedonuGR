@@ -41,14 +41,7 @@ namespace pc = physical_constants;
 //------------
 Grid3DCart::Grid3DCart(){
 	grid_type = "Grid3DCart";
-	for(int i=0; i<3; i++){
-		nx[i]      = -1;
-		dx[i]      = NaN;
-		x0[i]      = NaN;
-		x1[i]      = NaN;
-		xmax[i]    = NaN;
-		reflect[i] = 0;
-	}
+	for(int i=0; i<3; i++) reflect[i] = 0;
 	rotate_hemisphere[0] = 0;
 	rotate_hemisphere[1] = 0;
 	rotate_quadrant = 0;
@@ -72,6 +65,9 @@ void Grid3DCart::read_model_file(Lua* lua)
 
 void Grid3DCart::read_THC_file(Lua* lua)
 {
+	double dx[3], x0[3], x1[3], xmax[3];
+	int nx[3];
+
 	// verbocity
 	int MPI_myID;
 	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
@@ -191,10 +187,21 @@ void Grid3DCart::read_THC_file(Lua* lua)
 			nx[i] = nx[iother];
 			xmax[i] = xmax[iother];
 		}
-	}	
+	}
 	
 	// set up the zone structure
-	int nzones = nx[0] * nx[1] * nx[2];
+	int nzones = 1;
+	for(int a=0; a<3; a++){
+		vector<double> top(nx[a]), mid(nx[a]);
+		top[0] = x1[a];
+		mid[0] = 0.5 * (x0[a] + x1[a]);
+		for(int i=1; i<nx[a]; i++){
+			top[i] = x1[a] + (double)(i-1)*dx[a];
+			mid[i] = 0.5 * (top[i] + top[i-1]);
+		}
+		xAxes[a] = Axis(x0[a], top, mid);
+		nzones *= xAxes[a].size();
+	}
 	z.resize(nzones);
 
 	// print out grid structure
@@ -284,6 +291,9 @@ void Grid3DCart::read_THC_file(Lua* lua)
 
 void Grid3DCart::read_SpEC_file(Lua* lua)
 {
+	double x0[3], x1[3], xmax[3], dx[3];
+	int nx[3];
+
 	// get mpi rank
 	int MPI_myID;
 	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID  );
@@ -337,6 +347,21 @@ void Grid3DCart::read_SpEC_file(Lua* lua)
 		else if(i<2 && rotate_quadrant) dx[i]*=4;
 		x1[i] = x0[i]+dx[i];
 	}
+
+	// set up the zone structure
+	int nzones = 1;
+	for(int a=0; a<3; a++){
+		vector<double> top(nx[a]), mid(nx[a]);
+		top[0] = x1[a];
+		mid[0] = 0.5 * (x0[a] + x1[a]);
+		for(int i=1; i<nx[a]; i++){
+			top[i] = x1[a] + (double)(i-1)*dx[a];
+			mid[i] = 0.5 * (top[i] + top[i-1]);
+		}
+		xAxes[a] = Axis(x0[a], top, mid);
+		nzones *= xAxes[a].size();
+	}
+	z.resize(nzones);
 
 	// First loop - set indices and read zone values in file
 	// loop order is the file order
@@ -430,16 +455,14 @@ void Grid3DCart::read_SpEC_file(Lua* lua)
 int Grid3DCart::zone_index(const double x[3]) const
 {
 	// check for off grid
-	for(int i=0; i<3; i++) if (x[i]<x0[i] || x[i]>xmax[i]) return -2;
+	for(int i=0; i<3; i++) if (x[i]<xAxes[i].min || x[i]>xAxes[i].max()) return -2;
 
 	// get directional indices
 	int dir_ind[3] = {-1,-1,-1};
 	for(int i=0; i<3; i++){
-		if(x[i]<=x1[i]) dir_ind[i] = 0;
-		else if(x[i] > xmax[i]-dx[i]) dir_ind[i] = nx[i]-1; //need this to prevent issues when particle is ON boundary
-		else dir_ind[i] = (x[i]-x1[i]) / dx[i] + 1.0;
+		dir_ind[i] = xAxes[i].bin(x[i]);
 		PRINT_ASSERT(dir_ind[i],>=,0);
-		PRINT_ASSERT(dir_ind[i],<,nx[i]);
+		PRINT_ASSERT(dir_ind[i],<,xAxes[i].size());
 	}
 
 	int z_ind = zone_index(dir_ind[0],dir_ind[1],dir_ind[2]);
@@ -456,10 +479,10 @@ int Grid3DCart::zone_index(const int i, const int j, const int k) const{
 	PRINT_ASSERT(i,>=,0);
 	PRINT_ASSERT(j,>=,0);
 	PRINT_ASSERT(k,>=,0);
-	PRINT_ASSERT(i,<,nx[0]);
-	PRINT_ASSERT(j,<,nx[1]);
-	PRINT_ASSERT(k,<,nx[2]);
-	const int z_ind = i*nx[1]*nx[2] + j*nx[2] + k;
+	PRINT_ASSERT(i,<,xAxes[0].size());
+	PRINT_ASSERT(j,<,xAxes[1].size());
+	PRINT_ASSERT(k,<,xAxes[2].size());
+	const int z_ind = i*xAxes[1].size()*xAxes[2].size() + j*xAxes[2].size() + k;
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 	return z_ind;
 }
@@ -473,13 +496,13 @@ void Grid3DCart::zone_directional_indices(const int z_ind, int dir_ind[3], const
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 	PRINT_ASSERT(size,==,(int)dimensionality());
 
-	dir_ind[0] =  z_ind / (nx[1]*nx[2]);
-	dir_ind[1] = (z_ind % (nx[1]*nx[2])) / nx[2];
-	dir_ind[2] =  z_ind % nx[2];
+	dir_ind[0] =  z_ind / (xAxes[1].size()*xAxes[2].size());
+	dir_ind[1] = (z_ind % (xAxes[1].size()*xAxes[2].size())) / xAxes[2].size();
+	dir_ind[2] =  z_ind % xAxes[2].size();
 
 	for(int i=0; i<3; i++){
 		PRINT_ASSERT(dir_ind[i],>=,0);
-		PRINT_ASSERT(dir_ind[i],<,nx[i]);
+		PRINT_ASSERT(dir_ind[i],<,xAxes[i].size());
 	}
 }
 
@@ -525,8 +548,8 @@ void Grid3DCart::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3])
 		x[i] = zone_left_boundary(i,dir_ind[i]) + delta[i]*rand[i];
 
 		// make sure the particle is in bounds
-		PRINT_ASSERT(x[i],>,x0[i]   - TINY*dx[i]);
-		PRINT_ASSERT(x[0],<,xmax[i] + TINY*dx[i]);
+		PRINT_ASSERT(x[i],>,xAxes[i].min   - TINY*xAxes[i].delta(0));
+		PRINT_ASSERT(x[0],<,xAxes[i].max() + TINY*xAxes[i].delta(0));
 
 		// return particles just outside cell boundaries to within cell boundaries
 		x[i] = min(x[i], zone_right_boundary(i,dir_ind[i]));
@@ -601,7 +624,7 @@ void Grid3DCart::zone_coordinates(const int z_ind, double r[3], const int rsize)
 	zone_directional_indices(z_ind,dir_ind,3);
 
 	for(int i=0; i<3; i++)
-		r[i] = ( dir_ind[i]==0 ? 0.5*(x0[i]+x1[i]) : x1[i] + ((double)(dir_ind[i]-1) + 0.5) * dx[i] );
+		r[i] = xAxes[i].mid[dir_ind[i]];
 }
 
 
@@ -629,7 +652,7 @@ void Grid3DCart::write_rays(const int iw) const
 	outf.open(filename.c_str());
 	write_header(outf);
 	k = iorigin[2]; //nx[2]/2;
-	for(i=0; i<nx[0]; i++) for(j=0; j<nx[1]; j++){
+	for(i=0; i<xAxes[0].size(); i++) for(j=0; j<xAxes[1].size(); j++){
 		if(j==0) outf << endl;
 		z_ind = zone_index(i,j,k);
 		zone_coordinates(z_ind,r,3);
@@ -642,7 +665,7 @@ void Grid3DCart::write_rays(const int iw) const
 	outf.open(filename.c_str());
 	write_header(outf);
 	j = iorigin[1]; //nx[1]/2;
-	for(i=0; i<nx[0]; i++) for(k=0; k<nx[2]; k++){
+	for(i=0; i<xAxes[0].size(); i++) for(k=0; k<xAxes[2].size(); k++){
 		if(k==0) outf << endl;
 		z_ind = zone_index(i,j,k);
 		zone_coordinates(z_ind,r,3);
@@ -655,7 +678,7 @@ void Grid3DCart::write_rays(const int iw) const
 	outf.open(filename.c_str());
 	write_header(outf);
 	i = iorigin[0]; //nx[0]/2;
-	for(j=0; j<nx[1]; j++) for(k=0; k<nx[2]; k++){
+	for(j=0; j<xAxes[1].size(); j++) for(k=0; k<xAxes[2].size(); k++){
 		if(k==0) outf << endl;
 		z_ind = zone_index(i,j,k);
 		zone_coordinates(z_ind,r,3);
@@ -667,9 +690,9 @@ void Grid3DCart::write_rays(const int iw) const
 	filename = Transport::filename("ray_x",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
-	j = nx[1]/2;
-	k = nx[2]/2;
-	for (i=0;i<nx[0];i++){
+	j = xAxes[1].size()/2;
+	k = xAxes[2].size()/2;
+	for (i=0;i<xAxes[0].size();i++){
 		z_ind = zone_index(i,j,k);
 		zone_coordinates(z_ind,r,3);
 		write_line(outf,z_ind);
@@ -680,9 +703,9 @@ void Grid3DCart::write_rays(const int iw) const
 	filename = Transport::filename("ray_y",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
-	i = nx[0]/2;
-	k = nx[2]/2;
-	for (j=0; j<nx[1]; j++){
+	i = xAxes[0].size()/2;
+	k = xAxes[2].size()/2;
+	for (j=0; j<xAxes[1].size(); j++){
 		z_ind = zone_index(i,j,k);
 		zone_coordinates(z_ind,r,3);
 		write_line(outf,z_ind);
@@ -693,9 +716,9 @@ void Grid3DCart::write_rays(const int iw) const
 	filename = Transport::filename("ray_z",iw,".dat");
 	outf.open(filename.c_str());
 	write_header(outf);
-	i = nx[0]/2;
-	j = nx[1]/2;
-	for (k=0; k<nx[2]; k++)
+	i = xAxes[0].size()/2;
+	j = xAxes[1].size()/2;
+	for (k=0; k<xAxes[2].size(); k++)
 	{
 		z_ind = zone_index(i,j,k);
 		zone_coordinates(z_ind,r,3);
@@ -719,7 +742,7 @@ double Grid3DCart::zone_radius(const int z_ind) const{
 //-----------------------------
 void Grid3DCart::dims(hsize_t dims[3], const int size) const{
 	PRINT_ASSERT(size,==,(int)dimensionality());
-	for(int i=0; i<3; i++) dims[i] = nx[i];
+	for(int i=0; i<3; i++) dims[i] = xAxes[i].size();
 }
 
 //----------------------------------------------------
@@ -744,9 +767,9 @@ void Grid3DCart::write_hdf5_coordinates(H5::H5File file) const
 		dirstream << dir;
 		dataset = file.createDataSet("grid_"+dirstream.str()+"(cm)",H5::PredType::IEEE_F32LE,dataspace);
 		tmp.resize(coord_dims[dir]);
-		tmp[0] = x0[dir];
-		tmp[1] = x1[dir];
-		if(nx[dir]>1) for(int i=2; i<nx[dir]+1; i++) tmp[i] = x1[dir] + (i-1)*dx[dir];
+		tmp[0] = xAxes[dir].min;
+		tmp[1] = xAxes[dir].top[0];
+		if(xAxes[dir].size()>1) for(int i=2; i<xAxes[dir].size()+1; i++) tmp[i] = xAxes[dir].top[0] + (i-1)*xAxes[dir].delta(1);
 		dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 		dataset.close();
 	}
@@ -763,7 +786,7 @@ void Grid3DCart::get_deltas(const int z_ind, double delta[3], const int size) co
 	zone_directional_indices(z_ind,dir_ind,3);
 
 	for(int i=0; i<3; i++){
-		delta[i] = (dir_ind[i]==0 ? x1[i]-x0[i] : dx[i]);
+		delta[i] =xAxes[i].delta(dir_ind[i]);
 		PRINT_ASSERT(delta[i],>,0);
 	}
 }
@@ -774,9 +797,9 @@ double Grid3DCart::zone_left_boundary(const unsigned dir, const unsigned dir_ind
 	PRINT_ASSERT(dir,<,3);
 	PRINT_ASSERT(dir_ind,>=,0);
 
-	double boundary = ( dir_ind==0 ? x0[dir] : x1[dir] + (double)(dir_ind-1) * dx[dir] );
-	PRINT_ASSERT(boundary,<=,xmax[dir]);
-	PRINT_ASSERT(boundary,>=,x0[dir]);
+	double boundary = xAxes[dir].bottom(dir_ind);
+	PRINT_ASSERT(boundary,<=,xAxes[dir].max());
+	PRINT_ASSERT(boundary,>=,xAxes[dir].min);
 	return boundary;
 }
 double Grid3DCart::zone_right_boundary(const unsigned dir, const unsigned dir_ind) const{
@@ -784,9 +807,9 @@ double Grid3DCart::zone_right_boundary(const unsigned dir, const unsigned dir_in
 	PRINT_ASSERT(dir,<,3);
 	PRINT_ASSERT(dir_ind,>=,0);
 
-	double boundary = ( dir_ind==0 ? x1[dir] : x1[dir] + (double)dir_ind * dx[dir] );
-	PRINT_ASSERT(boundary,<=,xmax[dir]*(1.0+TINY));
-	PRINT_ASSERT(boundary,>=,x0[dir]);
+	double boundary = xAxes[dir].top[dir_ind];
+	PRINT_ASSERT(boundary,<=,xAxes[dir].max()*(1.0+TINY));
+	PRINT_ASSERT(boundary,>=,xAxes[dir].min);
 	return boundary;
 }
 
@@ -806,22 +829,22 @@ void Grid3DCart::symmetry_boundaries(LorentzHelper *lh, const double tolerance) 
 	// invert the radial component of the velocity, put the particle just inside the boundary
 	for(int i=0; i<3; i++){
 		if(reflect[i] && xup[i]<0){
-			PRINT_ASSERT(x0[i],==,0);
-			PRINT_ASSERT(-xup[i],<,dx[i]);
+			PRINT_ASSERT(xAxes[i].min,==,0);
+			PRINT_ASSERT(-xup[i],<,xAxes[i].delta(1));
 			// actual work
 			kup[i] = -kup[i];
 			xup[i] = -xup[i];
 			// end actual work
-			PRINT_ASSERT(xup[i],>=,x0[i]);
-			PRINT_ASSERT(xup[i],<=,xmax[i]);
+			PRINT_ASSERT(xup[i],>=,xAxes[i].min);
+			PRINT_ASSERT(xup[i],<=,xAxes[i].max());
 		}
 	}
 
 	// rotating boundary conditions
 	for(int i=0; i<2; i++){
 		if(xup[i]<0 && (rotate_hemisphere[i] || rotate_quadrant)){
-			PRINT_ASSERT(x0[i],==,0);
-			PRINT_ASSERT(-xup[i],<,dx[i]*tolerance);
+			PRINT_ASSERT(xAxes[i].min,==,0);
+			PRINT_ASSERT(-xup[i],<,xAxes[i].delta(1)*tolerance);
 			
 			if(rotate_hemisphere[i]){
 				for(int j=0; j<2; j++){
@@ -843,10 +866,10 @@ void Grid3DCart::symmetry_boundaries(LorentzHelper *lh, const double tolerance) 
 			}
 
 			// double check that the particle is in the boundary
-			PRINT_ASSERT(xup[0],>=,x0[0]);
-			PRINT_ASSERT(xup[1],>=,x0[1]);
-			PRINT_ASSERT(xup[0],<=,xmax[0]);
-			PRINT_ASSERT(xup[1],<=,xmax[1]);
+			PRINT_ASSERT(xup[0],>=,xAxes[0].min);
+			PRINT_ASSERT(xup[1],>=,xAxes[1].min);
+			PRINT_ASSERT(xup[0],<=,xAxes[0].max());
+			PRINT_ASSERT(xup[1],<=,xAxes[1].max());
 		}
 	}
 

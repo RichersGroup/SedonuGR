@@ -51,6 +51,9 @@ public:
 	double delta3(const int i) const{
 		return top[i]*top[i]*top[i] - bottom(i)*bottom(i)*bottom(i);
 	}
+	double max() const{
+		return top[size()-1];
+	}
 };
 
 #endif
