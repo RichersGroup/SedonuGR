@@ -14,6 +14,10 @@ public:
 	virtual void set(const unsigned int ind[], const double y)=0;
 	virtual double interpolate(const double x[], const unsigned int ind[]) const=0;
 	virtual void calculate_slopes()=0;
+	virtual void wipe()=0;
+	virtual double get_linear(const unsigned i) const=0;
+	virtual void set_linear(const unsigned i, const double val) = 0;
+	virtual unsigned size() = 0;
 };
 
 
@@ -29,15 +33,6 @@ private:
 	Tuple<unsigned int,ndims> stride;
 	Tuple<Axis*,ndims> axes;
 
-	unsigned int index(const unsigned int ind[ndims]) const{
-		int result = 0;
-		for(int i=0; i<ndims; i++) result += ind[i]*stride[i];
-		return result;
-	}
-	void indices(const int z_ind, unsigned int ind[ndims]) const{
-		for(int i=0; i<ndims; i++) ind[i] = z_ind % stride[i];
-	}
-
 public:
 
 	MultiDArray(const vector<Axis*>& axes){
@@ -52,17 +47,26 @@ public:
 	}
 
 
+	unsigned int linear_index(const unsigned int ind[ndims]) const{
+		int result = 0;
+		for(int i=0; i<ndims; i++) result += ind[i]*stride[i];
+		return result;
+	}
+	void indices(const int z_ind, unsigned int ind[ndims]) const{
+		for(int i=0; i<ndims; i++) ind[i] = z_ind % stride[i];
+	}
+
 	// get center value based on grid index
 	double get(const unsigned int ind[ndims]) const{
-		return y0[index(ind)];
+		return y0[linear_index(ind)];
 	}
 	void set(const unsigned int ind[ndims], const double y){
-		y0[index(ind)] = y;
+		y0[linear_index(ind)] = y;
 	}
 
 	// get interpolated value
 	double interpolate(const double x[ndims], const unsigned int ind[ndims]) const{
-		unsigned int z_ind = index(ind);
+		unsigned int z_ind = linear_index(ind);
 		double result = y0[z_ind];
 		if(dydx.size()>0) for(int i=0; i<ndims; i++)
 			result += dydx[z_ind][i] * (x[i] - axes[i]->mid[ind[i]]);
@@ -92,8 +96,8 @@ public:
 				}
 				indp[i]++;
 				indm[i]--;
-				zp = index(indp);
-				zm = index(indm);
+				zp = linear_index(indp);
+				zm = linear_index(indm);
 
 				// get plus and minus values
 				y=y0[z];
@@ -115,6 +119,28 @@ public:
 			}
 		}
 	}
+
+	virtual void wipe(){
+		for(unsigned z=0; z<y0.size(); z++){
+			y0[z] = 0;
+			for(unsigned i=0; i<ndims; i++)
+				dydx[z][i] = 0;
+		}
+	}
+
+	virtual double get_linear(const unsigned z) const{
+		return y0[z];
+	}
+
+	virtual void set_linear(const unsigned z, const double val){
+		y0[z] = val;
+	}
+
+	virtual unsigned size(){
+		return y0.size();
+	}
 };
+
+
 
 #endif
