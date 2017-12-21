@@ -674,8 +674,8 @@ double Grid2DSphere::zone_lab_3volume(const int z_ind) const
 	PRINT_ASSERT(do_GR,==,false); // need to include sqrt(detg3)
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	int dir_ind[2];
-	zone_directional_indices(z_ind,dir_ind,2);
+	vector<unsigned> dir_ind(2);
+	zone_directional_indices(z_ind,dir_ind);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 	const double r0     =     rAxis.bottom(i);
@@ -690,8 +690,8 @@ double Grid2DSphere::zone_lab_3volume(const int z_ind) const
 
 // returning 0 causes the min distance to take over in propagate.cpp::which_event
 double Grid2DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const{
-	int dir_ind[2];
-	zone_directional_indices(z_ind,dir_ind,2);
+	vector<unsigned> dir_ind(2);
+	zone_directional_indices(z_ind,dir_ind);
 	const unsigned int i = dir_ind[0];
 	const unsigned int j = dir_ind[1];
 
@@ -716,8 +716,8 @@ double Grid2DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const
 //------------------------------------------------------------
 double Grid2DSphere::zone_min_length(const int z_ind) const
 {
-	int dir_ind[2];
-	zone_directional_indices(z_ind,dir_ind,2);
+	vector<unsigned> dir_ind(2);
+	zone_directional_indices(z_ind,dir_ind);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 
@@ -739,8 +739,8 @@ void Grid2DSphere::zone_coordinates(const int z_ind, double r[2], const int rsiz
 	PRINT_ASSERT(z_ind,<,(int)(rAxis.size()*thetaAxis.size()));
 	PRINT_ASSERT(rsize,==,2);
 
-	int dir_ind[2];
-	zone_directional_indices(z_ind, dir_ind, 2);
+	vector<unsigned> dir_ind(2);
+	zone_directional_indices(z_ind, dir_ind);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 
@@ -754,11 +754,11 @@ void Grid2DSphere::zone_coordinates(const int z_ind, double r[2], const int rsiz
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-void Grid2DSphere::zone_directional_indices(const int z_ind, int dir_ind[2], const int size) const
+void Grid2DSphere::zone_directional_indices(const int z_ind, vector<unsigned>& dir_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	PRINT_ASSERT(size,==,2);
+	PRINT_ASSERT(dir_ind.size(),==,2);
 	dir_ind[0] = z_ind / thetaAxis.size(); // r index
 	dir_ind[1] = z_ind % thetaAxis.size(); // theta index
 	PRINT_ASSERT(dir_ind[0],>=,0);
@@ -782,8 +782,8 @@ void Grid2DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3
 	rand[2] = rangen->uniform();
 
 	// radius and theta indices
-	int dir_ind[2];
-	zone_directional_indices(z_ind,dir_ind,2);
+	vector<unsigned> dir_ind(2);
+	zone_directional_indices(z_ind,dir_ind);
 	int i = dir_ind[0];
 	int j = dir_ind[1];
 
@@ -941,8 +941,8 @@ double Grid2DSphere::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 
 	// radius and theta indices
-	int dir_ind[2];
-	zone_directional_indices(z_ind,dir_ind,2);
+	vector<unsigned> dir_ind(2);
+	zone_directional_indices(z_ind,dir_ind);
 	int i = dir_ind[0];
 
 	return rAxis.top[i];

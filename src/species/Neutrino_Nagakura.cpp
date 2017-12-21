@@ -73,10 +73,10 @@ void Neutrino_Nagakura::set_eas(int zone_index)
 	    filename << opacity_dir << "/opac_r" << zone_index << "_theta0.dat";
 	}
 	else if(sim->grid->grid_type == "Grid2DSphere"){
-		int dir_ind[2];
+		vector<unsigned> dir_ind(2);
 		hsize_t dims[2];
 		sim->grid->dims(dims,2);
-		sim->grid->zone_directional_indices(zone_index, dir_ind, 2);
+		sim->grid->zone_directional_indices(zone_index, dir_ind);
 		filename.str("");
 		filename << opacity_dir << "/opac_r" << dir_ind[0] << "_theta" << (dims[1]-dir_ind[1]-1) << ".dat"; // Hiroki's theta is backwards
 	}

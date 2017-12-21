@@ -114,7 +114,7 @@ public:
 	static double radius(const double xup[4]);
 
 	// get directional indices from the zone index
-	virtual void    zone_directional_indices(const int z_ind, int dir_ind[], int size) const=0;
+	virtual void    zone_directional_indices(const int z_ind, vector<unsigned>& dir_ind) const=0;
 	virtual void    dims                    (hsize_t dims[], const int size) const=0;
 	virtual hsize_t dimensionality          () const=0;
 

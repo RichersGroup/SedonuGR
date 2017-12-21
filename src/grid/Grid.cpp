@@ -173,9 +173,9 @@ void Grid::write_zones(const int iw) const
 		string filename = Transport::filename("fluid",iw,".dat");
 		outf.open(filename.c_str());
 		write_header(outf);
+		vector<unsigned> dir_ind(dimensionality());
 		for (unsigned z_ind=0; z_ind<z.size(); z_ind++){
-			int dir_ind[dimensionality()];
-			zone_directional_indices(z_ind, dir_ind, dimensionality());
+			zone_directional_indices(z_ind, dir_ind);
 			if(dimensionality()>0) if(dir_ind[dimensionality()-1]==0) outf << endl;
 			write_line(outf,z_ind);
 		}
@@ -336,11 +336,11 @@ void Grid::write_hdf5_data(H5::H5File file) const{
 
 	// write distribution function
 	if(output_zones_distribution){
+		vector<unsigned> dir_ind(dimensionality());
 		for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
-			int dir_ind[dimensionality()];
-			zone_directional_indices(z_ind,dir_ind,dimensionality());
+			zone_directional_indices(z_ind,dir_ind);
 			for(unsigned s=0; s<z[0].distribution.size(); s++){
-				z[z_ind].distribution[s]->write_hdf5_data(file, s, dir_ind, dimensionality());
+				z[z_ind].distribution[s]->write_hdf5_data(file, s, dir_ind);
 			}
 		}
 	}

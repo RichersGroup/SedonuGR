@@ -81,7 +81,7 @@ public:
 
 	// Print out
 	void print(const int iw, const int species) const;
-	void write_hdf5_data(H5::H5File file, const int s, const int dir_ind[], const hsize_t n_spatial_dims) const;
+	void write_hdf5_data(H5::H5File file, const int s, const vector<unsigned>& dir_ind) const;
 	void write_hdf5_coordinates(H5::H5File file, const Grid* grid) const;
 	void write_header(std::ofstream& outf) const;
 	void write_line(std::ofstream& outf) const;

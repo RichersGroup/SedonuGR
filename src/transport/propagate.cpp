@@ -243,7 +243,7 @@ void Transport::propagate(Particle* p)
 {
 
 	ParticleEvent event;
-	LorentzHelper lh(exponential_decay);
+	LorentzHelper lh(exponential_decay, grid->dimensionality());
 	lh.set_p<lab>(p);
 
 	PRINT_ASSERT(lh.p_fate(), ==, moving);

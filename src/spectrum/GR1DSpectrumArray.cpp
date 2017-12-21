@@ -204,7 +204,8 @@ void GR1DSpectrumArray::MPI_average(const int proc)
 // Write data to specified location in an HDF5 file
 //--------------------------------------------------------------
 void GR1DSpectrumArray::write_hdf5_data(H5::H5File file, const int s,
-		const int dir_ind[], const hsize_t n_spatial_dims) const {
+		const vector<unsigned>& dir_ind) const {
+	unsigned n_spatial_dims = dir_ind.size();
 
 	// get the dataset
 	H5::DataSet dataset = file.openDataSet("distribution(erg|ccm,lab)");

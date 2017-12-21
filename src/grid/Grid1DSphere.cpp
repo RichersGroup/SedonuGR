@@ -323,11 +323,11 @@ void Grid1DSphere::zone_coordinates(const int z_ind, double r[1], const int rsiz
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-void Grid1DSphere::zone_directional_indices(const int z_ind, int dir_ind[1], const int size) const
+void Grid1DSphere::zone_directional_indices(const int z_ind, vector<unsigned>& dir_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	PRINT_ASSERT(size,==,(int)dimensionality());
+	PRINT_ASSERT(dir_ind.size(),==,(int)dimensionality());
 	dir_ind[0] = z_ind;
 }
 

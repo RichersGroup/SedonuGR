@@ -32,6 +32,8 @@
 
 enum Frame {com,lab};
 
+using namespace std;
+
 class LorentzHelper{
 
 private:
@@ -40,14 +42,15 @@ private:
 	double dist[2];
 	double v[3]; // velocity of the fluid in the lab frame
 
+	vector<unsigned> dir_ind;
+
 	double doppler_shift(const double v[3], const double D[3], const int size) const;
 	void lorentz_transform_particle(Particle* p, const double v[3], const int vsize) const;
 
 public:
 	bool exponential_decay;
 
-	LorentzHelper(const bool exp_dec);
-	LorentzHelper(const double v[3], const bool exp_dec);
+	LorentzHelper(const bool exp_dec, const int n_spatial_dims);
 
 	static double lorentz_factor(const double v[3], const int vsize);
 	static void transform_cartesian_4vector_c2l(const double vfluid[3], double x[4]);

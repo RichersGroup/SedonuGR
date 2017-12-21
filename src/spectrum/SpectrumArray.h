@@ -31,6 +31,9 @@
 #include "Grid.h"
 #include "H5Cpp.h"
 #include <fstream>
+#include <vector>
+
+using namespace std;
 
 class Grid;
 
@@ -66,7 +69,7 @@ public:
 
 	// Print out
 	virtual void print(const int iw, const int species) const = 0;
-	virtual void write_hdf5_data(H5::H5File file, const int s, const int dir_ind[], const hsize_t n_spatial_dims) const = 0;
+	virtual void write_hdf5_data(H5::H5File file, const int s, const vector<unsigned>& dir_ind) const = 0;
 	virtual void write_hdf5_coordinates(H5::H5File file, const Grid* grid) const = 0;
 	virtual void write_header(std::ofstream& outf) const = 0;
 	virtual void write_line(std::ofstream& outf) const = 0;

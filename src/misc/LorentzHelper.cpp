@@ -36,7 +36,7 @@ namespace pc = physical_constants;
 
 // initialize with the exponential_decay parameter
 // so it knows which opacity to use for tau calculations
-LorentzHelper::LorentzHelper(const bool exp_dec){
+LorentzHelper::LorentzHelper(const bool exp_dec, const int n_spatial_dims){
 	exponential_decay = exp_dec;
 	for(int i=1; i<2; i++){
 		dist[i] = -1;
@@ -45,6 +45,7 @@ LorentzHelper::LorentzHelper(const bool exp_dec){
 		p[i] = Particle();
 	}
 	for(int i=0; i<3; i++) v[i] = 0;
+	dir_ind.resize(n_spatial_dims);
 }
 
 // updates the fluid velocity, assuming the particle in the lab frame remains constant

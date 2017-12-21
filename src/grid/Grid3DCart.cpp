@@ -261,12 +261,12 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	//===============//
 	// fill the grid //
 	//===============//
-    #pragma omp parallel for
+	vector<unsigned> dir_ind(dimensionality());
+    #pragma omp parallel for private(dir_ind)
 	for(int z_ind=0; z_ind<(int)z.size(); z_ind++){
 
 		// directional indices in Sedonu grid
-		int dir_ind[3];
-		zone_directional_indices(z_ind,dir_ind,3);
+		zone_directional_indices(z_ind,dir_ind);
 
 		// directional indices in hdf5 data
 		unsigned hdf5_dir_ind[3];
@@ -499,11 +499,11 @@ int Grid3DCart::zone_index(const int i, const int j, const int k) const{
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-void Grid3DCart::zone_directional_indices(const int z_ind, int dir_ind[3], const int size) const
+void Grid3DCart::zone_directional_indices(const int z_ind, vector<unsigned>& dir_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
-	PRINT_ASSERT(size,==,(int)dimensionality());
+	PRINT_ASSERT(dir_ind.size(),==,(int)dimensionality());
 
 	dir_ind[0] =  z_ind / (xAxes[1].size()*xAxes[2].size());
 	dir_ind[1] = (z_ind % (xAxes[1].size()*xAxes[2].size())) / xAxes[2].size();
@@ -545,8 +545,8 @@ void Grid3DCart::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3])
 	rand[2] = rangen->uniform();
 
 	// zone directional indices
-	int dir_ind[3];
-	zone_directional_indices(z_ind,dir_ind,3);
+	vector<unsigned> dir_ind(3);
+	zone_directional_indices(z_ind,dir_ind);
 
 	// zone deltas in each of three directions
 	double delta[3];
@@ -584,8 +584,8 @@ double  Grid3DCart::zone_min_length(const int z_ind) const
 
 // returning 0 causes the min distance to take over in propagate.cpp::which_event
 double Grid3DCart::zone_cell_dist(const double x_up[3], const int z_ind) const{
-	int dir_ind[3];
-	zone_directional_indices(z_ind,dir_ind,3);
+	vector<unsigned> dir_ind(3);
+	zone_directional_indices(z_ind,dir_ind);
 	const unsigned int i = dir_ind[0];
 	const unsigned int j = dir_ind[1];
 	const unsigned int k = dir_ind[2];
@@ -629,8 +629,8 @@ void Grid3DCart::zone_coordinates(const int z_ind, double r[3], const int rsize)
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 	PRINT_ASSERT(rsize,==,(int)dimensionality());
-	int dir_ind[3];
-	zone_directional_indices(z_ind,dir_ind,3);
+	vector<unsigned> dir_ind(3);
+	zone_directional_indices(z_ind,dir_ind);
 
 	for(int i=0; i<3; i++)
 		r[i] = xAxes[i].mid[dir_ind[i]];
@@ -652,8 +652,8 @@ void Grid3DCart::write_rays(const int iw) const
 	// get the origin coordinates
 	double origin[3] = {0,0,0};
 	z_ind = zone_index(origin);
-	int iorigin[3] = {0,0,0};
-	zone_directional_indices(z_ind,iorigin,3);
+	vector<unsigned> iorigin(3,0);
+	zone_directional_indices(z_ind,iorigin);
 
 
 	// XY-slice
@@ -791,8 +791,8 @@ void Grid3DCart::get_deltas(const int z_ind, double delta[3], const int size) co
 	PRINT_ASSERT(size,==,3);
 
 	// get directional indices
-	int dir_ind[3];
-	zone_directional_indices(z_ind,dir_ind,3);
+	vector<unsigned> dir_ind(3);
+	zone_directional_indices(z_ind,dir_ind);
 
 	for(int i=0; i<3; i++){
 		delta[i] =xAxes[i].delta(dir_ind[i]);

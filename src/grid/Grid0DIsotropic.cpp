@@ -108,10 +108,10 @@ void Grid0DIsotropic::zone_coordinates(const int z_ind, double r[0], const int r
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-void Grid0DIsotropic::zone_directional_indices(const int z_ind, int dir_ind[0], const int size) const
+void Grid0DIsotropic::zone_directional_indices(const int z_ind, vector<unsigned>& dir_ind) const
 {
 	PRINT_ASSERT(z_ind,==,0);
-	PRINT_ASSERT(size,==,0);
+	PRINT_ASSERT(dir_ind.size(),==,0);
 }
 
 

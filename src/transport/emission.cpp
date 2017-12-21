@@ -148,7 +148,7 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 	grid->isotropic_kup_tet(nu,pcom.kup,pcom.xup,&rangen);
 
 	// set up LorentzHelper
-	LorentzHelper lh(exponential_decay);
+	LorentzHelper lh(exponential_decay, grid->dimensionality());
 	lh.set_v(v,3);
 	lh.set_p<com>(&pcom);
 
@@ -224,7 +224,7 @@ void Transport::create_surface_particle(const double weight, const unsigned int 
 			* weight;                    // 1/number of samples
 
 	// set up LorentzHelper
-	LorentzHelper lh(exponential_decay);
+	LorentzHelper lh(exponential_decay, grid->dimensionality());
 	double v[3];
 	grid->interpolate_fluid_velocity(plab.xup,v,z_ind);
 	lh.set_v(v,3);
