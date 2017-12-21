@@ -57,9 +57,9 @@ void increment_tensor_indices(int tensor_indices[], const int rank, const int le
 //--------------------------------------------------------------
 // Initialization and Allocation
 //--------------------------------------------------------------
-void MomentSpectrumArray::init(const LocateArray wg, const int max_rank) {
+void MomentSpectrumArray::init(const Axis& wg, const int max_rank) {
 	// initialize locate arrays by swapping with the inputs
-	nu_grid.copy(wg);
+	nu_grid = wg;
 
 	// determine the number of independent elements
 	const int length = 3;
@@ -104,7 +104,7 @@ void MomentSpectrumArray::wipe() {
 //----------------------
 double MomentSpectrumArray::nu_bin_center(const unsigned index) const {
 	PRINT_ASSERT(index, <, nu_grid.size());
-	return nu_grid.center(index);
+	return nu_grid.mid[index];
 }
 
 //----------------------
@@ -129,7 +129,7 @@ void MomentSpectrumArray::count(const double D[3], const double nu, const double
 	PRINT_ASSERT(E, <, INFINITY);
 
 	// locate bin number
-	unsigned nu_bin = nu_grid.locate(nu);
+	unsigned nu_bin = nu_grid.bin(nu);
 	if (nu_bin == nu_grid.size()) nu_bin--;
 
 	// increment moments
@@ -156,7 +156,7 @@ double MomentSpectrumArray::average_nu() const {
 	double integral_N = 0;
 	for (unsigned nu_bin = 0; nu_bin<n_groups(); nu_bin++) {
 		integral_E += moments[nu_bin][0][0];
-		integral_N += moments[nu_bin][0][0] / nu_grid.center(nu_bin);
+		integral_N += moments[nu_bin][0][0] / nu_grid.mid[nu_bin];
 	}
 	double result = integral_E / integral_N;
 	if (result >= 0)
@@ -210,7 +210,7 @@ void MomentSpectrumArray::print(const int iw, const int species) const {
 
 	// write the data
 	for (unsigned group = 0; group < n_groups(); group++) {
-		outf << nu_grid.center(group) << " " << nu_grid.delta(group) << " ";
+		outf << nu_grid.mid[group] << " " << nu_grid.delta(group) << " ";
 		for (unsigned rank = 0; rank < n_ranks(); rank++)
 			for (unsigned i = 0; i < n_elements(rank); i++) {
 				// the delta is infinity if the bin is a catch-all.
@@ -358,7 +358,7 @@ void MomentSpectrumArray::write_hdf5_coordinates(H5::H5File file,
 			dataspace);
 	tmp[0] = nu_grid.min;
 	for (unsigned i = 1; i < nu_grid.size() + 1; i++)
-		tmp[i] = nu_grid[i - 1];
+		tmp[i] = nu_grid.top[i - 1];
 	dataset.write(&tmp[0], H5::PredType::IEEE_F32LE);
 	dataset.close();
 

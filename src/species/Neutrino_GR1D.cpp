@@ -55,21 +55,37 @@ void Neutrino_GR1D::myInit(Lua* lua)
 	Neutrino::myInit(lua);
 }
 
-void Neutrino_GR1D::set_nu_grid(Lua* lua, LocateArray* nu_grid){
+void Neutrino_GR1D::set_nu_grid(Lua* lua, Axis* nu_grid){
 	// get nugrid from nulib file
 	string nulibfilename = lua->scalar<string>("nulib_file");
 	H5::H5File file( nulibfilename.c_str(), H5F_ACC_RDONLY );
+
+	// read tops from hdf5 file
 	H5::DataSet dataset = file.openDataSet("bin_top");
 	H5::DataSpace dataspace = dataset.getSpace();
 	PRINT_ASSERT(dataspace.getSimpleExtentNdims(),==,1);
 	hsize_t dims[1];
 	dataspace.getSimpleExtentDims(dims);
-	nu_grid->resize(dims[0]);
-	dataset.read(&(nu_grid->x[0]),H5::PredType::IEEE_F64LE);
+	vector<double> tops(dims[0]);
+	dataset.read(&(tops[0]),H5::PredType::IEEE_F64LE);
+
+	// read the centers from hdf5 file
+	dataset = file.openDataSet("energies");
+	dataspace = dataset.getSpace();
+	PRINT_ASSERT(dataspace.getSimpleExtentNdims(),==,1);
+	dataspace.getSimpleExtentDims(dims);
+	vector<double> mid(dims[0]);
+	dataset.read(&(mid[0]),H5::PredType::IEEE_F64LE);
+
 	dataset.close();
 	file.close();
-	nu_grid->min = 0;
-	for(int i=0; i<nu_grid->size(); i++)	nu_grid->x[i] /= pc::h_MeV;
+
+	// adjust units
+	for(int i=0; i<nu_grid->size(); i++){
+		tops[i] /= pc::h_MeV;
+		mid[i] /= pc::h_MeV;
+	}
+	*nu_grid = Axis(0, tops, mid);
 }
 
 //-----------------------------------------------------------------

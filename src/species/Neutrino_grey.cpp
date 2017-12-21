@@ -63,7 +63,7 @@ void Neutrino_grey::set_eas(int zone_index)
 
 	PRINT_ASSERT(grey_abs_frac,>=,0);
 	PRINT_ASSERT(grey_abs_frac,<=,1.0);
-	for(unsigned j=0;j<nu_grid->size();j++)
+	for(unsigned j=0;j<nu_grid_axis->size();j++)
 	{
 		double nu  = sim->grid->nu_grid_axis.mid[j];        // (Hz)
 		double dnu3 = sim->grid->nu_grid_axis.delta3(j);         // (Hz)

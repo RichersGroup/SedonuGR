@@ -341,15 +341,15 @@ void Transport::sample_scattering_final_state(const int z_ind, LorentzHelper &lh
 	PRINT_ASSERT(species_list[lh.p_s()]->normalized_phi0.size(),>,0);
 
 	// get ingoing energy index
-	int igin = grid->nu_grid.locate(lh.p_nu());
-	if(igin == grid->nu_grid.size()) igin--;
+	int igin = grid->nu_grid_axis.bin(lh.p_nu());
+	if(igin == grid->nu_grid_axis.size()) igin--;
 
 	// get outgoing energy
-	double out_nu = species_list[lh.p_s()]->normalized_phi0[z_ind][igin].invert(rangen.uniform(),&grid->nu_grid);
+	int igout = rangen.uniform_discrete(0, grid->nu_grid_axis.size()-1);
+	double out_nu = rangen.uniform(grid->nu_grid_axis.bottom(igout), grid->nu_grid_axis.top[igout]);
 	lh.scale_p_energy(out_nu/lh.p_nu());
-
-	// get outgoing energy index
-	int igout = grid->nu_grid.locate(out_nu);
+	double weight = (double)grid->nu_grid_axis.size() * species_list[lh.p_s()]->normalized_phi0[z_ind][igin].get_value(igout);
+	lh.scale_p_number(weight);
 
 	// bias outgoing direction to be isotropic. Very inefficient for large values of delta.
 	double delta = species_list[lh.p_s()]->scattering_delta[z_ind][igin][igout];

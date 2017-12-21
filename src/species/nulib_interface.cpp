@@ -32,6 +32,7 @@
 #include "nulib_interface.h"
 #include "global_options.h"
 #include "H5Cpp.h"
+#include "Axis.h"
 
 using namespace std;
 namespace pc = physical_constants;
@@ -516,14 +517,23 @@ void nulib_get_pure_emis(
 /* nulib_get_nu_grid */
 /*********************/
 // Fill in the locate array with values of the array stored in the fortran module
-void nulib_get_nu_grid(LocateArray& nu_grid){ // Hz
+void nulib_get_nu_grid(Axis& nu_grid){ // Hz
+	vector<double> tops(nulibtable_number_groups), mid(nulibtable_number_groups);
+
 	// assign values from the NuLib module to nu_grid
-	nu_grid.x.assign(nulibtable_etop,
+	tops.assign(nulibtable_etop,
 			nulibtable_etop + nulibtable_number_groups);
+	mid.assign(nulibtable_energies,
+			nulibtable_energies + nulibtable_number_groups);
 
 	// convert from MeV to frequency using the Planck constant
-	for(unsigned i=0; i<nu_grid.size(); i++) nu_grid.x[i] /= pc::h_MeV;
-	nu_grid.min = nulibtable_ebottom[0] / pc::h_MeV;
+	for(unsigned i=0; i<tops.size(); i++){
+		tops[i] /= pc::h_MeV;
+		mid[i] /= pc::h_MeV;
+	}
+	double minval = nulibtable_ebottom[0] / pc::h_MeV;
+
+	nu_grid = Axis(minval, tops, mid);
 }
 
 

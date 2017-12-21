@@ -95,7 +95,7 @@ void Neutrino_Nagakura::set_eas(int zone_index)
     string line;
     getline(opac_file,line);
 
-    for(int inu=0; inu<nu_grid->size(); inu++){
+    for(int inu=0; inu<nu_grid_axis->size(); inu++){
             int itmp;
             double e=0, a=0, s=0;
 

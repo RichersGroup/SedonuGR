@@ -111,8 +111,8 @@ void Grid::init(Lua* lua)
 
     // get the frequency grid
 	string neutrino_type = lua->scalar<string>("neutrino_type");
-	if(neutrino_type=="NuLib") nulib_get_nu_grid(nu_grid);
-	else if(neutrino_type=="GR1D") Neutrino_GR1D::set_nu_grid(lua,&nu_grid);
+	if(neutrino_type=="NuLib") nulib_get_nu_grid(nu_grid_axis);
+	else if(neutrino_type=="GR1D") Neutrino_GR1D::set_nu_grid(lua,&nu_grid_axis);
 	else{
         double minval = 0;
         double trash, tmp=0;
@@ -122,7 +122,7 @@ void Grid::init(Lua* lua)
     		double nu_start = lua->scalar<double>("nugrid_start");
     		double nu_stop  = lua->scalar<double>("nugrid_stop");
     		PRINT_ASSERT(nu_stop,>,nu_start);
-    		nu_grid.init(nu_start/pc::h_MeV,nu_stop/pc::h_MeV,n_nu);
+    		nu_grid_axis = Axis(nu_start/pc::h_MeV,nu_stop/pc::h_MeV,n_nu);
     	}
     	else{
     		string nugrid_filename = lua->scalar<string>("nugrid_filename");
@@ -130,23 +130,19 @@ void Grid::init(Lua* lua)
     		nugrid_file.open(nugrid_filename.c_str());
     		nugrid_file >> trash >> minval;
     		minval /= pc::h_MeV;
+    		vector<double> binmid;
     		while(nugrid_file >> trash >> tmp){
     			tmp /= pc::h_MeV;
-    			if(bintops.size()>0) PRINT_ASSERT(tmp,>,bintops[bintops.size()-1]);
-    			else PRINT_ASSERT(tmp,>,minval);
+    			double last = bintops.size()>0 ? bintops[bintops.size()-1] : minval;
+    			PRINT_ASSERT(tmp,>,last);
     			bintops.push_back(tmp);
+    			binmid.push_back(0.5 * (last + tmp));
     		}
     		nugrid_file.close();
-            nu_grid.init(bintops,minval,nu_grid.interpolation_method);
+            nu_grid_axis = Axis(minval,bintops,binmid);
     	}
 	}
-	PRINT_ASSERT(nu_grid.size(),>,0);
-
-	// TEMPORARY // set up the axis
-	vector<double> mid(nu_grid.size());
-	for(int i=0; i<nu_grid.size(); i++) mid[i] = nu_grid.center(i);
-	nu_grid_axis = Axis(nu_grid.min, nu_grid.x, mid);
-
+	PRINT_ASSERT(nu_grid_axis.size(),>,0);
 }
 
 //------------------------------------------------------------

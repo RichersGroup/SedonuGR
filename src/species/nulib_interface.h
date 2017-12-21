@@ -30,7 +30,7 @@
 
 #include <vector>
 #include "CDFArray.h"
-#include "LocateArray.h"
+#include "Axis.h"
 //
 // returns everything in standard CGS units (i.e. ergs, s, cm, K, Hz)
 
@@ -42,7 +42,7 @@ void nulib_get_epannihil_kernels(double rho, double temp, double ye, int nulibID
 								 std::vector< std::vector< std::vector<double> > >& phi_production,
 								 std::vector< std::vector< std::vector<double> > >& phi_annihilation);
 void nulib_get_pure_emis(double rho, double temp, double ye, int nulibID, std::vector<double>& pure_emis);
-void nulib_get_nu_grid(LocateArray& nut_nu_grid);
+void nulib_get_nu_grid(Axis& nut_nu_grid);
 int nulib_get_nspecies();
 
 double nulib_get_Tmin();

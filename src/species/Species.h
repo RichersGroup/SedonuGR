@@ -63,7 +63,6 @@ public:
 	virtual ~Species() {}
 
 	// the frequency grid for emissivity/opacity (Hz)
-	LocateArray* nu_grid;
 	Axis* nu_grid_axis;
 
 	// name

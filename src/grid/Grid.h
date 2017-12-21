@@ -94,7 +94,6 @@ public:
 
 	// vector of zones
 	std::vector<Zone> z;
-	LocateArray nu_grid;
 
 	Axis nu_grid_axis;
 

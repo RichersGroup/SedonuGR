@@ -21,6 +21,10 @@ public:
 		this->min = min;
 		this->top = top;
 		this->mid = mid;
+		for(int i=0; i<top.size(); i++){
+			PRINT_ASSERT(top[i],>,mid[i]);
+			PRINT_ASSERT(mid[i],>, i==0 ? min : top[i-1]);
+		}
 	}
 	Axis(const double min, const double max, const unsigned nbins){
 		this->min = min;

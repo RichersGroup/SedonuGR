@@ -29,7 +29,6 @@
 #define _GR1D_SPECTRUM_ARRAY_H 1
 
 #include "SpectrumArray.h"
-#include "LocateArray.h"
 #include "H5Cpp.h"
 #include <fstream>
 
@@ -43,7 +42,7 @@ private:
 	// values represent bin upper walls (the single locate_array.min value is the leftmost wall)
 	// underflow is combined into leftmost bin (right of the locate_array.min)
 	// overflow is combined into the rightmost bin (left of locate_array[size-1])
-	LocateArray nu_grid;
+	Axis nu_grid;
 
 public:
 
@@ -51,7 +50,7 @@ public:
 	vector<double> moments;
 
 	// Initialize
-	void init(const LocateArray nu_grid);
+	void init(const Axis& nu_grid);
 
 	// MPI functions
 	virtual void MPI_average(const int proc);

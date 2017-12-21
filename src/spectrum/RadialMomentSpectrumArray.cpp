@@ -39,9 +39,9 @@ namespace pc = physical_constants;
 //--------------------------------------------------------------
 // Initialization and Allocation
 //--------------------------------------------------------------
-void RadialMomentSpectrumArray::init(const LocateArray wg, const int max_rank) {
+void RadialMomentSpectrumArray::init(const Axis& wg, const int max_rank) {
 	// initialize locate arrays by swapping with the inputs
-	nu_grid.copy(wg);
+	nu_grid = wg;
 
 	// initialize the moments
 	nranks = max_rank + 1;
@@ -64,7 +64,7 @@ void RadialMomentSpectrumArray::wipe() {
 //----------------------
 double RadialMomentSpectrumArray::nu_bin_center(const unsigned index) const {
 	PRINT_ASSERT(index, <, nu_grid.size());
-	return nu_grid.center(index);
+	return nu_grid.mid[index];
 }
 
 //----------------------
@@ -83,7 +83,7 @@ void RadialMomentSpectrumArray::count(const double D[3], const double nu, const 
 	PRINT_ASSERT(E, <, INFINITY);
 
 	// locate bin number
-	unsigned nu_bin = nu_grid.locate(nu);
+	unsigned nu_bin = nu_grid.bin(nu);
 	if (nu_bin == nu_grid.size()) nu_bin--;
 
 	// increment moments
@@ -103,7 +103,7 @@ double RadialMomentSpectrumArray::average_nu() const {
 	for (unsigned nu_bin = 0; nu_bin<nu_grid.size(); nu_bin++) {
 		int index2D = index(nu_bin,0);
 		integral_E += moments[index2D];
-		integral_N += moments[index2D] / nu_grid.center(nu_bin);
+		integral_N += moments[index2D] / nu_grid.mid[nu_bin];
 	}
 	double result = integral_E / integral_N;
 	if (result >= 0)
@@ -160,7 +160,7 @@ void RadialMomentSpectrumArray::print(const int iw, const int species) const {
 
 	// write the data
 	for (unsigned group = 0; group < nu_grid.size(); group++) {
-		outf << nu_grid.center(group) << " " << nu_grid.delta(group) << " ";
+		outf << nu_grid.mid[group] << " " << nu_grid.delta(group) << " ";
 		for (unsigned rank = 0; rank < nranks; rank++){
 			int index2D = index(group, rank);
 			// the delta is infinity if the bin is a catch-all.
@@ -280,7 +280,7 @@ void RadialMomentSpectrumArray::write_hdf5_coordinates(H5::H5File file,
 	dataspace = H5::DataSpace(1,dims);
 	dataset = file.createDataSet("distribution_frequency_grid(Hz,lab)",H5::PredType::IEEE_F32LE,dataspace);
 	tmp[0] = nu_grid.min;
-	for(unsigned i=1; i<nu_grid.size()+1; i++) tmp[i] = nu_grid[i-1];
+	for(unsigned i=1; i<nu_grid.size()+1; i++) tmp[i] = nu_grid.top[i-1];
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 

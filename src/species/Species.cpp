@@ -45,7 +45,6 @@ Species::Species(){
 	lepton_number = MAXLIM;
 	sim = NULL;
 	ID = MAXLIM;
-	nu_grid=NULL;
 	nu_grid_axis = NULL;
 	T_core = NaN;
 	mu_core = NaN;
@@ -62,7 +61,6 @@ void Species::init(Lua* lua, Transport* simulation)
 	// set the pointer to see the simulation info
 	sim = simulation;
 	PRINT_ASSERT(sim->grid->z.size(),>,0);
-	nu_grid = &(sim->grid->nu_grid);
 	nu_grid_axis = &(sim->grid->nu_grid_axis);
 
 
@@ -70,13 +68,6 @@ void Species::init(Lua* lua, Transport* simulation)
 	// CALL CHILD'S INIT FUNCTION //
 	//============================//
 	myInit(lua);
-
-    // set the interpolation method
-    int imeth  = lua->scalar<int>("opac_interp_method");
-	if     (imeth == 0) nu_grid->interpolation_method = constant;
-	else if(imeth == 1) nu_grid->interpolation_method = linear;
-	else if(imeth == 2) nu_grid->interpolation_method = logarithmic;
-	else				nu_grid->interpolation_method = power;
 
     //===========================//
 	// intialize output spectrum // only if child didn't
@@ -102,11 +93,11 @@ void Species::init(Lua* lua, Transport* simulation)
 		normalized_phi0.resize(sim->grid->z.size());
 		scattering_delta.resize(sim->grid->z.size());
 		for(int z_ind=0; z_ind<sim->grid->z.size(); z_ind++){
-			normalized_phi0[z_ind].resize(nu_grid->size());
-			scattering_delta[z_ind].resize(nu_grid->size());
-			for(int igin=0; igin<nu_grid->size(); igin++){
-				normalized_phi0[z_ind][igin].resize(nu_grid->size());
-				scattering_delta[z_ind][igin].resize(nu_grid->size(),0);
+			normalized_phi0[z_ind].resize(nu_grid_axis->size());
+			scattering_delta[z_ind].resize(nu_grid_axis->size());
+			for(int igin=0; igin<nu_grid_axis->size(); igin++){
+				normalized_phi0[z_ind][igin].resize(nu_grid_axis->size());
+				scattering_delta[z_ind][igin].resize(nu_grid_axis->size(),0);
 			}
 		}
 	}
@@ -115,9 +106,9 @@ void Species::init(Lua* lua, Transport* simulation)
 	int iorder = lua->scalar<int>("cdf_interpolation_order");
     //#pragma omp parallel for
 	for(unsigned i=0; i<abs_opac.size();  i++){
-		abs_opac[i].resize(nu_grid->size());
-		scat_opac[i].resize(nu_grid->size());
-		emis[i].resize(nu_grid->size());
+		abs_opac[i].resize(nu_grid_axis->size());
+		scat_opac[i].resize(nu_grid_axis->size());
+		emis[i].resize(nu_grid_axis->size());
 		emis[i].interpolation_order = iorder;
 	}
 	if(rank0) cout << "finished." << endl;
@@ -193,20 +184,20 @@ void Species::init(Lua* lua, Transport* simulation)
 	  else if(distribution_type == "Moments"){
 	    int order = lua->scalar<int>("distribution_moment_order");
 	    tmp_spectrum = new MomentSpectrumArray;
-	    ((MomentSpectrumArray*)tmp_spectrum)->init(*nu_grid, order);
+	    ((MomentSpectrumArray*)tmp_spectrum)->init(*nu_grid_axis, order);
 	  }
 
 	  //-- RADIAL MOMENT SPECTRUM --------------------
 	  else if(distribution_type == "RadialMoments"){
 	    int order = lua->scalar<int>("distribution_moment_order");
 	    tmp_spectrum = new RadialMomentSpectrumArray;
-	    ((RadialMomentSpectrumArray*)tmp_spectrum)->init(*nu_grid, order);
+	    ((RadialMomentSpectrumArray*)tmp_spectrum)->init(*nu_grid_axis, order);
 	  }
 
 	  //-- RADIAL MOMENT SPECTRUM --------------------
 	  else if(distribution_type == "GR1D"){
 	    tmp_spectrum = new GR1DSpectrumArray;
-	    ((GR1DSpectrumArray*)tmp_spectrum)->init(*nu_grid);
+	    ((GR1DSpectrumArray*)tmp_spectrum)->init(*nu_grid_axis);
 	  }
 
 	  //-- CATCH ------------------
@@ -237,8 +228,9 @@ void Species::get_opacity(const double com_nu, const int z_ind, double* a, doubl
 	PRINT_ASSERT(com_nu,>,0);
 
 	// absorption and scattering opacities
-	*a = max(nu_grid->value_at(com_nu, abs_opac[z_ind]),0.0);
-	*s = max(nu_grid->value_at(com_nu,scat_opac[z_ind]),0.0);
+	unsigned nu_bin = nu_grid_axis->bin(com_nu);
+	*a = abs_opac[z_ind][nu_bin];
+	*s = scat_opac[z_ind][nu_bin];
 
 	PRINT_ASSERT(*a,>=,0);
 	PRINT_ASSERT(*s,>=,0);
