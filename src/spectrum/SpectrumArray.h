@@ -28,7 +28,6 @@
 #ifndef _SPECTRUM_ARRAY_H
 #define _SPECTRUM_ARRAY_H 1
 
-#include "LocateArray.h"
 #include "Grid.h"
 #include "H5Cpp.h"
 #include <fstream>

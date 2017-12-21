@@ -22,6 +22,16 @@ public:
 		this->top = top;
 		this->mid = mid;
 	}
+	Axis(const double min, const double max, const unsigned nbins){
+		this->min = min;
+		top.resize(nbins);
+		mid.resize(nbins);
+		double del = (max-min) / (double)nbins;
+		for(int i=0; i<nbins; i++){
+			top[i] = min + (i+1)*del;
+			mid[i] = min + ((double)i + 0.5)*del;
+		}
+	}
 
 	Axis() {
 		min = NaN;

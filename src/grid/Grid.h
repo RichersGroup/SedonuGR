@@ -54,6 +54,7 @@
 #include "H5Cpp.h"
 #include "Axis.h"
 #include "MultiDArray.h"
+#include "LocateArray.h"
 
 class Transport;
 class Zone;

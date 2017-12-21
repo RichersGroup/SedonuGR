@@ -29,9 +29,9 @@
 #define _POLAR_SPECTRUM_ARRAY_H 1
 
 #include "SpectrumArray.h"
-#include "LocateArray.h"
 #include "H5Cpp.h"
 #include <fstream>
+#include "Axis.h"
 
 class PolarSpectrumArray : public SpectrumArray {
 
@@ -41,9 +41,9 @@ private:
 	// values represent bin upper walls (the single locate_array.min value is the leftmost wall)
 	// underflow is combined into leftmost bin (right of the locate_array.min)
 	// overflow is combined into the rightmost bin (left of locate_array[size-1])
-	LocateArray nu_grid;
-	LocateArray mu_grid;
-	LocateArray phi_grid;
+	Axis nu_grid;
+	Axis mu_grid;
+	Axis phi_grid;
 
 	// counting arrays
 	std::vector<double> flux;
@@ -51,7 +51,7 @@ private:
 public:
 
 	// Initialize
-	void init(const LocateArray nu_grid, const LocateArray mu_grid, const LocateArray phi_grid);
+	void init(const Axis& nu_grid, const Axis& mu_grid, const Axis& phi_grid);
 	void init(const std::vector<double> nu_grid, const int n_mu, const int n_phi);
 
 	// MPI functions

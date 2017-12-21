@@ -41,23 +41,21 @@ namespace pc = physical_constants;
 void PolarSpectrumArray::init(const std::vector<double> w,
 		const int n_mu, const int n_phi)
 {
-	// assign wave grid
-	double w_start = w[0];
-	double w_stop  = w[1];
-	double w_del   = w[2];
-	nu_grid.init(w_start,w_stop,w_del);
-	int n_wave   = nu_grid.size();
+	vector<double> top, mid;
+	double min;
 
-	// asign mu grid
-	mu_grid.init(-1,1,n_mu);
+	// frequency axis
+	double start = w[0];
+	double stop  = w[1];
+	double del   = w[2];
+	unsigned ng = (stop-start)/del;
+	nu_grid = Axis(start, stop, ng);
 
-	// asign phi grid
-	phi_grid.init(-pc::pi,pc::pi,n_phi);
+	mu_grid = Axis(-1,1,n_mu);
+	phi_grid = Axis(-pc::pi, pc::pi, n_phi);
 
 	// index parameters
-	unsigned n_elements  = n_wave*n_mu*n_phi;
-
-	// allocate memory
+	unsigned n_elements  = ng*n_mu*n_phi;
 	flux.resize(n_elements);
 
 	// clear
@@ -68,13 +66,13 @@ void PolarSpectrumArray::init(const std::vector<double> w,
 //--------------------------------------------------------------
 // Initialization and Allocation
 //--------------------------------------------------------------
-void PolarSpectrumArray::init(const LocateArray wg,
-		const LocateArray mg, const LocateArray pg)
+void PolarSpectrumArray::init(const Axis& wg,
+		const Axis& mg, const Axis& pg)
 {
 	// initialize locate arrays by swapping with the inputs
-	nu_grid.copy(wg);
-	mu_grid.copy(mg);
-	phi_grid.copy(pg);
+	nu_grid = wg;
+	mu_grid = mg;
+	phi_grid = pg;
 
 	int n_wave   = nu_grid.size();
 	int n_mu     = mu_grid.size();
@@ -147,27 +145,27 @@ unsigned PolarSpectrumArray::phi_bin(const unsigned index) const{
 //--------------------
 double PolarSpectrumArray::nu_center(const unsigned index) const{
 	PRINT_ASSERT(index,<,flux.size());
-	return nu_grid.center(nu_bin(index));
+	return nu_grid.mid[nu_bin(index)];
 }
 double PolarSpectrumArray::mu_center(const unsigned index) const{
 	PRINT_ASSERT(index,<,flux.size());
-	return mu_grid.center(mu_bin(index));
+	return mu_grid.mid[mu_bin(index)];
 }
 double PolarSpectrumArray::phi_center(const unsigned index) const{
 	PRINT_ASSERT(index,<,flux.size());
-	return phi_grid.center(phi_bin(index));
+	return phi_grid.mid[phi_bin(index)];
 }
 double PolarSpectrumArray::nu_bin_center(const unsigned index) const{
 	PRINT_ASSERT(index,<,nu_grid.size());
-	return nu_grid.center(index);
+	return nu_grid.mid[index];
 }
 double PolarSpectrumArray::mu_bin_center(const unsigned index) const{
 	PRINT_ASSERT(index,<,mu_grid.size());
-	return mu_grid.center(index);
+	return mu_grid.mid[index];
 }
 double PolarSpectrumArray::phi_bin_center(const unsigned index) const{
 	PRINT_ASSERT(index,<,phi_grid.size());
-	return phi_grid.center(index);
+	return phi_grid.mid[index];
 }
 
 //-------
@@ -209,17 +207,17 @@ void PolarSpectrumArray::count(const double D[3], const double nu, const double 
 	}
 
 	// locate bin number in all dimensions.
-	unsigned nu_bin  =  nu_grid.locate(nu);
-	unsigned mu_bin  =  mu_grid.locate(mu);
-	unsigned phi_bin = phi_grid.locate(phi);
+	unsigned nu_bin  =  nu_grid.bin(nu);
+	unsigned mu_bin  =  mu_grid.bin(mu);
+	unsigned phi_bin = phi_grid.bin(phi);
 
 	// if off the RIGHT of mu/phi grids, just return without counting
 	if((mu_bin ==   mu_grid.size()) || (phi_bin ==  phi_grid.size())){
 		cout << "Lost a particle off the right of the spectrum array!" << endl;
 		cout << "mu=" << mu << endl;
-		cout << "mu_max=" << mu_grid[mu_grid.size()-1] << endl;
+		cout << "mu_max=" << mu_grid.top[mu_grid.size()-1] << endl;
 		cout << "phi=" << phi << endl;
-		cout << "phi_max=" << phi_grid[phi_grid.size()-1] << endl;
+		cout << "phi_max=" << phi_grid.top[phi_grid.size()-1] << endl;
 		return;
 	}
 
@@ -244,7 +242,7 @@ double PolarSpectrumArray::average_nu() const{
 			for(unsigned phi_bin=0; phi_bin<phi_grid.size(); phi_bin++){
 				int ind = index(nu_bin,mu_bin,phi_bin);
 				integral1 += flux[ind];
-				integral2 += flux[ind] * nu_grid.center(nu_bin);
+				integral2 += flux[ind] * nu_grid.mid[nu_bin];
 			}
 		}
 	}
@@ -307,9 +305,9 @@ void PolarSpectrumArray::print(const int iw, const int species) const
 			for (unsigned j=0;j<n_nu;j++)
 			{
 				int id = index(j,k,m);
-				if (n_nu > 1) outf <<  nu_grid.center(j) << " " << nu_grid.delta(j) << " ";
-				if (n_mu > 1) outf <<  mu_grid.center(k) << " ";
-				if (n_phi> 1) outf << phi_grid.center(m) << " ";
+				if (n_nu > 1) outf <<  nu_grid.mid[j] << " " << nu_grid.delta(j) << " ";
+				if (n_mu > 1) outf <<  mu_grid.mid[k] << " ";
+				if (n_phi> 1) outf << phi_grid.mid[m] << " ";
 
 				// the delta is infinity if the bin is a catch-all.
 				double wdel = (nu_grid.delta(j)<numeric_limits<double>::infinity() ? nu_grid.delta(j) : 1);
@@ -428,7 +426,7 @@ void PolarSpectrumArray::write_hdf5_coordinates(H5::H5File file, const Grid* gri
 	dataspace = H5::DataSpace(1,dims);
 	dataset = file.createDataSet("distribution_frequency_grid(Hz,lab)",H5::PredType::IEEE_F32LE,dataspace);
 	tmp[0] = nu_grid.min;
-	for(unsigned i=1; i<nu_grid.size()+1; i++) tmp[i] = nu_grid[i-1];
+	for(unsigned i=1; i<nu_grid.size()+1; i++) tmp[i] = nu_grid.top[i-1];
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 
@@ -438,7 +436,7 @@ void PolarSpectrumArray::write_hdf5_coordinates(H5::H5File file, const Grid* gri
 	dataspace = H5::DataSpace(1,dims);
 	dataset = file.createDataSet("distribution_costheta_grid(lab)",H5::PredType::IEEE_F32LE,dataspace);
 	tmp[0] = mu_grid.min;
-	for(unsigned i=1; i<mu_grid.size()+1; i++) tmp[i] = mu_grid[i-1];
+	for(unsigned i=1; i<mu_grid.size()+1; i++) tmp[i] = mu_grid.top[i-1];
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 
@@ -448,7 +446,7 @@ void PolarSpectrumArray::write_hdf5_coordinates(H5::H5File file, const Grid* gri
 	dataspace = H5::DataSpace(1,dims);
 	dataset = file.createDataSet("distribution_phi_grid(radians,lab)",H5::PredType::IEEE_F32LE,dataspace);
 	tmp[0] = phi_grid.min;
-	for(unsigned i=1; i<phi_grid.size()+1; i++) tmp[i] = phi_grid[i-1];
+	for(unsigned i=1; i<phi_grid.size()+1; i++) tmp[i] = phi_grid.top[i-1];
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 
