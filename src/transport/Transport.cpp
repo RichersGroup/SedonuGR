@@ -187,53 +187,6 @@ void Transport::init(Lua* lua)
 		rho_max = nulib_get_rhomax();
 	}
 
-
-	//=================//
-	// SET UP THE GRID //
-	//=================//
-	// read the grid type
-	string grid_type = lua->scalar<string>("grid_type");
-
-	// create a grid of the appropriate type
-	if     (grid_type == "Grid0DIsotropic"    ) grid = new Grid0DIsotropic;
-	else if(grid_type == "Grid1DSphere"       ) grid = new Grid1DSphere;
-	else if(grid_type == "Grid2DSphere"       ) grid = new Grid2DSphere;
-	else if(grid_type == "Grid3DCart"         ) grid = new Grid3DCart;
-	else if(grid_type == "GridGR1D"           ) cout << "#   Using GridGR1D" << endl; // already set up in GR1Dinterface.cpp
-	else{
-		if(rank0) std::cout << "# ERROR: the requested grid type is not implemented." << std::endl;
-		exit(3);}
-	grid->init(lua);
-
-	// Reserve all the memory we might need right now. Speeds up particle additions.
-	max_particles = lua->scalar<int>("max_particles");
-	particles.reserve(max_particles);
-
-	//===============//
-	// GENERAL SETUP //
-	//===============//
-	// figure out which zones are in this processors work load
-	// a processor will do work in range [start,end)
-	my_zone_end.resize(MPI_nprocs);
-	for(int proc=0; proc<MPI_nprocs; proc++){
-		// how much work does this processor do?
-		int my_job = (int)(grid->z.size()/(1.0*MPI_nprocs));
-		if(my_job < 1) my_job = 1;
-
-		// where does this processor start and stop its work? (only the end needs to be stored)
-		int my_zone_start = proc*my_job;
-		my_zone_end[proc] = my_zone_start + my_job;
-
-		// make sure last guy finishes it all
-		if(proc == MPI_nprocs-1) my_zone_end[proc] = grid->z.size();
-
-		// make sure nobody goes overboard
-		if(my_zone_end[proc] >= grid->z.size()) my_zone_end[proc] = grid->z.size();
-	}
-
-	// setup and seed random number generator(s)
-	rangen.init();
-
 	//==================//
 	// SET UP TRANSPORT //
 	//==================//
@@ -269,10 +222,61 @@ void Transport::init(Lua* lua)
 		else if(neutrino_type == "GR1D")     neutrinos_tmp = new Neutrino_GR1D;
 		neutrinos_tmp->ID = i;
 		neutrinos_tmp->num_species = num_nut_species;
-		neutrinos_tmp->init(lua, this);
 		species_list.push_back(neutrinos_tmp);
 	}
 
+
+	//=================//
+	// SET UP THE GRID //
+	//=================//
+	// read the grid type
+	string grid_type = lua->scalar<string>("grid_type");
+
+	// create a grid of the appropriate type
+	if     (grid_type == "Grid0DIsotropic"    ) grid = new Grid0DIsotropic;
+	else if(grid_type == "Grid1DSphere"       ) grid = new Grid1DSphere;
+	else if(grid_type == "Grid2DSphere"       ) grid = new Grid2DSphere;
+	else if(grid_type == "Grid3DCart"         ) grid = new Grid3DCart;
+	else if(grid_type == "GridGR1D"           ) cout << "#   Using GridGR1D" << endl; // already set up in GR1Dinterface.cpp
+	else{
+		if(rank0) std::cout << "# ERROR: the requested grid type is not implemented." << std::endl;
+		exit(3);}
+	grid->init(lua, this);
+
+	// Reserve all the memory we might need right now. Speeds up particle additions.
+	max_particles = lua->scalar<int>("max_particles");
+	particles.reserve(max_particles);
+
+	//===============//
+	// GENERAL SETUP //
+	//===============//
+	// figure out which zones are in this processors work load
+	// a processor will do work in range [start,end)
+	my_zone_end.resize(MPI_nprocs);
+	for(int proc=0; proc<MPI_nprocs; proc++){
+		// how much work does this processor do?
+		int my_job = (int)(grid->z.size()/(1.0*MPI_nprocs));
+		if(my_job < 1) my_job = 1;
+
+		// where does this processor start and stop its work? (only the end needs to be stored)
+		int my_zone_start = proc*my_job;
+		my_zone_end[proc] = my_zone_start + my_job;
+
+		// make sure last guy finishes it all
+		if(proc == MPI_nprocs-1) my_zone_end[proc] = grid->z.size();
+
+		// make sure nobody goes overboard
+		if(my_zone_end[proc] >= grid->z.size()) my_zone_end[proc] = grid->z.size();
+	}
+
+	// setup and seed random number generator(s)
+	rangen.init();
+
+
+	//==========================//
+	// INITIALIZE THE NEUTRINOS //
+	//==========================//
+	for(unsigned i=0; i<species_list.size(); i++) species_list[i]->init(lua, this);
 
 	// complain if we're not simulating anything
 	n_active.resize(species_list.size(),0);

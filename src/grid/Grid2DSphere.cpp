@@ -46,6 +46,15 @@ Grid2DSphere::Grid2DSphere(){
 //------------------------------------------------------------
 void Grid2DSphere::read_model_file(Lua* lua)
 {
+	// set up the data structures
+	abs_opac.resize(sim->species_list.size());
+	scat_opac.resize(sim->species_list.size());
+	vector<Axis*> axes = {&nu_grid_axis, &rAxis, &thetaAxis};
+	for(int s=0; s<sim->species_list.size(); s++){
+		abs_opac[s] = new MultiDArray<3>(axes);
+		scat_opac[s] = new MultiDArray<3>(axes);
+	}
+
 	std::string model_type = lua->scalar<std::string>("model_type");
 	ignore_theta_min_dist = lua->scalar<int>("Grid2DSphere_ignore_theta_min_dist");
 	if(model_type == "Flash") read_flash_file(lua);

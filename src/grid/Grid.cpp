@@ -43,12 +43,15 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 // initialize the grid
 //------------------------------------------------------------
-void Grid::init(Lua* lua)
+void Grid::init(Lua* lua, Transport* insim)
 {
 	// MPI stuff
 	int MPI_myID;
 	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
 	bool rank0 = (MPI_myID==0);
+
+	// set the transport pointer
+	sim = insim;
 
 	// read the model file or fill in custom model
 	do_GR = lua->scalar<int>("do_GR");

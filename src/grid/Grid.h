@@ -54,7 +54,6 @@
 #include "H5Cpp.h"
 #include "Axis.h"
 #include "MultiDArray.h"
-#include "LocateArray.h"
 
 class Transport;
 class Zone;
@@ -90,15 +89,18 @@ public:
 
 	virtual ~Grid() {}
 
+	Transport* sim;
+
 	std::string grid_type;
 
 	// vector of zones
 	std::vector<Zone> z;
 
 	Axis nu_grid_axis;
+	vector<MultiDInterface*> abs_opac, scat_opac; // one for each species
 
 	// set everything up
-	virtual void init(Lua* lua);
+	virtual void init(Lua* lua, Transport* insim);
 
 	// write out zone information
 	void         write_zones(const int iw) const;
