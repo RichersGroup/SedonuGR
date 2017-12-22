@@ -41,59 +41,35 @@ private:
 	// values represent bin upper walls (the single locate_array.min value is the leftmost wall)
 	// underflow is combined into leftmost bin (right of the locate_array.min)
 	// overflow is combined into the rightmost bin (left of locate_array[size-1])
-	Axis nu_grid;
-	Axis mu_grid;
-	Axis phi_grid;
 
-	// counting arrays
-	std::vector<double> flux;
 
 public:
 
+	MultiDInterface* data;
+	unsigned phiGridIndex, nuGridIndex, muGridIndex;
+	unsigned nphi, nnu, nmu;
+
 	// Initialize
-	void init(const Axis& nu_grid, const Axis& mu_grid, const Axis& phi_grid);
-	void init(const std::vector<double> nu_grid, const int n_mu, const int n_phi);
+	void init(const vector<Axis>& spatial_axes,const Axis& nu_grid, const Axis& mu_grid, const Axis& phi_grid);
+	void init(const vector<Axis>& spatial_axes,const std::vector<double> nu_grid, const int n_mu, const int n_phi);
 
 	// MPI functions
-	void MPI_average(const int proc);
+	void MPI_average();
+	unsigned size() const{
+		if(data) return data->size();
+		else return 0;
+	}
 
 	// Count a packets
-	void count(const double D[3], const double nu, const double E);
+	void count(const double D[3], const vector<unsigned>& dir_ind, const double nu, const double E);
 
 	//  void normalize();
 	void rescale(const double);
 	void wipe();
 
-	// integrate over nu,mu,phi
-	double average_nu() const;
-	double integrate() const;
-	void integrate_over_direction(std::vector<double>& edens) const;
-
-	// get bin centers and indices
-	unsigned size() const;
-	double get(const int index) const;
-	double  nu_center(const unsigned index) const;
-	double  mu_center(const unsigned index) const;
-	double phi_center(const unsigned index) const;
-	double  nu_bin_center(const unsigned index) const;
-	double  mu_bin_center(const unsigned index) const;
-	double phi_bin_center(const unsigned index) const;
-
 	// Print out
-	void print(const int iw, const int species) const;
-	void write_hdf5_data(H5::H5File file, const int s, const vector<unsigned>& dir_ind) const;
-	void write_hdf5_coordinates(H5::H5File file, const Grid* grid) const;
-	void write_header(std::ofstream& outf) const;
-	void write_line(std::ofstream& outf) const;
-
-	// Indexing
-	unsigned index(const unsigned nu_bin,const unsigned mu_bin,const unsigned phi_bin) const;
-	unsigned  nu_bin(const unsigned index) const;
-	unsigned  mu_bin(const unsigned index) const;
-	unsigned phi_bin(const unsigned index) const;
-	unsigned  nu_dim() const {return  nu_grid.size();};
-	unsigned  mu_dim() const {return  mu_grid.size();};
-	unsigned phi_dim() const {return phi_grid.size();};
+	void write_hdf5_data(H5::H5File file, const string name) const;
+	void write_hdf5_coordinates(H5::H5File file, const string name) const;
 };
 
 #endif

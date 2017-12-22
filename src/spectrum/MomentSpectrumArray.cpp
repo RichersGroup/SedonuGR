@@ -57,9 +57,17 @@ void increment_tensor_indices(int tensor_indices[], const int rank, const int le
 //--------------------------------------------------------------
 // Initialization and Allocation
 //--------------------------------------------------------------
-void MomentSpectrumArray::init(const Axis& wg, const int max_rank) {
-	// initialize locate arrays by swapping with the inputs
-	nu_grid = wg;
+void MomentSpectrumArray::init(const vector<Axis>& spatial_axes, const Axis& nu_grid, const int max_rank) {
+	vector<Axis> axes(spatial_axes.size()+2);
+	nuGridIndex = spatial_axes.size()+1;
+	momGridIndex = spatial_axes.size()+2;
+
+	// spatial axes
+	for(int i=0; i<spatial_axes.size(); i++) axes[i] = spatial_axes[i];
+
+	// frequency axis
+	axes[nuGridIndex] = nu_grid;
+
 
 	// determine the number of independent elements
 	const int length = 3;
@@ -77,266 +85,100 @@ void MomentSpectrumArray::init(const Axis& wg, const int max_rank) {
 	}
 
 	// initialize the moments
-	moments.resize(nu_grid.size());
-	for (int inu = 0; inu < nu_grid.size(); inu++) {
-		moments[inu].resize(max_rank + 1);
-		for (int rank = 0; rank < max_rank + 1; rank++) {
-			moments[inu][rank].resize(n_independent_elements[rank]);
+	nranks = max_rank+1;
+	data.resize(nranks);
+	for (int rank=0; rank<nranks; rank++) {
+		double minval = -0.5; // this whole thing is a hack. do not try to use to interpolate...
+		unsigned nmoments = n_independent_elements[rank];
+		vector<double> top(nmoments);
+		vector<double> mid(nmoments);
+		for(int i=0; i<nmoments; i++){
+			mid[i] = i;
+			top[i] = i + 0.5;
 		}
-	}
+		axes[momGridIndex] = Axis(minval, top, mid);
 
-	// clear the data
-	wipe();
+		switch(spatial_axes.size()){
+		case 0: data[rank] = new MultiDArray<0+2>(axes); break;
+		case 1: data[rank] = new MultiDArray<1+2>(axes); break;
+		case 2: data[rank] = new MultiDArray<2+2>(axes); break;
+		case 3: data[rank] = new MultiDArray<3+2>(axes); break;
+		}
+
+		data[rank]->wipe();
+	}
 }
 
 //--------------------------------------------------------------
 // Functional procedure: Wipe
 //--------------------------------------------------------------
 void MomentSpectrumArray::wipe() {
-	for (int group = 0; group < moments.size(); group++)
-		for (int rank = 0; rank < moments[group].size(); rank++)
-			for (int i = 0; i < moments[group][rank].size(); i++)
-				moments[group][rank][i] = 0;
-}
-
-//----------------------
-// get bin central value
-//----------------------
-double MomentSpectrumArray::nu_bin_center(const unsigned index) const {
-	PRINT_ASSERT(index, <, nu_grid.size());
-	return nu_grid.mid[index];
-}
-
-//----------------------
-// get size of spectrum
-//----------------------
-unsigned MomentSpectrumArray::n_groups() const {
-	return moments.size();
-}
-unsigned MomentSpectrumArray::n_ranks() const {
-	return moments[0].size();
-}
-unsigned MomentSpectrumArray::n_elements(const int rank) const {
-	PRINT_ASSERT(rank, <, moments[0][rank].size());
-	return moments[0][rank].size();
+	for(int rank=0; rank<nranks; rank++) data[rank]->wipe();
 }
 
 //--------------------------------------------------------------
 // count a particle
 ////--------------------------------------------------------------
-void MomentSpectrumArray::count(const double D[3], const double nu, const double E) {
+void MomentSpectrumArray::count(const double D[3], const vector<unsigned>& dir_ind, const double nu, const double E) {
 	PRINT_ASSERT(E, >=, 0);
 	PRINT_ASSERT(E, <, INFINITY);
 
-	// locate bin number
-	unsigned nu_bin = nu_grid.bin(nu);
-	if (nu_bin == nu_grid.size()) nu_bin--;
+	unsigned data_indices[data[0]->Ndims()];
+	for(int i=0; i<dir_ind.size(); i++) data_indices[i] = dir_ind[i];
+
+	int nu_bin = data[0]->axes[nuGridIndex].bin(nu);
+	nu_bin = max(nu_bin, 0);
+	nu_bin = min(nu_bin, data[0]->axes[nuGridIndex].size()-1);
+	data_indices[nuGridIndex] = nu_bin;
 
 	// increment moments
 	double tmp;
-	const int nranks = n_ranks();
 	for (int rank = 0; rank<nranks; rank++) {
-		const int nelements = n_elements(rank);
+		const int nelements = data[rank]->axes[momGridIndex].size();
 		int tensor_indices[rank];
 		for (int r = 0; r<rank; r++) tensor_indices[r] = 0;
 		
 		for (int i = 0; i<nelements; i++) {
+			data_indices[momGridIndex] = i;
 			tmp = E;
 			for (int r = 0; r<rank; r++) tmp *= D[tensor_indices[r]];
 			increment_tensor_indices(tensor_indices, rank, 3);
 
-			#pragma omp atomic
-			moments[nu_bin][rank][i] += tmp;
+			data[rank]->add(data_indices, tmp);
 		}
 	}
 }
 
-double MomentSpectrumArray::average_nu() const {
-	double integral_E = 0;
-	double integral_N = 0;
-	for (unsigned nu_bin = 0; nu_bin<n_groups(); nu_bin++) {
-		integral_E += moments[nu_bin][0][0];
-		integral_N += moments[nu_bin][0][0] / nu_grid.mid[nu_bin];
-	}
-	double result = integral_E / integral_N;
-	if (result >= 0)
-		return result;
-	else
-		return 0;
-}
 
-double MomentSpectrumArray::integrate() const {
-	double integral = 0;
-	for (unsigned nu_bin = 0; nu_bin<n_groups(); nu_bin++)
-		integral += moments[nu_bin][0][0];
-	return integral;
-}
-
-// integrate over direction
-void MomentSpectrumArray::integrate_over_direction(
-		vector<double>& integral) const {
-	integral = vector<double>(nu_grid.size(), 0);
-	for (unsigned nu_bin = 0; nu_bin<n_groups(); nu_bin++) {
-		integral[nu_bin] = moments[nu_bin][0][0];
-	}
-}
-
-//--------------------------------------------------------------
-// print out
-//--------------------------------------------------------------
-void MomentSpectrumArray::print(const int iw, const int species) const {
-	ofstream outf;
-	stringstream speciesstream;
-	speciesstream << species;
-	string prefix = "spectrum_species" + speciesstream.str();
-	string filename = Transport::filename(prefix.c_str(), iw, ".dat");
-	outf.open(filename.c_str());
-
-	// write the header
-	outf << "# " << "n_nu:" << n_groups() << " n_ranks:" << n_ranks() << endl;
-	outf << "# ";
-	outf << "frequency(Hz) delta(Hz) M0(erg/s/Hz)";
-	for (int rank = 1; rank < n_ranks(); rank++) {
-		int tensor_indices[rank];
-		for (int r = 0; r < rank; r++)
-			tensor_indices[r] = 0;
-		while (tensor_indices[rank - 1] < 3) {
-			outf << " M" << rank << ":";
-			for (int r = 0; r < rank; r++)
-				outf << tensor_indices[r];
-		}
-	}
-	outf << endl;
-
-	// write the data
-	for (unsigned group = 0; group < n_groups(); group++) {
-		outf << nu_grid.mid[group] << " " << nu_grid.delta(group) << " ";
-		for (unsigned rank = 0; rank < n_ranks(); rank++)
-			for (unsigned i = 0; i < n_elements(rank); i++) {
-				// the delta is infinity if the bin is a catch-all.
-				double wdel = (
-						nu_grid.delta(group)
-								< numeric_limits<double>::infinity() ?
-								nu_grid.delta(group) : 1);
-				outf << moments[group][rank][i] / wdel << endl;
-			}
-	}
-	outf.close();
-}
 
 void MomentSpectrumArray::rescale(double r) {
-	for (int group = 0; group < n_groups(); group++)
-		for (int rank = 0; rank < n_ranks(); rank++)
-			for (int i = 0; i < n_elements(rank); i++)
-				moments[group][rank][i] *= r;
+	for(unsigned rank=0; rank<data.size(); rank++)
+		for(unsigned i=0; i<data[i]->size(); i++)
+			data[rank]->y0[i] *= r;
 }
 
 //--------------------------------------------------------------
 // MPI average the spectrum contents
 //--------------------------------------------------------------
 // only process 0 gets the reduced spectrum to print
-void MomentSpectrumArray::MPI_average(const int proc) {
-	int MPI_myID;
-	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID);
-	vector<double> receive;
-	const int tag=0;
-
-	for (int group = 0; group < n_groups(); group++)
-		for (int rank = 0; rank < n_ranks(); rank++) {
-			receive.resize(n_elements(rank));
-			MPI_Reduce(&moments[group][rank].front(), &receive.front(),
-				   n_elements(rank), MPI_DOUBLE, MPI_SUM, proc, MPI_COMM_WORLD);
-			if(proc>0){
-				cout << "Sending " << n_elements(rank) << endl;
-				if(MPI_myID==0) MPI_Recv(&receive.front(), n_elements(rank), MPI_DOUBLE, proc, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-				if(MPI_myID==proc) MPI_Send(&receive.front(), n_elements(rank), MPI_DOUBLE, 0, tag, MPI_COMM_WORLD);
-			}
-			for (unsigned i = 0; i < n_elements(rank); i++)
-				moments[group][rank][i] = receive[i]; //flux.swap(receive);
-		}
+void MomentSpectrumArray::MPI_average() {
+	for(unsigned rank=0; rank<data.size(); rank++)
+		data[rank]->MPI_combine();
 }
 
 //--------------------------------------------------------------
 // Write data to specified location in an HDF5 file
 //--------------------------------------------------------------
-void MomentSpectrumArray::write_hdf5_data(H5::H5File file, const int s,
-		const vector<unsigned>& dir_ind) const {
-
-	int n_spatial_dims = dir_ind.size();
-
-	for (int rank = 0; rank < n_ranks(); rank++) {
-		// prep the filenames
-		stringstream datasetname, indicesname;
-		string dfunc_dir = "distribution(erg|ccm,lab)";
-		datasetname << dfunc_dir << "/M" << rank;
-		vector<float> tmp(n_elements(rank), -1.0);
-
-		// get the dataset
-		H5::DataSet dataset = file.openDataSet(datasetname.str());
-
-		// get the dataspace of the dataset
-		H5::DataSpace dataspace = dataset.getSpace();
-		hsize_t n_total_dims = dataspace.getSimpleExtentNdims();
-		hsize_t dfunc_dims[n_spatial_dims + 3];
-		hsize_t start[n_spatial_dims + 3];
-		dataspace.getSelectBounds(start, dfunc_dims);
-		for (int i = 0; i < n_total_dims; i++)
-			dfunc_dims[i] += 1;
-		PRINT_ASSERT(dataspace.getSimpleExtentNdims(), ==, n_spatial_dims + 3);
-		PRINT_ASSERT(dfunc_dims[n_spatial_dims + 1], ==, n_groups());
-		PRINT_ASSERT(dfunc_dims[n_spatial_dims + 2], ==, n_elements(rank));
-
-		for (int group = 0; group < n_groups(); group++) {
-			// set up subspace offset
-			hsize_t offset[n_total_dims];
-			for (unsigned i = 0; i < n_spatial_dims; i++)
-				offset[i] = dir_ind[i];
-			offset[n_spatial_dims] = s;
-			offset[n_spatial_dims + 1] = group;
-			offset[n_spatial_dims + 2] = 0;
-
-			// set up subspace stride
-			hsize_t stride[n_total_dims];
-			for (unsigned i = 0; i < n_total_dims; i++)
-				stride[i] = 1;
-
-			// set up subspace block
-			hsize_t block[n_total_dims];
-			for (unsigned i = 0; i < n_total_dims; i++)
-				block[i] = 1;
-
-			// set up local spectrum dimensions
-			hsize_t spectrum_dims[n_total_dims];
-			for (unsigned i = 0; i < n_spatial_dims; i++)
-				spectrum_dims[i] = 1;
-			spectrum_dims[n_spatial_dims] = 1;
-			spectrum_dims[n_spatial_dims + 1] = 1;
-			spectrum_dims[n_spatial_dims + 2] = n_elements(rank);
-
-			// set dataspace
-			dataspace.selectHyperslab(H5S_SELECT_SET, &spectrum_dims[0],
-					&offset[0], &stride[0], &block[0]);
-
-			// define the memory dataspace
-			hsize_t mem_length = n_elements(rank);
-			H5::DataSpace memspace(1, &mem_length, NULL);
-
-			// write the data (converting to single precision)
-			// assumes phi increases fastest, then mu, then nu
-			for (unsigned i = 0; i < n_elements(rank); i++)
-				tmp[i] = moments[group][rank][i];
-			dataset.write(&tmp[0], H5::PredType::IEEE_F32LE, memspace,
-					dataspace);
-		}
-		dataset.close();
-	}
+void MomentSpectrumArray::write_hdf5_data(H5::H5File file,const string name) const {
+	for (int rank = 0; rank<data.size(); rank++)
+		data[rank]->write_HDF5(file, name+"[r"+to_string(rank)+"]");
 }
 
 //--------------------------------------------------------------
 // Write distribution function coordinates to an HDF5 file
 //--------------------------------------------------------------
 void MomentSpectrumArray::write_hdf5_coordinates(H5::H5File file,
-		const Grid* grid) const {
+		const string name) const {
 	// useful quantities
 	hsize_t dims[1];
 	H5::DataSpace dataspace;
@@ -349,55 +191,23 @@ void MomentSpectrumArray::write_hdf5_coordinates(H5::H5File file,
 	group = file.createGroup(dfunc_dir);
 	stringstream datasetname, indicesname;
 
-	// write nu_grid
-	tmp = vector<float>(nu_grid.size() + 1, 0.0);
-	dims[0] = nu_grid.size() + 1;
-	dataspace = H5::DataSpace(1, dims);
-
-	// write the frequency grid
-	datasetname << dfunc_dir << "/distribution_frequency_grid(Hz,lab)";
-	dataset = file.createDataSet(datasetname.str(), H5::PredType::IEEE_F32LE,
-			dataspace);
-	tmp[0] = nu_grid.min;
-	for (unsigned i = 1; i < nu_grid.size() + 1; i++)
-		tmp[i] = nu_grid.top[i - 1];
-	dataset.write(&tmp[0], H5::PredType::IEEE_F32LE);
-	dataset.close();
-
-	// set up list of dimensions in each direction
-	hsize_t zdims[grid->dimensionality()];
-	grid->dims(zdims, grid->dimensionality());
-	vector<hsize_t> dims_plus3(grid->dimensionality() + 3, 0);
-	for (unsigned i = 0; i < grid->dimensionality(); i++)
-		dims_plus3[i] = zdims[i]; // number of spatial bins
-	dims_plus3[grid->dimensionality()] = grid->z[0].distribution.size(); // number of species
-	dims_plus3[grid->dimensionality() + 1] = n_groups(); // number of energy bins
-	dims_plus3[grid->dimensionality() + 2] = 0; // number of elements in moment
-
 	// SET UP DATASPACE FOR EACH MOMENT
-	for (unsigned rank = 0; rank < n_ranks(); rank++) {
+	for (unsigned rank = 0; rank < data.size(); rank++) {
+		unsigned n_elements = data[rank]->axes[momGridIndex].size();
 		// prep the filenames
-		datasetname.str("");
-		datasetname << dfunc_dir << "/M" << rank;
 		indicesname.str("");
-		indicesname << dfunc_dir << "/M" << rank << "indices";
-
-		// set the HDF5 dataspace
-		dims_plus3[grid->dimensionality() + 2] = n_elements(rank);
-		dataspace = H5::DataSpace(grid->dimensionality() + 3, &dims_plus3[0]);
-		dataset = file.createDataSet(datasetname.str(),
-				H5::PredType::IEEE_F32LE, dataspace);
+		indicesname << "moment_" << rank << "_indices";
 
 		// set up the database with the indices
-		hsize_t indices_dimensions[] = { n_elements(rank), rank };
+		hsize_t indices_dimensions[] = { n_elements, rank };
 		dataspace = H5::DataSpace(2, indices_dimensions);
 		dataset = file.createDataSet(indicesname.str(), H5::PredType::STD_I32LE,
 				dataspace);
 		int tensor_indices[rank];
 		for (int r = 0; r < rank; r++)
 			tensor_indices[r] = 0;
-		int indices2D[n_elements(rank)][rank];
-		for (int i = 0; i < n_elements(rank); i++) {
+		int indices2D[n_elements][rank];
+		for (int i = 0; i < n_elements; i++) {
 			for (int r = 0; r < rank; r++)
 				indices2D[i][r] = tensor_indices[r];
 			increment_tensor_indices(tensor_indices, rank, 3);
@@ -408,40 +218,3 @@ void MomentSpectrumArray::write_hdf5_coordinates(H5::H5File file,
 	}
 }
 
-void MomentSpectrumArray::write_header(ofstream& outf) const {
-	outf << "frequency(Hz) delta(Hz) M0(erg/s/Hz/sr)";
-	for (int rank = 1; rank < n_ranks(); rank++) {
-		int tensor_indices[rank];
-		for (int r = 0; r < rank; r++)
-			tensor_indices[r] = 0;
-		while (tensor_indices[rank - 1] < 3) {
-			outf << " M" << rank << ":";
-			for (int r = 0; r < rank; r++)
-				outf << tensor_indices[r];
-		}
-	}
-
-	for (int group = 0; group < n_groups(); group++)
-		for (int rank = 0; rank < n_ranks(); rank++) {
-			if (rank > 0) {
-				outf << "i";
-				int tensor_indices[rank];
-				for (int r = 0; r < rank; r++)
-					tensor_indices[r] = 0;
-				while (tensor_indices[rank - 1] < 3) {
-					outf << "g" << group << "M" << rank << ":";
-					for (int r = 0; r < rank; r++)
-						outf << tensor_indices[r];
-				}
-			} else
-				outf << "g" << group << "M0";
-			outf << "edens(erg/ccm)  ";
-		}
-}
-
-void MomentSpectrumArray::write_line(ofstream& outf) const {
-	for (int group = 0; group < moments.size(); group++)
-		for (int rank = 0; rank < moments[group].size(); rank++)
-			for (int i = 0; i < moments[group][rank].size(); i++)
-				outf << moments[group][rank][i] << "\t";
-}

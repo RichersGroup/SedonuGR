@@ -49,7 +49,7 @@ void Grid2DSphere::read_model_file(Lua* lua)
 	// set up the data structures
 	abs_opac.resize(sim->species_list.size());
 	scat_opac.resize(sim->species_list.size());
-	vector<Axis*> axes = {&nu_grid_axis, &rAxis, &thetaAxis};
+	vector<Axis> axes({nu_grid_axis, rAxis, thetaAxis});
 	for(int s=0; s<sim->species_list.size(); s++){
 		abs_opac[s] = new MultiDArray<3>(axes);
 		scat_opac[s] = new MultiDArray<3>(axes);
@@ -869,67 +869,6 @@ void Grid2DSphere::interpolate_fluid_velocity(const double x[3], double v[3], in
 
 
 //------------------------------------------------------------
-// Write the grid information out to a file
-//------------------------------------------------------------
-void Grid2DSphere::write_rays(int iw) const
-{
-	PRINT_ASSERT(iw,>=,0);
-	ofstream outf;
-	unsigned i=0,j=0;
-	double r[2];
-	string filename = "";
-
-	// along theta=0
-	filename = Transport::filename("ray_t0",iw,".dat");
-	outf.open(filename.c_str());
-	write_header(outf);
-	j = 0;
-	for(i=0; i<rAxis.size(); i++){
-		int z_ind = zone_index(i,j);
-		zone_coordinates(z_ind,r,2);
-		write_line(outf,z_ind);
-	}
-	outf.close();
-
-	// along theta=pi/2
-	filename = Transport::filename("ray_t.5",iw,".dat");
-	outf.open(filename.c_str());
-	write_header(outf);
-	j = thetaAxis.size()/2;
-	for(i=0; i<rAxis.size(); i++){
-		int z_ind = zone_index(i,j);
-		zone_coordinates(z_ind,r,2);
-		write_line(outf,z_ind);
-	}
-	outf.close();
-
-	// along theta=pi
-	filename = Transport::filename("ray_t1",iw,".dat");
-	outf.open(filename.c_str());
-	write_header(outf);
-	j = thetaAxis.size()-1;
-	for(i=0; i<rAxis.size(); i++){
-		int z_ind = zone_index(i,j);
-		zone_coordinates(z_ind,r,2);
-		write_line(outf,z_ind);
-	}
-	outf.close();
-
-	// along theta
-	filename = Transport::filename("ray_r.5",iw,".dat");
-	outf.open(filename.c_str());
-	write_header(outf);
-	i = rAxis.size()/2;
-	for(j=0; j<thetaAxis.size(); j++){
-		int z_ind = zone_index(i,j);
-		zone_coordinates(z_ind,r,2);
-		write_line(outf,z_ind);
-	}
-	outf.close();
-}
-
-
-//------------------------------------------------------------
 // Reflect off the symmetry boundaries
 //------------------------------------------------------------
 void Grid2DSphere::symmetry_boundaries(LorentzHelper *lh, const double tolerance) const{
@@ -1009,4 +948,7 @@ void Grid2DSphere::connection_coefficients(const double xup[4], double gamma[4][
 double Grid2DSphere::zone_lapse(const int z_ind) const{
 	cout << "zone_lapse not implemented" << endl;
 	exit(1);
+}
+void Grid2DSphere::axis_vector(vector<Axis>& axes) const{
+	axes = vector<Axis>({rAxis,thetaAxis});
 }

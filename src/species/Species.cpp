@@ -78,7 +78,8 @@ void Species::init(Lua* lua, Transport* simulation)
 		int nphi = lua->scalar<int>("spec_n_phi");
 		tmp_mugrid = Axis(-1,1,nmu);
 		tmp_phigrid = Axis(-pc::pi,pc::pi, nphi);
-		spectrum.init(*nu_grid_axis, tmp_mugrid, tmp_phigrid);
+		vector<Axis> dummy_spatial_axes(0);
+		spectrum.init(dummy_spatial_axes, *nu_grid_axis, tmp_mugrid, tmp_phigrid);
 	}
 	PRINT_ASSERT(spectrum.size(),>,0);
 
@@ -111,110 +112,6 @@ void Species::init(Lua* lua, Transport* simulation)
 		emis[i].resize(nu_grid_axis->size());
 		emis[i].interpolation_order = iorder;
 	}
-	if(rank0) cout << "finished." << endl;
-
-    double minval = 0;
-    double trash, tmp=0;
-    vector<double> bintops = vector<double>(0);
-
-    //==================================//
-    // set up the spectrum in each zone //
-    //==================================//
-    if(rank0) cout << "#   Setting up the distribution function...";
-    string distribution_type = lua->scalar<string>("distribution_type");
-    for(unsigned z_ind=0; z_ind<sim->grid->z.size(); z_ind++){
-    	SpectrumArray* tmp_spectrum;
-
-    	//-- POLAR SPECTRUM -----------------
-    	if(distribution_type == "Polar"){
-    		tmp_spectrum = new PolarSpectrumArray;
-
-    		int n_mu = lua->scalar<int>("distribution_nmu");
-    		int n_phi = lua->scalar<int>("distribution_nphi");
-    		if(n_mu>0 && n_phi>0){
-    			tmp_mugrid = Axis(-1,1,n_mu);
-    			tmp_phigrid = Axis(-pc::pi, pc::pi, n_phi);
-    			((PolarSpectrumArray*)tmp_spectrum)->init(*nu_grid_axis, tmp_mugrid, tmp_phigrid);
-    		}
-    		else{
-    			// mu ---------------
-    			string mugrid_filename = lua->scalar<string>("distribution_mugrid_filename");
-    			ifstream mugrid_file;
-    			mugrid_file.open(mugrid_filename.c_str());
-    			mugrid_file >> trash >> minval;
-    			bintops = vector<double>(0);
-    			vector<double> binmid;
-    			while(mugrid_file >> trash >> tmp){
-    				if(bintops.size()>0) PRINT_ASSERT(tmp,>,bintops[bintops.size()-1]);
-    				else PRINT_ASSERT(tmp,>,minval);
-    				bintops.push_back(tmp);
-    				double last = bintops.size()==1 ? minval : bintops[bintops.size()-2];
-    				binmid.push_back(0.5 * (last + bintops[bintops.size()-1]));
-    			}
-    			bintops[bintops.size()-1] = 1.0;
-    			PRINT_ASSERT(minval,==,-1);
-    			tmp_mugrid = Axis(minval, bintops, binmid);
-
-    			// phi --------------
-    			string phigrid_filename = lua->scalar<string>("distribution_phigrid_filename");
-    			ifstream phigrid_file;
-    			phigrid_file.open(phigrid_filename.c_str());
-    			phigrid_file >> trash >> minval;
-    			minval -= pc::pi;
-    			bintops = vector<double>(0);
-    			binmid = vector<double>(0);
-    			while(phigrid_file >> trash >> tmp){
-    				tmp -= pc::pi;
-    				if(bintops.size()>0) PRINT_ASSERT(tmp,>,bintops[bintops.size()-1]);
-    				else PRINT_ASSERT(tmp,>,minval);
-    				bintops.push_back(tmp);
-    				double last = bintops.size()==1 ? minval : bintops[bintops.size()-2];
-    				binmid.push_back(0.5 * (last + bintops[bintops.size()-1]));
-    			}
-    			bintops[bintops.size()-1] = pc::pi;
-    			PRINT_ASSERT(minval,==,-pc::pi);
-    			tmp_phigrid = Axis(minval, bintops, binmid);
-    		}
-    		((PolarSpectrumArray*)tmp_spectrum)->init(*nu_grid_axis, tmp_mugrid, tmp_phigrid);
-    		PRINT_ASSERT(((PolarSpectrumArray*)tmp_spectrum)->size(),>,0);
-
-    	}
-	  
-	  //-- MOMENT SPECTRUM --------------------
-	  else if(distribution_type == "Moments"){
-	    int order = lua->scalar<int>("distribution_moment_order");
-	    tmp_spectrum = new MomentSpectrumArray;
-	    ((MomentSpectrumArray*)tmp_spectrum)->init(*nu_grid_axis, order);
-	  }
-
-	  //-- RADIAL MOMENT SPECTRUM --------------------
-	  else if(distribution_type == "RadialMoments"){
-	    int order = lua->scalar<int>("distribution_moment_order");
-	    tmp_spectrum = new RadialMomentSpectrumArray;
-	    ((RadialMomentSpectrumArray*)tmp_spectrum)->init(*nu_grid_axis, order);
-	  }
-
-	  //-- RADIAL MOMENT SPECTRUM --------------------
-	  else if(distribution_type == "GR1D"){
-	    tmp_spectrum = new GR1DSpectrumArray;
-	    ((GR1DSpectrumArray*)tmp_spectrum)->init(*nu_grid_axis);
-	  }
-
-	  //-- CATCH ------------------
-	  else{
-	    cout << "Distribution type not found." << endl;
-	    assert(0);
-	  }
-	  int distribution_polar_basis = lua->scalar<int>("distribution_polar_basis");
-	  tmp_spectrum->rotated_basis = distribution_polar_basis;
-	  
-	  // push a distribution function to each zone
-	  sim->grid->z[z_ind].distribution.push_back(tmp_spectrum);
-	  sim->grid->z[z_ind].Edens_com.push_back(0);
-	  sim->grid->z[z_ind].Ndens_com.push_back(0);
-	  PRINT_ASSERT(sim->grid->z[z_ind].distribution.size(),==,ID+1);
-	}
-	
 	if(rank0) cout << "finished." << endl;
 }
 

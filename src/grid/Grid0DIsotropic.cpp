@@ -45,7 +45,7 @@ void Grid0DIsotropic::read_model_file(Lua* lua)
 	// set up the data structures
 	abs_opac.resize(sim->species_list.size());
 	scat_opac.resize(sim->species_list.size());
-	vector<Axis*> axes = {&nu_grid_axis};
+	vector<Axis> axes({nu_grid_axis});
 	for(int s=0; s<sim->species_list.size(); s++){
 		abs_opac[s] = new MultiDArray<1>(axes);
 		scat_opac[s] = new MultiDArray<1>(axes);
@@ -141,16 +141,6 @@ void Grid0DIsotropic::interpolate_fluid_velocity(const double x[3], double v[3],
 
 
 //------------------------------------------------------------
-// Write the grid information out to a file
-//------------------------------------------------------------
-void Grid0DIsotropic::write_rays(const int iw) const
-{
-	// this is a 0D grid, so the function is exactly the same
-	// as write_zones
-}
-
-
-//------------------------------------------------------------
 // Reflect off symmetry plane
 //------------------------------------------------------------
 void Grid0DIsotropic::symmetry_boundaries(LorentzHelper *lh, const double tolerance) const{
@@ -195,4 +185,7 @@ void Grid0DIsotropic::connection_coefficients(const double xup[4], double gamma[
 }
 double Grid0DIsotropic::zone_lapse(const int z_ind) const{
 	return 1.0;
+}
+void Grid0DIsotropic::axis_vector(vector<Axis>& axes) const{
+	axes.resize(0);
 }

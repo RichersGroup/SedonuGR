@@ -48,7 +48,7 @@ void Grid1DSphere::read_model_file(Lua* lua)
 	// set up the data structures
 	abs_opac.resize(sim->species_list.size());
 	scat_opac.resize(sim->species_list.size());
-	vector<Axis*> axes = {&nu_grid_axis, &rAxis};
+	vector<Axis> axes({nu_grid_axis, rAxis});
 	for(int s=0; s<sim->species_list.size(); s++){
 		abs_opac[s] = new MultiDArray<2>(axes);
 		scat_opac[s] = new MultiDArray<2>(axes);
@@ -398,15 +398,6 @@ void Grid1DSphere::interpolate_fluid_velocity(const double x[3], double v[3], in
 }
 
 
-//------------------------------------------------------------
-// Write the grid information out to a file
-//------------------------------------------------------------
-void Grid1DSphere::write_rays(const int iw) const
-{
-	// this is a 1D grid, so the function is exactly the same
-	// as write_zones
-}
-
 
 //------------------------------------------------------------
 // Reflect off symmetry axis
@@ -558,4 +549,7 @@ void Grid1DSphere::connection_coefficients(const double xup[4], double gamma[4][
 
 double Grid1DSphere::zone_lapse(const int z_ind) const{
 	return metric.alpha[z_ind];
+}
+void Grid1DSphere::axis_vector(vector<Axis>& axes) const{
+	axes = vector<Axis>({rAxis});
 }

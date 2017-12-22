@@ -42,48 +42,29 @@ private:
 	// values represent bin upper walls (the single locate_array.min value is the leftmost wall)
 	// underflow is combined into leftmost bin (right of the locate_array.min)
 	// overflow is combined into the rightmost bin (left of locate_array[size-1])
-	Axis nu_grid;
-
-	// counting arrays
-	vector< vector< vector<double> > > moments;
+	vector<MultiDInterface*> data;
 
 	// array size
-	int nranks;
+	unsigned nuGridIndex, momGridIndex, nranks;
 
 public:
 
 	// Initialize
-	void init(const Axis& nu_grid, const int order);
+	void init(const vector<Axis>& spatial_axes, const Axis& nu_grid, const int order);
 
 	// MPI functions
-	virtual void MPI_average(const int proc);
+	virtual void MPI_average();
 
 	// Count a packets
-	virtual void count(const double D[3], const double nu, const double E);
+	virtual void count(const double D[3], const vector<unsigned>& dir_ind, const double nu, const double E);
 
 	//  void normalize();
 	virtual void rescale(const double);
 	virtual void wipe();
 
-	// integrate over nu,mu,phi
-	virtual double average_nu() const;
-	virtual double integrate() const;
-	virtual void integrate_over_direction(vector<double>& edens) const;
-
 	// Print out
-	virtual void print(const int iw, const int species) const;
-	virtual void write_hdf5_data(H5::H5File file, const int s, const vector<unsigned>& dir_ind) const;
-	virtual void write_hdf5_coordinates(H5::H5File file, const Grid* grid) const;
-	virtual void write_header(ofstream& outf) const;
-	virtual void write_line(ofstream& outf) const;
-
-	// energy bin info
-	double nu_bin_center(const unsigned index) const;
-
-	// return sizes
-	unsigned n_groups() const;
-	unsigned n_ranks() const;
-	unsigned n_elements(const int rank) const;
+	virtual void write_hdf5_data(H5::H5File file, const string name) const;
+	virtual void write_hdf5_coordinates(H5::H5File file, const string name) const;
 };
 
 #endif

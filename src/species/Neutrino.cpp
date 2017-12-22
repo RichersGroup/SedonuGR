@@ -92,12 +92,20 @@ double cos_angle_between(const double mu1, const double mu2, const double phi1, 
 	return result;
 }
 double Neutrino::annihilation_rate(
+		const vector<double> dir_ind,       // directional indices for the zone we're getting the rate at
 		const PolarSpectrumArray* nu_dist,     // erg/ccm (integrated over angular bin and energy bin)
 		const PolarSpectrumArray* nubar_dist,  // erg/ccm (integrated over angular bin and energy bin)
 		const bool electron_type,		   // is this an electron-type interaction?
 		const int weight){         		   // weight of each species
 
 	PRINT_ASSERT(nu_dist->size(),==,nubar_dist->size());
+
+	unsigned nuLoc = nu_dist->nuGridIndex;
+	Axis* nuAxis = &(nu_dist->data->axes[nuLoc]);
+	unsigned muLoc = nu_dist->muGridIndex;
+	Axis* muAxis = &(nu_dist->data->axes[muLoc]);
+	unsigned phiLoc = nu_dist->phiGridIndex;
+	Axis* phiAxis = &(nu_dist->data->axes[phiLoc]);
 
 	// constants
 	using namespace pc;
@@ -113,20 +121,19 @@ double Neutrino::annihilation_rate(
 	}
 
 	// calculate angle between distribution function angles beforehand
-	double onemcostheta [nu_dist->mu_dim()] [nu_dist->phi_dim()] [nubar_dist->mu_dim()] [nubar_dist->phi_dim()];
-	for(unsigned mu=0; mu<nu_dist->mu_dim(); mu++){
-		for(unsigned phi=0; phi<nu_dist->phi_dim(); phi++){
+	double onemcostheta [nu_dist->nmu] [nu_dist->nphi] [nubar_dist->nmu] [nubar_dist->nphi];
+	for(unsigned mu=0; mu<nu_dist->nmu; mu++){
+		for(unsigned phi=0; phi<nu_dist->nphi; phi++){
 
-			unsigned index = nu_dist->index(0,mu,phi);
-			double avg_mu  = nu_dist->mu_center(index);
-			double avg_phi = nu_dist->phi_center(index);
+			double avg_mu  = muAxis->mid[mu];
+			double avg_phi = phiAxis->mid[phi];
 
-			for(unsigned mubar=0; mubar<nu_dist->mu_dim(); mubar++){
-				for(unsigned phibar=0; phibar<nu_dist->phi_dim(); phibar++){
+			for(unsigned mubar=0; mubar<nu_dist->nmu; mubar++){
+				for(unsigned phibar=0; phibar<nu_dist->nphi; phibar++){
 
-					unsigned indexbar = nubar_dist->index(0,mubar,phibar);
-					double avg_mubar  = nubar_dist->mu_center(indexbar);
-					double avg_phibar = nubar_dist->phi_center(indexbar);
+					//unsigned indexbar = nubar_dist->index(0,mubar,phibar);
+					double avg_mubar  = muAxis->mid[mubar];
+					double avg_phibar = phiAxis->mid[phibar];
 
 					onemcostheta[mu][phi][mubar][phibar] = 1.0-cos_angle_between(avg_mu,avg_mubar,avg_phi,avg_phibar);
 				}
@@ -140,16 +147,26 @@ double Neutrino::annihilation_rate(
 	double C1pC2_3 = C1pC2/3.0;
 	double mec22 = pc::m_e*pc::m_e * pc::c*pc::c*pc::c*pc::c;
 	double inv_weight = 1./(double)weight;
-	unsigned nnu=nu_dist->nu_dim(), nmu=nu_dist->mu_dim(), nphi=nu_dist->phi_dim();
-	unsigned nnubar=nubar_dist->nu_dim(), nmubar=nubar_dist->mu_dim(), nphibar=nubar_dist->phi_dim();
+	unsigned nnu=nu_dist->nnu, nmu=nu_dist->nmu, nphi=nu_dist->nphi;
+	unsigned nnubar=nubar_dist->nnu, nmubar=nubar_dist->nmu, nphibar=nubar_dist->nphi;
+
+	// set up index arrays
+	unsigned index[dir_ind.size() + 3];
+	unsigned indexbar[dir_ind.size() + 3];
+	for(int i=0; i<dir_ind.size(); i++){
+		index[i] = dir_ind[i];
+		indexbar[i] = dir_ind[i];
+	}
 
 	// integrate over all bins
 	double Q = 0;
 	// energy loops
 	for(unsigned inu=0; inu<nnu; inu++){
-		double avg_e = nu_dist->nu_bin_center(inu)*pc::h; // erg
+		double avg_e = nuAxis->mid[inu]*pc::h; // erg
+		index[nu_dist->nuGridIndex] = inu;
 		for(unsigned inubar=0; inubar<nnubar; inubar++){
-			double avg_ebar = nubar_dist->nu_bin_center(inubar)*pc::h; // erg
+			double avg_ebar = nuAxis->mid[inubar]*pc::h; // erg
+			indexbar[nubar_dist->nuGridIndex] = inu;
 
 			double C3mec4_eebar = C3mec4/(avg_e*avg_ebar);
 			double sume_m_twomec2 = avg_e + avg_ebar - twomec2;
@@ -158,18 +175,20 @@ double Neutrino::annihilation_rate(
 
 				// neutrino direction loops
 				for(unsigned imu=0; imu<nmu; imu++){
+					index[nu_dist->muGridIndex] = imu;
 					for(unsigned iphi=0; iphi<nphi; iphi++){
-						unsigned index = nu_dist->index(inu,imu,iphi);
+						index[nu_dist->phiGridIndex] = iphi;
 
 						// antineutrino direction loops
 						for(unsigned imubar=0; imubar<nmubar; imubar++){
+							indexbar[nubar_dist->nuGridIndex] = imubar;
 							for(unsigned iphibar=0; iphibar<nphibar; iphibar++){
-								unsigned indexbar = nubar_dist->index(inubar,imubar,iphibar);
+								indexbar[nubar_dist->nuGridIndex] = iphibar;
 
 								double onemcost = onemcostheta[imu][iphi][imubar][iphibar];
 								if(eebar*onemcost > mec22){
-									double nudist_edens    =    nu_dist->get(index)    * inv_weight; // erg/ccm
-									double nubardist_edens = nubar_dist->get(indexbar) * inv_weight; // erg/ccm
+									double nudist_edens    =    nu_dist->data->get(index)    * inv_weight; // erg/ccm
+									double nubardist_edens = nubar_dist->data->get(indexbar) * inv_weight; // erg/ccm
 
 									Q += nudist_edens * nubardist_edens * sume_m_twomec2 * onemcost *
 											(C1pC2_3 * onemcost + C3mec4_eebar);

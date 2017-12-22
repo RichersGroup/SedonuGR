@@ -36,6 +36,8 @@ namespace pc = physical_constants;
 
 void Transport::propagate_particles()
 {
+	vector<unsigned> dummy_spatial_indices;
+
 	if(verbose && rank0) cout << "# Propagating particles..." << endl;
 
 	//--- MOVE THE PARTICLES AROUND ---
@@ -61,7 +63,7 @@ void Transport::propagate_particles()
 				L_net_esc[p->s] += p->N * nu*pc::h;
 				#pragma omp atomic
 				N_net_esc[p->s] += p->N;
-				species_list[p->s]->spectrum.count(D, nu, p->N * nu*pc::h);
+				species_list[p->s]->spectrum.count(D, dummy_spatial_indices, nu, p->N * nu*pc::h);
 			}
 			PRINT_ASSERT(p->fate, !=, moving);
 		} //#pragma omp parallel for
@@ -164,7 +166,7 @@ void Transport::tally_radiation(const LorentzHelper *lh, const int z_ind) const{
 	to_add *= lh->p_nu()*pc::h;
 	PRINT_ASSERT(to_add,<,INFINITY);
 
-	zone->distribution[lh->p_s()]->rotate_and_count(lh->p_kup(lab), lh->p_xup(), lh->p_nu(), to_add);
+	grid->distribution[lh->p_s()]->rotate_and_count(lh->p_kup(lab), lh->p_xup(), lh->dir_ind, lh->p_nu(), to_add);
 	#pragma omp atomic
 	zone->Edens_com[lh->p_s()] += to_add;
 	#pragma omp atomic

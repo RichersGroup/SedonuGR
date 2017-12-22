@@ -380,18 +380,6 @@ void Transport::write(const int it) const{
 			if(verbose) cout << "# writing zone file " << it << endl;
 			grid->write_zones(it);
 		}
-
-		// write ray data when appropriate
-		if(write_rays_every>0) if(it%write_rays_every==0 && write_rays_every>0){
-			if(verbose) cout << "# writing ray file " << it << endl;
-			grid->write_rays(it);
-		}
-
-		// print out spectrum when appropriate
-		if(write_spectra_every>0) if(it%write_spectra_every==0 && write_spectra_every>0){
-			if(verbose) cout << "# writing spectrum files " << it << endl;
-			for(unsigned i=0; i<species_list.size(); i++) species_list[i]->spectrum.print(it,i);
-		}
 	}
 }
 
@@ -423,115 +411,117 @@ void Transport::reset_radiation(){
 		z->Q_annihil = 0;
 
 		for(unsigned s=0; s<species_list.size(); s++){
-			z->distribution[s]->wipe();
 			z->Edens_com[s] = 0;
 			z->Ndens_com[s] = 0;
 			species_list[s]->set_eas(z_ind);
 		}
 	}
+
+	// clear the distribution functions
+	for(unsigned s=0; s<species_list.size(); s++) grid->distribution[s]->wipe();
 }
 
 //-----------------------------
 // calculate annihilation rates
 //-----------------------------
 void Transport::calculate_annihilation() const{
-	if(rank0 && verbose) cout << "# Calculating annihilation rates...";
-
-	// remember what zones I'm responsible for
-	int start = ( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
-	int end = my_zone_end[MPI_myID];
-	PRINT_ASSERT(end,>=,start);
-	PRINT_ASSERT(start,>=,0);
-	PRINT_ASSERT(end,<=,(int)grid->z.size());
-
-	vector<double> H_nunu_lab(species_list.size(),0);
-
-    #pragma omp parallel for schedule(guided)
-	for(int z_ind=start; z_ind<end; z_ind++){
-
-		// based on nulib's prescription for which species each distribution represents
-		unsigned s_nue    = 0;
-		unsigned s_nubare = 1;
-		PRINT_ASSERT(species_list[s_nue]->weight,==,species_list[s_nubare]->weight);
-		double Q_tmp = 0;
-		double vol = grid->zone_4volume(z_ind);
-		double zone_annihil_net = 0;
-		Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_nue],
-				 (PolarSpectrumArray*)grid->z[z_ind].distribution[s_nubare],
-				 true,species_list[s_nue]->weight);
-		zone_annihil_net += Q_tmp;
-		#pragma omp atomic
-		H_nunu_lab[0] += Q_tmp*vol;
-		PRINT_ASSERT(H_nunu_lab[1],==,0);
-
-		if(species_list.size()==3){
-			unsigned s_nux = 2;
-			Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_nux],
-					(PolarSpectrumArray*)grid->z[z_ind].distribution[s_nux],
-					false,species_list[s_nux]->weight);
-			zone_annihil_net += 2.0 * Q_tmp;
-			#pragma omp atomic
-			H_nunu_lab[2] += 2.0 * Q_tmp*vol;
-		}
-
-		else if(species_list.size()==4){
-			unsigned s_nux = 2;
-			unsigned s_nubarx = 3;
-			PRINT_ASSERT(species_list[s_nux]->weight,==,species_list[s_nubarx]->weight);
-			Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_nux   ],
-					(PolarSpectrumArray*)grid->z[z_ind].distribution[s_nubarx],
-					false,species_list[s_nux]->weight);
-			zone_annihil_net += 2.0 * Q_tmp;
-			#pragma omp atomic
-			H_nunu_lab[2] += 2.0 * Q_tmp*vol;
-			PRINT_ASSERT(H_nunu_lab[3],==,0);
-		}
-
-		else if(species_list.size()==6){
-			unsigned s_numu = 2;
-			unsigned s_nubarmu = 3;
-			unsigned s_nutau = 4;
-			unsigned s_nubartau = 5;
-			PRINT_ASSERT(species_list[s_numu]->weight,==,species_list[s_nubarmu]->weight);
-			PRINT_ASSERT(species_list[s_nutau]->weight,==,species_list[s_nubartau]->weight);
-			Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_numu   ],
-					(PolarSpectrumArray*)grid->z[z_ind].distribution[s_nubarmu],
-					  false,species_list[s_numu]->weight);
-			zone_annihil_net += Q_tmp;
-			#pragma omp atomic
-			H_nunu_lab[2] += Q_tmp*vol;
-			PRINT_ASSERT(H_nunu_lab[3],==,0);
-			Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_nutau   ],
-					(PolarSpectrumArray*)grid->z[z_ind].distribution[s_nubartau],
-					  false,species_list[s_nutau]->weight);
-			zone_annihil_net += Q_tmp;
-			#pragma omp atomic
-			H_nunu_lab[4] += Q_tmp*vol;
-			PRINT_ASSERT(H_nunu_lab[5],==,0);
-		}
-		else{
-			cout << "ERROR: wrong species list size in calculate_annihilation" << endl;
-			exit(34);
-		}
-
-		// set the value in grid
-		grid->z[z_ind].Q_annihil = zone_annihil_net;
-	}
-
-	// synchronize global quantities between processors
-	vector<double> send(species_list.size(),0);
-	vector<double> receive(species_list.size(),0);
-	for(unsigned s=0; s<species_list.size(); s++) send[s] = H_nunu_lab[s];
-	MPI_Allreduce(&send.front(), &receive.front(), species_list.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-	for(unsigned s=0; s<species_list.size(); s++) H_nunu_lab[s] = receive[s];
-
-	// write to screen
-	if(rank0) cout << "finished." << endl;
-	if(rank0 && verbose) {
-		cout << "#   { ";
-		for(unsigned s=0; s<species_list.size(); s++) cout << H_nunu_lab[s] << " ";
-		cout << " } erg/s H_annihil" << endl;
-	}
+//	if(rank0 && verbose) cout << "# Calculating annihilation rates...";
+//
+//	// remember what zones I'm responsible for
+//	int start = ( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
+//	int end = my_zone_end[MPI_myID];
+//	PRINT_ASSERT(end,>=,start);
+//	PRINT_ASSERT(start,>=,0);
+//	PRINT_ASSERT(end,<=,(int)grid->z.size());
+//
+//	vector<double> H_nunu_lab(species_list.size(),0);
+//
+//    #pragma omp parallel for schedule(guided)
+//	for(int z_ind=start; z_ind<end; z_ind++){
+//
+//		// based on nulib's prescription for which species each distribution represents
+//		unsigned s_nue    = 0;
+//		unsigned s_nubare = 1;
+//		PRINT_ASSERT(species_list[s_nue]->weight,==,species_list[s_nubare]->weight);
+//		double Q_tmp = 0;
+//		double vol = grid->zone_4volume(z_ind);
+//		double zone_annihil_net = 0;
+//		Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_nue],
+//				 (PolarSpectrumArray*)grid->z[z_ind].distribution[s_nubare],
+//				 true,species_list[s_nue]->weight);
+//		zone_annihil_net += Q_tmp;
+//		#pragma omp atomic
+//		H_nunu_lab[0] += Q_tmp*vol;
+//		PRINT_ASSERT(H_nunu_lab[1],==,0);
+//
+//		if(species_list.size()==3){
+//			unsigned s_nux = 2;
+//			Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_nux],
+//					(PolarSpectrumArray*)grid->z[z_ind].distribution[s_nux],
+//					false,species_list[s_nux]->weight);
+//			zone_annihil_net += 2.0 * Q_tmp;
+//			#pragma omp atomic
+//			H_nunu_lab[2] += 2.0 * Q_tmp*vol;
+//		}
+//
+//		else if(species_list.size()==4){
+//			unsigned s_nux = 2;
+//			unsigned s_nubarx = 3;
+//			PRINT_ASSERT(species_list[s_nux]->weight,==,species_list[s_nubarx]->weight);
+//			Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_nux   ],
+//					(PolarSpectrumArray*)grid->z[z_ind].distribution[s_nubarx],
+//					false,species_list[s_nux]->weight);
+//			zone_annihil_net += 2.0 * Q_tmp;
+//			#pragma omp atomic
+//			H_nunu_lab[2] += 2.0 * Q_tmp*vol;
+//			PRINT_ASSERT(H_nunu_lab[3],==,0);
+//		}
+//
+//		else if(species_list.size()==6){
+//			unsigned s_numu = 2;
+//			unsigned s_nubarmu = 3;
+//			unsigned s_nutau = 4;
+//			unsigned s_nubartau = 5;
+//			PRINT_ASSERT(species_list[s_numu]->weight,==,species_list[s_nubarmu]->weight);
+//			PRINT_ASSERT(species_list[s_nutau]->weight,==,species_list[s_nubartau]->weight);
+//			Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_numu   ],
+//					(PolarSpectrumArray*)grid->z[z_ind].distribution[s_nubarmu],
+//					  false,species_list[s_numu]->weight);
+//			zone_annihil_net += Q_tmp;
+//			#pragma omp atomic
+//			H_nunu_lab[2] += Q_tmp*vol;
+//			PRINT_ASSERT(H_nunu_lab[3],==,0);
+//			Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_nutau   ],
+//					(PolarSpectrumArray*)grid->z[z_ind].distribution[s_nubartau],
+//					  false,species_list[s_nutau]->weight);
+//			zone_annihil_net += Q_tmp;
+//			#pragma omp atomic
+//			H_nunu_lab[4] += Q_tmp*vol;
+//			PRINT_ASSERT(H_nunu_lab[5],==,0);
+//		}
+//		else{
+//			cout << "ERROR: wrong species list size in calculate_annihilation" << endl;
+//			exit(34);
+//		}
+//
+//		// set the value in grid
+//		grid->z[z_ind].Q_annihil = zone_annihil_net;
+//	}
+//
+//	// synchronize global quantities between processors
+//	vector<double> send(species_list.size(),0);
+//	vector<double> receive(species_list.size(),0);
+//	for(unsigned s=0; s<species_list.size(); s++) send[s] = H_nunu_lab[s];
+//	MPI_Allreduce(&send.front(), &receive.front(), species_list.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+//	for(unsigned s=0; s<species_list.size(); s++) H_nunu_lab[s] = receive[s];
+//
+//	// write to screen
+//	if(rank0) cout << "finished." << endl;
+//	if(rank0 && verbose) {
+//		cout << "#   { ";
+//		for(unsigned s=0; s<species_list.size(); s++) cout << H_nunu_lab[s] << " ";
+//		cout << " } erg/s H_annihil" << endl;
+//	}
 }
 
 
@@ -561,7 +551,7 @@ void Transport::normalize_radiative_quantities(){
 
 		// represents *all* species if nux
 		for(unsigned s=0; s<species_list.size(); s++){
-		  z->distribution[s]->rescale(inv_mult_four_vol * pc::inv_c);  // erg*dist --> erg/ccm
+		  grid->distribution[s]->rescale(inv_mult_four_vol * pc::inv_c);  // erg*dist --> erg/ccm
 		  z->Edens_com[s] *= inv_mult_four_vol *pc::inv_c;             // erg*dist --> erg/ccm
 		  z->Ndens_com[s] *= inv_mult_four_vol *pc::inv_c;             // erg/Hz*dist --> erg/Hz/ccm
 		}
@@ -694,7 +684,7 @@ void Transport::reduce_radiation()
 	// reduce the spectra
 	if(verbose && rank0) cout << "#   spectra" << endl;
 	for(unsigned i=0; i<species_list.size(); i++)
-	  species_list[i]->spectrum.MPI_average(proc);
+	  species_list[i]->spectrum.MPI_average();
 	  
 	// reduce the numbers of particles active/escaped
 	if(verbose && rank0) cout << "#   particle numbers" << endl;
@@ -712,6 +702,11 @@ void Transport::reduce_radiation()
 	//-- EACH PROCESSOR GETS THE REDUCTION INFORMATION IT NEEDS
 	if(verbose && rank0) cout << "#   fluid" << endl;
 	
+	// reduce distribution
+	for(unsigned s=0; s<species_list.size(); s++)
+		grid->distribution[s]->MPI_average();
+
+
 	for(int proc=0; proc<MPI_nprocs; proc++){
 
 	  int my_begin = ( proc==0 ? 0 : my_zone_end[proc-1] );
@@ -722,12 +717,8 @@ void Transport::reduce_radiation()
 	  send.resize(size);
 	  receive.resize(size);
 	  
-	  // reduce distribution
 	  for(unsigned s=0; s<species_list.size(); s++){
-	    for(int i=my_begin; i<my_end; i++)
-	      grid->z[i].distribution[s]->MPI_average(proc);
-
-	    // reduce Edens_com
+		// reduce Edens_com
 	    for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].Edens_com[s];
 	    hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
 

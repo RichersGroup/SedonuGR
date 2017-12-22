@@ -54,9 +54,11 @@
 #include "H5Cpp.h"
 #include "Axis.h"
 #include "MultiDArray.h"
+#include "SpectrumArray.h"
 
 class Transport;
 class Zone;
+class SpectrumArray;
 
 class Grid
 {
@@ -67,8 +69,6 @@ protected:
 	virtual void read_model_file(Lua* lua) = 0;
 
 	// output options
-	int output_zones_distribution;
-	int output_hdf5;
 	int do_annihilation;
 	int do_GR;
 
@@ -99,19 +99,20 @@ public:
 	Axis nu_grid_axis;
 	vector<MultiDInterface*> abs_opac, scat_opac; // one for each species
 
+	vector<SpectrumArray*> distribution;  // radiation energy density for each species in lab frame (erg/ccm. Integrated over bin frequency and direction)
+
+
 	// set everything up
 	virtual void init(Lua* lua, Transport* insim);
 
 	// write out zone information
 	void         write_zones(const int iw) const;
-	void         write_header(std::ofstream& outf) const;
-	void         write_line(std::ofstream& outf, const int z_ind) const;
-	virtual void write_rays(const int iw) const = 0;
 	void         write_hdf5_data       (H5::H5File file) const;
 	virtual void write_hdf5_coordinates(H5::H5File file) const=0;
 
 	// radius using naieve coord transformation
 	static double radius(const double xup[4]);
+	virtual void axis_vector(vector<Axis>& axes) const = 0;
 
 	// get directional indices from the zone index
 	virtual void    zone_directional_indices(const int z_ind, vector<unsigned>& dir_ind) const=0;

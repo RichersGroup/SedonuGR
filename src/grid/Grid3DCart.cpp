@@ -55,7 +55,7 @@ void Grid3DCart::read_model_file(Lua* lua)
 	// set up the data structures
 	abs_opac.resize(sim->species_list.size());
 	scat_opac.resize(sim->species_list.size());
-	vector<Axis*> axes = {&nu_grid_axis, &xAxes[0], &xAxes[1], &xAxes[2]};
+	vector<Axis> axes({nu_grid_axis, xAxes[0], xAxes[1], xAxes[2]});
 	for(int s=0; s<sim->species_list.size(); s++){
 		abs_opac[s] = new MultiDArray<4>(axes);
 		scat_opac[s] = new MultiDArray<4>(axes);
@@ -637,107 +637,6 @@ void Grid3DCart::zone_coordinates(const int z_ind, double r[3], const int rsize)
 }
 
 
-//------------------------------------------------------------
-// Write the grid information out to a file
-//------------------------------------------------------------
-void Grid3DCart::write_rays(const int iw) const
-{
-
-	int i,j,k;
-	int z_ind;
-	double r[3];
-	string filename = "";
-	ofstream outf;
-
-	// get the origin coordinates
-	double origin[3] = {0,0,0};
-	z_ind = zone_index(origin);
-	vector<unsigned> iorigin(3,0);
-	zone_directional_indices(z_ind,iorigin);
-
-
-	// XY-slice
-	filename = Transport::filename("slice_xy",iw,".dat");
-	outf.open(filename.c_str());
-	write_header(outf);
-	k = iorigin[2]; //nx[2]/2;
-	for(i=0; i<xAxes[0].size(); i++) for(j=0; j<xAxes[1].size(); j++){
-		if(j==0) outf << endl;
-		z_ind = zone_index(i,j,k);
-		zone_coordinates(z_ind,r,3);
-		write_line(outf,z_ind);
-	}
-	outf.close();
-
-	// XZ-slice
-	filename = Transport::filename("slice_xz",iw,".dat");
-	outf.open(filename.c_str());
-	write_header(outf);
-	j = iorigin[1]; //nx[1]/2;
-	for(i=0; i<xAxes[0].size(); i++) for(k=0; k<xAxes[2].size(); k++){
-		if(k==0) outf << endl;
-		z_ind = zone_index(i,j,k);
-		zone_coordinates(z_ind,r,3);
-		write_line(outf,z_ind);
-	}
-	outf.close();
-
-	// YZ-slice
-	filename = Transport::filename("slice_yz",iw,".dat");
-	outf.open(filename.c_str());
-	write_header(outf);
-	i = iorigin[0]; //nx[0]/2;
-	for(j=0; j<xAxes[1].size(); j++) for(k=0; k<xAxes[2].size(); k++){
-		if(k==0) outf << endl;
-		z_ind = zone_index(i,j,k);
-		zone_coordinates(z_ind,r,3);
-		write_line(outf,z_ind);
-	}
-	outf.close();
-
-	// X-direction
-	filename = Transport::filename("ray_x",iw,".dat");
-	outf.open(filename.c_str());
-	write_header(outf);
-	j = xAxes[1].size()/2;
-	k = xAxes[2].size()/2;
-	for (i=0;i<xAxes[0].size();i++){
-		z_ind = zone_index(i,j,k);
-		zone_coordinates(z_ind,r,3);
-		write_line(outf,z_ind);
-	}
-	outf.close();
-
-	// Y-direction
-	filename = Transport::filename("ray_y",iw,".dat");
-	outf.open(filename.c_str());
-	write_header(outf);
-	i = xAxes[0].size()/2;
-	k = xAxes[2].size()/2;
-	for (j=0; j<xAxes[1].size(); j++){
-		z_ind = zone_index(i,j,k);
-		zone_coordinates(z_ind,r,3);
-		write_line(outf,z_ind);
-	}
-	outf.close();
-
-	// Z-direction
-	filename = Transport::filename("ray_z",iw,".dat");
-	outf.open(filename.c_str());
-	write_header(outf);
-	i = xAxes[0].size()/2;
-	j = xAxes[1].size()/2;
-	for (k=0; k<xAxes[2].size(); k++)
-	{
-		z_ind = zone_index(i,j,k);
-		zone_coordinates(z_ind,r,3);
-		write_line(outf,z_ind);
-	}
-	outf.close();
-}
-
-
-
 double Grid3DCart::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
@@ -908,4 +807,7 @@ void Grid3DCart::connection_coefficients(const double xup[4], double gamma[4][4]
 }
 double Grid3DCart::zone_lapse(const int z_ind) const{
 	return metric[z_ind].alpha;
+}
+void Grid3DCart::axis_vector(vector<Axis>& axes) const{
+	axes = xAxes;
 }

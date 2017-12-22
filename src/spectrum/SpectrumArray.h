@@ -43,7 +43,7 @@ protected:
 
 	// rotate to polar basis
 	static void rotate_basis(double D[3], const double xyz[3]);
-	virtual void count(const double D[3], const double nu, const double E) = 0;
+	virtual void count(const double D[3], const vector<unsigned>& dir_ind, const double nu, const double E) = 0;
 
 public:
 
@@ -53,27 +53,18 @@ public:
 	SpectrumArray();
 
 	// MPI functions
-	virtual void MPI_average(const int proc) = 0;
+	virtual void MPI_average() = 0;
 
 	// Count a packets
-	void rotate_and_count(const double D[3], const double xup[3], const double nu, const double E);
+	void rotate_and_count(const double D[3], const double xup[3], const vector<unsigned>& dir_ind, const double nu, const double E);
 
 	//  void normalize();
 	virtual void rescale(const double) = 0;
 	virtual void wipe() = 0;
 
-	// integrate over nu,mu,phi
-	virtual double average_nu() const = 0;
-	virtual double integrate() const = 0;
-	virtual void integrate_over_direction(std::vector<double>& edens) const = 0;
-
 	// Print out
-	virtual void print(const int iw, const int species) const = 0;
-	virtual void write_hdf5_data(H5::H5File file, const int s, const vector<unsigned>& dir_ind) const = 0;
-	virtual void write_hdf5_coordinates(H5::H5File file, const Grid* grid) const = 0;
-	virtual void write_header(std::ofstream& outf) const = 0;
-	virtual void write_line(std::ofstream& outf) const = 0;
-
+	virtual void write_hdf5_data(H5::H5File file, const string name) const = 0;
+	virtual void write_hdf5_coordinates(H5::H5File file, const string name) const = 0;
 };
 
 #endif

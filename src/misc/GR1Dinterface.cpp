@@ -107,16 +107,20 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 	double new_Wrrr_Fr[nr][ns][ne];
 	double new_Wttr_Fr[nr][ns][ne];
 
+
 	// set the GR1D quantities
 	int indlast = ne*ns*nr_GR1D;
 	//#pragma omp for
-	for(int z_ind=0; z_ind<nr; z_ind++){
-		int indr = z_ind+nghost_GR1D;
-		const double X = metricX[indr];
-		for(int s=0; s<ns; s++){
+	unsigned dir_ind[3];
+	for(int s=0; s<ns; s++){
+		GR1DSpectrumArray* tmpSpectrum = static_cast<GR1DSpectrumArray*>((*sim)->grid->distribution[s]);
+		for(int z_ind=0; z_ind<nr; z_ind++){
+			dir_ind[0] = z_ind;
+			int indr = z_ind+nghost_GR1D;
+			const double X = metricX[indr];
 			int inds = indr + s*nr_GR1D;
-			GR1DSpectrumArray* tmpSpectrum = static_cast<GR1DSpectrumArray*>((*sim)->grid->z[z_ind].distribution[s]);
 			for(int ie=0; ie<ne; ie++){
+				dir_ind[1] = ie;
 				if(extract_MC[z_ind][s][ie]){
 					int inde = inds + ie*ns*nr_GR1D;
 					int indexE    = inde + 0*indlast;
@@ -130,10 +134,14 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 					int indexChi_pm = inde + 0*indlast + 0*ne*ns*nr_GR1D*1;
 
 					// load up new arrays
-					double Prr  = tmpSpectrum->moments[tmpSpectrum->index(ie,2)];//q_M1[indexPrr];//
-					double Ptt  = tmpSpectrum->moments[tmpSpectrum->index(ie,3)];//q_M1_extra[indexPtt];//
-					double Wrrr = tmpSpectrum->moments[tmpSpectrum->index(ie,4)];//q_M1_extra[indexWrrr];//
-					double Wttr = tmpSpectrum->moments[tmpSpectrum->index(ie,5)];//q_M1_extra[indexWttr];//
+					dir_ind[2] = 2;
+					double Prr  = tmpSpectrum->data->get(dir_ind);//q_M1[indexPrr];//
+					dir_ind[2] = 3;
+					double Ptt  = tmpSpectrum->data->get(dir_ind);//q_M1_extra[indexPtt];//
+					dir_ind[2] = 4;
+					double Wrrr = tmpSpectrum->data->get(dir_ind);//q_M1_extra[indexWrrr];//
+					dir_ind[2] = 5;
+					double Wttr = tmpSpectrum->data->get(dir_ind);//q_M1_extra[indexWttr];//
 
 					// enforce local GR consistency
 					double P_constraint = Prr/X/X + 2.*Ptt;

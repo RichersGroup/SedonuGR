@@ -42,13 +42,14 @@ private:
 	double dist[2];
 	double v[3]; // velocity of the fluid in the lab frame
 
-	vector<unsigned> dir_ind;
 
 	double doppler_shift(const double v[3], const double D[3], const int size) const;
 	void lorentz_transform_particle(Particle* p, const double v[3], const int vsize) const;
 
 public:
 	bool exponential_decay;
+
+	vector<unsigned> dir_ind;
 
 	LorentzHelper(const bool exp_dec, const int n_spatial_dims);
 

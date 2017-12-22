@@ -36,6 +36,9 @@
 #include "Transport.h"
 #include "H5Cpp.h"
 #include "Neutrino_GR1D.h"
+#include "MomentSpectrumArray.h"
+#include "RadialMomentSpectrumArray.h"
+#include "GR1DSpectrumArray.h"
 
 using namespace std;
 namespace pc = physical_constants;
@@ -60,10 +63,6 @@ void Grid::init(Lua* lua, Transport* insim)
 	// read some parameters
 	int do_relativity = lua->scalar<int>("do_relativity");
 	int write_zones_every = lua->scalar<int>("write_zones_every");
-	if(write_zones_every>0){
-		output_zones_distribution = lua->scalar<int>("output_zones_distribution");
-		output_hdf5 = lua->scalar<int>("output_hdf5");
-	}
 	do_annihilation = lua->scalar<int>("do_annihilation");
 
 	// complain if the grid is obviously not right
@@ -146,41 +145,127 @@ void Grid::init(Lua* lua, Transport* insim)
     	}
 	}
 	PRINT_ASSERT(nu_grid_axis.size(),>,0);
+
+    //==================================//
+    // set up the spectrum in each zone //
+    //==================================//
+    if(rank0) cout << "#   Setting up the distribution function...";
+    string distribution_type = lua->scalar<string>("distribution_type");
+
+    double minval = 0;
+    double trash, tmp=0;
+    vector<double> bintops = vector<double>(0);
+    distribution.resize(insim->species_list.size());
+    vector<Axis> spatial_axes;
+    axis_vector(spatial_axes);
+
+    for(int s=0; s<insim->species_list.size(); s++){
+
+    	//-- POLAR SPECTRUM -----------------
+    	if(distribution_type == "Polar"){
+    		Axis tmp_mugrid, tmp_phigrid;
+     		int n_mu = lua->scalar<int>("distribution_nmu");
+    		int n_phi = lua->scalar<int>("distribution_nphi");
+    		if(n_mu>0 && n_phi>0){
+    			tmp_mugrid = Axis(-1,1,n_mu);
+    			tmp_phigrid = Axis(-pc::pi, pc::pi, n_phi);
+    		}
+    		else{
+    			// mu ---------------
+    			string mugrid_filename = lua->scalar<string>("distribution_mugrid_filename");
+    			ifstream mugrid_file;
+    			mugrid_file.open(mugrid_filename.c_str());
+    			mugrid_file >> trash >> minval;
+    			bintops = vector<double>(0);
+    			vector<double> binmid;
+    			while(mugrid_file >> trash >> tmp){
+    				if(bintops.size()>0) PRINT_ASSERT(tmp,>,bintops[bintops.size()-1]);
+    				else PRINT_ASSERT(tmp,>,minval);
+    				bintops.push_back(tmp);
+    				double last = bintops.size()==1 ? minval : bintops[bintops.size()-2];
+    				binmid.push_back(0.5 * (last + bintops[bintops.size()-1]));
+    			}
+    			bintops[bintops.size()-1] = 1.0;
+    			PRINT_ASSERT(minval,==,-1);
+    			tmp_mugrid = Axis(minval, bintops, binmid);
+
+    			// phi --------------
+    			string phigrid_filename = lua->scalar<string>("distribution_phigrid_filename");
+    			ifstream phigrid_file;
+    			phigrid_file.open(phigrid_filename.c_str());
+    			phigrid_file >> trash >> minval;
+    			minval -= pc::pi;
+    			bintops = vector<double>(0);
+    			binmid = vector<double>(0);
+    			while(phigrid_file >> trash >> tmp){
+    				tmp -= pc::pi;
+    				if(bintops.size()>0) PRINT_ASSERT(tmp,>,bintops[bintops.size()-1]);
+    				else PRINT_ASSERT(tmp,>,minval);
+    				bintops.push_back(tmp);
+    				double last = bintops.size()==1 ? minval : bintops[bintops.size()-2];
+    				binmid.push_back(0.5 * (last + bintops[bintops.size()-1]));
+    			}
+    			bintops[bintops.size()-1] = pc::pi;
+    			PRINT_ASSERT(minval,==,-pc::pi);
+    			tmp_phigrid = Axis(minval, bintops, binmid);
+    		}
+    		distribution[s] = new PolarSpectrumArray;
+    		((PolarSpectrumArray*)distribution[s])->init(spatial_axes,nu_grid_axis, tmp_mugrid, tmp_phigrid);
+    	}
+
+    	//-- MOMENT SPECTRUM --------------------
+    	else if(distribution_type == "Moments"){
+    		int order = lua->scalar<int>("distribution_moment_order");
+    		distribution[s] = new MomentSpectrumArray;
+    		((MomentSpectrumArray*)distribution[s])->init(spatial_axes,nu_grid_axis, order);
+    	}
+
+    	//-- RADIAL MOMENT SPECTRUM --------------------
+    	else if(distribution_type == "RadialMoments"){
+    		int order = lua->scalar<int>("distribution_moment_order");
+    		distribution[s] = new RadialMomentSpectrumArray;
+    		((RadialMomentSpectrumArray*)distribution[s])->init(spatial_axes,nu_grid_axis, order);
+    	}
+
+    	//-- RADIAL MOMENT SPECTRUM --------------------
+    	else if(distribution_type == "GR1D"){
+    		distribution[s] = new GR1DSpectrumArray;
+    		((GR1DSpectrumArray*)distribution[s])->init(spatial_axes,nu_grid_axis);
+    	}
+
+    	//-- CATCH ------------------
+    	else{
+    		cout << "Distribution type not found." << endl;
+    		assert(0);
+    	}
+    	int distribution_polar_basis = lua->scalar<int>("distribution_polar_basis");
+    	distribution[s]->rotated_basis = distribution_polar_basis;
+
+    }
+
+    for(int z_ind=0; z_ind<z.size(); z_ind++){
+    	z[z_ind].Edens_com = vector<double>(sim->species_list.size());
+    	z[z_ind].Ndens_com = vector<double>(sim->species_list.size());
+    }
+
+    if(rank0) cout << "finished." << endl;
 }
 
-//------------------------------------------------------------
-// Write the grid information out to a file
-//------------------------------------------------------------
 void Grid::write_zones(const int iw) const
 {
 	PRINT_ASSERT(z.size(),>,0);
 
 	// output all zone data in hdf5 format
-	if(output_hdf5){
-		PRINT_ASSERT(dimensionality(),>,0);
-		string filename = Transport::filename("fluid",iw,".h5");
-		H5::H5File file(filename, H5F_ACC_TRUNC);
+	PRINT_ASSERT(dimensionality(),>,0);
+	string filename = Transport::filename("fluid",iw,".h5");
+	H5::H5File file(filename, H5F_ACC_TRUNC);
 
-		// write coordinates to the hdf5 file (implemented in each grid type)
-		z[0].distribution[0]->write_hdf5_coordinates(file, this);
-		write_hdf5_coordinates(file);
-		write_hdf5_data(file);
-	}
+	// write coordinates to the hdf5 file (implemented in each grid type)
+	distribution[0]->write_hdf5_coordinates(file, "distribution");
+	write_hdf5_coordinates(file);
+	write_hdf5_data(file);
 
-	// output all zone data in text files
-	else{
-		ofstream outf;
-		string filename = Transport::filename("fluid",iw,".dat");
-		outf.open(filename.c_str());
-		write_header(outf);
-		vector<unsigned> dir_ind(dimensionality());
-		for (unsigned z_ind=0; z_ind<z.size(); z_ind++){
-			zone_directional_indices(z_ind, dir_ind);
-			if(dimensionality()>0) if(dir_ind[dimensionality()-1]==0) outf << endl;
-			write_line(outf,z_ind);
-		}
-		outf.close();
-	}
+	sim->species_list[0]->spectrum.write_hdf5_coordinates(file,"spectrum");
 }
 
 // returning 0 causes the min distance to take over in propagate.cpp::which_event
@@ -196,37 +281,6 @@ double Grid::zone_com_3volume(const int z_ind) const{
 	// assumes v is orthonormal in cm/s
 	if(z_ind<0) return 0;
 	else return zone_lab_3volume(z_ind) * LorentzHelper::lorentz_factor(z[z_ind].u,3);
-}
-
-void Grid::write_header(ofstream& outf) const{
-	outf << setprecision(4);
-	outf << scientific;
-	outf << "# ";
-	double r[dimensionality()];
-	zone_coordinates(0,r,dimensionality());
-	unsigned c=0;
-	for(unsigned i=0; i<dimensionality(); i++) outf << ++c << "-r[" << i << "]  ";
-	outf << ++c << "-comoving_volume(ccm)  ";
-	outf << ++c << "-rho(g/ccm,com)  ";
-	outf << ++c << "-T_gas(MeV,com)  ";
-	outf << ++c << "-Ye  ";
-	outf << ++c << "-mue(MeV,com)  ";
-	outf << ++c << "-H_vis(erg/s/g,com)  ";
-	outf << ++c << "-H_abs(erg/g/s,com)  ";
-	outf << ++c << "-C_emit(erg/g/s,com)  ";
-	outf << ++c << "-dYe_dt_abs(1/s,lab)  ";
-	outf << ++c << "-dYe_dt_emit(1/s,lab)  ";
-	if(do_annihilation) outf << ++c << "-annihilation_rate(erg/ccm/s,lab)  ";
-	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << ++c << "-e_rad"<< s << "(erg/ccm,lab) ";
-	for(unsigned s=0; s<z[0].distribution.size(); s++) outf << ++c << "-avg_E"<< s << "(MeV,com) ";
-	if(output_zones_distribution){
-		for(unsigned s=0; s<z[0].distribution.size(); s++){
-			outf << ++c << "-s"<<s;
-			z[0].distribution[s]->write_header(outf);
-		}
-	}
-	outf << ++c << "-Edens_invariant(erg/ccm/MeV^3) ";
-	outf << endl;
 }
 
 void Grid::write_hdf5_data(H5::H5File file) const{
@@ -306,106 +360,13 @@ void Grid::write_hdf5_data(H5::H5File file) const{
 	}
 	dataspace.close();
 
-	// SET UP +1D DATASPACE
-	hsize_t dims_plus1[dimensionality()+1];
-	for(unsigned i=0; i<dimensionality(); i++) dims_plus1[i] = zdims[i];
-	dims_plus1[dimensionality()] = z[0].distribution.size();
-	dataspace = H5::DataSpace(dimensionality()+1,&dims_plus1[0]);
-	tmp.resize(z.size() * z[0].distribution.size());
-
-	// write neutrino energy density using contiguous temporary array
-	dataset = file.createDataSet("e_rad(erg|ccm,lab)",H5::PredType::IEEE_F32LE,dataspace);
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++)
-		for(unsigned s=0; s<z[0].distribution.size(); s++){
-			unsigned ind = z_ind*z[0].distribution.size() + s;
-			tmp[ind] = z[z_ind].distribution[s]->integrate();
-		}
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-	dataset.close();
-
-	// write average neutrino energy using contiguous temporary array
-	dataset = file.createDataSet("avg_E(MeV,com)",H5::PredType::IEEE_F32LE,dataspace);
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++)
-		for(unsigned s=0; s<z[0].distribution.size(); s++){
-			unsigned ind = z_ind*z[0].distribution.size() + s;
-			tmp[ind] = z[z_ind].Edens_com[s] / z[z_ind].Ndens_com[s] * pc::h_MeV;
-		}
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-	dataset.close();
-	dataspace.close();
-
 	// write distribution function
-	if(output_zones_distribution){
-		vector<unsigned> dir_ind(dimensionality());
-		for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
-			zone_directional_indices(z_ind,dir_ind);
-			for(unsigned s=0; s<z[0].distribution.size(); s++){
-				z[z_ind].distribution[s]->write_hdf5_data(file, s, dir_ind);
-			}
-		}
+	vector<unsigned> dir_ind(dimensionality());
+	for(unsigned s=0; s<distribution.size(); s++){
+		distribution[s]->write_hdf5_data(file, "distribution"+to_string(s));
+		sim->species_list[s]->spectrum.write_hdf5_data(file,"spectrum"+to_string(s));
 	}
 }
-
-void Grid::write_line(ofstream& outf, const int z_ind) const{
-	double r[dimensionality()];
-	zone_coordinates(z_ind,r,dimensionality());
-
-	for(unsigned i=0; i<dimensionality(); i++) outf << r[i] << " ";
-
-	outf << zone_com_3volume(z_ind) << "\t";
-	outf << z[z_ind].rho   << "\t";
-	outf << z[z_ind].T*pc::k_MeV << "\t";
-	outf << z[z_ind].Ye    << "\t";
-	if(nulib_in_range(z[z_ind].rho, z[z_ind].T, z[z_ind].Ye))
-		outf << nulib_eos_mue(z[z_ind].rho, z[z_ind].T, z[z_ind].Ye) * pc::ergs_to_MeV << "\t";
-	else outf << "UNDEF\t";
-	outf << z[z_ind].H_vis << "\t";
-
-	double H_abs  = z[z_ind].e_abs  / z[z_ind].rho;
-	double H_emit = z[z_ind].e_emit / z[z_ind].rho;
-	outf << H_abs << "\t";
-	outf << H_emit << "\t";
-
-	double n_baryons_per_ccm = z[z_ind].rho / Transport::mean_mass(z[z_ind].Ye);
-	double dYe_dt_abs = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / LorentzHelper::lorentz_factor(z[z_ind].u,3);
-	double dYe_dt_emit = -z[z_ind].l_emit / n_baryons_per_ccm / LorentzHelper::lorentz_factor(z[z_ind].u,3);
-	outf << dYe_dt_abs << "\t";
-	outf << dYe_dt_emit << "\t";
-
-	if(do_annihilation) outf << z[z_ind].Q_annihil << "\t";
-
-	// integrated energy density and average energy for each species
-	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) outf << z[z_ind].distribution[s]->integrate() << "\t";
-	for(unsigned s=0; s<z[z_ind].distribution.size(); s++) outf << z[z_ind].Edens_com[s]/z[z_ind].Ndens_com[s] * pc::h_MeV << "\t";
-
-	// integrated energy density
-	//double integrated_edens = 0;
-	//for(unsigned s=0; s<z[z_ind].distribution.size(); s++) integrated_edens += z[z_ind].distribution[s].integrate();
-	//utf << integrated_edens << "\t";
-	if(output_zones_distribution){
-		for(unsigned s=0; s<z[0].distribution.size(); s++){
-			z[z_ind].distribution[s]->write_line(outf);
-		}
-	}
-//	for(unsigned s=0; s<z[z_ind].distribution.size(); s++){
-//		vector<double> direction_integrated_edens;
-//		z[z_ind].distribution[s].integrate_over_direction(direction_integrated_edens);
-//		for(unsigned g=0; g<direction_integrated_edens.size(); g++){
-//			outf << direction_integrated_edens[g] << "\t";
-//		}
-//	}
-
-//	double Binvar = 0;
-//	for(unsigned s=0; s<z[z_ind].distribution.size(); s++){
-//		for(unsigned i=0; i<z[z_ind].distribution[s]->size(); i++){
-//			Binvar += z[z_ind].distribution[s]->get(i) / pow(z[z_ind].distribution[s]->nu_center(i) * pc::h_MeV,3);
-//		}
-//	}
-//	outf << Binvar << "\t";
-
-	outf << endl;
-}
-
 
 double Grid::total_rest_mass() const{
 	double mass = 0;

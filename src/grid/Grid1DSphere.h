@@ -107,13 +107,13 @@ public:
 	void zone_directional_indices (const int z_ind, vector<unsigned>& dir_ind                     ) const;
 	void sample_in_zone (const int z_ind, ThreadRNG* rangen, double x[3]) const;
 	void interpolate_fluid_velocity(const double x[3], double v[3], int z_ind) const;
-	void write_rays               (const int iw                                                  ) const;
 	void symmetry_boundaries      (LorentzHelper *lh, const double tolerance                     ) const;
 	double zone_radius            (const int z_ind) const;
 	void dims                     (hsize_t dims[1], const int size) const;
 	hsize_t dimensionality() const {return 1;};
 	void write_hdf5_coordinates(H5::H5File file) const;
 	double zone_cell_dist(const double x_up[3], const int z_ind) const;
+	void axis_vector(vector<Axis>& axes) const;
 
 	// GR functions
 	double lapse(const double xup[4], int z_ind=-1) const;

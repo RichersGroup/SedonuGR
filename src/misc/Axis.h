@@ -4,6 +4,8 @@
 #include <vector>
 #include <algorithm>
 #include "global_options.h"
+#include "hdf5.h"
+#include <string>
 
 using namespace std;
 
@@ -67,6 +69,28 @@ public:
 	}
 	double max() const{
 		return top[size()-1];
+	}
+
+	void write_HDF5(const string& name, H5::H5File file){
+		hsize_t dims[1];
+		H5::DataSpace dataspace;
+
+		// write top
+		dims[0] = size()+1;
+		dataspace = H5::DataSpace(1,dims);
+		H5::DataSet dataset = file.createDataSet(name+"[edge]",H5::PredType::IEEE_F64LE,dataspace);
+		vector<double> tmp(size()+1);
+		tmp[0] = min;
+		for(unsigned i=1; i<size()+1; i++) tmp[i] = top[i-1];
+		dataset.write(&tmp[0],H5::PredType::IEEE_F64LE);
+		dataset.close();
+
+		// write mid
+		dims[0] = size();
+		dataspace = H5::DataSpace(1,dims);
+		dataset = file.createDataSet(name+"[mid]",H5::PredType::IEEE_F64LE,dataspace);
+		dataset.write(&mid[0],H5::PredType::IEEE_F64LE);
+		dataset.close();
 	}
 };
 
