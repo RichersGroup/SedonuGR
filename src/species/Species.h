@@ -29,7 +29,6 @@
 #define _SPECIES_H
 
 #include <vector>
-#include "LorentzHelper.h"
 #include "SpectrumArray.h"
 #include "PolarSpectrumArray.h"
 #include "Lua.h"

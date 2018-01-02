@@ -67,9 +67,10 @@ public:
 	double zone_min_length        (const int z_ind                                               ) const;
 	void zone_coordinates         (const int z_ind, double r[2], const int rsize                 ) const;
 	void zone_directional_indices (const int z_ind, vector<unsigned>& dir_ind                    ) const;
+	double zone_lorentz_factor    (const int z_ind                                               ) const;
 	void sample_in_zone (const int z_ind, ThreadRNG* rangen, double x[3]) const;
 	void interpolate_fluid_velocity(const double x[3], double v[3], int z_ind) const;
-	void symmetry_boundaries      (LorentzHelper *lh, const double tolerance                     ) const;
+	void symmetry_boundaries      (EinsteinHelper *eh, const double tolerance                    ) const;
 	double zone_radius            (const int z_ind) const;
 	void dims                     (hsize_t dims[2], const int size) const;
 	hsize_t dimensionality() const {return 2;};

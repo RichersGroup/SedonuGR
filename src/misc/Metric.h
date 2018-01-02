@@ -12,15 +12,18 @@ public:
 // METRIC //
 //========//
 class Metric{
+private:
+	double gtt, betalow[3];
+
  public:
-  double gtt, alpha, betalow[3], betaup[3];
+  double alpha, betaup[3];
   ThreeMetric gammalow;
 
   // fill in values for gtt and betalow
   // assumes alpha, betaup, and gammalow have been set.
   void update(){
-    lower<4>(betaup, betalow);
-    gtt = -alpha*alpha + contract<4>(betaup, betalow);
+    lower<3>(betaup, betalow);
+    gtt = -alpha*alpha + contract<3>(betaup, betalow);
   }
 
   template<unsigned n>
@@ -41,7 +44,7 @@ class Metric{
   template<unsigned n>
     double contract(const double xup[n], const double xdown[n]) const{
     double result = 0;
-    for(int i=0; i<n; i++) result += xup[n]*xdown[n];
+    for(int i=0; i<n; i++)result += xup[i]*xdown[i];
     return result;
   }
         

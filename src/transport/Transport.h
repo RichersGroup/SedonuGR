@@ -32,7 +32,7 @@
 #include "Lua.h"
 #include "CDFArray.h"
 #include "ThreadRNG.h"
-#include "LorentzHelper.h"
+#include "EinsteinHelper.h"
 
 class Species;
 class Grid;
@@ -69,22 +69,22 @@ protected:
 	void create_thermal_particle(const int zone_index, const double weight, const unsigned int s, const unsigned int g);
 
 	// transformation functions
-	void get_opacity(LorentzHelper *lh, const int z_ind) const;
+	void get_opacity(EinsteinHelper *lh, const int z_ind) const;
 
 	// propagate the particles
 	void propagate_particles();
 	void propagate(Particle* p);
-	virtual void move(LorentzHelper *lh, int *z_ind);
-	void tally_radiation(const LorentzHelper *lh, const int z_ind) const;
+	virtual void move(EinsteinHelper *eh, int *z_ind);
+	void tally_radiation(const EinsteinHelper *lh, const int this_exp_decay, const int z_ind) const;
 	void reset_radiation();
-	void which_event(LorentzHelper* lh,const int z_ind, ParticleEvent *event) const;
-	void boundary_conditions(LorentzHelper *lh, int *z_ind) const;
-	void event_interact(LorentzHelper* lh, int *z_ind);
-	void scatter(LorentzHelper *lh, int *z_ind) const;
-	void random_walk(LorentzHelper *lh, const double Rcom, const double D, const int z_ind) const;
+	void which_event(EinsteinHelper* eh,const int z_ind, ParticleEvent *event) const;
+	void boundary_conditions(EinsteinHelper *eh, int *z_ind) const;
+	void event_interact(EinsteinHelper* eh, int *z_ind);
+	void scatter(EinsteinHelper *eh, int *z_ind) const;
+	void random_walk(EinsteinHelper *eh, const double Rcom, const double D, const int z_ind) const;
 	void init_randomwalk_cdf(Lua* lua);
-	void window(LorentzHelper *lh, const int z_ind);
-	void sample_scattering_final_state(const int z_ind, LorentzHelper& lh, const double cosTheta) const;
+	void window(EinsteinHelper *eh, const int z_ind);
+	void sample_scattering_final_state(const int z_ind, EinsteinHelper& lh, const double cosTheta) const;
 
 
 

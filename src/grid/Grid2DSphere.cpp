@@ -871,7 +871,7 @@ void Grid2DSphere::interpolate_fluid_velocity(const double x[3], double v[3], in
 //------------------------------------------------------------
 // Reflect off the symmetry boundaries
 //------------------------------------------------------------
-void Grid2DSphere::symmetry_boundaries(LorentzHelper *lh, const double tolerance) const{
+void Grid2DSphere::symmetry_boundaries(EinsteinHelper *lh, const double tolerance) const{
 // not implemented - does nothing
 }
 
@@ -951,4 +951,7 @@ double Grid2DSphere::zone_lapse(const int z_ind) const{
 }
 void Grid2DSphere::axis_vector(vector<Axis>& axes) const{
 	axes = vector<Axis>({rAxis,thetaAxis});
+}
+double Grid2DSphere::zone_lorentz_factor(const int z_ind) const{
+	abort(); // NOT IMPLEMENTED
 }

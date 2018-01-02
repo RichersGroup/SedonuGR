@@ -96,7 +96,7 @@ void Grid::init(Lua* lua, Transport* insim)
 		total_rest_mass += rest_mass;
 		Tbar            += z[z_ind].T * rest_mass;
 		Yebar           += z[z_ind].Ye * rest_mass;
-		total_KE        += (LorentzHelper::lorentz_factor(z[z_ind].u,3) - 1.0) * rest_mass * pc::c*pc::c;
+		total_KE        += (zone_lorentz_factor(z_ind) - 1.0) * rest_mass * pc::c*pc::c;
 		total_TE        += rest_mass   / pc::m_n * pc::k * z[z_ind].T;
 		if(do_visc) total_hvis += z[z_ind].H_vis * z[z_ind].rho * zone_com_3volume(z_ind);
 	}
@@ -280,7 +280,7 @@ double Grid::zone_rest_mass(const int z_ind) const{
 double Grid::zone_com_3volume(const int z_ind) const{
 	// assumes v is orthonormal in cm/s
 	if(z_ind<0) return 0;
-	else return zone_lab_3volume(z_ind) * LorentzHelper::lorentz_factor(z[z_ind].u,3);
+	else return zone_lab_3volume(z_ind) * zone_lorentz_factor(z_ind);
 }
 
 void Grid::write_hdf5_data(H5::H5File file) const{
@@ -346,7 +346,7 @@ void Grid::write_hdf5_data(H5::H5File file) const{
 	dataset = file.createDataSet("dYe_dt_abs(1|s,lab)",H5::PredType::IEEE_F32LE,dataspace);
 	for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
 		double n_baryons_per_ccm = z[z_ind].rho / Transport::mean_mass(z[z_ind].Ye);
-		tmp[z_ind] = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / LorentzHelper::lorentz_factor(z[z_ind].u,3);
+		tmp[z_ind] = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / zone_lorentz_factor(z_ind);
 	}
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
@@ -404,44 +404,29 @@ double Grid::radius(const double x[4]){
 	return sqrt(dot_Minkowski<3>(x,x));
 }
 
-void Grid::integrate_geodesic(LorentzHelper *lh) const{
-	if(do_GR){
-		const double* kold = lh->p_kup(lab);
-		const double* xold = lh->p_xup();
+void Grid::integrate_geodesic(EinsteinHelper *eh) const{
+	const double* kold = eh->p.kup;
+	const double* xold = eh->p.xup;
 
-		// get connection coefficients
-		double gamma[4][4][4];
-		connection_coefficients(xold,gamma);
+	// get connection coefficients
+	double gamma[4][4][4];
+	connection_coefficients(xold,gamma);
 
-		double lambda = lh->distance(lab) * (-n_dot(kold,xold));
+	double lambda = - eh->ds_com / eh->g.dot<4>(kold, eh->u);
 
-		double dk_dlambda[4] = {0,0,0,0};
-		double dx_dlambda[4] = {0,0,0,0};
-		for(int a=0; a<4; a++){
-			for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++)
-				dk_dlambda[a] -= gamma[a][mu][nu] * kold[mu] * kold[nu];
-			dx_dlambda[a]  = kold[a];
-		}
-
-		// get new x,k
-		double knew[4],xnew[4];
-		for(int i=0; i<4; i++){
-			knew[i] = lh->p_kup(lab)[i] + dk_dlambda[i]*lambda;
-			xnew[i] = lh->p_xup(   )[i] + dx_dlambda[i]*lambda;
-		}
-
-		// make vector null again
-		normalize_null(knew,xnew);
-
-		// actually change the values
-		lh->set_p_xup(xnew,4);
-		lh->set_p_kup<lab>(knew,4);
+	double dk_dlambda[4] = {0,0,0,0};
+	double dx_dlambda[4] = {0,0,0,0};
+	for(int a=0; a<4; a++){
+		for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++)
+			dk_dlambda[a] -= gamma[a][mu][nu] * kold[mu] * kold[nu];
+		dx_dlambda[a]  = kold[a];
 	}
-	else{
-		double xnew[4];
-		for(int i=0; i<3; i++) xnew[i] = lh->p_xup()[i] + lh->distance(lab) * lh->p_kup(lab)[i] / lh->p_kup(lab)[3];
-		xnew[3] = lh->p_xup()[3] + lh->distance(lab);
-		lh->set_p_xup(xnew,4);
+
+	// get new x,k
+	double knew[4],xnew[4];
+	for(int i=0; i<4; i++){
+		eh->p.kup[i] += dk_dlambda[i]*lambda;
+		eh->p.xup[i] += dx_dlambda[i]*lambda;
 	}
 }
 
@@ -527,18 +512,6 @@ void Grid::isotropic_kup_tet(const double nu, double kup_tet[4], const double xu
 	kup_tet[1] = nu * D[1] * 2.0*pc::pi / pc::c;
 	kup_tet[2] = nu * D[2] * 2.0*pc::pi / pc::c;
 	kup_tet[3] = nu        * 2.0*pc::pi / pc::c;
-
-	if(do_GR){
-		// move from tetrad frame to comoving frame
-		double v[3];
-		interpolate_fluid_velocity(xup,v);
-		double u[4];
-		double gamma = LorentzHelper::lorentz_factor(v,3);
-		u[0] = gamma * v[0];
-		u[1] = gamma * v[1];
-		u[2] = gamma * v[2];
-		u[3] = gamma * pc::c;
-	}
 }
 
 void Grid::orthogonalize(double v[4], const double e[4], const double xup[4]) const{
@@ -663,4 +636,16 @@ void Grid::g_down(const double xup[4], double g[4][4], const int z_ind) const{
 
 double Grid::zone_4volume(const int z_ind) const{
 	return zone_lab_3volume(z_ind) * zone_lapse(z_ind);
+}
+
+void Grid::interpolate_metric(const double xup[4], Metric* g, const int z_ind){
+	g->alpha = 1.0;
+	for(int i=0; i<3; i++) g->betaup[i] = 0;
+	g->gammalow.xx = 1.0;
+	g->gammalow.yy = 1.0;
+	g->gammalow.zz = 1.0;
+	g->gammalow.xy = 0.0;
+	g->gammalow.xz = 0.0;
+	g->gammalow.yz = 0.0;
+	g->update();
 }

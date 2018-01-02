@@ -49,12 +49,13 @@
 #include "Zone.h"
 #include "Lua.h"
 #include "Particle.h"
-#include "LorentzHelper.h"
 #include "ThreadRNG.h"
 #include "H5Cpp.h"
 #include "Axis.h"
 #include "MultiDArray.h"
 #include "SpectrumArray.h"
+#include "Metric.h"
+#include "EinsteinHelper.h"
 
 class Transport;
 class Zone;
@@ -126,6 +127,7 @@ public:
 	virtual double zone_min_length (const int z_ind)                        const=0;
 	virtual double zone_radius     (const int z_ind)                        const=0;
 	virtual double zone_cell_dist  (const double p_xup[3], const int z_ind) const;
+	virtual double zone_lorentz_factor(const int z_ind                    ) const=0;
 	double         zone_com_3volume(const int z_ind)                        const;
 	double         zone_4volume    (const int z_ind)                        const;
 	double         zone_rest_mass  (const int z_ind)                        const;
@@ -135,10 +137,11 @@ public:
 
 	// give the velocity vector at this point (PARTICLE COORDINATES)
 	virtual void interpolate_fluid_velocity(const double xup[4], double v[3], int z_ind=-1) const = 0;
+	void interpolate_metric(const double xup[4], Metric* g, const int z_ind=-1);
 
 
 	// boundary conditions
-	virtual void symmetry_boundaries(LorentzHelper *lh, const double step_size) const=0;
+	virtual void symmetry_boundaries(EinsteinHelper *eh, const double step_size) const=0;
 
 	// vector operations
 	template<int s>	static double dot_Minkowski(const double aup[], const double bup[]);
@@ -150,7 +153,7 @@ public:
 	void normalize_null(double aup[4], const double xup[4], const int z_ind=-1) const;
 
 	// move the particle
-	void integrate_geodesic(LorentzHelper *lh) const;
+	void integrate_geodesic(EinsteinHelper *eh) const;
 
 	// help with spawning particles
 	void random_core_x_D(const double r_core, ThreadRNG *rangen, double xup[4], double D[3]) const;

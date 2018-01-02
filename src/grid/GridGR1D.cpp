@@ -63,7 +63,7 @@ void GridGR1D::init(Lua* lua){
 //------------------------------------------------------------
 // Reflect off symmetry axis
 //------------------------------------------------------------
-void GridGR1D::symmetry_boundaries(LorentzHelper *lh) const{
+void GridGR1D::symmetry_boundaries(EinsteinHelper *eh) const{
 	// NONE - just flow out of outer boundary
 }
 

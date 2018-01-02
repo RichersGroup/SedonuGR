@@ -49,7 +49,7 @@ public:
 
 	// required functions
 	void read_model_file(Lua* lua);
-	void symmetry_boundaries      (LorentzHelper *lh) const;
+	void symmetry_boundaries      (EinsteinHelper *eh) const;
 	void init(Lua* lua);
 
 	// GR1D-specific functions

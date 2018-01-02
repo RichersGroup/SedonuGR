@@ -402,41 +402,30 @@ void Grid1DSphere::interpolate_fluid_velocity(const double x[3], double v[3], in
 //------------------------------------------------------------
 // Reflect off symmetry axis
 //------------------------------------------------------------
-void Grid1DSphere::symmetry_boundaries(LorentzHelper *lh, const double tolerance) const{
+void Grid1DSphere::symmetry_boundaries(EinsteinHelper *eh, const double tolerance) const{
 	// reflect from outer boundary
-	if(reflect_outer && radius(lh->p_xup())>rAxis.top[rAxis.size()-1]){
-		const Particle *p = lh->particle_readonly(lab);
-
+		double R = radius(eh->p.xup);
+	if(reflect_outer && R>rAxis.top[rAxis.size()-1]){
 		double r0 = (rAxis.size()>1 ? rAxis.top[rAxis.size()-2] : rAxis.min);
 		double rmax = rAxis.top[rAxis.size()-1];
 		double dr = rmax - r0;
-		double R = radius(p->xup);
 		PRINT_ASSERT( fabs(R - rAxis.top[rAxis.size()-1]),<,tolerance*dr);
 
 		double kr;
-		for(int i=0; i<3; i++) kr += p->xup[i]/R * p->kup[i];
+		for(int i=0; i<3; i++) kr += eh->p.xup[i]/R * eh->p.kup[i];
 
 		// invert the radial component of the velocity
-		double knew[3];
-		knew[3] = lh->p_kup(lab)[3];
-		knew[0] -= 2.*kr * p->xup[0]/R;
-		knew[1] -= 2.*kr * p->xup[1]/R;
-		knew[2] -= 2.*kr * p->xup[2]/R;
-		normalize_null(knew,p->xup);
-
-		lh->set_p_kup<lab>(knew,4);
+		eh->p.kup[0] -= 2.*kr * eh->p.xup[0]/R;
+		eh->p.kup[1] -= 2.*kr * eh->p.xup[1]/R;
+		eh->p.kup[2] -= 2.*kr * eh->p.xup[2]/R;
+		eh->g.normalize_null(eh->p.kup);
 
 		// put the particle just inside the boundary
 		double newR = rmax - TINY*dr;
-		double x[4];
-		x[0] = p->xup[0]/R*newR;
-		x[1] = p->xup[1]/R*newR;
-		x[2] = p->xup[2]/R*newR;
-		x[3] = p->xup[3];
-		lh->set_p_xup(x,4);
+		for(unsigned i=0; i<3; i++)	eh->p.xup[i] *= newR/R;
 
 		// must be inside the boundary, or will get flagged as escaped
-		PRINT_ASSERT(zone_index(x),>=,0);
+		PRINT_ASSERT(zone_index(eh->p.xup),>=,0);
 	}
 }
 
@@ -552,4 +541,7 @@ double Grid1DSphere::zone_lapse(const int z_ind) const{
 }
 void Grid1DSphere::axis_vector(vector<Axis>& axes) const{
 	axes = vector<Axis>({rAxis});
+}
+double Grid1DSphere::zone_lorentz_factor(const int z_ind) const{
+	abort(); // NOT IMPLEMENTED
 }

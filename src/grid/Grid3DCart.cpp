@@ -725,13 +725,13 @@ double Grid3DCart::zone_right_boundary(const unsigned dir, const unsigned dir_in
 //------------------------------------------------------------
 // Reflect off revlecting boundary condition
 //------------------------------------------------------------
-void Grid3DCart::symmetry_boundaries(LorentzHelper *lh, const double tolerance) const{
-	PRINT_ASSERT(zone_index(lh->p_xup()),<,0);
+void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh, const double tolerance) const{
+	PRINT_ASSERT(zone_index(eh->p.xup),<,0);
 
 	// initialize the arrays
 	double kup[4], xup[4];
-	for(int i=0; i<4; i++) xup[i] = lh->p_xup()[i];
-	for(int i=0; i<4; i++) kup[i] = lh->p_kup(lab)[i];
+	for(int i=0; i<4; i++) xup[i] = eh->p.xup[i];
+	for(int i=0; i<4; i++) kup[i] = eh->p.kup[i];
 
 
 	// invert the radial component of the velocity, put the particle just inside the boundary
@@ -782,8 +782,10 @@ void Grid3DCart::symmetry_boundaries(LorentzHelper *lh, const double tolerance) 
 	}
 
 	// assign the arrays
-	lh->set_p_xup(xup,4);
-	lh->set_p_kup<lab>(kup,4);
+	for(unsigned i=0; i<4; i++){
+		eh->p.xup[i] = xup[i];
+		eh->p.kup[i] = kup[i];
+	}
 }
 
 double Grid3DCart::lapse(const double xup[4], int z_ind) const {
@@ -810,4 +812,7 @@ double Grid3DCart::zone_lapse(const int z_ind) const{
 }
 void Grid3DCart::axis_vector(vector<Axis>& axes) const{
 	axes = xAxes;
+}
+double Grid3DCart::zone_lorentz_factor(const int z_ind) const{
+	abort(); // NOT IMPLEMENTED
 }

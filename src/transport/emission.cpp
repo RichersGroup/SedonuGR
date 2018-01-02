@@ -122,56 +122,60 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
 
-	Particle pcom;
-	pcom.fate = moving;
+	Particle p;
+	p.fate = moving;
 
 	// random sample position in zone
-	grid->sample_in_zone(z_ind,&rangen,pcom.xup);
-	pcom.xup[3] = 0;
+	grid->sample_in_zone(z_ind,&rangen,p.xup);
+	p.xup[3] = 0;
 
 	// get the velocity
 	double v[3];
-	grid->interpolate_fluid_velocity(pcom.xup,v,z_ind);
+	grid->interpolate_fluid_velocity(p.xup,v,z_ind);
 
 	// species
-	pcom.s = s;
-	PRINT_ASSERT(pcom.s,>=,0);
-	PRINT_ASSERT(pcom.s,<,(int)species_list.size());
+	p.s = s;
+	PRINT_ASSERT(p.s,>=,0);
+	PRINT_ASSERT(p.s,<,(int)species_list.size());
 
 	// frequency
 	double nu_min = grid->nu_grid_axis.bottom(g);
 	double nu_max = grid->nu_grid_axis.top[g];
 	double nu = rangen.uniform(nu_min, nu_max);
-	pcom.N = species_list[pcom.s]->emis[z_ind].get_value(g) * species_list[pcom.s]->emis[z_ind].N / (nu*pc::h) * weight * 4.*pc::pi;
+	p.N = species_list[p.s]->emis[z_ind].get_value(g) * species_list[p.s]->emis[z_ind].N / (nu*pc::h) * weight * 4.*pc::pi;
 
-	// emit isotropically in comoving frame
-	grid->isotropic_kup_tet(nu,pcom.kup,pcom.xup,&rangen);
 
 	// set up LorentzHelper
-	LorentzHelper lh(exponential_decay, grid->dimensionality());
-	lh.set_v(v,3);
-	lh.set_p<com>(&pcom);
+	EinsteinHelper eh;
+	eh.p = p;
+	grid->interpolate_metric(p.xup,&eh.g,z_ind);
+	eh.update(v);
+
+	// emit isotropically in comoving frame
+	double kup_tet[4];
+	grid->isotropic_kup_tet(nu,kup_tet,p.xup,&rangen);
+	eh.tetrad_to_coord(kup_tet,eh.p.kup);
 
 	// sample tau
-	get_opacity(&lh,z_ind);
-	lh.set_p_tau(sample_tau(&rangen));
-	window(&lh,z_ind);
+	get_opacity(&eh,z_ind);
+	eh.p.tau = sample_tau(&rangen);
+	window(&eh,z_ind);
 
 	// add to particle vector
-	if(lh.p_fate() == moving){
+	if(eh.p.fate == moving){
 		PRINT_ASSERT(particles.size(),<,particles.capacity());
-		PRINT_ASSERT(lh.p_N(),>,0);
-		PRINT_ASSERT(lh.p_tau(),>,0);
+		PRINT_ASSERT(eh.p.N,>,0);
+		PRINT_ASSERT(eh.p.tau,>,0);
 		#pragma omp critical
-		particles.push_back(lh.particle_copy(lab));
+		particles.push_back(eh.p);
 
 		// count up the emitted energy in each zone
 		#pragma omp atomic
-		N_net_lab[lh.p_s()] += lh.p_N();
+		N_net_lab[eh.p.s] += eh.p.N;
 		#pragma omp atomic
-		grid->z[z_ind].e_emit += lh.p_N() * pc::h*lh.p_nu();
+		grid->z[z_ind].e_emit += eh.p.N * pc::h*eh.nu();
 		#pragma omp atomic
-		grid->z[z_ind].l_emit += lh.p_N() * species_list[lh.p_s()]->lepton_number * pc::c;
+		grid->z[z_ind].l_emit += eh.p.N * species_list[eh.p.s]->lepton_number * pc::c;
 	}
 }
 
@@ -224,23 +228,24 @@ void Transport::create_surface_particle(const double weight, const unsigned int 
 			* weight;                    // 1/number of samples
 
 	// set up LorentzHelper
-	LorentzHelper lh(exponential_decay, grid->dimensionality());
+	EinsteinHelper eh;
+	eh.p = plab;
 	double v[3];
 	grid->interpolate_fluid_velocity(plab.xup,v,z_ind);
-	lh.set_v(v,3);
-	lh.set_p<lab>(&plab);
+	grid->interpolate_metric(plab.xup,&eh.g,z_ind);
+	eh.update(v);
 
 	// sample the optical depth
-	get_opacity(&lh,z_ind);
-	lh.set_p_tau(sample_tau(&rangen));
-	window(&lh,z_ind);
+	get_opacity(&eh,z_ind);
+	eh.p.tau = sample_tau(&rangen);
+	window(&eh,z_ind);
 
 	// add to particle vector
-	if(lh.p_fate() == moving){
+	if(eh.p.fate == moving){
 		PRINT_ASSERT(particles.size(),<,particles.capacity());
 	    #pragma omp critical
-		particles.push_back(lh.particle_copy(lab));
+		particles.push_back(eh.p);
 	    #pragma omp atomic
-		N_core_lab[lh.p_s()] += lh.p_N();
+		N_core_lab[eh.p.s] += eh.p.N;
 	}
 }

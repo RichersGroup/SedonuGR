@@ -143,7 +143,8 @@ void Grid0DIsotropic::interpolate_fluid_velocity(const double x[3], double v[3],
 //------------------------------------------------------------
 // Reflect off symmetry plane
 //------------------------------------------------------------
-void Grid0DIsotropic::symmetry_boundaries(LorentzHelper *lh, const double tolerance) const{
+
+void Grid0DIsotropic::symmetry_boundaries(EinsteinHelper *eh, const double tolerance) const{
 	// does nothing - no boundary
 }
 
@@ -188,4 +189,7 @@ double Grid0DIsotropic::zone_lapse(const int z_ind) const{
 }
 void Grid0DIsotropic::axis_vector(vector<Axis>& axes) const{
 	axes.resize(0);
+}
+double Grid0DIsotropic::zone_lorentz_factor(const int z_ind) const{
+	return 1.0;
 }

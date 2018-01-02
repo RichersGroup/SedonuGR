@@ -4,19 +4,24 @@
 #include "global_options.h"
 #include "Particle.h"
 #include "Metric.h"
+#include "physical_constants.h"
+
+namespace pc = physical_constants;
+using namespace std;
 
 class EinsteinHelper{
 public:
   // essential variables interpolated from grid
   Particle p;
   Metric g;
-  double u[4];
+  double u[4]; // dimensionless
 
   // intermediate quantities
   double e[4][4];
   double kup_tet[4];
   double absopac, scatopac;
   double ds_com;
+  vector<unsigned> dir_ind;
 
   // fill in values for g.{gtt, betalow}, u, e, kup_tet
   // assumes g.{alpha, betaup, gammalow}, p.kup are set
@@ -25,6 +30,7 @@ public:
     set_fourvel(v);
     set_tetrad_basis(u);
     coord_to_tetrad(p.kup, kup_tet);
+    g.normalize_null(p.kup);
   }
   
   // return the Lorentz factor W
@@ -32,18 +38,17 @@ public:
     return 1. / sqrt(1. - g.dot<3>(v,v));
   }
   
+  double nu() const{
+	  return -g.dot<4>(p.kup,u) * pc::c / (2.0*pc::pi);
+  }
+
   // get four velocity from three velocity
   void set_fourvel(const double v[3]){
     double W = lorentzFactor(v);
     u[3] = W/g.alpha;
     for(unsigned i=0; i<3; i++)
-      u[i] = v[3] * (g.alpha*v[i] - g.betaup[i]);
+      u[i] = v[3]/pc::c * (g.alpha*v[i]/pc::c - g.betaup[i]);
   }
-
-  // convert the comoving step size to a step size in the normal observer frame
-  /* double ds_lab(){ */
-  /*   return ds_com * g.ndot(p.kup) / g.dot<4>(p.kup, u); */
-  /* } */
 
 
   // get a Cartesian tetrad basis
@@ -106,6 +111,14 @@ public:
     for(unsigned i=0; i<3; i++) result += x1[n]*x2[n];
     if(n==4) result -= x1[2]*x2[3];
     return result;
+  }
+
+  void scale_p_frequency(const double scale){
+	  for(unsigned i=0; i<4; i++) p.kup[i] *= scale;
+  }
+
+  double ds_lab(const double ds_com_in){
+	  return ds_com_in * g.ndot(p.kup)/g.dot<4>(u,p.kup);
   }
 };
 
