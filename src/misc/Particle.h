@@ -65,6 +65,18 @@ public:
 				xup[0],xup[1],xup[2],xup[3],kup[0],kup[1],kup[2],kup[3],N,tau,s,fate);
 	}
 
+	Particle operator =(const Particle& p){
+		for(unsigned i=0; i<4; i++){
+			xup[i] = p.xup[i];
+			kup[i] = p.kup[i];
+		}
+		N = p.N;
+		tau = p.tau;
+		s = p.s;
+		fate = p.fate;
+		return *this;
+	}
+
 };
 
 #endif

@@ -30,6 +30,7 @@
 #include "Species.h"
 #include "Grid.h"
 #include <cstring>
+#include "EinsteinHelper.h"
 
 using namespace std;
 namespace pc = physical_constants;
@@ -248,6 +249,9 @@ void Transport::propagate(Particle* p)
 	LorentzHelper lh(exponential_decay, grid->dimensionality());
 	lh.set_p<lab>(p);
 
+	EinsteinHelper eh;
+	eh.p = *p;
+	
 	PRINT_ASSERT(lh.p_fate(), ==, moving);
 
 	while (lh.p_fate() == moving)
