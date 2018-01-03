@@ -9,11 +9,9 @@ rho = 10
 temp = 10*MeV
 Ye = 0.5
 v0 = 0
-v1 = 0
-v2 = 0
 alpha = 1
 X = 1
 
 print('1D_sphere', nx,r_in)
-print(R, rho, temp, 0.5, v0, v1, v2, alpha, X)
+print(R, rho, temp, 0.5, v0, alpha, X)
 
