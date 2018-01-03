@@ -71,7 +71,7 @@ public:
 		return top[size()-1];
 	}
 
-	void write_HDF5(const string& name, H5::H5File file){
+	void write_HDF5(const string& name, H5::H5File file) const{
 		hsize_t dims[1];
 		H5::DataSpace dataspace;
 
