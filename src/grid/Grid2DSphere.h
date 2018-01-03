@@ -48,7 +48,6 @@ private:
 	Axis rAxis;
 	Axis thetaAxis;
 	MultiDArray<2> vr, vtheta, vphi;
-	int ignore_theta_min_dist;
 
 public:
 

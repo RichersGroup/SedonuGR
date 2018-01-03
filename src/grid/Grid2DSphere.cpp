@@ -38,7 +38,6 @@ namespace pc = physical_constants;
 
 Grid2DSphere::Grid2DSphere(){
 	grid_type = "Grid2DSphere";
-	ignore_theta_min_dist = 0;
 }
 
 //------------------------------------------------------------
@@ -56,7 +55,6 @@ void Grid2DSphere::read_model_file(Lua* lua)
 	}
 
 	std::string model_type = lua->scalar<std::string>("model_type");
-	ignore_theta_min_dist = lua->scalar<int>("Grid2DSphere_ignore_theta_min_dist");
 	if(model_type == "Flash") read_flash_file(lua);
 	else if(model_type == "Nagakura") read_nagakura_file(lua);
 	else if(model_type == "custom") custom_model(lua);
@@ -739,8 +737,7 @@ double Grid2DSphere::zone_min_length(const int z_ind) const
 	const double theta_len = sin(thetaAxis.top[j] - thetaAxis.bottom(j)) * rAxis.bottom(i);
 
 	// if r_in is zero, there will be problems, but simulations would not have done this.
-	if(ignore_theta_min_dist>0 || rAxis.bottom(i)==0) return r_len;
-	else return min(r_len, theta_len);
+	return min(r_len, theta_len);
 }
 
 //------------------------------------------------------------
