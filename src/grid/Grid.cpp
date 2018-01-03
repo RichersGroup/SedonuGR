@@ -262,6 +262,8 @@ void Grid::write_zones(const int iw) const
 	write_hdf5_coordinates(file);
 	write_hdf5_data(file);
 
+	nu_grid_axis.write_HDF5("nu_grid(Hz)",file);
+
 	sim->species_list[0]->spectrum.write_hdf5_coordinates(file,"spectrum");
 }
 
