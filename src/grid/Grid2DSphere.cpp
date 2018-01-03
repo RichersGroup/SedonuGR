@@ -64,6 +64,10 @@ void Grid2DSphere::read_model_file(Lua* lua)
 		cout << "ERROR: model type unknown." << endl;
 		exit(8);
 	}
+
+	vr.calculate_slopes();
+	vtheta.calculate_slopes();
+	vphi.calculate_slopes();
 }
 void Grid2DSphere::read_nagakura_file(Lua* lua)
 {
@@ -121,6 +125,11 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 	binmid[ntheta-1] = 0.5 * (bintops[ntheta-1] + bintops[ntheta-2]);
 	thetaAxis = Axis(minval, bintops, binmid);
 
+	vector<Axis> axes;
+	axis_vector(axes);
+	vr = MultiDArray<2>(axes);
+	vtheta = MultiDArray<2>(axes);
+
 
 	// write grid properties
 	if(rank0) cout << "#   nr=" << nr << "\trmin=" << rAxis.min << "\trmax=" << rAxis.top[nr-1] << endl;
@@ -148,9 +157,8 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 			infile >> z[z_ind].rho; // g/ccm
 			infile >> z[z_ind].Ye;
 			infile >> z[z_ind].T; // MeV
-			infile >> z[z_ind].u[0]; // cm/s
-			infile >> z[z_ind].u[1]; // 1/s
-			infile >> z[z_ind].u[2]; // 1/s
+			infile >> vr[z_ind]; // cm/s
+			infile >> vtheta[z_ind]; // 1/s
 
 			// skip the rest of the line
 			for(int k=9; k<=165; k++) infile >> trash;
@@ -372,6 +380,11 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	}
 	thetaAxis = Axis(minval, bintop, binmid);
 
+	vector<Axis> axes;
+	axis_vector(axes);
+	vr = MultiDArray<2>(axes);
+	vtheta = MultiDArray<2>(axes);
+	vphi =  MultiDArray<2>(axes);
 
 	//===============//
 	// fill the grid //
@@ -401,19 +414,19 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 				z[z_ind].T                 = temp[proc][kb][jb][ib];
 				z[z_ind].Ye                = efrc[proc][kb][jb][ib];
 				if(do_visc) z[z_ind].H_vis = hvis[proc][kb][jb][ib];
-				double vr              = velx[proc][kb][jb][ib];
-				double vtheta          = vely[proc][kb][jb][ib];
-				double vphi            = angz[proc][kb][jb][ib]/r[0]/sin(r[1]);
-				double speed = sqrt(vr*vr + vtheta*vtheta + vphi*vphi);
+				double tmp_vr              = velx[proc][kb][jb][ib];
+				double tmp_vtheta          = vely[proc][kb][jb][ib];
+				double tmp_vphi            = angz[proc][kb][jb][ib]/r[0]/sin(r[1]);
+				double speed = sqrt(tmp_vr*tmp_vr + tmp_vtheta*tmp_vtheta + tmp_vphi*tmp_vphi);
 				if(speed > speed_max){
-					vr     *= speed_max / speed;
-					vtheta *= speed_max / speed;
-					vphi   *= speed_max / speed;
+					tmp_vr     *= speed_max / speed;
+					tmp_vtheta *= speed_max / speed;
+					tmp_vphi   *= speed_max / speed;
 					if(rank0) cout << "WARNING: velocity of superluminal cell at {r,theta}={" << r[0] << "," << r[1] << "} set to gamma=" << gamma_max << endl;
 				}
-				z[z_ind].u[0] = vr;
-				z[z_ind].u[1] = vtheta;
-				z[z_ind].u[2] = vphi;
+				vr[z_ind] = tmp_vr;
+				vtheta[z_ind] = tmp_vtheta;
+				vphi[z_ind] = tmp_vphi;
 				PRINT_ASSERT(z[z_ind].rho,>=,0.0);
 				PRINT_ASSERT(z[z_ind].T,>=,0.0);
 				PRINT_ASSERT(z[z_ind].Ye,>=,0.0);
@@ -602,9 +615,9 @@ void Grid2DSphere::custom_model(Lua* lua)
 		infile >> z[base_ind].T;
 		infile >> z[base_ind].Ye;
 		z[base_ind].H_vis = 0;
-		z[base_ind].u[0] = 0;
-		z[base_ind].u[1] = 0;
-		z[base_ind].u[2] = 0;
+		vr[base_ind] = 0;
+		vtheta[base_ind] = 0;
+		vphi[base_ind] = 0;
 		PRINT_ASSERT(z[base_ind].rho,>=,0);
 		PRINT_ASSERT(z[base_ind].T,>=,0);
 		PRINT_ASSERT(z[base_ind].Ye,>=,0);
@@ -695,7 +708,7 @@ double Grid2DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const
 	const unsigned int i = dir_ind[0];
 	const unsigned int j = dir_ind[1];
 
-	double r = sqrt(dot_Minkowski<3>(x_up,x_up));
+	double r = sqrt(Metric::dot_Minkowski<3>(x_up,x_up));
 	double rhat = sqrt(x_up[0]*x_up[0] + x_up[1]*x_up[1]);
 	double theta = Grid2DSphere_theta(x_up);
 	PRINT_ASSERT(r,<=,rAxis.top[i]);
@@ -834,25 +847,31 @@ void Grid2DSphere::interpolate_fluid_velocity(const double x[3], double v[3], in
 		double r    = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 		double rhat = sqrt(x[0]*x[0] + x[1]*x[1]);
 		int along_axis = (rhat/r < TINY);
+		double theta = pc::pi/2.0 - atan2(x[2], rhat);
+		theta = max(0.0,theta);
+		theta = min(pc::pi, theta);
 
 		// Based on position, calculate what the 3-velocity is
-		double vr     = z[z_ind].u[0];
-		double vtheta = z[z_ind].u[1];
-		double vphi   = z[z_ind].u[2];
+		double xvec[2] = {r,theta};
+		vector<unsigned> dir_ind(2);
+		zone_directional_indices(z_ind,dir_ind);
+		double tmp_vr     = vr.interpolate(xvec,&dir_ind.front());
+		double tmp_vtheta = vtheta.interpolate(xvec,&dir_ind.front());
+		double tmp_vphi   = vphi.interpolate(xvec,&dir_ind.front());
 
 		double vr_cart[3];
-		vr_cart[0] = vr * x[0]/r;
-		vr_cart[1] = vr * x[1]/r;
-		vr_cart[2] = vr * x[2]/r;
+		vr_cart[0] = tmp_vr * x[0]/r;
+		vr_cart[1] = tmp_vr * x[1]/r;
+		vr_cart[2] = tmp_vr * x[2]/r;
 
 		double vtheta_cart[3];
-		vtheta_cart[0] =  (along_axis ? 0 : vtheta * x[2]/r * x[0]/rhat );
-		vtheta_cart[1] =  (along_axis ? 0 : vtheta * x[2]/r * x[1]/rhat );
-		vtheta_cart[2] = -vtheta * rhat/r;
+		vtheta_cart[0] =  (along_axis ? 0 : tmp_vtheta * x[2]/r * x[0]/rhat );
+		vtheta_cart[1] =  (along_axis ? 0 : tmp_vtheta * x[2]/r * x[1]/rhat );
+		vtheta_cart[2] = -tmp_vtheta * rhat/r;
 
 		double vphi_cart[3];
-		vphi_cart[0] = (along_axis ? 0 : -vphi * x[1]/rhat );
-		vphi_cart[1] = (along_axis ? 0 :  vphi * x[0]/rhat );
+		vphi_cart[0] = (along_axis ? 0 : -tmp_vphi * x[1]/rhat );
+		vphi_cart[1] = (along_axis ? 0 :  tmp_vphi * x[0]/rhat );
 		vphi_cart[2] = 0;
 
 		// remember, symmetry axis is along the z-axis

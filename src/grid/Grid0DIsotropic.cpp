@@ -57,9 +57,6 @@ void Grid0DIsotropic::read_model_file(Lua* lua)
 	z[0].T   = lua->scalar<double>("Grid0DIsotropic_T")/pc::k_MeV;
 	z[0].Ye  = lua->scalar<double>("Grid0DIsotropic_Ye");
 	z[0].H_vis = 0;
-	z[0].u[0] = lua->scalar<double>("Grid0DIsotropic_vx");
-	z[0].u[1] = lua->scalar<double>("Grid0DIsotropic_vy");
-	z[0].u[2] = lua->scalar<double>("Grid0DIsotropic_vz");
 	PRINT_ASSERT(z[0].rho,>=,0);
 	PRINT_ASSERT(z[0].T,>=,0);
 	PRINT_ASSERT(z[0].Ye,>=,0);
@@ -134,9 +131,9 @@ void Grid0DIsotropic::sample_in_zone(const int z_ind, ThreadRNG* rangen, double 
 //------------------------------------------------------------
 void Grid0DIsotropic::interpolate_fluid_velocity(const double x[3], double v[3], int z_ind) const
 {
-	PRINT_ASSERT(z_ind,==,0);
-	for(int i=0; i<3; i++) v[i] = z[z_ind].u[i];
-	PRINT_ASSERT(dot_Minkowski<3>(v,v),<=,pc::c*pc::c);
+	v[0] = 0;
+	v[1] = 0;
+	v[2] = 0;
 }
 
 

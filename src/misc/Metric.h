@@ -64,7 +64,7 @@ private:
 
   // normalize a four vector to have a norm of +/-1
   void normalize(double x[4]) const{
-    double invnorm = abs(1./dot<4>(x,x));
+    double invnorm = fabs(1./dot<4>(x,x));
     for(int i=0; i<4; i++) x[i] *= invnorm;
   }
 
@@ -84,6 +84,29 @@ private:
     double projection = dot<n>(v,e);
     for(int mu=0; mu<n; mu++) v[mu] -= projection * e[mu];
   }  
+
+  // vector operations
+  template<unsigned s>
+  static double dot_Minkowski(const double a[], const double b[]){
+  	double product = 0;
+  	for(unsigned i=0; i<3; i++) product += a[i]*b[i];
+  	if(s==4) product -= a[3]*b[3];
+  	return product;
+  }
+
+  // normalize a vector
+  template<unsigned s>
+  static void normalize_Minkowski(double a[]){
+  	double inv_magnitude = 1./sqrt(fabs( dot_Minkowski<s>(a,a) ));
+  	PRINT_ASSERT(inv_magnitude,<,INFINITY);
+  	for(unsigned i=0; i<s; i++) a[i] *= inv_magnitude;
+  }
+
+  static void normalize_null_Minkowski(double a[4]){
+  	double spatial_norm = dot_Minkowski<3>(a,a);
+  	a[3] = sqrt(spatial_norm);
+  }
+
 };
 
 #endif

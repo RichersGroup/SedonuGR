@@ -77,14 +77,11 @@ protected:
 	virtual void zone_coordinates(const int z_ind, double r[], const int rsize) const = 0;
 
 	// GR functions
-	virtual double lapse(const double xup[4], int z_ind=-1) const = 0;
-	virtual void shiftup(double betaup[4], const double xup[4], int z_ind=-1) const = 0;
-	virtual void g3_down(const double xup[4], double gproj[4][4], int z_ind=-1) const = 0;
 	virtual void connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind=-1) const = 0; // Gamma^alhpa_mu_nu
-	void g_down(const double xup[4], double g[4][4], int z_ind=-1) const;
-	double n_dot(const double invec[4], const double xup[4], int z_ind=-1) const;
-	void orthogonalize(double v[4], const double e[4], const double xup[4]) const;
-	void tetrad_basis(const double x[4], const double u[4], double e[4][4]) const;
+
+	double dot (const double aup[4], const double bup[4], const double xup[4], const int z_ind=-1) const;
+	double dot3(const double aup[3], const double bup[3], const double xup[4], const int z_ind=-1) const;
+
 
 public:
 
@@ -139,18 +136,8 @@ public:
 	virtual void interpolate_fluid_velocity(const double xup[4], double v[3], int z_ind=-1) const = 0;
 	void interpolate_metric(const double xup[4], Metric* g, const int z_ind=-1);
 
-
 	// boundary conditions
 	virtual void symmetry_boundaries(EinsteinHelper *eh, const double step_size) const=0;
-
-	// vector operations
-	template<int s>	static double dot_Minkowski(const double aup[], const double bup[]);
-	template<int s>	static void normalize_Minkowski(double aup[]);
-	static void normalize_null_Minkowski(double aup[4]);
-	double dot (const double aup[4], const double bup[4], const double xup[4], const int z_ind=-1) const;
-	double dot3(const double aup[3], const double bup[3], const double xup[4], const int z_ind=-1) const;
-	void normalize     (double aup[4], const double xup[4], const int z_ind=-1) const;
-	void normalize_null(double aup[4], const double xup[4], const int z_ind=-1) const;
 
 	// move the particle
 	void integrate_geodesic(EinsteinHelper *eh) const;
@@ -160,10 +147,6 @@ public:
 	void isotropic_kup_tet(const double nu, double kup_tet[4], const double xup[4], ThreadRNG *rangen) const;
 	void isotropic_direction(double D[3], ThreadRNG *rangen) const;
 	virtual void sample_in_zone(const int z_ind, ThreadRNG *rangen, double xup[3]) const = 0;
-
-	// GR functions
-	void tetrad_to_coord(const double xup[4], const double u[4], const double kup_tet[4], double kup_coord[4]) const;
-	void coord_to_tetrad(const double xup[4], const double u[4], const double kup_coord[4], double kup_tet[4]) const;
 };
 
 

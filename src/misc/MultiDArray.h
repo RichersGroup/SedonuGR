@@ -51,6 +51,7 @@ public:
 		}
 		y0.resize(size);
 	}
+	MultiDArray(){}
 
 
 	unsigned direct_index(const unsigned ind[ndims]) const{
@@ -77,6 +78,8 @@ public:
 	void set(const unsigned int ind[ndims], const double y){
 		y0[direct_index(ind)] = y;
 	}
+	const double& operator[](const unsigned int i) const {return y0[i];}
+	double& operator[](const unsigned int i){return y0[i];}
 
 	// get interpolated value
 	double interpolate(const double x[ndims], const unsigned int ind[ndims]) const{
@@ -108,20 +111,27 @@ public:
 					indp[j] = ind[j];
 					indm[j] = ind[j];
 				}
-				indp[i]++;
-				indm[i]--;
-				zp = direct_index(indp);
-				zm = direct_index(indm);
 
 				// get plus and minus values
 				y=y0[z];
 				x=axes[i].mid[ind[i]];
 				if(ind[i] > 0){
+					indm[i] = ind[i]-1;
+					zm = direct_index(indm);
 					xm = axes[i].mid[indm[i]];
 					ym = y0[zm];
 					dxL = x-xm;
 					dyL = y-ym;
 					sL = dyL/dxL;
+				}
+				if(ind[i] < dydx.size()-1){
+					indp[i] = ind[i]+1;
+					zp = direct_index(indp);
+					xp = axes[i].mid[indp[i]];
+					yp = y0[zp];
+					dxR = xp-x;
+					dyR = yp-y;
+					sR = dyR/dxR;
 				}
 
 

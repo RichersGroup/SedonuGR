@@ -57,7 +57,7 @@ void Transport::propagate_particles()
 			if(p->fate == escaped){
 				const double nu = p->kup[3]/(2.0*pc::pi) * pc::c; // assumes metric is essentially Minkowski
 				double D[3] = {p->kup[0], p->kup[1], p->kup[2]};
-				Grid::normalize_Minkowski<3>(D);
+				Metric::normalize_Minkowski<3>(D);
 				#pragma omp atomic
 				n_escape[p->s]++;
 				#pragma omp atomic

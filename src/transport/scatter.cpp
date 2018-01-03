@@ -111,7 +111,7 @@ void Transport::scatter(EinsteinHelper *eh, int *z_ind) const{
 		if(eh->scatopac * Rlab >= randomwalk_min_optical_depth){
 			// determine maximum comoving sphere size
 			const double v[3] = {eh->u[0]/eh->u[3],eh->u[1]/eh->u[3],eh->u[2]/eh->u[3]};
-			double vabs = sqrt(Grid::dot_Minkowski<3>(v,v));
+			double vabs = sqrt(Metric::dot_Minkowski<3>(v,v));
 			double gamma = eh->u[3];
 
 			double Rcom = 0;

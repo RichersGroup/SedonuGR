@@ -60,14 +60,17 @@ void Grid3DCart::read_model_file(Lua* lua)
 		abs_opac[s] = new MultiDArray<4>(axes);
 		scat_opac[s] = new MultiDArray<4>(axes);
 	}
+	axes = vector<Axis>(xAxes);
+	for(unsigned i=0; i<3; i++) v[i] = MultiDArray<3>(axes);
 
 	std::string model_type = lua->scalar<std::string>("model_type");
-	if(model_type == "SpEC") read_SpEC_file(lua);
-	else if(model_type == "THC") read_THC_file(lua);
+	if(model_type == "THC") read_THC_file(lua);
 	else{
 		cout << "ERROR: model type unknown." << endl;
 		exit(8);
 	}
+
+	for(unsigned i=0; i<3; i++) v[i].calculate_slopes();
 }
 
 
@@ -285,9 +288,9 @@ void Grid3DCart::read_THC_file(Lua* lua)
 		z[z_ind].rho  =  rho[dataset_ind];
 		z[z_ind].T    = temp[dataset_ind];
 		z[z_ind].Ye   =   Ye[dataset_ind];
-		z[z_ind].u[0] = velx[dataset_ind];
-		z[z_ind].u[1] = vely[dataset_ind];
-		z[z_ind].u[2] = velz[dataset_ind];
+		v[0][z_ind]   = velx[dataset_ind];
+		v[1][z_ind]   = vely[dataset_ind];
+		v[2][z_ind]   = velz[dataset_ind];
 
 		PRINT_ASSERT(z[z_ind].rho,>=,0.0);
 		PRINT_ASSERT(z[z_ind].T,>=,0.0);
@@ -297,166 +300,6 @@ void Grid3DCart::read_THC_file(Lua* lua)
 
 	file.close();
 }
-
-void Grid3DCart::read_SpEC_file(Lua* lua)
-{
-	double x0[3], x1[3], xmax[3], dx[3];
-	int nx[3];
-
-	// get mpi rank
-	int MPI_myID;
-	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID  );
-
-	// remember which axes were truncated
-	vector<bool> truncate = vector<bool>(3,false);
-	truncate[0] = reflect[0] || rotate_hemisphere[0] || rotate_quadrant;
-	truncate[1] = reflect[1] || rotate_hemisphere[1] || rotate_quadrant;
-	truncate[2] = reflect[2];
-
-	// open up the model file, complaining if it fails to open
-	string model_file = lua->scalar<string>("model_file");
-	ifstream infile;
-	infile.open(model_file.c_str());
-	if(infile.fail())
-	{
-		cout << "Error: can't read the model file." << model_file << endl;
-		exit(4);
-	}
-
-	// geometry of model
-	infile >> grid_type;
-	if(grid_type != "3D_cart"){
-		cout << "Error: grid_type parameter disagrees with the model file." << endl;
-		exit(4);
-	}
-	grid_type="Grid1DCart";
-
-	// type of system
-	string system;
-	infile >> system;
-
-	// number of zones
-	for(int i=0; i<3; i++) infile >> nx[i];
-	// assume reflecting symmetry?
-	for(int i=0; i<3; i++){
-		infile >> reflect[i];
-		if(reflect[i]) nx[i]*=2;
-		else if(i<2 && rotate_hemisphere[i]) nx[i]*=2;
-		else if(i<2 && rotate_quadrant) nx[i]*=4;
-	}
-	int n_zones = nx[0]*nx[1]*nx[2];
-
-	//set the zone sizes and volumes
-	for(int i=0; i<3; i++){
-		infile >> x0[i];
-		infile >> xmax[i];
-		dx[i] = (xmax[i]-x0[i])/(double)nx[i];
-		if(reflect[i]) dx[i]*=2;
-		else if(i<2 && rotate_hemisphere[i]) dx[i]*=2;
-		else if(i<2 && rotate_quadrant) dx[i]*=4;
-		x1[i] = x0[i]+dx[i];
-	}
-
-	// set up the zone structure
-	int nzones = 1;
-	for(int a=0; a<3; a++){
-		vector<double> top(nx[a]), mid(nx[a]);
-		top[0] = x1[a];
-		mid[0] = 0.5 * (x0[a] + x1[a]);
-		for(int i=1; i<nx[a]; i++){
-			top[i] = x1[a] + (double)(i-1)*dx[a];
-			mid[i] = 0.5 * (top[i] + top[i-1]);
-		}
-		xAxes[a] = Axis(x0[a], top, mid);
-		nzones *= xAxes[a].size();
-	}
-	z.resize(nzones);
-
-	// First loop - set indices and read zone values in file
-	// loop order is the file order
-	// index order matches that in get_zone
-	z.resize(n_zones);
-	int ind = 0;
-	bool rx,ry,rz;
-	for (int k=0;k<nx[2];k++)
-		for (int j=0;j<nx[1];j++)
-			for (int i=0;i<nx[0];i++)
-			{
-				// set current index
-				ind = zone_index(i,j,k);
-
-				// create reverse map to x,y,z indices
-				rx=false; ry=false; rz=false;
-				if(truncate[0] && i<nx[0]/2) rx = true;
-				if(truncate[1] && j<nx[1]/2) ry = true;
-				if(truncate[2] && k<nx[2]/2) rz = true;
-
-				// read in values if not in reflected/rotated zone
-				if(!rx && !ry && !rz)
-				{
-					infile >> z[ind].rho;
-					infile >> z[ind].T;
-					infile >> z[ind].Ye;
-					infile >> z[ind].u[0];
-					infile >> z[ind].u[1];
-					infile >> z[ind].u[2];
-				}
-				else{ //poison values
-					z[ind].rho   = NaN;
-					z[ind].T     = NaN;
-					z[ind].Ye    = NaN;
-					z[ind].u[0]  = NaN;
-					z[ind].u[1]  = NaN;
-					z[ind].u[2]  = NaN;
-				}
-			}
-
-	// Second loop - apply symmetries
-	ind=0;
-	int origin_ind, origin_i, origin_j, origin_k;
-	for (int k=0;k<nx[2];k++)
-		for (int j=0;j<nx[1];j++)
-			for (int i=0;i<nx[0];i++)
-			{
-				// set current index
-				ind = zone_index(i,j,k);
-
-				// are we in a reflection/rotation zone?
-				rx=false; ry=false; rz=false;
-				if(truncate[0] && i<nx[0]/2) rx = 1;
-				if(truncate[1] && j<nx[1]/2) ry = 1;
-				if(truncate[2] && k<nx[2]/2) rz = 1;
-
-				// copy appropriate values
-				if(rx) origin_i = (nx[0]-1)-i; else origin_i = i;
-				if(ry) origin_j = (nx[1]-1)-j; else origin_j = j;
-				if(rz) origin_k = (nx[2]-1)-k; else origin_k = k;
-				if(rx || ry || rz)
-				{
-					origin_ind = zone_index(origin_i,origin_j,origin_k);
-					z[ind].rho   = z[origin_ind].rho;
-					z[ind].T = z[origin_ind].T;
-					z[ind].Ye    = z[origin_ind].Ye;
-					z[ind].u[0]  = z[origin_ind].u[0];
-					z[ind].u[1]  = z[origin_ind].u[1];
-					z[ind].u[2]  = z[origin_ind].u[2];
-				}
-			}
-
-	// adjust x0,y0,z0 to indicate new, reflected lower boundary
-	if(MPI_myID==0) cout << "# (zmin,zmax) before adjusting: (" << x0[2] << "," << xmax[2] << ")" << endl;
-	for(int i=0; i<3; i++) if(truncate[i]) x0[i] = x0[i] - (xmax[i]-x0[i]);
-
-	// debugging some output
-	if(MPI_myID==0){
-		cout << "#   nx=" << nx[0] << endl << "# ny=" << nx[1] << endl << "# nz=" << nx[2] << endl;
-		cout << "#   number of zones:" << z.size() << endl;
-		cout << "#   minima:{" << x0[0] << ", " << x0[1] << ", " << x0[2] << "}" << endl;
-		cout << "#   maxima:{" << x0[0]+(nx[0]*dx[0]) << ", " << x0[1]+(nx[1]*dx[1]) << ", " << x0[2]+(nx[2]*dx[2]) << "}" << endl;
-		cout << "#   deltas:{" << dx[0] << ", " << dx[1] << ", " << dx[2] << "}" << endl;
-	}
-}
-
 
 //------------------------------------------------------------
 // Overly simple search to find zone
@@ -609,16 +452,18 @@ double Grid3DCart::zone_cell_dist(const double x_up[3], const int z_ind) const{
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void Grid3DCart::interpolate_fluid_velocity(const double x[3], double v[3], int z_ind) const
+void Grid3DCart::interpolate_fluid_velocity(const double x[3], double vout[3], int z_ind) const
 {
 	if(z_ind<0) z_ind = zone_index(x);
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 
 	// may want to interpolate here?
-	for(int i=0; i<3; i++) v[i] = z[z_ind].u[i];
+	vector<unsigned> dir_ind(3);
+	zone_directional_indices(z_ind,dir_ind);
+	for(int i=0; i<3; i++) vout[i] = v[i].interpolate(x,&dir_ind.front());
 
-	PRINT_ASSERT(v[0]*v[0] + v[1]*v[1] + v[2]*v[2],<=,pc::c*pc::c);
+	PRINT_ASSERT(vout[0]*vout[0] + vout[1]*vout[1] + vout[2]*vout[2],<=,pc::c*pc::c);
 }
 
 //------------------------------------------------------------
@@ -642,7 +487,7 @@ double Grid3DCart::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 	double r[3];
 	zone_coordinates(z_ind,r,3);
-	return sqrt(dot_Minkowski<3>(r,r));
+	return sqrt(Metric::dot_Minkowski<3>(r,r));
 }
 
 //-----------------------------

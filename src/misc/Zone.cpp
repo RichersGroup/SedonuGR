@@ -29,9 +29,6 @@
 #include "global_options.h"
 
 Zone::Zone(){
-	u[0] = NaN;
-	u[1] = NaN;
-	u[2] = NaN;
 	rho = NaN;
 	T = NaN;
 	Ye = NaN;

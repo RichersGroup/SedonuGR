@@ -60,6 +60,8 @@ private:
 
 	vector<Axis> xAxes;
 
+	MultiDArray<3> v[3];
+
 public:
 
 	Grid3DCart();
@@ -68,7 +70,6 @@ public:
 	void get_deltas(const int z_ind, double delta[3], const int size) const;
 
 	void read_model_file(Lua* lua);
-	void read_SpEC_file(Lua* lua);
 	void read_THC_file(Lua* lua);
 
 	double zone_left_boundary(const unsigned dir, const unsigned dir_ind) const;

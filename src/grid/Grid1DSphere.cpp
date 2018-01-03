@@ -64,6 +64,10 @@ void Grid1DSphere::read_model_file(Lua* lua)
 
 	grid_type = "Grid1DSphere";
 	reflect_outer = lua->scalar<int>("reflect_outer");
+
+	vr.calculate_slopes();
+	alpha.calculate_slopes();
+	X.calculate_slopes();
 }
 
 void Grid1DSphere::read_nagakura_model(Lua* lua){
@@ -101,6 +105,10 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 		binmid.push_back(midpoint);
 	}
 	rAxis = Axis(minval, bintops, binmid);
+	vector<Axis> axes = {rAxis};
+	vr = MultiDArray<1>(axes);
+	alpha = MultiDArray<1>(axes);
+	X = MultiDArray<1>(axes);
 
 	// write grid properties
 	if(rank0)
@@ -117,16 +125,15 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 		infile >> z[z_ind].rho; // g/ccm
 		infile >> z[z_ind].Ye;
 		infile >> z[z_ind].T; // MeV
-		infile >> z[z_ind].u[0]; // cm/s
-		infile >> z[z_ind].u[1]; // 1/s
-		infile >> z[z_ind].u[2]; // 1/s
+		infile >> vr[z_ind]; // cm/s
+		infile >> trash; // 1/s
+		infile >> trash; // 1/s
 
 		// get rid of the rest of the line
 		for(int k=9; k<=165; k++) infile >> trash;
 
 		// convert units
-		z[z_ind].u[1] *= rAxis.mid[z_ind];
-		z[z_ind].u[2] *= rAxis.mid[z_ind];
+		vr[z_ind] *= rAxis.mid[z_ind];
 		z[z_ind].T /= pc::k_MeV;
 
 		// sanity checks
@@ -166,11 +173,11 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 	z.resize(n_zones);
 	vector<double> rtop(n_zones), rmid(n_zones);
 	double rmin;
-	metric.resize(n_zones);
 
 	// read zone properties
 	vector<double> tmp_alpha = vector<double>(n_zones,0);
 	vector<double> tmp_X = vector<double>(n_zones,0);
+	vector<double> tmp_vr = vector<double>(n_zones,0);
 	infile >> rmin;
 	PRINT_ASSERT(rmin,>=,0);
 	for(int z_ind=0; z_ind<n_zones; z_ind++)
@@ -181,9 +188,8 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 		infile >> z[z_ind].T;
 		infile >> z[z_ind].Ye;
 		z[z_ind].H_vis = 0;
-		infile >> z[z_ind].u[0];
-		infile >> z[z_ind].u[1];
-		infile >> z[z_ind].u[2];
+		infile >> tmp_vr[z_ind];
+		cout << "WARNING - INPUT COLUMNS HAVE CHANGED" << endl;
 		infile >> tmp_alpha[z_ind];
 		infile >> tmp_X[z_ind];
 
@@ -194,65 +200,23 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 		PRINT_ASSERT(z[z_ind].T,>=,0);
 		PRINT_ASSERT(z[z_ind].Ye,>=,0);
 		PRINT_ASSERT(z[z_ind].Ye,<=,1.0);
-		PRINT_ASSERT(z[z_ind].u[0]*z[z_ind].u[0] + z[z_ind].u[1]*z[z_ind].u[1] + z[z_ind].u[2]*z[z_ind].u[2],<,pc::c*pc::c);
 		PRINT_ASSERT(tmp_alpha[z_ind],<=,1.0);
 		PRINT_ASSERT(tmp_X[z_ind],>=,1.0);
 	}
 	rAxis = Axis(rmin, rtop, rmid);
-
+	vector<Axis> axes = {rAxis};
+	vr = MultiDArray<1>(axes);
+	alpha = MultiDArray<1>(axes);
+	X = MultiDArray<1>(axes);
+	for(unsigned z_ind=0; z_ind<vr.size(); z_ind++){
+		vr[z_ind] = tmp_vr[z_ind];
+		alpha[z_ind] = tmp_alpha[z_ind];
+		X[z_ind] = tmp_X[z_ind];
+	}
 
 	// set the christoffel symbol coefficients
 	vector<double> tmp_dadr = vector<double>(n_zones,0);
 	vector<double> tmp_dXdr = vector<double>(n_zones,0);
-	if(do_GR) for(int z_ind=0; z_ind<metric.size(); z_ind++){
-		double rL=0, r0=0, rR=0;
-		double aL=0, a0=0, aR=0;
-		double XL=0, X0=0, XR=0;
-		double drL=0, drR=0;
-		double daL=0, daR=0;
-		double dXL=0, dXR=0;
-
-		zone_coordinates(z_ind, &r0, 1);
-		a0 = tmp_alpha[z_ind];
-		X0 = tmp_X[z_ind];
-		PRINT_ASSERT(X0,>,0);
-		PRINT_ASSERT(a0,>,0);
-		if(z_ind>0){
-			zone_coordinates(z_ind-1, &rL, 1);
-			aL = tmp_alpha[z_ind-1];
-			XL = tmp_X[z_ind-1];
-			drL = r0-rL;
-			daL = a0-aL;
-			dXL = X0-XL;
-		}
-		if(z_ind < z.size()-1){
-			zone_coordinates(z_ind+1, &rR, 1);
-			aR = tmp_alpha[z_ind+1];
-			XR = tmp_X[z_ind+1];
-			drR = rR-r0;
-			daR = aR-a0;
-			dXR = XR-X0;
-		}
-
-		double dX_dr=0, da_dr=0;
-
-		if(z_ind == 0){
-			da_dr = daR / drR;
-			dX_dr = dXR / drR;
-		}
-		else if(z_ind == z.size()-1){
-			da_dr = daL / drL;
-			dX_dr = dXL / drL;
-		}
-		else{
-			da_dr = (drR*daL/drL + drL*daR/drR) / (drL+drR);
-			dX_dr = (drR*dXL/drL + drL*dXR/drR) / (drL+drR);
-		}
-
-		tmp_dadr[z_ind] = da_dr;
-		tmp_dXdr[z_ind] = dX_dr;
-	}
-	metric.set_metric(tmp_alpha,tmp_X,tmp_dadr,tmp_dXdr);
 
 	infile.close();
 }
@@ -288,7 +252,7 @@ double  Grid1DSphere::zone_lab_3volume(const int z_ind) const
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 	double r0 = (z_ind==0 ? rAxis.min : rAxis.top[z_ind-1]);
 	double vol = 4.0*pc::pi/3.0*( pow(rAxis.top[z_ind],3) - pow(r0,3) );
-	if(do_GR) vol *= metric.X[z_ind];
+	if(do_GR) vol *= X[z_ind];
 	PRINT_ASSERT(vol,>=,0);
 	return vol;
 }
@@ -378,13 +342,15 @@ void Grid1DSphere::interpolate_fluid_velocity(const double x[3], double v[3], in
 	PRINT_ASSERT(z_ind,<,(int)z.size());
 
 	// radius in zone
-	double r = sqrt(dot_Minkowski<3>(x,x));
+	double r = sqrt(Metric::dot_Minkowski<3>(x,x));
 
 	// assuming radial velocity (may want to interpolate here)
 	// (the other two components are ignored and mean nothing)
-	v[0] = x[0]/r*z[z_ind].u[0];
-	v[1] = x[1]/r*z[z_ind].u[0];
-	v[2] = x[2]/r*z[z_ind].u[0];
+	unsigned tmp_ind = z_ind;
+	double vr_interp = vr.interpolate(&r,&tmp_ind);
+	v[0] = x[0]/r*vr_interp;
+	v[1] = x[1]/r*vr_interp;
+	v[2] = x[2]/r*vr_interp;
 
 	// check for pathological case
 	if (r == 0)
@@ -394,7 +360,7 @@ void Grid1DSphere::interpolate_fluid_velocity(const double x[3], double v[3], in
 		v[2] = 0;
 	}
 
-	PRINT_ASSERT(dot_Minkowski<3>(v,v),<=,pc::c*pc::c);
+	PRINT_ASSERT(Metric::dot_Minkowski<3>(v,v),<=,pc::c*pc::c);
 }
 
 
@@ -430,7 +396,7 @@ void Grid1DSphere::symmetry_boundaries(EinsteinHelper *eh, const double toleranc
 }
 
 double Grid1DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const{
-	double r = sqrt(dot_Minkowski<3>(x_up,x_up));
+	double r = sqrt(Metric::dot_Minkowski<3>(x_up,x_up));
 	PRINT_ASSERT(r,<=,rAxis.top[z_ind]);
 	PRINT_ASSERT(r,>=,rAxis.bottom(z_ind));
 
@@ -537,11 +503,12 @@ void Grid1DSphere::connection_coefficients(const double xup[4], double gamma[4][
 }
 
 double Grid1DSphere::zone_lapse(const int z_ind) const{
-	return metric.alpha[z_ind];
+	return alpha[z_ind];
 }
 void Grid1DSphere::axis_vector(vector<Axis>& axes) const{
 	axes = vector<Axis>({rAxis});
 }
 double Grid1DSphere::zone_lorentz_factor(const int z_ind) const{
-	abort(); // NOT IMPLEMENTED
+	double vdotv = vr[z_ind]*vr[z_ind] * X[z_ind] / (pc::c*pc::c);
+	return 1. / sqrt(1.-vdotv);
 }

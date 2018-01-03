@@ -46,7 +46,6 @@ public:
 	Zone();
 
 	// fluid properties (rho,T are in comoving frame. Ye is invariant.)
-	double u[3];            // velocity vector (cm/s)
 	double rho;             // density (g/cm^3)
 	double T;               // gas temperature (K)
 	double Ye;              // electron fraction

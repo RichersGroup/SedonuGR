@@ -81,9 +81,6 @@ void Grid::init(Lua* lua, Transport* insim)
 	int do_visc = lua->scalar<int>("do_visc");
     #pragma omp parallel for reduction(+:total_rest_mass,total_KE,total_TE,total_hvis,Tbar,Yebar)
 	for(unsigned z_ind=0;z_ind<z.size();z_ind++){
-		// zero out fluid velocity if not doing SR
-		if(!do_relativity) for(unsigned i=0; i<3; i++) z[z_ind].u[i] = 0;
-
 		// calculate cell rest mass
 		double rest_mass   = zone_rest_mass(z_ind);
 
@@ -375,33 +372,9 @@ double Grid::total_rest_mass() const{
 	return mass;
 }
 
-// vector operations
-template<int s>
-double Grid::dot_Minkowski(const double a[], const double b[]){
-	double product = 0;
-	for(unsigned i=0; i<3; i++) product += a[i]*b[i];
-	if(s==4) product -= a[3]*b[3];
-	return product;
-}
-template double Grid::dot_Minkowski<3>(const double a[], const double b[]);
-template double Grid::dot_Minkowski<4>(const double a[], const double b[]);
-
-// normalize a vector
-template<int s>
-void Grid::normalize_Minkowski(double a[]){
-	double inv_magnitude = 1./sqrt(abs( dot_Minkowski<s>(a,a) ));
-	PRINT_ASSERT(inv_magnitude,<,INFINITY);
-	for(unsigned i=0; i<s; i++) a[i] *= inv_magnitude;
-}
-
-void Grid::normalize_null_Minkowski(double a[4]){
-	double spatial_norm = dot_Minkowski<3>(a,a);
-	a[3] = sqrt(spatial_norm);
-}
-
 // radius given coordinates
 double Grid::radius(const double x[4]){
-	return sqrt(dot_Minkowski<3>(x,x));
+	return sqrt(Metric::dot_Minkowski<3>(x,x));
 }
 
 void Grid::integrate_geodesic(EinsteinHelper *eh) const{
@@ -431,64 +404,6 @@ void Grid::integrate_geodesic(EinsteinHelper *eh) const{
 }
 
 
-// dot products
-double Grid::dot(const double a[], const double b[], const double xup[], const int z_ind) const{
-	double product = 0;
-	if(do_GR){
-		double g[4][4];
-		g_down(xup,g,z_ind);
-		for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++)
-			product += a[mu] * b[nu] * g[mu][nu];
-	}
-	else product = dot_Minkowski<4>(a,b);
-	return product;
-}
-
-double Grid::dot3(const double a[], const double b[], const double xup[], const int z_ind) const{
-	double product = 0;
-	if(do_GR){
-		double g[4][4];
-		g_down(xup,g,z_ind);
-		for(int mu=0; mu<3; mu++) for(int nu=0; nu<3; nu++)
-			product += a[mu] * b[nu] * g[mu][nu];
-	}
-	else product = dot_Minkowski<3>(a,b);
-	return product;
-}
-void Grid::normalize(double a[], const double xup[], const int z_ind) const{
-	double inv_norm = 0;
-	if(do_GR){
-		double g[4][4];
-		g_down(xup,g,z_ind);
-		for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++)
-			inv_norm += a[mu] * a[nu] * g[mu][nu];
-		inv_norm = 1.0 / sqrt(inv_norm);
-
-		for(int mu=0; mu<4; mu++) a[mu] *= inv_norm;
-	}
-	else normalize_Minkowski<4>(a);
-}
-void Grid::normalize_null(double a[], const double xup[], const int z_ind) const{
-	if(do_GR){
-		double g[4][4];
-		g_down(xup,g,z_ind);
-		double A = g[3][3];
-		double B=0, C=0;
-
-		for(int i=0; i<3; i++){
-			B += a[i] * g[i][3] / A;
-
-			for(int j=0; j<3; j++)
-				C += a[i] * a[j] * g[i][j] / A;
-		}
-
-		double result = 0.5 * (B + sqrt(B*B - 4.*C));
-		PRINT_ASSERT(result,>,0);
-
-		a[3] = result;
-	}
-	else normalize_null_Minkowski(a);
-}
 
 // isotropic scatter, done in COMOVING frame
 void Grid::isotropic_direction(double D[3], ThreadRNG *rangen) const
@@ -501,7 +416,7 @@ void Grid::isotropic_direction(double D[3], ThreadRNG *rangen) const
 	D[0] = smu*cos(phi);
 	D[1] = smu*sin(phi);
 	D[2] = mu;
-	Grid::normalize_Minkowski<3>(D);
+	Metric::normalize_Minkowski<3>(D);
 }
 
 void Grid::isotropic_kup_tet(const double nu, double kup_tet[4], const double xup[4], ThreadRNG *rangen) const{
@@ -514,71 +429,6 @@ void Grid::isotropic_kup_tet(const double nu, double kup_tet[4], const double xu
 	kup_tet[3] = nu        * 2.0*pc::pi / pc::c;
 }
 
-void Grid::orthogonalize(double v[4], const double e[4], const double xup[4]) const{
-	PRINT_ASSERT(abs(dot(e,e,xup)-1.0),<,TINY); // assume the basis vector is normalized
-	PRINT_ASSERT(do_GR,==,true);
-
-	double projection = dot(v,e,xup);
-	for(int mu=0; mu<4; mu++) v[mu] -= projection * v[mu];
-}
-void Grid::tetrad_basis(const double xup[4], const double u[4], double e[4][4]) const{
-	// normalize four-velocity to get timelike vector
-	for(int mu=0; mu<4; mu++) e[3][mu] = u[mu];
-	normalize(e[3], xup);
-
-	// use x0 as a trial vector
-	e[0][0] = 1.0;
-	e[0][1] = 0;
-	e[0][2] = 0;
-	e[0][3] = 0;
-	orthogonalize(e[0],e[3],xup);
-	normalize(e[0],xup);
-
-	// use x1 as a trial vector
-	e[1][0] = 0;
-	e[1][1] = 1.0;
-	e[1][2] = 0;
-	e[1][3] = 0;
-	orthogonalize(e[1],e[3],xup);
-	orthogonalize(e[1],e[0],xup);
-	normalize(e[1],xup);
-
-	// use x2 as a trial vector
-	e[2][0] = 0;
-	e[2][1] = 0;
-	e[2][2] = 1.0;
-	e[2][3] = 0;
-	orthogonalize(e[2],e[3],xup);
-	orthogonalize(e[2],e[0],xup);
-	orthogonalize(e[2],e[1],xup);
-	normalize(e[2],xup);
-
-	// sanity checks
-	PRINT_ASSERT(abs(dot(e[0],e[1],xup)),<,TINY);
-	PRINT_ASSERT(abs(dot(e[0],e[2],xup)),<,TINY);
-	PRINT_ASSERT(abs(dot(e[0],e[3],xup)),<,TINY);
-	PRINT_ASSERT(abs(dot(e[1],e[2],xup)),<,TINY);
-	PRINT_ASSERT(abs(dot(e[1],e[3],xup)),<,TINY);
-	PRINT_ASSERT(abs(dot(e[2],e[3],xup)),<,TINY);
-}
-void Grid::coord_to_tetrad(const double xup[4], const double u[4], const double kup_coord[4], double kup_tet[4]) const{
-	double e[4][4];
-	tetrad_basis(xup, u, e);
-
-	// transform to coordinate frame
-	for(int mu=0; mu<4; mu++) kup_tet[mu] = dot(kup_coord,e[mu],xup);
-}
-void Grid::tetrad_to_coord(const double xup[4], const double u[4], const double kup_tet[4], double kup_coord[4]) const{
-	double e[4][4];
-	tetrad_basis(xup, u, e);
-
-	// transform to coordinate frame
-	for(int mu=0; mu<4; mu++){
-		kup_coord[mu] = 0;
-		for(int nu=0; nu<4; nu++)
-			kup_coord[mu] += kup_tet[nu] * e[nu][mu];
-	}
-}
 
 void Grid::random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3], double D[3]) const{
 	PRINT_ASSERT(do_GR,==,false);
@@ -607,32 +457,9 @@ void Grid::random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3],
 	D[0] = cost_core*cosp_core*D_xl-sinp_core*D_yl+sint_core*cosp_core*D_zl;
 	D[1] = cost_core*sinp_core*D_xl+cosp_core*D_yl+sint_core*sinp_core*D_zl;
 	D[2] = -sint_core*D_xl+cost_core*D_zl;
-	Grid::normalize_Minkowski<3>(D);
+	Metric::normalize_Minkowski<3>(D);
 }
 
-double Grid::n_dot(const double invec[4], const double xup[4], const int z_ind) const{
-	return -lapse(xup,z_ind) * invec[3];
-}
-
-void Grid::g_down(const double xup[4], double g[4][4], const int z_ind) const{
-	g3_down(xup,g,z_ind);
-
-	double alpha = lapse(xup,z_ind);
-
-	double betaup[4];
-	shiftup(betaup,xup,z_ind);
-
-	// betaup[3] is zero by definition
-	double beta_dot_beta=0;
-	for(int i=0; i<3; i++){
-		double betadowni = 0;
-		for(int j=0; j<3; j++) betadowni += betaup[j] * g[i][j];
-		beta_dot_beta += betaup[i] * betadowni;
-		g[3][i] = g[i][3] = betadowni;
-	}
-	g[3][3] = -alpha*alpha + beta_dot_beta;
-	PRINT_ASSERT(g[3][3],<,0);
-}
 
 double Grid::zone_4volume(const int z_ind) const{
 	return zone_lab_3volume(z_ind) * zone_lapse(z_ind);

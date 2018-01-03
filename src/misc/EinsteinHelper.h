@@ -85,12 +85,12 @@ public:
     g.normalize(e[2]);
     
     // sanity checks
-    PRINT_ASSERT(abs(g.dot<4>(e[0],e[1])),<,TINY);
-    PRINT_ASSERT(abs(g.dot<4>(e[0],e[2])),<,TINY);
-    PRINT_ASSERT(abs(g.dot<4>(e[0],e[3])),<,TINY);
-    PRINT_ASSERT(abs(g.dot<4>(e[1],e[2])),<,TINY);
-    PRINT_ASSERT(abs(g.dot<4>(e[1],e[3])),<,TINY);
-    PRINT_ASSERT(abs(g.dot<4>(e[2],e[3])),<,TINY);
+    PRINT_ASSERT(fabs(g.dot<4>(e[0],e[1])),<,TINY);
+    PRINT_ASSERT(fabs(g.dot<4>(e[0],e[2])),<,TINY);
+    PRINT_ASSERT(fabs(g.dot<4>(e[0],e[3])),<,TINY);
+    PRINT_ASSERT(fabs(g.dot<4>(e[1],e[2])),<,TINY);
+    PRINT_ASSERT(fabs(g.dot<4>(e[1],e[3])),<,TINY);
+    PRINT_ASSERT(fabs(g.dot<4>(e[2],e[3])),<,TINY);
   }
   
   void coord_to_tetrad(const double kup_coord[4], double kup_tet[4]) const{

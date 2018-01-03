@@ -67,15 +67,13 @@ void GridGR1D::symmetry_boundaries(EinsteinHelper *eh) const{
 	// NONE - just flow out of outer boundary
 }
 
-void GridGR1D::set_fluid(const double* rho, const double* T, const double* Ye, const double* vr){
+void GridGR1D::set_fluid(const double* rho, const double* T, const double* Ye, const double* vr_in){
 	for(int z_ind=0; z_ind<z.size(); z_ind++)
 	{
-		z[z_ind].rho  = rho[z_ind+ghosts1];
-		z[z_ind].T    =   T[z_ind+ghosts1];
-		z[z_ind].Ye   =  Ye[z_ind+ghosts1];
-		z[z_ind].u[0] =  vr[z_ind+ghosts1];
-		z[z_ind].u[1] = 0;//vphi[z_ind];
-		z[z_ind].u[2] = 0;
+		z[z_ind].rho  =   rho[z_ind+ghosts1];
+		z[z_ind].T    =     T[z_ind+ghosts1];
+		z[z_ind].Ye   =    Ye[z_ind+ghosts1];
+		vr[z_ind]     = vr_in[z_ind+ghosts1];
 
 		z[z_ind].H_vis = 0;
 		PRINT_ASSERT(rAxis.top[z_ind],>,(z_ind==0 ? rAxis.min : rAxis.top[z_ind-1]));
@@ -83,7 +81,6 @@ void GridGR1D::set_fluid(const double* rho, const double* T, const double* Ye, c
 		PRINT_ASSERT(z[z_ind].T,>=,0);
 		PRINT_ASSERT(z[z_ind].Ye,>=,0);
 		PRINT_ASSERT(z[z_ind].Ye,<=,1.0);
-		PRINT_ASSERT(z[z_ind].u[0]*z[z_ind].u[0] + z[z_ind].u[1]*z[z_ind].u[1] + z[z_ind].u[2]*z[z_ind].u[2],<,pc::c*pc::c);
 	}
 }
 

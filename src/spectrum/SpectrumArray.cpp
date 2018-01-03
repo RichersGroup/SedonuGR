@@ -34,7 +34,7 @@ SpectrumArray::SpectrumArray(){
 
 void SpectrumArray::rotate_basis(double D[3], const double xyz[3]){
 	double x=xyz[0], y=xyz[1], z=xyz[2];
-	double inv_r = 1.0 / sqrt(Grid::dot_Minkowski<3>(xyz,xyz));
+	double inv_r = 1.0 / sqrt(Metric::dot_Minkowski<3>(xyz,xyz));
 	double rp = sqrt(x*x + y*y);
 	double rhat[3]     = {0,0,0};
 	double thetahat[3] = {0,0,0};
@@ -58,9 +58,9 @@ void SpectrumArray::rotate_basis(double D[3], const double xyz[3]){
 	}
 
 	double Dout[3];
-	Dout[0] = Grid::dot_Minkowski<3>(D,thetahat);
-	Dout[1] = Grid::dot_Minkowski<3>(D,phihat);
-	Dout[2] = Grid::dot_Minkowski<3>(D,rhat);
+	Dout[0] = Metric::dot_Minkowski<3>(D,thetahat);
+	Dout[1] = Metric::dot_Minkowski<3>(D,phihat);
+	Dout[2] = Metric::dot_Minkowski<3>(D,rhat);
 	for(int i=0; i<3; i++) D[i] = Dout[i];
 }
 
@@ -68,7 +68,7 @@ void SpectrumArray::rotate_and_count(const double kup[4], const double xup[4], c
 	double D[3] = {kup[0], kup[1], kup[2]};
 	if(rotated_basis) rotate_basis(D,xup);
 
-	Grid::normalize_Minkowski<3>(D);
+	Metric::normalize_Minkowski<3>(D);
 	count(D, dir_ind, nu, weight);
 }
 
