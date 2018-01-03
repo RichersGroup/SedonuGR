@@ -35,6 +35,7 @@ using namespace std;
 namespace pc = physical_constants;
 
 GridGR1D::GridGR1D(){
+	PRINT_ASSERT(NDIMS,==,1);
 	grid_type = "GridGR1D";
 	ghosts1=-1;
 }
@@ -44,15 +45,6 @@ GridGR1D::GridGR1D(){
 //------------------------------------------------------------
 void GridGR1D::read_model_file(Lua* lua)
 {
-	// set up the data structures
-	abs_opac.resize(sim->species_list.size());
-	scat_opac.resize(sim->species_list.size());
-	vector<Axis> axes({nu_grid_axis, rAxis});
-	for(int s=0; s<sim->species_list.size(); s++){
-		abs_opac[s] = new MultiDArray<2>(axes);
-		scat_opac[s] = new MultiDArray<2>(axes);
-	}
-
 	// DO NOTHING - zones will be set by a different function during each iteration.
 }
 

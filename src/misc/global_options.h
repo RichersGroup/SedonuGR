@@ -39,6 +39,8 @@
 #include "physical_constants.h"
 #include "H5Cpp.h"
 
+#define NDIMS 1
+
 //using real = float; // or float
 //const MPI_Datatype MPI_real = ( sizeof(real)==4 ? MPI_FLOAT : MPI_DOUBLE );
 #define NaN std::numeric_limits<double>::quiet_NaN()

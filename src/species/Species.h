@@ -79,7 +79,7 @@ public:
 	double core_lum_multiplier;
 
 	// this species' spectrum
-	PolarSpectrumArray spectrum;
+	PolarSpectrumArray<0> spectrum;
 
 	// set everything up
 	void init(Lua* lua, Transport* sim);

@@ -93,19 +93,19 @@ double cos_angle_between(const double mu1, const double mu2, const double phi1, 
 }
 double Neutrino::annihilation_rate(
 		const vector<double> dir_ind,       // directional indices for the zone we're getting the rate at
-		const PolarSpectrumArray* nu_dist,     // erg/ccm (integrated over angular bin and energy bin)
-		const PolarSpectrumArray* nubar_dist,  // erg/ccm (integrated over angular bin and energy bin)
+		const PolarSpectrumArray<NDIMS>* nu_dist,     // erg/ccm (integrated over angular bin and energy bin)
+		const PolarSpectrumArray<NDIMS>* nubar_dist,  // erg/ccm (integrated over angular bin and energy bin)
 		const bool electron_type,		   // is this an electron-type interaction?
 		const int weight){         		   // weight of each species
 
 	PRINT_ASSERT(nu_dist->size(),==,nubar_dist->size());
 
 	unsigned nuLoc = nu_dist->nuGridIndex;
-	Axis* nuAxis = &(nu_dist->data->axes[nuLoc]);
+	const Axis* nuAxis = &(nu_dist->data.axes[nuLoc]);
 	unsigned muLoc = nu_dist->muGridIndex;
-	Axis* muAxis = &(nu_dist->data->axes[muLoc]);
+	const Axis* muAxis = &(nu_dist->data.axes[muLoc]);
 	unsigned phiLoc = nu_dist->phiGridIndex;
-	Axis* phiAxis = &(nu_dist->data->axes[phiLoc]);
+	const Axis* phiAxis = &(nu_dist->data.axes[phiLoc]);
 
 	// constants
 	using namespace pc;
@@ -187,8 +187,8 @@ double Neutrino::annihilation_rate(
 
 								double onemcost = onemcostheta[imu][iphi][imubar][iphibar];
 								if(eebar*onemcost > mec22){
-									double nudist_edens    =    nu_dist->data->get(index)    * inv_weight; // erg/ccm
-									double nubardist_edens = nubar_dist->data->get(indexbar) * inv_weight; // erg/ccm
+									double nudist_edens    =    nu_dist->data.get(index)    * inv_weight; // erg/ccm
+									double nubardist_edens = nubar_dist->data.get(indexbar) * inv_weight; // erg/ccm
 
 									Q += nudist_edens * nubardist_edens * sume_m_twomec2 * onemcost *
 											(C1pC2_3 * onemcost + C3mec4_eebar);

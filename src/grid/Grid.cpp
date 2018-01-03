@@ -206,22 +206,22 @@ void Grid::init(Lua* lua, Transport* insim)
     			PRINT_ASSERT(minval,==,-pc::pi);
     			tmp_phigrid = Axis(minval, bintops, binmid);
     		}
-    		distribution[s] = new PolarSpectrumArray;
-    		((PolarSpectrumArray*)distribution[s])->init(spatial_axes,nu_grid_axis, tmp_mugrid, tmp_phigrid);
+    		distribution[s] = new PolarSpectrumArray<NDIMS>;
+    		((PolarSpectrumArray<NDIMS>*)distribution[s])->init(spatial_axes,nu_grid_axis, tmp_mugrid, tmp_phigrid);
     	}
 
     	//-- MOMENT SPECTRUM --------------------
     	else if(distribution_type == "Moments"){
     		int order = lua->scalar<int>("distribution_moment_order");
-    		distribution[s] = new MomentSpectrumArray;
-    		((MomentSpectrumArray*)distribution[s])->init(spatial_axes,nu_grid_axis, order);
+    		distribution[s] = new MomentSpectrumArray<NDIMS>;
+    		((MomentSpectrumArray<NDIMS>*)distribution[s])->init(spatial_axes,nu_grid_axis, order);
     	}
 
     	//-- RADIAL MOMENT SPECTRUM --------------------
     	else if(distribution_type == "RadialMoments"){
     		int order = lua->scalar<int>("distribution_moment_order");
-    		distribution[s] = new RadialMomentSpectrumArray;
-    		((RadialMomentSpectrumArray*)distribution[s])->init(spatial_axes,nu_grid_axis, order);
+    		distribution[s] = new RadialMomentSpectrumArray<NDIMS>;
+    		((RadialMomentSpectrumArray<NDIMS>*)distribution[s])->init(spatial_axes,nu_grid_axis, order);
     	}
 
     	//-- RADIAL MOMENT SPECTRUM --------------------
@@ -246,6 +246,18 @@ void Grid::init(Lua* lua, Transport* insim)
     }
 
     if(rank0) cout << "finished." << endl;
+
+	// set up the data structures
+	abs_opac.resize(sim->species_list.size());
+	scat_opac.resize(sim->species_list.size());
+	vector<Axis> axes;
+	axis_vector(axes);
+	axes.push_back(nu_grid_axis);
+	for(int s=0; s<sim->species_list.size(); s++){
+		abs_opac[s] = MultiDArray<NDIMS+1>(axes);
+		scat_opac[s] = MultiDArray<NDIMS+1>(axes);
+	}
+
 }
 
 void Grid::write_zones(const int iw) const

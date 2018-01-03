@@ -45,7 +45,7 @@ private:
 
 public:
 
-	MultiDInterface* data;
+	MultiDArray<2> data;
 	unsigned nuGridIndex, momGridIndex;
 	static const unsigned nelements = 6;
 
@@ -53,18 +53,18 @@ public:
 	void init(const vector<Axis>& spatial_axes, const Axis& nu_grid);
 
 	// MPI functions
-	virtual void MPI_average();
+	void MPI_average();
 
 	// Count a packets
-	virtual void count(const double D[3], const vector<unsigned>& dir_ind, const double nu, const double E);
+	void count(const double D[3], const vector<unsigned>& dir_ind, const double nu, const double E);
 
 	//  void normalize();
-	virtual void rescale(const double);
-	virtual void wipe();
+	void rescale(const double);
+	void wipe();
 
 	// Print out
-	virtual void write_hdf5_data(H5::H5File file, const string name) const;
-	virtual void write_hdf5_coordinates(H5::H5File file, const string name) const;
+	void write_hdf5_data(H5::H5File file, const string name) const;
+	void write_hdf5_coordinates(H5::H5File file, const string name) const;
 };
 
 #endif

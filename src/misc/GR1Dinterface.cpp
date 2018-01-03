@@ -135,13 +135,13 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 
 					// load up new arrays
 					dir_ind[2] = 2;
-					double Prr  = tmpSpectrum->data->get(dir_ind);//q_M1[indexPrr];//
+					double Prr  = tmpSpectrum->data.get(dir_ind);//q_M1[indexPrr];//
 					dir_ind[2] = 3;
-					double Ptt  = tmpSpectrum->data->get(dir_ind);//q_M1_extra[indexPtt];//
+					double Ptt  = tmpSpectrum->data.get(dir_ind);//q_M1_extra[indexPtt];//
 					dir_ind[2] = 4;
-					double Wrrr = tmpSpectrum->data->get(dir_ind);//q_M1_extra[indexWrrr];//
+					double Wrrr = tmpSpectrum->data.get(dir_ind);//q_M1_extra[indexWrrr];//
 					dir_ind[2] = 5;
-					double Wttr = tmpSpectrum->data->get(dir_ind);//q_M1_extra[indexWttr];//
+					double Wttr = tmpSpectrum->data.get(dir_ind);//q_M1_extra[indexWttr];//
 
 					// enforce local GR consistency
 					double P_constraint = Prr/X/X + 2.*Ptt;

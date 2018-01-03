@@ -58,7 +58,7 @@ public:
 
 	// required functions
 	void myInit(Lua* lua);
-	static double annihilation_rate(const vector<double> dir_ind,const PolarSpectrumArray* nu_dist, const PolarSpectrumArray* nbar_dist, const bool electron_type, const int weight);
+	static double annihilation_rate(const vector<double> dir_ind,const PolarSpectrumArray<NDIMS>* nu_dist, const PolarSpectrumArray<NDIMS>* nbar_dist, const bool electron_type, const int weight);
 };
 
 #endif

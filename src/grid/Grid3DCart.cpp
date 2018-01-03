@@ -40,6 +40,7 @@ namespace pc = physical_constants;
 // constructor
 //------------
 Grid3DCart::Grid3DCart(){
+	PRINT_ASSERT(NDIMS,==,3);
 	grid_type = "Grid3DCart";
 	for(int i=0; i<3; i++) reflect[i] = 0;
 	rotate_hemisphere[0] = 0;
@@ -53,14 +54,7 @@ Grid3DCart::Grid3DCart(){
 void Grid3DCart::read_model_file(Lua* lua)
 {
 	// set up the data structures
-	abs_opac.resize(sim->species_list.size());
-	scat_opac.resize(sim->species_list.size());
-	vector<Axis> axes({nu_grid_axis, xAxes[0], xAxes[1], xAxes[2]});
-	for(int s=0; s<sim->species_list.size(); s++){
-		abs_opac[s] = new MultiDArray<4>(axes);
-		scat_opac[s] = new MultiDArray<4>(axes);
-	}
-	axes = vector<Axis>(xAxes);
+	vector<Axis> axes = vector<Axis>(xAxes);
 	for(unsigned i=0; i<3; i++) v[i] = MultiDArray<3>(axes);
 
 	std::string model_type = lua->scalar<std::string>("model_type");

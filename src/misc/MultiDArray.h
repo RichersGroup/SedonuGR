@@ -8,36 +8,15 @@
 
 using namespace std;
 
-class MultiDInterface{
-public:
-	vector<double> y0;
-	vector<Axis> axes;
-
-	virtual ~MultiDInterface() {}
-	virtual double get(const unsigned int ind[]) const=0;
-	virtual void set(const unsigned int ind[], const double y)=0;
-	virtual double interpolate(const double x[], const unsigned int ind[]) const=0;
-	virtual void calculate_slopes()=0;
-	virtual void wipe()=0;
-	virtual unsigned size() const= 0;
-	virtual unsigned Ndims() const= 0;
-	virtual unsigned direct_index(const unsigned ind[]) const = 0;
-	virtual void add(const unsigned ind[], const double to_add) = 0;
-	virtual void direct_add(const unsigned lin_ind, const double to_add) = 0;
-	virtual void MPI_combine() = 0;
-	virtual void MPI_AllCombine() = 0;
-	virtual void write_HDF5(H5::H5File file, const string name) = 0;
-};
-
-
-
 //=====================//
 // INTERPOLATION ARRAY //
 //=====================//
 template<unsigned int ndims>
-class MultiDArray : public MultiDInterface{
+class MultiDArray{
 public:
 
+	vector<double> y0;
+	vector<Axis> axes;
 	vector<Tuple<double,ndims> > dydx;
 	Tuple<unsigned int,ndims> stride;
 
@@ -52,6 +31,15 @@ public:
 		y0.resize(size);
 	}
 	MultiDArray(){}
+
+	MultiDArray<ndims> operator =(const MultiDArray<ndims>& input){
+		PRINT_ASSERT(input.axes.size(),==,ndims);
+		this->axes = input.axes;
+		this->stride = input.stride;
+		this->dydx = input.dydx;
+		this->y0 = input.y0;
+		return *this;
+	}
 
 
 	unsigned direct_index(const unsigned ind[ndims]) const{
@@ -198,7 +186,7 @@ public:
 		MPI_Allreduce(MPI_IN_PLACE, &y0.front(), size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 	}
 
-	void write_HDF5(H5::H5File file, const string name) {
+	void write_HDF5(H5::H5File file, const string name) const {
 		hsize_t dims[ndims];
 		for(unsigned i=0; i<ndims; i++) dims[i] = axes[i].size(); // number of bins
 		H5::DataSpace dataspace(ndims,dims);

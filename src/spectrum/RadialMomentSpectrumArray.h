@@ -34,6 +34,7 @@
 
 using namespace std;
 
+template<unsigned ndims_spatial>
 class RadialMomentSpectrumArray : public SpectrumArray {
 
 private:
@@ -42,28 +43,97 @@ private:
 	// values represent bin upper walls (the single locate_array.min value is the leftmost wall)
 	// underflow is combined into leftmost bin (right of the locate_array.min)
 	// overflow is combined into the rightmost bin (left of locate_array[size-1])
-	MultiDInterface* data;
+	MultiDArray<ndims_spatial+2> data;
 
 	unsigned nuGridIndex, momGridIndex, nranks;
 
 public:
 
-	// Initialize
-	void init(const vector<Axis>& spatial_axes, const Axis& nu_grid, const int order);
+	//--------------------------------------------------------------
+	// Initialization and Allocation
+	//--------------------------------------------------------------
+	void init(const vector<Axis>& spatial_axes, const Axis& nu_grid, const int max_rank) {
+		vector<Axis> axes;
+		for(int i=0; i<spatial_axes.size(); i++) axes.push_back(spatial_axes[i]);
 
-	// MPI functions
-	virtual void MPI_average();
+		axes.push_back(nu_grid);
+		nuGridIndex = axes.size()-1;
 
-	// Count a packets
-	virtual void count(const double D[3], const vector<unsigned>& dir_ind, const double nu, const double E);
+		// moment axis
+		nranks = max_rank+1;
+		double minval = -0.5; // this is hacked...don't know a better way to include them all together
+		vector<double> top(nranks);
+		vector<double> mid(nranks);
+		for(int i=0; i<nranks; i++){
+			mid[i] = i;
+			top[i] = i + 0.5;
+		}
+		axes.push_back(Axis(minval, top, mid));
+		momGridIndex = axes.size()-1;
 
-	//  void normalize();
-	virtual void rescale(const double);
-	virtual void wipe();
+		// set up the data structure
+		data = MultiDArray<ndims_spatial+2>(axes);
+		data.wipe();
+	}
 
-	// Print out
-	virtual void write_hdf5_data(H5::H5File file, const string name) const;
-	virtual void write_hdf5_coordinates(H5::H5File file, const string name) const;
+	//--------------------------------------------------------------
+	// Functional procedure: Wipe
+	//--------------------------------------------------------------
+	void wipe() {
+		data.wipe();
+	}
+
+	//--------------------------------------------------------------
+	// count a particle
+	////--------------------------------------------------------------
+	void count(const double D[3], const vector<unsigned>& dir_ind, const double nu, const double E) {
+		PRINT_ASSERT(E, >=, 0);
+		PRINT_ASSERT(E, <, INFINITY);
+
+		unsigned indices[data.Ndims()];
+		for(int i=0; i<dir_ind.size(); i++) indices[i] = dir_ind[i];
+
+		int nu_bin = data.axes[nuGridIndex].bin(nu);
+		nu_bin = max(nu_bin, 0);
+		nu_bin = min(nu_bin, data.axes[nuGridIndex].size()-1);
+		indices[nuGridIndex] = nu_bin;
+
+		// increment moments
+		double tmp = E;
+		for (int rank = 0; rank<nranks; rank++) {
+			indices[momGridIndex] = rank;
+			data.add(indices, tmp);
+			tmp *= D[2];
+		}
+	}
+
+	void rescale(double r) {
+		for(unsigned i=0;i<data.size();i++) data.y0[i] *= r;
+	}
+
+
+	//--------------------------------------------------------------
+	// MPI average the spectrum contents
+	//--------------------------------------------------------------
+	// only process 0 gets the reduced spectrum to print
+	void MPI_average(){
+		data.MPI_combine();
+	}
+
+
+	//--------------------------------------------------------------
+	// Write data to specified location in an HDF5 file
+	//--------------------------------------------------------------
+	void write_hdf5_data(H5::H5File file, const string name) const {
+		data.write_HDF5(file, name);
+	}
+
+	//--------------------------------------------------------------
+	// Write distribution function coordinates to an HDF5 file
+	//--------------------------------------------------------------
+	void write_hdf5_coordinates(H5::H5File file, const string name) const {
+		// no extra axes for moment array
+	}
 };
 
 #endif

@@ -36,6 +36,7 @@ using namespace std;
 namespace pc = physical_constants;
 
 Grid1DSphere::Grid1DSphere(){
+	PRINT_ASSERT(NDIMS,==,1);
 	grid_type = "Grid1DSphere";
 	reflect_outer = 0;
 }
@@ -45,15 +46,6 @@ Grid1DSphere::Grid1DSphere(){
 //------------------------------------------------------------
 void Grid1DSphere::read_model_file(Lua* lua)
 {
-	// set up the data structures
-	abs_opac.resize(sim->species_list.size());
-	scat_opac.resize(sim->species_list.size());
-	vector<Axis> axes({nu_grid_axis, rAxis});
-	for(int s=0; s<sim->species_list.size(); s++){
-		abs_opac[s] = new MultiDArray<2>(axes);
-		scat_opac[s] = new MultiDArray<2>(axes);
-	}
-
 	std::string model_type = lua->scalar<std::string>("model_type");
 	if(model_type == "Nagakura") read_nagakura_model(lua);
 	else if(model_type == "custom") read_custom_model(lua);

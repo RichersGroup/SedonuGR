@@ -34,6 +34,7 @@ using namespace std;
 namespace pc = physical_constants;
 
 Grid0DIsotropic::Grid0DIsotropic(){
+	PRINT_ASSERT(NDIMS,==,0);
 	grid_type = "Grid0DIsotropic";
 }
 
@@ -42,15 +43,6 @@ Grid0DIsotropic::Grid0DIsotropic(){
 //------------------------------------------------------------
 void Grid0DIsotropic::read_model_file(Lua* lua)
 {
-	// set up the data structures
-	abs_opac.resize(sim->species_list.size());
-	scat_opac.resize(sim->species_list.size());
-	vector<Axis> axes({nu_grid_axis});
-	for(int s=0; s<sim->species_list.size(); s++){
-		abs_opac[s] = new MultiDArray<1>(axes);
-		scat_opac[s] = new MultiDArray<1>(axes);
-	}
-
 	// number of zones
 	z.resize(1);
 	z[0].rho = lua->scalar<double>("Grid0DIsotropic_rho");

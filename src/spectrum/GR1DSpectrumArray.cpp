@@ -58,21 +58,15 @@ void GR1DSpectrumArray::init(const vector<Axis>& spatial_axes, const Axis& nu_gr
 	momGridIndex = axes.size()-1;
 	
 	// set up the data structure
-	switch(spatial_axes.size()){
-	case 0: data = new MultiDArray<0+2>(axes); break;
-	case 1: data = new MultiDArray<1+2>(axes); break;
-	case 2: data = new MultiDArray<2+2>(axes); break;
-	case 3: data = new MultiDArray<3+2>(axes); break;
-	}
-
-	data->wipe();
+	data = MultiDArray<2>(axes);
+	data.wipe();
 }
 
 //--------------------------------------------------------------
 // Functional procedure: Wipe
 //--------------------------------------------------------------
 void GR1DSpectrumArray::wipe() {
-	data->wipe();
+	data.wipe();
 }
 
 
@@ -83,29 +77,29 @@ void GR1DSpectrumArray::count(const double D[3], const vector<unsigned>& dir_ind
 	PRINT_ASSERT(E, >=, 0);
 	PRINT_ASSERT(E, <, INFINITY);
 
-	unsigned indices[data->Ndims()];
+	unsigned indices[data.Ndims()];
 	for(int i=0; i<dir_ind.size(); i++) indices[i] = dir_ind[i];
 
-	int nu_bin = data->axes[nuGridIndex].bin(nu);
+	int nu_bin = data.axes[nuGridIndex].bin(nu);
 	nu_bin = max(nu_bin, 0);
-	nu_bin = min(nu_bin, data->axes[nuGridIndex].size()-1);
+	nu_bin = min(nu_bin, data.axes[nuGridIndex].size()-1);
 	indices[nuGridIndex] = nu_bin;
 
 	indices[momGridIndex] = 0;
-	unsigned base_ind = data->direct_index(indices);
+	unsigned base_ind = data.direct_index(indices);
 
 	// increment moments. Take advantage of fact that moments are stored in order.
-	data->direct_add(base_ind  , E     ); // E
-	data->direct_add(base_ind+1, E*D[2]); // E
-	data->direct_add(base_ind+2, E*D[2]*D[2]); // P^rr
-	data->direct_add(base_ind+3, E * (D[0]*D[0] + D[1]*D[1])*0.5); // average of P^tt and P^pp
-	data->direct_add(base_ind+4, E * D[2]*D[2]*D[2]); // W^rrr
-	data->direct_add(base_ind+5, E * D[2]*(D[0]*D[0] + D[1]*D[1])*0.5); // average of W^rtt and W^rpp
+	data.direct_add(base_ind  , E     ); // E
+	data.direct_add(base_ind+1, E*D[2]); // E
+	data.direct_add(base_ind+2, E*D[2]*D[2]); // P^rr
+	data.direct_add(base_ind+3, E * (D[0]*D[0] + D[1]*D[1])*0.5); // average of P^tt and P^pp
+	data.direct_add(base_ind+4, E * D[2]*D[2]*D[2]); // W^rrr
+	data.direct_add(base_ind+5, E * D[2]*(D[0]*D[0] + D[1]*D[1])*0.5); // average of W^rtt and W^rpp
 }
 
 
 void GR1DSpectrumArray::rescale(double r) {
-	for(unsigned i=0;i<data->size();i++) data->y0[i] *= r;
+	for(unsigned i=0;i<data.size();i++) data.y0[i] *= r;
 }
 
 
@@ -115,7 +109,7 @@ void GR1DSpectrumArray::rescale(double r) {
 // only process 0 gets the reduced spectrum to print
 void GR1DSpectrumArray::MPI_average()
 {
-	data->MPI_AllCombine();
+	data.MPI_AllCombine();
 }
 
 
@@ -123,7 +117,7 @@ void GR1DSpectrumArray::MPI_average()
 // Write data to specified location in an HDF5 file
 //--------------------------------------------------------------
 void GR1DSpectrumArray::write_hdf5_data(H5::H5File file, const string name) const {
-	data->write_HDF5(file, name);
+	data.write_HDF5(file, name);
 }
 
 //--------------------------------------------------------------
