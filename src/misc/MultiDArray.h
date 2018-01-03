@@ -11,13 +11,13 @@ using namespace std;
 //=====================//
 // INTERPOLATION ARRAY //
 //=====================//
-template<unsigned int ndims>
+template<typename T, unsigned int ndims>
 class MultiDArray{
 public:
 
-	vector<double> y0;
+	vector<T> y0;
 	vector<Axis> axes;
-	vector<Tuple<double,ndims> > dydx;
+	vector<Tuple<T,ndims> > dydx;
 	Tuple<unsigned int,ndims> stride;
 
 	MultiDArray(const vector<Axis>& axes){
@@ -32,7 +32,7 @@ public:
 	}
 	MultiDArray(){}
 
-	MultiDArray<ndims> operator =(const MultiDArray<ndims>& input){
+	MultiDArray<T,ndims> operator =(const MultiDArray<T,ndims>& input){
 		PRINT_ASSERT(input.axes.size(),==,ndims);
 		this->axes = input.axes;
 		this->stride = input.stride;
@@ -66,13 +66,13 @@ public:
 	void set(const unsigned int ind[ndims], const double y){
 		y0[direct_index(ind)] = y;
 	}
-	const double& operator[](const unsigned int i) const {return y0[i];}
-	double& operator[](const unsigned int i){return y0[i];}
+	const T& operator[](const unsigned i) const {return y0[i];}
+	T& operator[](const unsigned i){return y0[i];}
 
 	// get interpolated value
-	double interpolate(const double x[ndims], const unsigned int ind[ndims]) const{
-		unsigned int z_ind = direct_index(ind);
-		double result = y0[z_ind];
+	T interpolate(const double x[ndims], const unsigned int ind[ndims]) const{
+		unsigned z_ind = direct_index(ind);
+		T result = y0[z_ind];
 		if(dydx.size()>0) for(int i=0; i<ndims; i++)
 			result += dydx[z_ind][i] * (x[i] - axes[i].mid[ind[i]]);
 		return result;
@@ -83,11 +83,11 @@ public:
 		unsigned int ind[ndims], indp[ndims], indm[ndims];
 		unsigned int zp, zm;
 		double x, xp, xm;
-		double y, yp, ym;
+		T y, yp, ym;
 		double dxL, dxR;
-		double dyL, dyR;
-		double sL, sR;
-		double slope;
+		T dyL, dyR;
+		T sL, sR;
+		T slope;
 
 		dydx.resize(y0.size());
 		for(unsigned int z=0; z<dydx.size(); z++){
@@ -126,7 +126,7 @@ public:
 				// get the actual slope
 				if(ind[i]==0) slope = sR;
 				else if(ind[i]==axes[i].size()-1) slope = sL;
-				else slope = (dxR*sL + dxL*sR) / (dxR+dxL);
+				else slope = (sL*dxR + sR*dxL) / (dxR+dxL);
 				dydx[z][i] = slope;
 			}
 		}
@@ -149,11 +149,11 @@ public:
 		return ndims;
 	}
 
-	void add(const unsigned ind[ndims], const double to_add){
+	void add(const unsigned ind[ndims], const T to_add){
 		unsigned lin_ind = direct_index(ind);
 		direct_add(lin_ind, to_add);
 	}
-	void direct_add(const unsigned lin_ind, const double to_add){
+	void direct_add(const unsigned lin_ind, const T to_add){
 		PRINT_ASSERT(lin_ind,<,y0.size());
 		PRINT_ASSERT(y0[lin_ind],>=,0);
 		PRINT_ASSERT(to_add,<,INFINITY);

@@ -110,7 +110,38 @@ public:
   const T& operator[](const unsigned int i) const {return vals[i];}
   T& operator[](const unsigned int i){return vals[i];}
   unsigned int size() const{return size;}
-};
+  Tuple<T,len>& operator=(const Tuple<T,len> input){
+	  for(unsigned i=0; i<len; i++) this->vals[i] = input.vals[i];
+	  return *this;
+  }
+  const Tuple<T,len> operator*(const double scale) const{
+	  Tuple<T,len> result = *this;
+	  for(unsigned i=0; i<len; i++) result.vals[i] *= scale;
+	  return result;
+  }
+  const Tuple<T,len> operator/(const double scale) const{
+	  double inv_scale = 1./scale;
+	  return operator*(inv_scale);
+  }
+  const Tuple<T,len> operator+(const Tuple<T,len> input) const{
+	  Tuple<T,len> result = *this;
+	  for(unsigned i=0; i<len; i++) result.vals[i] += input.vals[i];
+	  return result;
+  }
+  const Tuple<T,len> operator-(const Tuple<T,len> input) const{
+	  Tuple<T,len> result = *this;
+	  for(unsigned i=0; i<len; i++) result.vals[i] -= input.vals[i];
+	  return result;
+  }
+  Tuple<T,len>& operator+=(const Tuple<T,len> input){
+	  for(unsigned i=0; i<len; i++) this->vals[i] += input.vals[i];
+	  return *this;
+  }
+  Tuple<T,len>& operator*=(const double scale){
+	  for(unsigned i=0; i<len; i++) this->vals[i] *= scale;
+	  return *this;
+  }
+ };
 
 
 #endif

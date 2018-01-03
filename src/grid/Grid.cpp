@@ -254,8 +254,8 @@ void Grid::init(Lua* lua, Transport* insim)
 	axis_vector(axes);
 	axes.push_back(nu_grid_axis);
 	for(int s=0; s<sim->species_list.size(); s++){
-		abs_opac[s] = MultiDArray<NDIMS+1>(axes);
-		scat_opac[s] = MultiDArray<NDIMS+1>(axes);
+		abs_opac[s] = MultiDArray<double,NDIMS+1>(axes);
+		scat_opac[s] = MultiDArray<double,NDIMS+1>(axes);
 	}
 
 }

@@ -44,7 +44,7 @@ protected:
 	int reflect_outer;
 
 	// ds^2 = -alpha dt^2 + X^2 dr^2 + dOmega^2
-	MultiDArray<1> X, vr;
+	MultiDArray<double,1> X, vr;
 
 public:
 

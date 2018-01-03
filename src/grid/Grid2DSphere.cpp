@@ -117,8 +117,9 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 
 	vector<Axis> axes;
 	axis_vector(axes);
-	vr = MultiDArray<2>(axes);
-	vtheta = MultiDArray<2>(axes);
+	vr = MultiDArray<double,2>(axes);
+	vtheta = MultiDArray<double,2>(axes);
+	vphi =  MultiDArray<double,2>(axes);
 
 
 	// write grid properties
@@ -372,9 +373,9 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 
 	vector<Axis> axes;
 	axis_vector(axes);
-	vr = MultiDArray<2>(axes);
-	vtheta = MultiDArray<2>(axes);
-	vphi =  MultiDArray<2>(axes);
+	vr = MultiDArray<double,2>(axes);
+	vtheta = MultiDArray<double,2>(axes);
+	vphi =  MultiDArray<double,2>(axes);
 
 	//===============//
 	// fill the grid //

@@ -55,7 +55,7 @@ void Grid3DCart::read_model_file(Lua* lua)
 {
 	// set up the data structures
 	vector<Axis> axes = vector<Axis>(xAxes);
-	for(unsigned i=0; i<3; i++) v[i] = MultiDArray<3>(axes);
+	v = MultiDArray<Tuple<double,3>,3>(axes);
 
 	std::string model_type = lua->scalar<std::string>("model_type");
 	if(model_type == "THC") read_THC_file(lua);
@@ -64,7 +64,7 @@ void Grid3DCart::read_model_file(Lua* lua)
 		exit(8);
 	}
 
-	for(unsigned i=0; i<3; i++) v[i].calculate_slopes();
+	v.calculate_slopes();
 }
 
 
@@ -282,9 +282,9 @@ void Grid3DCart::read_THC_file(Lua* lua)
 		z[z_ind].rho  =  rho[dataset_ind];
 		z[z_ind].T    = temp[dataset_ind];
 		z[z_ind].Ye   =   Ye[dataset_ind];
-		v[0][z_ind]   = velx[dataset_ind];
-		v[1][z_ind]   = vely[dataset_ind];
-		v[2][z_ind]   = velz[dataset_ind];
+		v[z_ind][0]   = velx[dataset_ind];
+		v[z_ind][1]   = vely[dataset_ind];
+		v[z_ind][2]   = velz[dataset_ind];
 
 		PRINT_ASSERT(z[z_ind].rho,>=,0.0);
 		PRINT_ASSERT(z[z_ind].T,>=,0.0);
@@ -455,7 +455,9 @@ void Grid3DCart::interpolate_fluid_velocity(const double x[3], double vout[3], i
 	// may want to interpolate here?
 	vector<unsigned> dir_ind(3);
 	zone_directional_indices(z_ind,dir_ind);
-	for(int i=0; i<3; i++) vout[i] = v[i].interpolate(x,&dir_ind.front());
+	Tuple<double,3> tmp;
+	tmp = v.interpolate(x,&dir_ind.front());
+	for(unsigned i=0; i<3; i++) vout[i] = tmp[i];
 
 	PRINT_ASSERT(vout[0]*vout[0] + vout[1]*vout[1] + vout[2]*vout[2],<=,pc::c*pc::c);
 }

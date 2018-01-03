@@ -60,7 +60,7 @@ private:
 
 	vector<Axis> xAxes;
 
-	MultiDArray<3> v[3];
+	MultiDArray<Tuple<double,3>,3> v;
 
 public:
 

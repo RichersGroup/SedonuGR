@@ -43,7 +43,7 @@ private:
 	// values represent bin upper walls (the single locate_array.min value is the leftmost wall)
 	// underflow is combined into leftmost bin (right of the locate_array.min)
 	// overflow is combined into the rightmost bin (left of locate_array[size-1])
-	vector<MultiDArray<ndims_spatial+2>> data;
+	vector<MultiDArray<double,ndims_spatial+2>> data;
 
 	// array size
 	unsigned nuGridIndex, momGridIndex, nranks;
@@ -113,7 +113,7 @@ public:
 			}
 			axes[momGridIndex] = Axis(minval, top, mid);
 
-			data[rank] = MultiDArray<NDIMS+2>(axes);
+			data[rank] = MultiDArray<double,NDIMS+2>(axes);
 			data[rank].wipe();
 		}
 	}

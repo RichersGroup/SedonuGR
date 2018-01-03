@@ -53,7 +53,7 @@ private:
 
 public:
 
-	MultiDArray<ndims_spatial+3> data;
+	MultiDArray<double,ndims_spatial+3> data;
 	unsigned phiGridIndex, nuGridIndex, muGridIndex;
 	unsigned nphi, nnu, nmu;
 
@@ -95,7 +95,7 @@ public:
 		nphi = axes[axes.size()-1].size();
 
 		// set up the data structure
-		data = MultiDArray<ndims_spatial+3>(axes);
+		data = MultiDArray<double,ndims_spatial+3>(axes);
 		data.wipe();
 	}
 
@@ -120,7 +120,7 @@ public:
 		nphi = pg.size();
 
 		// set up the data structure
-		data = MultiDArray<ndims_spatial+3>(axes);
+		data = MultiDArray<double,ndims_spatial+3>(axes);
 		data.wipe();
 	}
 
