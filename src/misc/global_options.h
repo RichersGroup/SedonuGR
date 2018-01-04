@@ -103,15 +103,21 @@ do {                                                 \
 //=======//
 // TUPLE //
 //=======//
-template<typename T, unsigned int len>
+template<typename T, unsigned len>
 class Tuple{
 public:
   T vals[len];
+
+  unsigned int size() const{return size;}
+
   const T& operator[](const unsigned int i) const {return vals[i];}
   T& operator[](const unsigned int i){return vals[i];}
-  unsigned int size() const{return size;}
   Tuple<T,len>& operator=(const Tuple<T,len> input){
 	  for(unsigned i=0; i<len; i++) this->vals[i] = input.vals[i];
+	  return *this;
+  }
+  Tuple<T,len>& operator=(const double input){
+	  for(unsigned i=0; i<len; i++) this->vals[i] = input;
 	  return *this;
   }
   const Tuple<T,len> operator*(const double scale) const{
@@ -141,7 +147,7 @@ public:
 	  for(unsigned i=0; i<len; i++) this->vals[i] *= scale;
 	  return *this;
   }
- };
+};
 
 
 #endif

@@ -11,16 +11,18 @@ using namespace std;
 //=====================//
 // INTERPOLATION ARRAY //
 //=====================//
-template<typename T, unsigned int ndims>
+template<unsigned nelements, unsigned int ndims>
 class MultiDArray{
 public:
 
-	vector<T> y0;
+	vector< Tuple<double,nelements> > y0;
 	vector<Axis> axes;
-	vector<Tuple<T,ndims> > dydx;
+	vector< Tuple< Tuple<double,nelements> ,ndims> > dydx;
 	Tuple<unsigned int,ndims> stride;
 
-	MultiDArray(const vector<Axis>& axes){
+	MultiDArray(){}
+
+	void set_axes(const vector<Axis>& axes){
 		this->axes = axes;
 		assert(axes.size()==ndims);
 		int size = 1;
@@ -30,9 +32,8 @@ public:
 		}
 		y0.resize(size);
 	}
-	MultiDArray(){}
 
-	MultiDArray<T,ndims> operator =(const MultiDArray<T,ndims>& input){
+	MultiDArray<nelements,ndims> operator =(const MultiDArray<nelements,ndims>& input){
 		PRINT_ASSERT(input.axes.size(),==,ndims);
 		this->axes = input.axes;
 		this->stride = input.stride;
@@ -60,19 +61,13 @@ public:
 	}
 
 	// get center value based on grid index
-	double get(const unsigned int ind[ndims]) const{
-		return y0[direct_index(ind)];
-	}
-	void set(const unsigned int ind[ndims], const double y){
-		y0[direct_index(ind)] = y;
-	}
-	const T& operator[](const unsigned i) const {return y0[i];}
-	T& operator[](const unsigned i){return y0[i];}
+	const Tuple<double,nelements>& operator[](const unsigned i) const {return y0[i];}
+	Tuple<double,nelements>& operator[](const unsigned i){return y0[i];}
 
 	// get interpolated value
-	T interpolate(const double x[ndims], const unsigned int ind[ndims]) const{
+	Tuple<double,nelements> interpolate(const double x[ndims], const unsigned int ind[ndims]) const{
 		unsigned z_ind = direct_index(ind);
-		T result = y0[z_ind];
+		Tuple<double,nelements> result = y0[z_ind];
 		if(dydx.size()>0) for(int i=0; i<ndims; i++)
 			result += dydx[z_ind][i] * (x[i] - axes[i].mid[ind[i]]);
 		return result;
@@ -83,11 +78,11 @@ public:
 		unsigned int ind[ndims], indp[ndims], indm[ndims];
 		unsigned int zp, zm;
 		double x, xp, xm;
-		T y, yp, ym;
+		Tuple<double,nelements> y, yp, ym;
 		double dxL, dxR;
-		T dyL, dyR;
-		T sL, sR;
-		T slope;
+		Tuple<double,nelements> dyL, dyR;
+		Tuple<double,nelements> sL, sR;
+		Tuple<double,nelements> slope;
 
 		dydx.resize(y0.size());
 		for(unsigned int z=0; z<dydx.size(); z++){
@@ -149,18 +144,15 @@ public:
 		return ndims;
 	}
 
-	void add(const unsigned ind[ndims], const T to_add){
+	void add(const unsigned ind[ndims], const Tuple<double,nelements> to_add){
 		unsigned lin_ind = direct_index(ind);
 		direct_add(lin_ind, to_add);
 	}
-	void direct_add(const unsigned lin_ind, const T to_add){
-		PRINT_ASSERT(lin_ind,<,y0.size());
-		PRINT_ASSERT(y0[lin_ind],>=,0);
-		PRINT_ASSERT(to_add,<,INFINITY);
-		PRINT_ASSERT(y0[lin_ind],<,INFINITY);
-
-		#pragma omp atomic
-		y0[lin_ind] += to_add;
+	void direct_add(const unsigned lin_ind, const Tuple<double,nelements> to_add){
+		for(unsigned i=0; i<nelements; i++){
+			#pragma omp atomic
+			y0[lin_ind][i] += to_add[i];
+		}
 	}
 
 	void MPI_combine()
@@ -199,6 +191,30 @@ public:
 	}
 };
 
+template<unsigned int ndims>
+class ScalarMultiDArray : public MultiDArray<1,ndims>{
+public:
+	void add(const unsigned ind[ndims], const double to_add){
+		unsigned lin_ind = this->direct_index(ind);
+		direct_add(lin_ind, to_add);
+	}
+	void direct_add(const unsigned lin_ind, const double to_add){
+		#pragma omp atomic
+		this->y0[lin_ind][0] += to_add;
+	}
 
+	// get center value based on grid index
+	const double& operator[](const unsigned i) const {return this->y0[i][0];}
+	double& operator[](const unsigned i){return this->y0[i][0];}
+
+	// get interpolated value
+	double interpolate(const double x[ndims], const unsigned int ind[ndims]) const{
+		unsigned z_ind = this->direct_index(ind);
+		double result = this->y0[z_ind][0];
+		if(this->dydx.size()>0) for(int i=0; i<ndims; i++)
+			result += this->dydx[z_ind][i][0] * (x[i] - this->axes[i].mid[ind[i]]);
+		return result;
+	}
+};
 
 #endif

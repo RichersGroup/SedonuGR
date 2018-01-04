@@ -47,7 +47,7 @@ private:
 	// order of zone array: r is increased fastest
 	Axis rAxis;
 	Axis thetaAxis;
-	MultiDArray<double,2> vr, vtheta, vphi;
+	ScalarMultiDArray<2> vr, vtheta, vphi;
 
 public:
 

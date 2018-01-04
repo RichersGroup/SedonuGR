@@ -49,9 +49,9 @@ private:
 
 public:
 
-	MultiDArray<double,2> data;
-	unsigned nuGridIndex, momGridIndex;
 	static const unsigned nelements = 6;
+	MultiDArray<nelements,2> data;
+	unsigned nuGridIndex, momGridIndex;
 
 	//--------------------------------------------------------------
 	// Initialization and Allocation
@@ -75,7 +75,7 @@ public:
 		momGridIndex = axes.size()-1;
 
 		// set up the data structure
-		data = MultiDArray<double,2>(axes);
+		data.set_axes(axes);
 		data.wipe();
 	}
 
@@ -105,13 +105,15 @@ public:
 		indices[momGridIndex] = 0;
 		unsigned base_ind = data.direct_index(indices);
 
+		Tuple<double,6> tmp;
 		// increment moments. Take advantage of fact that moments are stored in order.
-		data.direct_add(base_ind  , E     ); // E
-		data.direct_add(base_ind+1, E*D[2]); // E
-		data.direct_add(base_ind+2, E*D[2]*D[2]); // P^rr
-		data.direct_add(base_ind+3, E * (D[0]*D[0] + D[1]*D[1])*0.5); // average of P^tt and P^pp
-		data.direct_add(base_ind+4, E * D[2]*D[2]*D[2]); // W^rrr
-		data.direct_add(base_ind+5, E * D[2]*(D[0]*D[0] + D[1]*D[1])*0.5); // average of W^rtt and W^rpp
+		tmp[0] =  E;      // E
+		tmp[0] =  E*D[2]; // F
+		tmp[0] =  E*D[2]*D[2]; // P^rr
+		tmp[0] =  E * (D[0]*D[0] + D[1]*D[1])*0.5; // average of P^tt and P^pp
+		tmp[0] =  E * D[2]*D[2]*D[2]; // W^rrr
+		tmp[0] =  E * D[2]*(D[0]*D[0] + D[1]*D[1])*0.5; // average of W^rtt and W^rpp
+		data.add(indices,tmp);
 	}
 
 

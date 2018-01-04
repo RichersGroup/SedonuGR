@@ -43,9 +43,10 @@ private:
 	// values represent bin upper walls (the single locate_array.min value is the leftmost wall)
 	// underflow is combined into leftmost bin (right of the locate_array.min)
 	// overflow is combined into the rightmost bin (left of locate_array[size-1])
-	MultiDArray<double,ndims_spatial+2> data;
+	MultiDArray<4,ndims_spatial+1> data; // 0, r, rr, rrr
 
-	unsigned nuGridIndex, momGridIndex, nranks;
+	static const unsigned nranks = 4;
+	static const unsigned nuGridIndex = 3;
 
 public:
 
@@ -57,22 +58,9 @@ public:
 		for(int i=0; i<spatial_axes.size(); i++) axes.push_back(spatial_axes[i]);
 
 		axes.push_back(nu_grid);
-		nuGridIndex = axes.size()-1;
-
-		// moment axis
-		nranks = max_rank+1;
-		double minval = -0.5; // this is hacked...don't know a better way to include them all together
-		vector<double> top(nranks);
-		vector<double> mid(nranks);
-		for(int i=0; i<nranks; i++){
-			mid[i] = i;
-			top[i] = i + 0.5;
-		}
-		axes.push_back(Axis(minval, top, mid));
-		momGridIndex = axes.size()-1;
 
 		// set up the data structure
-		data = MultiDArray<double,ndims_spatial+2>(axes);
+		data.set_axes(axes);
 		data.wipe();
 	}
 
@@ -99,12 +87,12 @@ public:
 		indices[nuGridIndex] = nu_bin;
 
 		// increment moments
-		double tmp = E;
-		for (int rank = 0; rank<nranks; rank++) {
-			indices[momGridIndex] = rank;
-			data.add(indices, tmp);
-			tmp *= D[2];
+		Tuple<double,4> tmp;
+		tmp[0] = E;
+		for (unsigned rank = 1; rank<nranks; rank++) {
+			tmp[rank] = tmp[rank-1]*D[2];
 		}
+		data.add(indices, tmp);
 	}
 
 	void rescale(double r) {

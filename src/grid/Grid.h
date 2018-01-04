@@ -95,11 +95,11 @@ public:
 	std::vector<Zone> z;
 
 	Axis nu_grid_axis;
-	vector<MultiDArray<double,NDIMS+1> > abs_opac, scat_opac; // one for each species
+	vector<ScalarMultiDArray<NDIMS+1> > abs_opac, scat_opac; // one for each species
 
 	vector<SpectrumArray*> distribution;  // radiation energy density for each species in lab frame (erg/ccm. Integrated over bin frequency and direction)
 
-	MultiDArray<double,NDIMS> alpha;
+	ScalarMultiDArray<NDIMS> alpha;
 
 	// set everything up
 	virtual void init(Lua* lua, Transport* insim);

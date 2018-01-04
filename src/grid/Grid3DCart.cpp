@@ -55,7 +55,7 @@ void Grid3DCart::read_model_file(Lua* lua)
 {
 	// set up the data structures
 	vector<Axis> axes = vector<Axis>(xAxes);
-	v = MultiDArray<Tuple<double,3>,3>(axes);
+	v.set_axes(axes);
 
 	std::string model_type = lua->scalar<std::string>("model_type");
 	if(model_type == "THC") read_THC_file(lua);

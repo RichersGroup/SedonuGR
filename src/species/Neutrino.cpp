@@ -167,6 +167,7 @@ double Neutrino::annihilation_rate(
 		for(unsigned inubar=0; inubar<nnubar; inubar++){
 			double avg_ebar = nuAxis->mid[inubar]*pc::h; // erg
 			indexbar[nubar_dist->nuGridIndex] = inu;
+			unsigned indbar = nubar_dist->data.direct_index(indexbar);
 
 			double C3mec4_eebar = C3mec4/(avg_e*avg_ebar);
 			double sume_m_twomec2 = avg_e + avg_ebar - twomec2;
@@ -178,6 +179,7 @@ double Neutrino::annihilation_rate(
 					index[nu_dist->muGridIndex] = imu;
 					for(unsigned iphi=0; iphi<nphi; iphi++){
 						index[nu_dist->phiGridIndex] = iphi;
+						unsigned ind = nu_dist->data.direct_index(index);
 
 						// antineutrino direction loops
 						for(unsigned imubar=0; imubar<nmubar; imubar++){
@@ -187,8 +189,8 @@ double Neutrino::annihilation_rate(
 
 								double onemcost = onemcostheta[imu][iphi][imubar][iphibar];
 								if(eebar*onemcost > mec22){
-									double nudist_edens    =    nu_dist->data.get(index)    * inv_weight; // erg/ccm
-									double nubardist_edens = nubar_dist->data.get(indexbar) * inv_weight; // erg/ccm
+									double nudist_edens    =    nu_dist->data[ind]    * inv_weight; // erg/ccm
+									double nubardist_edens = nubar_dist->data[indbar] * inv_weight; // erg/ccm
 
 									Q += nudist_edens * nubardist_edens * sume_m_twomec2 * onemcost *
 											(C1pC2_3 * onemcost + C3mec4_eebar);

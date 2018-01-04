@@ -98,9 +98,9 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 	}
 	rAxis = Axis(minval, bintops, binmid);
 	vector<Axis> axes = {rAxis};
-	vr = MultiDArray<double,1>(axes);
-	alpha = MultiDArray<double,1>(axes);
-	X = MultiDArray<double,1>(axes);
+	vr.set_axes(axes);
+	alpha.set_axes(axes);
+	X.set_axes(axes);
 
 	// write grid properties
 	if(rank0)
@@ -197,9 +197,9 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 	}
 	rAxis = Axis(rmin, rtop, rmid);
 	vector<Axis> axes = {rAxis};
-	vr = MultiDArray<double,1>(axes);
-	alpha = MultiDArray<double,1>(axes);
-	X = MultiDArray<double,1>(axes);
+	vr.set_axes(axes);
+	alpha.set_axes(axes);
+	X.set_axes(axes);
 	for(unsigned z_ind=0; z_ind<vr.size(); z_ind++){
 		vr[z_ind] = tmp_vr[z_ind];
 		alpha[z_ind] = tmp_alpha[z_ind];

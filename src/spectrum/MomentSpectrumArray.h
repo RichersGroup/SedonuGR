@@ -39,28 +39,32 @@ class MomentSpectrumArray : public SpectrumArray {
 
 private:
 
+	// helper variables
+	static const unsigned index_range = 3; // index can be 0,1,2
+	static const unsigned nranks = 4;
+	static const unsigned nuGridIndex = ndims_spatial;
+	const unsigned n_independent_elements[4] = {1,3,6,10}; // for a symmetric tensor of rank 0,1,2,3
+	static const unsigned n_total_elements = 1+3+6+10;
+
 	// bin arrays
 	// values represent bin upper walls (the single locate_array.min value is the leftmost wall)
 	// underflow is combined into leftmost bin (right of the locate_array.min)
 	// overflow is combined into the rightmost bin (left of locate_array[size-1])
-	vector<MultiDArray<double,ndims_spatial+2>> data;
-
-	// array size
-	unsigned nuGridIndex, momGridIndex, nranks;
+	MultiDArray<n_total_elements, ndims_spatial+1> data;
 
 public:
 
 	//---------------------------------------------------
 	// increment tensor indices for any symmetric tensor
 	//---------------------------------------------------
-	static void increment_tensor_indices(int tensor_indices[], const int rank, const int length) {
-		PRINT_ASSERT(rank, >=, 0);
-		PRINT_ASSERT(length, >, 0);
+	static void increment_tensor_indices(unsigned tensor_indices[], const unsigned rank) {
+		PRINT_ASSERT(rank,>=,0);
+		PRINT_ASSERT(rank,<,nranks);
 		if (rank == 0)
 			return;
 		tensor_indices[0]++;
 		for (int which_index = 0; which_index < rank - 1; which_index++) {
-			if (tensor_indices[which_index] > length - 1) {
+			if (tensor_indices[which_index] > index_range - 1) {
 				tensor_indices[which_index + 1]++;
 				for (int which_index_2 = 0; which_index_2 < which_index + 1;
 						which_index_2++)
@@ -71,58 +75,28 @@ public:
 
 	//--------------------------------------------------------------
 	// Initialization and Allocation
-	//--------------------------------------------------------------
-	void init(const vector<Axis>& spatial_axes, const Axis& nu_grid, const int max_rank) {
-		vector<Axis> axes(spatial_axes.size()+2);
-		nuGridIndex = spatial_axes.size()+1;
-		momGridIndex = spatial_axes.size()+2;
+	//--------------------------------------------------------------		for(int rank=0; rank<nranks; rank++) data[rank].wipe();
+
+	void init(const vector<Axis>& spatial_axes, const Axis& nu_grid) {
+		PRINT_ASSERT(spatial_axes.size(),==,ndims_spatial);
+		vector<Axis> axes(ndims_spatial+2);
 
 		// spatial axes
-		for(int i=0; i<spatial_axes.size(); i++) axes[i] = spatial_axes[i];
+		for(int i=0; i<ndims_spatial; i++) axes[i] = spatial_axes[i];
 
 		// frequency axis
 		axes[nuGridIndex] = nu_grid;
 
-
-		// determine the number of independent elements
-		const int length = 3;
-		int n_independent_elements[max_rank + 1];
-		n_independent_elements[0] = 1;
-		for (int rank = 1; rank < max_rank + 1; rank++) {
-			n_independent_elements[rank] = 0;
-			int tensor_indices[rank];
-			for (int i = 0; i < rank; i++)
-				tensor_indices[i] = 0;
-			while (tensor_indices[rank - 1] < length) {
-				n_independent_elements[rank]++;
-				increment_tensor_indices(tensor_indices, rank, length);
-			}
-		}
-
 		// initialize the moments
-		nranks = max_rank+1;
-		data.resize(nranks);
-		for (int rank=0; rank<nranks; rank++) {
-			double minval = -0.5; // this whole thing is a hack. do not try to use to interpolate...
-			unsigned nmoments = n_independent_elements[rank];
-			vector<double> top(nmoments);
-			vector<double> mid(nmoments);
-			for(int i=0; i<nmoments; i++){
-				mid[i] = i;
-				top[i] = i + 0.5;
-			}
-			axes[momGridIndex] = Axis(minval, top, mid);
-
-			data[rank] = MultiDArray<double,NDIMS+2>(axes);
-			data[rank].wipe();
-		}
+		data.set_axes(axes);
+		wipe();
 	}
 
 	//--------------------------------------------------------------
 	// Functional procedure: Wipe
 	//--------------------------------------------------------------
-	void wipe() {
-		for(int rank=0; rank<nranks; rank++) data[rank].wipe();
+	void wipe(){
+		data.wipe();
 	}
 
 	//--------------------------------------------------------------
@@ -132,37 +106,33 @@ public:
 		PRINT_ASSERT(E, >=, 0);
 		PRINT_ASSERT(E, <, INFINITY);
 
-		unsigned data_indices[data[0].Ndims()];
+		unsigned data_indices[ndims_spatial+1];
 		for(int i=0; i<dir_ind.size(); i++) data_indices[i] = dir_ind[i];
 
-		int nu_bin = data[0].axes[nuGridIndex].bin(nu);
+		int nu_bin = data.axes[nuGridIndex].bin(nu);
 		nu_bin = max(nu_bin, 0);
-		nu_bin = min(nu_bin, data[0].axes[nuGridIndex].size()-1);
+		nu_bin = min(nu_bin, data.axes[nuGridIndex].size()-1);
 		data_indices[nuGridIndex] = nu_bin;
 
 		// increment moments
-		double tmp;
-		for (int rank = 0; rank<nranks; rank++) {
-			const int nelements = data[rank].axes[momGridIndex].size();
-			int tensor_indices[rank];
-			for (int r = 0; r<rank; r++) tensor_indices[r] = 0;
-
-			for (int i = 0; i<nelements; i++) {
-				data_indices[momGridIndex] = i;
-				tmp = E;
-				for (int r = 0; r<rank; r++) tmp *= D[tensor_indices[r]];
-				increment_tensor_indices(tensor_indices, rank, 3);
-
-				data[rank].add(data_indices, tmp);
+		Tuple<double, n_total_elements> tmp;
+		unsigned tuple_index=0;
+		for(unsigned rank = 0; rank<nranks; rank++) {
+			unsigned tensor_indices[rank];
+			for(unsigned r = 0; r<rank; r++) tensor_indices[r] = 0;
+			for(unsigned i=0; i<n_independent_elements[rank]; i++) {
+				tmp[tuple_index] = E;
+				for(int r = 0; r<rank; r++) tmp[tuple_index] *= D[tensor_indices[r]];
+				increment_tensor_indices(tensor_indices, rank);
+				tuple_index++;
 			}
 		}
+		data.add(data_indices, tmp);
 	}
 
 
-	void rescale(double r) {
-		for(unsigned rank=0; rank<data.size(); rank++)
-			for(unsigned i=0; i<data[i].size(); i++)
-				data[rank].y0[i] *= r;
+	void rescale(const double r) {
+		for(unsigned i=0; i<data.size(); i++) data[i] *= r;
 	}
 
 	//--------------------------------------------------------------
@@ -170,16 +140,14 @@ public:
 	//--------------------------------------------------------------
 	// only process 0 gets the reduced spectrum to print
 	void MPI_average() {
-		for(unsigned rank=0; rank<data.size(); rank++)
-			data[rank].MPI_combine();
+		data.MPI_combine();
 	}
 
 	//--------------------------------------------------------------
 	// Write data to specified location in an HDF5 file
 	//--------------------------------------------------------------
 	void write_hdf5_data(H5::H5File file,const string name) const {
-		for (int rank = 0; rank<data.size(); rank++)
-			data[rank].write_HDF5(file, name+"[r"+to_string(rank)+"]");
+		data.write_HDF5(file, name);
 	}
 
 	//--------------------------------------------------------------
@@ -200,25 +168,24 @@ public:
 		stringstream datasetname, indicesname;
 
 		// SET UP DATASPACE FOR EACH MOMENT
-		for (unsigned rank = 0; rank < data.size(); rank++) {
-			unsigned n_elements = data[rank].axes[momGridIndex].size();
+		for (unsigned rank=0; rank<nranks; rank++) {
 			// prep the filenames
 			indicesname.str("");
 			indicesname << "moment_" << rank << "_indices";
 
 			// set up the database with the indices
-			hsize_t indices_dimensions[] = { n_elements, rank };
+			hsize_t indices_dimensions[] = { n_independent_elements[rank], rank };
 			dataspace = H5::DataSpace(2, indices_dimensions);
 			dataset = file.createDataSet(indicesname.str(), H5::PredType::STD_I32LE,
 					dataspace);
-			int tensor_indices[rank];
+			unsigned tensor_indices[rank];
 			for (int r = 0; r < rank; r++)
 				tensor_indices[r] = 0;
-			int indices2D[n_elements][rank];
-			for (int i = 0; i < n_elements; i++) {
+			int indices2D[n_independent_elements[rank]][rank];
+			for (int i = 0; i < n_independent_elements[rank]; i++) {
 				for (int r = 0; r < rank; r++)
 					indices2D[i][r] = tensor_indices[r];
-				increment_tensor_indices(tensor_indices, rank, 3);
+				increment_tensor_indices(tensor_indices, rank);
 			}
 			dataset.write(indices2D, H5::PredType::STD_I32LE);
 			dataset.close();
