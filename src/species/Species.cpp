@@ -87,8 +87,6 @@ void Species::init(Lua* lua, Transport* simulation)
 	// allocate space for the grid eas containers //
 	//============================================//
 	if(rank0) cout << "#   Setting up the eas arrays...";
-	abs_opac.resize(sim->grid->rho.size());
-	scat_opac.resize(sim->grid->rho.size());
 	emis.resize(sim->grid->rho.size());
 	if(sim->use_scattering_kernels==1){
 		normalized_phi0.resize(sim->grid->rho.size());
@@ -106,9 +104,7 @@ void Species::init(Lua* lua, Transport* simulation)
 	// allocate space for each eas spectrum
 	int iorder = lua->scalar<int>("cdf_interpolation_order");
     //#pragma omp parallel for
-	for(unsigned i=0; i<abs_opac.size();  i++){
-		abs_opac[i].resize(nu_grid_axis->size());
-		scat_opac[i].resize(nu_grid_axis->size());
+	for(unsigned i=0; i<emis.size();  i++){
 		emis[i].resize(nu_grid_axis->size());
 		emis[i].interpolation_order = iorder;
 	}
@@ -126,8 +122,13 @@ void Species::get_opacity(const double com_nu, const int z_ind, double* a, doubl
 
 	// absorption and scattering opacities
 	unsigned nu_bin = nu_grid_axis->bin(com_nu);
-	*a = abs_opac[z_ind][nu_bin];
-	*s = scat_opac[z_ind][nu_bin];
+	unsigned dir_ind[NDIMS+1];
+	sim->grid->rho.indices(z_ind,dir_ind);
+	dir_ind[NDIMS] = nu_bin;
+	unsigned global_index = sim->grid->abs_opac[ID].direct_index(dir_ind);
+
+	*a = sim->grid->abs_opac[ID][global_index];
+	*s = sim->grid->scat_opac[ID][global_index];
 
 	PRINT_ASSERT(*a,>=,0);
 	PRINT_ASSERT(*s,>=,0);

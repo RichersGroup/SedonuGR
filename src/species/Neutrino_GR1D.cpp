@@ -108,41 +108,23 @@ void Neutrino_GR1D::set_eas_external(const double* easarray, const double GR1D_t
 	// first, get opacities everywhere
 	for(int z_ind=0; z_ind<emis.size(); z_ind++){
 		for(int inu=0; inu<ngroups; inu++){
+			unsigned dir_ind[NDIMS+1];
+			sim->grid->rho.indices(z_ind,dir_ind);
+			dir_ind[NDIMS] = inu;
+			unsigned global_index = sim->grid->abs_opac[ID].direct_index(dir_ind);
+
 			// indexed as eas(zone,species,group,e/a/s). The leftmost one varies fastest.
 			int aind = (z_ind+ghosts1) + ID*n_GR1D_zones + inu*nspecies*n_GR1D_zones + 1*ngroups*nspecies*n_GR1D_zones;
 			int sind = (z_ind+ghosts1) + ID*n_GR1D_zones + inu*nspecies*n_GR1D_zones + 2*ngroups*nspecies*n_GR1D_zones;
+			int eind = (z_ind+ghosts1) + ID*n_GR1D_zones + inu*nspecies*n_GR1D_zones + 0*ngroups*nspecies*n_GR1D_zones;
 
 			PRINT_ASSERT(easarray[aind],>=,0);
 			PRINT_ASSERT(easarray[sind],>=,0);
 
 			// set opacities
-			abs_opac[z_ind][inu] = easarray[aind] / nulib_opacity_gf;
-			scat_opac[z_ind][inu] = easarray[sind] / nulib_opacity_gf;
-
-			double tau = sqrt(abs_opac[z_ind][inu]*(abs_opac[z_ind][inu]+scat_opac[z_ind][inu])) * sim->grid->zone_min_length(z_ind);
-			if(tau>GR1D_tau_crit) extract_MC[extract_MC_index(z_ind,ID,nspecies,inu,ngroups)] = false;
-			else                  extract_MC[extract_MC_index(z_ind,ID,nspecies,inu,ngroups)] = true;
-		}
-	}
-
-	// next, only set emissivity in cells that will be used, and cells adjacent to these.
-	for(int z_ind=0; z_ind<emis.size(); z_ind++){
-		for(int inu=0; inu<ngroups; inu++){
-			int eind = (z_ind+ghosts1) + ID*n_GR1D_zones + inu*nspecies*n_GR1D_zones + 0*ngroups*nspecies*n_GR1D_zones;
-			PRINT_ASSERT(easarray[eind],>=,0);
-
-			// turn off emission in very optically deep cells
-			bool do_emit = extract_MC[extract_MC_index(z_ind,ID,nspecies,inu,ngroups)];
-			if(z_ind<emis.size()-1) do_emit = do_emit || extract_MC[extract_MC_index(z_ind+1,ID,nspecies,inu  ,ngroups)];
-			if(z_ind>            0) do_emit = do_emit || extract_MC[extract_MC_index(z_ind-1,ID,nspecies,inu  ,ngroups)];
-			if(inu  <    ngroups-1) do_emit = do_emit || extract_MC[extract_MC_index(z_ind  ,ID,nspecies,inu+1,ngroups)];
-			if(inu  >            0) do_emit = do_emit || extract_MC[extract_MC_index(z_ind  ,ID,nspecies,inu-1,ngroups)];
-			if(!GR1D_emit_outside_shock && sim->grid->zone_radius(z_ind)>rshock) do_emit = false;
-			
-			double tmp_emis = 0;
-			if(do_emit) tmp_emis = easarray[eind] / nulib_emissivity_gf;
-			//else cout << "z_ind=" << z_ind << " ie=" << inu << " turned off. tau=" << sqrt(abs_opac[z_ind][inu]*(abs_opac[z_ind][inu]+scat_opac[z_ind][inu])) * sim->grid->zone_min_length(z_ind) << endl;
-			emis[z_ind].set_value(inu,tmp_emis);
+			sim->grid->abs_opac[ID][global_index] = easarray[aind] / nulib_opacity_gf;
+			sim->grid->abs_opac[ID][global_index] = easarray[sind] / nulib_opacity_gf;
+			emis[z_ind].set_value(inu, easarray[eind] / nulib_emissivity_gf);
 		}
 		emis[z_ind].normalize();
 	}

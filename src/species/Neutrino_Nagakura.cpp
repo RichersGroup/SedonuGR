@@ -61,6 +61,8 @@ void Neutrino_Nagakura::myInit(Lua* lua)
 void Neutrino_Nagakura::set_eas(int zone_index)
 {
 	double ngroups = (double)emis[zone_index].size();
+	unsigned dir_ind[NDIMS];
+	sim->grid->rho.indices(zone_index,dir_ind);
 
 
 	//=======================//
@@ -95,6 +97,13 @@ void Neutrino_Nagakura::set_eas(int zone_index)
     getline(opac_file,line);
 
     for(int inu=0; inu<nu_grid_axis->size(); inu++){
+    	unsigned global_indices[NDIMS+1];
+    	for(unsigned i=0; i<NDIMS; i++){
+    		global_indices[i] = dir_ind[i];
+    	}
+    	global_indices[NDIMS] = inu;
+    	unsigned global_index = sim->grid->abs_opac[ID].direct_index(global_indices);
+
             int itmp;
             double e=0, a=0, s=0;
 
@@ -155,8 +164,8 @@ void Neutrino_Nagakura::set_eas(int zone_index)
                     assert(false);
             }
             emis[zone_index].set_value(inu,e);
-            abs_opac[zone_index][inu] = a;
-            scat_opac[zone_index][inu] = s;
+            sim->grid->abs_opac[ID][global_index] = a;
+            sim->grid->scat_opac[ID][global_index] = s;
     }
     opac_file.close();
 

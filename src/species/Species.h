@@ -43,8 +43,6 @@ public:
 
 	// the zone eas variables
 	std::vector< CDFArray      > emis;
-	std::vector< std::vector<double> > abs_opac;  // 1/cm
-	std::vector< std::vector<double> > scat_opac; // 1/cm
 
 	// inelastic scattering specific
 	std::vector< std::vector< CDFArray > > normalized_phi0; // for sampling scattering outgoing energy [z_ind,Ein,Eout]

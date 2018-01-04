@@ -64,6 +64,11 @@ void Neutrino_grey::set_eas(int z_ind)
 	PRINT_ASSERT(grey_abs_frac,<=,1.0);
 	for(unsigned j=0;j<nu_grid_axis->size();j++)
 	{
+		unsigned dir_ind[NDIMS+1];
+		sim->grid->rho.indices(z_ind,dir_ind);
+		dir_ind[NDIMS] = j;
+		unsigned global_index = sim->grid->abs_opac[ID].direct_index(dir_ind);
+
 		double nu  = sim->grid->nu_grid_axis.mid[j];        // (Hz)
 		double dnu3 = sim->grid->nu_grid_axis.delta3(j);         // (Hz)
 		double bb  = Transport::number_blackbody(sim->grid->T[z_ind],0*pc::MeV_to_ergs,nu)*dnu3/3.0;  // (#/s/cm^2/ster)
@@ -72,8 +77,8 @@ void Neutrino_grey::set_eas(int z_ind)
 		double s = grey_opac*sim->grid->rho[z_ind]*(1.0-grey_abs_frac);
 
 		emis[z_ind].set_value(j,a*bb); // (#/s/cm^3/ster)
-		abs_opac[z_ind][j] = a;        // (1/cm)
-		scat_opac[z_ind][j] = s;       // (1/cm)
+		sim->grid->abs_opac[ID][global_index] = a;        // (1/cm)
+		sim->grid->scat_opac[ID][global_index] = s;        // (1/cm)
 	}
 
 	emis[z_ind].normalize();
