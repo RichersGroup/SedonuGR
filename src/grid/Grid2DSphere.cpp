@@ -49,7 +49,6 @@ void Grid2DSphere::read_model_file(Lua* lua)
 	std::string model_type = lua->scalar<std::string>("model_type");
 	if(model_type == "Flash") read_flash_file(lua);
 	else if(model_type == "Nagakura") read_nagakura_file(lua);
-	else if(model_type == "custom") custom_model(lua);
 	else{
 		cout << "ERROR: model type unknown." << endl;
 		exit(8);
@@ -117,10 +116,13 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 
 	vector<Axis> axes;
 	axis_vector(axes);
+	rho.set_axes(axes);
+	T.set_axes(axes);
+	Ye.set_axes(axes);
+	H_vis.set_axes(axes);
 	vr.set_axes(axes);
 	vtheta.set_axes(axes);
 	vphi.set_axes(axes);
-
 
 	// write grid properties
 	if(rank0) cout << "#   nr=" << nr << "\trmin=" << rAxis.min << "\trmax=" << rAxis.top[nr-1] << endl;
@@ -136,7 +138,6 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 		if(rank0) cout << "Error: can't read the model file." << model_file << endl;
 		exit(4);
 	}
-	z.resize(ntheta*nr);
 	for(int itheta=ntheta-1; itheta>=0; itheta--) // Hiroki's theta is backwards
 		for(int ir=0; ir<nr; ir++){
 			unsigned z_ind = zone_index(ir,itheta);
@@ -253,7 +254,6 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	const int nr     = nxb*iprocs;
 	const int ntheta = nyb*jprocs;
 	const int n_zones = nr*ntheta;
-	z.resize(n_zones);
 
 
 	//=========================//
@@ -373,6 +373,10 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 
 	vector<Axis> axes;
 	axis_vector(axes);
+	rho.set_axes(axes);
+	T.set_axes(axes);
+	Ye.set_axes(axes);
+	H_vis.set_axes(axes);
 	vr.set_axes(axes);
 	vtheta.set_axes(axes);
 	vphi.set_axes(axes);
@@ -431,10 +435,10 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	if(rank0){
 		int width = 15;
 
-		vector<double> z_gamn(z.size());
-		vector<double> z_ncfn(z.size());
-		vector<double> z_nprs(z.size());
-		vector<double> z_eint(z.size());
+		vector<double> z_gamn(rho.size());
+		vector<double> z_ncfn(rho.size());
+		vector<double> z_nprs(rho.size());
+		vector<double> z_eint(rho.size());
 		for(unsigned proc=0; proc<dims[0]; proc++)
 			for(unsigned jb=0; jb<dims[2]; jb++)
 				for(unsigned ib=0; ib<dims[3]; ib++){
@@ -462,7 +466,7 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 		outf << setw(width) << "hvis(erg/g/s)";
 		outf << setw(width) << "eint(erg/g)";
 		outf << setw(width) << endl;
-		for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
+		for(unsigned z_ind=0; z_ind<rho.size(); z_ind++){
 			// zone position
 			double r[2];
 			zone_coordinates(z_ind,r,2);
@@ -486,10 +490,10 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 		//=================================//
 		// output composition in data file //
 		//=================================//
-		vector<double> z_atms(z.size());
-		vector<double> z_neut(z.size());
-		vector<double> z_prot(z.size());
-		vector<double> z_alfa(z.size());
+		vector<double> z_atms(rho.size());
+		vector<double> z_neut(rho.size());
+		vector<double> z_prot(rho.size());
+		vector<double> z_alfa(rho.size());
 		for(unsigned proc=0; proc<dims[0]; proc++)
 			for(unsigned jb=0; jb<dims[2]; jb++)
 				for(unsigned ib=0; ib<dims[3]; ib++){
@@ -519,7 +523,7 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 		outf << setw(width) << "data_Ye";
 		outf << setw(width) << "T(MeV)";
 		outf << endl;
-		for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
+		for(unsigned z_ind=0; z_ind<rho.size(); z_ind++){
 			// zone position
 			double r[2];
 			zone_coordinates(z_ind,r,2);
@@ -543,113 +547,6 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 			outf << endl;
 		}
 		outf.close();
-	}
-}
-
-//------------------------------------------------------------
-// Write a custom model here if you like
-//------------------------------------------------------------
-void Grid2DSphere::custom_model(Lua* lua)
-{
-	// verbocity
-	int MPI_myID;
-	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
-	const int rank0 = (MPI_myID == 0);
-	if(rank0) cout << "#   Reading 1D model file, mapping to 2D" << endl;
-
-	// open up the model file, complaining if it fails to open
-	std::string model_file = lua->scalar<std::string>("model_file");
-	ifstream infile;
-	infile.open(model_file.c_str());
-	if(infile.fail()){
-		cout << "Error: can't read the model file." << model_file << endl;
-		exit(4);
-	}
-
-	// geometry of model
-	infile >> grid_type;
-	if(grid_type != "2D_sphere"){
-		cout << "Error: grid_type parameter disagrees with the model file." << endl;
-	}
-	grid_type = "Grid2DSphere";
-
-	// number of zones
-	int r_zones,theta_zones;
-	theta_zones = 4;
-	infile >> r_zones;
-	PRINT_ASSERT(r_zones,>,0);
-	z.resize(r_zones*theta_zones);
-	vector<double> rtop(r_zones), rmid(r_zones);
-	vector<double> thetatop(theta_zones), thetamid(theta_zones);
-	double rmin, thetamin;
-
-	// read zone properties
-	infile >> rmin;
-	PRINT_ASSERT(rmin,>=,0);
-	thetamin = 0;
-	for(int j=0; j<theta_zones; j++){
-		thetatop[j] = thetamin + (double)(j+1) * pc::pi / (double)theta_zones;
-		double last = j==0 ? thetamin : thetatop[j-1];
-		thetamid[j] = 0.5 * (last + thetatop[j]);
-	}
-	thetaAxis = Axis(thetamin, thetatop, thetamid);
-
-	unsigned n_zones = r_zones*theta_zones;
-	vector<double> tmp_rho = vector<double>(n_zones,0);
-	vector<double> tmp_T = vector<double>(n_zones,0);
-	vector<double> tmp_Ye = vector<double>(n_zones,0);
-	vector<double> tmp_H_vis = vector<double>(n_zones,0);
-	vector<double> tmp_alpha = vector<double>(n_zones,0);
-	vector<double> tmp_vr = vector<double>(n_zones,0);
-	vector<double> tmp_vtheta = vector<double>(n_zones,0);
-	vector<double> tmp_vphi = vector<double>(n_zones,0);
-	for(int i=0; i<r_zones; i++)
-	{
-		infile >> rtop[i];
-		double last = i==0 ? rmin : rtop[i-1];
-		rmid[i] = 0.5 * (last + rtop[i]);
-		PRINT_ASSERT(rtop[i],>,(i==0 ? rmin : rtop[i-1]));
-
-		int base_ind = zone_index(i,0);
-		infile >> tmp_rho[base_ind];
-		infile >> tmp_T[base_ind];
-		infile >> tmp_Ye[base_ind];
-		tmp_H_vis[base_ind] = 0;
-		tmp_vr[base_ind] = 0;
-		tmp_vtheta[base_ind] = 0;
-		tmp_vphi[base_ind] = 0;
-		PRINT_ASSERT(rho[base_ind],>=,0);
-		PRINT_ASSERT(T[base_ind],>=,0);
-		PRINT_ASSERT(Ye[base_ind],>=,0);
-		PRINT_ASSERT(Ye[base_ind],<=,1.0);
-
-		for(int j=0; j<theta_zones; j++){
-			int z_ind = zone_index(i,j);
-			z[z_ind] = z[base_ind];
-		}
-	}
-	infile.close();
-	rAxis = Axis(rmin, rtop, rmid);
-
-	vector<Axis> axes = {rAxis,thetaAxis};
-	vr.set_axes(axes);
-	vtheta.set_axes(axes);
-	vphi.set_axes(axes);
-	alpha.set_axes(axes);
-	rho.set_axes(axes);
-	T.set_axes(axes);
-	Ye.set_axes(axes);
-	H_vis.set_axes(axes);
-
-	for(unsigned z_ind=0; z_ind<vr.size(); z_ind++){
-		vr[z_ind] = tmp_vr[z_ind];
-		vtheta[z_ind] = tmp_vtheta[z_ind];
-		vphi[z_ind] = tmp_vphi[z_ind];
-		alpha[z_ind] = tmp_alpha[z_ind];
-		rho[z_ind] = tmp_rho[z_ind];
-		T[z_ind] = tmp_T[z_ind];
-		Ye[z_ind] = tmp_Ye[z_ind];
-		H_vis[z_ind] = tmp_H_vis[z_ind];
 	}
 }
 
@@ -680,7 +577,7 @@ int Grid2DSphere::zone_index(const double x[3]) const
 	const int j = thetaAxis.bin(theta);
 	const int z_ind = zone_index(i,j);
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	return z_ind;
 }
 
@@ -694,7 +591,7 @@ int Grid2DSphere::zone_index(const int i, const int j) const
 	PRINT_ASSERT(i,<,(int)rAxis.size());
 	PRINT_ASSERT(j,<,(int)thetaAxis.size());
 	const int z_ind = i*thetaAxis.size() + j;
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	return z_ind;
 }
 
@@ -706,7 +603,7 @@ double Grid2DSphere::zone_lab_3volume(const int z_ind) const
 {
 	PRINT_ASSERT(do_GR,==,false); // need to include sqrt(detg3)
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	vector<unsigned> dir_ind(2);
 	zone_directional_indices(z_ind,dir_ind);
 	const unsigned i = dir_ind[0];
@@ -789,7 +686,7 @@ void Grid2DSphere::zone_coordinates(const int z_ind, double r[2], const int rsiz
 void Grid2DSphere::zone_directional_indices(const int z_ind, vector<unsigned>& dir_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	PRINT_ASSERT(dir_ind.size(),==,2);
 	dir_ind[0] = z_ind / thetaAxis.size(); // r index
 	dir_ind[1] = z_ind % thetaAxis.size(); // theta index
@@ -806,7 +703,7 @@ void Grid2DSphere::zone_directional_indices(const int z_ind, vector<unsigned>& d
 void Grid2DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3]) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 
 	double rand[3];
 	rand[0] = rangen->uniform();
@@ -915,7 +812,7 @@ void Grid2DSphere::symmetry_boundaries(EinsteinHelper *lh, const double toleranc
 
 double Grid2DSphere::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 
 	// radius and theta indices
 	vector<unsigned> dir_ind(2);

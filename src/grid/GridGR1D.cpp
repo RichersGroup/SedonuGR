@@ -60,7 +60,7 @@ void GridGR1D::symmetry_boundaries(EinsteinHelper *eh) const{
 }
 
 void GridGR1D::set_fluid(const double* rho_in, const double* T_in, const double* Ye_in, const double* vr_in){
-	for(int z_ind=0; z_ind<z.size(); z_ind++)
+	for(int z_ind=0; z_ind<rho.size(); z_ind++)
 	{
 		rho[z_ind]  = rho_in[z_ind+ghosts1];
 		T[z_ind]    =   T_in[z_ind+ghosts1];
@@ -78,7 +78,6 @@ void GridGR1D::set_fluid(const double* rho_in, const double* T_in, const double*
 
 void GridGR1D::initialize_grid(const double* rarray, const int n_zones, const int nghost){
 	ghosts1 = nghost;
-	z.resize(n_zones);
 	vector<double> rtop(n_zones), rmid(n_zones);
 	double rmin=0;
 	for(int z_ind=0; z_ind<n_zones; z_ind++){
@@ -89,6 +88,13 @@ void GridGR1D::initialize_grid(const double* rarray, const int n_zones, const in
 	}
 	rAxis = Axis(rmin, rtop, rmid);
 
-	cout << "#   Sedonu grid has "<< z.size() << " zones." << endl;
+	vector<Axis> axes;
+	axis_vector(axes);
+	rho.set_axes(axes);
+	T.set_axes(axes);
+	Ye.set_axes(axes);
+	H_vis.set_axes(axes);
+
+	cout << "#   Sedonu grid has "<< rho.size() << " zones." << endl;
 	cout << "#   Sedonu outer boundary is at "<< rAxis.top[n_zones-1] << " cm" << endl;
 }

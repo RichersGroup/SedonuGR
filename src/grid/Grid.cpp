@@ -66,7 +66,7 @@ void Grid::init(Lua* lua, Transport* insim)
 	do_annihilation = lua->scalar<int>("do_annihilation");
 
 	// complain if the grid is obviously not right
-	if(z.size()==0){
+	if(rho.size()==0){
 		cout << "Error: there are no grid zones." << endl;
 		exit(5);
 	}
@@ -80,7 +80,7 @@ void Grid::init(Lua* lua, Transport* insim)
 	double Yebar           = 0.0;
 	int do_visc = lua->scalar<int>("do_visc");
     #pragma omp parallel for reduction(+:total_rest_mass,total_KE,total_TE,total_hvis,Tbar,Yebar)
-	for(unsigned z_ind=0;z_ind<z.size();z_ind++){
+	for(unsigned z_ind=0;z_ind<rho.size();z_ind++){
 		// calculate cell rest mass
 		double rest_mass   = zone_rest_mass(z_ind);
 
@@ -239,11 +239,6 @@ void Grid::init(Lua* lua, Transport* insim)
 
     }
 
-    for(int z_ind=0; z_ind<z.size(); z_ind++){
-    	z[z_ind].Edens_com = vector<double>(sim->species_list.size());
-    	z[z_ind].Ndens_com = vector<double>(sim->species_list.size());
-    }
-
     if(rank0) cout << "finished." << endl;
 
 	// set up the data structures
@@ -252,6 +247,10 @@ void Grid::init(Lua* lua, Transport* insim)
 	vector<Axis> axes;
 	axis_vector(axes);
 	if(do_annihilation) Q_annihil.set_axes(axes);
+	fourforce_abs.set_axes(axes);
+	fourforce_emit.set_axes(axes);
+	l_abs.set_axes(axes);
+	l_emit.set_axes(axes);
 
 	axes.push_back(nu_grid_axis);
 	for(int s=0; s<sim->species_list.size(); s++){
@@ -262,7 +261,7 @@ void Grid::init(Lua* lua, Transport* insim)
 
 void Grid::write_zones(const int iw) const
 {
-	PRINT_ASSERT(z.size(),>,0);
+	PRINT_ASSERT(rho.size(),>,0);
 
 	// output all zone data in hdf5 format
 	PRINT_ASSERT(dimensionality(),>,0);
@@ -298,7 +297,7 @@ void Grid::write_hdf5_data(H5::H5File file) const{
 	// useful quantities
 	H5::DataSet dataset;
 	H5::DataSpace dataspace;
-	vector<float> tmp(z.size(),0.0);
+	vector<float> tmp(rho.size(),0.0);
 
 	// SET UP SCALAR DATASPACE
 	hsize_t zdims[dimensionality()];
@@ -307,7 +306,7 @@ void Grid::write_hdf5_data(H5::H5File file) const{
 
 	// write comoving volume, assumes last index varies fastest.
 	dataset = file.createDataSet("comoving_volume(ccm)",H5::PredType::IEEE_F32LE,dataspace);
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = zone_com_3volume(z_ind);
+	for(unsigned z_ind=0; z_ind<rho.size(); z_ind++) tmp[z_ind] = zone_com_3volume(z_ind);
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 
@@ -316,34 +315,10 @@ void Grid::write_hdf5_data(H5::H5File file) const{
 	T.write_HDF5(file,"T_gas(MeV,com)");
 	Ye.write_HDF5(file,"Ye");
 	H_vis.write_HDF5(file,"H_vis(erg|s|g,com)");
-
-	// write mue
-	dataset = file.createDataSet("mue(MeV,com)",H5::PredType::IEEE_F32LE,dataspace);
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = nulib_eos_mue(rho[z_ind], T[z_ind], Ye[z_ind]) * pc::ergs_to_MeV;
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-	dataset.close();
-
-	// write H_abs
-	dataset = file.createDataSet("H_abs(erg|s|g,com)",H5::PredType::IEEE_F32LE,dataspace);
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].e_abs  / rho[z_ind];
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-	dataset.close();
-
-	// write C_emit
-	dataset = file.createDataSet("C_emit(erg|s|g,com)",H5::PredType::IEEE_F32LE,dataspace);
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].e_emit / rho[z_ind];
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-	dataset.close();
-
-	// write dYe_dt_abs
-	dataset = file.createDataSet("dYe_dt_abs(1|s,lab)",H5::PredType::IEEE_F32LE,dataspace);
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
-		double n_baryons_per_ccm = rho[z_ind] / Transport::mean_mass(Ye[z_ind]);
-		tmp[z_ind] = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / zone_lorentz_factor(z_ind);
-	}
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-	dataset.close();
-	dataspace.close();
+	fourforce_abs.write_HDF5(file,"four-force[abs](erg|s|g,tetrad)");
+	fourforce_emit.write_HDF5(file,"four-force[emit](erg|s|g,tetrad)");
+	l_abs.write_HDF5(file,"l_abs(1|s|ccm,lab)");
+	l_emit.write_HDF5(file,"l_emit(1|s|ccm,lab)");
 
 	// write annihilation_rate
 	if(do_annihilation) Q_annihil.write_HDF5(file,"annihilation_rate(erg|ccm|s,lab)");
@@ -359,7 +334,7 @@ void Grid::write_hdf5_data(H5::H5File file) const{
 double Grid::total_rest_mass() const{
 	double mass = 0;
 	#pragma omp parallel for reduction(+:mass)
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) mass += zone_rest_mass(z_ind);
+	for(unsigned z_ind=0; z_ind<rho.size(); z_ind++) mass += zone_rest_mass(z_ind);
 	return mass;
 }
 

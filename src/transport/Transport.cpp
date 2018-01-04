@@ -255,7 +255,7 @@ void Transport::init(Lua* lua)
 	my_zone_end.resize(MPI_nprocs);
 	for(int proc=0; proc<MPI_nprocs; proc++){
 		// how much work does this processor do?
-		int my_job = (int)(grid->z.size()/(1.0*MPI_nprocs));
+		int my_job = (int)(grid->rho.size()/(1.0*MPI_nprocs));
 		if(my_job < 1) my_job = 1;
 
 		// where does this processor start and stop its work? (only the end needs to be stored)
@@ -263,10 +263,10 @@ void Transport::init(Lua* lua)
 		my_zone_end[proc] = my_zone_start + my_job;
 
 		// make sure last guy finishes it all
-		if(proc == MPI_nprocs-1) my_zone_end[proc] = grid->z.size();
+		if(proc == MPI_nprocs-1) my_zone_end[proc] = grid->rho.size();
 
 		// make sure nobody goes overboard
-		if(my_zone_end[proc] >= grid->z.size()) my_zone_end[proc] = grid->z.size();
+		if(my_zone_end[proc] >= grid->rho.size()) my_zone_end[proc] = grid->rho.size();
 	}
 
 	// setup and seed random number generator(s)
@@ -400,18 +400,14 @@ void Transport::reset_radiation(){
 
 	#pragma omp parallel for schedule(guided)
 	// prepare zone quantities for another round of transport
-	for(unsigned z_ind=0;z_ind<grid->z.size();z_ind++)
+	for(unsigned z_ind=0;z_ind<grid->rho.size();z_ind++)
 	{
-		Zone* z = &(grid->z[z_ind]);
-		z->nue_abs  = 0;
-		z->anue_abs = 0;
-		z->e_abs    = 0;
-		z->l_emit   = 0;
-		z->e_emit   = 0;
+		grid->l_abs[z_ind] = 0;
+		grid->l_emit[z_ind] = 0;
+		grid->fourforce_abs[z_ind] = 0;
+		grid->fourforce_emit[z_ind] = 0;
 
 		for(unsigned s=0; s<species_list.size(); s++){
-			z->Edens_com[s] = 0;
-			z->Ndens_com[s] = 0;
 			species_list[s]->set_eas(z_ind);
 		}
 	}
@@ -536,29 +532,25 @@ void Transport::normalize_radiative_quantities(){
 	double multiplier = (double)n_subcycles;
 	double inv_multiplier = 1.0/multiplier;
     #pragma omp parallel for reduction(+:net_visc_heating,net_neut_heating)
-	for(unsigned z_ind=0;z_ind<grid->z.size();z_ind++)
+	for(unsigned z_ind=0;z_ind<grid->rho.size();z_ind++)
 	{
-		Zone *z = &(grid->z[z_ind]);
 		double inv_mult_four_vol = 1.0/(multiplier * grid->zone_4volume(z_ind)); // Lorentz invariant - same in lab and comoving frames. Assume lab_dt=1.0
 		PRINT_ASSERT(inv_mult_four_vol,>=,0);
 
-		z->e_abs    *= inv_mult_four_vol;       // erg      --> erg/ccm/s
-		z->e_emit   *= inv_mult_four_vol;       // erg      --> erg/ccm/s
-		z->nue_abs  *= inv_mult_four_vol;       // num      --> num/ccm/s
-		z->anue_abs *= inv_mult_four_vol;       // num      --> num/ccm/s
-		z->l_emit   *= inv_mult_four_vol;       // num      --> num/ccm/s
+		grid->fourforce_abs[z_ind] *= inv_mult_four_vol;       // erg      --> erg/ccm/s
+		grid->fourforce_emit[z_ind] *= inv_mult_four_vol;       // erg      --> erg/ccm/s
+		grid->l_abs[z_ind] *= inv_mult_four_vol; // num      --> num/ccm/s
+		grid->l_emit[z_ind] *= inv_mult_four_vol;// num      --> num/ccm/s
 
 		// represents *all* species if nux
 		for(unsigned s=0; s<species_list.size(); s++){
 		  grid->distribution[s]->rescale(inv_mult_four_vol * pc::inv_c);  // erg*dist --> erg/ccm
-		  z->Edens_com[s] *= inv_mult_four_vol *pc::inv_c;             // erg*dist --> erg/ccm
-		  z->Ndens_com[s] *= inv_mult_four_vol *pc::inv_c;             // erg/Hz*dist --> erg/Hz/ccm
 		}
 
 		// tally heat absorbed from viscosity and neutrinos
 		if(do_visc){
 			net_visc_heating += zone_comoving_visc_heat_rate(z_ind);      // erg/s
-			net_neut_heating += z->e_abs * grid->zone_4volume(z_ind);
+			net_neut_heating += grid->fourforce_abs[z_ind][3] * grid->zone_4volume(z_ind);
 		}
 	}
 
@@ -716,35 +708,11 @@ void Transport::reduce_radiation()
 	  send.resize(size);
 	  receive.resize(size);
 	  
-	  for(unsigned s=0; s<species_list.size(); s++){
-		// reduce Edens_com
-	    for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].Edens_com[s];
-	    hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
-
-	    // reduce Ndens_com
-	    for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].Ndens_com[s];
-	    hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
-	  }
-	  
-	  // reduce e_abs
-	  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_abs;
-	  hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
-	  
-	  // reduce nue_abs
-	  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].nue_abs;
-	  hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
-	  
-	  // reduce anue_abs
-	  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].anue_abs;
-	  hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
-	  
-	  // reduce e_emit
-	  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].e_emit;
-	  hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
-
-	  // reduce l_emit
-	  for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].l_emit;
-	  hierarchical_reduce(MPI_myID, proc, &send.front(), &receive.front(), size);
+	  // reduce fourforce
+	  grid->fourforce_abs.MPI_combine();
+	  grid->fourforce_emit.MPI_combine();
+	  grid->l_abs.MPI_combine();
+	  grid->l_emit.MPI_combine();
 
 	  // format for single reduce
 	  //my_begin = ( proc==0 ? 0 : my_zone_end[proc-1] );
@@ -815,8 +783,6 @@ void Transport::update_zone_quantities(){
     #pragma omp parallel for schedule(guided)
 	for (int i=start; i<end; i++) if( (grid->rho[i] >= rho_min) && (grid->rho[i] <= rho_max) )
 	{
-		Zone *z = &(grid->z[i]);
-
 		// adjust the temperature based on the heat capacity (erg/K)
 		if(equilibrium_T){
 			// PRINT_ASSERT(z.heat_cap,>,0);
@@ -829,7 +795,7 @@ void Transport::update_zone_quantities(){
 		if(equilibrium_Ye){
 			double Nbary = grid->zone_rest_mass(i) / mean_mass(i);
 			PRINT_ASSERT(Nbary,>,0);
-			grid->Ye[i] += (z->nue_abs-z->anue_abs - z->l_emit) / Nbary;
+			grid->Ye[i] += (grid->l_abs[i] - grid->l_emit[i]) / Nbary;
 			PRINT_ASSERT(grid->Ye[i],>=,Ye_min);
 			PRINT_ASSERT(grid->Ye[i],<=,Ye_max);
 		}

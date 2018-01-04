@@ -101,13 +101,16 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 	vr.set_axes(axes);
 	alpha.set_axes(axes);
 	X.set_axes(axes);
+	rho.set_axes(axes);
+	T.set_axes(axes);
+	Ye.set_axes(axes);
+	H_vis.set_axes(axes);
 
 	// write grid properties
 	if(rank0)
 	  cout << "#   nr=" << rAxis.size() << "\trmin=" << rAxis.min << "\trmax=" << rAxis.top[rAxis.size()-1] << endl;
 
 	// read the fluid properties
-	z.resize(rAxis.size());
 	for(int z_ind=0; z_ind<rAxis.size(); z_ind++){
 		double trash;
 
@@ -162,7 +165,6 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 	int n_zones;
 	infile >> n_zones;
 	PRINT_ASSERT(n_zones,>,0);
-	z.resize(n_zones);
 	vector<double> rtop(n_zones), rmid(n_zones);
 	double rmin;
 
@@ -232,7 +234,7 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 //------------------------------------------------------------
 int Grid1DSphere::zone_index(const double x[3]) const
 {
-	PRINT_ASSERT(z.size(),>,0);
+	PRINT_ASSERT(rho.size(),>,0);
 	double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 	PRINT_ASSERT(r,>=,0);
 
@@ -243,7 +245,7 @@ int Grid1DSphere::zone_index(const double x[3]) const
 	// find in zone array using stl algorithm upper_bound and subtracting iterators
 	int z_ind = rAxis.bin(r);
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	return z_ind;
 }
 
@@ -254,7 +256,7 @@ int Grid1DSphere::zone_index(const double x[3]) const
 double  Grid1DSphere::zone_lab_3volume(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	double r0 = (z_ind==0 ? rAxis.min : rAxis.top[z_ind-1]);
 	double vol = 4.0*pc::pi/3.0*( pow(rAxis.top[z_ind],3) - pow(r0,3) );
 	if(do_GR) vol *= X[z_ind];
@@ -268,7 +270,7 @@ double  Grid1DSphere::zone_lab_3volume(const int z_ind) const
 double  Grid1DSphere::zone_min_length(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	double r0 = (z_ind==0 ? rAxis.min : rAxis.top[z_ind-1]);
 	double min_len = rAxis.top[z_ind] - r0;
 	PRINT_ASSERT(min_len,>=,0);
@@ -281,7 +283,7 @@ double  Grid1DSphere::zone_min_length(const int z_ind) const
 // ------------------------------------------------------------
 void Grid1DSphere::zone_coordinates(const int z_ind, double r[1], const int rsize) const{
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	PRINT_ASSERT(rsize,==,(int)dimensionality());
 	r[0] = 0.5*(rAxis.top[z_ind]+rAxis.bottom(z_ind));
 	PRINT_ASSERT(r[0],>,0);
@@ -295,7 +297,7 @@ void Grid1DSphere::zone_coordinates(const int z_ind, double r[1], const int rsiz
 void Grid1DSphere::zone_directional_indices(const int z_ind, vector<unsigned>& dir_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	PRINT_ASSERT(dir_ind.size(),==,(int)dimensionality());
 	dir_ind[0] = z_ind;
 }
@@ -307,7 +309,7 @@ void Grid1DSphere::zone_directional_indices(const int z_ind, vector<unsigned>& d
 void Grid1DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3]) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 
 	double rand[3];
 	rand[0] = rangen->uniform();
@@ -344,7 +346,7 @@ void Grid1DSphere::interpolate_fluid_velocity(const double x[3], double v[3], in
 {
 	if(z_ind < 0) z_ind = zone_index(x);
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 
 	// radius in zone
 	double r = sqrt(Metric::dot_Minkowski<3>(x,x));
@@ -413,7 +415,7 @@ double Grid1DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const
 
 double Grid1DSphere::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	return rAxis.top[z_ind];
 }
 

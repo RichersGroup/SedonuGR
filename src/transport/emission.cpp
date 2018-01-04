@@ -41,7 +41,7 @@ void Transport::emit_particles()
 {
 	// complain if we're out of room for particles
 	assert(n_emit_core_per_bin>0 || n_emit_zones_per_bin>=0);
-	int n_emit = (n_emit_core_per_bin + n_emit_zones_per_bin*grid->z.size()) * species_list.size()*grid->nu_grid_axis.size();
+	int n_emit = (n_emit_core_per_bin + n_emit_zones_per_bin*grid->rho.size()) * species_list.size()*grid->nu_grid_axis.size();
 	if (total_particles() + n_emit > max_particles){
 		if(rank0){
 			cout << "Total particles: " << total_particles() << endl;
@@ -92,7 +92,7 @@ void Transport::emit_zones_by_bin(){
 	double weight = 1./((double)n_emit_zones_per_bin);
 
 	#pragma omp parallel for reduction(+:n_attempted)
-	for (unsigned z_ind=MPI_myID; z_ind<grid->z.size(); z_ind+=MPI_nprocs) if(grid->zone_radius(z_ind) >= r_core){
+	for (unsigned z_ind=MPI_myID; z_ind<grid->rho.size(); z_ind+=MPI_nprocs) if(grid->zone_radius(z_ind) >= r_core){
 
 		for(unsigned s=0; s<species_list.size(); s++){
 			n_attempted += n_emit_zones_per_bin * grid->nu_grid_axis.size();
@@ -120,7 +120,7 @@ void Transport::emit_zones_by_bin(){
 void Transport::create_thermal_particle(const int z_ind,const double weight, const unsigned int s, const unsigned int g)
 {
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)grid->z.size());
+	PRINT_ASSERT(z_ind,<,(int)grid->rho.size());
 
 	Particle p;
 	p.fate = moving;
@@ -173,9 +173,11 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 		#pragma omp atomic
 		N_net_lab[eh.p.s] += eh.p.N;
 		#pragma omp atomic
-		grid->z[z_ind].e_emit += eh.p.N * pc::h*eh.nu();
-		#pragma omp atomic
-		grid->z[z_ind].l_emit += eh.p.N * species_list[eh.p.s]->lepton_number * pc::c;
+		grid->l_emit[z_ind] += eh.p.N * species_list[eh.p.s]->lepton_number * pc::c;
+		for(unsigned i=0; i<4; i++){
+			#pragma omp atomic
+			grid->fourforce_emit[z_ind][i] -= kup_tet[i] * pc::c*pc::h/(2.*pc::pi) * kup_tet[i];
+		}
 	}
 }
 

@@ -54,7 +54,6 @@ void Neutrino_NuLib::myInit(Lua* lua)
 //-----------------------------------------------------------------
 void Neutrino_NuLib::set_eas(int z_ind)
 {
-	Zone* z = &(sim->grid->z[z_ind]);
 	double ngroups = (double)emis[z_ind].size();
 
 	nulib_get_eas_arrays(sim->grid->rho[z_ind], sim->grid->T[z_ind], sim->grid->Ye[z_ind], ID,

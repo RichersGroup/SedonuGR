@@ -145,17 +145,12 @@ void Transport::boundary_conditions(EinsteinHelper *eh, int *z_ind) const{
 
 void Transport::tally_radiation(const EinsteinHelper *eh, const int this_exp_decay, const int z_ind) const{
 	PRINT_ASSERT(z_ind, >=, 0);
-	PRINT_ASSERT(z_ind, <, (int)grid->z.size());
+	PRINT_ASSERT(z_ind, <, grid->rho.size());
 	PRINT_ASSERT(eh->ds_com, >=, 0);
 	PRINT_ASSERT(eh->p.N, >, 0);
 	PRINT_ASSERT(eh->nu(), >, 0);
 	double to_add = 0;
 	double decay_factor = 1.0 - exp(-eh->absopac * eh->ds_com); //same in both frames
-
-
-	// set pointer to the current zone
-	Zone* zone;
-	zone = &(grid->z[z_ind]);
 
 	// tally in contribution to zone's distribution function (lab frame)
 	if(this_exp_decay && eh->absopac>0) to_add = eh->p.N / eh->absopac * decay_factor;
@@ -166,10 +161,6 @@ void Transport::tally_radiation(const EinsteinHelper *eh, const int this_exp_dec
 	double kup_tet[4];
 	eh->coord_to_tetrad(eh->p.kup, kup_tet);
 	grid->distribution[eh->p.s]->rotate_and_count(kup_tet, eh->p.xup, eh->dir_ind, eh->nu(), to_add);
-	#pragma omp atomic
-	zone->Edens_com[eh->p.s] += to_add;
-	#pragma omp atomic
-	zone->Ndens_com[eh->p.s] += to_add / (eh->nu()*pc::h);
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
 	if(this_exp_decay) to_add = eh->p.N * decay_factor;
@@ -177,21 +168,19 @@ void Transport::tally_radiation(const EinsteinHelper *eh, const int this_exp_dec
 	to_add *=  eh->nu()*pc::h;
 	PRINT_ASSERT(to_add,>=,0);
 
-	#pragma omp atomic
-	zone->e_abs += to_add;
+	Tuple<double,4> tmp_fourforce;
+	for(unsigned i=0; i<4; i++){
+		#pragma omp atomic
+		grid->fourforce_abs[z_ind][i] += kup_tet[i] * pc::h*pc::c/(2.*pc::pi) * to_add;
+	}
 
 	// store absorbed lepton number (same in both frames, except for the
 	// factor of this_d which is divided out later
 	if(species_list[eh->p.s]->lepton_number != 0){
 		to_add /= (eh->nu()*pc::h);
-		if(species_list[eh->p.s]->lepton_number == 1){
-            #pragma omp atomic
-			zone->nue_abs += to_add;
-		}
-		else if(species_list[eh->p.s]->lepton_number == -1){
-            #pragma omp atomic
-			zone->anue_abs += to_add;
-		}
+		to_add *= species_list[eh->p.s]->lepton_number;
+		#pragma omp atomic
+		grid->l_abs[z_ind] += to_add;
 	}
 }
 
@@ -251,7 +240,7 @@ void Transport::propagate(Particle* p)
 	{
 		int z_ind = grid->zone_index(eh.p.xup);
 		PRINT_ASSERT(z_ind, >=, 0);
-		PRINT_ASSERT(z_ind, <, (int)grid->z.size());
+		PRINT_ASSERT(z_ind, <, (int)grid->rho.size());
 
 		// set up the LorentzHelper
 		grid->zone_directional_indices(z_ind,eh.dir_ind);

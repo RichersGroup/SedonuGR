@@ -46,7 +46,6 @@
 #ifndef _GRID_GENERAL_H
 #define _GRID_GENERAL_H 1
 
-#include "Zone.h"
 #include "Lua.h"
 #include "Particle.h"
 #include "ThreadRNG.h"
@@ -91,9 +90,6 @@ public:
 
 	std::string grid_type;
 
-	// vector of zones
-	std::vector<Zone> z;
-
 	Axis nu_grid_axis;
 	vector<ScalarMultiDArray<NDIMS+1> > abs_opac, scat_opac; // one for each species
 
@@ -106,7 +102,8 @@ public:
 	ScalarMultiDArray<NDIMS> Ye;        // electron fraction
 	ScalarMultiDArray<NDIMS> H_vis;     // specific heating rate (erg/s/g)
 
-
+	MultiDArray<4,NDIMS> fourforce_abs, fourforce_emit;
+	ScalarMultiDArray<NDIMS> l_abs, l_emit; // lepton number emission rate (cm^-3 s^-1) (comoving frame)
 
 	// set everything up
 	virtual void init(Lua* lua, Transport* insim);

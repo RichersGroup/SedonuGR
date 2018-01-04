@@ -52,7 +52,7 @@ void Transport::solve_eq_zone_values()
 	int end = my_zone_end[MPI_myID];
 	PRINT_ASSERT(end,>=,start);
 	PRINT_ASSERT(start,>=,0);
-	PRINT_ASSERT(end,<=,(int)grid->z.size());
+	PRINT_ASSERT(end,<=,(int)grid->rho.size());
 
 	// solve radiative equilibrium temperature and Ye (but only in the zones I'm responsible for)
 	// don't solve if out of density bounds
@@ -159,13 +159,13 @@ double temp_eq_function(double T, void *params)
 	Transport* sim = p->sim;
 
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)sim->grid->z.size());
+	PRINT_ASSERT(z_ind,<,(int)sim->grid->rho.size());
 	PRINT_ASSERT(T,>=,0);
-	PRINT_ASSERT(sim->grid->z[z_ind].e_abs,>=,0);
 
 	// total energy absorbed in zone
-	double E_absorbed = sim->grid->z[z_ind].e_abs; // + sim->grid->z[z_ind].Q_annihil;
+	double E_absorbed = sim->grid->fourforce_abs[z_ind][3]; // + sim->grid->z[z_ind].Q_annihil;
 	if(sim->do_visc) E_absorbed += sim->zone_comoving_visc_heat_rate(z_ind) / sim->grid->zone_4volume(z_ind);
+	PRINT_ASSERT(E_absorbed,>=,0);
 
 	// total energy emitted (to be calculated based on emissivities)
 	double E_emitted = 0.;
@@ -209,12 +209,12 @@ double Ye_eq_function(double Ye, void *params)
 	Transport* sim = p->sim;
 
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)sim->grid->z.size());
+	PRINT_ASSERT(z_ind,<,(int)sim->grid->rho.size());
 	PRINT_ASSERT(Ye,>=,0);
 	PRINT_ASSERT(Ye,<=,1);
 
 	// total energy absorbed in zone
-	double l_absorbed = sim->grid->z[z_ind].nue_abs - sim->grid->z[z_ind].anue_abs;
+	double l_absorbed = sim->grid->l_abs[z_ind];
 	// total energy emitted (to be calculated)
 	double l_emitted = 0.;
 

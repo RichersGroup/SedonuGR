@@ -208,7 +208,6 @@ void Grid3DCart::read_THC_file(Lua* lua)
 		xAxes[a] = Axis(x0[a], top, mid);
 		nzones *= xAxes[a].size();
 	}
-	z.resize(nzones);
 	rho.set_axes(xAxes);
 	T.set_axes(xAxes);
 	Ye.set_axes(xAxes);
@@ -264,7 +263,7 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	//===============//
 	vector<unsigned> dir_ind(dimensionality());
     #pragma omp parallel for private(dir_ind)
-	for(int z_ind=0; z_ind<(int)z.size(); z_ind++){
+	for(int z_ind=0; z_ind<(int)rho.size(); z_ind++){
 
 		// directional indices in Sedonu grid
 		zone_directional_indices(z_ind,dir_ind);
@@ -317,7 +316,7 @@ int Grid3DCart::zone_index(const double x[3]) const
 
 	int z_ind = zone_index(dir_ind[0],dir_ind[1],dir_ind[2]);
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	return z_ind;
 }
 
@@ -333,7 +332,7 @@ int Grid3DCart::zone_index(const int i, const int j, const int k) const{
 	PRINT_ASSERT(j,<,xAxes[1].size());
 	PRINT_ASSERT(k,<,xAxes[2].size());
 	const int z_ind = i*xAxes[1].size()*xAxes[2].size() + j*xAxes[2].size() + k;
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	return z_ind;
 }
 
@@ -343,7 +342,7 @@ int Grid3DCart::zone_index(const int i, const int j, const int k) const{
 void Grid3DCart::zone_directional_indices(const int z_ind, vector<unsigned>& dir_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	PRINT_ASSERT(dir_ind.size(),==,(int)dimensionality());
 
 	dir_ind[0] =  z_ind / (xAxes[1].size()*xAxes[2].size());
@@ -363,7 +362,7 @@ void Grid3DCart::zone_directional_indices(const int z_ind, vector<unsigned>& dir
 double Grid3DCart::zone_lab_3volume(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	double delta[3];
 	get_deltas(z_ind,delta,3);
 	double result = delta[0] * delta[1] * delta[2];
@@ -378,7 +377,7 @@ double Grid3DCart::zone_lab_3volume(const int z_ind) const
 void Grid3DCart::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3]) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 
 	double rand[3];
 	rand[0] = rangen->uniform();
@@ -414,7 +413,7 @@ void Grid3DCart::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3])
 double  Grid3DCart::zone_min_length(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 
 	double delta[3];
 	get_deltas(z_ind,delta,3);
@@ -454,7 +453,7 @@ void Grid3DCart::interpolate_fluid_velocity(const double x[3], double vout[3], i
 {
 	if(z_ind<0) z_ind = zone_index(x);
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 
 	// may want to interpolate here?
 	vector<unsigned> dir_ind(3);
@@ -472,7 +471,7 @@ void Grid3DCart::interpolate_fluid_velocity(const double x[3], double vout[3], i
 void Grid3DCart::zone_coordinates(const int z_ind, double r[3], const int rsize) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	PRINT_ASSERT(rsize,==,(int)dimensionality());
 	vector<unsigned> dir_ind(3);
 	zone_directional_indices(z_ind,dir_ind);
@@ -484,7 +483,7 @@ void Grid3DCart::zone_coordinates(const int z_ind, double r[3], const int rsize)
 
 double Grid3DCart::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	double r[3];
 	zone_coordinates(z_ind,r,3);
 	return sqrt(Metric::dot_Minkowski<3>(r,r));
@@ -529,9 +528,10 @@ void Grid3DCart::write_hdf5_coordinates(H5::H5File file) const
 }
 
 
+
 void Grid3DCart::get_deltas(const int z_ind, double delta[3], const int size) const
 {
-	PRINT_ASSERT(z_ind,<,(int)z.size());
+	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	PRINT_ASSERT(size,==,3);
 
 	// get directional indices

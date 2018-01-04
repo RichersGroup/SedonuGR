@@ -78,7 +78,7 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 
 	const int nr_GR1D     = static_cast<Neutrino_GR1D*>((*sim)->species_list[0])->n_GR1D_zones;
 	const int nghost_GR1D = static_cast<Neutrino_GR1D*>((*sim)->species_list[0])->ghosts1;
-	const int nr = (*sim)->grid->z.size();
+	const int nr = (*sim)->grid->rho.size();
 	const int ns = (*sim)->species_list.size();
 	const int ne = (*sim)->species_list[0]->nu_grid_axis->size();
 	const double fsmooth = *dt*GR1D_recalc_every/time_gf / smoothing_timescale;

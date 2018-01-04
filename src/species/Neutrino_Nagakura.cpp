@@ -60,7 +60,6 @@ void Neutrino_Nagakura::myInit(Lua* lua)
 //-----------------------------------------------------------------
 void Neutrino_Nagakura::set_eas(int zone_index)
 {
-	Zone* z = &(sim->grid->z[zone_index]);
 	double ngroups = (double)emis[zone_index].size();
 
 

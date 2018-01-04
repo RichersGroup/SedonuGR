@@ -38,7 +38,7 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 void Transport::event_interact(EinsteinHelper* eh, int *z_ind){
 	PRINT_ASSERT(*z_ind,>=,0);
-	PRINT_ASSERT(*z_ind,<,(int)grid->z.size());
+	PRINT_ASSERT(*z_ind,<,(int)grid->rho.size());
 	PRINT_ASSERT(eh->p.N,>,0);
 	PRINT_ASSERT(eh->p.fate,==,moving);
 
@@ -147,11 +147,11 @@ void Transport::scatter(EinsteinHelper *eh, int *z_ind) const{
 
 		// sample outgoing energy and set the post-scattered state
 		if(use_scattering_kernels){
-			const double tmp_nu = eh->nu();
+			double Nold = eh->p.N;
 			sample_scattering_final_state(*z_ind,*eh,cosTheta);
-			double dep_energy = (tmp_nu - eh->nu()) * eh->p.N*pc::h;
-			if(dep_energy>0) grid->z[*z_ind].e_abs  += dep_energy;
-			else             grid->z[*z_ind].e_emit -= dep_energy;
+			for(unsigned i=0; i<4; i++){
+				grid->fourforce_abs[*z_ind][i] += (kup_tet_old[i]*Nold - kup_tet[i]*eh->p.N) * pc::h*pc::c/(2.*pc::pi);
+			}
 		}
 	}
 }

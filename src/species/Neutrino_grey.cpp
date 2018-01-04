@@ -58,7 +58,6 @@ void Neutrino_grey::myInit(Lua* lua)
 //-----------------------------------------------------------------
 void Neutrino_grey::set_eas(int z_ind)
 {
-	Zone* z = &(sim->grid->z[z_ind]);
 	double ngroups = (double)emis[z_ind].size();
 
 	PRINT_ASSERT(grey_abs_frac,>=,0);

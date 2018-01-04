@@ -57,7 +57,6 @@ public:
 	void read_model_file(Lua* lua);
 	void read_flash_file(Lua* lua);
 	void read_nagakura_file(Lua* lua);
-	void custom_model(Lua* lua);
 
 	// required functions
 	int    zone_index             (const double x[3]                            ) const;

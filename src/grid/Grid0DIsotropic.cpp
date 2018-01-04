@@ -44,7 +44,6 @@ Grid0DIsotropic::Grid0DIsotropic(){
 void Grid0DIsotropic::read_model_file(Lua* lua)
 {
 	// number of zones
-	z.resize(1);
 	vector<Axis> axes;
 	rho.set_axes(axes);
 	T.set_axes(axes);
