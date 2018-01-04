@@ -71,27 +71,3 @@ void Species::init(Lua* lua, Transport* simulation)
 }
 
 
-//-----------------------------------------------------------------
-// get opacity at the frequency
-//-----------------------------------------------------------------
-void Species::get_opacity(const double com_nu, const int z_ind, double* a, double* s) const
-{
-	PRINT_ASSERT(z_ind,>=,-1);
-	PRINT_ASSERT(com_nu,>,0);
-
-	// absorption and scattering opacities
-	unsigned nu_bin = sim->grid->nu_grid_axis.bin(com_nu);
-	unsigned dir_ind[NDIMS+1];
-	sim->grid->rho.indices(z_ind,dir_ind);
-	dir_ind[NDIMS] = nu_bin;
-	unsigned global_index = sim->grid->abs_opac[ID].direct_index(dir_ind);
-
-	*a = sim->grid->abs_opac[ID][global_index];
-	*s = sim->grid->scat_opac[ID][global_index];
-
-	PRINT_ASSERT(*a,>=,0);
-	PRINT_ASSERT(*s,>=,0);
-	PRINT_ASSERT(*a,<,INFINITY);
-	PRINT_ASSERT(*s,<,INFINITY);
-}
-

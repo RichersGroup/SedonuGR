@@ -152,6 +152,8 @@ public:
 
 	// move the particle
 	void integrate_geodesic(EinsteinHelper *eh) const;
+	void get_opacity(EinsteinHelper *eh, const int z_ind) const;
+
 
 	// help with spawning particles
 	void random_core_x_D(const double r_core, ThreadRNG *rangen, double xup[4], double D[3]) const;

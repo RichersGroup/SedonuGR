@@ -468,3 +468,31 @@ void Grid::interpolate_metric(const double xup[4], Metric* g, const int z_ind){
 	g->gammalow.yz = 0.0;
 	g->update();
 }
+
+
+
+//-----------------------------------------------------------------
+// get opacity at the frequency
+//-----------------------------------------------------------------
+void Grid::get_opacity(EinsteinHelper *eh, const int z_ind) const
+{
+	PRINT_ASSERT(z_ind,>=,-1);
+
+	// absorption and scattering opacities
+	unsigned nu_bin = nu_grid_axis.bin(eh->nu());
+	unsigned dir_ind[NDIMS+1];
+	sim->grid->rho.indices(z_ind,dir_ind);
+	dir_ind[NDIMS] = nu_bin;
+	unsigned global_index = abs_opac[eh->p.s].direct_index(dir_ind);
+
+	double a = abs_opac[eh->p.s][global_index];
+	double s = scat_opac[eh->p.s][global_index];
+
+	PRINT_ASSERT(a,>=,0);
+	PRINT_ASSERT(s,>=,0);
+	PRINT_ASSERT(a,<,INFINITY);
+	PRINT_ASSERT(s,<,INFINITY);
+
+	eh->absopac  = a;
+	eh->scatopac = s;
+}

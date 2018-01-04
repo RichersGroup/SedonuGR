@@ -67,9 +67,6 @@ protected:
 	void create_surface_particle(const double Ep, const unsigned int s, const unsigned int g);
 	void create_thermal_particle(const int zone_index, const double weight, const unsigned int s, const unsigned int g);
 
-	// transformation functions
-	void get_opacity(EinsteinHelper *lh, const int z_ind) const;
-
 	// propagate the particles
 	void propagate_particles();
 	void propagate(Particle* p);

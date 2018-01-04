@@ -71,7 +71,6 @@ public:
 
 	// set the emissivity, absorption opacity, and scattering opacity
 	virtual void set_eas(const int zone_index) = 0;
-	void get_opacity(const double com_nu, const int z_ind, double* abs_opac, double* scat_opac) const;
 };
 
 

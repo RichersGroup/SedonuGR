@@ -160,7 +160,7 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 	eh.tetrad_to_coord(kup_tet,eh.p.kup);
 
 	// sample tau
-	get_opacity(&eh,z_ind);
+	grid->get_opacity(&eh,z_ind);
 	eh.p.tau = sample_tau(&rangen);
 	window(&eh,z_ind);
 
@@ -241,7 +241,7 @@ void Transport::create_surface_particle(const double weight, const unsigned int 
 	eh.update(v);
 
 	// sample the optical depth
-	get_opacity(&eh,z_ind);
+	grid->get_opacity(&eh,z_ind);
 	eh.p.tau = sample_tau(&rangen);
 	window(&eh,z_ind);
 

@@ -212,15 +212,7 @@ void Transport::move(EinsteinHelper *eh, int *z_ind){
 
 }
 
-void Transport::get_opacity(EinsteinHelper *eh, const int z_ind) const{
-	PRINT_ASSERT(z_ind,>=,0);
 
-	// get local opacity and absorption fraction
-	double a=-1,s=-1;
-	species_list[eh->p.s]->get_opacity(eh->nu(), z_ind, &a, &s);
-	eh->absopac  = a;
-	eh->scatopac = s;
-}
 //--------------------------------------------------------
 // Propagate a single monte carlo particle until
 // it  escapes, is absorbed, or the time step ends
@@ -250,7 +242,7 @@ void Transport::propagate(Particle* p)
 		PRINT_ASSERT(eh.nu(), >, 0);
 
 		// get all the opacities
-		get_opacity(&eh,z_ind);
+		grid->get_opacity(&eh,z_ind);
 
 		// decide which event happens
 		which_event(&eh,z_ind,&event);
