@@ -79,7 +79,7 @@ void Transport::window(EinsteinHelper *eh){
 		eh->p.N /= (double)(n_new+1);
 		for(int i=0; i<n_new; i++){
 			#pragma omp critical
-			particles.push_back(eh->p);
+			particles.push_back(*eh);
 		}
 	}
 

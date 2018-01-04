@@ -44,7 +44,7 @@ class Transport
 protected:
 
 	// this species' list of particles
-	std::vector<Particle> particles;
+	vector<EinsteinHelper> particles;
 
 	// MPI stuff
 	int MPI_nprocs;
@@ -69,7 +69,7 @@ protected:
 
 	// propagate the particles
 	void propagate_particles();
-	void propagate(Particle* p);
+	void propagate(EinsteinHelper* eh);
 	virtual void move(EinsteinHelper *eh);
 	void tally_radiation(const EinsteinHelper *lh, const int this_exp_decay) const;
 	void reset_radiation();

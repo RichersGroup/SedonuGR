@@ -50,41 +50,41 @@ void Transport::propagate_particles()
 
 		#pragma omp parallel for schedule(dynamic)
 		for(unsigned i=start; i<end; i++){
-			Particle* p = &particles[i];
+			EinsteinHelper* eh = &particles[i];
 			#pragma omp atomic
-			n_active[p->s]++;
-			if(p->fate == moving) propagate(p);
-			if(p->fate == escaped){
-				const double nu = p->kup[3]/(2.0*pc::pi) * pc::c; // assumes metric is essentially Minkowski
-				double D[3] = {p->kup[0], p->kup[1], p->kup[2]};
+			n_active[eh->p.s]++;
+			if(eh->p.fate == moving) propagate(eh);
+			if(eh->p.fate == escaped){
+				const double nu = eh->p.kup[3]/(2.0*pc::pi) * pc::c; // assumes metric is essentially Minkowski
+				double D[3] = {eh->p.kup[0], eh->p.kup[1], eh->p.kup[2]};
 				Metric::normalize_Minkowski<3>(D);
 				#pragma omp atomic
-				n_escape[p->s]++;
+				n_escape[eh->p.s]++;
 				#pragma omp atomic
-				L_net_esc[p->s] += p->N * nu*pc::h;
+				L_net_esc[eh->p.s] += eh->p.N * nu*pc::h;
 				#pragma omp atomic
-				N_net_esc[p->s] += p->N;
+				N_net_esc[eh->p.s] += eh->p.N;
 				nu_index[0] = grid->nu_grid_axis.bin(nu);
-				grid->spectrum[p->s].count(D, nu_index, nu, p->N * nu*pc::h);
+				grid->spectrum[eh->p.s].count(D, nu_index, nu, eh->p.N * nu*pc::h);
 			}
-			PRINT_ASSERT(p->fate, !=, moving);
+			PRINT_ASSERT(eh->p.fate, !=, moving);
 		} //#pragma omp parallel for
 	} while(particles.size()>end);
 
 	double tot=0,core=0,rouletted=0,esc=0;
 	#pragma omp parallel for reduction(+:tot,core,rouletted,esc)
 	for(unsigned i=0; i<particles.size(); i++){
-		if(particles[i].fate == moving){
-			if(rank0) cout << particles[i].fate << endl;
+		if(particles[i].p.fate == moving){
+			if(rank0) cout << particles[i].p.fate << endl;
 			if(rank0) cout << i << endl;
-			PRINT_ASSERT(particles[i].fate,!=,moving);
+			PRINT_ASSERT(particles[i].p.fate,!=,moving);
 		}
-		const double nu = particles[i].kup[3]/(2.0*pc::pi) * pc::c;
-		const double e  = particles[i].N * nu*pc::h;
-		if(particles[i].fate!=rouletted) tot       += e;
-		if(particles[i].fate==escaped  ) esc       += e;
-		if(particles[i].fate==absorbed ) core      += e;
-		if(particles[i].fate==rouletted) rouletted += e;
+		const double nu = particles[i].p.kup[3]/(2.0*pc::pi) * pc::c;
+		const double e  = particles[i].p.N * nu*pc::h;
+		if(particles[i].p.fate!=rouletted) tot       += e;
+		if(particles[i].p.fate==escaped  ) esc       += e;
+		if(particles[i].p.fate==absorbed ) core      += e;
+		if(particles[i].p.fate==rouletted) rouletted += e;
 	}
 
 	particle_total_energy += tot;
@@ -215,37 +215,32 @@ void Transport::move(EinsteinHelper *eh){
 // Propagate a single monte carlo particle until
 // it  escapes, is absorbed, or the time step ends
 //--------------------------------------------------------
-void Transport::propagate(Particle* p)
+void Transport::propagate(EinsteinHelper *eh)
 {
 	double v[3];
 	ParticleEvent event;
 
-	EinsteinHelper eh;
-	eh.p = *p;
-	update_eh(&eh);
-	
-	PRINT_ASSERT(eh.p.fate, ==, moving);
+	PRINT_ASSERT(eh->p.fate, ==, moving);
 
-	while (eh.p.fate == moving)
+	while (eh->p.fate == moving)
 	{
-		PRINT_ASSERT(eh.nu(), >, 0);
+		PRINT_ASSERT(eh->nu(), >, 0);
 
 		// get all the opacities
-		grid->get_opacity(&eh);
+		grid->get_opacity(eh);
 
 		// decide which event happens
-		which_event(&eh,&event);
+		which_event(eh,&event);
 
 		// accumulate counts of radiation energy, absorption, etc
-		if(eh.z_ind>=0) tally_radiation(&eh,exponential_decay);
+		if(eh->z_ind>=0) tally_radiation(eh,exponential_decay);
 
 		// move particle the distance
-		move(&eh);
-		if(eh.p.fate==moving) boundary_conditions(&eh);
-		if(eh.p.fate==moving && event==interact) event_interact(&eh);
+		move(eh);
+		if(eh->p.fate==moving) boundary_conditions(eh);
+		if(eh->p.fate==moving && event==interact) event_interact(eh);
 	}
 
 	// copy particle back out of LorentzHelper
-	*p = eh.p;
-	PRINT_ASSERT(p->fate, !=, moving);
+	PRINT_ASSERT(eh->p.fate, !=, moving);
 }
