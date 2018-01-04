@@ -152,7 +152,7 @@ public:
 
 	// move the particle
 	void integrate_geodesic(EinsteinHelper *eh) const;
-	void get_opacity(EinsteinHelper *eh, const int z_ind) const;
+	void get_opacity(EinsteinHelper *eh) const;
 
 
 	// help with spawning particles

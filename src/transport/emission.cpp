@@ -151,8 +151,7 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 	// set up LorentzHelper
 	EinsteinHelper eh;
 	eh.p = p;
-	grid->interpolate_metric(p.xup,&eh.g,z_ind);
-	eh.update(v);
+	update_eh(&eh);
 
 	// emit isotropically in comoving frame
 	double kup_tet[4];
@@ -160,9 +159,9 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 	eh.tetrad_to_coord(kup_tet,eh.p.kup);
 
 	// sample tau
-	grid->get_opacity(&eh,z_ind);
+	grid->get_opacity(&eh);
 	eh.p.tau = sample_tau(&rangen);
-	window(&eh,z_ind);
+	window(&eh);
 
 	// add to particle vector
 	if(eh.p.fate == moving){
@@ -235,15 +234,12 @@ void Transport::create_surface_particle(const double weight, const unsigned int 
 	// set up LorentzHelper
 	EinsteinHelper eh;
 	eh.p = plab;
-	double v[3];
-	grid->interpolate_fluid_velocity(plab.xup,v,z_ind);
-	grid->interpolate_metric(plab.xup,&eh.g,z_ind);
-	eh.update(v);
+	update_eh(&eh);
 
 	// sample the optical depth
-	grid->get_opacity(&eh,z_ind);
+	grid->get_opacity(&eh);
 	eh.p.tau = sample_tau(&rangen);
-	window(&eh,z_ind);
+	window(&eh);
 
 	// add to particle vector
 	if(eh.p.fate == moving){

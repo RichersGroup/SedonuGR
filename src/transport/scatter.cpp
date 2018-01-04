@@ -36,21 +36,21 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 // physics of absorption/scattering
 //------------------------------------------------------------
-void Transport::event_interact(EinsteinHelper* eh, int *z_ind){
-	PRINT_ASSERT(*z_ind,>=,0);
-	PRINT_ASSERT(*z_ind,<,(int)grid->rho.size());
+void Transport::event_interact(EinsteinHelper* eh){
+	PRINT_ASSERT(eh->z_ind,>=,0);
+	PRINT_ASSERT(eh->z_ind,<,(int)grid->rho.size());
 	PRINT_ASSERT(eh->p.N,>,0);
 	PRINT_ASSERT(eh->p.fate,==,moving);
 
 	// absorb part of the packet
 	if(!exponential_decay) eh->p.N *= 1.0 - eh->absopac/(eh->absopac + eh->scatopac);
-	scatter(eh, z_ind);
+	scatter(eh);
 
 	// resample the path length
 	if(eh->p.fate==moving) eh->p.tau = sample_tau(&rangen);
 
 	// window the particle
-	if(eh->p.fate==moving) window(eh,*z_ind);
+	if(eh->p.fate==moving) window(eh);
 
 	// sanity checks
 	if(eh->p.fate==moving){
@@ -61,7 +61,7 @@ void Transport::event_interact(EinsteinHelper* eh, int *z_ind){
 
 
 // decide whether to kill a particle
-void Transport::window(EinsteinHelper *eh, const int z_ind){
+void Transport::window(EinsteinHelper *eh){
 	PRINT_ASSERT(eh->p.N,>=,0);
 	PRINT_ASSERT(eh->p.fate,!=,rouletted);
 
@@ -95,7 +95,7 @@ void Transport::window(EinsteinHelper *eh, const int z_ind){
 }
 
 // choose which type of scattering event to do
-void Transport::scatter(EinsteinHelper *eh, int *z_ind) const{
+void Transport::scatter(EinsteinHelper *eh) const{
 	bool did_random_walk = false;
 
 	// try to do random walk approximation in scattering-dominated diffusion regime
@@ -105,8 +105,8 @@ void Transport::scatter(EinsteinHelper *eh, int *z_ind) const{
 
 		// if the optical depth is below our threshold, don't do random walk
 		// (first pass to avoid doing lots of math)
-		double Rlab_min = randomwalk_sphere_size * grid->zone_min_length(*z_ind);
-		double Rlab_boundary = grid->zone_cell_dist(eh->p.xup,*z_ind);
+		double Rlab_min = randomwalk_sphere_size * grid->zone_min_length(eh->z_ind);
+		double Rlab_boundary = grid->zone_cell_dist(eh->p.xup,eh->z_ind);
 		double Rlab = max(Rlab_min, Rlab_boundary);
 		if(eh->scatopac * Rlab >= randomwalk_min_optical_depth){
 			// determine maximum comoving sphere size
@@ -121,10 +121,8 @@ void Transport::scatter(EinsteinHelper *eh, int *z_ind) const{
 
 			// if the optical depth is below our threshold, don't do random walk
 			if(eh->scatopac * Rcom >= randomwalk_min_optical_depth){
-				random_walk(eh, Rcom, D, *z_ind);
-				*z_ind = grid->zone_index(eh->p.xup);\
-				boundary_conditions(eh, z_ind);
-				//if(new_ind==-2) lh->set_p_fate(escaped);
+				random_walk(eh, Rcom, D);
+				boundary_conditions(eh);
 				did_random_walk = true;
 			}
 		}
@@ -148,9 +146,9 @@ void Transport::scatter(EinsteinHelper *eh, int *z_ind) const{
 		// sample outgoing energy and set the post-scattered state
 		if(use_scattering_kernels){
 			double Nold = eh->p.N;
-			sample_scattering_final_state(*z_ind,*eh,cosTheta);
+			sample_scattering_final_state(*eh,cosTheta);
 			for(unsigned i=0; i<4; i++){
-				grid->fourforce_abs[*z_ind][i] += (kup_tet_old[i]*Nold - kup_tet[i]*eh->p.N) * pc::h*pc::c/(2.*pc::pi);
+				grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i]*Nold - kup_tet[i]*eh->p.N) * pc::h*pc::c/(2.*pc::pi);
 			}
 		}
 	}
@@ -205,7 +203,7 @@ void Transport::init_randomwalk_cdf(Lua* lua){
 //----------------------
 // Do a random walk step
 //----------------------
-void Transport::random_walk(EinsteinHelper *eh, const double Rcom, const double D, const int z_ind) const{
+void Transport::random_walk(EinsteinHelper *eh, const double Rcom, const double D) const{
 //	PRINT_ASSERT(eh->scatopac,>,0);
 //	PRINT_ASSERT(eh->absopac,>=,0);
 //	PRINT_ASSERT(eh->p.N,>=,0);
@@ -328,21 +326,19 @@ void Transport::random_walk(EinsteinHelper *eh, const double Rcom, const double 
 //-------------------------------------------------------------
 // Sample outgoing neutrino direction and energy
 //-------------------------------------------------------------
-void Transport::sample_scattering_final_state(const int z_ind, EinsteinHelper &eh, const double cosTheta) const{
+void Transport::sample_scattering_final_state(EinsteinHelper &eh, const double cosTheta) const{
 	PRINT_ASSERT(use_scattering_kernels,>,0);
 	PRINT_ASSERT(grid->scattering_delta[eh.p.s].size(),>,0);
 	PRINT_ASSERT(grid->scattering_phi0[eh.p.s].size(),>,0);
 
 	// get spatial component of directional indices
 	unsigned dir_ind[NDIMS+2];
-	grid->rho.indices(z_ind,dir_ind);
 	double hyperloc[NDIMS+2];
-	for(unsigned i=0; i<NDIMS; i++) hyperloc[i] = eh.p.xup[i];
-
-	// get ingoing energy index
-	unsigned igin = grid->nu_grid_axis.bin(eh.nu());
-	igin = min(dir_ind[NDIMS], grid->nu_grid_axis.size()-1);
-	dir_ind[NDIMS+1] = igin;
+	for(unsigned i=0; i<NDIMS; i++){
+		hyperloc[i] = eh.p.xup[i];
+		dir_ind[i] = eh.dir_ind[i];
+	}
+	dir_ind[NDIMS] = eh.dir_ind[NDIMS];
 	hyperloc[NDIMS] = eh.nu();
 
 	// get outgoing energy bin w/ rejection sampling

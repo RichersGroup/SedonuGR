@@ -102,17 +102,13 @@ public:
 	//--------------------------------------------------------------
 	// count a particle
 	////--------------------------------------------------------------
-	void count(const double D[3], const vector<unsigned>& dir_ind, const double nu, const double E) {
+	void count(const double D[3], const unsigned dir_ind[ndims_spatial+1], const double nu, const double E) {
 		PRINT_ASSERT(E, >=, 0);
 		PRINT_ASSERT(E, <, INFINITY);
 
-		unsigned data_indices[ndims_spatial+1];
-		for(int i=0; i<dir_ind.size(); i++) data_indices[i] = dir_ind[i];
-
-		int nu_bin = data.axes[nuGridIndex].bin(nu);
-		nu_bin = max(nu_bin, 0);
-		nu_bin = min(nu_bin, (int)data.axes[nuGridIndex].size()-1);
-		data_indices[nuGridIndex] = nu_bin;
+		unsigned data_indices[data.Ndims()];
+		for(int i=0; i<ndims_spatial; i++) data_indices[i] = dir_ind[i];
+		data_indices[nuGridIndex] = dir_ind[ndims_spatial];
 
 		// increment moments
 		Tuple<double, n_total_elements> tmp;

@@ -66,7 +66,7 @@ void SpectrumArray::rotate_basis(double D[3], const double xyz[3]){
 	for(int i=0; i<3; i++) D[i] = Dout[i];
 }
 
-void SpectrumArray::rotate_and_count(const double kup[4], const double xup[4], const vector<unsigned>& dir_ind, const double nu, const double weight){
+void SpectrumArray::rotate_and_count(const double kup[4], const double xup[4], const unsigned dir_ind[NDIMS+1], const double nu, const double weight){
 	double D[3] = {kup[0], kup[1], kup[2]};
 	if(rotated_basis) rotate_basis(D,xup);
 

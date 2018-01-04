@@ -21,7 +21,8 @@ public:
   double kup_tet[4];
   double absopac, scatopac;
   double ds_com;
-  vector<unsigned> dir_ind;
+  unsigned dir_ind[NDIMS+1]; // spatial, nu_in
+  int z_ind, eas_ind;   // direct access indices
 
   // fill in values for g.{gtt, betalow}, u, e, kup_tet
   // assumes g.{alpha, betaup, gammalow}, p.kup are set

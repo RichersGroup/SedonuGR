@@ -37,7 +37,7 @@ namespace pc = physical_constants;
 
 void Transport::propagate_particles()
 {
-	vector<unsigned> dummy_spatial_indices;
+	unsigned nu_index[1];
 
 	if(verbose && rank0) cout << "# Propagating particles..." << endl;
 
@@ -64,7 +64,8 @@ void Transport::propagate_particles()
 				L_net_esc[p->s] += p->N * nu*pc::h;
 				#pragma omp atomic
 				N_net_esc[p->s] += p->N;
-				grid->spectrum[p->s].count(D, dummy_spatial_indices, nu, p->N * nu*pc::h);
+				nu_index[0] = grid->nu_grid_axis.bin(nu);
+				grid->spectrum[p->s].count(D, nu_index, nu, p->N * nu*pc::h);
 			}
 			PRINT_ASSERT(p->fate, !=, moving);
 		} //#pragma omp parallel for
@@ -98,16 +99,16 @@ void Transport::propagate_particles()
 //--------------------------------------------------------
 // Decide what happens to the particle
 //--------------------------------------------------------
-void Transport::which_event(EinsteinHelper *eh, const int z_ind, ParticleEvent *event) const{
+void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 	PRINT_ASSERT(eh->p.N, >, 0);
-	PRINT_ASSERT(z_ind,>=,0);
+	PRINT_ASSERT(eh->z_ind,>=,0);
 
 	double d_zone     = numeric_limits<double>::infinity();
 	double d_interact = numeric_limits<double>::infinity();
 
 	// FIND D_ZONE= ====================================================================
-	double d_zone_min = step_size * grid->zone_min_length(z_ind);
-	double d_zone_boundary = grid->zone_cell_dist(eh->p.xup, z_ind) + TINY*d_zone_min;
+	double d_zone_min = step_size * grid->zone_min_length(eh->z_ind);
+	double d_zone_boundary = grid->zone_cell_dist(eh->p.xup, eh->z_ind) + TINY*d_zone_min;
 	d_zone = max(d_zone_min, d_zone_boundary);
 	d_zone *= eh->g.dot<4>(eh->u,eh->p.kup) / eh->g.ndot(eh->p.kup); // convert to comoving frame
 	PRINT_ASSERT(d_zone, >, 0);
@@ -132,20 +133,19 @@ void Transport::which_event(EinsteinHelper *eh, const int z_ind, ParticleEvent *
 }
 
 
-void Transport::boundary_conditions(EinsteinHelper *eh, int *z_ind) const{
+void Transport::boundary_conditions(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->p.fate,==,moving);
 
 	if(r_core>0 && grid->radius(eh->p.xup)<r_core) eh->p.fate = absorbed;
-	else if(*z_ind<0){
+	else if(eh->z_ind<0){
 		grid->symmetry_boundaries(eh, step_size);
-		*z_ind = grid->zone_index(eh->p.xup);
-		if(*z_ind < 0) eh->p.fate = escaped;
+		update_eh(eh);
 	}
 }
 
-void Transport::tally_radiation(const EinsteinHelper *eh, const int this_exp_decay, const int z_ind) const{
-	PRINT_ASSERT(z_ind, >=, 0);
-	PRINT_ASSERT(z_ind, <, grid->rho.size());
+void Transport::tally_radiation(const EinsteinHelper *eh, const int this_exp_decay) const{
+	PRINT_ASSERT(eh->z_ind, >=, 0);
+	PRINT_ASSERT(eh->z_ind, <, grid->rho.size());
 	PRINT_ASSERT(eh->ds_com, >=, 0);
 	PRINT_ASSERT(eh->p.N, >, 0);
 	PRINT_ASSERT(eh->nu(), >, 0);
@@ -171,7 +171,7 @@ void Transport::tally_radiation(const EinsteinHelper *eh, const int this_exp_dec
 	Tuple<double,4> tmp_fourforce;
 	for(unsigned i=0; i<4; i++){
 		#pragma omp atomic
-		grid->fourforce_abs[z_ind][i] += kup_tet[i] * pc::h*pc::c/(2.*pc::pi) * to_add;
+		grid->fourforce_abs[eh->z_ind][i] += kup_tet[i] * pc::h*pc::c/(2.*pc::pi) * to_add;
 	}
 
 	// store absorbed lepton number (same in both frames, except for the
@@ -180,11 +180,11 @@ void Transport::tally_radiation(const EinsteinHelper *eh, const int this_exp_dec
 		to_add /= (eh->nu()*pc::h);
 		to_add *= species_list[eh->p.s]->lepton_number;
 		#pragma omp atomic
-		grid->l_abs[z_ind] += to_add;
+		grid->l_abs[eh->z_ind] += to_add;
 	}
 }
 
-void Transport::move(EinsteinHelper *eh, int *z_ind){
+void Transport::move(EinsteinHelper *eh){
 	PRINT_ASSERT(eh->p.tau,>=,0);
 	PRINT_ASSERT(eh->ds_com,>=,0);
 
@@ -204,12 +204,10 @@ void Transport::move(EinsteinHelper *eh, int *z_ind){
 	// appropriately reduce the particle's energy
 	if(exponential_decay){
 		eh->p.N *= exp(-eh->absopac * eh->ds_com);
-		window(eh,*z_ind);
+		window(eh);
 	}
 
-	// re-evaluate the particle's zone index
-	*z_ind = grid->zone_index(eh->p.xup);
-
+	update_eh(eh);
 }
 
 
@@ -223,37 +221,28 @@ void Transport::propagate(Particle* p)
 	ParticleEvent event;
 
 	EinsteinHelper eh;
-	eh.dir_ind.resize(grid->dimensionality());
 	eh.p = *p;
+	update_eh(&eh);
 	
 	PRINT_ASSERT(eh.p.fate, ==, moving);
 
 	while (eh.p.fate == moving)
 	{
-		int z_ind = grid->zone_index(eh.p.xup);
-		PRINT_ASSERT(z_ind, >=, 0);
-		PRINT_ASSERT(z_ind, <, (int)grid->rho.size());
-
-		// set up the LorentzHelper
-		grid->zone_directional_indices(z_ind,eh.dir_ind);
-		grid->interpolate_metric(eh.p.xup, &eh.g, z_ind);
-		grid->interpolate_fluid_velocity(eh.p.xup,v,z_ind);
-		eh.update(v);
 		PRINT_ASSERT(eh.nu(), >, 0);
 
 		// get all the opacities
-		grid->get_opacity(&eh,z_ind);
+		grid->get_opacity(&eh);
 
 		// decide which event happens
-		which_event(&eh,z_ind,&event);
+		which_event(&eh,&event);
 
 		// accumulate counts of radiation energy, absorption, etc
-		if(z_ind>=0) tally_radiation(&eh,exponential_decay,z_ind);
+		if(eh.z_ind>=0) tally_radiation(&eh,exponential_decay);
 
 		// move particle the distance
-		move(&eh, &z_ind);
-		if(eh.p.fate==moving) boundary_conditions(&eh, &z_ind);
-		if(eh.p.fate==moving && event==interact) event_interact(&eh,&z_ind);
+		move(&eh);
+		if(eh.p.fate==moving) boundary_conditions(&eh);
+		if(eh.p.fate==moving && event==interact) event_interact(&eh);
 	}
 
 	// copy particle back out of LorentzHelper

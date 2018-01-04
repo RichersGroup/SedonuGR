@@ -70,17 +70,17 @@ protected:
 	// propagate the particles
 	void propagate_particles();
 	void propagate(Particle* p);
-	virtual void move(EinsteinHelper *eh, int *z_ind);
-	void tally_radiation(const EinsteinHelper *lh, const int this_exp_decay, const int z_ind) const;
+	virtual void move(EinsteinHelper *eh);
+	void tally_radiation(const EinsteinHelper *lh, const int this_exp_decay) const;
 	void reset_radiation();
-	void which_event(EinsteinHelper* eh,const int z_ind, ParticleEvent *event) const;
-	void boundary_conditions(EinsteinHelper *eh, int *z_ind) const;
-	void event_interact(EinsteinHelper* eh, int *z_ind);
-	void scatter(EinsteinHelper *eh, int *z_ind) const;
-	void random_walk(EinsteinHelper *eh, const double Rcom, const double D, const int z_ind) const;
+	void which_event(EinsteinHelper* eh, ParticleEvent *event) const;
+	void boundary_conditions(EinsteinHelper *eh) const;
+	void event_interact(EinsteinHelper* eh);
+	void scatter(EinsteinHelper *eh) const;
+	void random_walk(EinsteinHelper *eh, const double Rcom, const double D) const;
 	void init_randomwalk_cdf(Lua* lua);
-	void window(EinsteinHelper *eh, const int z_ind);
-	void sample_scattering_final_state(const int z_ind, EinsteinHelper& lh, const double cosTheta) const;
+	void window(EinsteinHelper *eh);
+	void sample_scattering_final_state(EinsteinHelper& eh, const double cosTheta) const;
 
 
 
@@ -185,6 +185,7 @@ public:
 
 	// set things up
 	void   init(Lua* lua);
+	void update_eh(EinsteinHelper* eh) const;
 
 	// in-simulation functions to be used by main
 	void step();

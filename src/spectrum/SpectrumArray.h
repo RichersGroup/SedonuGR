@@ -29,6 +29,7 @@
 #define _SPECTRUM_ARRAY_H 1
 
 #include "H5Cpp.h"
+#include "global_options.h"
 #include <fstream>
 #include <vector>
 
@@ -40,7 +41,7 @@ protected:
 
 	// rotate to polar basis
 	static void rotate_basis(double D[3], const double xyz[3]);
-	virtual void count(const double D[3], const vector<unsigned>& dir_ind, const double nu, const double E) = 0;
+	virtual void count(const double D[3], const unsigned dir_ind[NDIMS+1], const double nu, const double E) = 0;
 
 public:
 
@@ -53,7 +54,7 @@ public:
 	virtual void MPI_average() = 0;
 
 	// Count a packets
-	void rotate_and_count(const double D[3], const double xup[3], const vector<unsigned>& dir_ind, const double nu, const double E);
+	void rotate_and_count(const double D[3], const double xup[3], const unsigned dir_ind[NDIMS+1], const double nu, const double E);
 
 	//  void normalize();
 	virtual void rescale(const double) = 0;

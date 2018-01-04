@@ -51,7 +51,7 @@ public:
 
 	static const unsigned nelements = 6;
 	MultiDArray<nelements,2> data;
-	unsigned nuGridIndex, momGridIndex;
+	unsigned nuGridIndex;
 
 	//--------------------------------------------------------------
 	// Initialization and Allocation
@@ -62,17 +62,6 @@ public:
 
 		axes.push_back(nu_grid);
 		nuGridIndex = axes.size()-1;
-
-		// moment axis
-		double minval = 0;
-		vector<double> top(nelements);
-		vector<double> mid(nelements);
-		for(int i=0; i<nelements; i++){
-			mid[i] = i + 0.5;
-			top[i] = i + 1;
-		}
-		axes.push_back(Axis(minval, top, mid));
-		momGridIndex = axes.size()-1;
 
 		// set up the data structure
 		data.set_axes(axes);
@@ -90,30 +79,22 @@ public:
 	//--------------------------------------------------------------
 	// count a particle
 	////--------------------------------------------------------------
-	void count(const double D[3], const vector<unsigned>& dir_ind, const double nu, const double E) {
+	void count(const double D[3], const unsigned dir_ind[1+1], const double nu, const double E) {
 		PRINT_ASSERT(E, >=, 0);
 		PRINT_ASSERT(E, <, INFINITY);
 
-		unsigned indices[data.Ndims()];
-		for(int i=0; i<dir_ind.size(); i++) indices[i] = dir_ind[i];
+		unsigned base_ind = data.direct_index(dir_ind);
 
-		int nu_bin = data.axes[nuGridIndex].bin(nu);
-		nu_bin = max(nu_bin, 0);
-		nu_bin = min(nu_bin, (int)data.axes[nuGridIndex].size()-1);
-		indices[nuGridIndex] = nu_bin;
-
-		indices[momGridIndex] = 0;
-		unsigned base_ind = data.direct_index(indices);
-
-		Tuple<double,6> tmp;
+		Tuple<double,6> tmp = data[base_ind];
 		// increment moments. Take advantage of fact that moments are stored in order.
-		tmp[0] =  E;      // E
+		tmp[0] =  E;      // E		indices[momGridIndex] = 0;
+
 		tmp[0] =  E*D[2]; // F
 		tmp[0] =  E*D[2]*D[2]; // P^rr
 		tmp[0] =  E * (D[0]*D[0] + D[1]*D[1])*0.5; // average of P^tt and P^pp
 		tmp[0] =  E * D[2]*D[2]*D[2]; // W^rrr
 		tmp[0] =  E * D[2]*(D[0]*D[0] + D[1]*D[1])*0.5; // average of W^rtt and W^rpp
-		data.add(indices,tmp);
+		data.add(dir_ind,tmp);
 	}
 
 
