@@ -87,7 +87,6 @@ void Species::init(Lua* lua, Transport* simulation)
 	// allocate space for the grid eas containers //
 	//============================================//
 	if(rank0) cout << "#   Setting up the eas arrays...";
-	emis.resize(sim->grid->rho.size());
 	if(sim->use_scattering_kernels==1){
 		normalized_phi0.resize(sim->grid->rho.size());
 		scattering_delta.resize(sim->grid->rho.size());
@@ -103,11 +102,6 @@ void Species::init(Lua* lua, Transport* simulation)
 
 	// allocate space for each eas spectrum
 	int iorder = lua->scalar<int>("cdf_interpolation_order");
-    //#pragma omp parallel for
-	for(unsigned i=0; i<emis.size();  i++){
-		emis[i].resize(nu_grid_axis->size());
-		emis[i].interpolation_order = iorder;
-	}
 	if(rank0) cout << "finished." << endl;
 }
 

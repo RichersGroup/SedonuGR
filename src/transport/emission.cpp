@@ -121,6 +121,8 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->rho.size());
+	unsigned dir_ind[NDIMS];
+	grid->rho.indices(z_ind,dir_ind);
 
 	Particle p;
 	p.fate = moving;
@@ -142,7 +144,8 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 	double nu_min = grid->nu_grid_axis.bottom(g);
 	double nu_max = grid->nu_grid_axis.top[g];
 	double nu = rangen.uniform(nu_min, nu_max);
-	p.N = species_list[p.s]->emis[z_ind].get_value(g) * species_list[p.s]->emis[z_ind].N / (nu*pc::h) * weight * 4.*pc::pi;
+	p.N = grid->BB[s].interpolate(p.xup,dir_ind) * grid->abs_opac[s].interpolate(p.xup,dir_ind);
+	p.N *= weight /(pc::c*pc::c) * 4.*pc::pi * grid->nu_grid_axis.delta3(g)/3.0 * grid->zone_com_3volume(z_ind);
 
 
 	// set up LorentzHelper

@@ -91,7 +91,7 @@ public:
 	std::string grid_type;
 
 	Axis nu_grid_axis;
-	vector<ScalarMultiDArray<NDIMS+1> > abs_opac, scat_opac; // one for each species
+	vector<ScalarMultiDArray<NDIMS+1> > BB, abs_opac, scat_opac; // one for each species
 
 	vector<SpectrumArray*> distribution;  // radiation energy density for each species in lab frame (erg/ccm. Integrated over bin frequency and direction)
 

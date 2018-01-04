@@ -41,9 +41,6 @@ class Species
 
 public:
 
-	// the zone eas variables
-	std::vector< CDFArray      > emis;
-
 	// inelastic scattering specific
 	std::vector< std::vector< CDFArray > > normalized_phi0; // for sampling scattering outgoing energy [z_ind,Ein,Eout]
 	std::vector< std::vector< std::vector<double> > > scattering_delta; // phi1/phi0 for sampling outgoing direction [z_ind,Ein,Eout]

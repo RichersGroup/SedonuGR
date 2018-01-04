@@ -26,7 +26,7 @@ public:
 		this->axes = axes;
 		assert(axes.size()==ndims);
 		int size = 1;
-		for(int i=ndims-1; i>=0; i--){
+		for(int i=0; i<ndims; i++){
 			stride[i] = size;
 			size *= axes[i].size();
 		}
@@ -86,6 +86,7 @@ public:
 		Tuple<double,nelements> slope;
 
 		dydx.resize(y0.size());
+
 		for(unsigned int z=0; z<dydx.size(); z++){
 			indices(z, ind);
 			for(unsigned int i=0; i<ndims; i++){
@@ -110,12 +111,15 @@ public:
 				}
 				if(ind[i] < dydx.size()-1){
 					indp[i] = ind[i]+1;
-					zp = direct_index(indp);
-					xp = axes[i].mid[indp[i]];
-					yp = y0[zp];
-					dxR = xp-x;
-					dyR = yp-y;
-					sR = dyR/dxR;
+					if(indp[i]>=axes[i].size()) sR=0;
+					else{
+						zp = direct_index(indp);
+						xp = axes[i].mid[indp[i]];
+						yp = y0[zp];
+						dxR = xp-x;
+						dyR = yp-y;
+						sR = dyR/dxR;
+					}
 				}
 
 

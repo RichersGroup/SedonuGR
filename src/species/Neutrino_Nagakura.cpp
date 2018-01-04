@@ -60,7 +60,6 @@ void Neutrino_Nagakura::myInit(Lua* lua)
 //-----------------------------------------------------------------
 void Neutrino_Nagakura::set_eas(int zone_index)
 {
-	double ngroups = (double)emis[zone_index].size();
 	unsigned dir_ind[NDIMS];
 	sim->grid->rho.indices(zone_index,dir_ind);
 
@@ -163,11 +162,9 @@ void Neutrino_Nagakura::set_eas(int zone_index)
                     cout << "ERROR: Neutrino ID not recognized!" << endl;
                     assert(false);
             }
-            emis[zone_index].set_value(inu,e);
+            sim->grid->BB[ID][global_index] = e/(pc::h*nu_grid_axis->mid[inu]) * pc::c*pc::c/(4.*pc::pi * nu_grid_axis->delta3(inu)/3.0);
             sim->grid->abs_opac[ID][global_index] = a;
             sim->grid->scat_opac[ID][global_index] = s;
     }
     opac_file.close();
-
-	emis[zone_index].normalize();
 }

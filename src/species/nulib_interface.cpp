@@ -385,7 +385,7 @@ void nulib_get_eas_arrays(
 		double rho,                     // g/cm^3
 		double temp,                    // K
 		double ye, int nulibID,
-		CDFArray& nut_emiss,         // erg/cm^3/s/ster
+		vector<double>& nut_BB,         // dimensionless
 		vector<double>& nut_absopac,    // cm^-1
 		vector<double>& nut_scatopac,   // cm^-1
 		vector< CDFArray >& phiTilde, // 2pi h^-3 c^-4 phi0 delta(E^3/3) [group in][group out] units 1/cm
@@ -423,9 +423,9 @@ void nulib_get_eas_arrays(
 	// If the density or temperature are too low, just set everything to zero
 	if(log10(rho) < nulibtable_logrho_min || log10(temp_MeV) < nulibtable_logtemp_min)
 		for(int j=0; j<ngroups; j++){
-			nut_emiss.set_value(j, 0);
-			nut_absopac [j] =      0;
-			nut_scatopac[j] =      0;
+			nut_BB[j]       = 0;
+			nut_absopac [j] = 0;
+			nut_scatopac[j] = 0;
 		}
 
 	// Otherwise, fill with the appropriate values
@@ -435,9 +435,9 @@ void nulib_get_eas_arrays(
 		nulibtable_single_species_range_energy_(&rho, &temp_MeV, &ye, &lns,
 				(double*)eas_energy, &ngroups, &nvars);
 		for(int j=0; j<ngroups; j++){
-			nut_emiss.set_value(j,       eas_energy[0][j]);
-			nut_absopac [j] =            eas_energy[1][j];
-			nut_scatopac[j] =        eas_energy[2][j];
+			nut_absopac [j] = eas_energy[1][j];
+			nut_scatopac[j] = eas_energy[2][j];
+			nut_BB[j]       = eas_energy[0][j]/eas_energy[1][j];
 			if(nulibtable_number_easvariables==4)
 				scattering_delta[j][j] = eas_energy[3][j];
  		}
@@ -450,7 +450,6 @@ void nulib_get_eas_arrays(
 			exit(1);
 		}
 	}
-	nut_emiss.N = NaN;
 
 	// how are we organizing the data?
 	bool use_scattering_kernels = true;

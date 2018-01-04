@@ -409,6 +409,9 @@ void Transport::reset_radiation(){
 
 		for(unsigned s=0; s<species_list.size(); s++){
 			species_list[s]->set_eas(z_ind);
+			grid->abs_opac[s].calculate_slopes();
+			grid->scat_opac[s].calculate_slopes();
+			grid->BB[s].calculate_slopes();
 		}
 	}
 
