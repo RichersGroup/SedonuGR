@@ -145,9 +145,9 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 			// read the contents of a single line
 			infile >> trash; // r sin(theta)
 			infile >> trash; // r cos(theta)
-			infile >> z[z_ind].rho; // g/ccm
-			infile >> z[z_ind].Ye;
-			infile >> z[z_ind].T; // MeV
+			infile >> rho[z_ind]; // g/ccm
+			infile >> Ye[z_ind];
+			infile >> T[z_ind]; // MeV
 			infile >> vr[z_ind]; // cm/s
 			infile >> vtheta[z_ind]; // 1/s
 
@@ -157,13 +157,13 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 			// convert units
 			//z[z_ind].u[1] *= r_out.center(ir);
 			//z[z_ind].u[2] *= r_out.center(ir);
-			z[z_ind].T /= pc::k_MeV;
+			T[z_ind] /= pc::k_MeV;
 
 			// sanity checks
-			PRINT_ASSERT(z[z_ind].rho,>=,0.0);
-			PRINT_ASSERT(z[z_ind].T,>=,0.0);
-			PRINT_ASSERT(z[z_ind].Ye,>=,0.0);
-			PRINT_ASSERT(z[z_ind].Ye,<=,1.0);
+			PRINT_ASSERT(rho[z_ind],>=,0.0);
+			PRINT_ASSERT(T[z_ind],>=,0.0);
+			PRINT_ASSERT(Ye[z_ind],>=,0.0);
+			PRINT_ASSERT(Ye[z_ind],<=,1.0);
 		}
 }
 
@@ -401,13 +401,13 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 				zone_coordinates(z_ind,r,2);
 
 				// zone values
-				z[z_ind].rho               = dens[proc][kb][jb][ib];
-				z[z_ind].T                 = temp[proc][kb][jb][ib];
-				z[z_ind].Ye                = efrc[proc][kb][jb][ib];
-				if(do_visc) z[z_ind].H_vis = hvis[proc][kb][jb][ib];
-				double tmp_vr              = velx[proc][kb][jb][ib];
-				double tmp_vtheta          = vely[proc][kb][jb][ib];
-				double tmp_vphi            = angz[proc][kb][jb][ib]/r[0]/sin(r[1]);
+				rho[z_ind]               = dens[proc][kb][jb][ib];
+				T[z_ind]                 = temp[proc][kb][jb][ib];
+				Ye[z_ind]                = efrc[proc][kb][jb][ib];
+				if(do_visc) H_vis[z_ind] = hvis[proc][kb][jb][ib];
+				double tmp_vr            = velx[proc][kb][jb][ib];
+				double tmp_vtheta        = vely[proc][kb][jb][ib];
+				double tmp_vphi          = angz[proc][kb][jb][ib]/r[0]/sin(r[1]);
 				double speed = sqrt(tmp_vr*tmp_vr + tmp_vtheta*tmp_vtheta + tmp_vphi*tmp_vphi);
 				if(speed > speed_max){
 					tmp_vr     *= speed_max / speed;
@@ -418,10 +418,10 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 				vr[z_ind] = tmp_vr;
 				vtheta[z_ind] = tmp_vtheta;
 				vphi[z_ind] = tmp_vphi;
-				PRINT_ASSERT(z[z_ind].rho,>=,0.0);
-				PRINT_ASSERT(z[z_ind].T,>=,0.0);
-				PRINT_ASSERT(z[z_ind].Ye,>=,0.0);
-				PRINT_ASSERT(z[z_ind].Ye,<=,1.0);
+				PRINT_ASSERT(rho[z_ind],>=,0.0);
+				PRINT_ASSERT(T[z_ind],>=,0.0);
+				PRINT_ASSERT(Ye[z_ind],>=,0.0);
+				PRINT_ASSERT(Ye[z_ind],<=,1.0);
 	}
 
 
@@ -477,7 +477,7 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 			outf << setw(width) << z_gamn[z_ind];
 			outf << setw(width) << z_ncfn[z_ind];
 			outf << setw(width) << z_nprs[z_ind];
-			outf << setw(width) << z[z_ind].H_vis;
+			outf << setw(width) << H_vis[z_ind];
 			outf << setw(width) << z_eint[z_ind];
 			outf << endl;
 		}
@@ -538,8 +538,8 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 			outf << setw(width) << z_alfa[z_ind];
 			outf << setw(width) << 1.0-(z_atms[z_ind]+z_neut[z_ind]+z_prot[z_ind]+z_alfa[z_ind]);
 			outf << setw(width) << ye_calculated;
-			outf << setw(width) << z[z_ind].Ye;
-			outf << setw(width) << z[z_ind].T*pc::k_MeV;
+			outf << setw(width) << Ye[z_ind];
+			outf << setw(width) << T[z_ind]*pc::k_MeV;
 			outf << endl;
 		}
 		outf.close();
@@ -594,6 +594,15 @@ void Grid2DSphere::custom_model(Lua* lua)
 	}
 	thetaAxis = Axis(thetamin, thetatop, thetamid);
 
+	unsigned n_zones = r_zones*theta_zones;
+	vector<double> tmp_rho = vector<double>(n_zones,0);
+	vector<double> tmp_T = vector<double>(n_zones,0);
+	vector<double> tmp_Ye = vector<double>(n_zones,0);
+	vector<double> tmp_H_vis = vector<double>(n_zones,0);
+	vector<double> tmp_alpha = vector<double>(n_zones,0);
+	vector<double> tmp_vr = vector<double>(n_zones,0);
+	vector<double> tmp_vtheta = vector<double>(n_zones,0);
+	vector<double> tmp_vphi = vector<double>(n_zones,0);
 	for(int i=0; i<r_zones; i++)
 	{
 		infile >> rtop[i];
@@ -602,26 +611,46 @@ void Grid2DSphere::custom_model(Lua* lua)
 		PRINT_ASSERT(rtop[i],>,(i==0 ? rmin : rtop[i-1]));
 
 		int base_ind = zone_index(i,0);
-		infile >> z[base_ind].rho;
-		infile >> z[base_ind].T;
-		infile >> z[base_ind].Ye;
-		z[base_ind].H_vis = 0;
-		vr[base_ind] = 0;
-		vtheta[base_ind] = 0;
-		vphi[base_ind] = 0;
-		PRINT_ASSERT(z[base_ind].rho,>=,0);
-		PRINT_ASSERT(z[base_ind].T,>=,0);
-		PRINT_ASSERT(z[base_ind].Ye,>=,0);
-		PRINT_ASSERT(z[base_ind].Ye,<=,1.0);
+		infile >> tmp_rho[base_ind];
+		infile >> tmp_T[base_ind];
+		infile >> tmp_Ye[base_ind];
+		tmp_H_vis[base_ind] = 0;
+		tmp_vr[base_ind] = 0;
+		tmp_vtheta[base_ind] = 0;
+		tmp_vphi[base_ind] = 0;
+		PRINT_ASSERT(rho[base_ind],>=,0);
+		PRINT_ASSERT(T[base_ind],>=,0);
+		PRINT_ASSERT(Ye[base_ind],>=,0);
+		PRINT_ASSERT(Ye[base_ind],<=,1.0);
 
 		for(int j=0; j<theta_zones; j++){
 			int z_ind = zone_index(i,j);
 			z[z_ind] = z[base_ind];
 		}
 	}
+	infile.close();
 	rAxis = Axis(rmin, rtop, rmid);
 
-	infile.close();
+	vector<Axis> axes = {rAxis,thetaAxis};
+	vr.set_axes(axes);
+	vtheta.set_axes(axes);
+	vphi.set_axes(axes);
+	alpha.set_axes(axes);
+	rho.set_axes(axes);
+	T.set_axes(axes);
+	Ye.set_axes(axes);
+	H_vis.set_axes(axes);
+
+	for(unsigned z_ind=0; z_ind<vr.size(); z_ind++){
+		vr[z_ind] = tmp_vr[z_ind];
+		vtheta[z_ind] = tmp_vtheta[z_ind];
+		vphi[z_ind] = tmp_vphi[z_ind];
+		alpha[z_ind] = tmp_alpha[z_ind];
+		rho[z_ind] = tmp_rho[z_ind];
+		T[z_ind] = tmp_T[z_ind];
+		Ye[z_ind] = tmp_Ye[z_ind];
+		H_vis[z_ind] = tmp_H_vis[z_ind];
+	}
 }
 
 double Grid2DSphere_theta(const double x[3]){

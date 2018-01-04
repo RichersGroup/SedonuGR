@@ -101,6 +101,11 @@ public:
 
 	ScalarMultiDArray<NDIMS> alpha;
 	ScalarMultiDArray<NDIMS> Q_annihil; // annihilation energy deposition rate (erg/ccm/s) (lab frame)
+	ScalarMultiDArray<NDIMS> rho;       // density (g/cm^3)
+	ScalarMultiDArray<NDIMS> T;         // gas temperature (K)
+	ScalarMultiDArray<NDIMS> Ye;        // electron fraction
+	ScalarMultiDArray<NDIMS> H_vis;     // specific heating rate (erg/s/g)
+
 
 
 	// set everything up

@@ -42,22 +42,12 @@ public:
 
 	// constructors
 	Zone(){
-		rho = NaN;
-		T = NaN;
-		Ye = NaN;
-		H_vis = NaN;
 		e_abs = NaN;
 		nue_abs = NaN;
 		anue_abs = NaN;
 		e_emit = NaN;
 		l_emit = NaN;
 	}
-
-	// fluid properties (rho,T are in comoving frame. Ye is invariant.)
-	double rho;             // density (g/cm^3)
-	double T;               // gas temperature (K)
-	double Ye;              // electron fraction
-	double H_vis;           // specific heating rate (erg/s/g)
 
 	// radiation quantities (all in comoving frame) (dVdt and lepton number are relativistic invariants)
 	double e_abs;                         // radiation energy deposition density rate (ergs/cm^3/s) (comoving frame)

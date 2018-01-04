@@ -57,7 +57,7 @@ void Transport::solve_eq_zone_values()
 	// solve radiative equilibrium temperature and Ye (but only in the zones I'm responsible for)
 	// don't solve if out of density bounds
     #pragma omp parallel for schedule(guided)
-	for(int z_ind=start; z_ind<end; z_ind++) if( (grid->z[z_ind].rho >= rho_min) && (grid->z[z_ind].rho <= rho_max) )
+	for(int z_ind=start; z_ind<end; z_ind++) if( (grid->rho[z_ind] >= rho_min) && (grid->rho[z_ind] <= rho_max) )
 	{
 		double T_last_iter=NaN, Ye_last_iter=NaN;
 		double T_last_step=NaN, Ye_last_step=NaN;
@@ -68,12 +68,12 @@ void Transport::solve_eq_zone_values()
 		if(equilibrium_T)
 		{
 			T_error  = 10*equilibrium_tolerance;
-			T_last_step  = grid->z[z_ind].T;
+			T_last_step  = grid->T[z_ind];
 		}
 		if(equilibrium_Ye)
 		{
 			Ye_error = 10*equilibrium_tolerance;
-			Ye_last_step = grid->z[z_ind].Ye;
+			Ye_last_step = grid->Ye[z_ind];
 		}
 
 		// loop through solving the temperature and Ye until both are within error.
@@ -82,19 +82,19 @@ void Transport::solve_eq_zone_values()
 		{
 			if(equilibrium_T)
 			{
-				T_last_iter  = grid->z[z_ind].T;
-				grid->z[z_ind].T = brent_method(z_ind, temp_eq_function, T_min,  T_max);
-				PRINT_ASSERT(grid->z[z_ind].T,>=,T_min);
-				PRINT_ASSERT(grid->z[z_ind].T,<=,T_max);
-				T_error  = fabs( (grid->z[z_ind].T - T_last_iter ) / (T_last_iter ) );
+				T_last_iter  = grid->T[z_ind];
+				grid->T[z_ind] = brent_method(z_ind, temp_eq_function, T_min,  T_max);
+				PRINT_ASSERT(grid->T[z_ind],>=,T_min);
+				PRINT_ASSERT(grid->T[z_ind],<=,T_max);
+				T_error  = fabs( (grid->T[z_ind] - T_last_iter ) / (T_last_iter ) );
 			}
 			if(equilibrium_Ye)
 			{
-				Ye_last_iter = grid->z[z_ind].Ye;
-				grid->z[z_ind].Ye = brent_method(z_ind, Ye_eq_function, Ye_min, Ye_max);
-				PRINT_ASSERT(grid->z[z_ind].Ye,>=,Ye_min);
-				PRINT_ASSERT(grid->z[z_ind].Ye,<=,Ye_max);
-				Ye_error = fabs( (grid->z[z_ind].Ye - Ye_last_iter) / (Ye_last_iter) );
+				Ye_last_iter = grid->Ye[z_ind];
+				grid->Ye[z_ind] = brent_method(z_ind, Ye_eq_function, Ye_min, Ye_max);
+				PRINT_ASSERT(grid->Ye[z_ind],>=,Ye_min);
+				PRINT_ASSERT(grid->Ye[z_ind],<=,Ye_max);
+				Ye_error = fabs( (grid->Ye[z_ind] - Ye_last_iter) / (Ye_last_iter) );
 			}
 			iter++;
 		}
@@ -114,29 +114,29 @@ void Transport::solve_eq_zone_values()
 		{
 			if(equilibrium_T)
 			{
-				dT_step  = grid->z[z_ind].T - T_last_step;
-				grid->z[z_ind].T =  T_last_step + (1.0 - equilibrium_damping)*dT_step;
-				if(grid->z[z_ind].T > T_max){
-					cout << "# WARNING: Changing T_gas in zone " << z_ind << " from " << grid->z[z_ind].T << " to T_max=" << T_max << endl;
-					grid->z[z_ind].T = T_max;}
-				if(grid->z[z_ind].T < T_min){
-					cout << "# WARNING: Changing T_gas in zone " << z_ind << " from " << grid->z[z_ind].T << " to T_min=" << T_min << endl;
-					grid->z[z_ind].T = T_min;}
-				if(grid->z[z_ind].T != grid->z[z_ind].T){
+				dT_step  = grid->T[z_ind] - T_last_step;
+				grid->T[z_ind] =  T_last_step + (1.0 - equilibrium_damping)*dT_step;
+				if(grid->T[z_ind] > T_max){
+					cout << "# WARNING: Changing T_gas in zone " << z_ind << " from " << grid->T[z_ind] << " to T_max=" << T_max << endl;
+					grid->T[z_ind] = T_max;}
+				if(grid->T[z_ind] < T_min){
+					cout << "# WARNING: Changing T_gas in zone " << z_ind << " from " << grid->T[z_ind] << " to T_min=" << T_min << endl;
+					grid->T[z_ind] = T_min;}
+				if(grid->T[z_ind] != grid->T[z_ind]){
 					cout << "# ERROR: T_gas is nan." << endl;
 					exit(5);}
 			}
 			if(equilibrium_Ye)
 			{
-				dYe_step = grid->z[z_ind].Ye - Ye_last_step;
-				grid->z[z_ind].Ye = Ye_last_step + (1.0 - equilibrium_damping)*dYe_step;
-				if(grid->z[z_ind].Ye > Ye_max){
-					cout << " WARNING: Changing Ye in zone " << z_ind << " from " << grid->z[z_ind].Ye << " to Ye_max=" << Ye_max << endl;
-					grid->z[z_ind].Ye = Ye_max;}
-				if(grid->z[z_ind].Ye < Ye_min){
-					cout << " WARNING: Changing Ye in zone " << z_ind << " from " << grid->z[z_ind].Ye << " to Ye_min=" << Ye_min << endl;
-					grid->z[z_ind].Ye = Ye_min;}
-				if(grid->z[z_ind].Ye != grid->z[z_ind].Ye){
+				dYe_step = grid->Ye[z_ind] - Ye_last_step;
+				grid->Ye[z_ind] = Ye_last_step + (1.0 - equilibrium_damping)*dYe_step;
+				if(grid->Ye[z_ind] > Ye_max){
+					cout << " WARNING: Changing Ye in zone " << z_ind << " from " << grid->Ye[z_ind] << " to Ye_max=" << Ye_max << endl;
+					grid->Ye[z_ind] = Ye_max;}
+				if(grid->Ye[z_ind] < Ye_min){
+					cout << " WARNING: Changing Ye in zone " << z_ind << " from " << grid->Ye[z_ind] << " to Ye_min=" << Ye_min << endl;
+					grid->Ye[z_ind] = Ye_min;}
+				if(grid->Ye[z_ind] != grid->Ye[z_ind]){
 					cout << "# ERROR: Ye is nan." << endl;
 					exit(5);}
 			}
@@ -171,7 +171,7 @@ double temp_eq_function(double T, void *params)
 	double E_emitted = 0.;
 
 	// set the zone temperature
-	sim->grid->z[z_ind].T = T;
+	sim->grid->T[z_ind] = T;
 
 	// include the emission from all species
 	for(unsigned i=0; i<sim->species_list.size(); i++)
@@ -219,7 +219,7 @@ double Ye_eq_function(double Ye, void *params)
 	double l_emitted = 0.;
 
 	// set the zone temperature
-	sim->grid->z[z_ind].Ye = Ye;
+	sim->grid->Ye[z_ind] = Ye;
 
 	// include the emission from all species
 	for(unsigned i=0; i<sim->species_list.size(); i++) if(sim->species_list[i]->lepton_number!=0)

@@ -85,17 +85,17 @@ void Grid::init(Lua* lua, Transport* insim)
 		double rest_mass   = zone_rest_mass(z_ind);
 
 		// sanity checks
-		PRINT_ASSERT(z[z_ind].rho,>=,0.0);
+		PRINT_ASSERT(rho[z_ind],>=,0.0);
 		PRINT_ASSERT(zone_com_3volume(z_ind),>=,0.0);
 		PRINT_ASSERT(rest_mass,>=,0);
 
 		// calculating totals and averages
 		total_rest_mass += rest_mass;
-		Tbar            += z[z_ind].T * rest_mass;
-		Yebar           += z[z_ind].Ye * rest_mass;
+		Tbar            += T[z_ind] * rest_mass;
+		Yebar           += Ye[z_ind] * rest_mass;
 		total_KE        += (zone_lorentz_factor(z_ind) - 1.0) * rest_mass * pc::c*pc::c;
-		total_TE        += rest_mass   / pc::m_n * pc::k * z[z_ind].T;
-		if(do_visc) total_hvis += z[z_ind].H_vis * z[z_ind].rho * zone_com_3volume(z_ind);
+		total_TE        += rest_mass   / pc::m_n * pc::k * T[z_ind];
+		if(do_visc) total_hvis += H_vis[z_ind] * rho[z_ind] * zone_com_3volume(z_ind);
 	}
 
 	// write out useful info about the grid
@@ -251,13 +251,13 @@ void Grid::init(Lua* lua, Transport* insim)
 	scat_opac.resize(sim->species_list.size());
 	vector<Axis> axes;
 	axis_vector(axes);
+	if(do_annihilation) Q_annihil.set_axes(axes);
+
 	axes.push_back(nu_grid_axis);
 	for(int s=0; s<sim->species_list.size(); s++){
 		abs_opac[s].set_axes(axes);
 		scat_opac[s].set_axes(axes);
 	}
-	Q_annihil.set_axes(axes);
-
 }
 
 void Grid::write_zones(const int iw) const
@@ -285,7 +285,7 @@ double Grid::zone_cell_dist(const double x_up[3], const int z_ind) const{
 }
 
 double Grid::zone_rest_mass(const int z_ind) const{
-	return z[z_ind].rho * zone_com_3volume(z_ind);
+	return rho[z_ind] * zone_com_3volume(z_ind);
 }
 
 double Grid::zone_com_3volume(const int z_ind) const{
@@ -311,52 +311,34 @@ void Grid::write_hdf5_data(H5::H5File file) const{
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 
-	// write density
-	dataset = file.createDataSet("rho(g|ccm,com)",H5::PredType::IEEE_F32LE,dataspace);
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].rho;
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-	dataset.close();
-
-	// write T_gas
-	dataset = file.createDataSet("T_gas(MeV,com)",H5::PredType::IEEE_F32LE,dataspace);
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].T*pc::k_MeV;
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-	dataset.close();
-
-	// write Ye
-	dataset = file.createDataSet("Ye",H5::PredType::IEEE_F32LE,dataspace);
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].Ye;
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-	dataset.close();
+	// write fluid quantities
+	rho.write_HDF5(file,"rho(g|ccm,com)");
+	T.write_HDF5(file,"T_gas(MeV,com)");
+	Ye.write_HDF5(file,"Ye");
+	H_vis.write_HDF5(file,"H_vis(erg|s|g,com)");
 
 	// write mue
 	dataset = file.createDataSet("mue(MeV,com)",H5::PredType::IEEE_F32LE,dataspace);
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = nulib_eos_mue(z[z_ind].rho, z[z_ind].T, z[z_ind].Ye) * pc::ergs_to_MeV;
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-	dataset.close();
-
-	// write H_vis
-	dataset = file.createDataSet("H_vis(erg|s|g,com)",H5::PredType::IEEE_F32LE,dataspace);
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].H_vis;
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = nulib_eos_mue(rho[z_ind], T[z_ind], Ye[z_ind]) * pc::ergs_to_MeV;
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 
 	// write H_abs
 	dataset = file.createDataSet("H_abs(erg|s|g,com)",H5::PredType::IEEE_F32LE,dataspace);
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].e_abs  / z[z_ind].rho;
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].e_abs  / rho[z_ind];
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 
 	// write C_emit
 	dataset = file.createDataSet("C_emit(erg|s|g,com)",H5::PredType::IEEE_F32LE,dataspace);
-	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].e_emit / z[z_ind].rho;
+	for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].e_emit / rho[z_ind];
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 
 	// write dYe_dt_abs
 	dataset = file.createDataSet("dYe_dt_abs(1|s,lab)",H5::PredType::IEEE_F32LE,dataspace);
 	for(unsigned z_ind=0; z_ind<z.size(); z_ind++){
-		double n_baryons_per_ccm = z[z_ind].rho / Transport::mean_mass(z[z_ind].Ye);
+		double n_baryons_per_ccm = rho[z_ind] / Transport::mean_mass(Ye[z_ind]);
 		tmp[z_ind] = (z[z_ind].nue_abs-z[z_ind].anue_abs) / n_baryons_per_ccm / zone_lorentz_factor(z_ind);
 	}
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);

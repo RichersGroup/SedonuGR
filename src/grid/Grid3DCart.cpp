@@ -209,6 +209,10 @@ void Grid3DCart::read_THC_file(Lua* lua)
 		nzones *= xAxes[a].size();
 	}
 	z.resize(nzones);
+	rho.set_axes(xAxes);
+	T.set_axes(xAxes);
+	Ye.set_axes(xAxes);
+	H_vis.set_axes(xAxes);
 
 	// print out grid structure
 	if(rank0){
@@ -224,34 +228,34 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	//=========================//
 	// read in the actual data //
 	//=========================//
-	vector<double>   Ye(dataset_nzones,0.0);
-	vector<double>  rho(dataset_nzones,0.0);
-	vector<double> temp(dataset_nzones,0.0);
-	vector<double> velx(dataset_nzones,0.0);
-	vector<double> vely(dataset_nzones,0.0);
-	vector<double> velz(dataset_nzones,0.0);
+	vector<double>   tmp_Ye(dataset_nzones,0.0);
+	vector<double>  tmp_rho(dataset_nzones,0.0);
+	vector<double> tmp_T(dataset_nzones,0.0);
+	vector<double> tmp_velx(dataset_nzones,0.0);
+	vector<double> tmp_vely(dataset_nzones,0.0);
+	vector<double> tmp_velz(dataset_nzones,0.0);
 	//vector<double>  vol(dataset_nzones,0.0);
 	dataset = file.openDataSet(groupname.str()+"Ye");
-	dataset.read(&Ye[0],H5::PredType::IEEE_F64LE);
+	dataset.read(&tmp_Ye[0],H5::PredType::IEEE_F64LE);
 	dataset = file.openDataSet(groupname.str()+"rho");
-	dataset.read(&(rho[0]),H5::PredType::IEEE_F64LE);
+	dataset.read(&(tmp_rho[0]),H5::PredType::IEEE_F64LE);
 	dataset = file.openDataSet(groupname.str()+"temp");
-	dataset.read(&(temp[0]),H5::PredType::IEEE_F64LE);
+	dataset.read(&(tmp_T[0]),H5::PredType::IEEE_F64LE);
 	dataset = file.openDataSet(groupname.str()+"velx");
-	dataset.read(&(velx[0]),H5::PredType::IEEE_F64LE);
+	dataset.read(&(tmp_velx[0]),H5::PredType::IEEE_F64LE);
 	dataset = file.openDataSet(groupname.str()+"vely");
-	dataset.read(&(vely[0]),H5::PredType::IEEE_F64LE);
+	dataset.read(&(tmp_vely[0]),H5::PredType::IEEE_F64LE);
 	dataset = file.openDataSet(groupname.str()+"velz");
-	dataset.read(&(velz[0]),H5::PredType::IEEE_F64LE);
+	dataset.read(&(tmp_velz[0]),H5::PredType::IEEE_F64LE);
 	//dataset = file.openDataSet(groupname.str()+"vol");
 	//dataset.read(&(vol[0]),H5::PredType::IEEE_F64LE);
 	#pragma omp parallel for
 	for(int i=0; i<dataset_nzones; i++){
-		rho[i] *= convert_density;
-		temp[i] *= convert_temperature;
-		velx[i] *= convert_velocity;
-		vely[i] *= convert_velocity;
-		velz[i] *= convert_velocity;
+		tmp_rho[i] *= convert_density;
+		tmp_T[i] *= convert_temperature;
+		tmp_velx[i] *= convert_velocity;
+		tmp_vely[i] *= convert_velocity;
+		tmp_velz[i] *= convert_velocity;
 	}
 
 
@@ -279,17 +283,17 @@ void Grid3DCart::read_THC_file(Lua* lua)
 		PRINT_ASSERT((int)dataset_ind,>=,0);
 
 		// fill the zone
-		z[z_ind].rho  =  rho[dataset_ind];
-		z[z_ind].T    = temp[dataset_ind];
-		z[z_ind].Ye   =   Ye[dataset_ind];
-		v[z_ind][0]   = velx[dataset_ind];
-		v[z_ind][1]   = vely[dataset_ind];
-		v[z_ind][2]   = velz[dataset_ind];
+		rho[z_ind]  =  tmp_rho[dataset_ind];
+		T[z_ind]    =    tmp_T[dataset_ind];
+		Ye[z_ind]   =   tmp_Ye[dataset_ind];
+		v[z_ind][0] = tmp_velx[dataset_ind];
+		v[z_ind][1] = tmp_vely[dataset_ind];
+		v[z_ind][2] = tmp_velz[dataset_ind];
 
-		PRINT_ASSERT(z[z_ind].rho,>=,0.0);
-		PRINT_ASSERT(z[z_ind].T,>=,0.0);
-		PRINT_ASSERT(z[z_ind].Ye,>=,0.0);
-		PRINT_ASSERT(z[z_ind].Ye,<=,1.0);
+		PRINT_ASSERT(tmp_rho[z_ind],>=,0.0);
+		PRINT_ASSERT(T[z_ind],>=,0.0);
+		PRINT_ASSERT(tmp_Ye[z_ind],>=,0.0);
+		PRINT_ASSERT(tmp_Ye[z_ind],<=,1.0);
 	}
 
 	file.close();

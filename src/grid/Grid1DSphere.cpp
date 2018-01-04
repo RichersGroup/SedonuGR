@@ -114,9 +114,9 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 		// read the contents of a single line
 		infile >> trash; // r
 		infile >> trash; // theta
-		infile >> z[z_ind].rho; // g/ccm
-		infile >> z[z_ind].Ye;
-		infile >> z[z_ind].T; // MeV
+		infile >> rho[z_ind]; // g/ccm
+		infile >> Ye[z_ind];
+		infile >> T[z_ind]; // MeV
 		infile >> vr[z_ind]; // cm/s
 		infile >> trash; // 1/s
 		infile >> trash; // 1/s
@@ -126,13 +126,13 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 
 		// convert units
 		vr[z_ind] *= rAxis.mid[z_ind];
-		z[z_ind].T /= pc::k_MeV;
+		T[z_ind] /= pc::k_MeV;
 
 		// sanity checks
-		PRINT_ASSERT(z[z_ind].rho,>=,0.0);
-		PRINT_ASSERT(z[z_ind].T,>=,0.0);
-		PRINT_ASSERT(z[z_ind].Ye,>=,0.0);
-		PRINT_ASSERT(z[z_ind].Ye,<=,1.0);
+		PRINT_ASSERT(rho[z_ind],>=,0.0);
+		PRINT_ASSERT(T[z_ind],>=,0.0);
+		PRINT_ASSERT(Ye[z_ind],>=,0.0);
+		PRINT_ASSERT(Ye[z_ind],<=,1.0);
 	}
 }
 
@@ -167,6 +167,10 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 	double rmin;
 
 	// read zone properties
+	vector<double> tmp_rho = vector<double>(n_zones,0);
+	vector<double> tmp_T = vector<double>(n_zones,0);
+	vector<double> tmp_Ye = vector<double>(n_zones,0);
+	vector<double> tmp_H_vis = vector<double>(n_zones,0);
 	vector<double> tmp_alpha = vector<double>(n_zones,0);
 	vector<double> tmp_X = vector<double>(n_zones,0);
 	vector<double> tmp_vr = vector<double>(n_zones,0);
@@ -176,10 +180,10 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 	{
 		double alpha, x;
 		infile >> rtop[z_ind];
-		infile >> z[z_ind].rho;
-		infile >> z[z_ind].T;
-		infile >> z[z_ind].Ye;
-		z[z_ind].H_vis = 0;
+		infile >> tmp_rho[z_ind];
+		infile >> tmp_T[z_ind];
+		infile >> tmp_Ye[z_ind];
+		tmp_H_vis[z_ind] = 0;
 		infile >> tmp_vr[z_ind];
 		cout << "WARNING - INPUT COLUMNS HAVE CHANGED" << endl;
 		infile >> tmp_alpha[z_ind];
@@ -188,10 +192,10 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 		double last = z_ind==0 ? rmin : rtop[z_ind-1];
 		rmid[z_ind] = 0.5 * (rtop[z_ind] + last);
 		PRINT_ASSERT(rtop[z_ind],>,(z_ind==0 ? rmin : rtop[z_ind-1]));
-		PRINT_ASSERT(z[z_ind].rho,>=,0);
-		PRINT_ASSERT(z[z_ind].T,>=,0);
-		PRINT_ASSERT(z[z_ind].Ye,>=,0);
-		PRINT_ASSERT(z[z_ind].Ye,<=,1.0);
+		PRINT_ASSERT(tmp_rho[z_ind],>=,0);
+		PRINT_ASSERT(tmp_T[z_ind],>=,0);
+		PRINT_ASSERT(tmp_Ye[z_ind],>=,0);
+		PRINT_ASSERT(tmp_Ye[z_ind],<=,1.0);
 		PRINT_ASSERT(tmp_alpha[z_ind],<=,1.0);
 		PRINT_ASSERT(tmp_X[z_ind],>=,1.0);
 	}
@@ -200,10 +204,19 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 	vr.set_axes(axes);
 	alpha.set_axes(axes);
 	X.set_axes(axes);
+	rho.set_axes(axes);
+	T.set_axes(axes);
+	Ye.set_axes(axes);
+	H_vis.set_axes(axes);
+
 	for(unsigned z_ind=0; z_ind<vr.size(); z_ind++){
 		vr[z_ind] = tmp_vr[z_ind];
 		alpha[z_ind] = tmp_alpha[z_ind];
 		X[z_ind] = tmp_X[z_ind];
+		rho[z_ind] = tmp_rho[z_ind];
+		T[z_ind] = tmp_T[z_ind];
+		Ye[z_ind] = tmp_Ye[z_ind];
+		H_vis[z_ind] = tmp_H_vis[z_ind];
 	}
 
 	// set the christoffel symbol coefficients

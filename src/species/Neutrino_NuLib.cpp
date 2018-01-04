@@ -52,14 +52,14 @@ void Neutrino_NuLib::myInit(Lua* lua)
 //-----------------------------------------------------------------
 // set emissivity, abs. opacity, and scat. opacity in zones
 //-----------------------------------------------------------------
-void Neutrino_NuLib::set_eas(int zone_index)
+void Neutrino_NuLib::set_eas(int z_ind)
 {
-	Zone* z = &(sim->grid->z[zone_index]);
-	double ngroups = (double)emis[zone_index].size();
+	Zone* z = &(sim->grid->z[z_ind]);
+	double ngroups = (double)emis[z_ind].size();
 
-	nulib_get_eas_arrays(z->rho, z->T, z->Ye, ID,
-			emis[zone_index], abs_opac[zone_index],
-			scat_opac[zone_index], normalized_phi0[zone_index], scattering_delta[zone_index]);
+	nulib_get_eas_arrays(sim->grid->rho[z_ind], sim->grid->T[z_ind], sim->grid->Ye[z_ind], ID,
+			emis[z_ind], abs_opac[z_ind],
+			scat_opac[z_ind], normalized_phi0[z_ind], scattering_delta[z_ind]);
 
-	emis[zone_index].normalize();
+	emis[z_ind].normalize();
 }

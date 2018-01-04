@@ -31,6 +31,7 @@ public:
 			size *= axes[i].size();
 		}
 		y0.resize(size);
+		if(ndims==0) y0.resize(1);
 	}
 
 	MultiDArray<nelements,ndims> operator =(const MultiDArray<nelements,ndims>& input){

@@ -776,16 +776,16 @@ void Transport::synchronize_gas()
 
 		// broadcast T_gas
 		if(equilibrium_T){
-			if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->z[i].T;
+			if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->T[i];
 			MPI_Bcast(&buffer.front(), size, MPI_DOUBLE, proc, MPI_COMM_WORLD);
-			if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->z[i].T = buffer[i-my_begin];
+			if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->T[i] = buffer[i-my_begin];
 		}
 
 		// broadcast Ye
 		if(equilibrium_Ye){
-			if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->z[i].Ye;
+			if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->Ye[i];
 			MPI_Bcast(&buffer.front(), size, MPI_DOUBLE, proc, MPI_COMM_WORLD);
-			if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->z[i].Ye = buffer[i-my_begin];
+			if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->Ye[i] = buffer[i-my_begin];
 		}
 
 		// broadcast Q_annihil
@@ -799,7 +799,7 @@ void Transport::synchronize_gas()
 // rate at which viscosity energizes the fluid (erg/s)
 double Transport::zone_comoving_visc_heat_rate(const int z_ind) const{
 	if(visc_specific_heat_rate >= 0) return visc_specific_heat_rate * grid->zone_rest_mass(z_ind);
-	else                             return grid->z[z_ind].H_vis    * grid->zone_rest_mass(z_ind);
+	else                             return grid->H_vis[z_ind]    * grid->zone_rest_mass(z_ind);
 }
 
 
@@ -813,7 +813,7 @@ void Transport::update_zone_quantities(){
 	// solve radiative equilibrium temperature and Ye (but only in the zones I'm responsible for)
 	// don't solve if out of density bounds
     #pragma omp parallel for schedule(guided)
-	for (int i=start; i<end; i++) if( (grid->z[i].rho >= rho_min) && (grid->z[i].rho <= rho_max) )
+	for (int i=start; i<end; i++) if( (grid->rho[i] >= rho_min) && (grid->rho[i] <= rho_max) )
 	{
 		Zone *z = &(grid->z[i]);
 
@@ -829,9 +829,9 @@ void Transport::update_zone_quantities(){
 		if(equilibrium_Ye){
 			double Nbary = grid->zone_rest_mass(i) / mean_mass(i);
 			PRINT_ASSERT(Nbary,>,0);
-			z->Ye += (z->nue_abs-z->anue_abs - z->l_emit) / Nbary;
-			PRINT_ASSERT(z->Ye,>=,Ye_min);
-			PRINT_ASSERT(z->Ye,<=,Ye_max);
+			grid->Ye[i] += (z->nue_abs-z->anue_abs - z->l_emit) / Nbary;
+			PRINT_ASSERT(grid->Ye[i],>=,Ye_min);
+			PRINT_ASSERT(grid->Ye[i],<=,Ye_max);
 		}
 	}
 }
