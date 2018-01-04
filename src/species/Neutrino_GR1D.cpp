@@ -40,7 +40,7 @@ namespace pc = physical_constants;
 Neutrino_GR1D::Neutrino_GR1D(){
 	ghosts1 = -1;
 	n_GR1D_zones = -1;
-	GR1D_emit_outside_shock = 1;
+	sim = NULL;
 }
 
 //----------------------------------------------------------------
@@ -48,11 +48,7 @@ Neutrino_GR1D::Neutrino_GR1D(){
 //----------------------------------------------------------------
 void Neutrino_GR1D::myInit(Lua* lua)
 {
-	// emit outside shock?
-	GR1D_emit_outside_shock = lua->scalar<int>("GR1D_emit_outside_shock");
-
-	// let the base class do the rest
-	Neutrino::myInit(lua);
+// do nothing
 }
 
 void Neutrino_GR1D::set_nu_grid(Lua* lua, Axis* nu_grid){
@@ -91,7 +87,7 @@ void Neutrino_GR1D::set_nu_grid(Lua* lua, Axis* nu_grid){
 //-----------------------------------------------------------------
 // set emissivity, abs. opacity, and scat. opacity in zones
 //-----------------------------------------------------------------
-void Neutrino_GR1D::set_eas(int zone_index)
+void Neutrino_GR1D::set_eas(const unsigned z_ind, Grid* grid) const
 {
 	// do nothing - opacities are set externally
 }

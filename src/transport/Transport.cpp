@@ -40,7 +40,6 @@
 #include "Grid3DCart.h"
 #include "GridGR1D.h"
 #include "Species.h"
-#include "Neutrino.h"
 #include "Neutrino_NuLib.h"
 #include "Neutrino_GR1D.h"
 #include "Neutrino_Nagakura.h"
@@ -215,7 +214,7 @@ void Transport::init(Lua* lua)
 	// create the species arrays
 	if(rank0) cout << "# Setting up misc. transport tools..." << endl;
 	for(int i=0; i<num_nut_species; i++){
-		Neutrino* neutrinos_tmp;
+		Species* neutrinos_tmp;
 		if     (neutrino_type == "NuLib")    neutrinos_tmp = new Neutrino_NuLib;
 		else if(neutrino_type == "grey" )    neutrinos_tmp = new Neutrino_grey;
 		else if(neutrino_type == "Nagakura") neutrinos_tmp = new Neutrino_Nagakura;
@@ -408,7 +407,7 @@ void Transport::reset_radiation(){
 		grid->fourforce_emit[z_ind] = 0;
 
 		for(unsigned s=0; s<species_list.size(); s++){
-			species_list[s]->set_eas(z_ind);
+			species_list[s]->set_eas(z_ind,grid);
 			grid->abs_opac[s].calculate_slopes();
 			grid->scat_opac[s].calculate_slopes();
 			grid->BB[s].calculate_slopes();

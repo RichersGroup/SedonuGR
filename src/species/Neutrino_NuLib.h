@@ -28,9 +28,9 @@
 #ifndef _NEUTRINOS_NULIB_H
 #define _NEUTRINOS_NULIB_H
 
-#include "Neutrino.h"
+#include "Species.h"
 
-class Neutrino_NuLib: public Neutrino
+class Neutrino_NuLib: public Species
 {
 
 protected:
@@ -40,7 +40,7 @@ public:
 	Neutrino_NuLib();
 
 	void myInit(Lua* lua);
-	void set_eas(int zone_index);
+	void set_eas(const unsigned z_ind, Grid* grid) const;
 };
 
 #endif

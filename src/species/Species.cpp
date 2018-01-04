@@ -43,7 +43,7 @@ namespace pc = physical_constants;
 Species::Species(){
 	weight = NaN;
 	lepton_number = MAXLIM;
-	sim = NULL;
+	num_species = MAXLIM;
 	ID = MAXLIM;
 	T_core = NaN;
 	mu_core = NaN;
@@ -52,15 +52,37 @@ Species::Species(){
 
 void Species::init(Lua* lua, Transport* simulation)
 {
+	// set lepton number
+	if(ID == 0)   lepton_number =  1;
+	if(ID == 1)   lepton_number = -1;
+	if(ID >= 2)   lepton_number =  0;
+
+	// set names and spectrum weight
+	if     (ID == 0) {name = "Electron Neutrinos";              weight = 1.0;}
+	else if(ID == 1) {name = "Electron Anti-Neutrinos";         weight = 1.0;}
+	else if(ID == 2){
+		if     (num_species == 3) {name = "Mu/Tau Anti/Neutrinos"; weight = 4.0;}
+		else if(num_species == 4) {name = "Mu/Tau Neutrinos";      weight = 2.0;}
+		else if(num_species == 6) {name = "Mu Neutrinos";          weight = 1.0;}
+		else                          {name = "ERROR";                 weight = -1;}}
+	else if(ID == 3){
+		if     (num_species == 4) {name = "Mu/Tau Anti-Neutrinos"; weight = 2.0;}
+		else if(num_species == 6) {name = "Mu Antineutrino";       weight = 1.0;}
+		else                          {name = "ERROR";                 weight = -1;}}
+	else if(ID == 4){
+		if(num_species == 6)      {name = "Tau Neutrinos";         weight = 1.0;}
+		else                          {name = "ERROR";                 weight = -1;}}
+	else if(ID == 5){
+		if(num_species == 6)      {name = "Tau Anti-Neutrinos";    weight = 1.0;}
+		else                          {name = "ERROR";                 weight = -1;}}
+	else{
+		cout << "ERROR: Sedona does not know how to deal with a neutrino ID of " << ID << "." << endl;
+		exit(16);}
+
 	// initialize MPI parallelism
 	int MPI_myID;
 	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
 	const int rank0 = (MPI_myID == 0);
-
-	// set the pointer to see the simulation info
-	sim = simulation;
-	PRINT_ASSERT(sim->grid->rho.size(),>,0);
-
 
 	//============================//
 	// CALL CHILD'S INIT FUNCTION //
@@ -70,4 +92,137 @@ void Species::init(Lua* lua, Transport* simulation)
 	if(rank0) cout << "finished." << endl;
 }
 
+//-------------------------------------------------------------------------------------------------------------
+// Calculate the neutrino anti-neutrino annihilation rate (erg/ccm/s) from the distribution functions (erg/ccm)
+//-------------------------------------------------------------------------------------------------------------
+double cos_angle_between(const double mu1, const double mu2, const double phi1, const double phi2){
+	PRINT_ASSERT(mu1,<=,1.0);
+	PRINT_ASSERT(mu1,>=,-1.0);
+	PRINT_ASSERT(mu2,<=,1.0);
+	PRINT_ASSERT(mu2,>=,-1.0);
+	double result = mu1*mu2 + sqrt((1.0-mu1*mu1)*(1.0-mu2*mu2))*cos(phi2-phi1); // Bruenn 1985 eq. A7
+
+	// make sure numerical error doesn't push it beyond {-1,1}
+	result = min(result, 1.0);
+	result = max(result,-1.0);
+	return result;
+}
+double Species::annihilation_rate(
+		const vector<double> dir_ind,       // directional indices for the zone we're getting the rate at
+		const PolarSpectrumArray<NDIMS>* nu_dist,     // erg/ccm (integrated over angular bin and energy bin)
+		const PolarSpectrumArray<NDIMS>* nubar_dist,  // erg/ccm (integrated over angular bin and energy bin)
+		const bool electron_type,		   // is this an electron-type interaction?
+		const int weight){         		   // weight of each species
+
+	PRINT_ASSERT(nu_dist->size(),==,nubar_dist->size());
+
+	unsigned nuLoc = nu_dist->nuGridIndex;
+	const Axis* nuAxis = &(nu_dist->data.axes[nuLoc]);
+	unsigned muLoc = nu_dist->muGridIndex;
+	const Axis* muAxis = &(nu_dist->data.axes[muLoc]);
+	unsigned phiLoc = nu_dist->phiGridIndex;
+	const Axis* phiAxis = &(nu_dist->data.axes[phiLoc]);
+
+	// constants
+	using namespace pc;
+	double mec2 = m_e*c*c; // erg
+	double C1pC2,C3; // from Ruffert+97 (paper II) above equation 4
+	if(electron_type){
+		C1pC2 = (CV-CA)*(CV-CA) + (CV+CA)*(CV+CA); // ~2.34
+		C3 = 2./3. * (2.*CV*CV - CA*CA);           // ~1.06
+	}
+	else{
+		C1pC2 = (CV-CA)*(CV-CA) + (CV+CA-2.)*(CV+CA-2.);     // ~0.50
+		C3 = 2./3. * (2.*(CV-1.)*(CV-1.) - (CA-1.)*(CA-1.)); // ~-0.16
+	}
+
+	// calculate angle between distribution function angles beforehand
+	double onemcostheta [nu_dist->nmu] [nu_dist->nphi] [nubar_dist->nmu] [nubar_dist->nphi];
+	for(unsigned mu=0; mu<nu_dist->nmu; mu++){
+		for(unsigned phi=0; phi<nu_dist->nphi; phi++){
+
+			double avg_mu  = muAxis->mid[mu];
+			double avg_phi = phiAxis->mid[phi];
+
+			for(unsigned mubar=0; mubar<nu_dist->nmu; mubar++){
+				for(unsigned phibar=0; phibar<nu_dist->nphi; phibar++){
+
+					//unsigned indexbar = nubar_dist->index(0,mubar,phibar);
+					double avg_mubar  = muAxis->mid[mubar];
+					double avg_phibar = phiAxis->mid[phibar];
+
+					onemcostheta[mu][phi][mubar][phibar] = 1.0-cos_angle_between(avg_mu,avg_mubar,avg_phi,avg_phibar);
+				}
+			}
+		}
+	}
+
+	// some useful constants
+	double twomec2 = 2.0*pc::m_e*pc::c*pc::c;
+	double C3mec4 = C3*mec2*mec2;
+	double C1pC2_3 = C1pC2/3.0;
+	double mec22 = pc::m_e*pc::m_e * pc::c*pc::c*pc::c*pc::c;
+	double inv_weight = 1./(double)weight;
+	unsigned nnu=nu_dist->nnu, nmu=nu_dist->nmu, nphi=nu_dist->nphi;
+	unsigned nnubar=nubar_dist->nnu, nmubar=nubar_dist->nmu, nphibar=nubar_dist->nphi;
+
+	// set up index arrays
+	unsigned index[dir_ind.size() + 3];
+	unsigned indexbar[dir_ind.size() + 3];
+	for(int i=0; i<dir_ind.size(); i++){
+		index[i] = dir_ind[i];
+		indexbar[i] = dir_ind[i];
+	}
+
+	// integrate over all bins
+	double Q = 0;
+	// energy loops
+	for(unsigned inu=0; inu<nnu; inu++){
+		double avg_e = nuAxis->mid[inu]*pc::h; // erg
+		index[nu_dist->nuGridIndex] = inu;
+		for(unsigned inubar=0; inubar<nnubar; inubar++){
+			double avg_ebar = nuAxis->mid[inubar]*pc::h; // erg
+			indexbar[nubar_dist->nuGridIndex] = inu;
+			unsigned indbar = nubar_dist->data.direct_index(indexbar);
+
+			double C3mec4_eebar = C3mec4/(avg_e*avg_ebar);
+			double sume_m_twomec2 = avg_e + avg_ebar - twomec2;
+			double eebar = avg_e * avg_ebar;
+			if(avg_e*avg_ebar > mec22){
+
+				// neutrino direction loops
+				for(unsigned imu=0; imu<nmu; imu++){
+					index[nu_dist->muGridIndex] = imu;
+					for(unsigned iphi=0; iphi<nphi; iphi++){
+						index[nu_dist->phiGridIndex] = iphi;
+						unsigned ind = nu_dist->data.direct_index(index);
+
+						// antineutrino direction loops
+						for(unsigned imubar=0; imubar<nmubar; imubar++){
+							indexbar[nubar_dist->nuGridIndex] = imubar;
+							for(unsigned iphibar=0; iphibar<nphibar; iphibar++){
+								indexbar[nubar_dist->nuGridIndex] = iphibar;
+
+								double onemcost = onemcostheta[imu][iphi][imubar][iphibar];
+								if(eebar*onemcost > mec22){
+									double nudist_edens    =    nu_dist->data[ind]    * inv_weight; // erg/ccm
+									double nubardist_edens = nubar_dist->data[indbar] * inv_weight; // erg/ccm
+
+									Q += nudist_edens * nubardist_edens * sume_m_twomec2 * onemcost *
+											(C1pC2_3 * onemcost + C3mec4_eebar);
+								} // if
+							} // phibar
+						} // mubar
+					} // phi
+				} // mu
+			} // if
+		} // nubar
+	} // nu
+
+
+	Q *= pc::sigma0*pc::c / (4.*mec2*mec2); // erg/ccm/s
+	PRINT_ASSERT(Q,>=,0);
+
+	return Q;
+}
 

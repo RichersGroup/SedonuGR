@@ -65,6 +65,7 @@ void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const i
 		Neutrino_GR1D* tmpSpecies =static_cast<Neutrino_GR1D*>((*sim)->species_list[s]);
 		tmpSpecies->ghosts1 = *ghosts1;
 		tmpSpecies->n_GR1D_zones = *n_GR1D_zones;
+		tmpSpecies->sim = *sim;
 	}
 	//omp_set_dynamic(true);
 	omp_set_num_threads(1);

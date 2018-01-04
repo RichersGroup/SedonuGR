@@ -44,38 +44,37 @@ Neutrino_NuLib::Neutrino_NuLib(){
 //----------------------------------------------------------------
 void Neutrino_NuLib::myInit(Lua* lua)
 {
-	// let the base class do the rest
-	Neutrino::myInit(lua);
+// do nothing
 }
 
 
 //-----------------------------------------------------------------
 // set emissivity, abs. opacity, and scat. opacity in zones
 //-----------------------------------------------------------------
-void Neutrino_NuLib::set_eas(int z_ind)
+void Neutrino_NuLib::set_eas(const unsigned z_ind, Grid* grid) const
 {
-	unsigned ngroups = sim->grid->nu_grid_axis.size();
+	unsigned ngroups = grid->nu_grid_axis.size();
 	unsigned dir_ind[NDIMS+2];
-	sim->grid->rho.indices(z_ind,dir_ind);
+	grid->rho.indices(z_ind,dir_ind);
 
 	vector<double> tmp_absopac(ngroups), tmp_scatopac(ngroups), tmp_BB(ngroups);
 	vector< vector<double> > tmp_delta(ngroups, vector<double>(ngroups));
 	vector< vector<double> > tmp_phi0(ngroups, vector<double>(ngroups));
-	nulib_get_eas_arrays(sim->grid->rho[z_ind], sim->grid->T[z_ind], sim->grid->Ye[z_ind], ID,
+	nulib_get_eas_arrays(grid->rho[z_ind], grid->T[z_ind], grid->Ye[z_ind], ID,
 			tmp_BB, tmp_absopac, tmp_scatopac, tmp_phi0, tmp_delta);
 
 	for(unsigned ig=0; ig<ngroups; ig++){
 		dir_ind[NDIMS] = ig;
-		unsigned global_index = sim->grid->abs_opac[ID].direct_index(dir_ind);
-		sim->grid->abs_opac[ID][global_index] = tmp_absopac[ig];
-		sim->grid->scat_opac[ID][global_index] = tmp_scatopac[ig];
-		sim->grid->BB[ID][global_index] = tmp_BB[ig]  /(pc::h*sim->grid->nu_grid_axis.mid[ig]) * pc::c*pc::c/(4.*pc::pi * sim->grid->nu_grid_axis.delta3(ig)/3.0);
+		unsigned global_index = grid->abs_opac[ID].direct_index(dir_ind);
+		grid->abs_opac[ID][global_index] = tmp_absopac[ig];
+		grid->scat_opac[ID][global_index] = tmp_scatopac[ig];
+		grid->BB[ID][global_index] = tmp_BB[ig]  /(pc::h*grid->nu_grid_axis.mid[ig]) * pc::c*pc::c/(4.*pc::pi * grid->nu_grid_axis.delta3(ig)/3.0);
 
 		for(unsigned og=0; og<ngroups; og++){
 			dir_ind[NDIMS+1] = og;
-			global_index = sim->grid->scattering_delta[ID].direct_index(dir_ind);
-			sim->grid->scattering_delta[ID][global_index] = tmp_delta[ig][og];
-			sim->grid->scattering_phi0[ID][global_index] = tmp_phi0[ig][og] * pc::h;
+			global_index = grid->scattering_delta[ID].direct_index(dir_ind);
+			grid->scattering_delta[ID][global_index] = tmp_delta[ig][og];
+			grid->scattering_phi0[ID][global_index] = tmp_phi0[ig][og] * pc::h;
 		}
 	}
 }

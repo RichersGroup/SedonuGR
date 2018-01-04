@@ -28,9 +28,9 @@
 #ifndef _NEUTRINOS_GREY_H
 #define _NEUTRINOS_GREY_H
 
-#include "Neutrino.h"
+#include "Species.h"
 
-class Neutrino_grey: public Neutrino
+class Neutrino_grey: public Species
 {
 
 protected:
@@ -44,8 +44,7 @@ public:
 	Neutrino_grey();
 
 	void myInit(Lua* lua);
-	void set_eas(int zone_index);
-	void get_opacity(const double com_nu, const int z_ind, double* abs_opac, double* scat_opac) const;
+	void set_eas(const unsigned z_ind, Grid* grid) const;
 };
 
 #endif

@@ -28,27 +28,29 @@
 #ifndef _NEUTRINOS_GR1D_H
 #define _NEUTRINOS_GR1D_H
 
-#include "Neutrino.h"
+#include "Species.h"
+#include "Transport.h"
 
-class Neutrino_GR1D: public Neutrino
+class Neutrino_GR1D: public Species
 {
 
 protected:
 
-	const double nulib_emissivity_gf = 5.59424238e-55/(6.77140812e-6 * 6.77140812e-06 * 6.77140812e-06 * 2.03001708e5);
-	const double nulib_opacity_gf = 1.0/6.77140812e-6;
-	const double nulib_energy_gf = 1.60217733e-6*5.59424238e-55;
-	const double nulib_kernel_gf = 6.77140812e-6*6.77140812e-6*6.77140812e-6/2.03001708e5;
+	constexpr static double nulib_emissivity_gf = 5.59424238e-55/(6.77140812e-6 * 6.77140812e-06 * 6.77140812e-06 * 2.03001708e5);
+	constexpr static double nulib_opacity_gf = 1.0/6.77140812e-6;
+	constexpr static double nulib_energy_gf = 1.60217733e-6*5.59424238e-55;
+	constexpr static double nulib_kernel_gf = 6.77140812e-6*6.77140812e-6*6.77140812e-6/2.03001708e5;
 
 public:
 
+	Transport* sim;
+
 	int ghosts1;
 	int n_GR1D_zones;
-	int GR1D_emit_outside_shock;
 	Neutrino_GR1D();
 
 	void myInit(Lua* lua);
-	void set_eas(int zone_index);
+	void set_eas(const unsigned z_ind, Grid* grid) const;
 	void set_eas_external(const double* easarray, const double GR1D_tau_crit, bool* extract_MC, const double rshock);
 	static void set_nu_grid(Lua* lua, Axis* nu_grid);
 };

@@ -28,9 +28,9 @@
 #ifndef _NEUTRINOS_NAGAKURA_H
 #define _NEUTRINOS_NAGAKURA_H
 
-#include "Neutrino.h"
+#include "Species.h"
 
-class Neutrino_Nagakura: public Neutrino
+class Neutrino_Nagakura: public Species
 {
 
 protected:
@@ -42,7 +42,7 @@ public:
 	Neutrino_Nagakura();
 
 	void myInit(Lua* lua);
-	void set_eas(int zone_index);
+	void set_eas(const unsigned z_ind, Grid* grid) const;
 };
 
 #endif

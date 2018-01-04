@@ -29,10 +29,9 @@
 #define _SPECIES_H
 
 #include <vector>
-#include "SpectrumArray.h"
-#include "PolarSpectrumArray.h"
 #include "Lua.h"
-#include "CDFArray.h"
+#include "MultiDArray.h"
+#include "Grid.h"
 
 class Transport;
 
@@ -40,9 +39,6 @@ class Species
 {
 
 public:
-
-	// pointer to the simulation info (one level up)
-	Transport* sim;
 
 	// species-specific initialization stuff
 	virtual void myInit(Lua* lua) = 0;
@@ -54,7 +50,8 @@ public:
 
 	// name
 	std::string name;
-	int ID;
+	unsigned ID;
+	unsigned num_species;
 
 	// lepton number (the particle property, {-1,0,1})
 	int lepton_number;
@@ -70,7 +67,9 @@ public:
 	void init(Lua* lua, Transport* sim);
 
 	// set the emissivity, absorption opacity, and scattering opacity
-	virtual void set_eas(const int zone_index) = 0;
+	virtual void set_eas(const unsigned z_ind, Grid* grid) const = 0;
+
+	static double annihilation_rate(const vector<double> dir_ind,const PolarSpectrumArray<NDIMS>* nu_dist, const PolarSpectrumArray<NDIMS>* nbar_dist, const bool electron_type, const int weight);
 };
 
 

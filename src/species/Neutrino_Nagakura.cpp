@@ -49,40 +49,37 @@ void Neutrino_Nagakura::myInit(Lua* lua)
 {
     // set up the frequency table
     opacity_dir   = lua->scalar<string>("opacity_dir");
-
-	// let the base class do the rest
-	Neutrino::myInit(lua);
 }
 
 
 //-----------------------------------------------------------------
 // set emissivity, abs. opacity, and scat. opacity in zones
 //-----------------------------------------------------------------
-void Neutrino_Nagakura::set_eas(int zone_index)
+void Neutrino_Nagakura::set_eas(const unsigned zone_index, Grid* grid) const
 {
-	unsigned dir_ind[NDIMS];
-	sim->grid->rho.indices(zone_index,dir_ind);
+	unsigned dir_ind[NDIMS+2];
+	grid->rho.indices(zone_index,dir_ind);
 
 
 	//=======================//
     // Open the opacity file //
 	//=======================//
 	stringstream filename;
-	if(sim->grid->grid_type == "Grid1DSphere"){
+	if(grid->grid_type == "Grid1DSphere"){
 		filename.str("");
 	    filename << opacity_dir << "/opac_r" << zone_index << "_theta0.dat";
 	}
-	else if(sim->grid->grid_type == "Grid2DSphere"){
+	else if(grid->grid_type == "Grid2DSphere"){
 		vector<unsigned> dir_ind(2);
 		hsize_t dims[2];
-		sim->grid->dims(dims,2);
-		sim->grid->zone_directional_indices(zone_index, dir_ind);
+		grid->dims(dims,2);
+		grid->zone_directional_indices(zone_index, dir_ind);
 		filename.str("");
 		filename << opacity_dir << "/opac_r" << dir_ind[0] << "_theta" << (dims[1]-dir_ind[1]-1) << ".dat"; // Hiroki's theta is backwards
 	}
 	else{
 		cout << "ERROR: Incompatible grid and neutrino types. Hiroki only does spherical coordinates." << endl;
-		cout << sim->grid->grid_type << endl;
+		cout << grid->grid_type << endl;
 		assert(false);
 	}
     ifstream opac_file;
@@ -95,13 +92,9 @@ void Neutrino_Nagakura::set_eas(int zone_index)
     string line;
     getline(opac_file,line);
 
-    for(int inu=0; inu<sim->grid->nu_grid_axis.size(); inu++){
-    	unsigned global_indices[NDIMS+1];
-    	for(unsigned i=0; i<NDIMS; i++){
-    		global_indices[i] = dir_ind[i];
-    	}
-    	global_indices[NDIMS] = inu;
-    	unsigned global_index = sim->grid->abs_opac[ID].direct_index(global_indices);
+    for(int inu=0; inu<grid->nu_grid_axis.size(); inu++){
+    	dir_ind[NDIMS] = inu;
+    	unsigned global_index = grid->abs_opac[ID].direct_index(dir_ind);
 
             int itmp;
             double e=0, a=0, s=0;
@@ -162,9 +155,9 @@ void Neutrino_Nagakura::set_eas(int zone_index)
                     cout << "ERROR: Neutrino ID not recognized!" << endl;
                     assert(false);
             }
-            sim->grid->BB[ID][global_index] = e/(pc::h*sim->grid->nu_grid_axis.mid[inu]) * pc::c*pc::c/(4.*pc::pi * sim->grid->nu_grid_axis.delta3(inu)/3.0);
-            sim->grid->abs_opac[ID][global_index] = a;
-            sim->grid->scat_opac[ID][global_index] = s;
+            grid->BB[ID][global_index] = e/(pc::h*grid->nu_grid_axis.mid[inu]) * pc::c*pc::c/(4.*pc::pi * grid->nu_grid_axis.delta3(inu)/3.0);
+            grid->abs_opac[ID][global_index] = a;
+            grid->scat_opac[ID][global_index] = s;
     }
     opac_file.close();
 }

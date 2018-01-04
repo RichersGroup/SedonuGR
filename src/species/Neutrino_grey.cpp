@@ -27,9 +27,8 @@
 
 #include "global_options.h"
 #include "Neutrino_grey.h"
-#include "Transport.h"
-#include "Grid.h"
 #include "nulib_interface.h"
+#include "Transport.h"
 
 using namespace std;
 namespace pc = physical_constants;
@@ -47,53 +46,35 @@ void Neutrino_grey::myInit(Lua* lua)
 {
 	grey_abs_frac = lua->scalar<double>("grey_abs_frac");
 	grey_opac     = lua->scalar<double>("grey_opac");
-
-	// let the base class do the rest
-	Neutrino::myInit(lua);
 }
 
 
 //-----------------------------------------------------------------
 // set emissivity, abs. opacity, and scat. opacity in zones
 //-----------------------------------------------------------------
-void Neutrino_grey::set_eas(int z_ind)
+void Neutrino_grey::set_eas(const unsigned z_ind, Grid* grid) const
 {
-	unsigned ngroups = sim->grid->nu_grid_axis.size();
+	unsigned ngroups = grid->BB[ID].axes[NDIMS].size();
+	unsigned dir_ind[NDIMS+2];
+	grid->rho.indices(z_ind,dir_ind);
 
 	PRINT_ASSERT(grey_abs_frac,>=,0);
 	PRINT_ASSERT(grey_abs_frac,<=,1.0);
-	for(unsigned j=0;j<sim->grid->nu_grid_axis.size();j++)
+	for(unsigned j=0;j<grid->nu_grid_axis.size();j++)
 	{
 		unsigned dir_ind[NDIMS+1];
-		sim->grid->rho.indices(z_ind,dir_ind);
 		dir_ind[NDIMS] = j;
-		unsigned global_index = sim->grid->abs_opac[ID].direct_index(dir_ind);
+		unsigned global_index = grid->abs_opac[ID].direct_index(dir_ind);
 
-		double nu  = sim->grid->nu_grid_axis.mid[j];        // (Hz)
-		double bb  = Transport::number_blackbody(sim->grid->T[z_ind],0*pc::MeV_to_ergs,nu);
+		double nu  = grid->nu_grid_axis.mid[j];        // (Hz)
+		double bb  = Transport::number_blackbody(grid->T[z_ind],0*pc::MeV_to_ergs,nu);
 
-		double a = grey_opac*sim->grid->rho[z_ind]*grey_abs_frac;
-		double s = grey_opac*sim->grid->rho[z_ind]*(1.0-grey_abs_frac);
+		double a = grey_opac*grid->rho[z_ind]*grey_abs_frac;
+		double s = grey_opac*grid->rho[z_ind]*(1.0-grey_abs_frac);
 
-		sim->grid->BB[s][global_index] = bb; // (#/s/cm^3/ster)
-		sim->grid->abs_opac[ID][global_index] = a;        // (1/cm)
-		sim->grid->scat_opac[ID][global_index] = s;        // (1/cm)
+		grid->BB[s][global_index] = bb; // (#/s/cm^3/ster)
+		grid->abs_opac[ID][global_index] = a;        // (1/cm)
+		grid->scat_opac[ID][global_index] = s;        // (1/cm)
 	}
 }
 
-//-----------------------------------------------------------------
-// get opacity at the frequency
-//-----------------------------------------------------------------
-void Neutrino_grey::get_opacity(const double com_nu, const int z_ind, double* a, double* s) const
-{
-	PRINT_ASSERT(z_ind,>=,-1);
-	PRINT_ASSERT(com_nu,>,0);
-
-	*a = grey_opac * grey_abs_frac;
-	*s = grey_opac * (1.0 - grey_abs_frac);
-
-	PRINT_ASSERT(*a,>=,0);
-	PRINT_ASSERT(*s,>=,0);
-	PRINT_ASSERT(*a,<,INFINITY);
-	PRINT_ASSERT(*s,<,INFINITY);
-}

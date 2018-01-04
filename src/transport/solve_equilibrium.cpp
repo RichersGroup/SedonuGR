@@ -177,7 +177,7 @@ double temp_eq_function(double T, void *params)
 	for(unsigned i=0; i<sim->species_list.size(); i++)
 	{
 		// reset the eas variables in this zone
-		sim->species_list[i]->set_eas(z_ind);
+		sim->species_list[i]->set_eas(z_ind, sim->grid);
 
 		// integrate emission over frequency (angle
 		// integration gives the 4*PI) to get total
@@ -226,7 +226,7 @@ double Ye_eq_function(double Ye, void *params)
 	{
 		// reset the eas variables in this zone
 		// OPTIMIZE - only set the emissivity variable
-		sim->species_list[i]->set_eas(z_ind);
+		sim->species_list[i]->set_eas(z_ind, sim->grid);
 
 		// integrate emissison over frequency (angle
 		// integration gives the 4*PI) to get total
