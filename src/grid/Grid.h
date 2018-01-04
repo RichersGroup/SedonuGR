@@ -100,6 +100,8 @@ public:
 	vector<SpectrumArray*> distribution;  // radiation energy density for each species in lab frame (erg/ccm. Integrated over bin frequency and direction)
 
 	ScalarMultiDArray<NDIMS> alpha;
+	ScalarMultiDArray<NDIMS> Q_annihil; // annihilation energy deposition rate (erg/ccm/s) (lab frame)
+
 
 	// set everything up
 	virtual void init(Lua* lua, Transport* insim);

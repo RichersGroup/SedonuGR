@@ -30,9 +30,7 @@
 
 #include <vector>
 #include <memory>
-#include "SpectrumArray.h"
-
-class SpectrumArray;
+#include "global_options.h"
 
 //-------------------------------------------------
 // Class to store properties of one zone
@@ -43,15 +41,23 @@ class Zone
 public:
 
 	// constructors
-	Zone();
+	Zone(){
+		rho = NaN;
+		T = NaN;
+		Ye = NaN;
+		H_vis = NaN;
+		e_abs = NaN;
+		nue_abs = NaN;
+		anue_abs = NaN;
+		e_emit = NaN;
+		l_emit = NaN;
+	}
 
 	// fluid properties (rho,T are in comoving frame. Ye is invariant.)
 	double rho;             // density (g/cm^3)
 	double T;               // gas temperature (K)
 	double Ye;              // electron fraction
-
-	// store other parameters
-	double H_vis;               // specific heating rate (erg/s/g)
+	double H_vis;           // specific heating rate (erg/s/g)
 
 	// radiation quantities (all in comoving frame) (dVdt and lepton number are relativistic invariants)
 	double e_abs;                         // radiation energy deposition density rate (ergs/cm^3/s) (comoving frame)
@@ -61,7 +67,6 @@ public:
 	double l_emit;						  // lepton number emission rate (cm^-3 s^-1) (comoving frame)
 	std::vector<double> Edens_com;
 	std::vector<double> Ndens_com;
-	double Q_annihil;                     // annihilation energy deposition rate (erg/ccm/s) (lab frame)
 };
 
 #endif

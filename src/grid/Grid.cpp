@@ -256,6 +256,7 @@ void Grid::init(Lua* lua, Transport* insim)
 		abs_opac[s].set_axes(axes);
 		scat_opac[s].set_axes(axes);
 	}
+	Q_annihil.set_axes(axes);
 
 }
 
@@ -360,15 +361,10 @@ void Grid::write_hdf5_data(H5::H5File file) const{
 	}
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
+	dataspace.close();
 
 	// write annihilation_rate
-	if(do_annihilation){
-		dataset = file.createDataSet("annihilation_rate(erg|ccm|s,lab)",H5::PredType::IEEE_F32LE,dataspace);
-		for(unsigned z_ind=0; z_ind<z.size(); z_ind++) tmp[z_ind] = z[z_ind].Q_annihil;
-		dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-		dataset.close();
-	}
-	dataspace.close();
+	if(do_annihilation) Q_annihil.write_HDF5(file,"annihilation_rate(erg|ccm|s,lab)");
 
 	// write distribution function
 	vector<unsigned> dir_ind(dimensionality());

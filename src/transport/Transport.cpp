@@ -408,7 +408,6 @@ void Transport::reset_radiation(){
 		z->e_abs    = 0;
 		z->l_emit   = 0;
 		z->e_emit   = 0;
-		z->Q_annihil = 0;
 
 		for(unsigned s=0; s<species_list.size(); s++){
 			z->Edens_com[s] = 0;
@@ -791,9 +790,7 @@ void Transport::synchronize_gas()
 
 		// broadcast Q_annihil
 		if(do_annihilation){
-			if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->z[i].Q_annihil;
-			MPI_Bcast(&buffer.front(), size, MPI_DOUBLE, proc, MPI_COMM_WORLD);
-			if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->z[i].Q_annihil = buffer[i-my_begin];
+			MPI_Bcast(&grid->Q_annihil[my_begin], size, MPI_DOUBLE, proc, MPI_COMM_WORLD);
 		}
 	}
 }
