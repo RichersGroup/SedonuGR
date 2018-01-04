@@ -247,6 +247,7 @@ void Grid::init(Lua* lua, Transport* insim)
 	BB.resize(sim->species_list.size());
 	scattering_delta.resize(sim->species_list.size());
 	scattering_phi0.resize(sim->species_list.size());
+	spectrum.resize(sim->species_list.size());
 	vector<Axis> axes;
 	axis_vector(axes);
 	if(do_annihilation) Q_annihil.set_axes(axes);
@@ -260,6 +261,20 @@ void Grid::init(Lua* lua, Transport* insim)
 		BB[s].set_axes(axes);
 		abs_opac[s].set_axes(axes);
 		scat_opac[s].set_axes(axes);
+
+	    //===========================//
+		// intialize output spectrum // only if child didn't
+		//===========================//
+		Axis tmp_mugrid, tmp_phigrid;
+		if(spectrum[s].size()==0){
+			int nmu  = lua->scalar<int>("spec_n_mu");
+			int nphi = lua->scalar<int>("spec_n_phi");
+			tmp_mugrid = Axis(-1,1,nmu);
+			tmp_phigrid = Axis(-pc::pi,pc::pi, nphi);
+			vector<Axis> dummy_spatial_axes(0);
+			spectrum[s].init(dummy_spatial_axes, nu_grid_axis, tmp_mugrid, tmp_phigrid);
+		}
+		PRINT_ASSERT(spectrum[s].size(),>,0);
 	}
 
 	if(sim->use_scattering_kernels==1){
@@ -286,8 +301,7 @@ void Grid::write_zones(const int iw) const
 	write_hdf5_data(file);
 
 	nu_grid_axis.write_HDF5("nu_grid(Hz)",file);
-
-	sim->species_list[0]->spectrum.write_hdf5_coordinates(file,"spectrum");
+	spectrum[0].write_hdf5_coordinates(file,"spectrum");
 }
 
 // returning 0 causes the min distance to take over in propagate.cpp::which_event
@@ -339,7 +353,7 @@ void Grid::write_hdf5_data(H5::H5File file) const{
 	vector<unsigned> dir_ind(dimensionality());
 	for(unsigned s=0; s<distribution.size(); s++){
 		distribution[s]->write_hdf5_data(file, "distribution"+to_string(s));
-		sim->species_list[s]->spectrum.write_hdf5_data(file,"spectrum"+to_string(s));
+		spectrum[s].write_hdf5_data(file,"spectrum"+to_string(s));
 	}
 }
 

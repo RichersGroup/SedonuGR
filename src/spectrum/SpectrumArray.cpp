@@ -27,6 +27,8 @@
 
 #include "SpectrumArray.h"
 #include "global_options.h"
+#include <cmath>
+#include "Metric.h"
 
 SpectrumArray::SpectrumArray(){
 	rotated_basis = -MAXLIM;

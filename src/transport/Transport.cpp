@@ -389,7 +389,7 @@ void Transport::write(const int it) const{
 void Transport::reset_radiation(){
 	// clear global radiation quantities
 	for(unsigned i=0; i<species_list.size(); i++){
-		species_list[i]->spectrum.wipe();
+		grid->spectrum[i].wipe();
 		n_active[i] = 0;
 		n_escape[i] = 0;
 		N_core_lab[i] = 0;
@@ -559,7 +559,7 @@ void Transport::normalize_radiative_quantities(){
 
 	// normalize global quantities
 	for(unsigned s=0; s<species_list.size(); s++){
-		species_list[s]->spectrum.rescale(inv_multiplier); // erg/s in each bin. Assume lab_dt=1.0
+		grid->spectrum[s].rescale(inv_multiplier); // erg/s in each bin. Assume lab_dt=1.0
 		N_core_lab[s] *= inv_multiplier; // assume lab_dt=1.0
 		L_net_esc[s] *= inv_multiplier; // assume lab_dt=1.0
 		N_net_lab[s] *= inv_multiplier; // assume lab_dt=1.0
@@ -678,7 +678,7 @@ void Transport::reduce_radiation()
 	// reduce the spectra
 	if(verbose && rank0) cout << "#   spectra" << endl;
 	for(unsigned i=0; i<species_list.size(); i++)
-	  species_list[i]->spectrum.MPI_average();
+	  grid->spectrum[i].MPI_average();
 	  
 	// reduce the numbers of particles active/escaped
 	if(verbose && rank0) cout << "#   particle numbers" << endl;

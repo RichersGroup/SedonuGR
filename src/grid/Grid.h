@@ -56,9 +56,9 @@
 #include "Metric.h"
 #include "EinsteinHelper.h"
 #include "CDFArray.h"
+#include "PolarSpectrumArray.h"
 
 class Transport;
-class Zone;
 class SpectrumArray;
 
 class Grid
@@ -95,6 +95,7 @@ public:
 	vector<ScalarMultiDArray<NDIMS+1> > BB, abs_opac, scat_opac; // one for each species
 	vector<ScalarMultiDArray<NDIMS+2> > scattering_delta; // phi1/phi0 for sampling outgoing direction [Ein,Eout]
 	vector<ScalarMultiDArray<NDIMS+2> > scattering_phi0; // opacity per outgoing frequency [Ein,Eout]
+	vector<PolarSpectrumArray<0> > spectrum;
 
 
 	vector<SpectrumArray*> distribution;  // radiation energy density for each species in lab frame (erg/ccm. Integrated over bin frequency and direction)

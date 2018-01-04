@@ -95,7 +95,7 @@ void Neutrino_Nagakura::set_eas(int zone_index)
     string line;
     getline(opac_file,line);
 
-    for(int inu=0; inu<nu_grid_axis->size(); inu++){
+    for(int inu=0; inu<sim->grid->nu_grid_axis.size(); inu++){
     	unsigned global_indices[NDIMS+1];
     	for(unsigned i=0; i<NDIMS; i++){
     		global_indices[i] = dir_ind[i];
@@ -162,7 +162,7 @@ void Neutrino_Nagakura::set_eas(int zone_index)
                     cout << "ERROR: Neutrino ID not recognized!" << endl;
                     assert(false);
             }
-            sim->grid->BB[ID][global_index] = e/(pc::h*nu_grid_axis->mid[inu]) * pc::c*pc::c/(4.*pc::pi * nu_grid_axis->delta3(inu)/3.0);
+            sim->grid->BB[ID][global_index] = e/(pc::h*sim->grid->nu_grid_axis.mid[inu]) * pc::c*pc::c/(4.*pc::pi * sim->grid->nu_grid_axis.delta3(inu)/3.0);
             sim->grid->abs_opac[ID][global_index] = a;
             sim->grid->scat_opac[ID][global_index] = s;
     }

@@ -64,7 +64,7 @@ void Transport::propagate_particles()
 				L_net_esc[p->s] += p->N * nu*pc::h;
 				#pragma omp atomic
 				N_net_esc[p->s] += p->N;
-				species_list[p->s]->spectrum.count(D, dummy_spatial_indices, nu, p->N * nu*pc::h);
+				grid->spectrum[p->s].count(D, dummy_spatial_indices, nu, p->N * nu*pc::h);
 			}
 			PRINT_ASSERT(p->fate, !=, moving);
 		} //#pragma omp parallel for

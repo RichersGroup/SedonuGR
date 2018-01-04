@@ -58,11 +58,11 @@ void Neutrino_grey::myInit(Lua* lua)
 //-----------------------------------------------------------------
 void Neutrino_grey::set_eas(int z_ind)
 {
-	unsigned ngroups = nu_grid_axis->size();
+	unsigned ngroups = sim->grid->nu_grid_axis.size();
 
 	PRINT_ASSERT(grey_abs_frac,>=,0);
 	PRINT_ASSERT(grey_abs_frac,<=,1.0);
-	for(unsigned j=0;j<nu_grid_axis->size();j++)
+	for(unsigned j=0;j<sim->grid->nu_grid_axis.size();j++)
 	{
 		unsigned dir_ind[NDIMS+1];
 		sim->grid->rho.indices(z_ind,dir_ind);

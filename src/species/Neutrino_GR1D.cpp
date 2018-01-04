@@ -102,7 +102,7 @@ int extract_MC_index(const int z_ind, const int ID, const int nspecies, const in
 void Neutrino_GR1D::set_eas_external(const double* easarray, const double GR1D_tau_crit, bool* extract_MC, const double rshock){
 	PRINT_ASSERT(ghosts1,>=,0);
 	PRINT_ASSERT(n_GR1D_zones,>=,sim->grid->rho.size());
-	const int ngroups=nu_grid_axis->size();
+	const int ngroups=sim->grid->nu_grid_axis.size();
 	const int nspecies = sim->species_list.size();
 
 	// first, get opacities everywhere
@@ -124,7 +124,8 @@ void Neutrino_GR1D::set_eas_external(const double* easarray, const double GR1D_t
 			// set opacities
 			sim->grid->abs_opac[ID][global_index] = easarray[aind] / nulib_opacity_gf;
 			sim->grid->abs_opac[ID][global_index] = easarray[sind] / nulib_opacity_gf;
-			sim->grid->BB[ID][global_index] = easarray[eind] / nulib_emissivity_gf /(pc::h*nu_grid_axis->mid[inu]) * pc::c*pc::c/(4.*pc::pi * nu_grid_axis->delta3(inu)/3.0);
+			sim->grid->BB[ID][global_index] = easarray[eind] / nulib_emissivity_gf /(pc::h*sim->grid->nu_grid_axis.mid[inu])
+					* pc::c*pc::c/(4.*pc::pi * sim->grid->nu_grid_axis.delta3(inu)/3.0);
 		}
 	}
 }

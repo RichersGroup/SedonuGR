@@ -52,9 +52,6 @@ public:
 	Species();
 	virtual ~Species() {}
 
-	// the frequency grid for emissivity/opacity (Hz)
-	Axis* nu_grid_axis;
-
 	// name
 	std::string name;
 	int ID;
@@ -68,9 +65,6 @@ public:
 	// core properties
 	double T_core, mu_core;
 	double core_lum_multiplier;
-
-	// this species' spectrum
-	PolarSpectrumArray<0> spectrum;
 
 	// set everything up
 	void init(Lua* lua, Transport* sim);

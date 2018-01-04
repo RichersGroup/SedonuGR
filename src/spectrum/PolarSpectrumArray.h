@@ -35,7 +35,7 @@
 #include <sstream>
 #include <fstream>
 #include "global_options.h"
-#include "Transport.h"
+#include "MultiDArray.h"
 
 using namespace std;
 namespace pc = physical_constants;

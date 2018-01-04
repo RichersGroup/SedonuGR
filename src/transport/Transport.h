@@ -36,7 +36,6 @@
 
 class Species;
 class Grid;
-class SpectrumArray;
 enum ParticleEvent {interact, nothing};
 
 class Transport

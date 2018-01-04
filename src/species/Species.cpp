@@ -45,7 +45,6 @@ Species::Species(){
 	lepton_number = MAXLIM;
 	sim = NULL;
 	ID = MAXLIM;
-	nu_grid_axis = NULL;
 	T_core = NaN;
 	mu_core = NaN;
 	core_lum_multiplier = NaN;
@@ -61,27 +60,12 @@ void Species::init(Lua* lua, Transport* simulation)
 	// set the pointer to see the simulation info
 	sim = simulation;
 	PRINT_ASSERT(sim->grid->rho.size(),>,0);
-	nu_grid_axis = &(sim->grid->nu_grid_axis);
 
 
 	//============================//
 	// CALL CHILD'S INIT FUNCTION //
 	//============================//
 	myInit(lua);
-
-    //===========================//
-	// intialize output spectrum // only if child didn't
-	//===========================//
-	Axis tmp_mugrid, tmp_phigrid;
-	if(spectrum.size()==0){
-		int nmu  = lua->scalar<int>("spec_n_mu");
-		int nphi = lua->scalar<int>("spec_n_phi");
-		tmp_mugrid = Axis(-1,1,nmu);
-		tmp_phigrid = Axis(-pc::pi,pc::pi, nphi);
-		vector<Axis> dummy_spatial_axes(0);
-		spectrum.init(dummy_spatial_axes, *nu_grid_axis, tmp_mugrid, tmp_phigrid);
-	}
-	PRINT_ASSERT(spectrum.size(),>,0);
 
 	if(rank0) cout << "finished." << endl;
 }
@@ -96,7 +80,7 @@ void Species::get_opacity(const double com_nu, const int z_ind, double* a, doubl
 	PRINT_ASSERT(com_nu,>,0);
 
 	// absorption and scattering opacities
-	unsigned nu_bin = nu_grid_axis->bin(com_nu);
+	unsigned nu_bin = sim->grid->nu_grid_axis.bin(com_nu);
 	unsigned dir_ind[NDIMS+1];
 	sim->grid->rho.indices(z_ind,dir_ind);
 	dir_ind[NDIMS] = nu_bin;

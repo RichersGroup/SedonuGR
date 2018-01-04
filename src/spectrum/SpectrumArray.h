@@ -28,14 +28,11 @@
 #ifndef _SPECTRUM_ARRAY_H
 #define _SPECTRUM_ARRAY_H 1
 
-#include "Grid.h"
 #include "H5Cpp.h"
 #include <fstream>
 #include <vector>
 
 using namespace std;
-
-class Grid;
 
 class SpectrumArray {
 

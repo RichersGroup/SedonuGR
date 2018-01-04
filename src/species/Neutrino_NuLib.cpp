@@ -54,7 +54,7 @@ void Neutrino_NuLib::myInit(Lua* lua)
 //-----------------------------------------------------------------
 void Neutrino_NuLib::set_eas(int z_ind)
 {
-	unsigned ngroups = nu_grid_axis->size();
+	unsigned ngroups = sim->grid->nu_grid_axis.size();
 	unsigned dir_ind[NDIMS+2];
 	sim->grid->rho.indices(z_ind,dir_ind);
 
@@ -69,7 +69,7 @@ void Neutrino_NuLib::set_eas(int z_ind)
 		unsigned global_index = sim->grid->abs_opac[ID].direct_index(dir_ind);
 		sim->grid->abs_opac[ID][global_index] = tmp_absopac[ig];
 		sim->grid->scat_opac[ID][global_index] = tmp_scatopac[ig];
-		sim->grid->BB[ID][global_index] = tmp_BB[ig]  /(pc::h*nu_grid_axis->mid[ig]) * pc::c*pc::c/(4.*pc::pi * nu_grid_axis->delta3(ig)/3.0);
+		sim->grid->BB[ID][global_index] = tmp_BB[ig]  /(pc::h*sim->grid->nu_grid_axis.mid[ig]) * pc::c*pc::c/(4.*pc::pi * sim->grid->nu_grid_axis.delta3(ig)/3.0);
 
 		for(unsigned og=0; og<ngroups; og++){
 			dir_ind[NDIMS+1] = og;
