@@ -330,22 +330,44 @@ void Transport::random_walk(EinsteinHelper *eh, const double Rcom, const double 
 //-------------------------------------------------------------
 void Transport::sample_scattering_final_state(const int z_ind, EinsteinHelper &eh, const double cosTheta) const{
 	PRINT_ASSERT(use_scattering_kernels,>,0);
-	PRINT_ASSERT(species_list[eh.p.s]->scattering_delta.size(),>,0);
-	PRINT_ASSERT(species_list[eh.p.s]->normalized_phi0.size(),>,0);
+	PRINT_ASSERT(grid->scattering_delta[eh.p.s].size(),>,0);
+	PRINT_ASSERT(grid->scattering_phi0[eh.p.s].size(),>,0);
+
+	// get spatial component of directional indices
+	unsigned dir_ind[NDIMS+2];
+	grid->rho.indices(z_ind,dir_ind);
+	double hyperloc[NDIMS+2];
+	for(unsigned i=0; i<NDIMS; i++) hyperloc[i] = eh.p.xup[i];
 
 	// get ingoing energy index
-	int igin = grid->nu_grid_axis.bin(eh.nu());
-	if(igin == grid->nu_grid_axis.size()) igin--;
+	unsigned igin = grid->nu_grid_axis.bin(eh.nu());
+	igin = min(dir_ind[NDIMS], grid->nu_grid_axis.size()-1);
+	dir_ind[NDIMS+1] = igin;
+	hyperloc[NDIMS] = eh.nu();
 
-	// get outgoing energy
-	int igout = rangen.uniform_discrete(0, grid->nu_grid_axis.size()-1);
+	// get outgoing energy bin w/ rejection sampling
+	unsigned igout;
+	double P, phi0avg, nubar;
+	do{
+		igout = rangen.uniform_discrete(0, grid->nu_grid_axis.size()-1);
+		dir_ind[NDIMS+1] = igout;
+		nubar = 0.5 * (grid->nu_grid_axis.top[igout] - grid->nu_grid_axis.bottom(igout));
+		hyperloc[NDIMS+1] = nubar;
+		phi0avg = grid->scattering_phi0[eh.p.s].interpolate(hyperloc,dir_ind);
+		P = phi0avg * grid->nu_grid_axis.delta(igout) / eh.scatopac;
+		PRINT_ASSERT(P,<=,1.0);
+	} while(rangen.uniform() > P);
+
+	// uniformly sample within zone
+	unsigned global_index = grid->scattering_phi0[eh.p.s].direct_index(dir_ind);
 	double out_nu = rangen.uniform(grid->nu_grid_axis.bottom(igout), grid->nu_grid_axis.top[igout]);
 	eh.scale_p_frequency(out_nu/eh.nu());
-	double weight = (double)grid->nu_grid_axis.size() * species_list[eh.p.s]->normalized_phi0[z_ind][igin].get_value(igout);
-	eh.p.N *= weight;
+	double phi_interpolated = grid->scattering_phi0[eh.p.s].dydx[global_index][NDIMS+1][0]*(out_nu - nubar) + phi0avg;
+	eh.p.N *= phi_interpolated / phi0avg;
 
 	// bias outgoing direction to be isotropic. Very inefficient for large values of delta.
-	double delta = species_list[eh.p.s]->scattering_delta[z_ind][igin][igout];
+	hyperloc[NDIMS+1] = out_nu;
+	double delta = grid->scattering_delta[eh.p.s].interpolate(hyperloc,dir_ind);
 	PRINT_ASSERT(fabs(delta),<,3.0);
 	if(fabs(delta)<=1.0) eh.p.N *= 1.0 + delta*cosTheta;
 	else{

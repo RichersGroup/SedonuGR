@@ -321,7 +321,7 @@ void nulib_get_iscatter_kernels(
 		const double ye,
 		const int nulibID,
 		vector<double>& nut_scatopac, // 1/cm   opac[group in] Input AND output
-		vector< CDFArray >& phi0Tilde, // 2pi h^-3 c^-4 phi0 delta(E^3/3) [group in][group out] units 1/cm Output.
+		vector< vector<double> >& phi0Tilde, // 2pi h^-3 c^-4 phi0 delta(E^3/3)/deltaE [group in][group out] units 1/cm/erg Output.
 		vector< vector<double> >& scattering_delta){  // 3.*phi1/phi0   [group_in][group_out] Input AND output.
 
 	// fetch the relevant table from nulib. NuLib only accepts doubles.
@@ -357,23 +357,23 @@ void nulib_get_iscatter_kernels(
 			double E1 = nulibtable_ebottom[igout] * pc::MeV_to_ergs;
 			double E2 = nulibtable_etop[   igout] * pc::MeV_to_ergs;
 			double dE3 = E2*E2*E2 - E1*E1*E1;
-			double coeff = constants / (dE3/3.0);
+			double coeff = (dE3/3.0) / constants / (E2-E1);
 
 			double inelastic_phi0=0, inelastic_phi1=0;
 			if(read_Ielectron){
 				inelastic_phi0 = phi[0][igout][igin] * coeff;
-				inelastic_phi1 = phi[1][igout][igin] * coeff / 9.;
+				inelastic_phi1 = phi[1][igout][igin] * coeff;
+				PRINT_ASSERT(inelastic_phi1,<=,inelastic_phi0);
 			}
 			if(igin == igout){
 				inelastic_phi0 += nut_scatopac[igin];
 				if(nulibtable_number_easvariables==4)
 					inelastic_phi1 += nut_scatopac[igin] * scattering_delta[igin][igin] / 3.0; // scattering_delta set in nulib_get_eas_arrays
 			}
-			phi0Tilde[igin].set_value(igout, inelastic_phi0);
+			phi0Tilde[igin][igout] = inelastic_phi0;
 			scattering_delta[igin][igout] = (inelastic_phi0==0 ? 0 : 3. * inelastic_phi1 / inelastic_phi0);
 			PRINT_ASSERT(abs(scattering_delta[igin][igout]),<=,3.0);
 		}
-		phi0Tilde[igin].normalize();
 	}
 }
 
@@ -388,7 +388,7 @@ void nulib_get_eas_arrays(
 		vector<double>& nut_BB,         // dimensionless
 		vector<double>& nut_absopac,    // cm^-1
 		vector<double>& nut_scatopac,   // cm^-1
-		vector< CDFArray >& phiTilde, // 2pi h^-3 c^-4 phi0 delta(E^3/3) [group in][group out] units 1/cm
+		vector< vector<double> >& phiTilde, // 2pi h^-3 c^-4 phi0 delta(E^3/3) [group in][group out] units 1/cm
 		vector< vector<double> >& scattering_delta){
 
 	PRINT_ASSERT(rho,>=,0);

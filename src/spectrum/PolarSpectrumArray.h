@@ -150,7 +150,7 @@ public:
 		mu = min( 1.0-tiny,mu);
 		int mu_bin = data.axes[muGridIndex].bin(mu);
 		mu_bin = max(mu_bin, 0);
-		mu_bin = min(mu_bin, data.axes[muGridIndex].size()-1);
+		mu_bin = min(mu_bin, (int)data.axes[muGridIndex].size()-1);
 		indices[muGridIndex] = mu_bin;
 
 		double phi = atan2(D[1],D[0]);  // projection into x-y plane
@@ -158,12 +158,12 @@ public:
 		if(phi>= pc::pi) phi -= 2.0*pc::pi;
 		int phi_bin = data.axes[phiGridIndex].bin(phi);
 		phi_bin = max(phi_bin, 0);
-		phi_bin = min(phi_bin, data.axes[phiGridIndex].size()-1);
+		phi_bin = min((unsigned)phi_bin, data.axes[phiGridIndex].size()-1);
 		indices[phiGridIndex] = phi_bin;
 
 		int nu_bin = data.axes[nuGridIndex].bin(nu);
 		nu_bin = max(nu_bin, 0);
-		nu_bin = min(nu_bin, data.axes[nuGridIndex].size()-1);
+		nu_bin = min((unsigned)nu_bin, data.axes[nuGridIndex].size()-1);
 		indices[nuGridIndex] = nu_bin;
 
 		data.add(indices, E);

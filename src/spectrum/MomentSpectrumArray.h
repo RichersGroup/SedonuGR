@@ -111,7 +111,7 @@ public:
 
 		int nu_bin = data.axes[nuGridIndex].bin(nu);
 		nu_bin = max(nu_bin, 0);
-		nu_bin = min(nu_bin, data.axes[nuGridIndex].size()-1);
+		nu_bin = min(nu_bin, (int)data.axes[nuGridIndex].size()-1);
 		data_indices[nuGridIndex] = nu_bin;
 
 		// increment moments

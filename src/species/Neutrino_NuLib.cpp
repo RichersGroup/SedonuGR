@@ -55,12 +55,14 @@ void Neutrino_NuLib::myInit(Lua* lua)
 void Neutrino_NuLib::set_eas(int z_ind)
 {
 	unsigned ngroups = nu_grid_axis->size();
-	unsigned dir_ind[NDIMS+1];
+	unsigned dir_ind[NDIMS+2];
 	sim->grid->rho.indices(z_ind,dir_ind);
 
 	vector<double> tmp_absopac(ngroups), tmp_scatopac(ngroups), tmp_BB(ngroups);
+	vector< vector<double> > tmp_delta(ngroups, vector<double>(ngroups));
+	vector< vector<double> > tmp_phi0(ngroups, vector<double>(ngroups));
 	nulib_get_eas_arrays(sim->grid->rho[z_ind], sim->grid->T[z_ind], sim->grid->Ye[z_ind], ID,
-			tmp_BB, tmp_absopac, tmp_scatopac, normalized_phi0[z_ind], scattering_delta[z_ind]);
+			tmp_BB, tmp_absopac, tmp_scatopac, tmp_phi0, tmp_delta);
 
 	for(unsigned ig=0; ig<ngroups; ig++){
 		dir_ind[NDIMS] = ig;
@@ -68,5 +70,12 @@ void Neutrino_NuLib::set_eas(int z_ind)
 		sim->grid->abs_opac[ID][global_index] = tmp_absopac[ig];
 		sim->grid->scat_opac[ID][global_index] = tmp_scatopac[ig];
 		sim->grid->BB[ID][global_index] = tmp_BB[ig]  /(pc::h*nu_grid_axis->mid[ig]) * pc::c*pc::c/(4.*pc::pi * nu_grid_axis->delta3(ig)/3.0);
+
+		for(unsigned og=0; og<ngroups; og++){
+			dir_ind[NDIMS+1] = og;
+			global_index = sim->grid->scattering_delta[ID].direct_index(dir_ind);
+			sim->grid->scattering_delta[ID][global_index] = tmp_delta[ig][og];
+			sim->grid->scattering_phi0[ID][global_index] = tmp_phi0[ig][og] * pc::h;
+		}
 	}
 }

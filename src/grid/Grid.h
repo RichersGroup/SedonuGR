@@ -55,6 +55,7 @@
 #include "SpectrumArray.h"
 #include "Metric.h"
 #include "EinsteinHelper.h"
+#include "CDFArray.h"
 
 class Transport;
 class Zone;
@@ -88,10 +89,13 @@ public:
 
 	Transport* sim;
 
-	std::string grid_type;
+	string grid_type;
 
 	Axis nu_grid_axis;
 	vector<ScalarMultiDArray<NDIMS+1> > BB, abs_opac, scat_opac; // one for each species
+	vector<ScalarMultiDArray<NDIMS+2> > scattering_delta; // phi1/phi0 for sampling outgoing direction [Ein,Eout]
+	vector<ScalarMultiDArray<NDIMS+2> > scattering_phi0; // opacity per outgoing frequency [Ein,Eout]
+
 
 	vector<SpectrumArray*> distribution;  // radiation energy density for each species in lab frame (erg/ccm. Integrated over bin frequency and direction)
 
@@ -104,6 +108,7 @@ public:
 
 	MultiDArray<4,NDIMS> fourforce_abs, fourforce_emit;
 	ScalarMultiDArray<NDIMS> l_abs, l_emit; // lepton number emission rate (cm^-3 s^-1) (comoving frame)
+
 
 	// set everything up
 	virtual void init(Lua* lua, Transport* insim);

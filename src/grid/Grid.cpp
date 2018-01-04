@@ -245,6 +245,8 @@ void Grid::init(Lua* lua, Transport* insim)
 	abs_opac.resize(sim->species_list.size());
 	scat_opac.resize(sim->species_list.size());
 	BB.resize(sim->species_list.size());
+	scattering_delta.resize(sim->species_list.size());
+	scattering_phi0.resize(sim->species_list.size());
 	vector<Axis> axes;
 	axis_vector(axes);
 	if(do_annihilation) Q_annihil.set_axes(axes);
@@ -258,6 +260,14 @@ void Grid::init(Lua* lua, Transport* insim)
 		BB[s].set_axes(axes);
 		abs_opac[s].set_axes(axes);
 		scat_opac[s].set_axes(axes);
+	}
+
+	if(sim->use_scattering_kernels==1){
+		axes.push_back(nu_grid_axis);
+		for(int s=0; s<sim->species_list.size(); s++){
+			scattering_delta[s].set_axes(axes);
+			scattering_phi0[s].set_axes(axes);
+		}
 	}
 }
 

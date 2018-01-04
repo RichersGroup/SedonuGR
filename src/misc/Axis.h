@@ -43,7 +43,7 @@ public:
 		min = NaN;
 	}
 
-	int size() const {return top.size();}
+	unsigned size() const {return top.size();}
 
 	int bin(const double x) const{
 		if(x<min) return -1;
