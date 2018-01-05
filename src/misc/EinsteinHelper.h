@@ -146,7 +146,7 @@ public:
   	double dlambda = ds_com / (pc::h*nu());
 
   	double dk_dlambda[4] = {0,0,0,0};
-  	christoffel.contract2(p.kup,dk_dlambda);
+  	if(DO_GR) christoffel.contract2(p.kup,dk_dlambda);
 
   	// get new x,k
   	for(int i=0; i<4; i++){

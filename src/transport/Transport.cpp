@@ -851,7 +851,9 @@ void Transport::set_cdf_to_BB(const double T, const double chempot, CDFArray& em
 
 void Transport::update_eh(EinsteinHelper* eh) const{
 	// get new spatial indices
+	int zold = eh->z_ind;
 	eh->z_ind = grid->zone_index(eh->p.xup);
+	bool newZone = zold!=eh->z_ind;
 
 	if(eh->z_ind >= 0){
 		grid->rho.indices(eh->z_ind, eh->dir_ind);
@@ -861,7 +863,7 @@ void Transport::update_eh(EinsteinHelper* eh) const{
 		// update the background data
 		double v[3];
 		grid->interpolate_metric(eh->p.xup, &(eh->g), eh->dir_ind);
-		grid->get_connection_coefficients(eh);
+		if(DO_GR && newZone) grid->get_connection_coefficients(eh);
 		grid->interpolate_fluid_velocity(eh->p.xup,v,eh->dir_ind);
 		eh->update(v);
 
