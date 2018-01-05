@@ -79,10 +79,6 @@ protected:
 	// GR functions
 	virtual void connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind=-1) const = 0; // Gamma^alhpa_mu_nu
 
-	double dot (const double aup[4], const double bup[4], const double xup[4], const int z_ind=-1) const;
-	double dot3(const double aup[3], const double bup[3], const double xup[4], const int z_ind=-1) const;
-
-
 public:
 
 	virtual ~Grid() {}
