@@ -625,7 +625,7 @@ double Grid2DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const
 	const unsigned int i = dir_ind[0];
 	const unsigned int j = dir_ind[1];
 
-	double r = sqrt(Metric::dot_Minkowski<3>(x_up,x_up));
+	double r = radius(x_up);
 	double rhat = sqrt(x_up[0]*x_up[0] + x_up[1]*x_up[1]);
 	double theta = Grid2DSphere_theta(x_up);
 	PRINT_ASSERT(r,<=,rAxis.top[i]);

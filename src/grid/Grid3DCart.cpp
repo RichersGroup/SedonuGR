@@ -486,7 +486,7 @@ double Grid3DCart::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	double r[3];
 	zone_coordinates(z_ind,r,3);
-	return sqrt(Metric::dot_Minkowski<3>(r,r));
+	return radius(r);
 }
 
 //-----------------------------

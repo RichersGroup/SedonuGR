@@ -88,8 +88,6 @@ void Species::init(Lua* lua, Transport* simulation)
 	// CALL CHILD'S INIT FUNCTION //
 	//============================//
 	myInit(lua);
-
-	if(rank0) cout << "finished." << endl;
 }
 
 //-------------------------------------------------------------------------------------------------------------

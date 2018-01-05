@@ -187,7 +187,6 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 		infile >> tmp_Ye[z_ind];
 		tmp_H_vis[z_ind] = 0;
 		infile >> tmp_vr[z_ind];
-		cout << "WARNING - INPUT COLUMNS HAVE CHANGED" << endl;
 		infile >> tmp_alpha[z_ind];
 		infile >> tmp_X[z_ind];
 
@@ -349,7 +348,7 @@ void Grid1DSphere::interpolate_fluid_velocity(const double x[3], double v[3], in
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 
 	// radius in zone
-	double r = sqrt(Metric::dot_Minkowski<3>(x,x));
+	double r = radius(x);
 
 	// assuming radial velocity (may want to interpolate here)
 	// (the other two components are ignored and mean nothing)
@@ -403,7 +402,7 @@ void Grid1DSphere::symmetry_boundaries(EinsteinHelper *eh, const double toleranc
 }
 
 double Grid1DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const{
-	double r = sqrt(Metric::dot_Minkowski<3>(x_up,x_up));
+	double r = radius(x_up);
 	PRINT_ASSERT(r,<=,rAxis.top[z_ind]);
 	PRINT_ASSERT(r,>=,rAxis.bottom(z_ind));
 

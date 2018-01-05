@@ -29,6 +29,7 @@
 #include "global_options.h"
 #include <cmath>
 #include "Metric.h"
+#include "Grid.h"
 
 SpectrumArray::SpectrumArray(){
 	rotated_basis = -MAXLIM;
@@ -36,7 +37,7 @@ SpectrumArray::SpectrumArray(){
 
 void SpectrumArray::rotate_basis(double D[3], const double xyz[3]){
 	double x=xyz[0], y=xyz[1], z=xyz[2];
-	double inv_r = 1.0 / sqrt(Metric::dot_Minkowski<3>(xyz,xyz));
+	double inv_r = 1.0 / Grid::radius(xyz);
 	double rp = sqrt(x*x + y*y);
 	double rhat[3]     = {0,0,0};
 	double thetahat[3] = {0,0,0};
