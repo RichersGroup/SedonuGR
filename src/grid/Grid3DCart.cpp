@@ -212,6 +212,10 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	T.set_axes(xAxes);
 	Ye.set_axes(xAxes);
 	H_vis.set_axes(xAxes);
+	betaup.set_axes(xAxes);
+	gamma.set_axes(xAxes);
+	g3.set_axes(xAxes);
+	sqrtdetg3.set_axes(xAxes);
 
 	// print out grid structure
 	if(rank0){
@@ -366,7 +370,7 @@ double Grid3DCart::zone_lab_3volume(const int z_ind) const
 	double delta[3];
 	get_deltas(z_ind,delta,3);
 	double result = delta[0] * delta[1] * delta[2];
-	if(do_GR) result *= metric[z_ind].sqrtdetg3;
+	if(DO_GR) result *= sqrtdetg3[z_ind];
 	return result;
 }
 
@@ -627,24 +631,26 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh, const double tolerance)
 	}
 }
 
-//void Grid3DCart::shiftup(double betaup[4], const double xup[4], int z_ind) const {
-//	if(z_ind<0) z_ind = zone_index(xup);
-//	betaup[3] = 0;
-//	for(int i=0; i<3; i++) betaup[i] = metric[z_ind].beta[i];
-//}
-//void Grid3DCart::g3_down(const double xup[4], double gproj[4][4], int z_ind) const {
-//	if(z_ind<0) z_ind = zone_index(xup);
-//	for(int i=0; i<3; i++) for(int j=0; j<3; j++)
-//		gproj[i][j] = metric[z_ind].g3[i][j];
-//}
-//void Grid3DCart::get_connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind) const{
-//	if(z_ind<0) z_ind = zone_index(xup);
-//	for(int i=0; i<4; i++) for(int j=0; j<4; j++) for(int k=0; k<4; k++)
-//		gamma[i][j][k] = metric[z_ind].gamma[i][j][k];
-//}
 void Grid3DCart::axis_vector(vector<Axis>& axes) const{
 	axes = xAxes;
 }
 double Grid3DCart::zone_lorentz_factor(const int z_ind) const{
-	abort(); // NOT IMPLEMENTED
+	Metric g;
+	g.gammalow.data = g3[z_ind];
+
+	double threevel[3];
+	for(unsigned i=0; i<3; i++) threevel[i] = v[z_ind][i];
+
+	return EinsteinHelper::lorentzFactor(&g,threevel);
+}
+
+void Grid3DCart::get_connection_coefficients(EinsteinHelper* eh) const{
+	eh->christoffel.data = gamma[eh->z_ind];
+}
+void Grid3DCart::interpolate_shift(const double xup[4], double betaup_out[3], const unsigned dir_ind[NDIMS]) const{
+	Tuple<double,3> tmp = betaup.interpolate(xup,dir_ind);
+	for(unsigned i=0; i<3; i++) betaup_out[i] = tmp[i];
+}
+void Grid3DCart::interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const{
+	gammalow->data = g3.interpolate(xup,dir_ind);
 }

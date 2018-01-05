@@ -139,7 +139,7 @@ void Transport::boundary_conditions(EinsteinHelper *eh) const{
 	if(r_core>0 && grid->radius(eh->p.xup)<r_core) eh->p.fate = absorbed;
 	else if(eh->z_ind<0){
 		grid->symmetry_boundaries(eh, step_size);
-		update_eh(eh);
+		update_eh_background(eh);
 	}
 }
 
@@ -205,7 +205,7 @@ void Transport::move(EinsteinHelper *eh){
 		window(eh);
 	}
 
-	update_eh(eh);
+	update_eh_background(eh);
 }
 
 
@@ -225,10 +225,10 @@ void Transport::propagate(EinsteinHelper *eh)
 		PRINT_ASSERT(eh->nu(), >, 0);
 		PRINT_ASSERT(eh->z_ind,>=,0);
 		for(unsigned i=0; i<NDIMS; i++) PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
-		PRINT_ASSERT(eh->dir_ind[NDIMS],<,grid->nu_grid_axis.size());
 
 		// get all the opacities
 		grid->get_opacity(eh);
+		PRINT_ASSERT(eh->dir_ind[NDIMS],<,grid->nu_grid_axis.size());
 
 		// decide which event happens
 		which_event(eh,&event);

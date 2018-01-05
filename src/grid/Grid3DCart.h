@@ -49,14 +49,10 @@ private:
 	int    rotate_hemisphere[2];
 	int    rotate_quadrant;
 
-	struct CartesianMetric{
-		double alpha;
-		double beta[3];
-		double g3[3][3];
-		double gamma[4][4][4];
-		double sqrtdetg3;
-	};
-	std::vector<CartesianMetric> metric;
+	MultiDArray<3,3> betaup;
+	MultiDArray<6,3> g3;
+	MultiDArray<30,3> gamma;
+	ScalarMultiDArray<3> sqrtdetg3;
 
 	vector<Axis> xAxes;
 
@@ -94,9 +90,9 @@ public:
 	void axis_vector(vector<Axis>& axes) const;
 
 	// GR functions
-//	void get_connection_coefficients(EinsteinHelper* eh) const; // Gamma^alhpa_mu_nu
-//	void interpolate_shift(const double xup[4], double betaup[3], const unsigned dir_ind[NDIMS]) const;
-//	void interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const;
+	void get_connection_coefficients(EinsteinHelper* eh) const; // Gamma^alhpa_mu_nu
+	void interpolate_shift(const double xup[4], double betaup[3], const unsigned dir_ind[NDIMS]) const;
+	void interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const;
 };
 
 #endif

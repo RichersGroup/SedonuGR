@@ -258,7 +258,7 @@ double  Grid1DSphere::zone_lab_3volume(const int z_ind) const
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	double r0 = (z_ind==0 ? rAxis.min : rAxis.top[z_ind-1]);
 	double vol = 4.0*pc::pi/3.0*( pow(rAxis.top[z_ind],3) - pow(r0,3) );
-	if(do_GR) vol *= X[z_ind];
+	if(DO_GR) vol *= X[z_ind];
 	PRINT_ASSERT(vol,>=,0);
 	return vol;
 }
@@ -444,22 +444,21 @@ void Grid1DSphere::write_hdf5_coordinates(H5::H5File file) const
 	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
 	dataset.close();
 }
-
-void Grid1DSphere::interpolate_3metric(const double xup[4], ThreeMetric* gammalow, unsigned dir_ind[NDIMS]) const{
+void Grid1DSphere::interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const{
 	const double r = radius(xup);
 	const double Xloc = X.interpolate(xup,dir_ind);
 	double tmp = (Xloc*Xloc-1.0) / (r*r);
 
-	gammalow->xx = xup[0]*xup[0] * tmp;
-	gammalow->yy = xup[1]*xup[1] * tmp;
-	gammalow->zz = xup[2]*xup[2] * tmp;
-	gammalow->xy = xup[0]*xup[1] * tmp;
-	gammalow->xz = xup[0]*xup[2] * tmp;
-	gammalow->yz = xup[1]*xup[2] * tmp;
+	gammalow->data[ixx] = xup[0]*xup[0] * tmp;
+	gammalow->data[iyy] = xup[1]*xup[1] * tmp;
+	gammalow->data[izz] = xup[2]*xup[2] * tmp;
+	gammalow->data[ixy] = xup[0]*xup[1] * tmp;
+	gammalow->data[ixz] = xup[0]*xup[2] * tmp;
+	gammalow->data[iyz] = xup[1]*xup[2] * tmp;
 
-	gammalow->xx += 1.0;
-	gammalow->yy += 1.0;
-	gammalow->zz += 1.0;
+	gammalow->data[ixx] += 1.0;
+	gammalow->data[iyy] += 1.0;
+	gammalow->data[izz] += 1.0;
 }
 
 void Grid1DSphere::get_connection_coefficients(EinsteinHelper* eh) const{
@@ -470,28 +469,30 @@ void Grid1DSphere::get_connection_coefficients(EinsteinHelper* eh) const{
 	const double dXdr = X.dydx[eh->z_ind][0][0];
 
 	double tmp;
-	double *xup;
-	xup = &(eh->p.xup[0]);
+	double* xup = eh->p.xup;
+	Tuple<double,30>& ch = eh->christoffel.data;
 
-	for(int a=0; a<4; a++) for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++){
-		eh->christoffel.data[a].tt = alpha * dadr / (r*Xloc*Xloc) * xup[a];
-		eh->christoffel.data[a].xt = 0;
-		eh->christoffel.data[a].yt = 0;
-		eh->christoffel.data[a].zt = 0;
+	for(int a=0; a<3; a++){
+		const unsigned offset = 10*a;
+		ch[offset+itt] = alpha * dadr / (r*Xloc*Xloc) * xup[a];
+		ch[offset+ixt] = 0;
+		ch[offset+iyt] = 0;
+		ch[offset+izt] = 0;
 
 		tmp = 1. / (r*r*r*Xloc*Xloc) * (1.0 - Xloc*Xloc + r*Xloc*dXdr) * xup[a]/r;
-		eh->christoffel.data[a].xx = xup[0]*xup[0] * tmp;
-		eh->christoffel.data[a].yy = xup[1]*xup[1] * tmp;
-		eh->christoffel.data[a].zz = xup[2]*xup[2] * tmp;
-		eh->christoffel.data[a].xy = xup[0]*xup[1] * tmp;
-		eh->christoffel.data[a].xz = xup[0]*xup[2] * tmp;
-		eh->christoffel.data[a].yz = xup[1]*xup[2] * tmp;
+		ch[offset+ixx] = xup[0]*xup[0] * tmp;
+		ch[offset+iyy] = xup[1]*xup[1] * tmp;
+		ch[offset+izz] = xup[2]*xup[2] * tmp;
+		ch[offset+ixy] = xup[0]*xup[1] * tmp;
+		ch[offset+ixz] = xup[0]*xup[2] * tmp;
+		ch[offset+iyz] = xup[1]*xup[2] * tmp;
 
 		tmp = -(1.-Xloc*Xloc) / (r*Xloc*Xloc) * xup[a]/r;
-		eh->christoffel.data[a].xx += tmp;
-		eh->christoffel.data[a].yy += tmp;
-		eh->christoffel.data[a].zz += tmp;
+		ch[offset+ixx] += tmp;
+		ch[offset+iyy] += tmp;
+		ch[offset+izz] += tmp;
 	}
+	for(unsigned i=0; i<30; i++) PRINT_ASSERT(ch[i],==,ch[i]);
 }
 
 void Grid1DSphere::axis_vector(vector<Axis>& axes) const{
@@ -500,4 +501,9 @@ void Grid1DSphere::axis_vector(vector<Axis>& axes) const{
 double Grid1DSphere::zone_lorentz_factor(const int z_ind) const{
 	double vdotv = vr[z_ind]*vr[z_ind] * X[z_ind] / (pc::c*pc::c);
 	return 1. / sqrt(1.-vdotv);
+}
+void Grid1DSphere::interpolate_shift(const double xup[4], double betaup[3], const unsigned dir_ind[NDIMS]) const{ // default Minkowski
+	betaup[0] = 0;
+	betaup[1] = 0;
+	betaup[2] = 0;
 }

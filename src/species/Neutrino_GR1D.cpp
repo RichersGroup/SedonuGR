@@ -118,10 +118,11 @@ void Neutrino_GR1D::set_eas_external(const double* easarray, const double GR1D_t
 			PRINT_ASSERT(easarray[sind],>=,0);
 
 			// set opacities
-			sim->grid->abs_opac[ID][global_index] = easarray[aind] / nulib_opacity_gf;
-			sim->grid->abs_opac[ID][global_index] = easarray[sind] / nulib_opacity_gf;
-			sim->grid->BB[ID][global_index] = easarray[eind] / nulib_emissivity_gf /(pc::h*sim->grid->nu_grid_axis.mid[inu])
-					* pc::c*pc::c/(4.*pc::pi * sim->grid->nu_grid_axis.delta3(inu)/3.0);
+			sim->grid->abs_opac[ID][global_index] = easarray[aind] / nulib_opacity_gf; // 1/cm
+			sim->grid->abs_opac[ID][global_index] = easarray[sind] / nulib_opacity_gf; // 1/cm
+			sim->grid->BB[ID][global_index] = easarray[eind] / nulib_emissivity_gf     // erg/s/cm^3/sr
+					/ (sim->grid->abs_opac[ID][global_index] * pc::h)                  // #/s/cm^2/sr/Hz^-1
+					/ (pow(sim->grid->nu_grid_axis.mid[inu],3) * sim->grid->nu_grid_axis.delta(inu)); // #/s/cm^2/sr/(Hz^3/3)
 		}
 	}
 }

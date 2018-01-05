@@ -156,6 +156,7 @@ public:
 	double r_core;
 	int n_emit_core_per_bin;
 	void init_core(const double r_core, const double T_core, const double munue_core);
+	void random_core_x(double x3[3]) const;
 
 	// items for zone emission
 	int do_visc;
@@ -182,10 +183,12 @@ public:
 	// blackbody function (#/cm^2/s/ster/Hz^3)
 	static double number_blackbody(const double T, const double chempot, const double nu);
 	void set_cdf_to_BB(const double T, const double chempot, CDFArray& emis);
+	static void isotropic_kup_tet(const double nu, double kup_tet[4], const double xup[4], ThreadRNG *rangen);
+	static void isotropic_direction(double D[3], ThreadRNG *rangen);
 
 	// set things up
-	void   init(Lua* lua);
-	void update_eh(EinsteinHelper* eh) const;
+	void init(Lua* lua);
+	void update_eh_background(EinsteinHelper* eh) const;
 
 	// in-simulation functions to be used by main
 	void step();

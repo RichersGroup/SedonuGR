@@ -40,7 +40,7 @@
 #include "H5Cpp.h"
 
 #define NDIMS 1
-#define DO_GR 0
+#define DO_GR 1
 
 //using real = float; // or float
 //const MPI_Datatype MPI_real = ( sizeof(real)==4 ? MPI_FLOAT : MPI_DOUBLE );

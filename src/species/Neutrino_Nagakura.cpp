@@ -155,7 +155,7 @@ void Neutrino_Nagakura::set_eas(const unsigned zone_index, Grid* grid) const
                     cout << "ERROR: Neutrino ID not recognized!" << endl;
                     assert(false);
             }
-            grid->BB[ID][global_index] = e/(pc::h*grid->nu_grid_axis.mid[inu]) * pc::c*pc::c/(4.*pc::pi * grid->nu_grid_axis.delta3(inu)/3.0);
+            grid->BB[ID][global_index] = e / pow(pc::c,2); // #/cm^2/s/sr/(Hz^3/3)
             grid->abs_opac[ID][global_index] = a;
             grid->scat_opac[ID][global_index] = s;
     }

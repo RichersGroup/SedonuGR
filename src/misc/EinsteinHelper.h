@@ -41,19 +41,22 @@ public:
 			dir_ind[i] = MAXLIM;
 	}
 
-	// fill in values for g.{gtt, betalow}, u, e, kup_tet
-	// assumes g.{alpha, betaup, gammalow}, p.kup are set
-	void update(const double v[3]){ // use v as input since we don't store it
-		g.update();
-		set_fourvel(v);
-		set_tetrad_basis(u);
-		coord_to_tetrad(p.kup, kup_tet);
+	void set_kup_tet(const double kup_tet_in[4]){
+		PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet_in,kup_tet_in)/(kup_tet_in[3]*kup_tet_in[3]),<,1e-6);
+		for(unsigned i=0; i<4; i++) kup_tet[i] = kup_tet_in[i];
+		tetrad_to_coord(kup_tet,p.kup);
 		g.normalize_null(p.kup);
+	}
+	void renormalize_kup(){
+		if(p.kup[3]==p.kup[3]){ // only if kup has been set already
+			g.normalize_null(p.kup);
+			coord_to_tetrad(p.kup, kup_tet);
+		}
 	}
 
 	// return the Lorentz factor W
-	double lorentzFactor(const double v[3]) const{
-		return 1. / sqrt(1. - g.dot<3>(v,v));
+	static double lorentzFactor(Metric* g, const double v[3]){
+		return 1. / sqrt(1. - g->dot<3>(v,v));
 	}
 
 	double nu() const{
@@ -64,7 +67,7 @@ public:
 
 	// get four velocity from three velocity
 	void set_fourvel(const double v[3]){
-		double W = lorentzFactor(v);
+		double W = lorentzFactor(&g,v);
 		u[3] = W/g.alpha;
 		for(unsigned i=0; i<3; i++)
 			u[i] = v[3]/pc::c * (g.alpha*v[i]/pc::c - g.betaup[i]);
@@ -72,7 +75,7 @@ public:
 
 
 	// get a Cartesian tetrad basis
-	void set_tetrad_basis(const double u[4]){
+	void set_tetrad_basis(){
 		// normalize four-velocity to get timelike vector
 		for(int mu=0; mu<4; mu++) e[3][mu] = u[mu];
 		g.normalize(e[3]);

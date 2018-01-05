@@ -849,28 +849,54 @@ void Transport::set_cdf_to_BB(const double T, const double chempot, CDFArray& em
 	emis.normalize();
 }
 
-void Transport::update_eh(EinsteinHelper* eh) const{
-	// get new spatial indices
-	int zold = eh->z_ind;
+void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that depend only on particle position
+	// zone index
 	eh->z_ind = grid->zone_index(eh->p.xup);
-	bool newZone = zold!=eh->z_ind;
 
 	if(eh->z_ind >= 0){
+		// spatial indices
 		grid->rho.indices(eh->z_ind, eh->dir_ind);
-		for(unsigned i=0; i<NDIMS; i++)
-			PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
+		for(unsigned i=0; i<NDIMS; i++)	PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
 
-		// update the background data
-		double v[3];
+		// metric and its derivatives
+		grid->get_connection_coefficients(eh);
 		grid->interpolate_metric(eh->p.xup, &(eh->g), eh->dir_ind);
-		if(DO_GR && newZone) grid->get_connection_coefficients(eh);
-		grid->interpolate_fluid_velocity(eh->p.xup,v,eh->dir_ind);
-		eh->update(v);
+		eh->g.update();
 
-		// update frequency index
-		eh->dir_ind[NDIMS] = min(grid->nu_grid_axis.bin(eh->nu()), (int)grid->nu_grid_axis.size()-1);
-		eh->dir_ind[NDIMS] = min(eh->dir_ind[NDIMS], grid->nu_grid_axis.size());
-		eh->eas_ind = grid->BB[0].direct_index(eh->dir_ind);
+		// four-velocity and tetrad
+		double v[3];
+		grid->interpolate_fluid_velocity(eh->p.xup,v,eh->dir_ind);
+		eh->set_fourvel(v);
+		eh->set_tetrad_basis();
+
+		// make sure kup is consistent with the new background
+		eh->renormalize_kup();
 	}
 	else eh->p.fate = escaped;
+}
+
+
+// Randomly generate new direction isotropically in comoving frame
+void Transport::isotropic_direction(double D[3], ThreadRNG *rangen){
+	D[0] = rangen->uniform();
+	D[1] = rangen->uniform();
+	D[2] = rangen->uniform();
+	Metric::normalize_Minkowski<3>(D);
+}
+
+void Transport::isotropic_kup_tet(const double nu, double kup_tet[4], const double xup[4], ThreadRNG *rangen){
+	double D[3];
+	isotropic_direction(D,rangen);
+
+	double tmp = nu*pc::h;
+	kup_tet[0] = tmp * D[0];
+	kup_tet[1] = tmp * D[1];
+	kup_tet[2] = tmp * D[2];
+	kup_tet[3] = tmp;
+}
+
+void Transport::random_core_x(double x3[3]) const{
+	double a_phot = r_core * (1. + 1e-10);
+	isotropic_direction(x3,&rangen);
+	for(unsigned i=0; i<3; i++) x3[i] *= a_phot;
 }

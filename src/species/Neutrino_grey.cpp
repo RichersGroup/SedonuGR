@@ -72,7 +72,7 @@ void Neutrino_grey::set_eas(const unsigned z_ind, Grid* grid) const
 		double a = grey_opac*grid->rho[z_ind]*grey_abs_frac;
 		double s = grey_opac*grid->rho[z_ind]*(1.0-grey_abs_frac);
 
-		grid->BB[s][global_index] = bb; // (#/s/cm^3/ster)
+		grid->BB[s][global_index] = bb; // (#/s/cm^2/ster/(Hz^3/3))
 		grid->abs_opac[ID][global_index] = a;        // (1/cm)
 		grid->scat_opac[ID][global_index] = s;        // (1/cm)
 	}

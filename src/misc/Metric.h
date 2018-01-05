@@ -3,42 +3,44 @@
 
 #include "global_options.h"
 
+const unsigned ixx=0,iyy=1,izz=2,ixy=3,ixz=4,iyz=5,itt=6,ixt=7,iyt=8,izt=9;
+
 class ThreeMetric{
+// both indices are down
 public:
-	double xx, yy, zz, xy, xz, yz;
+	Tuple<double,6> data;
 
 	ThreeMetric(){
-		xx=yy=zz=xy=xz=yz = NaN;
+		data = NaN;
 	}
 };
 
 class Christoffel{
 public:
-	class SymmetricIndices{
-	public:
-		double xx, yy, zz, tt;
-		double xy, xz, xt;
-		double yz, yt, zt;
-		SymmetricIndices(){
-			xx=yy=zz=tt=xy=xz=xt=yz=yt=zt = NaN;
-		}
-	};
-	SymmetricIndices data[3]; // don't do time component because it's normalized anyway
+	// first index is up, others are down
+	// 0-9 = 0 first index, 10-19 = 1 first index, 20-29 = 2 first index
+	// 3 first index not included
+	Tuple<double, 30> data;
+
+	Christoffel(){
+		data = NaN;
+	}
 
 	void contract2(const double kup[4], double result[3]){
 		for(unsigned i=0; i<3; i++){
+			const unsigned offset = i*10;
 			result[i] = 0;
-			result[i] += data[i].xx * kup[0]*kup[0];
-			result[i] += data[i].yy * kup[1]*kup[1];
-			result[i] += data[i].zz * kup[2]*kup[2];
-			result[i] += data[i].tt * kup[3]*kup[3];
+			result[i] += data[offset+ixx] * kup[0]*kup[0];
+			result[i] += data[offset+iyy] * kup[1]*kup[1];
+			result[i] += data[offset+izz] * kup[2]*kup[2];
+			result[i] += data[offset+itt] * kup[3]*kup[3];
 
-			result[i] += data[i].xy * kup[0]*kup[1]*2.0;
-			result[i] += data[i].xz * kup[0]*kup[2]*2.0;
-			result[i] += data[i].xt * kup[0]*kup[3]*2.0;
-			result[i] += data[i].yz * kup[1]*kup[2]*2.0;
-			result[i] += data[i].yt * kup[1]*kup[3]*2.0;
-			result[i] += data[i].zt * kup[2]*kup[3]*2.0;
+			result[i] += data[offset+ixy] * kup[0]*kup[1]*2.0;
+			result[i] += data[offset+ixz] * kup[0]*kup[2]*2.0;
+			result[i] += data[offset+ixt] * kup[0]*kup[3]*2.0;
+			result[i] += data[offset+iyz] * kup[1]*kup[2]*2.0;
+			result[i] += data[offset+iyt] * kup[1]*kup[3]*2.0;
+			result[i] += data[offset+izt] * kup[2]*kup[3]*2.0;
 		}
 	}
 };
@@ -73,9 +75,17 @@ public:
 	template<unsigned n>
 	void lower(const double xup[], double xdown[]) const{
 		if(DO_GR){
-			xdown[0] = gammalow.xx*xup[0] + gammalow.xy*xup[1] + gammalow.xz*xup[2];
-			xdown[1] = gammalow.xy*xup[0] + gammalow.yy*xup[1] + gammalow.yz*xup[2];
-			xdown[2] = gammalow.xz*xup[0] + gammalow.yz*xup[1] + gammalow.zz*xup[2];
+			xdown[0] = gammalow.data[ixx]*xup[0] +
+					   gammalow.data[ixy]*xup[1] +
+					   gammalow.data[ixz]*xup[2];
+
+			xdown[1] = gammalow.data[ixy]*xup[0] +
+					   gammalow.data[iyy]*xup[1] +
+					   gammalow.data[iyz]*xup[2];
+
+			xdown[2] = gammalow.data[ixz]*xup[0] +
+					   gammalow.data[iyz]*xup[1] +
+					   gammalow.data[izz]*xup[2];
 
 			if(n==4){
 				xdown[3]  = xup[3] * gtt;

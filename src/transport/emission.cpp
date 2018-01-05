@@ -121,49 +121,35 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->rho.size());
-	unsigned dir_ind[NDIMS];
-	grid->rho.indices(z_ind,dir_ind);
+	PRINT_ASSERT(s,>=,0);
+	PRINT_ASSERT(s,<,(int)species_list.size());
 
-	Particle p;
-	p.fate = moving;
+	EinsteinHelper eh;
+	eh.p.fate = moving;
+	eh.p.s = s;
+	eh.p.tau = sample_tau(&rangen);
 
 	// random sample position in zone
-	grid->sample_in_zone(z_ind,&rangen,p.xup);
-	p.xup[3] = 0;
-
-	// get the velocity
-	double v[3];
-	grid->interpolate_fluid_velocity(p.xup,v,dir_ind);
-
-	// species
-	p.s = s;
-	PRINT_ASSERT(p.s,>=,0);
-	PRINT_ASSERT(p.s,<,(int)species_list.size());
+	grid->sample_in_zone(z_ind,&rangen,eh.p.xup);
+	eh.p.xup[3] = 0;
+	update_eh_background(&eh);
 
 	// frequency
-	double nu_min = grid->nu_grid_axis.bottom(g);
-	double nu_max = grid->nu_grid_axis.top[g];
-	double nu = rangen.uniform(nu_min, nu_max);
-	p.N = grid->BB[s].interpolate(p.xup,dir_ind) * grid->abs_opac[s].interpolate(p.xup,dir_ind);
-	p.N *= weight /(pc::c*pc::c) * 4.*pc::pi * grid->nu_grid_axis.delta3(g)/3.0 * grid->zone_com_3volume(z_ind);
-
-
-	// set up LorentzHelper
-	EinsteinHelper eh;
-	eh.p = p;
-	update_eh(&eh);
+	// sample the frequency
+	double nu3_min = pow(grid->nu_grid_axis.bottom(g), 3);
+	double nu3_max = pow(grid->nu_grid_axis.top[g],    3);
+	double nu3 = rangen.uniform(nu3_min, nu3_max);
+	double nu = pow(nu3, 1./3.);
+	eh.p.N = grid->BB[s].interpolate(eh.p.xup,eh.dir_ind) * grid->abs_opac[s].interpolate(eh.p.xup,eh.dir_ind); // #/s/cm^3/sr/(Hz^3/3)
+	eh.p.N *= weight * 1/*s*/ * grid->zone_com_3volume(z_ind)/*cm^3*/ * 4.*pc::pi/*sr*/ * grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/;
 
 	// emit isotropically in comoving frame
 	double kup_tet[4];
-	grid->isotropic_kup_tet(nu,kup_tet,p.xup,&rangen);
-	eh.tetrad_to_coord(kup_tet,eh.p.kup);
-
-	// sample tau
-	grid->get_opacity(&eh);
-	eh.p.tau = sample_tau(&rangen);
-	window(&eh);
+	isotropic_kup_tet(nu,kup_tet,eh.p.xup,&rangen);
+	eh.set_kup_tet(kup_tet);
 
 	// add to particle vector
+	window(&eh);
 	if(eh.p.fate == moving){
 		PRINT_ASSERT(particles.size(),<,particles.capacity());
 		PRINT_ASSERT(eh.p.N,>,0);
@@ -192,38 +178,38 @@ void Transport::create_surface_particle(const double weight, const unsigned int 
 {
 	PRINT_ASSERT(weight,>,0);
 	PRINT_ASSERT(weight,!=,INFINITY);
+	PRINT_ASSERT(s,>=,0);
+	PRINT_ASSERT(s,<,(int)species_list.size());
 
-	Particle plab;
-	plab.fate = moving;
+	EinsteinHelper eh;
+	eh.p.fate = moving;
+	eh.p.s = s;
+	eh.p.tau = sample_tau(&rangen);
 
 	// pick initial position on photosphere
-	double D[3];
-	grid->random_core_x_D(r_core,&rangen,plab.xup,D);
-	plab.xup[3] = 0;
-
-	// get index of current zone
-	const int z_ind = grid->zone_index(plab.xup);
-	PRINT_ASSERT(z_ind,>=,0);
-
-	// sample the species
-	plab.s = s;
-	PRINT_ASSERT(plab.s,>=,0);
-	PRINT_ASSERT(plab.s,<,(int)species_list.size());
+	random_core_x(eh.p.xup);
+	eh.p.xup[3] = 0;
+	update_eh_background(&eh);
 
 	// sample the frequency
 	double nu3_min = pow(grid->nu_grid_axis.bottom(g), 3);
 	double nu3_max = pow(grid->nu_grid_axis.top[g],    3);
 	double nu3 = rangen.uniform(nu3_min, nu3_max);
 	double nu = pow(nu3, 1./3.);
-	plab.kup[3] = nu * pc::h;
-	for(int i=0; i<3; i++) plab.kup[i] = D[i] * plab.kup[3];
+
+	// sample outward direction
+	double kup_tet[4];
+	do{
+		isotropic_kup_tet(nu,kup_tet,eh.p.xup,&rangen);
+	} while(Metric::dot_Minkowski<3>(eh.p.xup,kup_tet) < 0);
+	eh.set_kup_tet(kup_tet);
 
 	//get the number of neutrinos in the particle
 	double T = species_list[s]->T_core;
 	double mu = species_list[s]->mu_core;
 	double multiplier = species_list[s]->core_lum_multiplier * species_list[s]->weight;
 	PRINT_ASSERT(nu,>,0);
-	plab.N = number_blackbody(T,mu,nu)   // #/s/cm^2/sr/(Hz^3/3)
+	eh.p.N = number_blackbody(T,mu,nu)   // #/s/cm^2/sr/(Hz^3/3)
 			* 1                          //   s
 			* (4.0*pc::pi*r_core*r_core) //     cm^2
 			* pc::pi                     //          sr
@@ -231,17 +217,10 @@ void Transport::create_surface_particle(const double weight, const unsigned int 
 			* multiplier                 // overall scaling
 			* weight;                    // 1/number of samples
 
-	// set up LorentzHelper
-	EinsteinHelper eh;
-	eh.p = plab;
-	update_eh(&eh);
 
-	// sample the optical depth
-	grid->get_opacity(&eh);
-	eh.p.tau = sample_tau(&rangen);
-	window(&eh);
 
 	// add to particle vector
+	window(&eh);
 	if(eh.p.fate == moving){
 		PRINT_ASSERT(particles.size(),<,particles.capacity());
 	    #pragma omp critical

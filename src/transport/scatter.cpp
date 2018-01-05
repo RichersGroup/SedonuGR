@@ -136,8 +136,8 @@ void Transport::scatter(EinsteinHelper *eh) const{
 
 		// sample new direction
 		double kup_tet[4];
-		grid->isotropic_kup_tet(eh->nu(),kup_tet,eh->p.xup,&rangen);
-		eh->tetrad_to_coord(kup_tet,eh->p.kup);
+		isotropic_kup_tet(eh->nu(),kup_tet,eh->p.xup,&rangen);
+		eh->set_kup_tet(kup_tet);
 
 		// get the dot product between the old and new directions
 		double cosTheta = eh->g.dot<3>(kup_tet,kup_tet_old) / (kup_tet[3] * kup_tet_old[3]);

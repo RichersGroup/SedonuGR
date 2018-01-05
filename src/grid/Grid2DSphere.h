@@ -75,6 +75,11 @@ public:
 	void write_hdf5_coordinates(H5::H5File file) const;
 	double zone_cell_dist(const double x_up[3], const int z_ind) const;
 	void axis_vector(vector<Axis>& axes) const;
+
+	// GR functions
+	void get_connection_coefficients(EinsteinHelper* eh) const; // Gamma^alhpa_mu_nu
+	void interpolate_shift(const double xup[4], double betaup[3], const unsigned dir_ind[NDIMS]) const;
+	void interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const;
  };
 
 

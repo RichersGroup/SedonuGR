@@ -601,7 +601,7 @@ int Grid2DSphere::zone_index(const int i, const int j) const
 //------------------------------------------------------------
 double Grid2DSphere::zone_lab_3volume(const int z_ind) const
 {
-	PRINT_ASSERT(do_GR,==,false); // need to include sqrt(detg3)
+	PRINT_ASSERT(DO_GR,==,false); // need to include sqrt(detg3)
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	vector<unsigned> dir_ind(2);
@@ -860,4 +860,23 @@ void Grid2DSphere::axis_vector(vector<Axis>& axes) const{
 }
 double Grid2DSphere::zone_lorentz_factor(const int z_ind) const{
 	abort(); // NOT IMPLEMENTED
+}
+void Grid2DSphere::get_connection_coefficients(EinsteinHelper* eh) const{ // default Minkowski
+	PRINT_ASSERT(DO_GR,==,0);
+	eh->christoffel.data = 0;
+}
+void Grid2DSphere::interpolate_shift(const double xup[4], double betaup[3], const unsigned dir_ind[NDIMS]) const{ // default Minkowski
+	PRINT_ASSERT(DO_GR,==,0);
+	betaup[0] = 0;
+	betaup[1] = 0;
+	betaup[2] = 0;
+}
+void Grid2DSphere::interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const{ // default Minkowski
+	PRINT_ASSERT(DO_GR,==,0);
+	gammalow->data[ixx] = 1.0;
+	gammalow->data[iyy] = 1.0;
+	gammalow->data[izz] = 1.0;
+	gammalow->data[ixy] = 0.0;
+	gammalow->data[ixz] = 0.0;
+	gammalow->data[iyz] = 0.0;
 }

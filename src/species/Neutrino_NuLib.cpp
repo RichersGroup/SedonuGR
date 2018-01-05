@@ -68,7 +68,8 @@ void Neutrino_NuLib::set_eas(const unsigned z_ind, Grid* grid) const
 		unsigned global_index = grid->abs_opac[ID].direct_index(dir_ind);
 		grid->abs_opac[ID][global_index] = tmp_absopac[ig];
 		grid->scat_opac[ID][global_index] = tmp_scatopac[ig];
-		grid->BB[ID][global_index] = tmp_BB[ig]  /(pc::h*grid->nu_grid_axis.mid[ig]) * pc::c*pc::c/(4.*pc::pi * grid->nu_grid_axis.delta3(ig)/3.0);
+		grid->BB[ID][global_index] = tmp_BB[ig]; // erg/cm^2/s/sr - convert in next line
+		grid->BB[ID][global_index] /= pc::h * pow(grid->nu_grid_axis.mid[ig],3) * grid->nu_grid_axis.delta(ig); // #/cm^2/s/sr/(Hz^3/3)
 
 		for(unsigned og=0; og<ngroups; og++){
 			dir_ind[NDIMS+1] = og;

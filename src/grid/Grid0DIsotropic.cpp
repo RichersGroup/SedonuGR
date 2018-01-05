@@ -173,4 +173,22 @@ double Grid0DIsotropic::zone_cell_dist(const double x_up[3], const int z_ind) co
 	return 0;
 }
 
-
+void Grid0DIsotropic::get_connection_coefficients(EinsteinHelper* eh) const{ // default Minkowski
+	PRINT_ASSERT(DO_GR,==,0);
+	eh->christoffel.data = 0;
+}
+void Grid0DIsotropic::interpolate_shift(const double xup[4], double betaup[3], const unsigned dir_ind[NDIMS]) const{ // default Minkowski
+	PRINT_ASSERT(DO_GR,==,0);
+	betaup[0] = 0;
+	betaup[1] = 0;
+	betaup[2] = 0;
+}
+void Grid0DIsotropic::interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const{ // default Minkowski
+	PRINT_ASSERT(DO_GR,==,0);
+	gammalow->data[ixx] = 1.0;
+	gammalow->data[iyy] = 1.0;
+	gammalow->data[izz] = 1.0;
+	gammalow->data[ixy] = 0.0;
+	gammalow->data[ixz] = 0.0;
+	gammalow->data[iyz] = 0.0;
+}

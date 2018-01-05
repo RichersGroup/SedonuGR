@@ -59,6 +59,11 @@ public:
 	hsize_t dimensionality() const {return 0;};
 	void write_hdf5_coordinates(H5::H5File file) const;
 	void axis_vector(vector<Axis>& axes) const;
+
+	// GR functions
+	void get_connection_coefficients(EinsteinHelper* eh) const; // Gamma^alhpa_mu_nu
+	void interpolate_shift(const double xup[4], double betaup[3], const unsigned dir_ind[NDIMS]) const;
+	void interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const;
 };
 
 

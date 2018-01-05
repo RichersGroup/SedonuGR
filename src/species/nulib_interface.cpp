@@ -385,7 +385,7 @@ void nulib_get_eas_arrays(
 		double rho,                     // g/cm^3
 		double temp,                    // K
 		double ye, int nulibID,
-		vector<double>& nut_BB,         // dimensionless
+		vector<double>& nut_BB,         // erg/cm^2/s/sr
 		vector<double>& nut_absopac,    // cm^-1
 		vector<double>& nut_scatopac,   // cm^-1
 		vector< vector<double> >& phiTilde, // 2pi h^-3 c^-4 phi0 delta(E^3/3) [group in][group out] units 1/cm

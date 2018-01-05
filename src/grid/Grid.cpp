@@ -57,7 +57,6 @@ void Grid::init(Lua* lua, Transport* insim)
 	sim = insim;
 
 	// read the model file or fill in custom model
-	do_GR = lua->scalar<int>("do_GR");
 	read_model_file(lua);
 
 	// read some parameters
@@ -364,94 +363,10 @@ double Grid::radius(const double x[4]){
 	return sqrt(Metric::dot_Minkowski<3>(x,x));
 }
 
-
-// isotropic scatter, done in COMOVING frame
-void Grid::isotropic_direction(double D[3], ThreadRNG *rangen) const
-{
-	// Randomly generate new direction isotropically in comoving frame
-	double mu  = 1 - 2.0*rangen->uniform();
-	double phi = 2.0*pc::pi*rangen->uniform();
-	double smu = sqrt(1 - mu*mu);
-
-	D[0] = smu*cos(phi);
-	D[1] = smu*sin(phi);
-	D[2] = mu;
-	Metric::normalize_Minkowski<3>(D);
-}
-
-void Grid::isotropic_kup_tet(const double nu, double kup_tet[4], const double xup[4], ThreadRNG *rangen) const{
-	double D[3];
-	isotropic_direction(D,rangen);
-
-	kup_tet[0] = nu * D[0] * pc::h;
-	kup_tet[1] = nu * D[1] * pc::h;
-	kup_tet[2] = nu * D[2] * pc::h;
-	kup_tet[3] = nu        * pc::h;
-}
-
-
-void Grid::random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3], double D[3]) const{
-	PRINT_ASSERT(do_GR,==,false);
-
-	double phi_core   = 2*pc::pi*rangen->uniform();
-	double cosp_core  = cos(phi_core);
-	double sinp_core  = sin(phi_core);
-	double cost_core  = 1 - 2.0*rangen->uniform();
-	double sint_core  = sqrt(1-cost_core*cost_core);
-
-	double a_phot = r_core + r_core*1e-10;
-	x3[0] = a_phot*sint_core*cosp_core;
-	x3[1] = a_phot*sint_core*sinp_core;
-	x3[2] = a_phot*cost_core;
-
-	// pick photon propagation direction wtr to local normal
-	double phi_loc = 2*pc::pi*rangen->uniform();
-	// choose sqrt(R) to get outward, cos(theta) emission
-	double cost_loc  = sqrt(rangen->uniform());
-	double sint_loc  = sqrt(1 - cost_loc*cost_loc);
-	// local direction vector
-	double D_xl = sint_loc*cos(phi_loc);
-	double D_yl = sint_loc*sin(phi_loc);
-	double D_zl = cost_loc;
-	// apply rotation matrix to convert D vector into overall frame
-	D[0] = cost_core*cosp_core*D_xl-sinp_core*D_yl+sint_core*cosp_core*D_zl;
-	D[1] = cost_core*sinp_core*D_xl+cosp_core*D_yl+sint_core*sinp_core*D_zl;
-	D[2] = -sint_core*D_xl+cost_core*D_zl;
-	Metric::normalize_Minkowski<3>(D);
-}
-
-
 double Grid::zone_4volume(const int z_ind) const{
 	return zone_lab_3volume(z_ind) * lapse[z_ind];
 }
 
-void Grid::get_connection_coefficients(EinsteinHelper* eh) const{ // default Minkowski
-	for(unsigned i=0; i<3; i++){
-		eh->christoffel.data[i].xx = 0;
-		eh->christoffel.data[i].yy = 0;
-		eh->christoffel.data[i].zz = 0;
-		eh->christoffel.data[i].tt = 0;
-		eh->christoffel.data[i].xy = 0;
-		eh->christoffel.data[i].xz = 0;
-		eh->christoffel.data[i].xt = 0;
-		eh->christoffel.data[i].yz = 0;
-		eh->christoffel.data[i].yt = 0;
-		eh->christoffel.data[i].zt = 0;
-	}
-}
-void Grid::interpolate_shift(const double xup[4], double betaup[3], const unsigned dir_ind[NDIMS]) const{ // default Minkowski
-	betaup[0] = 0;
-	betaup[1] = 0;
-	betaup[2] = 0;
-}
-void Grid::interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const{ // default Minkowski
-	gammalow->xx = 1.0;
-	gammalow->yy = 1.0;
-	gammalow->zz = 1.0;
-	gammalow->xy = 0.0;
-	gammalow->xz = 0.0;
-	gammalow->yz = 0.0;
-}
 void Grid::interpolate_metric(const double xup[4], Metric* g, const unsigned dir_ind[NDIMS]) const{
 	// first, the lapse
 	g->alpha = lapse.interpolate(xup,dir_ind);
@@ -472,6 +387,10 @@ void Grid::interpolate_metric(const double xup[4], Metric* g, const unsigned dir
 void Grid::get_opacity(EinsteinHelper *eh) const
 {
 	PRINT_ASSERT(eh->z_ind,>=,-1);
+
+	// update frequency index
+	eh->dir_ind[NDIMS] = min(nu_grid_axis.bin(eh->nu()), (int)nu_grid_axis.size()-1);
+	eh->eas_ind = BB[0].direct_index(eh->dir_ind);
 
 	double a = abs_opac[eh->p.s][eh->eas_ind];
 	double s = scat_opac[eh->p.s][eh->eas_ind];
