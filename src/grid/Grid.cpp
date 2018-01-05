@@ -415,10 +415,10 @@ void Grid::isotropic_kup_tet(const double nu, double kup_tet[4], const double xu
 	double D[3];
 	isotropic_direction(D,rangen);
 
-	kup_tet[0] = nu * D[0] * 2.0*pc::pi / pc::c;
-	kup_tet[1] = nu * D[1] * 2.0*pc::pi / pc::c;
-	kup_tet[2] = nu * D[2] * 2.0*pc::pi / pc::c;
-	kup_tet[3] = nu        * 2.0*pc::pi / pc::c;
+	kup_tet[0] = nu * D[0] * pc::h;
+	kup_tet[1] = nu * D[1] * pc::h;
+	kup_tet[2] = nu * D[2] * pc::h;
+	kup_tet[3] = nu        * pc::h;
 }
 
 

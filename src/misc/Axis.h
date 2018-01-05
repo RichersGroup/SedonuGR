@@ -19,7 +19,7 @@ public:
 	vector<double> mid;
 
 	Axis(const double min, vector<double>& top, vector<double>& mid){
-		assert(top.size() == mid.size());
+		PRINT_ASSERT(top.size(),==,mid.size());
 		this->min = min;
 		this->top = top;
 		this->mid = mid;
@@ -51,20 +51,23 @@ public:
 			// upper_bound returns first element greater than xval
 			// values mark bin tops, so this is what we want
 			int ind = upper_bound(top.begin(), top.end(), x) - top.begin();
-			assert(ind>=0);
-			assert(ind<=(int)top.size());
+			PRINT_ASSERT(ind,>=,0);
+			PRINT_ASSERT(ind,<=,(int)top.size());
 			return ind;
 		}
 	}
 
 	double bottom(const int i) const{
+		PRINT_ASSERT(i,<,size());
 		return i==0 ? min : top[i-1];
 	}
 
 	double delta(const int i) const{
+		PRINT_ASSERT(i,<,size());
 		return top[i] - bottom(i);
 	}
 	double delta3(const int i) const{
+		PRINT_ASSERT(i,<,size());
 		return top[i]*top[i]*top[i] - bottom(i)*bottom(i)*bottom(i);
 	}
 	double max() const{

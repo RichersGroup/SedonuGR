@@ -53,7 +53,7 @@ public:
 	}
 
 	double xup[4];          // x,y,z,ct position (cm)
-	double kup[4];          // 4-wavevector (2pi nu/c)
+	double kup[4];          // 4-wavevector (erg) //old definition:(2pi nu/c)
 	double       N;         // total number of neutrinos in packet
 	double     tau;         // remaining optical depth
 	int          s;         // species number

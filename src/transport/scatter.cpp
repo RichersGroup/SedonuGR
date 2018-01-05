@@ -140,7 +140,7 @@ void Transport::scatter(EinsteinHelper *eh) const{
 		eh->tetrad_to_coord(kup_tet,eh->p.kup);
 
 		// get the dot product between the old and new directions
-		double cosTheta = eh->g.dot<3>(kup_tet,kup_tet_old) / (eh->nu() * eh->nu() * 4. * pc::pi * pc::pi / (pc::c * pc::c));
+		double cosTheta = eh->g.dot<3>(kup_tet,kup_tet_old) / (kup_tet[3] * kup_tet_old[3]);
 		PRINT_ASSERT(fabs(cosTheta),<=,1.0);
 
 		// sample outgoing energy and set the post-scattered state
@@ -148,7 +148,7 @@ void Transport::scatter(EinsteinHelper *eh) const{
 			double Nold = eh->p.N;
 			sample_scattering_final_state(*eh,cosTheta);
 			for(unsigned i=0; i<4; i++){
-				grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i]*Nold - kup_tet[i]*eh->p.N) * pc::h*pc::c/(2.*pc::pi);
+				grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i]*Nold - kup_tet[i]*eh->p.N);
 			}
 		}
 	}

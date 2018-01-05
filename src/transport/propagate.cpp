@@ -55,7 +55,7 @@ void Transport::propagate_particles()
 			n_active[eh->p.s]++;
 			if(eh->p.fate == moving) propagate(eh);
 			if(eh->p.fate == escaped){
-				const double nu = eh->p.kup[3]/(2.0*pc::pi) * pc::c; // assumes metric is essentially Minkowski
+				const double nu = eh->nu(); // uses last-known metric
 				double D[3] = {eh->p.kup[0], eh->p.kup[1], eh->p.kup[2]};
 				Metric::normalize_Minkowski<3>(D);
 				#pragma omp atomic
@@ -79,7 +79,7 @@ void Transport::propagate_particles()
 			if(rank0) cout << i << endl;
 			PRINT_ASSERT(particles[i].p.fate,!=,moving);
 		}
-		const double nu = particles[i].p.kup[3]/(2.0*pc::pi) * pc::c;
+		const double nu = particles[i].nu();
 		const double e  = particles[i].p.N * nu*pc::h;
 		if(particles[i].p.fate!=rouletted) tot       += e;
 		if(particles[i].p.fate==escaped  ) esc       += e;
@@ -165,19 +165,17 @@ void Transport::tally_radiation(const EinsteinHelper *eh, const int this_exp_dec
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
 	if(this_exp_decay) to_add = eh->p.N * decay_factor;
 	else to_add = eh->p.N * eh->ds_com * eh->absopac;
-	to_add *=  eh->nu()*pc::h;
 	PRINT_ASSERT(to_add,>=,0);
 
 	Tuple<double,4> tmp_fourforce;
 	for(unsigned i=0; i<4; i++){
 		#pragma omp atomic
-		grid->fourforce_abs[eh->z_ind][i] += kup_tet[i] * pc::h*pc::c/(2.*pc::pi) * to_add;
+		grid->fourforce_abs[eh->z_ind][i] += kup_tet[i] * to_add;
 	}
 
 	// store absorbed lepton number (same in both frames, except for the
 	// factor of this_d which is divided out later
 	if(species_list[eh->p.s]->lepton_number != 0){
-		to_add /= (eh->nu()*pc::h);
 		to_add *= species_list[eh->p.s]->lepton_number;
 		#pragma omp atomic
 		grid->l_abs[eh->z_ind] += to_add;

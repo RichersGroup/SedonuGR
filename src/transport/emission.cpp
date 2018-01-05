@@ -178,7 +178,7 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 		grid->l_emit[z_ind] += eh.p.N * species_list[eh.p.s]->lepton_number * pc::c;
 		for(unsigned i=0; i<4; i++){
 			#pragma omp atomic
-			grid->fourforce_emit[z_ind][i] -= kup_tet[i] * pc::c*pc::h/(2.*pc::pi) * kup_tet[i];
+			grid->fourforce_emit[z_ind][i] -= kup_tet[i];
 		}
 	}
 }
@@ -215,7 +215,7 @@ void Transport::create_surface_particle(const double weight, const unsigned int 
 	double nu3_max = pow(grid->nu_grid_axis.top[g],    3);
 	double nu3 = rangen.uniform(nu3_min, nu3_max);
 	double nu = pow(nu3, 1./3.);
-	plab.kup[3] = nu / pc::c * 2.0*pc::pi;
+	plab.kup[3] = nu * pc::h;
 	for(int i=0; i<3; i++) plab.kup[i] = D[i] * plab.kup[3];
 
 	//get the number of neutrinos in the particle

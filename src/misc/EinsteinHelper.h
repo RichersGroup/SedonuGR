@@ -40,7 +40,9 @@ public:
   }
   
   double nu() const{
-	  return -g.dot<4>(p.kup,u) * pc::c / (2.0*pc::pi);
+	  double nu = kup_tet[3] / pc::h;
+	  PRINT_ASSERT(nu,>,0);
+	  return nu;
   }
 
   // get four velocity from three velocity
@@ -93,25 +95,26 @@ public:
     PRINT_ASSERT(fabs(g.dot<4>(e[1],e[3])),<,TINY);
     PRINT_ASSERT(fabs(g.dot<4>(e[2],e[3])),<,TINY);
   }
-  
+
   void coord_to_tetrad(const double kup_coord[4], double kup_tet[4]) const{
-    for(int mu=0; mu<4; mu++) kup_tet[mu] = g.dot<4>(kup_coord,e[mu]);
+	  for(int mu=0; mu<4; mu++) kup_tet[mu] = g.dot<4>(kup_coord,e[mu]);
+	  kup_tet[3] *= -1.;
   }
 
   void tetrad_to_coord(const double kup_tet[4], double kup_coord[4]) const{
-    for(int mu=0; mu<4; mu++){
-      kup_coord[mu] = 0;
-      for(int nu=0; nu<4; nu++)
-	kup_coord[mu] += kup_tet[nu] * e[nu][mu];
-    }
+	  for(int mu=0; mu<4; mu++){
+		  kup_coord[mu] = 0;
+		  for(int nu=0; nu<4; nu++)
+			  kup_coord[mu] += kup_tet[nu] * e[nu][mu];
+	  }
   }
 
   template<unsigned n>
-    double dot_tetrad(const double x1[n], const double x2[n]){
-    double result = 0;
-    for(unsigned i=0; i<3; i++) result += x1[n]*x2[n];
-    if(n==4) result -= x1[2]*x2[3];
-    return result;
+  double dot_tetrad(const double x1[n], const double x2[n]){
+	  double result = 0;
+	  for(unsigned i=0; i<3; i++) result += x1[n]*x2[n];
+	  if(n==4) result -= x1[2]*x2[3];
+	  return result;
   }
 
   void scale_p_frequency(const double scale){
