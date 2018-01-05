@@ -67,21 +67,27 @@ public:
 	// assumes alpha, betaup, and gammalow have been set.
 	void update(){
 		lower<3>(betaup, betalow);
-		gtt = -alpha*alpha + contract<3>(betaup, betalow);
+		gtt = DO_GR ? -alpha*alpha + contract<3>(betaup, betalow) : -1.0;
 	}
 
 	template<unsigned n>
 	void lower(const double xup[], double xdown[]) const{
-		xdown[0] = gammalow.xx*xup[0] + gammalow.xy*xup[1] + gammalow.xz*xup[2];
-		xdown[1] = gammalow.xy*xup[0] + gammalow.yy*xup[1] + gammalow.yz*xup[2];
-		xdown[2] = gammalow.xz*xup[0] + gammalow.yz*xup[1] + gammalow.zz*xup[2];
+		if(DO_GR){
+			xdown[0] = gammalow.xx*xup[0] + gammalow.xy*xup[1] + gammalow.xz*xup[2];
+			xdown[1] = gammalow.xy*xup[0] + gammalow.yy*xup[1] + gammalow.yz*xup[2];
+			xdown[2] = gammalow.xz*xup[0] + gammalow.yz*xup[1] + gammalow.zz*xup[2];
 
-		if(n==4){
-			xdown[3]  = xup[3] * gtt;
-			for(unsigned i=0; i<3; i++){
-				xdown[3] += xup[i] * betalow[i];
-				xdown[i] += xup[3] * betalow[i];
+			if(n==4){
+				xdown[3]  = xup[3] * gtt;
+				for(unsigned i=0; i<3; i++){
+					xdown[3] += xup[i] * betalow[i];
+					xdown[i] += xup[3] * betalow[i];
+				}
 			}
+		}
+		else{
+			for(unsigned i=0; i<3; i++) xdown[i] = xup[i];
+			if(n==4) xdown[3] = -xup[3];
 		}
 	}
 
@@ -95,10 +101,13 @@ public:
 	// dot product
 	template<unsigned n>
 	double dot(const double x1up[n], const double x2up[n]) const{
-		double x2low[n];
-		lower<n>(x2up, x2low);
-		double result = contract<n>(x1up, x2low);
-		return result;
+		if(DO_GR){
+			double x2low[n];
+			lower<n>(x2up, x2low);
+			double result = contract<n>(x1up, x2low);
+			return result;
+		}
+		else return dot_Minkowski<n>(x1up, x2up);
 	}
 
 	// dot the normal observer's four-velocity with a four vector
