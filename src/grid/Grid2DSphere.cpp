@@ -855,10 +855,6 @@ void Grid2DSphere::write_hdf5_coordinates(H5::H5File file) const
 	dataset.close();
 }
 
-double Grid2DSphere::zone_lapse(const int z_ind) const{
-	cout << "zone_lapse not implemented" << endl;
-	exit(1);
-}
 void Grid2DSphere::axis_vector(vector<Axis>& axes) const{
 	axes = vector<Axis>({rAxis,thetaAxis});
 }

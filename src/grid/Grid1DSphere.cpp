@@ -494,9 +494,6 @@ void Grid1DSphere::get_connection_coefficients(EinsteinHelper* eh) const{
 	}
 }
 
-double Grid1DSphere::zone_lapse(const int z_ind) const{
-	return lapse[z_ind];
-}
 void Grid1DSphere::axis_vector(vector<Axis>& axes) const{
 	axes = vector<Axis>({rAxis});
 }

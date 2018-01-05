@@ -162,9 +162,6 @@ void Grid0DIsotropic::write_hdf5_coordinates(H5::H5File file) const
 	assert(0);
 }
 
-double Grid0DIsotropic::zone_lapse(const int z_ind) const{
-	return 1.0;
-}
 void Grid0DIsotropic::axis_vector(vector<Axis>& axes) const{
 	axes.resize(0);
 }

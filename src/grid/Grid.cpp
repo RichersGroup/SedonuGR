@@ -427,7 +427,7 @@ void Grid::random_core_x_D(const double r_core, ThreadRNG *rangen, double x3[3],
 
 
 double Grid::zone_4volume(const int z_ind) const{
-	return zone_lab_3volume(z_ind) * zone_lapse(z_ind);
+	return zone_lab_3volume(z_ind) * lapse[z_ind];
 }
 
 void Grid::get_connection_coefficients(EinsteinHelper* eh) const{ // default Minkowski

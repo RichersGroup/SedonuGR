@@ -642,9 +642,6 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh, const double tolerance)
 //	for(int i=0; i<4; i++) for(int j=0; j<4; j++) for(int k=0; k<4; k++)
 //		gamma[i][j][k] = metric[z_ind].gamma[i][j][k];
 //}
-double Grid3DCart::zone_lapse(const int z_ind) const{
-	return metric[z_ind].alpha;
-}
 void Grid3DCart::axis_vector(vector<Axis>& axes) const{
 	axes = xAxes;
 }

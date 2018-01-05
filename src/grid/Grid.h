@@ -124,7 +124,6 @@ public:
 	// describe zone
 	virtual int    zone_index      (const double xup[4])                    const=0;
 	virtual double zone_lab_3volume(const int z_ind)                        const=0;
-	virtual double zone_lapse      (const int z_ind)                        const=0;
 	virtual double zone_min_length (const int z_ind)                        const=0;
 	virtual double zone_radius     (const int z_ind)                        const=0;
 	virtual double zone_cell_dist  (const double p_xup[3], const int z_ind) const;
