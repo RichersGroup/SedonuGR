@@ -304,11 +304,6 @@ void Grid::write_zones(const int iw) const
 	spectrum[0].write_hdf5_coordinates(file,"spectrum");
 }
 
-// returning 0 causes the min distance to take over in propagate.cpp::which_event
-double Grid::zone_cell_dist(const double x_up[3], const int z_ind) const{
-	return 0;
-}
-
 double Grid::zone_rest_mass(const int z_ind) const{
 	return rho[z_ind] * zone_com_3volume(z_ind);
 }
