@@ -369,33 +369,6 @@ double Grid::radius(const double x[4]){
 	return sqrt(Metric::dot_Minkowski<3>(x,x));
 }
 
-void Grid::integrate_geodesic(EinsteinHelper *eh) const{
-	const double* kold = eh->p.kup;
-	const double* xold = eh->p.xup;
-
-	// get connection coefficients
-	double gamma[4][4][4];
-	connection_coefficients(xold,gamma);
-
-	double lambda = - eh->ds_com / eh->g.dot<4>(kold, eh->u);
-
-	double dk_dlambda[4] = {0,0,0,0};
-	double dx_dlambda[4] = {0,0,0,0};
-	for(int a=0; a<4; a++){
-		for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++)
-			dk_dlambda[a] -= gamma[a][mu][nu] * kold[mu] * kold[nu];
-		dx_dlambda[a]  = kold[a];
-	}
-
-	// get new x,k
-	double knew[4],xnew[4];
-	for(int i=0; i<4; i++){
-		eh->p.kup[i] += dk_dlambda[i]*lambda;
-		eh->p.xup[i] += dx_dlambda[i]*lambda;
-	}
-}
-
-
 
 // isotropic scatter, done in COMOVING frame
 void Grid::isotropic_direction(double D[3], ThreadRNG *rangen) const
@@ -457,16 +430,43 @@ double Grid::zone_4volume(const int z_ind) const{
 	return zone_lab_3volume(z_ind) * zone_lapse(z_ind);
 }
 
-void Grid::interpolate_metric(const double xup[4], Metric* g, const int z_ind){
-	g->alpha = 1.0;
-	for(int i=0; i<3; i++) g->betaup[i] = 0;
-	g->gammalow.xx = 1.0;
-	g->gammalow.yy = 1.0;
-	g->gammalow.zz = 1.0;
-	g->gammalow.xy = 0.0;
-	g->gammalow.xz = 0.0;
-	g->gammalow.yz = 0.0;
-	g->update();
+void Grid::get_connection_coefficients(EinsteinHelper* eh) const{ // default Minkowski
+	for(unsigned i=0; i<3; i++){
+		eh->christoffel.data[i].xx = 0;
+		eh->christoffel.data[i].yy = 0;
+		eh->christoffel.data[i].zz = 0;
+		eh->christoffel.data[i].tt = 0;
+		eh->christoffel.data[i].xy = 0;
+		eh->christoffel.data[i].xz = 0;
+		eh->christoffel.data[i].xt = 0;
+		eh->christoffel.data[i].yz = 0;
+		eh->christoffel.data[i].yt = 0;
+		eh->christoffel.data[i].zt = 0;
+	}
+}
+void Grid::interpolate_shift(const double xup[4], double betaup[3], const unsigned dir_ind[NDIMS]) const{ // default Minkowski
+	betaup[0] = 0;
+	betaup[1] = 0;
+	betaup[2] = 0;
+}
+void Grid::interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const{ // default Minkowski
+	gammalow->xx = 1.0;
+	gammalow->yy = 1.0;
+	gammalow->zz = 1.0;
+	gammalow->xy = 0.0;
+	gammalow->xz = 0.0;
+	gammalow->yz = 0.0;
+}
+void Grid::interpolate_metric(const double xup[4], Metric* g, const unsigned dir_ind[NDIMS]) const{
+	// first, the lapse
+	g->alpha = lapse.interpolate(xup,dir_ind);
+	PRINT_ASSERT(g->alpha,>,0);
+
+	// second, the shift
+	interpolate_shift(xup, g->betaup, dir_ind);
+
+	// third, the three-metric
+	interpolate_3metric(xup, &g->gammalow, dir_ind);
 }
 
 

@@ -14,6 +14,7 @@ public:
   // essential variables interpolated from grid
   Particle p;
   Metric g;
+  Christoffel christoffel;
   double u[4]; // dimensionless
 
   // intermediate quantities
@@ -23,6 +24,22 @@ public:
   double ds_com;
   unsigned dir_ind[NDIMS+1]; // spatial, nu_in
   int z_ind, eas_ind;   // direct access indices
+
+  EinsteinHelper(){
+	  for(unsigned i=0; i<4; i++){
+		  u[i] = NaN;
+		  kup_tet[i] = NaN;
+		  for(unsigned j=0; j<4; j++)
+			  e[i][j] = NaN;
+	  }
+	  absopac = NaN;
+	  scatopac = NaN;
+	  ds_com = NaN;
+	  z_ind = -MAXLIM;
+	  eas_ind = -MAXLIM;
+	  for(unsigned i=0; i<NDIMS+1; i++)
+		  dir_ind[i] = MAXLIM;
+  }
 
   // fill in values for g.{gtt, betalow}, u, e, kup_tet
   // assumes g.{alpha, betaup, gammalow}, p.kup are set
@@ -122,8 +139,22 @@ public:
   }
 
   double ds_lab(const double ds_com_in){
-	  return ds_com_in * g.ndot(p.kup)/g.dot<4>(u,p.kup);
+	  return -ds_com_in * g.ndot(p.kup) / (pc::h*nu());
   }
+
+  void integrate_geodesic(){
+  	double dlambda = ds_com / (pc::h*nu());
+
+  	double dk_dlambda[4] = {0,0,0,0};
+  	christoffel.contract2(p.kup,dk_dlambda);
+
+  	// get new x,k
+  	for(int i=0; i<4; i++){
+  		p.kup[i] += dk_dlambda[i]*dlambda;
+  		p.xup[i] +=      p.kup[i]*dlambda;
+  	}
+  }
+
 };
 
 #endif

@@ -187,7 +187,7 @@ void Transport::move(EinsteinHelper *eh){
 	PRINT_ASSERT(eh->ds_com,>=,0);
 
 	// translate the particle
-	grid->integrate_geodesic(eh);
+	eh->integrate_geodesic();
 
 	// reduce the particle's remaining optical depth
 	double relevant_opac = eh->scatopac;
@@ -223,6 +223,9 @@ void Transport::propagate(EinsteinHelper *eh)
 	while (eh->p.fate == moving)
 	{
 		PRINT_ASSERT(eh->nu(), >, 0);
+		PRINT_ASSERT(eh->z_ind,>=,0);
+		for(unsigned i=0; i<NDIMS; i++) PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
+		PRINT_ASSERT(eh->dir_ind[NDIMS],<,grid->nu_grid_axis.size());
 
 		// get all the opacities
 		grid->get_opacity(eh);

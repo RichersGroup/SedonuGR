@@ -58,7 +58,7 @@ void Grid1DSphere::read_model_file(Lua* lua)
 	reflect_outer = lua->scalar<int>("reflect_outer");
 
 	vr.calculate_slopes();
-	alpha.calculate_slopes();
+	lapse.calculate_slopes();
 	X.calculate_slopes();
 }
 
@@ -99,7 +99,7 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 	rAxis = Axis(minval, bintops, binmid);
 	vector<Axis> axes = {rAxis};
 	vr.set_axes(axes);
-	alpha.set_axes(axes);
+	lapse.set_axes(axes);
 	X.set_axes(axes);
 	rho.set_axes(axes);
 	T.set_axes(axes);
@@ -203,7 +203,7 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 	rAxis = Axis(rmin, rtop, rmid);
 	vector<Axis> axes = {rAxis};
 	vr.set_axes(axes);
-	alpha.set_axes(axes);
+	lapse.set_axes(axes);
 	X.set_axes(axes);
 	rho.set_axes(axes);
 	T.set_axes(axes);
@@ -212,7 +212,7 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 
 	for(unsigned z_ind=0; z_ind<vr.size(); z_ind++){
 		vr[z_ind] = tmp_vr[z_ind];
-		alpha[z_ind] = tmp_alpha[z_ind];
+		lapse[z_ind] = tmp_alpha[z_ind];
 		X[z_ind] = tmp_X[z_ind];
 		rho[z_ind] = tmp_rho[z_ind];
 		T[z_ind] = tmp_T[z_ind];
@@ -341,19 +341,14 @@ void Grid1DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void Grid1DSphere::interpolate_fluid_velocity(const double x[3], double v[3], int z_ind) const
+void Grid1DSphere::interpolate_fluid_velocity(const double x[3], double v[3], const unsigned dir_ind[NDIMS]) const
 {
-	if(z_ind < 0) z_ind = zone_index(x);
-	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)rho.size());
-
 	// radius in zone
 	double r = radius(x);
 
 	// assuming radial velocity (may want to interpolate here)
 	// (the other two components are ignored and mean nothing)
-	unsigned tmp_ind = z_ind;
-	double vr_interp = vr.interpolate(&r,&tmp_ind);
+	double vr_interp = vr.interpolate(&r,dir_ind);
 	v[0] = x[0]/r*vr_interp;
 	v[1] = x[1]/r*vr_interp;
 	v[2] = x[2]/r*vr_interp;
@@ -450,66 +445,57 @@ void Grid1DSphere::write_hdf5_coordinates(H5::H5File file) const
 	dataset.close();
 }
 
-double Grid1DSphere::lapse(const double xup[4], int z_ind) const{
-	double r = radius(xup);
-	if(z_ind<0) z_ind = zone_index(xup);
-	return 1.0;//metric.get_alpha(z_ind, r, rAxis);
-}
-
-void Grid1DSphere::shiftup(double betaup[4], const double xup[4], int z_ind) const{
-	for(int i=0; i<4; i++) betaup[i] = 0;
-}
-
-void Grid1DSphere::g3_down(const double xup[4], double gproj[4][4], int z_ind) const{
+void Grid1DSphere::interpolate_3metric(const double xup[4], ThreeMetric* gammalow, unsigned dir_ind[NDIMS]) const{
 	const double r = radius(xup);
-	if(z_ind<0) z_ind = zone_index(xup);
-	const double X = 1.0;//metric.get_X(z_ind,r, rAxis);
-	for(int i=0; i<3; i++){
-		for(int j=0; j<3; j++) gproj[i][j] = xup[i] * xup[j] * (X*X-1.0) / (r*r);
-		gproj[i][i] += 1.0;
-	}
+	const double Xloc = X.interpolate(xup,dir_ind);
+	double tmp = (Xloc*Xloc-1.0) / (r*r);
+
+	gammalow->xx = xup[0]*xup[0] * tmp;
+	gammalow->yy = xup[1]*xup[1] * tmp;
+	gammalow->zz = xup[2]*xup[2] * tmp;
+	gammalow->xy = xup[0]*xup[1] * tmp;
+	gammalow->xz = xup[0]*xup[2] * tmp;
+	gammalow->yz = xup[1]*xup[2] * tmp;
+
+	gammalow->xx += 1.0;
+	gammalow->yy += 1.0;
+	gammalow->zz += 1.0;
 }
 
-void Grid1DSphere::connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind) const{
-	if(z_ind<0) z_ind = zone_index(xup);
-	const double r = radius(xup);
-	const double X = 1.0;//metric.get_X(z_ind, r, rAxis); // 1.0/alpha;
-	const double alpha = 1.0;//metric.get_alpha(z_ind, r, rAxis); // sqrt(1.0 - 1.0/r);
-	const double dadr = 0.0;//metric.get_dadr(z_ind); // 0.5/(r*r) * X;
-	const double dXdr = 0.0;//metric.get_dXdr(z_ind); // -0.5/(r*r) * X*X*X;
+void Grid1DSphere::get_connection_coefficients(EinsteinHelper* eh) const{
+	const double r = radius(eh->p.xup);
+	const double Xloc = X[eh->z_ind];
+	const double alpha = lapse[eh->z_ind];
+	const double dadr = lapse.dydx[eh->z_ind][0][0];
+	const double dXdr = X.dydx[eh->z_ind][0][0];
 
-	// t mu nu
-	gamma[3][3][3] = 0;
-	for(int i=0; i<3; i++){
-		for(int j=0; j<3; j++) gamma[3][i][j] = 0;
-		gamma[3][i][3] = gamma[3][3][i] = dadr / (r*alpha) * xup[i];
-	}
+	double tmp;
+	double *xup;
+	xup = &(eh->p.xup[0]);
 
 	for(int a=0; a<4; a++) for(int mu=0; mu<4; mu++) for(int nu=0; nu<4; nu++){
-		double result=0.;
-		if(a==3){
-			if(mu==3 and nu==3) result=0;
-			else if(nu==3) result =  dadr / (r*alpha) * xup[mu];
-			else if(mu==3) result =  dadr / (r*alpha) * xup[nu];
-			else result = 0;
-		}
+		eh->christoffel.data[a].tt = alpha * dadr / (r*Xloc*Xloc) * xup[a];
+		eh->christoffel.data[a].xt = 0;
+		eh->christoffel.data[a].yt = 0;
+		eh->christoffel.data[a].zt = 0;
 
-		else{ // a == 0-2
-			if(mu==3 and nu==3) result = alpha * dadr / (r*X*X) * xup[a];
-			else if(mu==3 or nu==3) result = 0;
-			else{
-				result = xup[mu]*xup[nu] / (r*r*r*X*X) * (1.0 - X*X + r*X*dXdr);
-				if(mu==nu) result -= (1.-X*X) / (r*X*X);
-				result *= xup[a] / r;
-			}
-		}
+		tmp = 1. / (r*r*r*Xloc*Xloc) * (1.0 - Xloc*Xloc + r*Xloc*dXdr) * xup[a]/r;
+		eh->christoffel.data[a].xx = xup[0]*xup[0] * tmp;
+		eh->christoffel.data[a].yy = xup[1]*xup[1] * tmp;
+		eh->christoffel.data[a].zz = xup[2]*xup[2] * tmp;
+		eh->christoffel.data[a].xy = xup[0]*xup[1] * tmp;
+		eh->christoffel.data[a].xz = xup[0]*xup[2] * tmp;
+		eh->christoffel.data[a].yz = xup[1]*xup[2] * tmp;
 
-		gamma[a][mu][nu] = result;
+		tmp = -(1.-Xloc*Xloc) / (r*Xloc*Xloc) * xup[a]/r;
+		eh->christoffel.data[a].xx += tmp;
+		eh->christoffel.data[a].yy += tmp;
+		eh->christoffel.data[a].zz += tmp;
 	}
 }
 
 double Grid1DSphere::zone_lapse(const int z_ind) const{
-	return alpha[z_ind];
+	return lapse[z_ind];
 }
 void Grid1DSphere::axis_vector(vector<Axis>& axes) const{
 	axes = vector<Axis>({rAxis});

@@ -68,7 +68,7 @@ public:
 	void zone_directional_indices (const int z_ind, vector<unsigned>& dir_ind                    ) const;
 	double zone_lorentz_factor    (const int z_ind                                               ) const;
 	void sample_in_zone (const int z_ind, ThreadRNG* rangen, double x[3]) const;
-	void interpolate_fluid_velocity(const double x[3], double v[3], int z_ind) const;
+	void interpolate_fluid_velocity(const double x[3], double v[3], const unsigned dir_ind[NDIMS]) const;
 	void symmetry_boundaries      (EinsteinHelper *eh, const double tolerance                    ) const;
 	double zone_radius            (const int z_ind) const;
 	void dims                     (hsize_t dims[2], const int size) const;
@@ -76,13 +76,7 @@ public:
 	void write_hdf5_coordinates(H5::H5File file) const;
 	double zone_cell_dist(const double x_up[3], const int z_ind) const;
 	void axis_vector(vector<Axis>& axes) const;
-
-	// GR functions
-	double lapse(const double xup[4], int z_ind=-1) const;
-	void shiftup(double betaup[4], const double xup[4], int z_ind=-1) const;
-	void g3_down(const double xup[4], double gproj[4][4], int z_ind=-1) const;
-	void connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind=-1) const; // Gamma^alhpa_mu_nu
-};
+ };
 
 
 #endif

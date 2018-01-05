@@ -76,9 +76,6 @@ protected:
 	// get the coordinates at the center of the zone z_ind (GRID COORDINATES)
 	virtual void zone_coordinates(const int z_ind, double r[], const int rsize) const = 0;
 
-	// GR functions
-	virtual void connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind=-1) const = 0; // Gamma^alhpa_mu_nu
-
 public:
 
 	virtual ~Grid() {}
@@ -96,7 +93,7 @@ public:
 
 	vector<SpectrumArray*> distribution;  // radiation energy density for each species in lab frame (erg/ccm. Integrated over bin frequency and direction)
 
-	ScalarMultiDArray<NDIMS> alpha;
+	ScalarMultiDArray<NDIMS> lapse;
 	ScalarMultiDArray<NDIMS> Q_annihil; // annihilation energy deposition rate (erg/ccm/s) (lab frame)
 	ScalarMultiDArray<NDIMS> rho;       // density (g/cm^3)
 	ScalarMultiDArray<NDIMS> T;         // gas temperature (K)
@@ -140,22 +137,25 @@ public:
 	double total_rest_mass() const;
 
 	// give the velocity vector at this point (PARTICLE COORDINATES)
-	virtual void interpolate_fluid_velocity(const double xup[4], double v[3], int z_ind=-1) const = 0;
-	void interpolate_metric(const double xup[4], Metric* g, const int z_ind=-1);
+	virtual void interpolate_fluid_velocity(const double xup[4], double v[3], const unsigned dir_ind[NDIMS]) const = 0;
 
 	// boundary conditions
 	virtual void symmetry_boundaries(EinsteinHelper *eh, const double step_size) const=0;
 
 	// move the particle
-	void integrate_geodesic(EinsteinHelper *eh) const;
 	void get_opacity(EinsteinHelper *eh) const;
-
 
 	// help with spawning particles
 	void random_core_x_D(const double r_core, ThreadRNG *rangen, double xup[4], double D[3]) const;
 	void isotropic_kup_tet(const double nu, double kup_tet[4], const double xup[4], ThreadRNG *rangen) const;
 	void isotropic_direction(double D[3], ThreadRNG *rangen) const;
 	virtual void sample_in_zone(const int z_ind, ThreadRNG *rangen, double xup[3]) const = 0;
+
+	// GR functions
+	virtual void get_connection_coefficients(EinsteinHelper* eh) const; // Gamma^alhpa_mu_nu
+	virtual void interpolate_shift(const double xup[4], double betaup[3], const unsigned dir_ind[NDIMS]) const;
+	virtual void interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const;
+	void interpolate_metric(const double xup[4], Metric* g, const unsigned dir_ind[NDIMS]) const;
 };
 
 

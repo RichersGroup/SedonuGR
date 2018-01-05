@@ -125,7 +125,7 @@ void Grid0DIsotropic::sample_in_zone(const int z_ind, ThreadRNG* rangen, double 
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void Grid0DIsotropic::interpolate_fluid_velocity(const double x[3], double v[3], int z_ind) const
+void Grid0DIsotropic::interpolate_fluid_velocity(const double x[3], double v[3], const unsigned dir_ind[NDIMS]) const
 {
 	v[0] = 0;
 	v[1] = 0;
@@ -162,21 +162,6 @@ void Grid0DIsotropic::write_hdf5_coordinates(H5::H5File file) const
 	assert(0);
 }
 
-double Grid0DIsotropic::lapse(const double xup[4], int z_ind) const {
-	return 1.0;
-}
-void Grid0DIsotropic::shiftup(double betaup[4], const double xup[4], int z_ind) const {
-	cout << "g_down not implemented" << endl;
-	assert(0);
-}
-void Grid0DIsotropic::g3_down(const double xup[4], double gproj[4][4], int z_ind) const {
-	cout << "g_down not implemented" << endl;
-	assert(0);
-}
-void Grid0DIsotropic::connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind) const {
-	cout << "g_down not implemented" << endl;
-	assert(0);
-}
 double Grid0DIsotropic::zone_lapse(const int z_ind) const{
 	return 1.0;
 }

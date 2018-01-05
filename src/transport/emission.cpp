@@ -133,7 +133,7 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 
 	// get the velocity
 	double v[3];
-	grid->interpolate_fluid_velocity(p.xup,v,z_ind);
+	grid->interpolate_fluid_velocity(p.xup,v,dir_ind);
 
 	// species
 	p.s = s;

@@ -751,54 +751,45 @@ void Grid2DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3
 //------------------------------------------------------------
 // get the cartesian velocity vector (cm/s)
 //------------------------------------------------------------
-void Grid2DSphere::interpolate_fluid_velocity(const double x[3], double v[3], int z_ind) const
+void Grid2DSphere::interpolate_fluid_velocity(const double x[3], double v[3], const unsigned dir_ind[NDIMS]) const
 {
-	if(z_ind < 0) z_ind = zone_index(x);
-	PRINT_ASSERT(z_ind,>=,-1);
+	// radius in zone
+	double r    = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+	double rhat = sqrt(x[0]*x[0] + x[1]*x[1]);
+	int along_axis = (rhat/r < TINY);
+	double theta = pc::pi/2.0 - atan2(x[2], rhat);
+	theta = max(0.0,theta);
+	theta = min(pc::pi, theta);
 
-	// if within inner sphere, z_ind=-1. Leave velocity at 0.
-	if(z_ind >= 0){
+	// Based on position, calculate what the 3-velocity is
+	double xvec[2] = {r,theta};
+	double tmp_vr     = vr.interpolate(xvec,dir_ind);
+	double tmp_vtheta = vtheta.interpolate(xvec,dir_ind);
+	double tmp_vphi   = vphi.interpolate(xvec,dir_ind);
 
-		// radius in zone
-		double r    = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
-		double rhat = sqrt(x[0]*x[0] + x[1]*x[1]);
-		int along_axis = (rhat/r < TINY);
-		double theta = pc::pi/2.0 - atan2(x[2], rhat);
-		theta = max(0.0,theta);
-		theta = min(pc::pi, theta);
+	double vr_cart[3];
+	vr_cart[0] = tmp_vr * x[0]/r;
+	vr_cart[1] = tmp_vr * x[1]/r;
+	vr_cart[2] = tmp_vr * x[2]/r;
 
-		// Based on position, calculate what the 3-velocity is
-		double xvec[2] = {r,theta};
-		vector<unsigned> dir_ind(2);
-		zone_directional_indices(z_ind,dir_ind);
-		double tmp_vr     = vr.interpolate(xvec,&dir_ind.front());
-		double tmp_vtheta = vtheta.interpolate(xvec,&dir_ind.front());
-		double tmp_vphi   = vphi.interpolate(xvec,&dir_ind.front());
+	double vtheta_cart[3];
+	vtheta_cart[0] =  (along_axis ? 0 : tmp_vtheta * x[2]/r * x[0]/rhat );
+	vtheta_cart[1] =  (along_axis ? 0 : tmp_vtheta * x[2]/r * x[1]/rhat );
+	vtheta_cart[2] = -tmp_vtheta * rhat/r;
 
-		double vr_cart[3];
-		vr_cart[0] = tmp_vr * x[0]/r;
-		vr_cart[1] = tmp_vr * x[1]/r;
-		vr_cart[2] = tmp_vr * x[2]/r;
+	double vphi_cart[3];
+	vphi_cart[0] = (along_axis ? 0 : -tmp_vphi * x[1]/rhat );
+	vphi_cart[1] = (along_axis ? 0 :  tmp_vphi * x[0]/rhat );
+	vphi_cart[2] = 0;
 
-		double vtheta_cart[3];
-		vtheta_cart[0] =  (along_axis ? 0 : tmp_vtheta * x[2]/r * x[0]/rhat );
-		vtheta_cart[1] =  (along_axis ? 0 : tmp_vtheta * x[2]/r * x[1]/rhat );
-		vtheta_cart[2] = -tmp_vtheta * rhat/r;
+	// remember, symmetry axis is along the z-axis
+	for(int i=0; i<3; i++) v[i] = vr_cart[i] + vtheta_cart[i] + vphi_cart[i];
 
-		double vphi_cart[3];
-		vphi_cart[0] = (along_axis ? 0 : -tmp_vphi * x[1]/rhat );
-		vphi_cart[1] = (along_axis ? 0 :  tmp_vphi * x[0]/rhat );
-		vphi_cart[2] = 0;
-
-		// remember, symmetry axis is along the z-axis
-		for(int i=0; i<3; i++) v[i] = vr_cart[i] + vtheta_cart[i] + vphi_cart[i];
-
-		// check for pathological case
-		if (r == 0){ // set everything to 0
-			v[0] = 0;
-			v[1] = 0;
-			v[2] = 0;
-		}
+	// check for pathological case
+	if (r == 0){ // set everything to 0
+		v[0] = 0;
+		v[1] = 0;
+		v[2] = 0;
 	}
 }
 
@@ -864,22 +855,6 @@ void Grid2DSphere::write_hdf5_coordinates(H5::H5File file) const
 	dataset.close();
 }
 
-double Grid2DSphere::lapse(const double xup[4], int z_ind) const {
-	cout << "g_down not implemented" << endl;
-	exit(1);
-}
-void Grid2DSphere::shiftup(double betaup[4], const double xup[4], int z_ind) const {
-	cout << "g_down not implemented" << endl;
-	exit(1);
-}
-void Grid2DSphere::g3_down(const double xup[4], double gproj[4][4], int z_ind) const {
-	cout << "g_down not implemented" << endl;
-	exit(1);
-}
-void Grid2DSphere::connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind) const {
-	cout << "g_down not implemented" << endl;
-	exit(1);
-}
 double Grid2DSphere::zone_lapse(const int z_ind) const{
 	cout << "zone_lapse not implemented" << endl;
 	exit(1);

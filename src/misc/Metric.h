@@ -5,7 +5,42 @@
 
 class ThreeMetric{
 public:
-  double xx, yy, zz, xy, xz, yz;
+	double xx, yy, zz, xy, xz, yz;
+
+	ThreeMetric(){
+		xx=yy=zz=xy=xz=yz = NaN;
+	}
+};
+
+class Christoffel{
+public:
+	class SymmetricIndices{
+	public:
+		double xx, yy, zz, tt;
+		double xy, xz, xt;
+		double yz, yt, zt;
+		SymmetricIndices(){
+			xx=yy=zz=tt=xy=xz=xt=yz=yt=zt = NaN;
+		}
+	};
+	SymmetricIndices data[3]; // don't do time component because it's normalized anyway
+
+	void contract2(const double kup[4], double result[3]){
+		for(unsigned i=0; i<3; i++){
+			result[i] = 0;
+			result[i] += data[i].xx * kup[0]*kup[0];
+			result[i] += data[i].yy * kup[1]*kup[1];
+			result[i] += data[i].zz * kup[2]*kup[2];
+			result[i] += data[i].tt * kup[3]*kup[3];
+
+			result[i] += data[i].xy * kup[0]*kup[1]*2.0;
+			result[i] += data[i].xz * kup[0]*kup[2]*2.0;
+			result[i] += data[i].xt * kup[0]*kup[3]*2.0;
+			result[i] += data[i].yz * kup[1]*kup[2]*2.0;
+			result[i] += data[i].yt * kup[1]*kup[3]*2.0;
+			result[i] += data[i].zt * kup[2]*kup[3]*2.0;
+		}
+	}
 };
 
 //========//
@@ -18,6 +53,15 @@ private:
  public:
   double alpha, betaup[3];
   ThreeMetric gammalow;
+
+  Metric(){
+	  gtt=NaN;
+	  alpha = NaN;
+	  for(unsigned i=0; i<3; i++){
+		  betaup[i] = NaN;
+		  betalow[i] = NaN;
+	  }
+  }
 
   // fill in values for gtt and betalow
   // assumes alpha, betaup, and gammalow have been set.

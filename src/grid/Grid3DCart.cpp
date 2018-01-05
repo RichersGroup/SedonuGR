@@ -449,17 +449,11 @@ double Grid3DCart::zone_cell_dist(const double x_up[3], const int z_ind) const{
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void Grid3DCart::interpolate_fluid_velocity(const double x[3], double vout[3], int z_ind) const
+void Grid3DCart::interpolate_fluid_velocity(const double x[3], double vout[3], const unsigned dir_ind[NDIMS]) const
 {
-	if(z_ind<0) z_ind = zone_index(x);
-	PRINT_ASSERT(z_ind,>=,0);
-	PRINT_ASSERT(z_ind,<,(int)rho.size());
-
 	// may want to interpolate here?
-	vector<unsigned> dir_ind(3);
-	zone_directional_indices(z_ind,dir_ind);
 	Tuple<double,3> tmp;
-	tmp = v.interpolate(x,&dir_ind.front());
+	tmp = v.interpolate(x,dir_ind);
 	for(unsigned i=0; i<3; i++) vout[i] = tmp[i];
 
 	PRINT_ASSERT(vout[0]*vout[0] + vout[1]*vout[1] + vout[2]*vout[2],<=,pc::c*pc::c);
@@ -633,25 +627,21 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh, const double tolerance)
 	}
 }
 
-double Grid3DCart::lapse(const double xup[4], int z_ind) const {
-	if(z_ind<0) z_ind = zone_index(xup);
-	return metric[z_ind].alpha;
-}
-void Grid3DCart::shiftup(double betaup[4], const double xup[4], int z_ind) const {
-	if(z_ind<0) z_ind = zone_index(xup);
-	betaup[3] = 0;
-	for(int i=0; i<3; i++) betaup[i] = metric[z_ind].beta[i];
-}
-void Grid3DCart::g3_down(const double xup[4], double gproj[4][4], int z_ind) const {
-	if(z_ind<0) z_ind = zone_index(xup);
-	for(int i=0; i<3; i++) for(int j=0; j<3; j++)
-		gproj[i][j] = metric[z_ind].g3[i][j];
-}
-void Grid3DCart::connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind) const{
-	if(z_ind<0) z_ind = zone_index(xup);
-	for(int i=0; i<4; i++) for(int j=0; j<4; j++) for(int k=0; k<4; k++)
-		gamma[i][j][k] = metric[z_ind].gamma[i][j][k];
-}
+//void Grid3DCart::shiftup(double betaup[4], const double xup[4], int z_ind) const {
+//	if(z_ind<0) z_ind = zone_index(xup);
+//	betaup[3] = 0;
+//	for(int i=0; i<3; i++) betaup[i] = metric[z_ind].beta[i];
+//}
+//void Grid3DCart::g3_down(const double xup[4], double gproj[4][4], int z_ind) const {
+//	if(z_ind<0) z_ind = zone_index(xup);
+//	for(int i=0; i<3; i++) for(int j=0; j<3; j++)
+//		gproj[i][j] = metric[z_ind].g3[i][j];
+//}
+//void Grid3DCart::get_connection_coefficients(const double xup[4], double gamma[4][4][4], int z_ind) const{
+//	if(z_ind<0) z_ind = zone_index(xup);
+//	for(int i=0; i<4; i++) for(int j=0; j<4; j++) for(int k=0; k<4; k++)
+//		gamma[i][j][k] = metric[z_ind].gamma[i][j][k];
+//}
 double Grid3DCart::zone_lapse(const int z_ind) const{
 	return metric[z_ind].alpha;
 }
