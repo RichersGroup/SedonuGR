@@ -86,7 +86,7 @@ void Transport::scatter(EinsteinHelper *eh) const{
 		// if the optical depth is below our threshold, don't do random walk
 		// (first pass to avoid doing lots of math)
 		double Rlab_min = randomwalk_sphere_size * grid->zone_min_length(eh->z_ind);
-		double Rlab_boundary = grid->zone_cell_dist(eh->p.xup,eh->z_ind);
+		double Rlab_boundary = grid->d_boundary(eh);
 		double Rlab = max(Rlab_min, Rlab_boundary);
 		if(eh->scatopac * Rlab >= randomwalk_min_optical_depth){
 			// determine maximum comoving sphere size

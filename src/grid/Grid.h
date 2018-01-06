@@ -127,7 +127,7 @@ public:
 	virtual double zone_lab_3volume(const int z_ind)                        const=0;
 	virtual double zone_min_length (const int z_ind)                        const=0;
 	virtual double zone_radius     (const int z_ind)                        const=0;
-	virtual double zone_cell_dist  (const double p_xup[3], const int z_ind) const=0;
+	virtual double d_boundary  (const EinsteinHelper *eh) const=0;
 	virtual double zone_lorentz_factor(const int z_ind                    ) const=0;
 	double         zone_com_3volume(const int z_ind)                        const;
 	double         zone_4volume    (const int z_ind)                        const;

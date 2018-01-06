@@ -619,26 +619,33 @@ double Grid2DSphere::zone_lab_3volume(const int z_ind) const
 
 
 // returning 0 causes the min distance to take over in propagate.cpp::which_event
-double Grid2DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const{
-	vector<unsigned> dir_ind(2);
-	zone_directional_indices(z_ind,dir_ind);
-	const unsigned int i = dir_ind[0];
-	const unsigned int j = dir_ind[1];
 
-	double r = radius(x_up);
-	double rhat = sqrt(x_up[0]*x_up[0] + x_up[1]*x_up[1]);
-	double theta = Grid2DSphere_theta(x_up);
-	PRINT_ASSERT(r,<=,rAxis.top[i]);
-	PRINT_ASSERT(r,>=,rAxis.bottom(i));
-	PRINT_ASSERT(theta,<=,thetaAxis.top[j]);
-	PRINT_ASSERT(theta,>=,thetaAxis.bottom(j));
+double Grid2DSphere::d_boundary(const EinsteinHelper* eh) const{
+	const double r = radius(eh->p.xup);
+	PRINT_ASSERT(r,<=,rAxis.top[eh->z_ind]);
+	PRINT_ASSERT(r,>=,rAxis.bottom(eh->z_ind));
+	const double x = eh->p.xup[0];
+	const double y = eh->p.xup[1];
+	const double z = eh->p.xup[2];
+	const double rp = sqrt(x*x + y*y);
+	const double theta = Grid2DSphere_theta(eh->p.xup);
 
-	double dthetaL = r * sin(theta - thetaAxis.bottom(j));
-	double dthetaR = r * sin(thetaAxis.top[j] - theta);
-	double drL = r - rAxis.bottom(i);
-	double drR = rAxis.top[i] - r;
+	// get component of k in the radial direction
+	double kr = eh->g.dot<4>(eh->e[0],eh->p.kup);
+	double dlambda_r = INFINITY;
+	if(kr>0) dlambda_r = (rAxis.top[eh->dir_ind[0]] - r   ) / kr;
+	if(kr<0) dlambda_r = (r - rAxis.bottom(eh->dir_ind[0])) / kr;
+	dlambda_r = abs(dlambda_r);
 
-	return min(dthetaL, min(dthetaR, min(drL, drR)));
+	// get component of k in the theta direction
+	double kt = eh->g.dot<4>(eh->e[1],eh->p.kup);
+	double dlambda_t = INFINITY;
+	if(kt>0) dlambda_t = r * (thetaAxis.top[eh->dir_ind[1]]  - theta  ) / kt;
+	if(kt<0) dlambda_t = r * (theta - thetaAxis.bottom(eh->dir_ind[1])) / kt;
+	dlambda_t = abs(dlambda_t);
+
+	double ds_com = eh->kup_tet[3] * min(dlambda_t, dlambda_r);
+	return ds_com;
 }
 
 //------------------------------------------------------------

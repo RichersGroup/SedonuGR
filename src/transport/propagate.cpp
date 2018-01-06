@@ -104,7 +104,7 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 	PRINT_ASSERT(eh->z_ind,>=,0);
 
 	// FIND D_ZONE= ====================================================================
-	double d_boundary = grid->zone_cell_dist(eh->p.xup, eh->z_ind);
+	double d_boundary = grid->d_boundary(eh);
 	double d_zone = grid->zone_min_length(eh->z_ind);
 	d_boundary = min(max(d_boundary, d_zone*min_step_size), d_zone*max_step_size);
 	PRINT_ASSERT(d_zone, >, 0);

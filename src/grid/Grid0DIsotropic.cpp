@@ -169,7 +169,7 @@ double Grid0DIsotropic::zone_lorentz_factor(const int z_ind) const{
 	return 1.0;
 }
 // returning 0 causes the min distance to take over in propagate.cpp::which_event
-double Grid0DIsotropic::zone_cell_dist(const double x_up[3], const int z_ind) const{
+double Grid0DIsotropic::d_boundary(const EinsteinHelper *eh) const{
 	return 0;
 }
 

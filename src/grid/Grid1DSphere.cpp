@@ -395,15 +395,22 @@ void Grid1DSphere::symmetry_boundaries(EinsteinHelper *eh) const{
 	}
 }
 
-double Grid1DSphere::zone_cell_dist(const double x_up[3], const int z_ind) const{
-	double r = radius(x_up);
-	PRINT_ASSERT(r,<=,rAxis.top[z_ind]);
-	PRINT_ASSERT(r,>=,rAxis.bottom(z_ind));
+double Grid1DSphere::d_boundary(const EinsteinHelper *eh) const{
+	double r = radius(eh->p.xup);
+	PRINT_ASSERT(r,<=,rAxis.top[eh->z_ind]);
+	PRINT_ASSERT(r,>=,rAxis.bottom(eh->z_ind));
+	const double x = eh->p.xup[0];
+	const double y = eh->p.xup[1];
+	const double z = eh->p.xup[2];
 
-	double drL = r - rAxis.bottom(z_ind);
-	double drR = rAxis.top[z_ind] - r;
+	// get component of k in the radial direction
+	double kr = eh->g.dot<4>(eh->e[0],eh->p.kup);
 
-	return min(drL, drR);
+	double dlambda = INFINITY;
+	if(kr>0) dlambda = (rAxis.top[eh->z_ind] - r   ) / kr;
+	if(kr<0) dlambda = (r = rAxis.bottom(eh->z_ind)) / kr;
+
+	return dlambda * eh->kup_tet[3];
 }
 
 double Grid1DSphere::zone_radius(const int z_ind) const{
