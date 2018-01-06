@@ -67,7 +67,8 @@ Transport::Transport(){
 	rho_min = NaN;
 	rho_max = NaN;
 	max_particles = -MAXLIM;
-	step_size = NaN;
+	min_step_size = NaN;
+	max_step_size = NaN;
 	randomwalk_sphere_size = NaN;
 	min_packet_number = NaN;
 	max_packet_number = NaN;
@@ -137,7 +138,8 @@ void Transport::init(Lua* lua)
 		equilibrium_itmax     = lua->scalar<int>("equilibrium_itmax");
 		equilibrium_tolerance = lua->scalar<double>("equilibrium_tolerance");
 	}
-	step_size     = lua->scalar<double>("step_size");
+	min_step_size     = lua->scalar<double>("min_step_size");
+	max_step_size     = lua->scalar<double>("max_step_size");
 	randomwalk_sphere_size = lua->scalar<double>("randomwalk_sphere_size");
 	if(randomwalk_sphere_size>0){
 		randomwalk_min_optical_depth = lua->scalar<double>("randomwalk_min_optical_depth");

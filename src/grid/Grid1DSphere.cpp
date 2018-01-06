@@ -369,14 +369,13 @@ void Grid1DSphere::interpolate_fluid_velocity(const double x[3], double v[3], co
 //------------------------------------------------------------
 // Reflect off symmetry axis
 //------------------------------------------------------------
-void Grid1DSphere::symmetry_boundaries(EinsteinHelper *eh, const double tolerance) const{
+void Grid1DSphere::symmetry_boundaries(EinsteinHelper *eh) const{
 	// reflect from outer boundary
 		double R = radius(eh->p.xup);
 	if(reflect_outer && R>rAxis.top[rAxis.size()-1]){
 		double r0 = (rAxis.size()>1 ? rAxis.top[rAxis.size()-2] : rAxis.min);
 		double rmax = rAxis.top[rAxis.size()-1];
 		double dr = rmax - r0;
-		PRINT_ASSERT( fabs(R - rAxis.top[rAxis.size()-1]),<,tolerance*dr);
 
 		double kr;
 		for(int i=0; i<3; i++) kr += eh->p.xup[i]/R * eh->p.kup[i];

@@ -103,18 +103,14 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 	PRINT_ASSERT(eh->p.N, >, 0);
 	PRINT_ASSERT(eh->z_ind,>=,0);
 
-	double d_zone     = numeric_limits<double>::infinity();
-	double d_interact = numeric_limits<double>::infinity();
-
 	// FIND D_ZONE= ====================================================================
-	double d_zone_min = step_size * grid->zone_min_length(eh->z_ind);
-	double d_zone_boundary = grid->zone_cell_dist(eh->p.xup, eh->z_ind) + TINY*d_zone_min;
-	d_zone = max(d_zone_min, d_zone_boundary);
-	d_zone *= eh->g.dot<4>(eh->u,eh->p.kup) / eh->g.ndot(eh->p.kup); // convert to comoving frame
+	double d_boundary = grid->zone_cell_dist(eh->p.xup, eh->z_ind);
+	double d_zone = grid->zone_min_length(eh->z_ind);
+	d_boundary = min(max(d_boundary, d_zone*min_step_size), d_zone*max_step_size);
 	PRINT_ASSERT(d_zone, >, 0);
 
 	// FIND D_INTERACT =================================================================
-	d_interact = numeric_limits<double>::infinity();
+	double d_interact = numeric_limits<double>::infinity();
 	if(eh->scatopac > 0){
 		double tau;
 		do{
@@ -126,7 +122,7 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 
 	// find out what event happens (shortest distance) =====================================
 	*event  = nothing;
-	double d_smallest = d_zone;
+	double d_smallest = d_boundary;
 	if( d_interact <= d_smallest ){
 		*event = interact;
 		d_smallest = d_interact;
@@ -142,7 +138,7 @@ void Transport::boundary_conditions(EinsteinHelper *eh) const{
 
 	if(r_core>0 && grid->radius(eh->p.xup)<r_core) eh->p.fate = absorbed;
 	else if(eh->z_ind<0){
-		grid->symmetry_boundaries(eh, step_size);
+		grid->symmetry_boundaries(eh);
 		update_eh_background(eh);
 	}
 }

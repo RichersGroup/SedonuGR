@@ -137,7 +137,7 @@ void Grid0DIsotropic::interpolate_fluid_velocity(const double x[3], double v[3],
 // Reflect off symmetry plane
 //------------------------------------------------------------
 
-void Grid0DIsotropic::symmetry_boundaries(EinsteinHelper *eh, const double tolerance) const{
+void Grid0DIsotropic::symmetry_boundaries(EinsteinHelper *eh) const{
 	// does nothing - no boundary
 }
 

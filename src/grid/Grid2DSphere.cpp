@@ -797,7 +797,7 @@ void Grid2DSphere::interpolate_fluid_velocity(const double x[3], double v[3], co
 //------------------------------------------------------------
 // Reflect off the symmetry boundaries
 //------------------------------------------------------------
-void Grid2DSphere::symmetry_boundaries(EinsteinHelper *lh, const double tolerance) const{
+void Grid2DSphere::symmetry_boundaries(EinsteinHelper *lh) const{
 // not implemented - does nothing
 }
 

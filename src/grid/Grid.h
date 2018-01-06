@@ -140,7 +140,7 @@ public:
 	virtual void interpolate_fluid_velocity(const double xup[4], double v[3], const unsigned dir_ind[NDIMS]) const = 0;
 
 	// boundary conditions
-	virtual void symmetry_boundaries(EinsteinHelper *eh, const double step_size) const=0;
+	virtual void symmetry_boundaries(EinsteinHelper *eh) const=0;
 
 	// move the particle
 	void get_opacity(EinsteinHelper *eh) const;

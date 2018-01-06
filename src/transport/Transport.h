@@ -99,7 +99,7 @@ protected:
 	int max_particles;
 
 	// simulation parameters
-	double step_size;
+	double min_step_size, max_step_size;
 	int    do_annihilation;
 	int    rank0;
 

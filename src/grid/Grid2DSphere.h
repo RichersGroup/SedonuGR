@@ -68,7 +68,7 @@ public:
 	double zone_lorentz_factor    (const int z_ind                                               ) const;
 	void sample_in_zone (const int z_ind, ThreadRNG* rangen, double x[3]) const;
 	void interpolate_fluid_velocity(const double x[3], double v[3], const unsigned dir_ind[NDIMS]) const;
-	void symmetry_boundaries      (EinsteinHelper *eh, const double tolerance                    ) const;
+	void symmetry_boundaries      (EinsteinHelper *eh                                            ) const;
 	double zone_radius            (const int z_ind) const;
 	void dims                     (hsize_t dims[2], const int size) const;
 	hsize_t dimensionality() const {return 2;};

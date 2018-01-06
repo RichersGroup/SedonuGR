@@ -568,7 +568,7 @@ double Grid3DCart::zone_right_boundary(const unsigned dir, const unsigned dir_in
 //------------------------------------------------------------
 // Reflect off revlecting boundary condition
 //------------------------------------------------------------
-void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh, const double tolerance) const{
+void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
 	PRINT_ASSERT(zone_index(eh->p.xup),<,0);
 
 	// initialize the arrays
@@ -595,7 +595,7 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh, const double tolerance)
 	for(int i=0; i<2; i++){
 		if(xup[i]<0 && (rotate_hemisphere[i] || rotate_quadrant)){
 			PRINT_ASSERT(xAxes[i].min,==,0);
-			PRINT_ASSERT(-xup[i],<,xAxes[i].delta(1)*tolerance);
+			PRINT_ASSERT(-xup[i],<,xAxes[i].delta(1)*zone_min_length(eh->z_ind));
 			
 			if(rotate_hemisphere[i]){
 				for(int j=0; j<2; j++){

@@ -80,7 +80,7 @@ public:
 	void   zone_directional_indices (const int z_ind, vector<unsigned>& dir_ind                    ) const;
 	void   sample_in_zone (const int z_ind, ThreadRNG* rangen, double x[3]) const;
 	void   interpolate_fluid_velocity(const double x[3], double v[3], const unsigned dir_ind[NDIMS]) const;
-	void   symmetry_boundaries      (EinsteinHelper *lh, const double tolerance                    ) const;
+	void   symmetry_boundaries      (EinsteinHelper *eh                                            ) const;
 	double zone_lorentz_factor      (const int z_ind                                               ) const;
 	double zone_radius              (const int z_ind) const;
 	void dims                       (hsize_t dims[3], const int size) const;
