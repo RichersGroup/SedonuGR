@@ -46,9 +46,6 @@ void Transport::event_interact(EinsteinHelper* eh) const{
 	if(!exponential_decay) eh->p.N *= 1.0 - eh->absopac/(eh->absopac + eh->scatopac);
 	scatter(eh);
 
-	// resample the path length
-	if(eh->p.fate==moving) eh->p.tau = sample_tau(&rangen);
-
 	// window the particle
 	if(eh->p.fate==moving) window(eh);
 
@@ -138,20 +135,6 @@ void Transport::scatter(EinsteinHelper *eh) const{
 	}
 }
 
-
-
-//---------------------------------------------------------------------
-// Randomly select an optical depth through which a particle will move.
-//---------------------------------------------------------------------
-double Transport::sample_tau(ThreadRNG* rangen){
-	double tau;
-
-	do{
-		tau = -log(rangen->uniform());
-	} while(tau >= INFINITY);
-
-	return tau;
-}
 
 
 //-------------------------------------------------------

@@ -146,11 +146,9 @@ public:
 	// pointer to grid
 	Grid *grid;
 
-	// biasing
 	// minimum neutrino packet energy
 	double min_packet_number;
 	double max_packet_number;
-	static double sample_tau(ThreadRNG* rangen);
 
 	// items for core emission
 	double r_core;

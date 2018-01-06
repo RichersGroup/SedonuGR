@@ -47,7 +47,6 @@ public:
 			kup[i] = NaN;
 		}
 		N = NaN;
-		tau = NaN;
 		s = -1;
 		fate = moving;
 	}
@@ -55,14 +54,13 @@ public:
 	double xup[4];          // x,y,z,ct position (cm)
 	double kup[4];          // 4-wavevector (erg) //old definition:(2pi nu/c)
 	double       N;         // total number of neutrinos in packet
-	double     tau;         // remaining optical depth
 	int          s;         // species number
 	ParticleFate fate;
 
 	void print() const
 	{
-		printf("%10.3e %10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e %10.3e | %10.3e %10.3e %i %i\n",
-				xup[0],xup[1],xup[2],xup[3],kup[0],kup[1],kup[2],kup[3],N,tau,s,fate);
+		printf("%10.3e %10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e %10.3e | %10.3e %i %i\n",
+				xup[0],xup[1],xup[2],xup[3],kup[0],kup[1],kup[2],kup[3],N,s,fate);
 	}
 
 	Particle operator =(const Particle& p){
@@ -71,7 +69,6 @@ public:
 			kup[i] = p.kup[i];
 		}
 		N = p.N;
-		tau = p.tau;
 		s = p.s;
 		fate = p.fate;
 		return *this;

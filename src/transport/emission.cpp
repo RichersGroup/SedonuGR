@@ -127,7 +127,6 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 	EinsteinHelper eh;
 	eh.p.fate = moving;
 	eh.p.s = s;
-	eh.p.tau = sample_tau(&rangen);
 
 	// random sample position in zone
 	grid->sample_in_zone(z_ind,&rangen,eh.p.xup);
@@ -153,7 +152,6 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 	if(eh.p.fate == moving){
 		PRINT_ASSERT(particles.size(),<,particles.capacity());
 		PRINT_ASSERT(eh.p.N,>,0);
-		PRINT_ASSERT(eh.p.tau,>,0);
 		#pragma omp critical
 		particles.push_back(eh);
 
@@ -184,7 +182,6 @@ void Transport::create_surface_particle(const double weight, const unsigned int 
 	EinsteinHelper eh;
 	eh.p.fate = moving;
 	eh.p.s = s;
-	eh.p.tau = sample_tau(&rangen);
 
 	// pick initial position on photosphere
 	random_core_x(eh.p.xup);

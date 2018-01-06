@@ -114,10 +114,15 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 	PRINT_ASSERT(d_zone, >, 0);
 
 	// FIND D_INTERACT =================================================================
-	double relevant_opacity = eh->scatopac;
-	if(exponential_decay) relevant_opacity += eh->absopac;
-	if (relevant_opacity == 0) d_interact = numeric_limits<double>::infinity();
-	else                       d_interact = static_cast<double>(eh->p.tau / relevant_opacity);
+	double relevant_opacity = eh->scatopac + (exponential_decay ? eh->absopac : 0);
+	if(relevant_opacity == 0) d_interact = numeric_limits<double>::infinity();
+	else{
+	  double tau;
+	  do{
+	    tau = -log(rangen->uniform());
+	  } while(tau >= INFINITY);
+	  d_interact = tau / relevant_opacity;
+	}
 	PRINT_ASSERT(d_interact,>=,0);
 
 	// find out what event happens (shortest distance) =====================================
@@ -181,21 +186,10 @@ void Transport::tally_radiation(const EinsteinHelper *eh, const int this_exp_dec
 }
 
 void Transport::move(EinsteinHelper *eh) const{
-	PRINT_ASSERT(eh->p.tau,>=,0);
 	PRINT_ASSERT(eh->ds_com,>=,0);
 
 	// translate the particle
 	eh->integrate_geodesic();
-
-	// reduce the particle's remaining optical depth
-	double relevant_opac = eh->scatopac;
-	if(exponential_decay) relevant_opac += eh->absopac;
-	if(relevant_opac>0){
-		double old_tau = eh->p.tau;
-		double new_tau = eh->p.tau - relevant_opac * eh->ds_com;
-		PRINT_ASSERT(new_tau,>=,-TINY*old_tau);
-		eh->p.tau = max(0.0,new_tau);
-	}
 
 	// appropriately reduce the particle's energy
 	if(exponential_decay){
