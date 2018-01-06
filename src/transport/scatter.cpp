@@ -36,7 +36,7 @@ namespace pc = physical_constants;
 //------------------------------------------------------------
 // physics of absorption/scattering
 //------------------------------------------------------------
-void Transport::event_interact(EinsteinHelper* eh){
+void Transport::event_interact(EinsteinHelper* eh) const{
 	PRINT_ASSERT(eh->z_ind,>=,0);
 	PRINT_ASSERT(eh->z_ind,<,(int)grid->rho.size());
 	PRINT_ASSERT(eh->p.N,>,0);
@@ -61,7 +61,7 @@ void Transport::event_interact(EinsteinHelper* eh){
 
 
 // decide whether to kill a particle
-void Transport::window(EinsteinHelper *eh){
+void Transport::window(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->p.N,>=,0);
 	PRINT_ASSERT(eh->p.fate,!=,rouletted);
 
@@ -70,27 +70,11 @@ void Transport::window(EinsteinHelper *eh){
 		if(rangen.uniform() < 0.5) eh->p.fate = rouletted;
 		else eh->p.N *= 2.0;
 	}
-	if(eh->p.fate==moving) PRINT_ASSERT(eh->p.N,>=,min_packet_number);
-
-	// split if too high energy, if enough space, and if in important region
-	double ratio = eh->p.N / max_packet_number;
-	int n_new = (int)ratio;
-	if(ratio>1.0 && (int)particles.size()+n_new<max_particles){
-		eh->p.N /= (double)(n_new+1);
-		for(int i=0; i<n_new; i++){
-			#pragma omp critical
-			particles.push_back(*eh);
-		}
-	}
 
 	if(eh->p.fate == moving){
+		PRINT_ASSERT(eh->p.N,>=,min_packet_number);
 		PRINT_ASSERT(eh->p.N,<,INFINITY);
 		PRINT_ASSERT(eh->p.N,>,0);
-	}
-	if((int)particles.size()>=max_particles && verbose && rank0){
-		cout << "max_particles: " << max_particles << endl;
-		cout << "particles.size(): " << particles.size() << endl;
-		cout << "WARNING: max_particles is too small to allow splitting." << endl;
 	}
 }
 
@@ -204,123 +188,45 @@ void Transport::init_randomwalk_cdf(Lua* lua){
 // Do a random walk step
 //----------------------
 void Transport::random_walk(EinsteinHelper *eh, const double Rcom, const double D) const{
-//	PRINT_ASSERT(eh->scatopac,>,0);
-//	PRINT_ASSERT(eh->absopac,>=,0);
-//	PRINT_ASSERT(eh->p.N,>=,0);
-//	PRINT_ASSERT(eh->nu(),>=,0);
-//
-//	// set pointer to the current zone
-//	Zone* zone;
-//	zone = &(grid->z[z_ind]);
-//
-//	// sample the distance travelled during the random walk
-//	double path_length_com = pc::c * Rcom*Rcom / D * randomwalk_diffusion_time.invert(rangen.uniform(),&randomwalk_xaxis,-1);
-//	//PRINT_ASSERT(path_length_com,>=,Rcom);
-//	path_length_com = max(path_length_com,Rcom);
-//
-//	//=================================//
-//	// pick a random direction to move //
-//	//=================================//
-//	double Diso[3], xnew[4];
-//	grid->isotropic_direction(Diso,&rangen);
-//	double displacement4[4] = {Rcom*Diso[0], Rcom*Diso[1], Rcom*Diso[2], path_length_com};
-//	double d3com[3] = {displacement4[0], displacement4[1], displacement4[2]};
-//	LorentzHelper::transform_cartesian_4vector_c2l(zone->u, displacement4);
-//	double d3lab[3] = {displacement4[0], displacement4[1], displacement4[2]};
-//	xnew[0] = eh->p.xup[0] + d3lab[0];
-//	xnew[1] = eh->p.xup[1] + d3lab[1];
-//	xnew[2] = eh->p.xup[2] + d3lab[2];
-//	xnew[3] = eh->p.xup[3] + eh->ds_lab(Rcom);
-//
-//	//===============================//
-//	// pick a random final direction //
-//	//===============================//
-//	double pD[3];
-//	double outward_phi = 2*pc::pi * rangen.uniform();
-//	double outward_mu = rangen.uniform();
-//	pD[0] = outward_mu*cos(outward_phi);
-//	pD[1] = outward_mu*sin(outward_phi);
-//	pD[2] = sqrt(1.0 - outward_mu*outward_mu);
-//
-//	// get the displacement vector polar coordinates
-//	// theta_rotate is angle away from z-axis, not from xy-plane
-//	Grid::normalize_Minkowski<3>(d3com);
-//	double costheta_rotate = d3com[2];
-//	double sintheta_rotate = sqrt(1.0 - d3com[2]*d3com[2]);
-//
-//	if(abs(sintheta_rotate) < TINY) pD[2] *= costheta_rotate>0 ? 1.0 : -1.0;
-//	else{
-//
-//		// first rotate away from the z axis along y=0 (move it toward x=0)
-//		Grid::normalize_Minkowski<3>(pD);
-//		double pD_old[3];
-//		for(int i=0; i<3; i++) pD_old[i] = pD[i];
-//		pD[0] =  costheta_rotate*pD_old[0] + sintheta_rotate*pD_old[2];
-//		pD[2] = -sintheta_rotate*pD_old[0] + costheta_rotate*pD_old[2];
-//
-//		// second rotate around the z axis, away from the x-axis
-//		double cosphi_rotate = d3com[0] / sintheta_rotate;
-//		double sinphi_rotate = d3com[1] / sintheta_rotate;
-//		Grid::normalize_Minkowski<3>(pD);
-//		for(int i=0; i<3; i++) pD_old[i] = pD[i];
-//		pD[0] = cosphi_rotate*pD_old[0] - sinphi_rotate*pD_old[1];
-//		pD[1] = sinphi_rotate*pD_old[0] + cosphi_rotate*pD_old[1];
-//	}
-//	Grid::normalize_Minkowski<3>(pD);
-//	double kup_new[4];
-//	kup_new[3] = lh->p_kup(com)[3];
-//	kup_new[0] = kup_new[3] * pD[0];
-//	kup_new[1] = kup_new[3] * pD[2];
-//	kup_new[2] = kup_new[3] * pD[1];
-//
-//	//==============================//
-//	// setup for radiation tallying //
-//	//==============================//
-//	LorentzHelper lhtmp = *lh;
-//	lhtmp.exponential_decay = true;
-//	lhtmp.set_distance<com>(path_length_com);
-//	Particle fakeP = lh->particle_copy(com);
-//
-//	//===============================//
-//	// DEPOSIT DIRECTIONAL COMPONENT //
-//	//===============================//
-//
-//	fakeP.N = lh->p_N();
-//	if(randomwalk_n_isotropic > 0)
-//		fakeP.N *= Rcom / path_length_com;
-//	PRINT_ASSERT(fakeP.N,>=,0);
-//	fakeP.kup[0] = fakeP.kup[3] * Diso[0]; // Diso set above when choosing where to place particle
-//	fakeP.kup[1] = fakeP.kup[3] * Diso[1];
-//	fakeP.kup[2] = fakeP.kup[3] * Diso[2];
-//	lhtmp.set_p<com>(&fakeP);
-//	tally_radiation(&lhtmp,z_ind);
-//
-//	//=============================//
-//	// DEPOSIT ISOTROPIC COMPONENT //
-//	//=============================//
-//
-//	if(randomwalk_n_isotropic > 0){
-//		fakeP.N = lh->p_N() * (path_length_com - Rcom)/path_length_com / (double)randomwalk_n_isotropic;
-//		if(fakeP.N > 0) for(int ip=0; ip<randomwalk_n_isotropic; ip++){
-//			// select a random direction
-//			double Diso_tmp[3];
-//			grid->isotropic_direction(Diso_tmp,&rangen);
-//			fakeP.kup[0] = fakeP.kup[3] * Diso_tmp[0];
-//			fakeP.kup[1] = fakeP.kup[3] * Diso_tmp[1];
-//			fakeP.kup[2] = fakeP.kup[3] * Diso_tmp[2];
-//
-//			// tally the contribution
-//			lhtmp.set_p<com>(&fakeP);
-//			tally_radiation(&lhtmp,z_ind);
-//		}
-//	}
-//
-//	//=============================================//
-//	// move the particle to the edge of the sphere //
-//	//=============================================//
-//	lh->set_p_xup(xnew,4);
-//	lh->set_p_kup<com>(kup_new,4);
-//	lh->scale_p_number( exp(-lh->abs_opac(com) * path_length_com) );
+	PRINT_ASSERT(eh->scatopac,>,0);
+	PRINT_ASSERT(eh->absopac,>=,0);
+	PRINT_ASSERT(eh->p.N,>=,0);
+	PRINT_ASSERT(eh->nu(),>=,0);
+
+	// sample the distance travelled during the random walk
+	double path_length_com = pc::c * Rcom*Rcom / D * randomwalk_diffusion_time.invert(rangen.uniform(),&randomwalk_xaxis,-1);
+	path_length_com = max(path_length_com,Rcom);
+
+	// move along with the fluid
+	double dtau = path_length_com / pc::c;
+	for(unsigned i=0; i<4; i++) eh->p.xup[i] += dtau * eh->u[i];
+
+	// determine the average and final neutrino numbers
+	double opt_depth = eh->absopac * path_length_com;
+	double Nfinal = eh->p.N * exp(-opt_depth);
+	double Naverage = (eh->p.N - Nfinal) / (opt_depth);
+
+	// select a random direction
+	double kup_tet[4];
+	isotropic_kup_tet(eh->nu(),kup_tet,eh->p.xup,&rangen);
+	eh->set_kup_tet(kup_tet);
+	eh->ds_com = Rcom;
+	eh->p.N = Naverage;
+	tally_radiation(eh,true);
+	move(eh);
+	eh->p.N = Nfinal;
+
+	// select a random outward direction
+	double kup_tet_final[4] = {0,0,0, kup_tet[3]};
+	do{
+		isotropic_direction(kup_tet_final,&rangen);
+	} while(Metric::dot_Minkowski<3>(kup_tet_final,kup_tet) < 0);
+	for(unsigned i=0; i<3; i++) kup_tet_final[i] *= kup_tet_final[3];
+	eh->set_kup_tet(kup_tet_final);
+
+	// contribute energy isotropically
+	double Eiso = pc::h*eh->nu() * Naverage * (path_length_com - Rcom);
+	grid->distribution[eh->p.s]->add_isotropic(eh->dir_ind, Eiso);
 }
 
 //-------------------------------------------------------------

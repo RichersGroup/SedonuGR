@@ -158,9 +158,7 @@ void Transport::tally_radiation(const EinsteinHelper *eh, const int this_exp_dec
 	to_add *= eh->nu()*pc::h;
 	PRINT_ASSERT(to_add,<,INFINITY);
 
-	double kup_tet[4];
-	eh->coord_to_tetrad(eh->p.kup, kup_tet);
-	grid->distribution[eh->p.s]->rotate_and_count(kup_tet, eh->p.xup, eh->dir_ind, eh->nu(), to_add);
+	grid->distribution[eh->p.s]->rotate_and_count(eh->kup_tet, eh->p.xup, eh->dir_ind, eh->nu(), to_add);
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
 	if(this_exp_decay) to_add = eh->p.N * decay_factor;
@@ -170,7 +168,7 @@ void Transport::tally_radiation(const EinsteinHelper *eh, const int this_exp_dec
 	Tuple<double,4> tmp_fourforce;
 	for(unsigned i=0; i<4; i++){
 		#pragma omp atomic
-		grid->fourforce_abs[eh->z_ind][i] += kup_tet[i] * to_add;
+		grid->fourforce_abs[eh->z_ind][i] += eh->kup_tet[i] * to_add;
 	}
 
 	// store absorbed lepton number (same in both frames, except for the
@@ -182,7 +180,7 @@ void Transport::tally_radiation(const EinsteinHelper *eh, const int this_exp_dec
 	}
 }
 
-void Transport::move(EinsteinHelper *eh){
+void Transport::move(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->p.tau,>=,0);
 	PRINT_ASSERT(eh->ds_com,>=,0);
 
@@ -213,9 +211,7 @@ void Transport::move(EinsteinHelper *eh){
 // Propagate a single monte carlo particle until
 // it  escapes, is absorbed, or the time step ends
 //--------------------------------------------------------
-void Transport::propagate(EinsteinHelper *eh)
-{
-	double v[3];
+void Transport::propagate(EinsteinHelper *eh) const{
 	ParticleEvent event;
 
 	PRINT_ASSERT(eh->p.fate, ==, moving);
