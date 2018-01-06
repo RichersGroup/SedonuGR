@@ -83,17 +83,14 @@ public:
 		PRINT_ASSERT(E, >=, 0);
 		PRINT_ASSERT(E, <, INFINITY);
 
-		unsigned base_ind = data.direct_index(dir_ind);
-
-		Tuple<double,6> tmp = data[base_ind];
+		Tuple<double,6> tmp;
 		// increment moments. Take advantage of fact that moments are stored in order.
 		tmp[0] =  E;      // E		indices[momGridIndex] = 0;
-
-		tmp[0] =  E*D[2]; // F
-		tmp[0] =  E*D[2]*D[2]; // P^rr
-		tmp[0] =  E * (D[0]*D[0] + D[1]*D[1])*0.5; // average of P^tt and P^pp
-		tmp[0] =  E * D[2]*D[2]*D[2]; // W^rrr
-		tmp[0] =  E * D[2]*(D[0]*D[0] + D[1]*D[1])*0.5; // average of W^rtt and W^rpp
+		tmp[1] =  E*D[2]; // F
+		tmp[2] =  E*D[2]*D[2]; // P^rr
+		tmp[3] =  E * (D[0]*D[0] + D[1]*D[1])*0.5; // average of P^tt and P^pp
+		tmp[4] =  E * D[2]*D[2]*D[2]; // W^rrr
+		tmp[5] =  E * D[2]*(D[0]*D[0] + D[1]*D[1])*0.5; // average of W^rtt and W^rpp
 		data.add(dir_ind,tmp);
 	}
 
@@ -127,6 +124,19 @@ public:
 		// no extra axes for moment array
 	}
 
+	void add_isotropic(const unsigned dir_ind[NDIMS+1], const double E){
+		PRINT_ASSERT(E, >=, 0);
+		PRINT_ASSERT(E, <, INFINITY);
+
+		Tuple<double,6> tmp;
+		tmp = 0;
+
+		// increment moments. Take advantage of fact that moments are stored in order.
+		tmp[0] =  E;      // E		indices[momGridIndex] = 0;
+		tmp[2] =  E/3.; // P^rr
+		tmp[3] =  E/3.; // average of P^tt and P^pp
+		data.add(dir_ind,tmp);
+	}
 };
 
 #endif

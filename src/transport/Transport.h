@@ -69,17 +69,17 @@ protected:
 
 	// propagate the particles
 	void propagate_particles();
-	void propagate(EinsteinHelper* eh);
-	virtual void move(EinsteinHelper *eh);
+	void propagate(EinsteinHelper* eh) const;
+	void move(EinsteinHelper *eh) const;
 	void tally_radiation(const EinsteinHelper *lh, const int this_exp_decay) const;
 	void reset_radiation();
 	void which_event(EinsteinHelper* eh, ParticleEvent *event) const;
 	void boundary_conditions(EinsteinHelper *eh) const;
-	void event_interact(EinsteinHelper* eh);
+	void event_interact(EinsteinHelper* eh) const;
 	void scatter(EinsteinHelper *eh) const;
 	void random_walk(EinsteinHelper *eh, const double Rcom, const double D) const;
 	void init_randomwalk_cdf(Lua* lua);
-	void window(EinsteinHelper *eh);
+	void window(EinsteinHelper *eh) const;
 	void sample_scattering_final_state(EinsteinHelper& eh, const double cosTheta) const;
 
 

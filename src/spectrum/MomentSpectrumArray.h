@@ -75,7 +75,7 @@ public:
 
 	//--------------------------------------------------------------
 	// Initialization and Allocation
-	//--------------------------------------------------------------		for(int rank=0; rank<nranks; rank++) data[rank].wipe();
+	//--------------------------------------------------------------
 
 	void init(const vector<Axis>& spatial_axes, const Axis& nu_grid) {
 		PRINT_ASSERT(spatial_axes.size(),==,ndims_spatial);
@@ -187,6 +187,20 @@ public:
 			dataset.close();
 
 		}
+	}
+	void add_isotropic(const unsigned dir_ind[NDIMS+1], const double E){
+		unsigned indices[data.Ndims()];
+		for(int i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
+		indices[nuGridIndex] = dir_ind[ndims_spatial];
+
+		// increment moments
+		Tuple<double, n_total_elements> tmp;
+		tmp = 0;
+		tmp[0] = E;
+		tmp[4] = E/3.; // xx
+		tmp[7] = E/3.; // yy
+		tmp[9] = E/3.; // zz
+		data.add(indices, tmp);
 	}
 
 };

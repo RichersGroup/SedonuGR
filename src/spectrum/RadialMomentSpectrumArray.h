@@ -118,6 +118,20 @@ public:
 	void write_hdf5_coordinates(H5::H5File file, const string name) const {
 		// no extra axes for moment array
 	}
+
+	void add_isotropic(const unsigned dir_ind[NDIMS+1], const double E){
+		unsigned indices[data.Ndims()];
+		for(int i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
+		indices[nuGridIndex] = dir_ind[ndims_spatial];
+
+		// increment moments
+		Tuple<double,4> tmp;
+		tmp[0] = E;
+		tmp[1] = 0;
+		tmp[2] = E/3.;
+		tmp[3] = 0;
+		data.add(indices, tmp);
+	}
 };
 
 #endif

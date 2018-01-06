@@ -55,6 +55,7 @@ public:
 
 	// Count a packets
 	void rotate_and_count(const double D[3], const double xup[3], const unsigned dir_ind[NDIMS+1], const double nu, const double E);
+	virtual void add_isotropic(const unsigned dir_ind[NDIMS+1], const double E) = 0;
 
 	//  void normalize();
 	virtual void rescale(const double) = 0;

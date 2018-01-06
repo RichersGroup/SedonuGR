@@ -197,7 +197,20 @@ public:
 		data.axes[muGridIndex].write_HDF5(name+"_costheta_grid(lab)",file);
 		data.axes[phiGridIndex].write_HDF5(name+"_phi_grid(radians,lab)",file);
 	}
+	
+	void add_isotropic(const unsigned dir_ind[NDIMS+1], const double E){
+		unsigned indices[data.Ndims()];
+		for(int i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
+		indices[nuGridIndex] = dir_ind[ndims_spatial];
+		indices[muGridIndex] = 0;
+		indices[phiGridIndex] = 0;
+		unsigned start = data.direct_index(indices);
+		unsigned stop = start + nphi*nmu;
+		double tmp = E / (double)(nphi*nmu);
 
+		#pragma omp critical
+		for(unsigned i=start; i<stop; i++) data[i] += tmp;
+	}
 };
 
 #endif
