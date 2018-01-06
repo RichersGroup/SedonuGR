@@ -91,7 +91,6 @@ Transport::Transport(){
 	randomwalk_min_optical_depth = NaN;
 	randomwalk_max_x = NaN;
 	randomwalk_sumN = -MAXLIM;
-	exponential_decay = -MAXLIM;
 	randomwalk_n_isotropic = -MAXLIM;
 	use_scattering_kernels = -MAXLIM;
 }
@@ -128,7 +127,6 @@ void Transport::init(Lua* lua)
 	n_emit_core_per_bin  = lua->scalar<int>("n_emit_core_per_bin");
 
 	// read simulation parameters
-	exponential_decay = lua->scalar<int>("exponential_decay");
 	use_scattering_kernels = lua->scalar<int>("use_scattering_kernels");
 	verbose      = lua->scalar<int>("verbose");
 	do_annihilation = lua->scalar<int>("do_annihilation");

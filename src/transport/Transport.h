@@ -71,7 +71,7 @@ protected:
 	void propagate_particles();
 	void propagate(EinsteinHelper* eh) const;
 	void move(EinsteinHelper *eh) const;
-	void tally_radiation(const EinsteinHelper *lh, const int this_exp_decay) const;
+	void tally_radiation(const EinsteinHelper *eh) const;
 	void reset_radiation();
 	void which_event(EinsteinHelper* eh, ParticleEvent *event) const;
 	void boundary_conditions(EinsteinHelper *eh) const;
@@ -102,7 +102,6 @@ protected:
 	double step_size;
 	int    do_annihilation;
 	int    rank0;
-	int    exponential_decay;
 
 	// random walk parameters
 	CDFArray randomwalk_diffusion_time;

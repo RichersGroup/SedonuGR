@@ -43,7 +43,6 @@ void Transport::event_interact(EinsteinHelper* eh) const{
 	PRINT_ASSERT(eh->p.fate,==,moving);
 
 	// absorb part of the packet
-	if(!exponential_decay) eh->p.N *= 1.0 - eh->absopac/(eh->absopac + eh->scatopac);
 	scatter(eh);
 
 	// window the particle
@@ -195,7 +194,7 @@ void Transport::random_walk(EinsteinHelper *eh, const double Rcom, const double 
 	eh->set_kup_tet(kup_tet);
 	eh->ds_com = Rcom;
 	eh->p.N = Naverage;
-	tally_radiation(eh,true);
+	tally_radiation(eh);
 	move(eh);
 	eh->p.N = Nfinal;
 

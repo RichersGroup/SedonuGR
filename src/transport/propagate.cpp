@@ -114,14 +114,13 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 	PRINT_ASSERT(d_zone, >, 0);
 
 	// FIND D_INTERACT =================================================================
-	double relevant_opacity = eh->scatopac + (exponential_decay ? eh->absopac : 0);
-	if(relevant_opacity == 0) d_interact = numeric_limits<double>::infinity();
-	else{
-	  double tau;
-	  do{
-	    tau = -log(rangen->uniform());
-	  } while(tau >= INFINITY);
-	  d_interact = tau / relevant_opacity;
+	d_interact = numeric_limits<double>::infinity();
+	if(eh->scatopac > 0){
+		double tau;
+		do{
+			tau = -log(rangen.uniform());
+		} while(tau >= INFINITY);
+		d_interact = tau / eh->scatopac;
 	}
 	PRINT_ASSERT(d_interact,>=,0);
 
@@ -148,7 +147,7 @@ void Transport::boundary_conditions(EinsteinHelper *eh) const{
 	}
 }
 
-void Transport::tally_radiation(const EinsteinHelper *eh, const int this_exp_decay) const{
+void Transport::tally_radiation(const EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->z_ind, >=, 0);
 	PRINT_ASSERT(eh->z_ind, <, grid->rho.size());
 	PRINT_ASSERT(eh->ds_com, >=, 0);
@@ -158,7 +157,7 @@ void Transport::tally_radiation(const EinsteinHelper *eh, const int this_exp_dec
 	double decay_factor = 1.0 - exp(-eh->absopac * eh->ds_com); //same in both frames
 
 	// tally in contribution to zone's distribution function (lab frame)
-	if(this_exp_decay && eh->absopac>0) to_add = eh->p.N / eh->absopac * decay_factor;
+	if(eh->absopac>0) to_add = eh->p.N / eh->absopac * decay_factor;
 	else to_add = eh->p.N * eh->ds_com;
 	to_add *= eh->nu()*pc::h;
 	PRINT_ASSERT(to_add,<,INFINITY);
@@ -166,8 +165,7 @@ void Transport::tally_radiation(const EinsteinHelper *eh, const int this_exp_dec
 	grid->distribution[eh->p.s]->rotate_and_count(eh->kup_tet, eh->p.xup, eh->dir_ind, eh->nu(), to_add);
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
-	if(this_exp_decay) to_add = eh->p.N * decay_factor;
-	else to_add = eh->p.N * eh->ds_com * eh->absopac;
+	to_add = eh->p.N * decay_factor;
 	PRINT_ASSERT(to_add,>=,0);
 
 	Tuple<double,4> tmp_fourforce;
@@ -192,10 +190,8 @@ void Transport::move(EinsteinHelper *eh) const{
 	eh->integrate_geodesic();
 
 	// appropriately reduce the particle's energy
-	if(exponential_decay){
-		eh->p.N *= exp(-eh->absopac * eh->ds_com);
-		window(eh);
-	}
+	eh->p.N *= exp(-eh->absopac * eh->ds_com);
+	window(eh);
 
 	update_eh_background(eh);
 }
@@ -224,7 +220,7 @@ void Transport::propagate(EinsteinHelper *eh) const{
 		which_event(eh,&event);
 
 		// accumulate counts of radiation energy, absorption, etc
-		if(eh->z_ind>=0) tally_radiation(eh,exponential_decay);
+		if(eh->z_ind>=0) tally_radiation(eh);
 
 		// move particle the distance
 		move(eh);
