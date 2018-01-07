@@ -37,8 +37,6 @@ namespace pc = physical_constants;
 
 void Transport::propagate_particles()
 {
-	unsigned nu_index[1];
-
 	if(verbose && rank0) cout << "# Propagating particles..." << endl;
 
 	//--- MOVE THE PARTICLES AROUND ---
@@ -64,8 +62,7 @@ void Transport::propagate_particles()
 				L_net_esc[eh->p.s] += eh->p.N * nu*pc::h;
 				#pragma omp atomic
 				N_net_esc[eh->p.s] += eh->p.N;
-				nu_index[0] = grid->nu_grid_axis.bin(nu);
-				grid->spectrum[eh->p.s].count(D, nu_index, nu, eh->p.N * nu*pc::h);
+				grid->spectrum[eh->p.s].count(eh, eh->p.N * nu*pc::h);
 			}
 			PRINT_ASSERT(eh->p.fate, !=, moving);
 		} //#pragma omp parallel for
@@ -158,7 +155,7 @@ void Transport::tally_radiation(const EinsteinHelper *eh) const{
 	to_add *= eh->nu()*pc::h;
 	PRINT_ASSERT(to_add,<,INFINITY);
 
-	grid->distribution[eh->p.s]->rotate_and_count(eh->kup_tet, eh->p.xup, eh->dir_ind, eh->nu(), to_add);
+	grid->distribution[eh->p.s]->count(eh, to_add);
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
 	to_add = eh->p.N * decay_factor;

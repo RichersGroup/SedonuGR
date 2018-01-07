@@ -867,7 +867,7 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 		double v[3];
 		grid->interpolate_fluid_velocity(eh->p.xup,v,eh->dir_ind);
 		eh->set_fourvel(v);
-		eh->set_tetrad_basis();
+		eh->set_tetrad_basis(grid->tetrad_rotation);
 
 		// make sure kup is consistent with the new background
 		eh->renormalize_kup();

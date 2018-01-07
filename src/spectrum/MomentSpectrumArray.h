@@ -102,13 +102,15 @@ public:
 	//--------------------------------------------------------------
 	// count a particle
 	////--------------------------------------------------------------
-	void count(const double D[3], const unsigned dir_ind[ndims_spatial+1], const double nu, const double E) {
+	void count(const EinsteinHelper* eh, const double E) {
 		PRINT_ASSERT(E, >=, 0);
 		PRINT_ASSERT(E, <, INFINITY);
-
+		double D[3] = {eh->kup_tet[0], eh->kup_tet[1], eh->kup_tet[2]};
+		Metric::normalize_Minkowski<3>(D);
+		
 		unsigned data_indices[data.Ndims()];
-		for(int i=0; i<ndims_spatial; i++) data_indices[i] = dir_ind[i];
-		data_indices[nuGridIndex] = dir_ind[ndims_spatial];
+		for(int i=0; i<ndims_spatial; i++) data_indices[i] = eh->dir_ind[i];
+		data_indices[nuGridIndex] = eh->dir_ind[NDIMS];
 
 		// increment moments
 		Tuple<double, n_total_elements> tmp;

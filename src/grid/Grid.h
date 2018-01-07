@@ -82,7 +82,8 @@ public:
 	Transport* sim;
 
 	string grid_type;
-
+	TetradRotation tetrad_rotation;
+	
 	Axis nu_grid_axis;
 
 	// vectors over neutrino species

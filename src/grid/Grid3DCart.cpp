@@ -46,6 +46,7 @@ Grid3DCart::Grid3DCart(){
 	rotate_hemisphere[0] = 0;
 	rotate_hemisphere[1] = 0;
 	rotate_quadrant = 0;
+	tetrad_rotation = cartesian;
 }
 
 //------------------------------------------------------------

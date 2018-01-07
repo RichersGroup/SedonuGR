@@ -233,8 +233,6 @@ void Grid::init(Lua* lua, Transport* insim)
     		cout << "Distribution type not found." << endl;
     		assert(0);
     	}
-    	int distribution_polar_basis = lua->scalar<int>("distribution_polar_basis");
-    	distribution[s]->rotated_basis = distribution_polar_basis;
 
     }
 
@@ -403,3 +401,4 @@ void Grid::get_opacity(EinsteinHelper *eh) const
 	eh->absopac  = a;
 	eh->scatopac = s;
 }
+

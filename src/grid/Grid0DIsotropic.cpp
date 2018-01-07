@@ -36,6 +36,7 @@ namespace pc = physical_constants;
 Grid0DIsotropic::Grid0DIsotropic(){
 	PRINT_ASSERT(NDIMS,==,0);
 	grid_type = "Grid0DIsotropic";
+	tetrad_rotation = cartesian;
 }
 
 //------------------------------------------------------------

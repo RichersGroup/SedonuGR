@@ -32,6 +32,7 @@
 #include "global_options.h"
 #include <fstream>
 #include <vector>
+#include "EinsteinHelper.h"
 
 using namespace std;
 
@@ -39,22 +40,17 @@ class SpectrumArray {
 
 protected:
 
-	// rotate to polar basis
-	static void rotate_basis(double D[3], const double xyz[3]);
-	virtual void count(const double D[3], const unsigned dir_ind[NDIMS+1], const double nu, const double E) = 0;
-
 public:
 
-	int rotated_basis; // 0-no rotation, cartesian basis. 1-rotate to polar basis w/ simple transformation
-
 	virtual ~SpectrumArray() {}
-	SpectrumArray();
+
+	// record some data
+	virtual void count(const EinsteinHelper* eh, const double E) = 0;
 
 	// MPI functions
 	virtual void MPI_average() = 0;
 
 	// Count a packets
-	void rotate_and_count(const double D[3], const double xup[3], const unsigned dir_ind[NDIMS+1], const double nu, const double E);
 	virtual void add_isotropic(const unsigned dir_ind[NDIMS+1], const double E) = 0;
 
 	//  void normalize();

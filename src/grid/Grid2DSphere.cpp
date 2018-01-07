@@ -39,6 +39,7 @@ namespace pc = physical_constants;
 Grid2DSphere::Grid2DSphere(){
 	PRINT_ASSERT(NDIMS,==,2);
 	grid_type = "Grid2DSphere";
+	tetrad_rotation = spherical;
 }
 
 //------------------------------------------------------------

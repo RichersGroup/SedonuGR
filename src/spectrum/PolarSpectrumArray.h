@@ -136,16 +136,16 @@ public:
 	//--------------------------------------------------------------
 	// count a particle
 	////--------------------------------------------------------------
-	void count(const double D[3], const unsigned dir_ind[ndims_spatial+1], const double nu, const double E){
+	void count(const EinsteinHelper* eh, const double E){
 		PRINT_ASSERT(E,>=,0);
-		PRINT_ASSERT(nu,>=,0);
+		PRINT_ASSERT(eh->kup_tet[3],>=,0);
 		const double tiny = 1e-8;
 
 		unsigned indices[data.Ndims()];
-		for(int i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
-		indices[nuGridIndex] = dir_ind[ndims_spatial];
-
-		double mu = D[2];
+		for(int i=0; i<ndims_spatial; i++) indices[i] = eh->dir_ind[i];
+		indices[nuGridIndex] = eh->dir_ind[NDIMS];
+		
+		double mu = eh->kup_tet[2] / eh->kup_tet[3];
 		mu = max(-1.0+tiny,mu);
 		mu = min( 1.0-tiny,mu);
 		int mu_bin = data.axes[muGridIndex].bin(mu);
@@ -153,7 +153,7 @@ public:
 		mu_bin = min(mu_bin, (int)data.axes[muGridIndex].size()-1);
 		indices[muGridIndex] = mu_bin;
 
-		double phi = atan2(D[1],D[0]);  // projection into x-y plane
+		double phi = atan2(eh->kup_tet[1],eh->kup_tet[0]);  // projection into x-y plane
 		if(phi< -pc::pi) phi += 2.0*pc::pi;
 		if(phi>= pc::pi) phi -= 2.0*pc::pi;
 		int phi_bin = data.axes[phiGridIndex].bin(phi);

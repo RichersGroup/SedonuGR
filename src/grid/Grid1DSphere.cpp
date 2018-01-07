@@ -39,6 +39,7 @@ Grid1DSphere::Grid1DSphere(){
 	PRINT_ASSERT(NDIMS,==,1);
 	grid_type = "Grid1DSphere";
 	reflect_outer = 0;
+	tetrad_rotation = spherical;
 }
 
 //------------------------------------------------------------
