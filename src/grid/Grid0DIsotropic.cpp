@@ -61,8 +61,6 @@ void Grid0DIsotropic::read_model_file(Lua* lua)
 	PRINT_ASSERT(T[0],>=,0);
 	PRINT_ASSERT(Ye[0],>=,0);
 	PRINT_ASSERT(Ye[0],<=,1.0);
-
-	lapse.calculate_slopes();
 }
 
 

@@ -146,7 +146,10 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 	grid->interpolate_opacity(&eh);
 
 	// set the particle number
-	eh.p.N = grid->BB[s].interpolate(eh.p.xup,eh.dir_ind) * eh.absopac; // #/s/cm^3/sr/(Hz^3/3)
+	double hypervec[NDIMS+1];
+	grid->grid_coordinates(eh.p.xup,hypervec);
+	hypervec[NDIMS] = eh.nu();
+	eh.p.N = grid->BB[s].interpolate(hypervec,eh.dir_ind) * eh.absopac; // #/s/cm^3/sr/(Hz^3/3)
 	eh.p.N *= weight * 1/*s*/ * grid->zone_com_3volume(z_ind)/*cm^3*/ * 4.*pc::pi/*sr*/ * grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/;
 	PRINT_ASSERT(eh.p.N,>=,0);
 

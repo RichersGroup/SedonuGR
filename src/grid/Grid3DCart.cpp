@@ -65,7 +65,7 @@ void Grid3DCart::read_model_file(Lua* lua)
 		exit(8);
 	}
 
-	v.calculate_slopes();
+	v.calculate_slopes(-INFINITY,INFINITY);
 }
 
 

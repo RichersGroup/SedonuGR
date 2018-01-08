@@ -189,8 +189,10 @@ void Transport::move(EinsteinHelper *eh) const{
 	// appropriately reduce the particle's energy
 	eh->p.N *= exp(-eh->absopac * eh->ds_com);
 	window(eh);
+	if(eh->p.fate==moving) PRINT_ASSERT(eh->p.N,>,0);
 
 	update_eh_background(eh);
+	grid->interpolate_opacity(eh);
 }
 
 
@@ -207,11 +209,8 @@ void Transport::propagate(EinsteinHelper *eh) const{
 	{
 		PRINT_ASSERT(eh->nu(), >, 0);
 		PRINT_ASSERT(eh->z_ind,>=,0);
+		PRINT_ASSERT(eh->p.N,>,0);
 		for(unsigned i=0; i<NDIMS; i++) PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
-
-		// get all the opacities
-		grid->interpolate_opacity(eh);
-		PRINT_ASSERT(eh->dir_ind[NDIMS],<,grid->nu_grid_axis.size());
 
 		// decide which event happens
 		which_event(eh,&event);
@@ -220,6 +219,7 @@ void Transport::propagate(EinsteinHelper *eh) const{
 		if(eh->z_ind>=0) tally_radiation(eh);
 
 		// move particle the distance
+		PRINT_ASSERT(eh->p.N,>,0);
 		switch(event){
 		case nothing:
 			move(eh);
@@ -237,6 +237,7 @@ void Transport::propagate(EinsteinHelper *eh) const{
 
 		if(eh->p.fate==moving) window(eh);
 		if(eh->p.fate==moving) boundary_conditions(eh);
+		PRINT_ASSERT(eh->p.N,<,1e99);
 	}
 
 	// copy particle back out of LorentzHelper

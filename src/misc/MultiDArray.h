@@ -54,9 +54,11 @@ public:
 		return result;
 	}
 	void indices(const int z_ind, unsigned ind[ndims]) const{
-		PRINT_ASSERT(z_ind,<,y0.size());
+		unsigned leftover=z_ind;
+		PRINT_ASSERT(leftover,<,y0.size());
 		for(int i=0; i<ndims; i++){
-			ind[i] = z_ind / stride[i];
+			ind[i] = leftover / stride[i];
+			leftover -= ind[i]*stride[i];
 			PRINT_ASSERT(ind[i],<,axes[i].size());
 		}
 	}
@@ -69,13 +71,16 @@ public:
 	Tuple<double,nelements> interpolate(const double x[ndims], const unsigned int ind[ndims]) const{
 		unsigned z_ind = direct_index(ind);
 		Tuple<double,nelements> result = y0[z_ind];
-		if(dydx.size()>0) for(int i=0; i<ndims; i++)
+		if(dydx.size()>0) for(int i=0; i<ndims; i++){
+			PRINT_ASSERT(x[i],>=,axes[i].bottom(ind[i]));
+			PRINT_ASSERT(x[i],<=,axes[i].top[ind[i]]);
 			result += dydx[z_ind][i] * (x[i] - axes[i].mid[ind[i]]);
+		}
 		return result;
 	}
 
 	// set the slopes
-	void calculate_slopes(){
+	void calculate_slopes(const double minval, const double maxval){
 		unsigned int ind[ndims], indp[ndims], indm[ndims];
 		unsigned int zp, zm;
 		double x, xp, xm;
@@ -131,6 +136,32 @@ public:
 				if(ind[i]==0) slope = sR;
 				else if(ind[i]==axes[i].size()-1) slope = sL;
 				else slope = (sL*dxR + sR*dxL) / (dxR+dxL);
+
+				// check min/max values
+				PRINT_ASSERT(minval,<=,maxval);
+				for(unsigned e=0; e<nelements; e++){
+					PRINT_ASSERT(y[e],<=,maxval);
+					PRINT_ASSERT(y[e],>=,minval);
+					double ytop = y[e] + slope[e] * (axes[i].top[ind[i]] - axes[i].mid[ind[i]]);
+					if(ytop>maxval){
+						ytop = maxval;
+						slope[e] = (ytop-y[e]) / (axes[i].top[ind[i]] - axes[i].mid[ind[i]]);
+					}
+					else if(ytop<minval){
+						ytop = minval;
+						slope[e] = (ytop-y[e]) / (axes[i].top[ind[i]] - axes[i].mid[ind[i]]);
+					}
+					double ybottom = y[e] + slope[e] * (axes[i].bottom(ind[i]) - axes[i].mid[ind[i]]);
+					if(ybottom>maxval){
+						ybottom = maxval;
+						slope[e] = (ybottom-y[e]) / (axes[i].bottom(ind[i]) - axes[i].mid[ind[i]]);
+					}
+					else if(ybottom<minval){
+						ybottom = minval;
+						slope[e] = (ybottom-y[e]) / (axes[i].bottom(ind[i]) - axes[i].mid[ind[i]]);
+					}
+				}
+
 				dydx[z][i] = slope;
 			}
 		}
@@ -218,11 +249,8 @@ public:
 
 	// get interpolated value
 	double interpolate(const double x[ndims], const unsigned int ind[ndims]) const{
-		unsigned z_ind = this->direct_index(ind);
-		double result = this->y0[z_ind][0];
-		if(this->dydx.size()>0) for(int i=0; i<ndims; i++)
-			result += this->dydx[z_ind][i][0] * (x[i] - this->axes[i].mid[ind[i]]);
-		return result;
+		Tuple<double,1> result = MultiDArray<1,ndims>::interpolate(x,ind);
+		return result[0];
 	}
 };
 

@@ -58,9 +58,8 @@ void Grid1DSphere::read_model_file(Lua* lua)
 	grid_type = "Grid1DSphere";
 	reflect_outer = lua->scalar<int>("reflect_outer");
 
-	vr.calculate_slopes();
-	lapse.calculate_slopes();
-	X.calculate_slopes();
+	vr.calculate_slopes(-INFINITY,INFINITY);
+	X.calculate_slopes(0,INFINITY);
 }
 
 void Grid1DSphere::read_nagakura_model(Lua* lua){

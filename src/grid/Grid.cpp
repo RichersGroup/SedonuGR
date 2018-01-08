@@ -281,6 +281,8 @@ void Grid::init(Lua* lua, Transport* insim)
 			scattering_phi0[s].set_axes(axes);
 		}
 	}
+
+	lapse.calculate_slopes(0,INFINITY);
 }
 
 void Grid::write_zones(const int iw) const
@@ -394,15 +396,27 @@ void Grid::interpolate_opacity(EinsteinHelper *eh) const
 	for(unsigned i=0; i<NDIMS; i++) hypervec[i] = eh->grid_coords[i];
 	hypervec[NDIMS] = eh->nu();
 
+	eh->eas_ind = abs_opac[eh->p.s].direct_index(eh->dir_ind);
 	double a = abs_opac[eh->p.s].interpolate(hypervec,eh->dir_ind);
 	double s = scat_opac[eh->p.s].interpolate(hypervec,eh->dir_ind);
 
-	PRINT_ASSERT(a,>=,0);
-	PRINT_ASSERT(s,>=,0);
+	// sanity checks
+	if(a<0 || s<0){
+		hypervec[NDIMS] = nu_grid_axis.mid[eh->dir_ind[NDIMS]];
+		double acenter = abs_opac[eh->p.s].interpolate(hypervec,eh->dir_ind);
+		double scenter = scat_opac[eh->p.s].interpolate(hypervec,eh->dir_ind);
+		PRINT_ASSERT(acenter,>,0);
+		PRINT_ASSERT(scenter,>,0);
+		PRINT_ASSERT(abs(a)/acenter,<,1e-6);
+		PRINT_ASSERT(abs(s)/scenter,<,1e-6);
+	}
+
+	a = max(0,a);
+	s = max(0,s);
 	PRINT_ASSERT(a,<,INFINITY);
 	PRINT_ASSERT(s,<,INFINITY);
 
-	eh->absopac  = a;
-	eh->scatopac = s;
+	eh->absopac  = max(0.,a);
+	eh->scatopac = max(0.,s);
 }
 

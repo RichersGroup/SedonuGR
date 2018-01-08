@@ -46,7 +46,10 @@ public:
 		min = NaN;
 	}
 
-	unsigned size() const {return top.size();}
+	unsigned size() const {
+		PRINT_ASSERT(top.size(),==,mid.size());
+		return top.size();
+	}
 
 	int bin(const double x) const{
 		if(x<min) return -1;

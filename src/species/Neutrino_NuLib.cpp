@@ -71,11 +71,12 @@ void Neutrino_NuLib::set_eas(const unsigned z_ind, Grid* grid) const
 		grid->BB[ID][global_index] = tmp_BB[ig]; // erg/cm^2/s/sr - convert in next line
 		grid->BB[ID][global_index] /= pc::h * pow(grid->nu_grid_axis.mid[ig],3) * grid->nu_grid_axis.delta(ig); // #/cm^2/s/sr/(Hz^3/3)
 
-		for(unsigned og=0; og<ngroups; og++){
-			dir_ind[NDIMS+1] = og;
-			global_index = grid->scattering_delta[ID].direct_index(dir_ind);
-			grid->scattering_delta[ID][global_index] = tmp_delta[ig][og];
-			grid->scattering_phi0[ID][global_index] = tmp_phi0[ig][og] * pc::h;
-		}
+		if(grid->scattering_delta[ID].size()>0)
+			for(unsigned og=0; og<ngroups; og++){
+				dir_ind[NDIMS+1] = og;
+				global_index = grid->scattering_delta[ID].direct_index(dir_ind);
+				grid->scattering_delta[ID][global_index] = tmp_delta[ig][og];
+				grid->scattering_phi0[ID][global_index] = tmp_phi0[ig][og] * pc::h;
+			}
 	}
 }

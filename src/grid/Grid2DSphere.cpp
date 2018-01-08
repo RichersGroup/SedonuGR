@@ -55,9 +55,9 @@ void Grid2DSphere::read_model_file(Lua* lua)
 		exit(8);
 	}
 
-	vr.calculate_slopes();
-	vtheta.calculate_slopes();
-	vphi.calculate_slopes();
+	vr.calculate_slopes(-INFINITY,INFINITY);
+	vtheta.calculate_slopes(-INFINITY,INFINITY);
+	vphi.calculate_slopes(-INFINITY,INFINITY);
 }
 void Grid2DSphere::read_nagakura_file(Lua* lua)
 {

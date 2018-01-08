@@ -351,13 +351,14 @@ void nulib_get_iscatter_kernels(
 	}
 
 	// set the arrays.
-	double constants = pc::h*pc::h*pc::h * pc::c*pc::c*pc::c*pc::c / (4.*pc::pi);
+	double constants = pow(pc::h,3) * pow(pc::c,4) / (4.*pc::pi);
 	for(int igin=0; igin<nulibtable_number_groups; igin++){
 		for(int igout=0; igout<nulibtable_number_groups; igout++){
 			double E1 = nulibtable_ebottom[igout] * pc::MeV_to_ergs;
 			double E2 = nulibtable_etop[   igout] * pc::MeV_to_ergs;
+			double dE = E2-E1;
 			double dE3 = E2*E2*E2 - E1*E1*E1;
-			double coeff = (dE3/3.0) / constants / (E2-E1);
+			double coeff = (dE3/3.0) / constants / dE;
 
 			double inelastic_phi0=0, inelastic_phi1=0;
 			if(read_Ielectron){
@@ -365,10 +366,12 @@ void nulib_get_iscatter_kernels(
 				inelastic_phi1 = phi[1][igout][igin] * coeff;
 				PRINT_ASSERT(inelastic_phi1,<=,inelastic_phi0);
 			}
+			// add elastic scatter opacity to the kernel
 			if(igin == igout){
-				inelastic_phi0 += nut_scatopac[igin];
+				inelastic_phi0 += nut_scatopac[igin]/dE;
 				if(nulibtable_number_easvariables==4)
-					inelastic_phi1 += nut_scatopac[igin] * scattering_delta[igin][igin] / 3.0; // scattering_delta set in nulib_get_eas_arrays
+					inelastic_phi1 += nut_scatopac[igin]/dE * scattering_delta[igin][igin] / 3.0; // scattering_delta set in nulib_get_eas_arrays
+				nut_scatopac[igin] = NaN; // scattering opacity is accounted for in kernel - must make total opacity consistent with kernel in Transport.cpp
 			}
 			phi0Tilde[igin][igout] = inelastic_phi0;
 			scattering_delta[igin][igout] = (inelastic_phi0==0 ? 0 : 3. * inelastic_phi1 / inelastic_phi0);

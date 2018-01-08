@@ -173,7 +173,6 @@ void Transport::sample_scattering_final_state(EinsteinHelper &eh, const double c
 		dir_ind[i] = eh.dir_ind[i];
 	}
 	dir_ind[NDIMS] = eh.dir_ind[NDIMS];
-	hyperloc[NDIMS] = eh.nu();
 
 	// get outgoing energy bin w/ rejection sampling
 	unsigned igout;
@@ -181,21 +180,24 @@ void Transport::sample_scattering_final_state(EinsteinHelper &eh, const double c
 	do{
 		igout = rangen.uniform_discrete(0, grid->nu_grid_axis.size()-1);
 		dir_ind[NDIMS+1] = igout;
-		nubar = 0.5 * (grid->nu_grid_axis.top[igout] - grid->nu_grid_axis.bottom(igout));
+		nubar = 0.5 * (grid->nu_grid_axis.top[igout] + grid->nu_grid_axis.bottom(igout));
+		hyperloc[NDIMS] = grid->nu_grid_axis.mid[dir_ind[NDIMS]];
 		hyperloc[NDIMS+1] = nubar;
 		phi0avg = grid->scattering_phi0[eh.p.s].interpolate(hyperloc,dir_ind);
-		P = phi0avg * grid->nu_grid_axis.delta(igout) / eh.scatopac;
+		P = phi0avg * grid->nu_grid_axis.delta(igout) / grid->scat_opac[eh.p.s][eh.eas_ind];
 		PRINT_ASSERT(P,<=,1.0);
 	} while(rangen.uniform() > P);
 
 	// uniformly sample within zone
 	unsigned global_index = grid->scattering_phi0[eh.p.s].direct_index(dir_ind);
 	double out_nu = rangen.uniform(grid->nu_grid_axis.bottom(igout), grid->nu_grid_axis.top[igout]);
-	eh.scale_p_frequency(out_nu/eh.nu());
 	double phi_interpolated = grid->scattering_phi0[eh.p.s].dydx[global_index][NDIMS+1][0]*(out_nu - nubar) + phi0avg;
+	PRINT_ASSERT(eh.p.N,<,1e30);
 	eh.p.N *= phi_interpolated / phi0avg;
+	PRINT_ASSERT(eh.p.N,<,1e30);
 
 	// bias outgoing direction to be isotropic. Very inefficient for large values of delta.
+	hyperloc[NDIMS] = eh.nu();
 	hyperloc[NDIMS+1] = out_nu;
 	double delta = grid->scattering_delta[eh.p.s].interpolate(hyperloc,dir_ind);
 	PRINT_ASSERT(fabs(delta),<,3.0);
@@ -204,5 +206,10 @@ void Transport::sample_scattering_final_state(EinsteinHelper &eh, const double c
 		double b = 2.*fabs(delta) / (3.-fabs(delta));
 		if(delta>1.0) eh.p.N *= pow(1.+cosTheta, b);
 		else          eh.p.N *= pow(1.-cosTheta, b);
+		PRINT_ASSERT(eh.p.N,<,1e30);
 	}
+	PRINT_ASSERT(eh.p.N,<,1e30);
+
+
+	eh.scale_p_frequency(out_nu/eh.nu());
 }
