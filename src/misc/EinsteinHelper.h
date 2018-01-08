@@ -21,6 +21,7 @@ public:
 
 	// intermediate quantities
 	double e[4][4];
+	double grid_coords[NDIMS];
 	double kup_tet[4];
 	double absopac, scatopac;
 	double ds_com;

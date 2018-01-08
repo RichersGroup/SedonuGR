@@ -34,7 +34,7 @@ using namespace std;
 namespace pc = physical_constants;
 
 Grid0DIsotropic::Grid0DIsotropic(){
-	PRINT_ASSERT(NDIMS,==,0);
+	PRINT_ASSERT(NDIMS,==,1);
 	grid_type = "Grid0DIsotropic";
 	tetrad_rotation = cartesian;
 }
@@ -45,19 +45,24 @@ Grid0DIsotropic::Grid0DIsotropic(){
 void Grid0DIsotropic::read_model_file(Lua* lua)
 {
 	// number of zones
-	vector<Axis> axes;
-	rho.set_axes(axes);
-	T.set_axes(axes);
-	Ye.set_axes(axes);
-	H_vis.set_axes(axes);
+	dummyAxes.resize(1);
+	dummyAxes[0] = Axis(-INFINITY,INFINITY,1);
+	rho.set_axes(dummyAxes);
+	T.set_axes(dummyAxes);
+	Ye.set_axes(dummyAxes);
+	H_vis.set_axes(dummyAxes);
+	lapse.set_axes(dummyAxes);
 	rho[0] = lua->scalar<double>("Grid0DIsotropic_rho");
 	T[0]   = lua->scalar<double>("Grid0DIsotropic_T")/pc::k_MeV;
 	Ye[0]  = lua->scalar<double>("Grid0DIsotropic_Ye");
+	lapse[0] = 1.0;
 	H_vis[0] = 0;
 	PRINT_ASSERT(rho[0],>=,0);
 	PRINT_ASSERT(T[0],>=,0);
 	PRINT_ASSERT(Ye[0],>=,0);
 	PRINT_ASSERT(Ye[0],<=,1.0);
+
+	lapse.calculate_slopes();
 }
 
 
@@ -150,6 +155,7 @@ double Grid0DIsotropic::zone_radius(const int z_ind) const{
 // Dimensions of the grid
 //-----------------------------
 void Grid0DIsotropic::dims(hsize_t dims[0], const int size) const{
+	dims[0] = 1;
 	PRINT_ASSERT(size,==,(int)dimensionality());
 }
 
@@ -164,7 +170,7 @@ void Grid0DIsotropic::write_hdf5_coordinates(H5::H5File file) const
 }
 
 void Grid0DIsotropic::axis_vector(vector<Axis>& axes) const{
-	axes.resize(0);
+	axes = dummyAxes;
 }
 double Grid0DIsotropic::zone_lorentz_factor(const int z_ind) const{
 	return 1.0;
@@ -178,21 +184,22 @@ double Grid0DIsotropic::d_randomwalk(const EinsteinHelper *eh) const{
 }
 
 void Grid0DIsotropic::get_connection_coefficients(EinsteinHelper* eh) const{ // default Minkowski
-	PRINT_ASSERT(DO_GR,==,0);
 	eh->christoffel.data = 0;
 }
 void Grid0DIsotropic::interpolate_shift(const double xup[4], double betaup[3], const unsigned dir_ind[NDIMS]) const{ // default Minkowski
-	PRINT_ASSERT(DO_GR,==,0);
 	betaup[0] = 0;
 	betaup[1] = 0;
 	betaup[2] = 0;
 }
 void Grid0DIsotropic::interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const{ // default Minkowski
-	PRINT_ASSERT(DO_GR,==,0);
 	gammalow->data[ixx] = 1.0;
 	gammalow->data[iyy] = 1.0;
 	gammalow->data[izz] = 1.0;
 	gammalow->data[ixy] = 0.0;
 	gammalow->data[ixz] = 0.0;
 	gammalow->data[iyz] = 0.0;
+}
+
+void Grid0DIsotropic::grid_coordinates(const double xup[3], double coords[NDIMS]) const{
+	coords[0] = 0;
 }

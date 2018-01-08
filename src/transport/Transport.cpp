@@ -852,6 +852,7 @@ void Transport::set_cdf_to_BB(const double T, const double chempot, CDFArray& em
 void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that depend only on particle position
 	// zone index
 	eh->z_ind = grid->zone_index(eh->p.xup);
+	grid->grid_coordinates(eh->p.xup,eh->grid_coords);
 
 	if(eh->z_ind >= 0){
 		// spatial indices

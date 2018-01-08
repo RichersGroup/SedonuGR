@@ -32,10 +32,13 @@ public:
 		this->min = min;
 		top.resize(nbins);
 		mid.resize(nbins);
-		double del = (max-min) / (double)nbins;
-		for(int i=0; i<nbins; i++){
-			top[i] = min + (i+1)*del;
-			mid[i] = min + ((double)i + 0.5)*del;
+		if(nbins==1) top[0] = max;
+		else{
+			double del = (max-min) / (double)nbins;
+			for(int i=0; i<nbins; i++){
+				top[i] = min + (i+1)*del;
+				mid[i] = min + ((double)i + 0.5)*del;
+			}
 		}
 	}
 

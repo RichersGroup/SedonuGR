@@ -482,7 +482,7 @@ void Grid1DSphere::write_hdf5_coordinates(H5::H5File file) const
 }
 void Grid1DSphere::interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const{
 	const double r = radius(xup);
-	const double Xloc = X.interpolate(xup,dir_ind);
+	const double Xloc = X.interpolate(&r,dir_ind);
 	double tmp = (Xloc*Xloc-1.0) / (r*r);
 
 	gammalow->data[ixx] = xup[0]*xup[0] * tmp;
@@ -542,4 +542,7 @@ void Grid1DSphere::interpolate_shift(const double xup[4], double betaup[3], cons
 	betaup[0] = 0;
 	betaup[1] = 0;
 	betaup[2] = 0;
+}
+void Grid1DSphere::grid_coordinates(const double xup[3], double coords[NDIMS]) const{
+	coords[0] = radius(xup);
 }

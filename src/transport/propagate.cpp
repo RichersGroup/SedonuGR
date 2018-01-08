@@ -210,7 +210,7 @@ void Transport::propagate(EinsteinHelper *eh) const{
 		for(unsigned i=0; i<NDIMS; i++) PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
 
 		// get all the opacities
-		grid->get_opacity(eh);
+		grid->interpolate_opacity(eh);
 		PRINT_ASSERT(eh->dir_ind[NDIMS],<,grid->nu_grid_axis.size());
 
 		// decide which event happens
@@ -228,6 +228,7 @@ void Transport::propagate(EinsteinHelper *eh) const{
 			random_walk(eh);
 			break;
 		case interact:
+			move(eh);
 			scatter(eh);
 			break;
 		default:

@@ -937,3 +937,7 @@ void Grid2DSphere::interpolate_3metric(const double xup[4], ThreeMetric* gammalo
 	gammalow->data[ixz] = 0.0;
 	gammalow->data[iyz] = 0.0;
 }
+void Grid2DSphere::grid_coordinates(const double xup[3], double coords[NDIMS]) const{
+	coords[0] = radius(xup);
+	coords[1] = Grid2DSphere_theta(xup);
+}

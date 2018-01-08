@@ -145,12 +145,13 @@ public:
 	virtual void symmetry_boundaries(EinsteinHelper *eh) const=0;
 
 	// move the particle
-	void get_opacity(EinsteinHelper *eh) const;
+	void interpolate_opacity(EinsteinHelper *eh) const;
 
 	// help with spawning particles
 	virtual void sample_in_zone(const int z_ind, ThreadRNG *rangen, double xup[3]) const = 0;
 
 	// GR functions
+	virtual void grid_coordinates(const double xup[3], double coords[NDIMS]) const=0;
 	virtual void get_connection_coefficients(EinsteinHelper* eh) const=0; // Gamma^alhpa_mu_nu
 	virtual void interpolate_shift(const double xup[4], double betaup[3], const unsigned dir_ind[NDIMS]) const=0;
 	virtual void interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const=0;

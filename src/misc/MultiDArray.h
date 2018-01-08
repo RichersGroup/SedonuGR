@@ -26,7 +26,7 @@ public:
 		this->axes = axes;
 		assert(axes.size()==ndims);
 		int size = 1;
-		for(int i=0; i<ndims; i++){
+		for(int i=ndims-1; i>=0; i--){
 			stride[i] = size;
 			size *= axes[i].size();
 		}
@@ -56,7 +56,7 @@ public:
 	void indices(const int z_ind, unsigned ind[ndims]) const{
 		PRINT_ASSERT(z_ind,<,y0.size());
 		for(int i=0; i<ndims; i++){
-			ind[i] = z_ind % stride[i];
+			ind[i] = z_ind / stride[i];
 			PRINT_ASSERT(ind[i],<,axes[i].size());
 		}
 	}
@@ -90,6 +90,10 @@ public:
 		for(unsigned int z=0; z<dydx.size(); z++){
 			indices(z, ind);
 			for(unsigned int i=0; i<ndims; i++){
+				if(axes[i].size()==1){
+					dydx[z][i] = 0;
+					continue;
+				}
 
 				// get the index for the plus and minus values
 				for(unsigned int j=0; j<ndims; j++){
@@ -109,7 +113,7 @@ public:
 					dyL = y-ym;
 					sL = dyL/dxL;
 				}
-				if(ind[i] < dydx.size()-1){
+				if(ind[i] < axes[i].size()-1){
 					indp[i] = ind[i]+1;
 					if(indp[i]>=axes[i].size()) sR=0;
 					else{

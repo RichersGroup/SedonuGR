@@ -683,3 +683,8 @@ void Grid3DCart::interpolate_shift(const double xup[4], double betaup_out[3], co
 void Grid3DCart::interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const{
 	gammalow->data = g3.interpolate(xup,dir_ind);
 }
+void Grid3DCart::grid_coordinates(const double xup[3], double coords[NDIMS]) const{
+	coords[0] = xup[0];
+	coords[1] = xup[1];
+	coords[2] = xup[2];
+}

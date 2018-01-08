@@ -133,19 +133,22 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 	eh.p.xup[3] = 0;
 	update_eh_background(&eh);
 
-	// frequency
 	// sample the frequency
 	double nu3_min = pow(grid->nu_grid_axis.bottom(g), 3);
 	double nu3_max = pow(grid->nu_grid_axis.top[g],    3);
 	double nu3 = rangen.uniform(nu3_min, nu3_max);
 	double nu = pow(nu3, 1./3.);
-	eh.p.N = grid->BB[s].interpolate(eh.p.xup,eh.dir_ind) * grid->abs_opac[s].interpolate(eh.p.xup,eh.dir_ind); // #/s/cm^3/sr/(Hz^3/3)
-	eh.p.N *= weight * 1/*s*/ * grid->zone_com_3volume(z_ind)/*cm^3*/ * 4.*pc::pi/*sr*/ * grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/;
 
 	// emit isotropically in comoving frame
 	double kup_tet[4];
 	isotropic_kup_tet(nu,kup_tet,&rangen);
 	eh.set_kup_tet(kup_tet);
+	grid->interpolate_opacity(&eh);
+
+	// set the particle number
+	eh.p.N = grid->BB[s].interpolate(eh.p.xup,eh.dir_ind) * eh.absopac; // #/s/cm^3/sr/(Hz^3/3)
+	eh.p.N *= weight * 1/*s*/ * grid->zone_com_3volume(z_ind)/*cm^3*/ * 4.*pc::pi/*sr*/ * grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/;
+	PRINT_ASSERT(eh.p.N,>=,0);
 
 	// add to particle vector
 	window(&eh);

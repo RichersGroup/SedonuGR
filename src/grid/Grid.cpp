@@ -367,7 +367,9 @@ double Grid::zone_4volume(const int z_ind) const{
 
 void Grid::interpolate_metric(const double xup[4], Metric* g, const unsigned dir_ind[NDIMS]) const{
 	// first, the lapse
-	g->alpha = lapse.interpolate(xup,dir_ind);
+	double grid_coords[NDIMS];
+	grid_coordinates(xup,grid_coords);
+	g->alpha = lapse.interpolate(grid_coords,dir_ind);
 	PRINT_ASSERT(g->alpha,>,0);
 
 	// second, the shift
@@ -382,16 +384,18 @@ void Grid::interpolate_metric(const double xup[4], Metric* g, const unsigned dir
 //-----------------------------------------------------------------
 // get opacity at the frequency
 //-----------------------------------------------------------------
-void Grid::get_opacity(EinsteinHelper *eh) const
+void Grid::interpolate_opacity(EinsteinHelper *eh) const
 {
 	PRINT_ASSERT(eh->z_ind,>=,-1);
 
 	// update frequency index
 	eh->dir_ind[NDIMS] = min(nu_grid_axis.bin(eh->nu()), (int)nu_grid_axis.size()-1);
-	eh->eas_ind = BB[0].direct_index(eh->dir_ind);
+	double hypervec[NDIMS+1];
+	for(unsigned i=0; i<NDIMS; i++) hypervec[i] = eh->grid_coords[i];
+	hypervec[NDIMS] = eh->nu();
 
-	double a = abs_opac[eh->p.s][eh->eas_ind];
-	double s = scat_opac[eh->p.s][eh->eas_ind];
+	double a = abs_opac[eh->p.s].interpolate(hypervec,eh->dir_ind);
+	double s = scat_opac[eh->p.s].interpolate(hypervec,eh->dir_ind);
 
 	PRINT_ASSERT(a,>=,0);
 	PRINT_ASSERT(s,>=,0);

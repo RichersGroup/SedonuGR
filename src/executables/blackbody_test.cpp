@@ -31,7 +31,6 @@
 #include <fstream>
 #include "Lua.h"
 #include "Transport.h"
-#include "Zone.h"
 #include "Grid.h"
 #include "nulib_interface.h"
 #include "global_options.h"
@@ -43,12 +42,9 @@ void run_test(const bool rank0, const double rho, const double T, const double y
 	if(rank0) cout << endl << "Currently running: rho=" << rho << "g/ccm T=" << T << "MeV Ye=" << ye << endl;
 
 	// set the fluid properties
-	sim.grid->z[0].rho = rho;
-	sim.grid->z[0].T   = T/pc::k_MeV;
-	sim.grid->z[0].Ye  = ye;
-	sim.grid->z[0].u[0] = v[0];
-	sim.grid->z[0].u[1] = v[1];
-	sim.grid->z[0].u[2] = v[2];
+	sim.grid->rho[0] = rho;
+	sim.grid->T[0]   = T/pc::k_MeV;
+	sim.grid->Ye[0]  = ye;
 
 	// do the transport step
 	sim.step();
@@ -58,7 +54,7 @@ void run_test(const bool rank0, const double rho, const double T, const double y
 	if(rank0) outf << munue*pc::ergs_to_MeV << "\t";
 
 	// write the data out to file
-	if(rank0) sim.grid->write_line(outf,0);
+	//if(rank0) sim.grid->write_line(outf,0);
 }
 
 //--------------------------------------------------------
@@ -113,9 +109,6 @@ int main(int argc, char **argv)
 	string script_file = string(argv[1]);
 	lua.init( script_file );
 
-	// fix velocities if nonrelativistic
-	if(!lua.scalar<int>("do_relativity")) for(int i=0; i<3; i++) v[i] = 0;
-
 	// set up the transport module (includes the grid)
 	Transport sim;
 	sim.init(&lua);
@@ -128,8 +121,6 @@ int main(int argc, char **argv)
 	ofstream outf;
 	if(rank0){
 		outf.open("results.dat");
-		outf << "# munue(MeV) ";
-		sim.grid->write_header(outf);
 	}
 
 	//==============//
