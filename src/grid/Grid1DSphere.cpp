@@ -413,6 +413,35 @@ double Grid1DSphere::d_boundary(const EinsteinHelper *eh) const{
 
 	return dlambda * eh->kup_tet[3];
 }
+double Grid1DSphere::d_randomwalk(const EinsteinHelper *eh) const{
+	double R=INFINITY;
+	double D = eh->scatopac / (3.*pc::c);
+
+	double ktest[4] = {eh->p.xup[0], eh->p.xup[1], eh->p.xup[2], 0};
+	const double r = radius(eh->p.xup);
+	const double kr = r;
+	const double ur = radius(eh->u);
+
+	for(int sgn=1; sgn>0; sgn*=-1){
+		// get a null test vector
+		for(unsigned i=0; i<3; i++) ktest[i] *= sgn;
+		eh->g.normalize_null(ktest);
+
+		// get the time component of the tetrad test vector
+		double kup_tet_t = -eh->g.dot<4>(ktest,eh->u);
+
+		// get the min distance from the boundary in direction i. Negative if moving left
+		double drlab=0;
+		if(sgn>0) drlab = rAxis.top[eh->dir_ind[0]] - r;
+		if(sgn<0) drlab = rAxis.bottom(eh->dir_ind[0]) - r;
+
+		R = min(R, sim->R_randomwalk(kr/kup_tet_t, ur, drlab, D));
+	}
+
+	PRINT_ASSERT(R,>=,0);
+	PRINT_ASSERT(R,<,INFINITY);
+	return R;
+}
 
 double Grid1DSphere::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);

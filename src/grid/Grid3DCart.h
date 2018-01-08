@@ -87,6 +87,7 @@ public:
 	hsize_t dimensionality() const {return 3;};
 	void write_hdf5_coordinates(H5::H5File file) const;
 	double d_boundary(const EinsteinHelper* eh) const;
+	double d_randomwalk(const EinsteinHelper *eh) const;
 	void axis_vector(vector<Axis>& axes) const;
 
 	// GR functions

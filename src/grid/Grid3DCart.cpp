@@ -452,6 +452,33 @@ double Grid3DCart::d_boundary(const EinsteinHelper *eh) const{
 	return ds_com;
 }
 
+double Grid3DCart::d_randomwalk(const EinsteinHelper *eh) const{
+	double R=INFINITY;
+	double D = eh->scatopac / (3.*pc::c);
+
+	for(unsigned i=0; i<3; i++){
+		for(int sgn=1; sgn>0; sgn*=-1){
+			// get a null test vector
+			double ktest[4] = {0,0,0,0};
+			ktest[i] = sgn;
+			eh->g.normalize_null(ktest);
+
+			// get the time component of the tetrad test vector
+			double kup_tet_t = -eh->g.dot<4>(ktest,eh->u);
+
+			// get the min distance from the boundary in direction i. Negative if moving left
+			double dxlab=0;
+			if(sgn>0) dxlab = xAxes[i].top[eh->dir_ind[i]] - eh->p.xup[i];
+			if(sgn<0) dxlab = xAxes[i].bottom(eh->dir_ind[i]) - eh->p.xup[i];
+
+			R = min(R, sim->R_randomwalk(ktest[i]/kup_tet_t, eh->u[i], dxlab, D));
+		}
+	}
+
+	PRINT_ASSERT(R,>=,0);
+	PRINT_ASSERT(R,<,INFINITY);
+	return R;
+}
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------

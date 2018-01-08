@@ -102,29 +102,33 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 
 	// FIND D_ZONE= ====================================================================
 	double d_boundary = grid->d_boundary(eh);
-	double d_zone = grid->zone_min_length(eh->z_ind);
+	double d_zone = grid->zone_min_length(eh->z_ind); // REPLACE WITH detg^1/6
 	d_boundary = min(max(d_boundary, d_zone*min_step_size), d_zone*max_step_size);
 	PRINT_ASSERT(d_zone, >, 0);
+	*event = nothing;
+	eh->ds_com = d_boundary;
+
+	// FIND D_RANDOMWALK
+	double d_randomwalk = INFINITY;
+	if(eh->scatopac * eh->ds_com > randomwalk_min_optical_depth){ // coarse check
+		d_randomwalk = grid->d_randomwalk(eh);
+		PRINT_ASSERT(d_randomwalk,>=,0);
+		if(eh->scatopac * d_randomwalk > randomwalk_min_optical_depth){ // real check
+			eh->ds_com = d_randomwalk;
+			*event = randomwalk;
+		}
+	}
 
 	// FIND D_INTERACT =================================================================
-	double d_interact = numeric_limits<double>::infinity();
-	if(eh->scatopac > 0){
+	double d_interact = INFINITY;
+	if(*event==nothing && eh->scatopac>0){
 		double tau;
 		do{
 			tau = -log(rangen.uniform());
 		} while(tau >= INFINITY);
-		d_interact = tau / eh->scatopac;
-	}
-	PRINT_ASSERT(d_interact,>=,0);
-
-	// find out what event happens (shortest distance) =====================================
-	*event  = nothing;
-	double d_smallest = d_boundary;
-	if( d_interact <= d_smallest ){
+		eh->ds_com = tau / eh->scatopac;
 		*event = interact;
-		d_smallest = d_interact;
 	}
-	eh->ds_com = d_smallest;
 	PRINT_ASSERT(eh->ds_com, >=, 0);
 	PRINT_ASSERT(eh->ds_com, <, INFINITY);
 }
@@ -216,9 +220,22 @@ void Transport::propagate(EinsteinHelper *eh) const{
 		if(eh->z_ind>=0) tally_radiation(eh);
 
 		// move particle the distance
-		move(eh);
+		switch(event){
+		case nothing:
+			move(eh);
+			break;
+		case randomwalk:
+			random_walk(eh);
+			break;
+		case interact:
+			scatter(eh);
+			break;
+		default:
+			assert(0);
+		}
+
+		if(eh->p.fate==moving) window(eh);
 		if(eh->p.fate==moving) boundary_conditions(eh);
-		if(eh->p.fate==moving && event==interact) event_interact(eh);
 	}
 
 	// copy particle back out of LorentzHelper

@@ -648,6 +648,55 @@ double Grid2DSphere::d_boundary(const EinsteinHelper* eh) const{
 	double ds_com = eh->kup_tet[3] * min(dlambda_t, dlambda_r);
 	return ds_com;
 }
+double Grid2DSphere::d_randomwalk(const EinsteinHelper *eh) const{
+	double R=INFINITY;
+	double D = eh->scatopac / (3.*pc::c);
+	double x=eh->p.xup[0], y=eh->p.xup[1], z=eh->p.xup[2];
+
+
+	double ktest[4] = {x, y, z, 0};
+	const double r = radius(eh->p.xup);
+	const double kr = r;
+	const double ur = radius(eh->u);
+	for(int sgn=1; sgn>0; sgn*=-1){
+		// get a null test vector
+		for(unsigned i=0; i<3; i++) ktest[i] *= sgn;
+		eh->g.normalize_null(ktest);
+
+		// get the time component of the tetrad test vector
+		double kup_tet_t = -eh->g.dot<4>(ktest,eh->u);
+
+		// get the min distance from the boundary in direction i. Negative if moving left
+		double drlab=0;
+		if(sgn>0) drlab = rAxis.top[eh->dir_ind[0]] - r;
+		if(sgn<0) drlab = rAxis.bottom(eh->dir_ind[0]) - r;
+
+		R = min(R, sim->R_randomwalk(kr/kup_tet_t, ur, drlab, D));
+	}
+
+	double rp = sqrt(x*x + y*y);
+	double ktest2[4] = {x*z, y*z, -rp*rp, 0};
+	double theta = Grid2DSphere_theta(eh->p.xup);
+	for(int sgn=1; sgn>0; sgn*=-1){
+		// get a null test vector
+		for(unsigned i=0; i<3; i++) ktest[i] *= sgn;
+		eh->g.normalize_null(ktest);
+
+		// get the time component of the tetrad test vector
+		double kup_tet_t = -eh->g.dot<4>(ktest,eh->u);
+
+		// get the min distance from the boundary in direction i. Negative if moving left
+		double dthetalab=0;
+		if(sgn>0) dthetalab = thetaAxis.top[eh->dir_ind[1]] - theta;
+		if(sgn<0) dthetalab = thetaAxis.bottom(eh->dir_ind[1]) - theta;
+
+		R = min(R, sim->R_randomwalk(kr/kup_tet_t, ur, r*dthetalab, D));
+	}
+
+	PRINT_ASSERT(R,>=,0);
+	PRINT_ASSERT(R,<,INFINITY);
+	return R;
+}
 
 //------------------------------------------------------------
 // return length of zone

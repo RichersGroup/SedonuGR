@@ -173,6 +173,9 @@ double Grid0DIsotropic::zone_lorentz_factor(const int z_ind) const{
 double Grid0DIsotropic::d_boundary(const EinsteinHelper *eh) const{
 	return 0;
 }
+double Grid0DIsotropic::d_randomwalk(const EinsteinHelper *eh) const{
+	return 0;
+}
 
 void Grid0DIsotropic::get_connection_coefficients(EinsteinHelper* eh) const{ // default Minkowski
 	PRINT_ASSERT(DO_GR,==,0);

@@ -180,10 +180,6 @@ public:
 		for(unsigned i=0; i<4; i++) p.kup[i] *= scale;
 	}
 
-	double ds_lab(const double ds_com_in){
-		return -ds_com_in * g.ndot(p.kup) / (pc::h*nu());
-	}
-
 	void integrate_geodesic(){
 		double dlambda = ds_com / (pc::h*nu());
 

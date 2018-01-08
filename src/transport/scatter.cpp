@@ -33,28 +33,6 @@
 using namespace std;
 namespace pc = physical_constants;
 
-//------------------------------------------------------------
-// physics of absorption/scattering
-//------------------------------------------------------------
-void Transport::event_interact(EinsteinHelper* eh) const{
-	PRINT_ASSERT(eh->z_ind,>=,0);
-	PRINT_ASSERT(eh->z_ind,<,(int)grid->rho.size());
-	PRINT_ASSERT(eh->p.N,>,0);
-	PRINT_ASSERT(eh->p.fate,==,moving);
-
-	// absorb part of the packet
-	scatter(eh);
-
-	// window the particle
-	if(eh->p.fate==moving) window(eh);
-
-	// sanity checks
-	if(eh->p.fate==moving){
-		PRINT_ASSERT(eh->nu(),>,0);
-		PRINT_ASSERT(eh->nu(),>,0);
-	}
-}
-
 
 // decide whether to kill a particle
 void Transport::window(EinsteinHelper *eh) const{
@@ -76,60 +54,25 @@ void Transport::window(EinsteinHelper *eh) const{
 
 // choose which type of scattering event to do
 void Transport::scatter(EinsteinHelper *eh) const{
-	bool did_random_walk = false;
+	// store the old direction
+	double kup_tet_old[4];
+	eh->coord_to_tetrad(eh->p.kup,kup_tet_old);
 
-	// try to do random walk approximation in scattering-dominated diffusion regime
-	if(randomwalk_sphere_size>0){
+	// sample new direction
+	double kup_tet[4];
+	isotropic_kup_tet(eh->nu(),kup_tet,&rangen);
+	eh->set_kup_tet(kup_tet);
 
-		double D = pc::c / (3.0 * eh->scatopac); // diffusion coefficient (cm^2/s)
+	// get the dot product between the old and new directions
+	double cosTheta = eh->g.dot<3>(kup_tet,kup_tet_old) / (kup_tet[3] * kup_tet_old[3]);
+	PRINT_ASSERT(fabs(cosTheta),<=,1.0);
 
-		// if the optical depth is below our threshold, don't do random walk
-		// (first pass to avoid doing lots of math)
-		double Rlab_min = randomwalk_sphere_size * grid->zone_min_length(eh->z_ind);
-		double Rlab_boundary = grid->d_boundary(eh);
-		double Rlab = max(Rlab_min, Rlab_boundary);
-		if(eh->scatopac * Rlab >= randomwalk_min_optical_depth){
-			// determine maximum comoving sphere size
-			const double v[3] = {eh->u[0]/eh->u[3],eh->u[1]/eh->u[3],eh->u[2]/eh->u[3]};
-			double vabs = sqrt(Metric::dot_Minkowski<3>(v,v));
-			double gamma = eh->u[3];
-
-			double Rcom = 0;
-			if(Rlab==0) Rcom = 0;
-			else if(Rlab==INFINITY) Rcom = randomwalk_sphere_size * randomwalk_min_optical_depth / (eh->absopac>0 ? eh->absopac : eh->scatopac);
-			else Rcom =  2. * Rlab / gamma / (1. + sqrt(1. + 4.*Rlab*vabs*randomwalk_max_x / (gamma*D) ) );
-
-			// if the optical depth is below our threshold, don't do random walk
-			if(eh->scatopac * Rcom >= randomwalk_min_optical_depth){
-				random_walk(eh, Rcom, D);
-				boundary_conditions(eh);
-				did_random_walk = true;
-			}
-		}
-	}
-
-	// isotropic scatter if can't do random walk
-	if(!did_random_walk && eh->p.fate==moving){
-		// store the old direction
-		double kup_tet_old[4];
-		eh->coord_to_tetrad(eh->p.kup,kup_tet_old);
-
-		// sample new direction
-		double kup_tet[4];
-		isotropic_kup_tet(eh->nu(),kup_tet,eh->p.xup,&rangen);
-		eh->set_kup_tet(kup_tet);
-
-		// get the dot product between the old and new directions
-		double cosTheta = eh->g.dot<3>(kup_tet,kup_tet_old) / (kup_tet[3] * kup_tet_old[3]);
-		PRINT_ASSERT(fabs(cosTheta),<=,1.0);
-
-		// sample outgoing energy and set the post-scattered state
-		if(use_scattering_kernels){
-			double Nold = eh->p.N;
-			sample_scattering_final_state(*eh,cosTheta);
-			for(unsigned i=0; i<4; i++){
-				grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i]*Nold - kup_tet[i]*eh->p.N);
-			}
+	// sample outgoing energy and set the post-scattered state
+	if(use_scattering_kernels){
+		double Nold = eh->p.N;
+		sample_scattering_final_state(*eh,cosTheta);
+		for(unsigned i=0; i<4; i++){
+			grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i]*Nold - kup_tet[i]*eh->p.N);
 		}
 	}
 }
@@ -169,11 +112,14 @@ void Transport::init_randomwalk_cdf(Lua* lua){
 //----------------------
 // Do a random walk step
 //----------------------
-void Transport::random_walk(EinsteinHelper *eh, const double Rcom, const double D) const{
+void Transport::random_walk(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->scatopac,>,0);
 	PRINT_ASSERT(eh->absopac,>=,0);
 	PRINT_ASSERT(eh->p.N,>=,0);
 	PRINT_ASSERT(eh->nu(),>=,0);
+
+	const double Rcom = eh->ds_com;
+	const double D = eh->scatopac / (3.*pc::c);
 
 	// sample the distance travelled during the random walk
 	double path_length_com = pc::c * Rcom*Rcom / D * randomwalk_diffusion_time.invert(rangen.uniform(),&randomwalk_xaxis,-1);
@@ -190,7 +136,7 @@ void Transport::random_walk(EinsteinHelper *eh, const double Rcom, const double 
 
 	// select a random direction
 	double kup_tet[4];
-	isotropic_kup_tet(eh->nu(),kup_tet,eh->p.xup,&rangen);
+	isotropic_kup_tet(eh->nu(),kup_tet,&rangen);
 	eh->set_kup_tet(kup_tet);
 	eh->ds_com = Rcom;
 	eh->p.N = Naverage;

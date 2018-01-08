@@ -144,7 +144,7 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 
 	// emit isotropically in comoving frame
 	double kup_tet[4];
-	isotropic_kup_tet(nu,kup_tet,eh.p.xup,&rangen);
+	isotropic_kup_tet(nu,kup_tet,&rangen);
 	eh.set_kup_tet(kup_tet);
 
 	// add to particle vector
@@ -197,7 +197,7 @@ void Transport::create_surface_particle(const double weight, const unsigned int 
 	// sample outward direction
 	double kup_tet[4];
 	do{
-		isotropic_kup_tet(nu,kup_tet,eh.p.xup,&rangen);
+		isotropic_kup_tet(nu,kup_tet,&rangen);
 	} while(Metric::dot_Minkowski<3>(eh.p.xup,kup_tet) < 0);
 	eh.set_kup_tet(kup_tet);
 

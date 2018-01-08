@@ -884,7 +884,7 @@ void Transport::isotropic_direction(double D[3], ThreadRNG *rangen){
 	Metric::normalize_Minkowski<3>(D);
 }
 
-void Transport::isotropic_kup_tet(const double nu, double kup_tet[4], const double xup[4], ThreadRNG *rangen){
+void Transport::isotropic_kup_tet(const double nu, double kup_tet[4], ThreadRNG *rangen){
 	double D[3];
 	isotropic_direction(D,rangen);
 
@@ -899,4 +899,18 @@ void Transport::random_core_x(double x3[3]) const{
 	double a_phot = r_core * (1. + 1e-10);
 	isotropic_direction(x3,&rangen);
 	for(unsigned i=0; i<3; i++) x3[i] *= a_phot;
+}
+
+// given k^x/k_tet^t and u^x and the lab-frame distance to the boundary, return the largest random walk sphere size
+double Transport::R_randomwalk(const double kx_kttet, const double ux, const double dlab, const double D){
+	PRINT_ASSERT(dlab*kx_kttet,>,0); // the displacement and the k vector should be in the same direction
+	double b = kx_kttet - ux; // <0
+	const double a = ux*pc::c * randomwalk_max_x / D / b;
+	const double c = dlab / b;
+	double R=NaN;
+	if(b<0) R =    (-1. + sqrt(1. - 4.*a*c)) / (2.*a); // (moving forward)
+	if(b>0) R = abs(-1. - sqrt(1. - 4.*a*c)) / (2.*a); // (moving backward)
+
+	PRINT_ASSERT(R,>=,0);
+	return R;
 }

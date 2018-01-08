@@ -36,7 +36,7 @@
 
 class Species;
 class Grid;
-enum ParticleEvent {interact, nothing};
+enum ParticleEvent {interact, randomwalk, nothing};
 
 class Transport
 {
@@ -75,9 +75,8 @@ protected:
 	void reset_radiation();
 	void which_event(EinsteinHelper* eh, ParticleEvent *event) const;
 	void boundary_conditions(EinsteinHelper *eh) const;
-	void event_interact(EinsteinHelper* eh) const;
 	void scatter(EinsteinHelper *eh) const;
-	void random_walk(EinsteinHelper *eh, const double Rcom, const double D) const;
+	void random_walk(EinsteinHelper *eh) const;
 	void init_randomwalk_cdf(Lua* lua);
 	void window(EinsteinHelper *eh) const;
 	void sample_scattering_final_state(EinsteinHelper& eh, const double cosTheta) const;
@@ -180,8 +179,9 @@ public:
 	// blackbody function (#/cm^2/s/ster/Hz^3)
 	static double number_blackbody(const double T, const double chempot, const double nu);
 	void set_cdf_to_BB(const double T, const double chempot, CDFArray& emis);
-	static void isotropic_kup_tet(const double nu, double kup_tet[4], const double xup[4], ThreadRNG *rangen);
+	static void isotropic_kup_tet(const double nu, double kup_tet[4], ThreadRNG *rangen);
 	static void isotropic_direction(double D[3], ThreadRNG *rangen);
+	double R_randomwalk(const double kx_kttet, const double ux, const double dlab, const double D);
 
 	// set things up
 	void init(Lua* lua);
