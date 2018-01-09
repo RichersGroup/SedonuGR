@@ -79,7 +79,7 @@ public:
 
 	void init(const vector<Axis>& spatial_axes, const Axis& nu_grid) {
 		PRINT_ASSERT(spatial_axes.size(),==,ndims_spatial);
-		vector<Axis> axes(ndims_spatial+2);
+		vector<Axis> axes(ndims_spatial+1);
 
 		// spatial axes
 		for(int i=0; i<ndims_spatial; i++) axes[i] = spatial_axes[i];
