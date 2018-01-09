@@ -27,6 +27,7 @@
 
 #include "global_options.h"
 #include "nulib_interface.h"
+#include "MultiDArray.h"
 #include <cstdlib>
 
 namespace pc = physical_constants;
@@ -52,7 +53,7 @@ int main(int argc, char* argv[]){
 	nulib_init(filename,0);
 
 	// grids
-	LocateArray nu_grid; // Hz
+	Axis nu_grid; // Hz
 	vector<double> ye_grid;
 	vector<double> T_grid; // K
 	vector<double> rho_grid; // g/cm^3
@@ -67,31 +68,58 @@ int main(int argc, char* argv[]){
 
 	// read in the number of species and groups in the table
 	cout << "# of species: "    << nulib_get_nspecies() << endl;
-	cout << "# of groups: "     << nu_grid.size()       << " (" << nu_grid.min << "-" << nu_grid.x[nu_grid.size()-1] << ")" << endl;
+	cout << "# of groups: "     << nu_grid.size()       << " (" << nu_grid.min << "-" << nu_grid.mid[nu_grid.size()-1] << ")" << endl;
 	cout << "# of rho points: " << rho_grid.size()      << " (" << rho_grid[0] << "-" << rho_grid[rho_grid.size()-1] << ")" << endl;
 	cout << "# of ye points: "  << ye_grid.size()       << " (" <<  ye_grid[0] << "-" <<  ye_grid[ ye_grid.size()-1] << ")" << endl;
 	cout << "# of T points: "   << T_grid.size()        << " (" <<   T_grid[0] << "-" <<   T_grid[  T_grid.size()-1] << ")" << endl;
 
-	//make vectors of appropriate sizes
-	int n_groups = nu_grid.size();
-	PRINT_ASSERT(n_groups,>,0);
-	vector<double> absopac  (n_groups,0); // cm^-1
-	vector<double> scatopac (n_groups,0); // cm^-1
-	vector<double> pure_emis(n_groups,0); // erg/cm^3/s/ster/Hz
-	CDFArray emis;                 // erg/cm^3/s/ster
-	emis.resize(n_groups);
 
-	//===================//
-	// SINGLE LINE PLOTS //
-	//===================//
+	unsigned ngroups = nu_grid.size();
 
-	vector<CDFArray> normalized_phi0;
-	vector< vector<double> > phi1_phi0;
-	nulib_get_eas_arrays(rho, T, ye, nulibID, emis, absopac, scatopac,normalized_phi0, phi1_phi0);
-	nulib_get_pure_emis (rho, T, ye, nulibID, pure_emis);
-	cout << "e = " << nu_grid.value_at(myfreq, pure_emis) << " erg/cm^3/s/ster/Hz" << endl;
-	cout << "a = " << nu_grid.value_at(myfreq, absopac)   << " 1/cm" << endl;
-	cout << "s = " << nu_grid.value_at(myfreq, scatopac)  << " 1/cm" << endl;
+	ScalarMultiDArray<1> BB;        // #/s/cm^2/sr/(Hz^3/3)
+	ScalarMultiDArray<1> abs_opac;  // 1/cm
+	ScalarMultiDArray<1> scat_opac; // 1/cm
+	ScalarMultiDArray<2> scattering_delta; // phi1/phi0 for sampling outgoing direction [Ein,Eout]
+	ScalarMultiDArray<2> scattering_phi0; // opacity per outgoing frequency [Ein,Eout]
+
+	vector<Axis> axes;
+	axes.push_back(nu_grid);
+	BB.set_axes(axes);
+	abs_opac.set_axes(axes);
+	scat_opac.set_axes(axes);
+	axes.push_back(nu_grid);
+	scattering_delta.set_axes(axes);
+	scattering_phi0.set_axes(axes);
+
+	vector<double> tmp_absopac(ngroups), tmp_scatopac(ngroups), tmp_BB(ngroups);
+	vector< vector<double> > tmp_delta(ngroups, vector<double>(ngroups));
+	vector< vector<double> > tmp_phi0(ngroups, vector<double>(ngroups));
+	nulib_get_eas_arrays(rho, T, ye, nulibID,
+			tmp_BB, tmp_absopac, tmp_scatopac, tmp_phi0, tmp_delta);
+
+	unsigned dir_ind[2];
+	for(unsigned ig=0; ig<ngroups; ig++){
+		dir_ind[0] = ig;
+		unsigned global_index = abs_opac.direct_index(dir_ind);
+		abs_opac[global_index] = tmp_absopac[ig];
+		scat_opac[global_index] = tmp_scatopac[ig];
+		BB[global_index] = tmp_BB[ig]; // erg/cm^2/s/sr - convert in next line
+		BB[global_index] /= pc::h * pow(nu_grid.mid[ig],3) * nu_grid.delta(ig); // #/cm^2/s/sr/(Hz^3/3)
+
+		if(scattering_delta.size()>0)
+			for(unsigned og=0; og<ngroups; og++){
+				dir_ind[1] = og;
+				global_index = scattering_delta.direct_index(dir_ind);
+				scattering_delta[nulibID] = tmp_delta[ig][og];
+				scattering_phi0[nulibID] = tmp_phi0[ig][og] * pc::h;
+			}
+	}
+
+
+	unsigned nubin = nu_grid.bin(myfreq);
+	cout << "BB = " << BB.interpolate(&myfreq, &nubin) << " #/s/cm^2/sr/(Hz^3/3)" << endl;
+	cout << "a = " << abs_opac.interpolate(&myfreq,&nubin)   << " 1/cm" << endl;
+	cout << "s = " << scat_opac.interpolate(&myfreq, &nubin)  << " 1/cm" << endl;
 
 	return 0;
 }
