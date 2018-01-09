@@ -51,7 +51,7 @@ private:
 
 	MultiDArray<3,3> betaup;
 	MultiDArray<6,3> g3;
-	MultiDArray<30,3> gamma;
+	MultiDArray<40,3> gamma;
 	ScalarMultiDArray<3> sqrtdetg3;
 
 	vector<Axis> xAxes;

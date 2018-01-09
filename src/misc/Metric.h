@@ -18,16 +18,16 @@ public:
 class Christoffel{
 public:
 	// first index is up, others are down
-	// 0-9 = 0 first index, 10-19 = 1 first index, 20-29 = 2 first index
+	// 0-9 = 0 first index, 10-19 = 1 first index, 20-29 = 2 first index, 20-23 - third index
 	// 3 first index not included
-	Tuple<double, 30> data;
+	Tuple<double, 40> data;
 
 	Christoffel(){
 		data = NaN;
 	}
 
 	void contract2(const double kup[4], double result[3]){
-		for(unsigned i=0; i<3; i++){
+		for(unsigned i=0; i<4; i++){
 			const unsigned offset = i*10;
 			result[i] = 0;
 			result[i] += data[offset+ixx] * kup[0]*kup[0];

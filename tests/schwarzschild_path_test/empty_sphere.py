@@ -1,7 +1,7 @@
 import numpy as np
 nx = 999
 rs = 1.0
-rin = 1.5
+rin = 1.34
 
 R = 10
 rho = 0

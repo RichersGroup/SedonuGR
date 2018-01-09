@@ -505,10 +505,12 @@ void Grid1DSphere::get_connection_coefficients(EinsteinHelper* eh) const{
 
 	double tmp;
 	double* xup = eh->p.xup;
-	Tuple<double,30>& ch = eh->christoffel.data;
+	Tuple<double,40>& ch = eh->christoffel.data;
 
+	// spatial parts
+	unsigned offset;
 	for(int a=0; a<3; a++){
-		const unsigned offset = 10*a;
+		offset = 10*a;
 		ch[offset+itt] = alpha * dadr / (r*Xloc*Xloc) * xup[a];
 		ch[offset+ixt] = 0;
 		ch[offset+iyt] = 0;
@@ -527,7 +529,22 @@ void Grid1DSphere::get_connection_coefficients(EinsteinHelper* eh) const{
 		ch[offset+iyy] += tmp;
 		ch[offset+izz] += tmp;
 	}
-	for(unsigned i=0; i<30; i++) PRINT_ASSERT(ch[i],==,ch[i]);
+	// time part
+	offset = 30;
+	tmp = dadr / (r * alpha);
+	ch[offset+itt] = 0;
+	ch[offset+ixt] = xup[0] * tmp;
+	ch[offset+iyt] = xup[1] * tmp;
+	ch[offset+izt] = xup[2] * tmp;
+	ch[offset+ixx] = 0;
+	ch[offset+iyy] = 0;
+	ch[offset+izz] = 0;
+	ch[offset+ixy] = 0;
+	ch[offset+ixz] = 0;
+	ch[offset+iyz] = 0;
+
+
+	for(unsigned i=0; i<40; i++) PRINT_ASSERT(ch[i],==,ch[i]);
 }
 
 void Grid1DSphere::axis_vector(vector<Axis>& axes) const{
