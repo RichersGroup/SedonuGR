@@ -56,6 +56,7 @@ public:
 	//  void normalize();
 	virtual void rescale(const double) = 0;
 	virtual void wipe() = 0;
+	virtual double total() const = 0;
 
 	// Print out
 	virtual void write_hdf5_data(H5::H5File file, const string name) const = 0;

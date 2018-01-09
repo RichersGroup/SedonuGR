@@ -178,7 +178,7 @@ double Grid0DIsotropic::d_boundary(const EinsteinHelper *eh) const{
 	return 0;
 }
 double Grid0DIsotropic::d_randomwalk(const EinsteinHelper *eh) const{
-	return 0;
+	return INFINITY;
 }
 
 void Grid0DIsotropic::get_connection_coefficients(EinsteinHelper* eh) const{ // default Minkowski

@@ -140,7 +140,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	eh->set_kup_tet(kup_tet);
 	eh->ds_com = Rcom;
 	eh->p.N = Naverage;
-	tally_radiation(eh);
+	if(Rcom < INFINITY) tally_radiation(eh);
 	move(eh);
 	eh->p.N = Nfinal;
 
@@ -153,7 +153,8 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	eh->set_kup_tet(kup_tet_final);
 
 	// contribute energy isotropically
-	double Eiso = pc::h*eh->nu() * Naverage * (path_length_com - Rcom);
+	double Eiso;
+	Eiso = pc::h*eh->nu() * Naverage * (path_length_com - Rcom);
 	grid->distribution[eh->p.s]->add_isotropic(eh->dir_ind, Eiso);
 }
 

@@ -25,7 +25,7 @@ center_ye = 0.3
 epsmin = 1e26
 epsmax = 1e35
 
-zR = np.loadtxt('results.dat', skiprows=1, usecols=(2,3,4,11,12,13))
+zR = np.loadtxt('results.dat', skiprows=1, usecols=(0,1,2,4,5,6))
 zR = np.transpose(zR)
 rhoR   = zR[0] # g/ccm
 tempR  = zR[1] # MeV

@@ -397,6 +397,7 @@ void Grid::interpolate_opacity(EinsteinHelper *eh) const
 	hypervec[NDIMS] = eh->nu();
 
 	eh->eas_ind = abs_opac[eh->p.s].direct_index(eh->dir_ind);
+	double nu = eh->nu();
 	double a = abs_opac[eh->p.s].interpolate(hypervec,eh->dir_ind);
 	double s = scat_opac[eh->p.s].interpolate(hypervec,eh->dir_ind);
 
@@ -411,8 +412,8 @@ void Grid::interpolate_opacity(EinsteinHelper *eh) const
 		PRINT_ASSERT(abs(s)/scenter,<,1e-6);
 	}
 
-	a = max(0,a);
-	s = max(0,s);
+	a = max(0.0,a);
+	s = max(0.0,s);
 	PRINT_ASSERT(a,<,INFINITY);
 	PRINT_ASSERT(s,<,INFINITY);
 

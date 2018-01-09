@@ -413,7 +413,7 @@ void Transport::reset_radiation(){
 	// calculate the slopes for interpolation
 	for(unsigned s=0; s<species_list.size(); s++){
 		grid->abs_opac[s].calculate_slopes(0,INFINITY);
-		grid->BB[s].calculate_slopes(0,1);
+		//grid->BB[s].calculate_slopes(0,1); // energy densities come out wrong if I interpolate...
 
 		// if using scattering kernels, have to keep kernel and opacity consistent
 		if(use_scattering_kernels){

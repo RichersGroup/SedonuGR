@@ -211,6 +211,12 @@ public:
 		#pragma omp critical
 		for(unsigned i=start; i<stop; i++) data[i] += tmp;
 	}
+	double total() const{
+		double result=0;
+		for(unsigned i=0; i<data.size(); i++)
+			result += data[i];
+		return result;
+	}
 };
 
 #endif

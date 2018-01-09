@@ -134,6 +134,13 @@ public:
 		tmp[3] = 0;
 		data.add(indices, tmp);
 	}
+
+	double total() const{
+		double result=0;
+		for(unsigned i=0; i<data.size(); i++)
+			result += data[i][0];
+		return result;
+	}
 };
 
 #endif

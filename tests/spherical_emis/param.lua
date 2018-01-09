@@ -53,7 +53,7 @@ output_hdf5 = 0
 max_particles  = 2e7
 n_subcycles = 1
 do_emit_by_bin = 1
-n_emit_core_per_bin    = 1000
+n_emit_core_per_bin    = 100
 n_emit_therm_per_bin   = 0
 max_time_hours = -1
 
@@ -69,7 +69,8 @@ core_lum_multiplier = {1.0,1.0,1.0}
 
 verbose       = 1
 max_n_iter =  1
-step_size = 0.4
+min_step_size = 0.1
+max_step_size = 0.4
 
 -- Biasing
 

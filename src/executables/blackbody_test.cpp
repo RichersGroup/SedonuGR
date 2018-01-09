@@ -51,7 +51,15 @@ void run_test(const bool rank0, const double rho, const double T, const double y
 
 	// get the chemical potential
 	double munue = nulib_eos_munue(rho,T/pc::k_MeV,ye);
-	if(rank0) outf << munue*pc::ergs_to_MeV << "\t";
+	if(rank0){
+		outf << rho << "\t";
+		outf << T << "\t";
+		outf << ye << "\t";
+		outf << munue*pc::ergs_to_MeV << "\t";
+		for(unsigned i=0; i<sim.species_list.size(); i++)
+			outf << sim.grid->distribution[i]->total() << "\t";
+		outf << endl;
+	}
 
 	// write the data out to file
 	//if(rank0) sim.grid->write_line(outf,0);
@@ -78,7 +86,7 @@ int main(int argc, char **argv)
 	double max_ye    , min_ye    , ye0;
 	double v[3];
 	int n_rho, n_T, n_ye;
-	PRINT_ASSERT(argc,==,18);
+	PRINT_ASSERT(argc,==,15);
 	sscanf(argv[2 ], "%lf", &min_logrho);
 	sscanf(argv[3 ], "%lf", &max_logrho);
 	sscanf(argv[4 ], "%lf", &rho0);
@@ -91,9 +99,6 @@ int main(int argc, char **argv)
 	sscanf(argv[11], "%lf", &max_ye);
 	sscanf(argv[12], "%lf", &ye0);
 	sscanf(argv[13], "%d" , &n_ye);
-	sscanf(argv[15], "%lf" , &(v[0]));
-	sscanf(argv[16], "%lf" , &(v[1]));
-	sscanf(argv[17], "%lf" , &(v[2]));
 	double dlogT   = (max_logT   - min_logT  ) / ((double)n_T   - 1.0);
 	double dlogrho = (max_logrho - min_logrho) / ((double)n_rho - 1.0);
 	double dye     = (max_ye     - min_ye    ) / ((double)n_ye  - 1.0);

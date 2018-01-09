@@ -110,8 +110,9 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 
 	// FIND D_RANDOMWALK
 	double d_randomwalk = INFINITY;
-	if(eh->scatopac * eh->ds_com > randomwalk_min_optical_depth){ // coarse check
+	if(randomwalk_sphere_size>0 && eh->scatopac*eh->ds_com>randomwalk_min_optical_depth){ // coarse check
 		d_randomwalk = grid->d_randomwalk(eh);
+		if(d_randomwalk == INFINITY) d_randomwalk = 1.1*randomwalk_min_optical_depth / eh->scatopac;
 		PRINT_ASSERT(d_randomwalk,>=,0);
 		if(eh->scatopac * d_randomwalk > randomwalk_min_optical_depth){ // real check
 			eh->ds_com = d_randomwalk;
@@ -215,19 +216,18 @@ void Transport::propagate(EinsteinHelper *eh) const{
 		// decide which event happens
 		which_event(eh,&event);
 
-		// accumulate counts of radiation energy, absorption, etc
-		if(eh->z_ind>=0) tally_radiation(eh);
-
 		// move particle the distance
 		PRINT_ASSERT(eh->p.N,>,0);
 		switch(event){
 		case nothing:
+			tally_radiation(eh);
 			move(eh);
 			break;
 		case randomwalk:
 			random_walk(eh);
 			break;
 		case interact:
+			tally_radiation(eh);
 			move(eh);
 			scatter(eh);
 			break;

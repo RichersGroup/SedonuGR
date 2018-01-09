@@ -139,6 +139,12 @@ public:
 		tmp[3] =  E/3.; // average of P^tt and P^pp
 		data.add(dir_ind,tmp);
 	}
+	double total() const{
+		double result=0;
+		for(unsigned i=0; i<data.size(); i++)
+			result += data[i][0];
+		return result;
+	}
 };
 
 #endif
