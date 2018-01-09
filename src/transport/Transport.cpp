@@ -852,7 +852,7 @@ double Transport::mean_mass(const double Ye){
 // Calculate the fermi-dirac blackbody function (#/s/cm^2/ster/(Hz^3/3))
 //-----------------------------------------------------------------
 double Transport::number_blackbody(const double T /*K*/, const double chem_pot /*erg*/, const double nu /*Hz*/){
-	double zeta = (pc::h*nu - chem_pot)/pc::k/T;
+	double zeta = T==0 ? 0 : (pc::h*nu - chem_pot)/pc::k/T;
 	double bb = pc::inv_c*pc::inv_c / (exp(zeta) + 1.0);
 	PRINT_ASSERT(bb,>=,0);
 	return bb;
@@ -899,7 +899,6 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 		// make sure kup is consistent with the new background
 		eh->renormalize_kup();
 	}
-	else eh->p.fate = escaped;
 }
 
 

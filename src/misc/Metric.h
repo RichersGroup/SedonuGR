@@ -127,7 +127,7 @@ public:
 
 	// normalize a four vector to have a norm of +/-1
 	void normalize(double x[4]) const{
-		double invnorm = fabs(1./dot<4>(x,x));
+		double invnorm = sqrt(fabs(1./dot<4>(x,x)));
 		for(int i=0; i<4; i++) x[i] *= invnorm;
 	}
 

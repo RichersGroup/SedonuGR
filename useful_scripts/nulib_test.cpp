@@ -70,7 +70,7 @@ int main(int argc, char* argv[]){
 	ofstream grid_file;
 	grid_file.open("grids.dat");
 
-	LocateArray nu_grid; // Hz
+	Axis nu_grid; // Hz
 	nulib_get_nu_grid(nu_grid);
 	grid_file << "Energy Grid (bin tops) (MeV)" << endl;
 	grid_file << "min:" << nu_grid.min << endl;

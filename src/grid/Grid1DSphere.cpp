@@ -239,7 +239,7 @@ int Grid1DSphere::zone_index(const double x[3]) const
 
 	// check if off the boundaries
 	if(r < rAxis.min             ) return -1;
-	if(r >= rAxis.top[rAxis.size()-1] ) return -2;
+	if(r >= rAxis.top[rAxis.size()-1] ) return -1;
 
 	// find in zone array using stl algorithm upper_bound and subtracting iterators
 	int z_ind = rAxis.bin(r);

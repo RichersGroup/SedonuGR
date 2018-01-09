@@ -142,6 +142,7 @@ void Transport::boundary_conditions(EinsteinHelper *eh) const{
 	else if(eh->z_ind<0){
 		grid->symmetry_boundaries(eh);
 		update_eh_background(eh);
+		if(eh->z_ind < 0) eh->p.fate = escaped;
 	}
 }
 
@@ -183,6 +184,11 @@ void Transport::tally_radiation(const EinsteinHelper *eh) const{
 
 void Transport::move(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->ds_com,>=,0);
+	// FOR SCHWARZSCHILD PATH TEST
+	//for(unsigned i=0; i<4; i++) cout << eh->p.xup[i] << "\t";
+	//for(unsigned i=0; i<4; i++) cout << eh->p.kup[i] << "\t";
+	//for(unsigned i=0; i<4; i++) cout << eh->kup_tet[i] << "\t";
+	//cout << eh->nu() << endl;
 
 	// translate the particle
 	eh->integrate_geodesic();
@@ -193,7 +199,7 @@ void Transport::move(EinsteinHelper *eh) const{
 	if(eh->p.fate==moving) PRINT_ASSERT(eh->p.N,>,0);
 
 	update_eh_background(eh);
-	grid->interpolate_opacity(eh);
+	if(eh->z_ind >= 0) grid->interpolate_opacity(eh);
 }
 
 

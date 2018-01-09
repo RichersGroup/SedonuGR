@@ -63,14 +63,18 @@ int main(int argc, char **argv)
 
 	class testTransport : public Transport{
 	public:
-		void set_particle(Particle p){
+		void set_particle(EinsteinHelper& eh){
 			particles.resize(1);
-			particles[0] = p;
+			particles[0] = eh;
 		}
-		void move(LorentzHelper *lh, int *z_ind){
-			lh->particle_readonly(lab)->print();
-			Transport::move(lh,z_ind);
-			if(lh->p_xup()[0]<0 and lh->p_xup()[1]<0) lh->set_p_fate(absorbed);
+		virtual void move(EinsteinHelper *eh){
+			for(unsigned i=0; i<4; i++) cout << eh->p.xup[i] << "\t";
+			for(unsigned i=0; i<4; i++) cout << eh->p.kup[i] << "\t";
+			for(unsigned i=0; i<4; i++) cout << eh->kup_tet[i] << "\t";
+			cout << eh->nu() << endl;
+
+			Transport::move(eh);
+			if(eh->p.xup[0]<0 and eh->p.xup[1]<0) eh->p.fate = absorbed;
 		}
 	};
 
@@ -79,36 +83,36 @@ int main(int argc, char **argv)
 	sim.init(&lua);
 
 	// start only one neutrino
-	Particle p;
+	EinsteinHelper eh;
 
 	vector<double> xup,kup;
 	xup.resize(4);
 	kup.resize(4);
 	xup = lua.vector<double>("initial_xup");
 	kup = lua.vector<double>("initial_kup");
+	eh.p.xup[3] = 0;
 	for(int i=0; i<4; i++){
-		p.xup[i] = xup[i];
-		p.kup[i] = kup[i];
+		eh.p.xup[i] = xup[i];
+		eh.p.kup[i] = kup[i];
 	}
+	eh.p.s = 0;
+	eh.p.N = 1;
+	eh.p.fate = moving;
 
-	p.s = 0;
-	p.N = 1;
-	sim.grid->normalize_null(p.kup,p.xup);
-	p.tau = INFINITY;
-	p.fate = moving;
-	sim.set_particle(p);
+	sim.update_eh_background(&eh);
+	eh.g.normalize_null(&eh.p.kup[0]);
+	eh.renormalize_kup();
+
+	sim.grid->interpolate_opacity(&eh);
+
+	sim.set_particle(eh);
 	sim.step();
 	sim.write(0);
 
 	// read in time stepping parameters
 	lua.close();
 
-	// open the output file
-	ofstream outf;
-	if(rank0) outf.open("results.dat");
-
 	// exit the program
-	if(rank0) outf.close();
 	MPI_Finalize();
 	return 0;
 }

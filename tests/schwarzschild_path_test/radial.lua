@@ -23,7 +23,7 @@ cdf_cutoff = 0
 cdf_interpolation_order=0
 nugrid_n=1
 nugrid_start=0
-nugrid_stop=1
+nugrid_stop=1e99
 
 -- Escape Spectra
 
@@ -56,8 +56,8 @@ output_hdf5 = 0
 max_particles  = 2e7
 n_subcycles = 1
 do_emit_by_bin = 0
-n_emit_core    = 0
-n_emit_therm   = 0
+n_emit_core_per_bin    = 0
+n_emit_therm_per_bin   = 0
 max_time_hours = -1
 
 -- Inner Source
@@ -72,14 +72,15 @@ core_lum_multiplier = 1.0
 
 verbose       = 0
 max_n_iter =  1
-step_size = 0.01
+min_step_size = 0.01
+max_step_size = 0.01
 
 -- Biasing
 
 importance_bias = 0
 bias_path_length = 0
-min_packet_energy = 1e24
-max_packet_energy = 1e99
+min_packet_number = 0
+max_packet_number = 1e99
 exponential_decay = 0
 
 -- Random Walk

@@ -98,7 +98,7 @@ public:
 	  }
 
 	  else if(rotation == spherical){
-	    const double rp = sqrt(p.xup[1]*p.xup[0] + p.xup[1]*p.xup[1]);
+	    const double rp = sqrt(p.xup[0]*p.xup[0] + p.xup[1]*p.xup[1]);
 	    
 	    // pathological case
 	    if(rp==0){
