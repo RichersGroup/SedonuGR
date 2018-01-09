@@ -81,19 +81,21 @@ public:
 
 	// set the slopes
 	void calculate_slopes(const double minval, const double maxval){
-		unsigned int ind[ndims], indp[ndims], indm[ndims];
-		unsigned int zp, zm;
-		double x, xp, xm;
-		Tuple<double,nelements> y, yp, ym;
-		double dxL, dxR;
-		Tuple<double,nelements> dyL, dyR;
-		Tuple<double,nelements> sL, sR;
-		Tuple<double,nelements> slope;
+	  PRINT_ASSERT(maxval,>=,minval);
+	  dydx.resize(y0.size());
 
-		dydx.resize(y0.size());
-
+		#pragma omp parallel for
 		for(unsigned int z=0; z<dydx.size(); z++){
-			indices(z, ind);
+		        unsigned int ind[ndims], indp[ndims], indm[ndims];
+		        unsigned int zp, zm;
+		        double x, xp, xm;
+		        Tuple<double,nelements> y, yp, ym;
+		        double dxL, dxR;
+		        Tuple<double,nelements> dyL, dyR;
+		        Tuple<double,nelements> sL, sR;
+		        Tuple<double,nelements> slope;
+		  
+		        indices(z, ind);
 			for(unsigned int i=0; i<ndims; i++){
 				if(axes[i].size()==1){
 					dydx[z][i] = 0;
@@ -138,7 +140,6 @@ public:
 				else slope = (sL*dxR + sR*dxL) / (dxR+dxL);
 
 				// check min/max values
-				PRINT_ASSERT(minval,<=,maxval);
 				for(unsigned e=0; e<nelements; e++){
 					PRINT_ASSERT(y[e],<=,maxval);
 					PRINT_ASSERT(y[e],>=,minval);
@@ -168,12 +169,16 @@ public:
 	}
 
 	void wipe(){
-		for(unsigned z=0; z<y0.size(); z++)
-			y0[z] = 0;
-		for(unsigned z=0; z<dydx.size(); z++)
-			for(unsigned i=0; i<ndims; i++)
-				dydx[z][i] = 0;
-
+          #pragma omp parallel
+	  {
+	    #pragma omp for
+	    for(unsigned z=0; z<y0.size(); z++)
+	      y0[z] = 0;
+            #pragma omp for collapse(2)
+	    for(unsigned z=0; z<dydx.size(); z++)
+	      for(unsigned i=0; i<ndims; i++)
+		dydx[z][i] = 0;
+	  }
 	}
 
 	unsigned size() const{
