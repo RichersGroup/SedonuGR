@@ -55,25 +55,22 @@ void Transport::window(EinsteinHelper *eh) const{
 // choose which type of scattering event to do
 void Transport::scatter(EinsteinHelper *eh) const{
 	// store the old direction
+	double Nold = eh->p.N;
 	double kup_tet_old[4];
-	eh->coord_to_tetrad(eh->p.kup,kup_tet_old);
-
-	// sample new direction
-	double kup_tet[4];
-	isotropic_kup_tet(eh->nu(),kup_tet,&rangen);
-	eh->set_kup_tet(kup_tet);
-
-	// get the dot product between the old and new directions
-	double cosTheta = eh->g.dot<3>(kup_tet,kup_tet_old) / (kup_tet[3] * kup_tet_old[3]);
-	PRINT_ASSERT(fabs(cosTheta),<=,1.0);
-
+	for(unsigned i=0; i<4; i++) kup_tet_old[i] = eh->kup_tet[i];
+	PRINT_ASSERT(kup_tet_old[3],==,eh->kup_tet[3]);
+	
 	// sample outgoing energy and set the post-scattered state
-	if(use_scattering_kernels){
-		double Nold = eh->p.N;
-		sample_scattering_final_state(*eh,cosTheta);
-		for(unsigned i=0; i<4; i++){
-			grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i]*Nold - kup_tet[i]*eh->p.N);
-		}
+	if(use_scattering_kernels) sample_scattering_final_state(eh,kup_tet_old);
+	else{
+		// sample new direction
+		double kup_tet[4];
+		isotropic_kup_tet(eh->nu(),kup_tet,&rangen);
+		eh->set_kup_tet(kup_tet);
+	}
+
+	for(unsigned i=0; i<4; i++){
+		grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i]*Nold - eh->kup_tet[i]*eh->p.N);
 	}
 }
 
@@ -161,19 +158,20 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 //-------------------------------------------------------------
 // Sample outgoing neutrino direction and energy
 //-------------------------------------------------------------
-void Transport::sample_scattering_final_state(EinsteinHelper &eh, const double cosTheta) const{
+void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double kup_tet_old[4]) const{
 	PRINT_ASSERT(use_scattering_kernels,>,0);
-	PRINT_ASSERT(grid->scattering_delta[eh.p.s].size(),>,0);
-	PRINT_ASSERT(grid->scattering_phi0[eh.p.s].size(),>,0);
+	PRINT_ASSERT(grid->scattering_delta[eh->p.s].size(),>,0);
+	PRINT_ASSERT(grid->scattering_phi0[eh->p.s].size(),>,0);
+	PRINT_ASSERT(kup_tet_old[3],==,eh->kup_tet[3]);
 
 	// get spatial component of directional indices
 	unsigned dir_ind[NDIMS+2];
 	double hyperloc[NDIMS+2];
 	for(unsigned i=0; i<NDIMS; i++){
-		hyperloc[i] = eh.p.xup[i];
-		dir_ind[i] = eh.dir_ind[i];
+		hyperloc[i] = eh->p.xup[i];
+		dir_ind[i] = eh->dir_ind[i];
 	}
-	dir_ind[NDIMS] = eh.dir_ind[NDIMS];
+	dir_ind[NDIMS] = eh->dir_ind[NDIMS];
 
 	// get outgoing energy bin w/ rejection sampling
 	unsigned igout;
@@ -184,33 +182,41 @@ void Transport::sample_scattering_final_state(EinsteinHelper &eh, const double c
 		nubar = 0.5 * (grid->nu_grid_axis.top[igout] + grid->nu_grid_axis.bottom(igout));
 		hyperloc[NDIMS] = grid->nu_grid_axis.mid[dir_ind[NDIMS]];
 		hyperloc[NDIMS+1] = nubar;
-		phi0avg = grid->scattering_phi0[eh.p.s].interpolate(hyperloc,dir_ind);
-		P = phi0avg * grid->nu_grid_axis.delta(igout) / grid->scat_opac[eh.p.s][eh.eas_ind];
+		phi0avg = grid->scattering_phi0[eh->p.s].interpolate(hyperloc,dir_ind);
+		P = phi0avg * grid->nu_grid_axis.delta(igout) / grid->scat_opac[eh->p.s][eh->eas_ind];
 		PRINT_ASSERT(P,<=,1.0);
 	} while(rangen.uniform() > P);
 
 	// uniformly sample within zone
-	unsigned global_index = grid->scattering_phi0[eh.p.s].direct_index(dir_ind);
+	unsigned global_index = grid->scattering_phi0[eh->p.s].direct_index(dir_ind);
 	double out_nu = rangen.uniform(grid->nu_grid_axis.bottom(igout), grid->nu_grid_axis.top[igout]);
-	double phi_interpolated = grid->scattering_phi0[eh.p.s].dydx[global_index][NDIMS+1][0]*(out_nu - nubar) + phi0avg;
-	PRINT_ASSERT(eh.p.N,<,1e30);
-	eh.p.N *= phi_interpolated / phi0avg;
-	PRINT_ASSERT(eh.p.N,<,1e30);
+	double phi_interpolated = grid->scattering_phi0[eh->p.s].dydx[global_index][NDIMS+1][0]*(out_nu - nubar) + phi0avg;
+	eh->p.N *= phi_interpolated / phi0avg;
 
-	// bias outgoing direction to be isotropic. Very inefficient for large values of delta.
-	hyperloc[NDIMS] = eh.nu();
+	// get scattering delta
+	hyperloc[NDIMS] = eh->nu();
 	hyperloc[NDIMS+1] = out_nu;
-	double delta = grid->scattering_delta[eh.p.s].interpolate(hyperloc,dir_ind);
+	double delta = grid->scattering_delta[eh->p.s].interpolate(hyperloc,dir_ind);
 	PRINT_ASSERT(fabs(delta),<,3.0);
-	if(fabs(delta)<=1.0) eh.p.N *= 1.0 + delta*cosTheta;
-	else{
-		double b = 2.*fabs(delta) / (3.-fabs(delta));
-		if(delta>1.0) eh.p.N *= pow(1.+cosTheta, b);
-		else          eh.p.N *= pow(1.-cosTheta, b);
-		PRINT_ASSERT(eh.p.N,<,1e30);
+
+	// sample the new direction, but only if not absurdly forward/backward peaked
+	// (delta=2.8 corresponds to a possible factor of 10 in the neutrino weight)
+	if(fabs(delta) < 2.8){
+	  double min_mu = delta> 1.0 ? delta-2. : -1.0;
+	  double max_mu = delta<-1.0 ? delta+2. :  1.0;
+	  double kup_tet_new[4];
+	  double costheta=0;
+	  do{
+	    isotropic_kup_tet(out_nu, kup_tet_new, &rangen);
+	    costheta = Metric::dot_Minkowski<3>(kup_tet_new,kup_tet_old) / (kup_tet_old[3]*kup_tet_new[3]);
+	  } while(costheta<min_mu || costheta>max_mu);
+	  double delta_eff = max(min(delta, 1.0), -1.0);
+	  double mubar = 0.5*(min_mu+max_mu);
+	  eh->p.N *= 1. + 2.*delta_eff * (costheta-mubar) / (max_mu - min_mu);
+	  eh->set_kup_tet(kup_tet_new);
+	  PRINT_ASSERT(eh->p.N,<,1e99);
 	}
-	PRINT_ASSERT(eh.p.N,<,1e30);
-
-
-	eh.scale_p_frequency(out_nu/eh.nu());
+	else{
+	  eh->scale_p_frequency(out_nu/eh->nu());
+	}
 }

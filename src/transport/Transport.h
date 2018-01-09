@@ -79,7 +79,7 @@ protected:
 	void random_walk(EinsteinHelper *eh) const;
 	void init_randomwalk_cdf(Lua* lua);
 	void window(EinsteinHelper *eh) const;
-	void sample_scattering_final_state(EinsteinHelper& eh, const double cosTheta) const;
+	void sample_scattering_final_state(EinsteinHelper* eh, const double kup_tet_old[4]) const;
 
 
 

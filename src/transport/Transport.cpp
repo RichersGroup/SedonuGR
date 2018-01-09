@@ -904,9 +904,9 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 
 // Randomly generate new direction isotropically in comoving frame
 void Transport::isotropic_direction(double D[3], ThreadRNG *rangen){
-	D[0] = rangen->uniform();
-	D[1] = rangen->uniform();
-	D[2] = rangen->uniform();
+	D[0] = 2.*rangen->uniform() - 1.;
+	D[1] = 2.*rangen->uniform() - 1.;
+	D[2] = 2.*rangen->uniform() - 1.;
 	Metric::normalize_Minkowski<3>(D);
 }
 
