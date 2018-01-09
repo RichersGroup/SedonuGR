@@ -371,7 +371,8 @@ void Grid::interpolate_metric(const double xup[4], Metric* g, const unsigned dir
 	// first, the lapse
 	double grid_coords[NDIMS];
 	grid_coordinates(xup,grid_coords);
-	g->alpha = lapse.interpolate(grid_coords,dir_ind);
+	double r = radius(xup);
+	g->alpha = lapse.interpolate(grid_coords,dir_ind);//sqrt(1.-1./r);//
 	PRINT_ASSERT(g->alpha,>,0);
 
 	// second, the shift

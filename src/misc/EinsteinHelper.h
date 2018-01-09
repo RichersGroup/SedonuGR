@@ -185,11 +185,29 @@ public:
 		double dlambda = ds_com / (pc::h*nu());
 
 		double dk_dlambda[4] = {0,0,0,0};
-		if(DO_GR) christoffel.contract2(p.kup,dk_dlambda);
+		if(DO_GR){
+			// rk4
+			double dk_dlambda0[4];
+			christoffel.contract2(p.kup,dk_dlambda0);
+
+			double k1[4], dk_dlambda1[4];
+			for(unsigned i=0; i<4; i++) k1[i] = p.kup[i] + 0.5*dlambda*dk_dlambda0[i];
+			christoffel.contract2(k1,dk_dlambda1);
+
+			double k2[4], dk_dlambda2[4];
+			for(unsigned i=0; i<4; i++) k2[i] = p.kup[i] + 0.5*dlambda*dk_dlambda1[i];
+			christoffel.contract2(k1,dk_dlambda2);
+
+			double k3[4], dk_dlambda3[4];
+			for(unsigned i=0; i<4; i++) k3[i] = p.kup[i] + 1.0*dlambda*dk_dlambda2[i];
+			christoffel.contract2(k1,dk_dlambda3);
+
+			for(unsigned i=0; i<4; i++) dk_dlambda[i] = 1./6.*dk_dlambda0[i] + 1./3.*dk_dlambda1[i] + 1./3.*dk_dlambda2[i] + 1./6.*dk_dlambda3[i];
+		}
 
 		// get new x,k
 		for(int i=0; i<4; i++){
-			p.kup[i] += dk_dlambda[i]*dlambda;
+			p.kup[i] -= dk_dlambda[i]*dlambda;
 			p.xup[i] +=      p.kup[i]*dlambda;
 		}
 	}

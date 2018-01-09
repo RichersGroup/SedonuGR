@@ -481,7 +481,7 @@ void Grid1DSphere::write_hdf5_coordinates(H5::H5File file) const
 }
 void Grid1DSphere::interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const{
 	const double r = radius(xup);
-	const double Xloc = X.interpolate(&r,dir_ind);
+	const double Xloc = 1./sqrt(1.-1./r);//X.interpolate(&r,dir_ind);
 	double tmp = (Xloc*Xloc-1.0) / (r*r);
 
 	gammalow->data[ixx] = xup[0]*xup[0] * tmp;
@@ -498,10 +498,10 @@ void Grid1DSphere::interpolate_3metric(const double xup[4], ThreeMetric* gammalo
 
 void Grid1DSphere::get_connection_coefficients(EinsteinHelper* eh) const{
 	const double r = radius(eh->p.xup);
-	const double Xloc = X[eh->z_ind];
-	const double alpha = lapse[eh->z_ind];
-	const double dadr = lapse.dydx[eh->z_ind][0][0];
-	const double dXdr = X.dydx[eh->z_ind][0][0];
+	const double alpha = lapse[eh->z_ind]; //sqrt(1.-1./r); //
+	const double Xloc = X[eh->z_ind]; //1./alpha; //
+	const double dadr = lapse.dydx[eh->z_ind][0][0]; //Xloc / (2.*r*r);//
+	const double dXdr = X.dydx[eh->z_ind][0][0]; //-Xloc*Xloc*Xloc / (2.*r*r);//
 
 	double tmp;
 	double* xup = eh->p.xup;
@@ -514,7 +514,7 @@ void Grid1DSphere::get_connection_coefficients(EinsteinHelper* eh) const{
 		ch[offset+iyt] = 0;
 		ch[offset+izt] = 0;
 
-		tmp = 1. / (r*r*r*Xloc*Xloc) * (1.0 - Xloc*Xloc + r*Xloc*dXdr) * xup[a]/r;
+		tmp = (1. - Xloc*Xloc + r*Xloc*dXdr) / (r*r*r*Xloc*Xloc) * xup[a]/r;
 		ch[offset+ixx] = xup[0]*xup[0] * tmp;
 		ch[offset+iyy] = xup[1]*xup[1] * tmp;
 		ch[offset+izz] = xup[2]*xup[2] * tmp;
