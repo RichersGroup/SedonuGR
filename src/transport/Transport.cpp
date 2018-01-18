@@ -915,6 +915,8 @@ void Transport::isotropic_kup_tet(const double nu, double kup_tet[4], ThreadRNG 
 	kup_tet[1] = tmp * D[1];
 	kup_tet[2] = tmp * D[2];
 	kup_tet[3] = tmp;
+
+	PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet,kup_tet)/(kup_tet[3]*kup_tet[3]),<,TINY);
 }
 
 void Transport::random_core_x(double x3[3]) const{

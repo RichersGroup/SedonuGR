@@ -73,8 +73,6 @@ public:
 		Tuple<double,nelements> result = y0[z_ind];
 		if(dydx.size()>0) for(int i=0; i<ndims; i++){
 			result += dydx[z_ind][i] * (x[i] - axes[i].mid[ind[i]]);
-			if(x[i] > axes[i].max()+axes[i].delta(axes[i].size()-1) or x[i] < axes[i].min-axes[i].delta(0))
-				cout << "WARNING: significantly exceeding axis range." << endl;
 		}
 		for(unsigned e=0; e<nelements; e++) PRINT_ASSERT(abs(result[e]),<,INFINITY);
 		return result;

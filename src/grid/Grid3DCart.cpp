@@ -814,7 +814,7 @@ double Grid3DCart::zone_lorentz_factor(const int z_ind) const{
 	for(unsigned i=0; i<3; i++) threevel[i] = v[z_ind][i]/pc::c;
 
 	double result = EinsteinHelper::lorentzFactor(&g,threevel);
-	PRINT_ASSERT(result,>,1);
+	PRINT_ASSERT(result,>=,1);
 	PRINT_ASSERT(result,<,INFINITY);
 	return result;
 }

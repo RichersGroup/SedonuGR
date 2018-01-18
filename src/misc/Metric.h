@@ -145,6 +145,13 @@ public:
 		}
 	}
 
+	void get_betalow(double output[3]) const{
+		for(unsigned i=0; i<3; i++) output[i] = betalow[i];
+	}
+	double get_gtt() const{
+		return gtt;
+	}
+
 	template<unsigned n>
 	void lower(const double xup[], double xdown[]) const{
 		if(DO_GR){
@@ -175,9 +182,9 @@ public:
 	}
 
 	template<unsigned n>
-	double contract(const double xup[n], const double xdown[n]) const{
+	static double contract(const double xup[n], const double xdown[n]){
 		double result = 0;
-		for(int i=0; i<n; i++)result += xup[i]*xdown[i];
+		for(int i=0; i<n; i++) result += xup[i]*xdown[i];
 		return result;
 	}
 
@@ -209,13 +216,15 @@ public:
 		double result = NaN;
 		if(DO_GR){
 			const double invA = 1./gtt;
-			const double B = (x[0]*betalow[0] + x[1]*betalow[1] + x[2]*betalow[2]) * invA;
+			const double B = 2.*(x[0]*betalow[0] + x[1]*betalow[1] + x[2]*betalow[2]) * invA;
 			const double C = dot<3>(x,x) * invA;
-			const double result = 0.5 * (B + sqrt(B*B - 4.*C));
+			PRINT_ASSERT(B*B - 4.*C,>=,0);
+			result = 0.5 * (-B + sqrt(B*B - 4.*C));
 		}
 		else result = sqrt(dot_Minkowski<3>(x,x));
 		PRINT_ASSERT(result,>,0);
 		x[3] = result;
+		PRINT_ASSERT(dot<4>(x,x)/(x[3]*x[3]),<,TINY);
 	}
 
 	// make four vector v orthogonal to four vector v

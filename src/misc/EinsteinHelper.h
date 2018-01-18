@@ -17,10 +17,10 @@ public:
 	Particle p;
 	Metric g;
 	Christoffel christoffel;
-	double u[4]; // dimensionless
+	double u[4]; // dimensionless, up index
 
 	// intermediate quantities
-	double e[4][4];
+	double e[4][4]; // [tet(low)][coord(up)]
 	double grid_coords[NDIMS];
 	double kup_tet[4];
 	double absopac, scatopac;
@@ -49,20 +49,23 @@ public:
 		for(unsigned i=0; i<4; i++) kup_tet[i] = kup_tet_in[i];
 		tetrad_to_coord(kup_tet,p.kup);
 		g.normalize_null(p.kup);
+		PRINT_ASSERT(g.dot<4>(p.kup,p.kup)/(p.kup[3]*p.kup[3]),<,TINY);
 	}
 	void renormalize_kup(){
 		if(p.kup[3]==p.kup[3]){ // only if kup has been set already
 			g.normalize_null(p.kup);
 			coord_to_tetrad(p.kup, kup_tet);
+			Metric::normalize_null_Minkowski(kup_tet);
 			PRINT_ASSERT(kup_tet[3],>,0);
+			PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet,kup_tet)/(kup_tet[3]*kup_tet[3]),<,TINY);
 		}
 	}
 
 	// return the Lorentz factor W
 	static double lorentzFactor(const Metric* g, const double v[3]){
-	  double result = 1. / sqrt(1. - g->dot<3>(v,v));
-	  PRINT_ASSERT(result,>=,1);
-	  return result;
+		double result = 1. / sqrt(1. - g->dot<3>(v,v));
+		PRINT_ASSERT(result,>=,1);
+		return result;
 	}
 
 	double nu() const{
@@ -73,13 +76,15 @@ public:
 
 	// get four velocity from three velocity
 	void set_fourvel(const double v[3]){
-	  const double vdimless[3] = {v[0]/pc::c, v[1]/pc::c, v[2]/pc::c};
+		const double vdimless[3] = {v[0]/pc::c, v[1]/pc::c, v[2]/pc::c};
 		double W = lorentzFactor(&g,vdimless);
 		u[3] = W / (DO_GR ? g.alpha : 1.0);
 		PRINT_ASSERT(u[3],>,0);
 		PRINT_ASSERT(u[3],<,INFINITY);
-		for(unsigned i=0; i<3; i++)
-			u[i] = u[3] * (DO_GR ? g.alpha*vdimless[i] - g.betaup[i] : vdimless[i]);
+		for(unsigned i=0; i<3; i++){
+			u[i] = W*vdimless[i];
+			if(DO_GR) u[i] -= W/g.alpha * g.betaup[i];
+		}
 		PRINT_ASSERT(fabs(g.dot<4>(u,u)+1.0),<,TINY);
 	}
 
@@ -164,8 +169,9 @@ public:
 	}
 
 	void coord_to_tetrad(const double kup_coord[4], double kup_tet[4]) const{
-		for(int mu=0; mu<4; mu++) kup_tet[mu] = g.dot<4>(kup_coord,e[mu]);
-		kup_tet[3] *= -1.;
+		double kdown_tet[4];
+		for(int mu=0; mu<4; mu++) kdown_tet[mu] = g.dot<4>(kup_coord,e[mu]);
+		kup_tet[3] *= -1.; // k.e = kdown_tet. Must raise index.
 	}
 
 	void tetrad_to_coord(const double kup_tet[4], double kup_coord[4]) const{
