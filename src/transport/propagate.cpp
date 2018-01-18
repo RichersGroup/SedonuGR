@@ -65,12 +65,12 @@ void Transport::propagate_particles()
 				N_net_esc[eh->p.s] += eh->p.N;
 				grid->spectrum[eh->p.s].count(eh, eh->p.N * nu*pc::h);
 			}
+
 			#pragma omp atomic
 			ndone++;
-			if(ndone%1000==0){
-				#pragma omp critical
+			if(ndone%1000==0)
 				cout << "\r"<<ndone<<"/"<<particles.size() << " (" << (double)ndone/(double)particles.size()*100<<"\%)";
-			}
+
 			PRINT_ASSERT(eh->p.fate, !=, moving);
 		} //#pragma omp parallel for
 		cout << endl;
