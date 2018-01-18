@@ -72,30 +72,32 @@ public:
 		unsigned z_ind = direct_index(ind);
 		Tuple<double,nelements> result = y0[z_ind];
 		if(dydx.size()>0) for(int i=0; i<ndims; i++){
-			PRINT_ASSERT(x[i],>=,axes[i].bottom(ind[i]));
-			PRINT_ASSERT(x[i],<=,axes[i].top[ind[i]]);
 			result += dydx[z_ind][i] * (x[i] - axes[i].mid[ind[i]]);
+			if(x[i] > axes[i].max()+axes[i].delta(axes[i].size()-1) or x[i] < axes[i].min-axes[i].delta(0))
+				cout << "WARNING: significantly exceeding axis range." << endl;
 		}
+		for(unsigned e=0; e<nelements; e++) PRINT_ASSERT(abs(result[e]),<,INFINITY);
 		return result;
 	}
 
 	// set the slopes
 	void calculate_slopes(const double minval, const double maxval){
-	  PRINT_ASSERT(maxval,>=,minval);
-	  dydx.resize(y0.size());
+		PRINT_ASSERT(maxval,>=,minval);
+		dydx.resize(y0.size());
 
 		#pragma omp parallel for
 		for(unsigned int z=0; z<dydx.size(); z++){
-		        unsigned int ind[ndims], indp[ndims], indm[ndims];
-		        unsigned int zp, zm;
-		        double x, xp, xm;
-		        Tuple<double,nelements> y, yp, ym;
-		        double dxL, dxR;
-		        Tuple<double,nelements> dyL, dyR;
-		        Tuple<double,nelements> sL, sR;
-		        Tuple<double,nelements> slope;
-		  
-		        indices(z, ind);
+			unsigned int ind[ndims], indp[ndims], indm[ndims];
+			unsigned int zp, zm;
+			double x, xp, xm;
+			Tuple<double,nelements> y, yp, ym;
+			double dxL, dxR;
+			Tuple<double,nelements> dyL, dyR;
+			Tuple<double,nelements> sL, sR;
+			Tuple<double,nelements> slope;
+
+			y=y0[z];
+			indices(z, ind);
 			for(unsigned int i=0; i<ndims; i++){
 				if(axes[i].size()==1){
 					dydx[z][i] = 0;
@@ -109,7 +111,6 @@ public:
 				}
 
 				// get plus and minus values
-				y=y0[z];
 				x=axes[i].mid[ind[i]];
 				if(ind[i] > 0){
 					indm[i] = ind[i]-1;
@@ -139,31 +140,41 @@ public:
 				else if(ind[i]==axes[i].size()-1) slope = sL;
 				else slope = (sL*dxR + sR*dxL) / (dxR+dxL);
 
-				// check min/max values
-				for(unsigned e=0; e<nelements; e++){
-					PRINT_ASSERT(y[e],<=,maxval);
-					PRINT_ASSERT(y[e],>=,minval);
-					double ytop = y[e] + slope[e] * (axes[i].top[ind[i]] - axes[i].mid[ind[i]]);
-					if(ytop>maxval){
-						ytop = maxval;
-						slope[e] = (ytop-y[e]) / (axes[i].top[ind[i]] - axes[i].mid[ind[i]]);
+				dydx[z][i] = slope;
+			}
+
+
+			// check min/max values
+			for(unsigned e=0; e<nelements; e++){
+				double ybig = y[e];
+				double ysmall = y[e];
+				PRINT_ASSERT(y[e],<=,maxval);
+				PRINT_ASSERT(y[e],>=,minval);
+
+				for(unsigned i=0; i<ndims; i++){
+					if(dydx[z][i][e] >= 0){
+						ybig   += dydx[z][i][e] * (axes[i].top[ind[i]]    - axes[i].mid[ind[i]]);
+						ysmall += dydx[z][i][e] * (axes[i].bottom(ind[i]) - axes[i].mid[ind[i]]);
 					}
-					else if(ytop<minval){
-						ytop = minval;
-						slope[e] = (ytop-y[e]) / (axes[i].top[ind[i]] - axes[i].mid[ind[i]]);
-					}
-					double ybottom = y[e] + slope[e] * (axes[i].bottom(ind[i]) - axes[i].mid[ind[i]]);
-					if(ybottom>maxval){
-						ybottom = maxval;
-						slope[e] = (ybottom-y[e]) / (axes[i].bottom(ind[i]) - axes[i].mid[ind[i]]);
-					}
-					else if(ybottom<minval){
-						ybottom = minval;
-						slope[e] = (ybottom-y[e]) / (axes[i].bottom(ind[i]) - axes[i].mid[ind[i]]);
+					else{
+						ybig   += dydx[z][i][e] * (axes[i].bottom(ind[i]) - axes[i].mid[ind[i]]);
+						ysmall += dydx[z][i][e] * (axes[i].top[ind[i]]    - axes[i].mid[ind[i]]);
 					}
 				}
+				PRINT_ASSERT(ybig,>=,y[e]);
+				PRINT_ASSERT(ysmall,<=,y[e]);
 
-				dydx[z][i] = slope;
+				for(unsigned i=0; i<ndims; i++){
+					const double oldslope= dydx[z][i][e];
+					if(ybig > maxval){
+						dydx[z][i][e] = oldslope * (maxval-y[e]) / (ybig - y[e]);
+						PRINT_ASSERT(ysmall,>=,minval);
+					}
+					if(ysmall < minval){
+						dydx[z][i][e] = oldslope * (y[e]-minval) / (y[e]-ysmall);
+						PRINT_ASSERT(ybig,<=,maxval);
+					}
+				}
 			}
 		}
 	}

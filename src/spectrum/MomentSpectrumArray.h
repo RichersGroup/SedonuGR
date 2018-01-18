@@ -132,6 +132,16 @@ public:
 	void rescale(const double r) {
 		for(unsigned i=0; i<data.size(); i++) data[i] *= r;
 	}
+	void rescale_spatial_point(const unsigned dir_ind[ndims_spatial], const double r){
+		unsigned all_indices[ndims_spatial+1];
+		for(unsigned i=0; i<ndims_spatial; i++) all_indices[i] = dir_ind[i];
+		all_indices[ndims_spatial  ] = 0;
+		unsigned base_ind = data.direct_index(all_indices);
+		unsigned nbins = data.axes[ndims_spatial].size();
+		for(unsigned i=0; i<nbins; i++){
+			data.y0[base_ind+i] *= r;
+		}
+	}
 
 	//--------------------------------------------------------------
 	// MPI average the spectrum contents

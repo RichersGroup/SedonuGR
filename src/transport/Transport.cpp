@@ -71,7 +71,6 @@ Transport::Transport(){
 	max_step_size = NaN;
 	randomwalk_sphere_size = NaN;
 	min_packet_number = NaN;
-	max_packet_number = NaN;
 	do_annihilation = -MAXLIM;
 	rank0 = -MAXLIM;
 	grid = NULL;
@@ -147,7 +146,6 @@ void Transport::init(Lua* lua)
 		randomwalk_n_isotropic = lua->scalar<int>("randomwalk_n_isotropic");
 	}
 	min_packet_number = lua->scalar<double>("min_packet_number");
-	max_packet_number = lua->scalar<double>("max_packet_number");
 
 	// output parameters
 	write_zones_every   = lua->scalar<double>("write_zones_every");
@@ -386,57 +384,57 @@ void Transport::write(const int it) const{
 // reset radiation quantities
 //------------------------------
 void Transport::reset_radiation(){
-  // clear global radiation quantities
-  for(unsigned i=0; i<species_list.size(); i++){
-    grid->distribution[i]->wipe();
-    grid->spectrum[i].wipe();
-    n_active[i] = 0;
-    n_escape[i] = 0;
-    N_core_lab[i] = 0;
-    L_net_esc[i] = 0;
-    N_net_lab[i] = 0;
-    N_net_esc[i] = 0;
-  }
-  
-  grid->l_abs.wipe();
-  grid->l_emit.wipe();
-  grid->fourforce_abs.wipe();
-  grid->fourforce_emit.wipe();
-
-  if(rank0) cout << "Setting zone transport quantities" << endl;
-  for(unsigned s=0; s<species_list.size(); s++){
-    #pragma omp parallel for
-    for(unsigned z_ind=0;z_ind<grid->rho.size();z_ind++)
-      species_list[s]->set_eas(z_ind,grid);
-    
-    grid->abs_opac[s].calculate_slopes(0,INFINITY);
-    //grid->BB[s].calculate_slopes(0,1); // energy densities come out wrong if I interpolate...
-    
-    // if using scattering kernels, have to keep kernel and opacity consistent
-    if(use_scattering_kernels){
-      grid->scattering_phi0[s].calculate_slopes(0,INFINITY);
-      grid->scattering_delta[s].calculate_slopes(-3,3);
-      
-      #pragma omp parallel for
-      for(unsigned z_ind=0; z_ind<grid->rho.size(); z_ind++){
-	unsigned dir_ind[NDIMS+2];
-	double hypervec[NDIMS+2];
-	grid->rho.indices(z_ind,dir_ind);
-	for(unsigned i=0; i<NDIMS; i++) hypervec[i] = grid->rho.axes[i].mid[dir_ind[i]];
-	for(unsigned igin=0; igin<grid->nu_grid_axis.size(); igin++){
-	  dir_ind[NDIMS] = igin;
-	  hypervec[NDIMS] = grid->nu_grid_axis.mid[igin];
-	  grid->scat_opac[s][igin] = 0;
-	  for(unsigned igout=0; igout<grid->nu_grid_axis.size(); igout++){
-	    dir_ind[NDIMS+1] = igout;
-	    hypervec[NDIMS+1] = 0.5 * (grid->nu_grid_axis.bottom(igout) + grid->nu_grid_axis.top[igout]);
-	    grid->scat_opac[s][igin] += grid->scattering_phi0[s].interpolate(hypervec,dir_ind) * grid->nu_grid_axis.delta(igout);
-	  }
+	// clear global radiation quantities
+	for(unsigned i=0; i<species_list.size(); i++){
+		grid->distribution[i]->wipe();
+		grid->spectrum[i].wipe();
+		n_active[i] = 0;
+		n_escape[i] = 0;
+		N_core_lab[i] = 0;
+		L_net_esc[i] = 0;
+		N_net_lab[i] = 0;
+		N_net_esc[i] = 0;
 	}
-      }
-    }
-    grid->scat_opac[s].calculate_slopes(0,INFINITY);
-  }  
+
+	grid->l_abs.wipe();
+	grid->l_emit.wipe();
+	grid->fourforce_abs.wipe();
+	grid->fourforce_emit.wipe();
+
+	if(rank0) cout << "# Setting zone transport quantities" << endl;
+	for(unsigned s=0; s<species_list.size(); s++){
+		#pragma omp parallel for
+		for(unsigned z_ind=0;z_ind<grid->rho.size();z_ind++)
+			species_list[s]->set_eas(z_ind,grid);
+
+		//grid->abs_opac[s].calculate_slopes(0,INFINITY);
+		//grid->BB[s].calculate_slopes(0,1); // energy densities come out wrong if I interpolate...
+
+		// if using scattering kernels, have to keep kernel and opacity consistent
+		if(use_scattering_kernels){
+			//grid->scattering_phi0[s].calculate_slopes(0,INFINITY);
+			//grid->scattering_delta[s].calculate_slopes(-3,3);
+
+			#pragma omp parallel for
+			for(unsigned z_ind=0; z_ind<grid->rho.size(); z_ind++){
+				unsigned dir_ind[NDIMS+2];
+				double hypervec[NDIMS+2];
+				grid->rho.indices(z_ind,dir_ind);
+				for(unsigned i=0; i<NDIMS; i++) hypervec[i] = grid->rho.axes[i].mid[dir_ind[i]];
+				for(unsigned igin=0; igin<grid->nu_grid_axis.size(); igin++){
+					dir_ind[NDIMS] = igin;
+					hypervec[NDIMS] = grid->nu_grid_axis.mid[igin];
+					grid->scat_opac[s][igin] = 0;
+					for(unsigned igout=0; igout<grid->nu_grid_axis.size(); igout++){
+						dir_ind[NDIMS+1] = igout;
+						hypervec[NDIMS+1] = 0.5 * (grid->nu_grid_axis.bottom(igout) + grid->nu_grid_axis.top[igout]);
+						grid->scat_opac[s][igin] += grid->scattering_phi0[s].interpolate(hypervec,dir_ind) * grid->nu_grid_axis.delta(igout);
+					}
+				}
+			}
+		}
+		//grid->scat_opac[s].calculate_slopes(0,INFINITY);
+	}
 }
 
 //-----------------------------
@@ -566,8 +564,10 @@ void Transport::normalize_radiative_quantities(){
 		grid->l_emit[z_ind] *= inv_mult_four_vol;// num      --> num/ccm/s
 
 		// represents *all* species if nux
+		unsigned dir_ind[NDIMS];
+		grid->rho.indices(z_ind,dir_ind);
 		for(unsigned s=0; s<species_list.size(); s++){
-		  grid->distribution[s]->rescale(inv_mult_four_vol * pc::inv_c);  // erg*dist --> erg/ccm
+		  grid->distribution[s]->rescale_spatial_point(dir_ind, inv_mult_four_vol * pc::inv_c);  // erg*dist --> erg/ccm
 		}
 
 		// tally heat absorbed from viscosity and neutrinos
@@ -892,7 +892,8 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 		eh->set_tetrad_basis(grid->tetrad_rotation);
 
 		// make sure kup is consistent with the new background
-		eh->renormalize_kup();
+		if(eh->kup_tet[3]==eh->kup_tet[3])
+			eh->renormalize_kup();
 	}
 }
 
@@ -917,7 +918,7 @@ void Transport::isotropic_kup_tet(const double nu, double kup_tet[4], ThreadRNG 
 }
 
 void Transport::random_core_x(double x3[3]) const{
-	double a_phot = r_core * (1. + 1e-10);
+	double a_phot = r_core * (1. + TINY);
 	isotropic_direction(x3,&rangen);
 	for(unsigned i=0; i<3; i++) x3[i] *= a_phot;
 }

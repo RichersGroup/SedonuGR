@@ -282,7 +282,7 @@ void Grid::init(Lua* lua, Transport* insim)
 		}
 	}
 
-	lapse.calculate_slopes(0,INFINITY);
+	if(DO_GR) lapse.calculate_slopes(0,INFINITY);
 }
 
 void Grid::write_zones(const int iw) const
@@ -309,8 +309,10 @@ double Grid::zone_rest_mass(const int z_ind) const{
 
 double Grid::zone_com_3volume(const int z_ind) const{
 	// assumes v is orthonormal in cm/s
-	if(z_ind<0) return 0;
-	else return zone_lab_3volume(z_ind) * zone_lorentz_factor(z_ind);
+	PRINT_ASSERT(z_ind,>=,0);
+	double result = zone_lab_3volume(z_ind) * zone_lorentz_factor(z_ind);
+	PRINT_ASSERT(result,>,0);
+	return result;
 }
 
 void Grid::write_hdf5_data(H5::H5File file) const{
@@ -364,22 +366,24 @@ double Grid::radius(const double x[4]){
 }
 
 double Grid::zone_4volume(const int z_ind) const{
-	return zone_lab_3volume(z_ind) * lapse[z_ind];
+	return zone_lab_3volume(z_ind) * (DO_GR ? lapse[z_ind] : 1.0);
 }
 
 void Grid::interpolate_metric(const double xup[4], Metric* g, const unsigned dir_ind[NDIMS]) const{
-	// first, the lapse
-	double grid_coords[NDIMS];
-	grid_coordinates(xup,grid_coords);
-	double r = radius(xup);
-	g->alpha = lapse.interpolate(grid_coords,dir_ind);//sqrt(1.-1./r);//
-	PRINT_ASSERT(g->alpha,>,0);
+	if(DO_GR){
+		// first, the lapse
+		double grid_coords[NDIMS];
+		grid_coordinates(xup,grid_coords);
+		double r = radius(xup);
+		g->alpha = lapse.interpolate(grid_coords,dir_ind);//sqrt(1.-1./r);//
+		PRINT_ASSERT(g->alpha,>,0);
 
-	// second, the shift
-	interpolate_shift(xup, g->betaup, dir_ind);
+		// second, the shift
+		interpolate_shift(xup, g->betaup, dir_ind);
 
-	// third, the three-metric
-	interpolate_3metric(xup, &g->gammalow, dir_ind);
+		// third, the three-metric
+		interpolate_3metric(xup, &g->gammalow, dir_ind);
+	}
 }
 
 
@@ -409,8 +413,8 @@ void Grid::interpolate_opacity(EinsteinHelper *eh) const
 		double scenter = scat_opac[eh->p.s].interpolate(hypervec,eh->dir_ind);
 		PRINT_ASSERT(acenter,>,0);
 		PRINT_ASSERT(scenter,>,0);
-		PRINT_ASSERT(abs(a)/acenter,<,1e-6);
-		PRINT_ASSERT(abs(s)/scenter,<,1e-6);
+		PRINT_ASSERT(abs(a)/acenter,<,TINY);
+		PRINT_ASSERT(abs(s)/scenter,<,TINY);
 	}
 
 	a = max(0.0,a);

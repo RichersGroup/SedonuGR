@@ -55,14 +55,13 @@ void Neutrino_grey::myInit(Lua* lua)
 void Neutrino_grey::set_eas(const unsigned z_ind, Grid* grid) const
 {
 	unsigned ngroups = grid->BB[ID].axes[NDIMS].size();
-	unsigned dir_ind[NDIMS+2];
+	unsigned dir_ind[NDIMS+1];
 	grid->rho.indices(z_ind,dir_ind);
 
 	PRINT_ASSERT(grey_abs_frac,>=,0);
 	PRINT_ASSERT(grey_abs_frac,<=,1.0);
 	for(unsigned j=0;j<grid->nu_grid_axis.size();j++)
 	{
-		unsigned dir_ind[NDIMS+1];
 		dir_ind[NDIMS] = j;
 		unsigned global_index = grid->abs_opac[ID].direct_index(dir_ind);
 

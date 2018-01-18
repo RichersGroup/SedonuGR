@@ -371,7 +371,7 @@ void Grid1DSphere::interpolate_fluid_velocity(const double x[3], double v[3], co
 //------------------------------------------------------------
 void Grid1DSphere::symmetry_boundaries(EinsteinHelper *eh) const{
 	// reflect from outer boundary
-		double R = radius(eh->p.xup);
+	double R = radius(eh->p.xup);
 	if(reflect_outer && R>rAxis.top[rAxis.size()-1]){
 		double r0 = (rAxis.size()>1 ? rAxis.top[rAxis.size()-2] : rAxis.min);
 		double rmax = rAxis.top[rAxis.size()-1];
@@ -481,7 +481,7 @@ void Grid1DSphere::write_hdf5_coordinates(H5::H5File file) const
 }
 void Grid1DSphere::interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const{
 	const double r = radius(xup);
-	const double Xloc = 1./sqrt(1.-1./r);//X.interpolate(&r,dir_ind);
+	const double Xloc = X.interpolate(&r,dir_ind);//1./sqrt(1.-1./r);//
 	double tmp = (Xloc*Xloc-1.0) / (r*r);
 
 	gammalow->data[ixx] = xup[0]*xup[0] * tmp;
@@ -498,8 +498,8 @@ void Grid1DSphere::interpolate_3metric(const double xup[4], ThreeMetric* gammalo
 
 void Grid1DSphere::get_connection_coefficients(EinsteinHelper* eh) const{
 	const double r = radius(eh->p.xup);
-	const double alpha = lapse[eh->z_ind]; //sqrt(1.-1./r); //
-	const double Xloc = X[eh->z_ind]; //1./alpha; //
+	const double alpha = lapse.interpolate(eh->p.xup,eh->dir_ind); //sqrt(1.-1./r); //
+	const double Xloc = X.interpolate(eh->p.xup, eh->dir_ind); //1./alpha; //
 	const double dadr = lapse.dydx[eh->z_ind][0][0]; //Xloc / (2.*r*r);//
 	const double dXdr = X.dydx[eh->z_ind][0][0]; //-Xloc*Xloc*Xloc / (2.*r*r);//
 

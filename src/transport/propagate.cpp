@@ -39,6 +39,7 @@ void Transport::propagate_particles()
 {
 	if(verbose && rank0) cout << "# Propagating particles..." << endl;
 
+	unsigned ndone=0;
 	//--- MOVE THE PARTICLES AROUND ---
 	// particle list is changing size due to splitting, so must go through repeatedly
 	unsigned start=0, end=0;
@@ -64,8 +65,15 @@ void Transport::propagate_particles()
 				N_net_esc[eh->p.s] += eh->p.N;
 				grid->spectrum[eh->p.s].count(eh, eh->p.N * nu*pc::h);
 			}
+			#pragma omp atomic
+			ndone++;
+			if(ndone%1000==0){
+				#pragma omp critical
+				cout << "\r"<<ndone<<"/"<<particles.size() << " (" << (double)ndone/(double)particles.size()*100<<"\%)";
+			}
 			PRINT_ASSERT(eh->p.fate, !=, moving);
 		} //#pragma omp parallel for
+		cout << endl;
 	} while(particles.size()>end);
 
 	double tot=0,core=0,rouletted=0,esc=0;
@@ -127,8 +135,11 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 		do{
 			tau = -log(rangen.uniform());
 		} while(tau >= INFINITY);
-		eh->ds_com = tau / eh->scatopac;
-		*event = interact;
+		d_interact = tau / eh->scatopac;
+		if(d_interact < eh->ds_com){
+			eh->ds_com = d_interact;
+			*event = interact;
+		}
 	}
 	PRINT_ASSERT(eh->ds_com, >=, 0);
 	PRINT_ASSERT(eh->ds_com, <, INFINITY);
@@ -214,9 +225,12 @@ void Transport::propagate(EinsteinHelper *eh) const{
 
 	while (eh->p.fate == moving)
 	{
-		PRINT_ASSERT(eh->nu(), >, 0);
 		PRINT_ASSERT(eh->z_ind,>=,0);
 		PRINT_ASSERT(eh->p.N,>,0);
+		PRINT_ASSERT(eh->p.kup[3],>,0);
+		PRINT_ASSERT(eh->kup_tet[3],>,0);
+		PRINT_ASSERT(eh->p.kup[3],<,INFINITY);
+		PRINT_ASSERT(eh->kup_tet[3],<,INFINITY);
 		for(unsigned i=0; i<NDIMS; i++) PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
 
 		// decide which event happens
@@ -235,7 +249,7 @@ void Transport::propagate(EinsteinHelper *eh) const{
 		case interact:
 			tally_radiation(eh);
 			move(eh);
-			scatter(eh);
+			if(eh->z_ind>0) scatter(eh);
 			break;
 		default:
 			assert(0);

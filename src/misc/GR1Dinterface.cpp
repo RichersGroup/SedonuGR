@@ -195,12 +195,12 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 					double P_constraint = Prr_E/X/X + 2.*Ptt_E;
 					Prr_E = P_constraint>0 ? Prr_E / P_constraint : X*X;
 					Ptt_E = P_constraint>0 ? Ptt_E / P_constraint : 0.0;
-					if(Prr_E>X*X and (Prr_E-X*X)/(X*X)<1e-3) Prr_E=X*X;
+					if(Prr_E>X*X and (Prr_E-X*X)/(X*X)<TINY) Prr_E=X*X;
 
 					double W_constraint = X*X*Wrrr + 2.*Wttr;
 					Wrrr_Fr = abs(W_constraint)>0 ? Wrrr / W_constraint : 1./X/X;
 					Wttr_Fr = abs(W_constraint)>0 ? Wttr / W_constraint : 0.0;
-					if(X*X*Wrrr_Fr>1 and (X*X*Wrrr_Fr-1)<1e-3) Wrrr_Fr=1./X/X;
+					if(X*X*Wrrr_Fr>1 and (X*X*Wrrr_Fr-1)<TINY) Wrrr_Fr=1./X/X;
 
 					// write out the variables
 					q_M1[indexPrr]       = Prr_E;

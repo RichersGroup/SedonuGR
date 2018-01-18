@@ -55,6 +55,7 @@ public:
 
 	//  void normalize();
 	virtual void rescale(const double) = 0;
+	virtual void rescale_spatial_point(const unsigned dir_ind[NDIMS], const double) = 0;
 	virtual void wipe() = 0;
 	virtual double total() const = 0;
 

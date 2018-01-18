@@ -54,10 +54,6 @@ Grid3DCart::Grid3DCart(){
 //------------------------------------------------------------
 void Grid3DCart::read_model_file(Lua* lua)
 {
-	// set up the data structures
-	vector<Axis> axes = vector<Axis>(xAxes);
-	v.set_axes(axes);
-
 	std::string model_type = lua->scalar<std::string>("model_type");
 	if(model_type == "THC") read_THC_file(lua);
 	else{
@@ -66,6 +62,104 @@ void Grid3DCart::read_model_file(Lua* lua)
 	}
 
 	v.calculate_slopes(-INFINITY,INFINITY);
+
+	if(DO_GR){
+		betaup.calculate_slopes(-INFINITY,INFINITY);
+		g3.calculate_slopes(-INFINITY,INFINITY);
+		sqrtdetg3.calculate_slopes(0,INFINITY);
+		lapse.calculate_slopes(0,INFINITY); // will be done later as well, but need it now for the christoffel symbols
+
+		// get temporary array of betalow
+		MultiDArray<3,3> betalow;
+		betalow.set_axes(betaup.axes);
+		for(unsigned z_ind=0; z_ind<betalow.size(); z_ind++){
+			ThreeMetric gammadown;
+			gammadown.data = g3[z_ind];
+			gammadown.lower(betaup[z_ind], betalow[z_ind]);
+		}
+		betalow.calculate_slopes(-INFINITY,INFINITY);
+
+
+		//===================================//
+		// calculate connection coefficients //
+		//===================================//
+		if(sim->rank0) cout << "# Calculating connection coefficients...";
+		#pragma omp parallel for
+		for(unsigned z_ind=0; z_ind<gamma.size(); z_ind++){
+			// get inverse of metric
+			ThreeMetric gammadown, gammaup;
+			gammadown.data = g3[z_ind];
+			gammaup = gammadown.inverse();
+			double ginv[4][4];
+			double a2 = lapse[z_ind]*lapse[z_ind];
+			PRINT_ASSERT(a2,>,0);
+			PRINT_ASSERT(a2,<,INFINITY);
+			ginv[3][3] = -1./a2;
+			for(unsigned i=0; i<3; i++){
+				ginv[i][3] = ginv[3][i] = betaup[z_ind][i] / a2;
+				for(unsigned j=0; j<3; j++) ginv[i][j] = gammaup.get(i,j) - betaup[z_ind][i]*betaup[z_ind][j]/a2;
+			}
+
+			double dg[4][4][4]; // 1st index is the differentiation direction
+			// no time derivatives
+			for(unsigned i=0; i<4; i++) for(unsigned j=0; j<4; j++){
+				dg[3][i][j] = 0;
+			}
+			// spatial derivatives
+			for(unsigned i=0; i<3; i++){
+				// xx parts
+				dg[i][0][0]             = g3.dydx[z_ind][i][ixx]; // [zone][direction][element]
+				dg[i][1][1]             = g3.dydx[z_ind][i][iyy];
+				dg[i][2][2]             = g3.dydx[z_ind][i][izz];
+				dg[i][0][1]=dg[i][1][0] = g3.dydx[z_ind][i][ixy];
+				dg[i][0][2]=dg[i][2][0] = g3.dydx[z_ind][i][ixz];
+				dg[i][1][2]=dg[i][2][1] = g3.dydx[z_ind][i][iyz];
+
+				// xt and tt parts
+				dg[i][3][3] = -2.*lapse[z_ind]*lapse.dydx[z_ind][i][0];
+				for(unsigned j=0; j<3; j++){
+					dg[i][3][3] += betalow[z_ind][j]* betaup.dydx[z_ind][i][j]; // [zone][direction][element]
+					dg[i][3][3] +=  betaup[z_ind][j]*betalow.dydx[z_ind][i][j];
+
+					dg[i][3][j]=dg[i][j][3] = betalow.dydx[z_ind][i][j];
+				}
+			}
+
+			// get the low-index Christoffel symbols
+			double christoffel_low[4][4][4];
+			for(unsigned a=0; a<4; a++)
+				for(unsigned i=0; i<4; i++)
+					for(unsigned j=0; j<4; j++){
+						christoffel_low[a][i][j] = 0.5 * (dg[j][i][a] + dg[i][a][j] - dg[a][i][j]);
+						PRINT_ASSERT(abs(christoffel_low[a][i][j]),<,INFINITY);
+					}
+
+			// get the high-index Christoffel symbols
+			for(unsigned a=0; a<4; a++){
+				unsigned offset = a*10;
+				for(unsigned i=0; i<10; i++) gamma[z_ind][offset+i] = 0;
+				for(unsigned b=0; b<4; b++){
+					gamma[z_ind][offset+ixx] += ginv[a][b] * christoffel_low[b][0][0];
+					gamma[z_ind][offset+ixy] += ginv[a][b] * christoffel_low[b][0][1];
+					gamma[z_ind][offset+ixz] += ginv[a][b] * christoffel_low[b][0][2];
+					gamma[z_ind][offset+iyy] += ginv[a][b] * christoffel_low[b][1][1];
+					gamma[z_ind][offset+iyz] += ginv[a][b] * christoffel_low[b][1][2];
+					gamma[z_ind][offset+izz] += ginv[a][b] * christoffel_low[b][2][2];
+					gamma[z_ind][offset+itt] += ginv[a][b] * christoffel_low[b][3][3];
+					gamma[z_ind][offset+ixt] += ginv[a][b] * christoffel_low[b][0][3];
+					gamma[z_ind][offset+iyt] += ginv[a][b] * christoffel_low[b][1][3];
+					gamma[z_ind][offset+izt] += ginv[a][b] * christoffel_low[b][2][3];
+				}
+			}
+		}
+
+		// check results
+		for(unsigned z_ind=0; z_ind<gamma.size(); z_ind++)
+			for(unsigned i=0; i<40; i++)
+				PRINT_ASSERT(abs(gamma[z_ind][i]),<,INFINITY);
+
+		if(sim->rank0) cout << "done" << endl;
+	}
 }
 
 
@@ -198,25 +292,31 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	
 	// set up the zone structure
 	int nzones = 1;
+	xAxes.resize(3);
 	for(int a=0; a<3; a++){
 		vector<double> top(nx[a]), mid(nx[a]);
 		top[0] = x1[a];
 		mid[0] = 0.5 * (x0[a] + x1[a]);
 		for(int i=1; i<nx[a]; i++){
-			top[i] = x1[a] + (double)(i-1)*dx[a];
+			top[i] = x1[a] + (double)i*dx[a];
 			mid[i] = 0.5 * (top[i] + top[i-1]);
 		}
 		xAxes[a] = Axis(x0[a], top, mid);
 		nzones *= xAxes[a].size();
 	}
+	// set up the data structures
+	v.set_axes(xAxes);
 	rho.set_axes(xAxes);
 	T.set_axes(xAxes);
 	Ye.set_axes(xAxes);
 	H_vis.set_axes(xAxes);
-	betaup.set_axes(xAxes);
-	gamma.set_axes(xAxes);
-	g3.set_axes(xAxes);
-	sqrtdetg3.set_axes(xAxes);
+	if(DO_GR){
+		betaup.set_axes(xAxes);
+		gamma.set_axes(xAxes);
+		g3.set_axes(xAxes);
+		lapse.set_axes(xAxes);
+		sqrtdetg3.set_axes(xAxes);
+	}
 
 	// print out grid structure
 	if(rank0){
@@ -238,7 +338,17 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	vector<double> tmp_velx(dataset_nzones,0.0);
 	vector<double> tmp_vely(dataset_nzones,0.0);
 	vector<double> tmp_velz(dataset_nzones,0.0);
-	//vector<double>  vol(dataset_nzones,0.0);
+	vector<double> tmp_betax(dataset_nzones,0.0);
+	vector<double> tmp_betay(dataset_nzones,0.0);
+	vector<double> tmp_betaz(dataset_nzones,0.0);
+	vector<double> tmp_lapse(dataset_nzones,0.0);
+	vector<double> tmp_gxx(dataset_nzones,0.0);
+	vector<double> tmp_gxy(dataset_nzones,0.0);
+	vector<double> tmp_gxz(dataset_nzones,0.0);
+	vector<double> tmp_gyy(dataset_nzones,0.0);
+	vector<double> tmp_gyz(dataset_nzones,0.0);
+	vector<double> tmp_gzz(dataset_nzones,0.0);
+	vector<double> tmp_vol(dataset_nzones,0.0);
 	dataset = file.openDataSet(groupname.str()+"Ye");
 	dataset.read(&tmp_Ye[0],H5::PredType::IEEE_F64LE);
 	dataset = file.openDataSet(groupname.str()+"rho");
@@ -251,8 +361,31 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	dataset.read(&(tmp_vely[0]),H5::PredType::IEEE_F64LE);
 	dataset = file.openDataSet(groupname.str()+"velz");
 	dataset.read(&(tmp_velz[0]),H5::PredType::IEEE_F64LE);
-	//dataset = file.openDataSet(groupname.str()+"vol");
-	//dataset.read(&(vol[0]),H5::PredType::IEEE_F64LE);
+	if(DO_GR){
+		dataset = file.openDataSet(groupname.str()+"betax");
+		dataset.read(&(tmp_betax[0]),H5::PredType::IEEE_F64LE);
+		dataset = file.openDataSet(groupname.str()+"betay");
+		dataset.read(&(tmp_betay[0]),H5::PredType::IEEE_F64LE);
+		dataset = file.openDataSet(groupname.str()+"betaz");
+		dataset.read(&(tmp_betaz[0]),H5::PredType::IEEE_F64LE);
+		dataset = file.openDataSet(groupname.str()+"lapse");
+		dataset.read(&(tmp_lapse[0]),H5::PredType::IEEE_F64LE);
+		dataset = file.openDataSet(groupname.str()+"gxx");
+		dataset.read(&(tmp_gxx[0]),H5::PredType::IEEE_F64LE);
+		dataset = file.openDataSet(groupname.str()+"gxy");
+		dataset.read(&(tmp_gxy[0]),H5::PredType::IEEE_F64LE);
+		dataset = file.openDataSet(groupname.str()+"gxz");
+		dataset.read(&(tmp_gxz[0]),H5::PredType::IEEE_F64LE);
+		dataset = file.openDataSet(groupname.str()+"gyy");
+		dataset.read(&(tmp_gyy[0]),H5::PredType::IEEE_F64LE);
+		dataset = file.openDataSet(groupname.str()+"gyz");
+		dataset.read(&(tmp_gyz[0]),H5::PredType::IEEE_F64LE);
+		dataset = file.openDataSet(groupname.str()+"gzz");
+		dataset.read(&(tmp_gzz[0]),H5::PredType::IEEE_F64LE);
+		dataset = file.openDataSet(groupname.str()+"vol");
+		dataset.read(&(tmp_vol[0]),H5::PredType::IEEE_F64LE);
+	}
+
 	#pragma omp parallel for
 	for(int i=0; i<dataset_nzones; i++){
 		tmp_rho[i] *= convert_density;
@@ -266,11 +399,11 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	//===============//
 	// fill the grid //
 	//===============//
-	vector<unsigned> dir_ind(dimensionality());
-    #pragma omp parallel for private(dir_ind)
+	#pragma omp parallel for
 	for(int z_ind=0; z_ind<(int)rho.size(); z_ind++){
 
 		// directional indices in Sedonu grid
+		vector<unsigned> dir_ind(NDIMS);
 		zone_directional_indices(z_ind,dir_ind);
 
 		// directional indices in hdf5 data
@@ -293,6 +426,20 @@ void Grid3DCart::read_THC_file(Lua* lua)
 		v[z_ind][0] = tmp_velx[dataset_ind];
 		v[z_ind][1] = tmp_vely[dataset_ind];
 		v[z_ind][2] = tmp_velz[dataset_ind];
+		if(DO_GR){
+			lapse[z_ind]= tmp_lapse[dataset_ind];
+			betaup[z_ind][0] = tmp_betax[dataset_ind];
+			betaup[z_ind][1] = tmp_betay[dataset_ind];
+			betaup[z_ind][2] = tmp_betaz[dataset_ind];
+			g3[z_ind][ixx] = tmp_gxx[dataset_ind];
+			g3[z_ind][ixy] = tmp_gxy[dataset_ind];
+			g3[z_ind][ixz] = tmp_gxz[dataset_ind];
+			g3[z_ind][iyy] = tmp_gyy[dataset_ind];
+			g3[z_ind][iyz] = tmp_gyz[dataset_ind];
+			g3[z_ind][izz] = tmp_gzz[dataset_ind];
+			sqrtdetg3[z_ind] = tmp_vol[dataset_ind];
+			gamma[z_ind] = NaN; // NEED TO INVERT METRIC TO CALCULATE GAMMA
+		}
 
 		PRINT_ASSERT(tmp_rho[z_ind],>=,0.0);
 		PRINT_ASSERT(T[z_ind],>=,0.0);
@@ -309,7 +456,7 @@ void Grid3DCart::read_THC_file(Lua* lua)
 int Grid3DCart::zone_index(const double x[3]) const
 {
 	// check for off grid
-	for(int i=0; i<3; i++) if (x[i]<xAxes[i].min || x[i]>xAxes[i].max()) return -2;
+	for(int i=0; i<3; i++) if (x[i]<=xAxes[i].min || x[i]>=xAxes[i].max()) return -2;
 
 	// get directional indices
 	int dir_ind[3] = {-1,-1,-1};
@@ -348,7 +495,7 @@ void Grid3DCart::zone_directional_indices(const int z_ind, vector<unsigned>& dir
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	PRINT_ASSERT(dir_ind.size(),==,(int)dimensionality());
+	PRINT_ASSERT(dir_ind.size(),==,NDIMS);
 
 	dir_ind[0] =  z_ind / (xAxes[1].size()*xAxes[2].size());
 	dir_ind[1] = (z_ind % (xAxes[1].size()*xAxes[2].size())) / xAxes[2].size();
@@ -372,6 +519,7 @@ double Grid3DCart::zone_lab_3volume(const int z_ind) const
 	get_deltas(z_ind,delta,3);
 	double result = delta[0] * delta[1] * delta[2];
 	if(DO_GR) result *= sqrtdetg3[z_ind];
+	PRINT_ASSERT(result,>,0);
 	return result;
 }
 
@@ -429,26 +577,20 @@ double  Grid3DCart::zone_min_length(const int z_ind) const
 
 // returning 0 causes the min distance to take over in propagate.cpp::which_event
 double Grid3DCart::d_boundary(const EinsteinHelper *eh) const{
-	const unsigned int i = eh->dir_ind[0];
-	const unsigned int j = eh->dir_ind[1];
-	const unsigned int k = eh->dir_ind[2];
-	PRINT_ASSERT(eh->p.xup[0],<=,zone_right_boundary(0,i));
-	PRINT_ASSERT(eh->p.xup[0],>=,zone_left_boundary(0,i));
-	PRINT_ASSERT(eh->p.xup[1],<=,zone_right_boundary(1,j));
-	PRINT_ASSERT(eh->p.xup[1],>=,zone_left_boundary(1,j));
-	PRINT_ASSERT(eh->p.xup[2],<=,zone_right_boundary(2,k));
-	PRINT_ASSERT(eh->p.xup[2],>=,zone_left_boundary(2,k));
 
 	// x direction
-	double dlambda_x=INFINITY, dlambda_y=INFINITY, dlambda_z=INFINITY;
-	if(eh->p.kup[0] > 0) dlambda_x = (eh->p.xup[0] - zone_left_boundary(0,i)) / eh->p.kup[0];
-	if(eh->p.kup[1] > 0) dlambda_y = (eh->p.xup[1] - zone_left_boundary(1,i)) / eh->p.kup[1];
-	if(eh->p.kup[2] > 0) dlambda_z = (eh->p.xup[2] - zone_left_boundary(2,i)) / eh->p.kup[2];
-	if(eh->p.kup[0] > 0) dlambda_x = (zone_right_boundary(0,i) - eh->p.xup[0]) / eh->p.kup[0];
-	if(eh->p.kup[1] > 0) dlambda_y = (zone_right_boundary(1,i) - eh->p.xup[1]) / eh->p.kup[1];
-	if(eh->p.kup[2] > 0) dlambda_z = (zone_right_boundary(2,i) - eh->p.xup[2]) / eh->p.kup[2];
+	double dlambda[3] = {INFINITY,INFINITY,INFINITY};
+	for(unsigned d=0; d<3; d++){
+		unsigned i = eh->dir_ind[d];
+		PRINT_ASSERT(eh->p.xup[d],<=,zone_right_boundary(d,i));
+		PRINT_ASSERT(eh->p.xup[d],>=, zone_left_boundary(d,i));
+		if(eh->p.kup[d] < 0) dlambda[d] = ( zone_left_boundary(d,i) - eh->p.xup[d]) / eh->p.kup[d];
+		if(eh->p.kup[d] > 0) dlambda[d] = (zone_right_boundary(d,i) - eh->p.xup[d]) / eh->p.kup[d];
+		PRINT_ASSERT(dlambda[d],>=,0);
+	}
 
-	double ds_com = min( dlambda_x, min(dlambda_y, dlambda_z)) * eh->kup_tet[3];
+	double ds_com = min( dlambda[0], min(dlambda[1], dlambda[2])) * eh->kup_tet[3];
+	PRINT_ASSERT(ds_com,>=,0);
 	return ds_com;
 }
 
@@ -598,7 +740,7 @@ double Grid3DCart::zone_right_boundary(const unsigned dir, const unsigned dir_in
 // Reflect off revlecting boundary condition
 //------------------------------------------------------------
 void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
-	PRINT_ASSERT(zone_index(eh->p.xup),<,0);
+	PRINT_ASSERT(eh->p.fate,==,moving);
 
 	// initialize the arrays
 	double kup[4], xup[4];
@@ -624,7 +766,7 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
 	for(int i=0; i<2; i++){
 		if(xup[i]<0 && (rotate_hemisphere[i] || rotate_quadrant)){
 			PRINT_ASSERT(xAxes[i].min,==,0);
-			PRINT_ASSERT(-xup[i],<,xAxes[i].delta(1)*zone_min_length(eh->z_ind));
+			PRINT_ASSERT(-xup[i],<,xAxes[i].delta(1));
 			
 			if(rotate_hemisphere[i]){
 				for(int j=0; j<2; j++){
@@ -648,8 +790,8 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
 			// double check that the particle is in the boundary
 			PRINT_ASSERT(xup[0],>=,xAxes[0].min);
 			PRINT_ASSERT(xup[1],>=,xAxes[1].min);
-			PRINT_ASSERT(xup[0],<=,xAxes[0].max());
-			PRINT_ASSERT(xup[1],<=,xAxes[1].max());
+			//PRINT_ASSERT(xup[0],<=,xAxes[0].max());
+			//PRINT_ASSERT(xup[1],<=,xAxes[1].max());
 		}
 	}
 
@@ -665,23 +807,29 @@ void Grid3DCart::axis_vector(vector<Axis>& axes) const{
 }
 double Grid3DCart::zone_lorentz_factor(const int z_ind) const{
 	Metric g;
-	g.gammalow.data = g3[z_ind];
+	if(DO_GR) g.gammalow.data = g3[z_ind];
+	else g.gammalow.data = NaN;
 
 	double threevel[3];
-	for(unsigned i=0; i<3; i++) threevel[i] = v[z_ind][i];
+	for(unsigned i=0; i<3; i++) threevel[i] = v[z_ind][i]/pc::c;
 
-	return EinsteinHelper::lorentzFactor(&g,threevel);
+	double result = EinsteinHelper::lorentzFactor(&g,threevel);
+	PRINT_ASSERT(result,>,1);
+	PRINT_ASSERT(result,<,INFINITY);
+	return result;
 }
 
 void Grid3DCart::get_connection_coefficients(EinsteinHelper* eh) const{
-	eh->christoffel.data = gamma[eh->z_ind];
+	if(DO_GR) eh->christoffel.data = gamma[eh->z_ind];
 }
 void Grid3DCart::interpolate_shift(const double xup[4], double betaup_out[3], const unsigned dir_ind[NDIMS]) const{
-	Tuple<double,3> tmp = betaup.interpolate(xup,dir_ind);
-	for(unsigned i=0; i<3; i++) betaup_out[i] = tmp[i];
+	if(DO_GR){
+		Tuple<double,3> tmp = betaup.interpolate(xup,dir_ind);
+		for(unsigned i=0; i<3; i++) betaup_out[i] = tmp[i];
+	}
 }
 void Grid3DCart::interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const{
-	gammalow->data = g3.interpolate(xup,dir_ind);
+	if(DO_GR) gammalow->data = g3.interpolate(xup,dir_ind);
 }
 void Grid3DCart::grid_coordinates(const double xup[3], double coords[NDIMS]) const{
 	coords[0] = xup[0];

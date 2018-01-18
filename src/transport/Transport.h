@@ -100,7 +100,6 @@ protected:
 	// simulation parameters
 	double min_step_size, max_step_size;
 	int    do_annihilation;
-	int    rank0;
 
 	// random walk parameters
 	CDFArray randomwalk_diffusion_time;
@@ -146,7 +145,6 @@ public:
 
 	// minimum neutrino packet energy
 	double min_packet_number;
-	double max_packet_number;
 
 	// items for core emission
 	double r_core;
@@ -163,6 +161,7 @@ public:
 
 	// how many times do we emit+propagate each timestep?
 	int n_subcycles;
+	int rank0;
 
 	// global radiation quantities
 	std::vector<double> N_core_lab;

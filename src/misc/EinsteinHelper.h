@@ -45,7 +45,7 @@ public:
 	}
 
 	void set_kup_tet(const double kup_tet_in[4]){
-		PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet_in,kup_tet_in)/(kup_tet_in[3]*kup_tet_in[3]),<,1e-6);
+		PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet_in,kup_tet_in)/(kup_tet_in[3]*kup_tet_in[3]),<,TINY);
 		for(unsigned i=0; i<4; i++) kup_tet[i] = kup_tet_in[i];
 		tetrad_to_coord(kup_tet,p.kup);
 		g.normalize_null(p.kup);
@@ -54,12 +54,15 @@ public:
 		if(p.kup[3]==p.kup[3]){ // only if kup has been set already
 			g.normalize_null(p.kup);
 			coord_to_tetrad(p.kup, kup_tet);
+			PRINT_ASSERT(kup_tet[3],>,0);
 		}
 	}
 
 	// return the Lorentz factor W
-	static double lorentzFactor(Metric* g, const double v[3]){
-		return 1. / sqrt(1. - g->dot<3>(v,v));
+	static double lorentzFactor(const Metric* g, const double v[3]){
+	  double result = 1. / sqrt(1. - g->dot<3>(v,v));
+	  PRINT_ASSERT(result,>=,1);
+	  return result;
 	}
 
 	double nu() const{
@@ -70,10 +73,14 @@ public:
 
 	// get four velocity from three velocity
 	void set_fourvel(const double v[3]){
-		double W = lorentzFactor(&g,v);
-		u[3] = W/g.alpha;
+	  const double vdimless[3] = {v[0]/pc::c, v[1]/pc::c, v[2]/pc::c};
+		double W = lorentzFactor(&g,vdimless);
+		u[3] = W / (DO_GR ? g.alpha : 1.0);
+		PRINT_ASSERT(u[3],>,0);
+		PRINT_ASSERT(u[3],<,INFINITY);
 		for(unsigned i=0; i<3; i++)
-			u[i] = v[3]/pc::c * (g.alpha*v[i]/pc::c - g.betaup[i]);
+			u[i] = u[3] * (DO_GR ? g.alpha*vdimless[i] - g.betaup[i] : vdimless[i]);
+		PRINT_ASSERT(fabs(g.dot<4>(u,u)+1.0),<,TINY);
 	}
 
 
@@ -183,6 +190,7 @@ public:
 
 	void integrate_geodesic(){
 		double dlambda = ds_com / (pc::h*nu());
+		PRINT_ASSERT(dlambda,>=,0);
 
 		double dk_dlambda[4] = {0,0,0,0};
 		if(DO_GR){
@@ -208,8 +216,10 @@ public:
 		// get new x,k
 		for(int i=0; i<4; i++){
 			p.kup[i] -= dk_dlambda[i]*dlambda;
+			PRINT_ASSERT(p.kup[i],==,p.kup[i]);
 			p.xup[i] +=      p.kup[i]*dlambda;
 		}
+		PRINT_ASSERT(p.kup[3],<,INFINITY);
 	}
 };
 

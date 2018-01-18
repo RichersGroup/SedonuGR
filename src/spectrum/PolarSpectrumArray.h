@@ -139,15 +139,14 @@ public:
 	void count(const EinsteinHelper* eh, const double E){
 		PRINT_ASSERT(E,>=,0);
 		PRINT_ASSERT(eh->kup_tet[3],>=,0);
-		const double tiny = 1e-8;
 
 		unsigned indices[data.Ndims()];
 		for(int i=0; i<ndims_spatial; i++) indices[i] = eh->dir_ind[i];
 		indices[nuGridIndex] = eh->dir_ind[NDIMS];
 		
 		double mu = eh->kup_tet[2] / eh->kup_tet[3];
-		mu = max(-1.0+tiny,mu);
-		mu = min( 1.0-tiny,mu);
+		mu = max(-1.0+TINY,mu);
+		mu = min( 1.0-TINY,mu);
 		int mu_bin = data.axes[muGridIndex].bin(mu);
 		mu_bin = max(mu_bin, 0);
 		mu_bin = min(mu_bin, (int)data.axes[muGridIndex].size()-1);
@@ -167,7 +166,18 @@ public:
 	void rescale(double r){
 		for(unsigned i=0;i<data.size();i++) data.y0[i] *= r;
 	}
-
+	void rescale_spatial_point(const unsigned dir_ind[ndims_spatial], const double r){
+		unsigned all_indices[ndims_spatial+3];
+		for(unsigned i=0; i<ndims_spatial; i++) all_indices[i] = dir_ind[i];
+		all_indices[ndims_spatial  ] = 0;
+		all_indices[ndims_spatial+1] = 0;
+		all_indices[ndims_spatial+2] = 0;
+		unsigned base_ind = data.direct_index(all_indices);
+		unsigned nbins = data.axes[ndims_spatial].size() * data.axes[ndims_spatial+1].size() * data.axes[ndims_spatial+2].size();
+		for(unsigned i=0; i<nbins; i++){
+			data.y0[base_ind+i] *= r;
+		}
+	}
 
 	//--------------------------------------------------------------
 	// MPI average the spectrum contents

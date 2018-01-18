@@ -2,6 +2,7 @@
 #define _METRIC_H 1
 
 #include "global_options.h"
+#include "gsl/gsl_linalg.h"
 
 const unsigned ixx=0,iyy=1,izz=2,ixy=3,ixz=4,iyz=5,itt=6,ixt=7,iyt=8,izt=9;
 
@@ -12,6 +13,76 @@ public:
 
 	ThreeMetric(){
 		data = NaN;
+	}
+
+	double det() const{
+		double result = 0;
+		result += data[ixx] * (data[iyy]*data[izz] - data[iyz]*data[iyz]);
+		result -= data[ixy] * (data[ixy]*data[izz] - data[iyz]*data[ixz]);
+		result += data[ixz] * (data[ixy]*data[iyz] - data[iyy]*data[ixz]);
+		return result;
+	}
+	void lower(const Tuple<double,3>& in, Tuple<double,3>& out) const{
+		for(unsigned i=0; i<3; i++){
+			out[i] = 0;
+			for(unsigned j=0; j<3; j++){
+				out[i] += get(i,j)*in[j];
+			}
+		}
+	}
+	ThreeMetric inverse() const{
+		gsl_matrix* g = gsl_matrix_alloc(3,3);
+		gsl_matrix_set(g,0,0,data[ixx]);
+		gsl_matrix_set(g,0,1,data[ixy]);
+		gsl_matrix_set(g,0,2,data[ixz]);
+		gsl_matrix_set(g,1,0,data[ixy]);
+		gsl_matrix_set(g,1,1,data[iyy]);
+		gsl_matrix_set(g,1,2,data[iyz]);
+		gsl_matrix_set(g,2,0,data[ixz]);
+		gsl_matrix_set(g,2,1,data[iyz]);
+		gsl_matrix_set(g,2,2,data[izz]);
+
+		// get LU decomposition
+		int s;
+		gsl_permutation *p = gsl_permutation_alloc(3);
+		gsl_linalg_LU_decomp(g, p, &s);
+
+		// invert and store
+		gsl_matrix* ginv = gsl_matrix_alloc(3,3);
+		gsl_linalg_LU_invert(g, p, ginv);
+		ThreeMetric output;
+		output.data[ixx] = gsl_matrix_get(ginv, 0, 0);
+		output.data[ixy] = gsl_matrix_get(ginv, 0, 1);
+		output.data[ixz] = gsl_matrix_get(ginv, 0, 2);
+		output.data[iyy] = gsl_matrix_get(ginv, 1, 1);
+		output.data[iyz] = gsl_matrix_get(ginv, 1, 2);
+		output.data[izz] = gsl_matrix_get(ginv, 2, 2);
+
+		// free the memory
+		gsl_permutation_free(p);
+		gsl_matrix_free(g);
+		gsl_matrix_free(ginv);
+
+		return output;
+	}
+
+	double get(const unsigned i, const unsigned j) const{
+		PRINT_ASSERT(i,<,3);
+		PRINT_ASSERT(j,<,3);
+		switch( (j+1)*(i+1) ){
+		case 1:
+			return data[ixx];
+		case 2:
+			return data[ixy];
+		case 3:
+			return data[ixz];
+		case 4:
+			return data[iyy];
+		case 6:
+			return data[iyz];
+		case 9:
+			return data[izz];
+		}
 	}
 };
 
@@ -26,7 +97,7 @@ public:
 		data = NaN;
 	}
 
-	void contract2(const double kup[4], double result[3]){
+	void contract2(const double kup[4], double result[3]) const{
 		for(unsigned i=0; i<4; i++){
 			const unsigned offset = i*10;
 			result[i] = 0;
@@ -68,8 +139,10 @@ public:
 	// fill in values for gtt and betalow
 	// assumes alpha, betaup, and gammalow have been set.
 	void update(){
-		lower<3>(betaup, betalow);
-		gtt = DO_GR ? -alpha*alpha + contract<3>(betaup, betalow) : -1.0;
+		if(DO_GR){
+			lower<3>(betaup, betalow);
+			gtt = DO_GR ? -alpha*alpha + contract<3>(betaup, betalow) : -1.0;
+		}
 	}
 
 	template<unsigned n>
@@ -133,10 +206,14 @@ public:
 
 	// make a vector null
 	void normalize_null(double x[4]) const{
-		const double invA = 1./gtt;
-		const double B = (x[0]*betalow[0] + x[1]*betalow[1] + x[2]*betalow[2]) * invA;
-		const double C = dot<3>(x,x) * invA;
-		const double result = 0.5 * (B + sqrt(B*B - 4.*C));
+		double result = NaN;
+		if(DO_GR){
+			const double invA = 1./gtt;
+			const double B = (x[0]*betalow[0] + x[1]*betalow[1] + x[2]*betalow[2]) * invA;
+			const double C = dot<3>(x,x) * invA;
+			const double result = 0.5 * (B + sqrt(B*B - 4.*C));
+		}
+		else result = sqrt(dot_Minkowski<3>(x,x));
 		PRINT_ASSERT(result,>,0);
 		x[3] = result;
 	}
@@ -144,7 +221,7 @@ public:
 	// make four vector v orthogonal to four vector v
 	template<unsigned n>
 	void orthogonalize(double v[n], const double e[n]) const{
-		double projection = dot<n>(v,e);
+		double projection = dot<n>(v,e) / dot<n>(e,e);
 		for(int mu=0; mu<n; mu++) v[mu] -= projection * e[mu];
 	}
 

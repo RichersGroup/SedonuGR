@@ -51,7 +51,6 @@ public:
 
 	static const unsigned nelements = 6;
 	MultiDArray<nelements,2> data;
-	unsigned nuGridIndex;
 
 	//--------------------------------------------------------------
 	// Initialization and Allocation
@@ -61,7 +60,6 @@ public:
 		for(int i=0; i<spatial_axes.size(); i++) axes.push_back(spatial_axes[i]);
 
 		axes.push_back(nu_grid);
-		nuGridIndex = axes.size()-1;
 
 		// set up the data structure
 		data.set_axes(axes);
@@ -99,6 +97,16 @@ public:
 
 	void rescale(double r) {
 		for(unsigned i=0;i<data.size();i++) data.y0[i] *= r;
+	}
+	void rescale_spatial_point(const unsigned dir_ind[1], const double r){
+		unsigned all_indices[1+1];
+		all_indices[0] = dir_ind[0];
+		all_indices[1] = 0;
+		unsigned base_ind = data.direct_index(all_indices);
+		unsigned nbins = data.axes[1].size();
+		for(unsigned i=0; i<nbins; i++){
+			data.y0[base_ind+i] *= r;
+		}
 	}
 
 
