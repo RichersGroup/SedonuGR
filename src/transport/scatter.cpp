@@ -158,6 +158,24 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 //-------------------------------------------------------------
 // Sample outgoing neutrino direction and energy
 //-------------------------------------------------------------
+bool reject_direction(const double mu, const double delta, ThreadRNG* rangen){
+	// uniform in direction
+	if(delta==0) return false;
+
+	// highly anisotropic - must cut off PDF. Reject if outside bounds
+	double min_mu = delta> 1.0 ? delta-2. : -1.0;
+	double max_mu = delta<-1.0 ? delta+2. :  1.0;
+	if(mu<min_mu || mu>max_mu) return true;
+
+	// If inside bounds, use linear PDF
+	double delta_eff = max(min(delta, 1.0), -1.0);
+	double mubar = 0.5*(min_mu+max_mu);
+	double pdfval = 0.5 + delta_eff * (mu-mubar) / (max_mu-min_mu);
+	PRINT_ASSERT(pdfval,<=,1.);
+	PRINT_ASSERT(pdfval,>=,0.);
+	if(rangen->uniform() > pdfval) return true;
+	else return false;
+}
 void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double kup_tet_old[4]) const{
 	PRINT_ASSERT(use_scattering_kernels,>,0);
 	PRINT_ASSERT(grid->scattering_delta[eh->p.s].size(),>,0);
@@ -202,21 +220,16 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double k
 	// sample the new direction, but only if not absurdly forward/backward peaked
 	// (delta=2.8 corresponds to a possible factor of 10 in the neutrino weight)
 	if(fabs(delta) < 2.8){
-	  double min_mu = delta> 1.0 ? delta-2. : -1.0;
-	  double max_mu = delta<-1.0 ? delta+2. :  1.0;
-	  double kup_tet_new[4];
-	  double costheta=0;
-	  do{
-	    isotropic_kup_tet(out_nu, kup_tet_new, &rangen);
-	    costheta = Metric::dot_Minkowski<3>(kup_tet_new,kup_tet_old) / (kup_tet_old[3]*kup_tet_new[3]);
-	  } while(costheta<min_mu || costheta>max_mu);
-	  double delta_eff = max(min(delta, 1.0), -1.0);
-	  double mubar = 0.5*(min_mu+max_mu);
-	  eh->p.N *= 1. + 2.*delta_eff * (costheta-mubar) / (max_mu - min_mu);
-	  eh->set_kup_tet(kup_tet_new);
-	  PRINT_ASSERT(eh->p.N,<,1e99);
+		double kup_tet_new[4];
+		double costheta=0;
+		do{
+			isotropic_kup_tet(out_nu, kup_tet_new, &rangen);
+			costheta = Metric::dot_Minkowski<3>(kup_tet_new,kup_tet_old) / (kup_tet_old[3]*kup_tet_new[3]);
+		} while(reject_direction(costheta, delta, &rangen));
+		eh->set_kup_tet(kup_tet_new);
+		PRINT_ASSERT(eh->p.N,<,1e99);
 	}
 	else{
-	  eh->scale_p_frequency(out_nu/eh->nu());
+		eh->scale_p_frequency(out_nu/eh->nu());
 	}
 }
