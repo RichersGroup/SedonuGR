@@ -66,7 +66,7 @@ void Grid3DCart::read_model_file(Lua* lua)
 	if(DO_GR){
 		betaup.calculate_slopes(-INFINITY,INFINITY);
 		g3.calculate_slopes(-INFINITY,INFINITY);
-		sqrtdetg3.calculate_slopes(0,INFINITY);
+		//sqrtdetg3.calculate_slopes(0,INFINITY); // this shouldn't be interpolated
 		lapse.calculate_slopes(0,INFINITY); // will be done later as well, but need it now for the christoffel symbols
 
 		// get temporary array of betalow
