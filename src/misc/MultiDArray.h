@@ -236,7 +236,7 @@ public:
 		hsize_t dims[ndims];
 		for(unsigned i=0; i<ndims; i++) dims[i] = axes[i].size(); // number of bins
 		H5::DataSpace dataspace(ndims,dims);
-		H5::DataSet dataset = file.createDataSet(name+"(erg|ccm,lab)",H5::PredType::IEEE_F64LE,dataspace);
+		H5::DataSet dataset = file.createDataSet(name,H5::PredType::IEEE_F64LE,dataspace);
 
 		// write the data (converting to single precision)
 		// assumes phi increases fastest, then mu, then nu
