@@ -233,9 +233,15 @@ public:
 	}
 
 	void write_HDF5(H5::H5File file, const string name) const {
-		hsize_t dims[ndims];
+		hsize_t dims[ndims+1];
 		for(unsigned i=0; i<ndims; i++) dims[i] = axes[i].size(); // number of bins
-		H5::DataSpace dataspace(ndims,dims);
+		H5::DataSpace dataspace;
+		if(nelements==1)
+			dataspace = H5::DataSpace(ndims,dims);
+		else{
+			dims[ndims] = nelements;
+			dataspace = H5::DataSpace(ndims+1,dims);
+		}
 		H5::DataSet dataset = file.createDataSet(name,H5::PredType::IEEE_F64LE,dataspace);
 
 		// write the data (converting to single precision)
