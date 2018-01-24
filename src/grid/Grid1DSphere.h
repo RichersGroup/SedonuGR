@@ -40,7 +40,6 @@ class Grid1DSphere: public Grid
 
 protected:
 	// store location of the outer edge of the zone.
-	Axis rAxis;
 	int reflect_outer;
 
 	// ds^2 = -alpha dt^2 + X^2 dr^2 + dOmega^2
@@ -68,10 +67,9 @@ public:
 	double zone_radius            (const int z_ind) const;
 	void dims                     (hsize_t dims[1], const int size) const;
 	hsize_t dimensionality() const {return 1;};
-	void write_hdf5_coordinates(H5::H5File file) const;
 	double d_boundary(const EinsteinHelper *eh) const;
 	double d_randomwalk(const EinsteinHelper *eh) const;
-	void axis_vector(vector<Axis>& axes) const;
+	void write_child_zones(H5::H5File file) const;
 
 	// GR functions
 	void get_connection_coefficients(EinsteinHelper* eh) const; // Gamma^alhpa_mu_nu

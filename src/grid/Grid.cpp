@@ -43,6 +43,12 @@
 using namespace std;
 namespace pc = physical_constants;
 
+Grid::Grid(){
+	xAxes.resize(NDIMS);
+	sim = NULL;
+	do_annihilation=0;
+	tetrad_rotation = cartesian;
+}
 //------------------------------------------------------------
 // initialize the grid
 //------------------------------------------------------------
@@ -152,8 +158,6 @@ void Grid::init(Lua* lua, Transport* insim)
     double trash, tmp=0;
     vector<double> bintops = vector<double>(0);
     distribution.resize(insim->species_list.size());
-    vector<Axis> spatial_axes;
-    axis_vector(spatial_axes);
 
     for(int s=0; s<insim->species_list.size(); s++){
 
@@ -206,26 +210,26 @@ void Grid::init(Lua* lua, Transport* insim)
     			tmp_phigrid = Axis(minval, bintops, binmid);
     		}
     		distribution[s] = new PolarSpectrumArray<NDIMS>;
-    		((PolarSpectrumArray<NDIMS>*)distribution[s])->init(spatial_axes,nu_grid_axis, tmp_mugrid, tmp_phigrid);
+    		((PolarSpectrumArray<NDIMS>*)distribution[s])->init(xAxes,nu_grid_axis, tmp_mugrid, tmp_phigrid);
     	}
 
     	//-- MOMENT SPECTRUM --------------------
     	else if(distribution_type == "Moments"){
     		distribution[s] = new MomentSpectrumArray<NDIMS>;
-    		((MomentSpectrumArray<NDIMS>*)distribution[s])->init(spatial_axes,nu_grid_axis);
+    		((MomentSpectrumArray<NDIMS>*)distribution[s])->init(xAxes,nu_grid_axis);
     	}
 
     	//-- RADIAL MOMENT SPECTRUM --------------------
     	else if(distribution_type == "RadialMoments"){
     		int order = lua->scalar<int>("distribution_moment_order");
     		distribution[s] = new RadialMomentSpectrumArray<NDIMS>;
-    		((RadialMomentSpectrumArray<NDIMS>*)distribution[s])->init(spatial_axes,nu_grid_axis, order);
+    		((RadialMomentSpectrumArray<NDIMS>*)distribution[s])->init(xAxes,nu_grid_axis, order);
     	}
 
     	//-- RADIAL MOMENT SPECTRUM --------------------
     	else if(distribution_type == "GR1D"){
     		distribution[s] = new GR1DSpectrumArray;
-    		((GR1DSpectrumArray*)distribution[s])->init(spatial_axes,nu_grid_axis);
+    		((GR1DSpectrumArray*)distribution[s])->init(xAxes,nu_grid_axis);
     	}
 
     	//-- CATCH ------------------
@@ -245,8 +249,7 @@ void Grid::init(Lua* lua, Transport* insim)
 	scattering_delta.resize(sim->species_list.size());
 	scattering_phi0.resize(sim->species_list.size());
 	spectrum.resize(sim->species_list.size());
-	vector<Axis> axes;
-	axis_vector(axes);
+	vector<Axis> axes = xAxes;
 	if(do_annihilation) Q_annihil.set_axes(axes);
 	fourforce_abs.set_axes(axes);
 	fourforce_emit.set_axes(axes);
@@ -293,14 +296,36 @@ void Grid::write_zones(const int iw) const
 	PRINT_ASSERT(dimensionality(),>,0);
 	string filename = Transport::filename("fluid",iw,".h5");
 	H5::H5File file(filename, H5F_ACC_TRUNC);
+	file.createGroup("/axes");
 
-	// write coordinates to the hdf5 file (implemented in each grid type)
-	distribution[0]->write_hdf5_coordinates(file, "distribution");
-	write_hdf5_coordinates(file);
-	write_hdf5_data(file);
+	// axes
+	for(int dir=0; dir<3; dir++){
+		string datasetname = string("/axes/x")+to_string(dir)+string("(cm)");
+		xAxes[dir].write_HDF5(datasetname, file);
+	}
+	distribution[0]->write_hdf5_coordinates(file, "/axes/distribution");
+	nu_grid_axis.write_HDF5("/axes/frequency(Hz)",file);
+	spectrum[0].write_hdf5_coordinates(file,"/axes/spectrum");
 
-	nu_grid_axis.write_HDF5("nu_grid(Hz)",file);
-	spectrum[0].write_hdf5_coordinates(file,"spectrum");
+	// write fluid quantities
+	rho.write_HDF5(file,"rho(g|ccm,tet)");
+	T.write_HDF5(file,"T_gas(MeV,tet)");
+	Ye.write_HDF5(file,"Ye");
+	H_vis.write_HDF5(file,"H_vis(erg|s|g,tet)");
+	fourforce_abs.write_HDF5(file,"four-force[abs](erg|s|g,tet)");
+	fourforce_emit.write_HDF5(file,"four-force[emit](erg|s|g,tet)");
+	l_abs.write_HDF5(file,"l_abs(1|s|ccm,tet)");
+	l_emit.write_HDF5(file,"l_emit(1|s|ccm,tet)");
+	if(DO_GR){
+		lapse.write_HDF5(file,"lapse");
+	}
+	if(do_annihilation>0) Q_annihil.write_HDF5(file,"annihilation_rate(erg|ccm|s,tet)");
+	for(unsigned s=0; s<distribution.size(); s++){
+		distribution[s]->write_hdf5_data(file, "distribution"+to_string(s)+"(erg|ccm,tet)");
+		spectrum[s].write_hdf5_data(file,"spectrum"+to_string(s)+"(erg|s)");
+	}
+
+	write_child_zones(file);
 }
 
 double Grid::zone_rest_mass(const int z_ind) const{
@@ -315,43 +340,6 @@ double Grid::zone_com_3volume(const int z_ind) const{
 	return result;
 }
 
-void Grid::write_hdf5_data(H5::H5File file) const{
-	// useful quantities
-	H5::DataSet dataset;
-	H5::DataSpace dataspace;
-	vector<float> tmp(rho.size(),0.0);
-
-	// SET UP SCALAR DATASPACE
-	hsize_t zdims[dimensionality()];
-	dims(zdims,dimensionality());
-	dataspace = H5::DataSpace(dimensionality(),&zdims[0]);
-
-	// write comoving volume, assumes last index varies fastest.
-	dataset = file.createDataSet("comoving_volume(ccm)",H5::PredType::IEEE_F32LE,dataspace);
-	for(unsigned z_ind=0; z_ind<rho.size(); z_ind++) tmp[z_ind] = zone_com_3volume(z_ind);
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-	dataset.close();
-
-	// write fluid quantities
-	rho.write_HDF5(file,"rho(g|ccm,com)");
-	T.write_HDF5(file,"T_gas(MeV,com)");
-	Ye.write_HDF5(file,"Ye");
-	H_vis.write_HDF5(file,"H_vis(erg|s|g,com)");
-	fourforce_abs.write_HDF5(file,"four-force[abs](erg|s|g,tetrad)");
-	fourforce_emit.write_HDF5(file,"four-force[emit](erg|s|g,tetrad)");
-	l_abs.write_HDF5(file,"l_abs(1|s|ccm,lab)");
-	l_emit.write_HDF5(file,"l_emit(1|s|ccm,lab)");
-
-	// write annihilation_rate
-	if(do_annihilation) Q_annihil.write_HDF5(file,"annihilation_rate(erg|ccm|s,lab)");
-
-	// write distribution function
-	vector<unsigned> dir_ind(dimensionality());
-	for(unsigned s=0; s<distribution.size(); s++){
-		distribution[s]->write_hdf5_data(file, "distribution"+to_string(s));
-		spectrum[s].write_hdf5_data(file,"spectrum"+to_string(s));
-	}
-}
 
 double Grid::total_rest_mass() const{
 	double mass = 0;

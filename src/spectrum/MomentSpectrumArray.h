@@ -171,15 +171,14 @@ public:
 		vector<float> tmp;
 
 		// set up the dfunc group
-		string dfunc_dir = "distribution(erg|ccm,lab)";
-		group = file.createGroup(dfunc_dir);
 		stringstream datasetname, indicesname;
 
 		// SET UP DATASPACE FOR EACH MOMENT
 		for (unsigned rank=0; rank<nranks; rank++) {
 			// prep the filenames
 			indicesname.str("");
-			indicesname << "moment_" << rank << "_indices";
+			indicesname << name;
+			indicesname << "_moment_" << rank << "_indices";
 
 			// set up the database with the indices
 			hsize_t indices_dimensions[] = { n_independent_elements[rank], rank };

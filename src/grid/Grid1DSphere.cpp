@@ -55,11 +55,15 @@ void Grid1DSphere::read_model_file(Lua* lua)
 		exit(8);
 	}
 
-	grid_type = "Grid1DSphere";
 	reflect_outer = lua->scalar<int>("reflect_outer");
 
 	vr.calculate_slopes(-INFINITY,INFINITY);
 	X.calculate_slopes(0,INFINITY);
+}
+
+void Grid1DSphere::write_child_zones(H5::H5File file) const{
+	vr.write_HDF5(file,"vr(cm|s)");
+	X.write_HDF5(file,"X");
 }
 
 void Grid1DSphere::read_nagakura_model(Lua* lua){
@@ -96,8 +100,8 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 		double midpoint = 0.5 * (bintops[bintops.size()-1] + last);
 		binmid.push_back(midpoint);
 	}
-	rAxis = Axis(minval, bintops, binmid);
-	vector<Axis> axes = {rAxis};
+	xAxes[0] = Axis(minval, bintops, binmid);
+	vector<Axis> axes = {xAxes[0]};
 	vr.set_axes(axes);
 	lapse.set_axes(axes);
 	X.set_axes(axes);
@@ -108,10 +112,10 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 
 	// write grid properties
 	if(rank0)
-	  cout << "#   nr=" << rAxis.size() << "\trmin=" << rAxis.min << "\trmax=" << rAxis.top[rAxis.size()-1] << endl;
+	  cout << "#   nr=" << xAxes[0].size() << "\trmin=" << xAxes[0].min << "\trmax=" << xAxes[0].top[xAxes[0].size()-1] << endl;
 
 	// read the fluid properties
-	for(int z_ind=0; z_ind<rAxis.size(); z_ind++){
+	for(int z_ind=0; z_ind<xAxes[0].size(); z_ind++){
 		double trash;
 
 		// read the contents of a single line
@@ -128,7 +132,7 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 		for(int k=9; k<=165; k++) infile >> trash;
 
 		// convert units
-		vr[z_ind] *= rAxis.mid[z_ind];
+		vr[z_ind] *= xAxes[0].mid[z_ind];
 		T[z_ind] /= pc::k_MeV;
 
 		// sanity checks
@@ -200,8 +204,8 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 		PRINT_ASSERT(tmp_alpha[z_ind],<=,1.0);
 		PRINT_ASSERT(tmp_X[z_ind],>=,1.0);
 	}
-	rAxis = Axis(rmin, rtop, rmid);
-	vector<Axis> axes = {rAxis};
+	xAxes[0] = Axis(rmin, rtop, rmid);
+	vector<Axis> axes = {xAxes[0]};
 	vr.set_axes(axes);
 	lapse.set_axes(axes);
 	X.set_axes(axes);
@@ -238,11 +242,11 @@ int Grid1DSphere::zone_index(const double x[3]) const
 	PRINT_ASSERT(r,>=,0);
 
 	// check if off the boundaries
-	if(r < rAxis.min             ) return -1;
-	if(r >= rAxis.top[rAxis.size()-1] ) return -1;
+	if(r < xAxes[0].min             ) return -1;
+	if(r >= xAxes[0].top[xAxes[0].size()-1] ) return -1;
 
 	// find in zone array using stl algorithm upper_bound and subtracting iterators
-	int z_ind = rAxis.bin(r);
+	int z_ind = xAxes[0].bin(r);
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	return z_ind;
@@ -256,8 +260,8 @@ double  Grid1DSphere::zone_lab_3volume(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	double r0 = (z_ind==0 ? rAxis.min : rAxis.top[z_ind-1]);
-	double vol = 4.0*pc::pi/3.0*( pow(rAxis.top[z_ind],3) - pow(r0,3) );
+	double r0 = (z_ind==0 ? xAxes[0].min : xAxes[0].top[z_ind-1]);
+	double vol = 4.0*pc::pi/3.0*( pow(xAxes[0].top[z_ind],3) - pow(r0,3) );
 	if(DO_GR) vol *= X[z_ind];
 	PRINT_ASSERT(vol,>=,0);
 	return vol;
@@ -270,8 +274,8 @@ double  Grid1DSphere::zone_min_length(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	double r0 = (z_ind==0 ? rAxis.min : rAxis.top[z_ind-1]);
-	double min_len = rAxis.top[z_ind] - r0;
+	double r0 = (z_ind==0 ? xAxes[0].min : xAxes[0].top[z_ind-1]);
+	double min_len = xAxes[0].top[z_ind] - r0;
 	PRINT_ASSERT(min_len,>=,0);
 	return min_len;
 }
@@ -284,9 +288,9 @@ void Grid1DSphere::zone_coordinates(const int z_ind, double r[1], const int rsiz
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	PRINT_ASSERT(rsize,==,(int)dimensionality());
-	r[0] = 0.5*(rAxis.top[z_ind]+rAxis.bottom(z_ind));
+	r[0] = 0.5*(xAxes[0].top[z_ind]+xAxes[0].bottom(z_ind));
 	PRINT_ASSERT(r[0],>,0);
-	PRINT_ASSERT(r[0],<,rAxis.top[rAxis.size()-1]);
+	PRINT_ASSERT(r[0],<,xAxes[0].top[xAxes[0].size()-1]);
 }
 
 
@@ -316,8 +320,8 @@ void Grid1DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3
 	rand[2] = rangen->uniform();
 
 	// inner and outer radii of shell
-	double r0 = (z_ind==0 ? rAxis.min : rAxis.top[z_ind-1]);
-	double r1 = rAxis.top[z_ind];
+	double r0 = (z_ind==0 ? xAxes[0].min : xAxes[0].top[z_ind-1]);
+	double r1 = xAxes[0].top[z_ind];
 
 	// sample radial position in shell using a probability integral transform
 	double radius = pow( rand[0]*(r1*r1*r1 - r0*r0*r0) + r0*r0*r0, 1./3.);
@@ -372,9 +376,9 @@ void Grid1DSphere::interpolate_fluid_velocity(const double x[3], double v[3], co
 void Grid1DSphere::symmetry_boundaries(EinsteinHelper *eh) const{
 	// reflect from outer boundary
 	double R = radius(eh->p.xup);
-	if(reflect_outer && R>rAxis.top[rAxis.size()-1]){
-		double r0 = (rAxis.size()>1 ? rAxis.top[rAxis.size()-2] : rAxis.min);
-		double rmax = rAxis.top[rAxis.size()-1];
+	if(reflect_outer && R>xAxes[0].top[xAxes[0].size()-1]){
+		double r0 = (xAxes[0].size()>1 ? xAxes[0].top[xAxes[0].size()-2] : xAxes[0].min);
+		double rmax = xAxes[0].top[xAxes[0].size()-1];
 		double dr = rmax - r0;
 
 		double kr;
@@ -397,8 +401,8 @@ void Grid1DSphere::symmetry_boundaries(EinsteinHelper *eh) const{
 
 double Grid1DSphere::d_boundary(const EinsteinHelper *eh) const{
 	double r = radius(eh->p.xup);
-	PRINT_ASSERT(r,<=,rAxis.top[eh->z_ind]);
-	PRINT_ASSERT(r,>=,rAxis.bottom(eh->z_ind));
+	PRINT_ASSERT(r,<=,xAxes[0].top[eh->z_ind]);
+	PRINT_ASSERT(r,>=,xAxes[0].bottom(eh->z_ind));
 	const double x = eh->p.xup[0];
 	const double y = eh->p.xup[1];
 	const double z = eh->p.xup[2];
@@ -407,8 +411,8 @@ double Grid1DSphere::d_boundary(const EinsteinHelper *eh) const{
 	double kr = eh->g.dot<4>(eh->e[0],eh->p.kup);
 
 	double dlambda = INFINITY;
-	if(kr>0) dlambda = (rAxis.top[eh->z_ind] - r   ) / kr;
-	if(kr<0) dlambda = (r = rAxis.bottom(eh->z_ind)) / kr;
+	if(kr>0) dlambda = (xAxes[0].top[eh->z_ind] - r   ) / kr;
+	if(kr<0) dlambda = (r = xAxes[0].bottom(eh->z_ind)) / kr;
 
 	return dlambda * eh->kup_tet[3];
 }
@@ -431,8 +435,8 @@ double Grid1DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 
 		// get the min distance from the boundary in direction i. Negative if moving left
 		double drlab=0;
-		if(sgn>0) drlab = rAxis.top[eh->dir_ind[0]] - r;
-		if(sgn<0) drlab = rAxis.bottom(eh->dir_ind[0]) - r;
+		if(sgn>0) drlab = xAxes[0].top[eh->dir_ind[0]] - r;
+		if(sgn<0) drlab = xAxes[0].bottom(eh->dir_ind[0]) - r;
 
 		R = min(R, sim->R_randomwalk(kr/kup_tet_t, ur, drlab, D));
 	}
@@ -445,7 +449,7 @@ double Grid1DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 double Grid1DSphere::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	return rAxis.top[z_ind];
+	return xAxes[0].top[z_ind];
 }
 
 //-----------------------------
@@ -453,32 +457,10 @@ double Grid1DSphere::zone_radius(const int z_ind) const{
 //-----------------------------
 void Grid1DSphere::dims(hsize_t dims[1], const int size) const{
 	PRINT_ASSERT(size,==,(int)dimensionality());
-	dims[0] = rAxis.size();
+	dims[0] = xAxes[0].size();
 }
 
-//----------------------------------------------------
-// Write the coordinates of the grid points to the hdf5 file
-//----------------------------------------------------
-void Grid1DSphere::write_hdf5_coordinates(H5::H5File file) const
-{
-	// useful quantities
-	H5::DataSet dataset;
-	H5::DataSpace dataspace;
-	float tmp[rAxis.size()+1];
 
-	// get dimensions
-	hsize_t coord_dims[1];
-	dims(coord_dims,1);
-	for(unsigned i=0; i<1; i++) coord_dims[i]++; //make room for min value
-
-	// write coordinates
-	dataspace = H5::DataSpace(1,&coord_dims[0]);
-	dataset = file.createDataSet("r(cm)",H5::PredType::IEEE_F32LE,dataspace);
-	tmp[0] = rAxis.min;
-	for(unsigned i=1; i<rAxis.size()+1; i++) tmp[i] = rAxis.top[i-1];
-	dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-	dataset.close();
-}
 void Grid1DSphere::interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const{
 	const double r = radius(xup);
 	const double Xloc = X.interpolate(&r,dir_ind);//1./sqrt(1.-1./r);//
@@ -547,9 +529,6 @@ void Grid1DSphere::get_connection_coefficients(EinsteinHelper* eh) const{
 	for(unsigned i=0; i<40; i++) PRINT_ASSERT(ch[i],==,ch[i]);
 }
 
-void Grid1DSphere::axis_vector(vector<Axis>& axes) const{
-	axes = vector<Axis>({rAxis});
-}
 double Grid1DSphere::zone_lorentz_factor(const int z_ind) const{
 	double vdotv = vr[z_ind]*vr[z_ind] * X[z_ind] / (pc::c*pc::c);
 	return 1. / sqrt(1.-vdotv);

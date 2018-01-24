@@ -68,7 +68,7 @@ void GridGR1D::set_fluid(const double* rho_in, const double* T_in, const double*
 		vr[z_ind]   =  vr_in[z_ind+ghosts1];
 
 		H_vis[z_ind] = 0;
-		PRINT_ASSERT(rAxis.top[z_ind],>,(z_ind==0 ? rAxis.min : rAxis.top[z_ind-1]));
+		PRINT_ASSERT(xAxes[0].top[z_ind],>,(z_ind==0 ? xAxes[0].min : xAxes[0].top[z_ind-1]));
 		PRINT_ASSERT(rho[z_ind],>=,0);
 		PRINT_ASSERT(T[z_ind],>=,0);
 		PRINT_ASSERT(Ye[z_ind],>=,0);
@@ -86,15 +86,13 @@ void GridGR1D::initialize_grid(const double* rarray, const int n_zones, const in
 		PRINT_ASSERT(rtop[z_ind],>,last);
 		rmid[z_ind] = 0.5 * (rtop[z_ind] + last);
 	}
-	rAxis = Axis(rmin, rtop, rmid);
+	xAxes[0] = Axis(rmin, rtop, rmid);
 
-	vector<Axis> axes;
-	axis_vector(axes);
-	rho.set_axes(axes);
-	T.set_axes(axes);
-	Ye.set_axes(axes);
-	H_vis.set_axes(axes);
+	rho.set_axes(xAxes);
+	T.set_axes(xAxes);
+	Ye.set_axes(xAxes);
+	H_vis.set_axes(xAxes);
 
 	cout << "#   Sedonu grid has "<< rho.size() << " zones." << endl;
-	cout << "#   Sedonu outer boundary is at "<< rAxis.top[n_zones-1] << " cm" << endl;
+	cout << "#   Sedonu outer boundary is at "<< xAxes[0].top[n_zones-1] << " cm" << endl;
 }

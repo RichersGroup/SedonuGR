@@ -49,6 +49,14 @@ Grid3DCart::Grid3DCart(){
 	tetrad_rotation = cartesian;
 }
 
+void Grid3DCart::write_child_zones(H5::H5File file) const{
+	betaup.write_HDF5(file,"shiftup");
+	g3.write_HDF5(file,"threemetric");
+	christoffel.write_HDF5(file,"christoffel");
+	sqrtdetg3.write_HDF5(file,"sqrtdetg3");
+	v.write_HDF5(file,"threevelocity(cm|s)");
+}
+
 //------------------------------------------------------------
 // Read in a cartesian model file
 //------------------------------------------------------------
@@ -85,7 +93,7 @@ void Grid3DCart::read_model_file(Lua* lua)
 		//===================================//
 		if(sim->rank0) cout << "# Calculating connection coefficients...";
 		#pragma omp parallel for
-		for(unsigned z_ind=0; z_ind<gamma.size(); z_ind++){
+		for(unsigned z_ind=0; z_ind<christoffel.size(); z_ind++){
 			// get inverse of metric
 			ThreeMetric gammadown, gammaup;
 			gammadown.data = g3[z_ind];
@@ -137,26 +145,26 @@ void Grid3DCart::read_model_file(Lua* lua)
 			// get the high-index Christoffel symbols
 			for(unsigned a=0; a<4; a++){
 				unsigned offset = a*10;
-				for(unsigned i=0; i<10; i++) gamma[z_ind][offset+i] = 0;
+				for(unsigned i=0; i<10; i++) christoffel[z_ind][offset+i] = 0;
 				for(unsigned b=0; b<4; b++){
-					gamma[z_ind][offset+ixx] += ginv[a][b] * christoffel_low[b][0][0];
-					gamma[z_ind][offset+ixy] += ginv[a][b] * christoffel_low[b][0][1];
-					gamma[z_ind][offset+ixz] += ginv[a][b] * christoffel_low[b][0][2];
-					gamma[z_ind][offset+iyy] += ginv[a][b] * christoffel_low[b][1][1];
-					gamma[z_ind][offset+iyz] += ginv[a][b] * christoffel_low[b][1][2];
-					gamma[z_ind][offset+izz] += ginv[a][b] * christoffel_low[b][2][2];
-					gamma[z_ind][offset+itt] += ginv[a][b] * christoffel_low[b][3][3];
-					gamma[z_ind][offset+ixt] += ginv[a][b] * christoffel_low[b][0][3];
-					gamma[z_ind][offset+iyt] += ginv[a][b] * christoffel_low[b][1][3];
-					gamma[z_ind][offset+izt] += ginv[a][b] * christoffel_low[b][2][3];
+					christoffel[z_ind][offset+ixx] += ginv[a][b] * christoffel_low[b][0][0];
+					christoffel[z_ind][offset+ixy] += ginv[a][b] * christoffel_low[b][0][1];
+					christoffel[z_ind][offset+ixz] += ginv[a][b] * christoffel_low[b][0][2];
+					christoffel[z_ind][offset+iyy] += ginv[a][b] * christoffel_low[b][1][1];
+					christoffel[z_ind][offset+iyz] += ginv[a][b] * christoffel_low[b][1][2];
+					christoffel[z_ind][offset+izz] += ginv[a][b] * christoffel_low[b][2][2];
+					christoffel[z_ind][offset+itt] += ginv[a][b] * christoffel_low[b][3][3];
+					christoffel[z_ind][offset+ixt] += ginv[a][b] * christoffel_low[b][0][3];
+					christoffel[z_ind][offset+iyt] += ginv[a][b] * christoffel_low[b][1][3];
+					christoffel[z_ind][offset+izt] += ginv[a][b] * christoffel_low[b][2][3];
 				}
 			}
 		}
 
 		// check results
-		for(unsigned z_ind=0; z_ind<gamma.size(); z_ind++)
+		for(unsigned z_ind=0; z_ind<christoffel.size(); z_ind++)
 			for(unsigned i=0; i<40; i++)
-				PRINT_ASSERT(abs(gamma[z_ind][i]),<,INFINITY);
+				PRINT_ASSERT(abs(christoffel[z_ind][i]),<,INFINITY);
 
 		if(sim->rank0) cout << "done" << endl;
 	}
@@ -292,7 +300,6 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	
 	// set up the zone structure
 	int nzones = 1;
-	xAxes.resize(3);
 	for(int a=0; a<3; a++){
 		vector<double> top(nx[a]), mid(nx[a]);
 		top[0] = x1[a];
@@ -312,7 +319,7 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	H_vis.set_axes(xAxes);
 	if(DO_GR){
 		betaup.set_axes(xAxes);
-		gamma.set_axes(xAxes);
+		christoffel.set_axes(xAxes);
 		g3.set_axes(xAxes);
 		lapse.set_axes(xAxes);
 		sqrtdetg3.set_axes(xAxes);
@@ -438,7 +445,7 @@ void Grid3DCart::read_THC_file(Lua* lua)
 			g3[z_ind][iyz] = tmp_gyz[dataset_ind];
 			g3[z_ind][izz] = tmp_gzz[dataset_ind];
 			sqrtdetg3[z_ind] = tmp_vol[dataset_ind];
-			gamma[z_ind] = NaN; // NEED TO INVERT METRIC TO CALCULATE GAMMA
+			christoffel[z_ind] = NaN; // NEED TO INVERT METRIC TO CALCULATE GAMMA
 		}
 
 		PRINT_ASSERT(tmp_rho[z_ind],>=,0.0);
@@ -666,38 +673,6 @@ void Grid3DCart::dims(hsize_t dims[3], const int size) const{
 	for(int i=0; i<3; i++) dims[i] = xAxes[i].size();
 }
 
-//----------------------------------------------------
-// Write the coordinates of the grid points to the hdf5 file
-//----------------------------------------------------
-void Grid3DCart::write_hdf5_coordinates(H5::H5File file) const
-{
-	// useful quantities
-	H5::DataSet dataset;
-	H5::DataSpace dataspace;
-	vector<float> tmp;
-
-	// get dimensions
-	hsize_t coord_dims[3];
-	dims(coord_dims,3);
-	for(unsigned i=0; i<3; i++) coord_dims[i]++; //make room for min value
-
-	// write x coordinates
-	for(int dir=0; dir<3; dir++){
-		dataspace = H5::DataSpace(1,&coord_dims[dir]);
-		stringstream dirstream;
-		dirstream << dir;
-		dataset = file.createDataSet("grid_"+dirstream.str()+"(cm)",H5::PredType::IEEE_F32LE,dataspace);
-		tmp.resize(coord_dims[dir]);
-		tmp[0] = xAxes[dir].min;
-		tmp[1] = xAxes[dir].top[0];
-		if(xAxes[dir].size()>1) for(int i=2; i<xAxes[dir].size()+1; i++) tmp[i] = xAxes[dir].top[0] + (i-1)*xAxes[dir].delta(1);
-		dataset.write(&tmp[0],H5::PredType::IEEE_F32LE);
-		dataset.close();
-	}
-}
-
-
-
 void Grid3DCart::get_deltas(const int z_ind, double delta[3], const int size) const
 {
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
@@ -802,9 +777,6 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
 	}
 }
 
-void Grid3DCart::axis_vector(vector<Axis>& axes) const{
-	axes = xAxes;
-}
 double Grid3DCart::zone_lorentz_factor(const int z_ind) const{
 	Metric g;
 	if(DO_GR) g.gammalow.data = g3[z_ind];
@@ -820,7 +792,7 @@ double Grid3DCart::zone_lorentz_factor(const int z_ind) const{
 }
 
 void Grid3DCart::get_connection_coefficients(EinsteinHelper* eh) const{
-	if(DO_GR) eh->christoffel.data = gamma[eh->z_ind];
+	if(DO_GR) eh->christoffel.data = christoffel[eh->z_ind];
 }
 void Grid3DCart::interpolate_shift(const double xup[4], double betaup_out[3], const unsigned dir_ind[NDIMS]) const{
 	if(DO_GR){

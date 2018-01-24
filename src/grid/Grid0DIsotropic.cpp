@@ -37,6 +37,7 @@ Grid0DIsotropic::Grid0DIsotropic(){
 	PRINT_ASSERT(NDIMS,==,1);
 	grid_type = "Grid0DIsotropic";
 	tetrad_rotation = cartesian;
+	xAxes.resize(1);
 }
 
 //------------------------------------------------------------
@@ -45,13 +46,12 @@ Grid0DIsotropic::Grid0DIsotropic(){
 void Grid0DIsotropic::read_model_file(Lua* lua)
 {
 	// number of zones
-	dummyAxes.resize(1);
-	dummyAxes[0] = Axis(-INFINITY,INFINITY,1);
-	rho.set_axes(dummyAxes);
-	T.set_axes(dummyAxes);
-	Ye.set_axes(dummyAxes);
-	H_vis.set_axes(dummyAxes);
-	lapse.set_axes(dummyAxes);
+	xAxes[0] = Axis(-INFINITY,INFINITY,1);
+	rho.set_axes(xAxes);
+	T.set_axes(xAxes);
+	Ye.set_axes(xAxes);
+	H_vis.set_axes(xAxes);
+	lapse.set_axes(xAxes);
 	rho[0] = lua->scalar<double>("Grid0DIsotropic_rho");
 	T[0]   = lua->scalar<double>("Grid0DIsotropic_T")/pc::k_MeV;
 	Ye[0]  = lua->scalar<double>("Grid0DIsotropic_Ye");
@@ -63,6 +63,9 @@ void Grid0DIsotropic::read_model_file(Lua* lua)
 	PRINT_ASSERT(Ye[0],<=,1.0);
 }
 
+void Grid0DIsotropic::write_child_zones(H5::H5File file) const{
+	// nothing to write.
+}
 
 //------------------------------------------------------------
 // Return the zone index containing the position x
@@ -157,19 +160,6 @@ void Grid0DIsotropic::dims(hsize_t dims[0], const int size) const{
 	PRINT_ASSERT(size,==,(int)dimensionality());
 }
 
-//----------------------------------------------------
-// Write the coordinates of the grid points to the hdf5 file
-//----------------------------------------------------
-void Grid0DIsotropic::write_hdf5_coordinates(H5::H5File file) const
-{
-	// it's stupid to output this in hdf5...
-	cout << "ERROR: write_hdf5_coordinates is not implemented for grid_0D_isotropic." << endl;
-	assert(0);
-}
-
-void Grid0DIsotropic::axis_vector(vector<Axis>& axes) const{
-	axes = dummyAxes;
-}
 double Grid0DIsotropic::zone_lorentz_factor(const int z_ind) const{
 	return 1.0;
 }

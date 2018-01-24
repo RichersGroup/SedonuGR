@@ -49,12 +49,10 @@ private:
 	int    rotate_hemisphere[2];
 	int    rotate_quadrant;
 
-	MultiDArray<3,3> betaup;
-	MultiDArray<6,3> g3;
-	MultiDArray<40,3> gamma;
-	ScalarMultiDArray<3> sqrtdetg3;
-
-	vector<Axis> xAxes;
+	MultiDArray<3,3> betaup; // shift
+	MultiDArray<6,3> g3;  // three-metric
+	MultiDArray<40,3> christoffel; // connection coefficients
+	ScalarMultiDArray<3> sqrtdetg3; // sqrt of determinant of three-metric
 
 	MultiDArray<3,3> v;
 
@@ -85,10 +83,9 @@ public:
 	double zone_radius              (const int z_ind) const;
 	void dims                       (hsize_t dims[3], const int size) const;
 	hsize_t dimensionality() const {return 3;};
-	void write_hdf5_coordinates(H5::H5File file) const;
 	double d_boundary(const EinsteinHelper* eh) const;
 	double d_randomwalk(const EinsteinHelper *eh) const;
-	void axis_vector(vector<Axis>& axes) const;
+	void write_child_zones(H5::H5File file) const;
 
 	// GR functions
 	void get_connection_coefficients(EinsteinHelper* eh) const; // Gamma^alhpa_mu_nu

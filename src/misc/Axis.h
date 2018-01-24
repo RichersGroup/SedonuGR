@@ -83,11 +83,13 @@ public:
 	void write_HDF5(const string& name, H5::H5File file) const{
 		hsize_t dims[1];
 		H5::DataSpace dataspace;
+		string dataset_name;
 
 		// write top
 		dims[0] = size()+1;
 		dataspace = H5::DataSpace(1,dims);
-		H5::DataSet dataset = file.createDataSet(name+"[edge]",H5::PredType::IEEE_F64LE,dataspace);
+		dataset_name = name+"[edge]";
+		H5::DataSet dataset = file.createDataSet(dataset_name,H5::PredType::IEEE_F64LE,dataspace);
 		vector<double> tmp(size()+1);
 		tmp[0] = min;
 		for(unsigned i=1; i<size()+1; i++) tmp[i] = top[i-1];
@@ -97,7 +99,8 @@ public:
 		// write mid
 		dims[0] = size();
 		dataspace = H5::DataSpace(1,dims);
-		dataset = file.createDataSet(name+"[mid]",H5::PredType::IEEE_F64LE,dataspace);
+		dataset_name = name+"[mid]";
+		dataset = file.createDataSet(dataset_name,H5::PredType::IEEE_F64LE,dataspace);
 		dataset.write(&mid[0],H5::PredType::IEEE_F64LE);
 		dataset.close();
 	}
