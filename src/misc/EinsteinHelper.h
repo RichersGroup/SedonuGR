@@ -169,8 +169,7 @@ public:
 	}
 
 	void coord_to_tetrad(const double kup_coord[4], double kup_tet[4]) const{
-		double kdown_tet[4];
-		for(int mu=0; mu<4; mu++) kdown_tet[mu] = g.dot<4>(kup_coord,e[mu]);
+		for(int mu=0; mu<4; mu++) kup_tet[mu] = g.dot<4>(kup_coord,e[mu]);
 		kup_tet[3] *= -1.; // k.e = kdown_tet. Must raise index.
 	}
 

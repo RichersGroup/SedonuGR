@@ -160,7 +160,7 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 		PRINT_ASSERT(particles.size(),<,particles.capacity());
 		PRINT_ASSERT(eh.p.N,>,0);
 		#pragma omp critical
-		particles.push_back(eh);
+		particles.push_back(eh.p);
 
 		// count up the emitted energy in each zone
 		#pragma omp atomic
@@ -228,7 +228,7 @@ void Transport::create_surface_particle(const double weight, const unsigned int 
 	if(eh.p.fate == moving){
 		PRINT_ASSERT(particles.size(),<,particles.capacity());
 	    #pragma omp critical
-		particles.push_back(eh);
+		particles.push_back(eh.p);
 	    #pragma omp atomic
 		N_core_lab[eh.p.s] += eh.p.N;
 	}

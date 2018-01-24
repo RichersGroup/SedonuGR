@@ -44,7 +44,7 @@ class Transport
 protected:
 
 	// this species' list of particles
-	vector<EinsteinHelper> particles;
+	vector<Particle> particles;
 
 	// MPI stuff
 	int MPI_nprocs;

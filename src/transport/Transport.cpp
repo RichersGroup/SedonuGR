@@ -892,8 +892,7 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 		eh->set_tetrad_basis(grid->tetrad_rotation);
 
 		// make sure kup is consistent with the new background
-		if(eh->kup_tet[3]==eh->kup_tet[3])
-			eh->renormalize_kup();
+		eh->renormalize_kup();
 	}
 }
 
