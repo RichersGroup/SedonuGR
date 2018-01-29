@@ -42,9 +42,9 @@ void Transport::emit_particles()
 	// complain if we're out of room for particles
 	assert(n_emit_core_per_bin>0 || n_emit_zones_per_bin>=0);
 	int n_emit = (n_emit_core_per_bin + n_emit_zones_per_bin*grid->rho.size()) * species_list.size()*grid->nu_grid_axis.size();
-	if (total_particles() + n_emit > max_particles){
-		if(rank0){
-			cout << "Total particles: " << total_particles() << endl;
+	if (particles.size() + n_emit > max_particles){
+		if(MPI_myID==0){
+			cout << "Total particles: " << particles.size() << endl;
 			cout << "n_emit: " << n_emit << endl;
 			cout << "max_particles: " << max_particles << endl;
 			cout << "# ERROR: Not enough particle space\n";
@@ -54,7 +54,7 @@ void Transport::emit_particles()
 
 
 	// emit from the core and/or the zones
-	if(verbose && rank0) cout << "# Emitting particles..." << endl;
+	if(verbose) cout << "# Emitting particles..." << endl;
 	if(n_emit_core_per_bin>0)  emit_inner_source_by_bin();
 	if(n_emit_zones_per_bin>0) emit_zones_by_bin();
 }
@@ -78,7 +78,7 @@ void Transport::emit_inner_source_by_bin(){
 	}
 
 	int n_created = particles.size()-size_before;
-	if(verbose && rank0) cout << "#   emit_inner_source_by_bin() created = " << n_created << " particles on rank 0 ("
+	if(verbose) cout << "#   emit_inner_source_by_bin() created = " << n_created << " particles on rank 0 ("
 			<< n_attempted-n_created << " rouletted during emission)" << endl;
 }
 
@@ -106,7 +106,7 @@ void Transport::emit_zones_by_bin(){
 	}
 
 	int n_created = particles.size() - size_before;
-	if(verbose && rank0) cout << "#   emit_zones_by_bin() created " << n_created << " particles on rank 0 ("
+	if(verbose) cout << "#   emit_zones_by_bin() created " << n_created << " particles on rank 0 ("
 			<< n_attempted-n_created << " rouletted immediately)" << endl;
 }
 
@@ -164,7 +164,7 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 
 		// count up the emitted energy in each zone
 		#pragma omp atomic
-		N_net_lab[eh.p.s] += eh.p.N;
+		N_net_emit[eh.p.s] += eh.p.N;
 		#pragma omp atomic
 		grid->l_emit[z_ind] += eh.p.N * species_list[eh.p.s]->lepton_number * pc::c;
 		for(unsigned i=0; i<4; i++){
@@ -230,6 +230,6 @@ void Transport::create_surface_particle(const double weight, const unsigned int 
 	    #pragma omp critical
 		particles.push_back(eh.p);
 	    #pragma omp atomic
-		N_core_lab[eh.p.s] += eh.p.N;
+		N_core_emit[eh.p.s] += eh.p.N;
 	}
 }

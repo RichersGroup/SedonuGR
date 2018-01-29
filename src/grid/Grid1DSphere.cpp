@@ -61,7 +61,7 @@ void Grid1DSphere::read_model_file(Lua* lua)
 	X.calculate_slopes(0,INFINITY);
 }
 
-void Grid1DSphere::write_child_zones(H5::H5File file) const{
+void Grid1DSphere::write_child_zones(H5::H5File file){
 	vr.write_HDF5(file,"vr(cm|s)");
 	X.write_HDF5(file,"X");
 }

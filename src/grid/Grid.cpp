@@ -288,7 +288,7 @@ void Grid::init(Lua* lua, Transport* insim)
 	if(DO_GR) lapse.calculate_slopes(0,INFINITY);
 }
 
-void Grid::write_zones(const int iw) const
+void Grid::write_zones(const int iw)
 {
 	PRINT_ASSERT(rho.size(),>,0);
 

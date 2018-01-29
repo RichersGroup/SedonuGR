@@ -20,11 +20,14 @@ public:
 	vector< Tuple< Tuple<double,nelements> ,ndims> > dydx;
 	Tuple<unsigned int,ndims> stride;
 
+	// MPI requests
+	vector<MPI_Request> mpi_requests;
+
 	MultiDArray(){}
 
 	void set_axes(const vector<Axis>& axes){
 		this->axes = axes;
-		assert(axes.size()==ndims);
+		PRINT_ASSERT(axes.size(),==,ndims);
 		int size = 1;
 		for(int i=ndims-1; i>=0; i--){
 			stride[i] = size;
@@ -35,6 +38,7 @@ public:
 	}
 
 	MultiDArray<nelements,ndims> operator =(const MultiDArray<nelements,ndims>& input){
+		PRINT_ASSERT(mpi_requests.size(),==,0);
 		PRINT_ASSERT(input.axes.size(),==,ndims);
 		this->axes = input.axes;
 		this->stride = input.stride;
@@ -45,6 +49,7 @@ public:
 
 
 	unsigned direct_index(const unsigned ind[ndims]) const{
+		PRINT_ASSERT(mpi_requests.size(),==,0);
 		int result = 0;
 		for(int i=0; i<ndims; i++){
 			PRINT_ASSERT(ind[i],<,axes[i].size());
@@ -54,6 +59,7 @@ public:
 		return result;
 	}
 	void indices(const int z_ind, unsigned ind[ndims]) const{
+		PRINT_ASSERT(mpi_requests.size(),==,0);
 		unsigned leftover=z_ind;
 		PRINT_ASSERT(leftover,<,y0.size());
 		for(int i=0; i<ndims; i++){
@@ -64,11 +70,18 @@ public:
 	}
 
 	// get center value based on grid index
-	const Tuple<double,nelements>& operator[](const unsigned i) const {return y0[i];}
-	Tuple<double,nelements>& operator[](const unsigned i){return y0[i];}
+	const Tuple<double,nelements>& operator[](const unsigned i) const {
+		PRINT_ASSERT(mpi_requests.size(),==,0);
+		return y0[i];
+	}
+	Tuple<double,nelements>& operator[](const unsigned i){
+		PRINT_ASSERT(mpi_requests.size(),==,0);
+		return y0[i];
+	}
 
 	// get interpolated value
 	Tuple<double,nelements> interpolate(const double x[ndims], const unsigned int ind[ndims]) const{
+		PRINT_ASSERT(mpi_requests.size(),==,0);
 		unsigned z_ind = direct_index(ind);
 		Tuple<double,nelements> result = y0[z_ind];
 		if(dydx.size()>0) for(int i=0; i<ndims; i++){
@@ -80,6 +93,7 @@ public:
 
 	// set the slopes
 	void calculate_slopes(const double minval, const double maxval){
+		mpi_wait();
 		PRINT_ASSERT(maxval,>=,minval);
 		dydx.resize(y0.size());
 
@@ -178,16 +192,17 @@ public:
 	}
 
 	void wipe(){
-          #pragma omp parallel
-	  {
-	    #pragma omp for
-	    for(unsigned z=0; z<y0.size(); z++)
-	      y0[z] = 0;
-            #pragma omp for collapse(2)
-	    for(unsigned z=0; z<dydx.size(); z++)
-	      for(unsigned i=0; i<ndims; i++)
-		dydx[z][i] = 0;
-	  }
+		mpi_wait();
+		#pragma omp parallel
+		{
+			#pragma omp for
+			for(unsigned z=0; z<y0.size(); z++)
+				y0[z] = 0;
+			#pragma omp for collapse(2)
+			for(unsigned z=0; z<dydx.size(); z++)
+				for(unsigned i=0; i<ndims; i++)
+					dydx[z][i] = 0;
+		}
 	}
 
 	unsigned size() const{
@@ -199,40 +214,71 @@ public:
 	}
 
 	void add(const unsigned ind[ndims], const Tuple<double,nelements> to_add){
+		PRINT_ASSERT(mpi_requests.size(),==,0);
 		unsigned lin_ind = direct_index(ind);
 		direct_add(lin_ind, to_add);
 	}
 	void direct_add(const unsigned lin_ind, const Tuple<double,nelements> to_add){
+		PRINT_ASSERT(mpi_requests.size(),==,0);
 		for(unsigned i=0; i<nelements; i++){
 			#pragma omp atomic
 			y0[lin_ind][i] += to_add[i];
 		}
 	}
 
-	void MPI_combine()
-	{
-		int MPI_myID;
-		MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID);
-		MPI_Request request;
-		const int tag = 0;
-
-		// average the flux (receive goes out of scope after section)
-		if(MPI_myID==0) MPI_Reduce(MPI_IN_PLACE, &y0.front(), size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-		else            MPI_Reduce(&y0.front(),  &y0.front(), size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	void mpi_sum(){
+		mpi_wait();
+		mpi_requests.resize(1);
+		MPI_Ireduce(MPI_IN_PLACE, &y0.front(), y0.size()*nelements, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, &mpi_requests[0]);
 	}
 
-	void MPI_AllCombine()
-	{
-		int MPI_myID;
-		MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID);
-		MPI_Request request;
-		const int tag = 0;
+	void mpi_gather(vector<unsigned>& stop_list){
+		mpi_wait();
+		int MPI_nprocs, MPI_myID;
+		MPI_Comm_size(MPI_COMM_WORLD, &MPI_nprocs);
+		MPI_Comm_rank(MPI_COMM_WORLD, &MPI_myID);
+		PRINT_ASSERT(stop_list.size(),==,MPI_nprocs);
+		PRINT_ASSERT(stop_list[stop_list.size()-1],==,y0.size());
+		int tag=0;
 
-		// average the flux (receive goes out of scope after section)
-		MPI_Allreduce(MPI_IN_PLACE, &y0.front(), size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		vector<int> sendcounts(MPI_nprocs), displs(MPI_nprocs);
+		displs[0] = 0;
+		sendcounts[0] = stop_list[0];
+		for(unsigned i=1; i<MPI_nprocs; i++){
+			displs[i] = stop_list[i-1];
+			sendcounts[i] = stop_list[i] - stop_list[i-1];
+		}
+		MPI_Gatherv(MPI_IN_PLACE, -1/*ignored with MPI_IN_PLACE*/, MPI_DOUBLE, &y0[0],&sendcounts[0],&displs[0], MPI_DOUBLE,0,MPI_COMM_WORLD);
 	}
 
-	void write_HDF5(H5::H5File file, const string name) const {
+	void mpi_scatter(vector<unsigned>& stop_list){
+		mpi_wait();
+		int MPI_nprocs, MPI_myID;
+		MPI_Comm_size(MPI_COMM_WORLD, &MPI_nprocs);
+		MPI_Comm_rank(MPI_COMM_WORLD, &MPI_myID);
+		PRINT_ASSERT(stop_list.size(),==,MPI_nprocs);
+		PRINT_ASSERT(stop_list[stop_list.size()-1],==,y0.size());
+
+		vector<int> sendcounts(MPI_nprocs), displs(MPI_nprocs);
+		displs[0] = 0;
+		sendcounts[0] = stop_list[0];
+		for(unsigned i=1; i<MPI_nprocs; i++){
+			displs[i] = stop_list[i-1];
+			sendcounts[i] = stop_list[i] - stop_list[i-1];
+		}
+		MPI_Scatterv(&y0[0],&sendcounts[0], &displs[0], MPI_DOUBLE, MPI_IN_PLACE, -1/*ignored with MPI_IN_PLACE*/, MPI_DOUBLE, 0,MPI_COMM_WORLD);
+	}
+
+	void mpi_wait(){
+		for(unsigned i=0; i<mpi_requests.size(); i++){
+			MPI_Status status;
+			MPI_Wait(&mpi_requests[i], &status);
+		}
+		mpi_requests.resize(0);
+	}
+
+	void write_HDF5(H5::H5File file, const string name) {
+		mpi_wait();
 		hsize_t dims[ndims+1];
 		for(unsigned i=0; i<ndims; i++) dims[i] = axes[i].size(); // number of bins
 		H5::DataSpace dataspace;
@@ -255,20 +301,29 @@ template<unsigned int ndims>
 class ScalarMultiDArray : public MultiDArray<1,ndims>{
 public:
 	void add(const unsigned ind[ndims], const double to_add){
+		PRINT_ASSERT(this->mpi_requests.size(),==,0);
 		unsigned lin_ind = this->direct_index(ind);
 		direct_add(lin_ind, to_add);
 	}
 	void direct_add(const unsigned lin_ind, const double to_add){
+		PRINT_ASSERT(this->mpi_requests.size(),==,0);
 		#pragma omp atomic
 		this->y0[lin_ind][0] += to_add;
 	}
 
 	// get center value based on grid index
-	const double& operator[](const unsigned i) const {return this->y0[i][0];}
-	double& operator[](const unsigned i){return this->y0[i][0];}
+	const double& operator[](const unsigned i) const {
+		PRINT_ASSERT(this->mpi_requests.size(),==,0);
+		return this->y0[i][0];
+	}
+	double& operator[](const unsigned i){
+		PRINT_ASSERT(this->mpi_requests.size(),==,0);
+		return this->y0[i][0];
+	}
 
 	// get interpolated value
 	double interpolate(const double x[ndims], const unsigned int ind[ndims]) const{
+		PRINT_ASSERT(this->mpi_requests.size(),==,0);
 		Tuple<double,1> result = MultiDArray<1,ndims>::interpolate(x,ind);
 		return result[0];
 	}

@@ -59,7 +59,7 @@ void Grid2DSphere::read_model_file(Lua* lua)
 	vtheta.calculate_slopes(-INFINITY,INFINITY);
 	vphi.calculate_slopes(-INFINITY,INFINITY);
 }
-void Grid2DSphere::write_child_zones(H5::H5File file) const{
+void Grid2DSphere::write_child_zones(H5::H5File file){
 	vr.write_HDF5(file,"vr(cm|s)");
 	vtheta.write_HDF5(file,"vtheta(cm|s)");
 	vphi.write_HDF5(file,"vphi(cm|s)");

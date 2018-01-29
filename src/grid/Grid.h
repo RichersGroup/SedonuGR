@@ -112,8 +112,8 @@ public:
 	virtual void init(Lua* lua, Transport* insim);
 
 	// write out zone information
-	void write_zones(const int iw) const;
-	virtual void write_child_zones(H5::H5File file) const=0;
+	void write_zones(const int iw);
+	virtual void write_child_zones(H5::H5File file) =0;
 
 	// radius using naieve coord transformation
 	static double radius(const double xup[4]);

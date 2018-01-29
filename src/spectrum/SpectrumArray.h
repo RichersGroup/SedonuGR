@@ -48,7 +48,8 @@ public:
 	virtual void count(const EinsteinHelper* eh, const double E) = 0;
 
 	// MPI functions
-	virtual void MPI_average() = 0;
+	virtual void mpi_scatter(vector<unsigned>& zone_stop_list) = 0;
+	virtual void mpi_sum() = 0;
 
 	// Count a packets
 	virtual void add_isotropic(const unsigned dir_ind[NDIMS+1], const double E) = 0;
@@ -60,7 +61,7 @@ public:
 	virtual double total() const = 0;
 
 	// Print out
-	virtual void write_hdf5_data(H5::H5File file, const string name) const = 0;
+	virtual void write_hdf5_data(H5::H5File file, const string name) = 0;
 	virtual void write_hdf5_coordinates(H5::H5File file, const string name) const = 0;
 };
 

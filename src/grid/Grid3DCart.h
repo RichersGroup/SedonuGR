@@ -85,7 +85,7 @@ public:
 	hsize_t dimensionality() const {return 3;};
 	double d_boundary(const EinsteinHelper* eh) const;
 	double d_randomwalk(const EinsteinHelper *eh) const;
-	void write_child_zones(H5::H5File file) const;
+	void write_child_zones(H5::H5File file);
 
 	// GR functions
 	void get_connection_coefficients(EinsteinHelper* eh) const; // Gamma^alhpa_mu_nu

@@ -37,71 +37,62 @@ namespace pc = physical_constants;
 
 void Transport::propagate_particles()
 {
-	if(verbose && rank0) cout << "# Propagating particles..." << endl;
+	if(verbose) cout << "# Propagating particles..." << endl;
 
 	unsigned ndone=0;
+	const unsigned nparticles = particles.size();
+
 	//--- MOVE THE PARTICLES AROUND ---
-	// particle list is changing size due to splitting, so must go through repeatedly
-	unsigned start=0, end=0;
-	do{
-	  start = end;
-	  end = particles.size();
+	#pragma omp parallel for schedule(dynamic)
+	for(unsigned i=0; i<nparticles; i++){
+		// propagate each particle with an EinsteinHelper
+		EinsteinHelper eh;
+		eh.p = particles[i];
+		update_eh_background(&eh);
+		if(eh.z_ind >= 0) grid->interpolate_opacity(&eh);
 
-		#pragma omp parallel for schedule(dynamic)
-		for(unsigned i=start; i<end; i++){
-			// propagate each particle with an EinsteinHelper
-			EinsteinHelper eh;
-			eh.p = particles[i];
-			update_eh_background(&eh);
-			if(eh.z_ind >= 0) grid->interpolate_opacity(&eh);
-			particles[i] = eh.p;
-
-			// save final data
+		// save final data
+		#pragma omp atomic
+		n_active[eh.p.s]++;
+		if(eh.p.fate == moving) propagate(&eh);
+		if(eh.p.fate == escaped){
+			const double nu = eh.nu(); // uses last-known metric
+			double D[3] = {eh.p.kup[0], eh.p.kup[1], eh.p.kup[2]};
+			Metric::normalize_Minkowski<3>(D);
 			#pragma omp atomic
-			n_active[eh.p.s]++;
-			if(eh.p.fate == moving) propagate(&eh);
-			if(eh.p.fate == escaped){
-				const double nu = eh.nu(); // uses last-known metric
-				double D[3] = {eh.p.kup[0], eh.p.kup[1], eh.p.kup[2]};
-				Metric::normalize_Minkowski<3>(D);
-				#pragma omp atomic
-				n_escape[eh.p.s]++;
-				#pragma omp atomic
-				L_net_esc[eh.p.s] += eh.p.N * nu*pc::h;
-				#pragma omp atomic
-				N_net_esc[eh.p.s] += eh.p.N;
-				grid->spectrum[eh.p.s].count(&eh, eh.p.N * nu*pc::h);
-			}
-
+			n_escape[eh.p.s]++;
 			#pragma omp atomic
-			ndone++;
-			if(ndone%1000==0)
-				cout << "\r"<<ndone<<"/"<<particles.size() << " (" << (double)ndone/(double)particles.size()*100<<"\%)";
-
-			PRINT_ASSERT(eh.p.fate, !=, moving);
-		} //#pragma omp parallel for
-		cout << endl;
-	} while(particles.size()>end);
-
-	double tot=0,core=0,rouletted=0,esc=0;
-	#pragma omp parallel for reduction(+:tot,core,rouletted,esc)
-	for(unsigned i=0; i<particles.size(); i++){
-		if(particles[i].fate == moving){
-			if(rank0) cout << particles[i].fate << endl;
-			if(rank0) cout << i << endl;
-			PRINT_ASSERT(particles[i].fate,!=,moving);
+			L_net_esc[eh.p.s] += eh.p.N * nu*pc::h;
+			#pragma omp atomic
+			N_net_esc[eh.p.s] += eh.p.N;
+			grid->spectrum[eh.p.s].count(&eh, eh.p.N * nu*pc::h);
 		}
+
+		#pragma omp atomic
+		ndone++;
+		if(verbose && ndone%10000==0)
+			cout << "\r"<<ndone<<"/"<<nparticles << " (" << (double)ndone/(double)nparticles*100<<"\%)";
+
+		PRINT_ASSERT(eh.p.fate, !=, moving);
+		particles[i] = eh.p;
+	} //#pragma omp parallel for
+	cout << endl;
+
+
+	double tot=0,core=0,roulette=0,esc=0;
+	#pragma omp parallel for reduction(+:tot,core,roulette,esc)
+	for(unsigned i=0; i<particles.size(); i++){
+		PRINT_ASSERT(particles[i].fate,!=,moving);
 		const double e  = particles[i].N * particles[i].kup[3];
 		if(particles[i].fate!=rouletted) tot       += e;
 		if(particles[i].fate==escaped  ) esc       += e;
 		if(particles[i].fate==absorbed ) core      += e;
-		if(particles[i].fate==rouletted) rouletted += e;
+		if(particles[i].fate==rouletted) roulette  += e;
 	}
-
-	particle_total_energy += tot;
-	particle_core_abs_energy += core;
-	particle_rouletted_energy += rouletted;
-	particle_escape_energy += esc;
+	particle_total_energy = tot;
+	particle_core_abs_energy = core;
+	particle_rouletted_energy = roulette;
+	particle_escape_energy = esc;
 
 	// remove the dead particles
 	particles.resize(0);
@@ -124,7 +115,7 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 
 	// FIND D_RANDOMWALK
 	double d_randomwalk = INFINITY;
-	if(randomwalk_sphere_size>0 && eh->scatopac*eh->ds_com>randomwalk_min_optical_depth){ // coarse check
+	if(do_randomwalk && eh->scatopac*eh->ds_com>randomwalk_min_optical_depth){ // coarse check
 		d_randomwalk = grid->d_randomwalk(eh);
 		if(d_randomwalk == INFINITY) d_randomwalk = 1.1*randomwalk_min_optical_depth / eh->scatopac;
 		PRINT_ASSERT(d_randomwalk,>=,0);

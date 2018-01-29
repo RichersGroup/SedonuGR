@@ -44,7 +44,10 @@ double      Ye_eq_function(double Ye, void* params);
 //-------------------------------------------------------------
 void Transport::solve_eq_zone_values()
 {
-	if(verbose && rank0) cout << "# Solving for equilibrium values" << endl;
+	grid->fourforce_abs.mpi_wait();
+	grid->Q_annihil.mpi_wait();
+
+	if(verbose) cout << "# Solving for equilibrium values" << endl;
 	PRINT_ASSERT(equilibrium_tolerance,>,0);
 
 	// remember what zones I'm responsible for
@@ -142,6 +145,9 @@ void Transport::solve_eq_zone_values()
 			}
 		}
 	}
+
+	if(equilibrium_Ye) grid->Ye.mpi_gather(my_zone_end);
+	if(equilibrium_T) grid->T.mpi_gather(my_zone_end);
 }
 
 

@@ -49,7 +49,7 @@ Grid3DCart::Grid3DCart(){
 	tetrad_rotation = cartesian;
 }
 
-void Grid3DCart::write_child_zones(H5::H5File file) const{
+void Grid3DCart::write_child_zones(H5::H5File file){
 	betaup.write_HDF5(file,"shiftup");
 	g3.write_HDF5(file,"threemetric");
 	christoffel.write_HDF5(file,"christoffel");
@@ -89,14 +89,15 @@ void Grid3DCart::read_model_file(Lua* lua)
 
 
 		//===================================//
-		// calculate connection coefficients //
+		// calculate connection coefficients // // also calculate detg
 		//===================================//
-		if(sim->rank0) cout << "# Calculating connection coefficients...";
+		if(sim->verbose) cout << "# Calculating connection coefficients...";
 		#pragma omp parallel for
 		for(unsigned z_ind=0; z_ind<christoffel.size(); z_ind++){
 			// get inverse of metric
 			ThreeMetric gammadown, gammaup;
 			gammadown.data = g3[z_ind];
+			sqrtdetg3[z_ind] = sqrt(gammadown.det());
 			gammaup = gammadown.inverse();
 			double ginv[4][4];
 			double a2 = lapse[z_ind]*lapse[z_ind];
@@ -166,7 +167,7 @@ void Grid3DCart::read_model_file(Lua* lua)
 			for(unsigned i=0; i<40; i++)
 				PRINT_ASSERT(abs(christoffel[z_ind][i]),<,INFINITY);
 
-		if(sim->rank0) cout << "done" << endl;
+		if(sim->verbose) cout << "done" << endl;
 	}
 }
 
@@ -355,7 +356,7 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	vector<double> tmp_gyy(dataset_nzones,0.0);
 	vector<double> tmp_gyz(dataset_nzones,0.0);
 	vector<double> tmp_gzz(dataset_nzones,0.0);
-	vector<double> tmp_vol(dataset_nzones,0.0);
+	//vector<double> tmp_vol(dataset_nzones,0.0);
 	dataset = file.openDataSet(groupname.str()+"Ye");
 	dataset.read(&tmp_Ye[0],H5::PredType::IEEE_F64LE);
 	dataset = file.openDataSet(groupname.str()+"rho");
@@ -389,8 +390,8 @@ void Grid3DCart::read_THC_file(Lua* lua)
 		dataset.read(&(tmp_gyz[0]),H5::PredType::IEEE_F64LE);
 		dataset = file.openDataSet(groupname.str()+"gzz");
 		dataset.read(&(tmp_gzz[0]),H5::PredType::IEEE_F64LE);
-		dataset = file.openDataSet(groupname.str()+"vol");
-		dataset.read(&(tmp_vol[0]),H5::PredType::IEEE_F64LE);
+		//dataset = file.openDataSet(groupname.str()+"vol");
+		//dataset.read(&(tmp_vol[0]),H5::PredType::IEEE_F64LE);
 	}
 
 	#pragma omp parallel for
@@ -444,7 +445,7 @@ void Grid3DCart::read_THC_file(Lua* lua)
 			g3[z_ind][iyy] = tmp_gyy[dataset_ind];
 			g3[z_ind][iyz] = tmp_gyz[dataset_ind];
 			g3[z_ind][izz] = tmp_gzz[dataset_ind];
-			sqrtdetg3[z_ind] = tmp_vol[dataset_ind];
+			//sqrtdetg3[z_ind] = tmp_vol[dataset_ind];
 			christoffel[z_ind] = NaN; // NEED TO INVERT METRIC TO CALCULATE GAMMA
 		}
 

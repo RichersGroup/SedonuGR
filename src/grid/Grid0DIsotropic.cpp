@@ -63,7 +63,7 @@ void Grid0DIsotropic::read_model_file(Lua* lua)
 	PRINT_ASSERT(Ye[0],<=,1.0);
 }
 
-void Grid0DIsotropic::write_child_zones(H5::H5File file) const{
+void Grid0DIsotropic::write_child_zones(H5::H5File file){
 	// nothing to write.
 }
 

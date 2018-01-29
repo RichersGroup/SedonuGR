@@ -87,7 +87,6 @@ int main(int argc, char **argv)
 
 			// printout time step
 			sim.write(it);
-			if(rank0) printf("%12d %12d\n",it,sim.total_particles());
 		}
 		else break;
 	}

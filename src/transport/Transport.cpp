@@ -69,10 +69,9 @@ Transport::Transport(){
 	max_particles = -MAXLIM;
 	min_step_size = NaN;
 	max_step_size = NaN;
-	randomwalk_sphere_size = NaN;
+	do_randomwalk = -MAXLIM;
 	min_packet_number = NaN;
 	do_annihilation = -MAXLIM;
-	rank0 = -MAXLIM;
 	grid = NULL;
 	r_core = NaN;
 	n_emit_core_per_bin = -MAXLIM;
@@ -81,8 +80,6 @@ Transport::Transport(){
 	n_emit_zones_per_bin = -MAXLIM;
 	visc_specific_heat_rate = NaN;
 	n_subcycles = -MAXLIM;
-	write_rays_every = -MAXLIM;
-	write_spectra_every = -MAXLIM;
 	write_zones_every = -MAXLIM;
 	particle_total_energy = NaN;
 	particle_core_abs_energy = NaN;
@@ -106,8 +103,7 @@ void Transport::init(Lua* lua)
 	// get mpi rank
 	MPI_Comm_size( MPI_COMM_WORLD, &MPI_nprocs );
 	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID  );
-	rank0 = (MPI_myID==0);
-	if(rank0){
+	if(MPI_myID==0){
 		cout << "# Initializing transport..." << endl;
 		cout << "#   Using " << MPI_nprocs << " MPI ranks" << endl;
             #ifdef _OPENMP
@@ -128,7 +124,7 @@ void Transport::init(Lua* lua)
 
 	// read simulation parameters
 	use_scattering_kernels = lua->scalar<int>("use_scattering_kernels");
-	verbose      = lua->scalar<int>("verbose");
+	verbose      = MPI_myID==0 ? lua->scalar<int>("verbose") : 0;
 	do_annihilation = lua->scalar<int>("do_annihilation");
 	equilibrium_T       = lua->scalar<int>("equilibrium_T");
 	equilibrium_Ye      = lua->scalar<int>("equilibrium_Ye");
@@ -139,8 +135,8 @@ void Transport::init(Lua* lua)
 	}
 	min_step_size     = lua->scalar<double>("min_step_size");
 	max_step_size     = lua->scalar<double>("max_step_size");
-	randomwalk_sphere_size = lua->scalar<double>("randomwalk_sphere_size");
-	if(randomwalk_sphere_size>0){
+	do_randomwalk = lua->scalar<int>("do_randomwalk");
+	if(do_randomwalk){
 		randomwalk_min_optical_depth = lua->scalar<double>("randomwalk_min_optical_depth");
 		init_randomwalk_cdf(lua);
 		randomwalk_n_isotropic = lua->scalar<int>("randomwalk_n_isotropic");
@@ -149,8 +145,6 @@ void Transport::init(Lua* lua)
 
 	// output parameters
 	write_zones_every   = lua->scalar<double>("write_zones_every");
-	write_rays_every    = lua->scalar<double>("write_rays_every");
-	write_spectra_every = lua->scalar<double>("write_spectra_every");
 
 
 	//===================================//
@@ -167,7 +161,7 @@ void Transport::init(Lua* lua)
 	string neutrino_type = lua->scalar<string>("neutrino_type");
 	if(neutrino_type=="NuLib"){ // get everything from NuLib
 		// read the fortran module into memory
-		if(rank0) cout << "# Initializing NuLib..." << endl;
+		if(verbose) cout << "# Initializing NuLib..." << endl;
 		string nulib_table = lua->scalar<string>("nulib_table");
 		nulib_init(nulib_table,use_scattering_kernels);
 
@@ -189,19 +183,19 @@ void Transport::init(Lua* lua)
 	//==================//
 	int num_nut_species = 0;
 	if(neutrino_type=="NuLib"){ // get everything from NuLib
-		if(rank0) cout << "#   Using NuLib neutrino opacities" << endl;
+		if(verbose) cout << "#   Using NuLib neutrino opacities" << endl;
 		num_nut_species = nulib_get_nspecies();
 	}
 	else if(neutrino_type=="grey"){
-		if(rank0) cout << "#   Using grey opacity (0 chemical potential blackbody)" << endl;
+		if(verbose) cout << "#   Using grey opacity (0 chemical potential blackbody)" << endl;
 		num_nut_species = 2;
 	}
 	else if(neutrino_type=="Nagakura"){
-		if(rank0) cout << "#   Using Nagakura neutrino opacities, assumed to match the grid" << endl;
+		if(verbose) cout << "#   Using Nagakura neutrino opacities, assumed to match the grid" << endl;
 		num_nut_species = 3;
 	}
 	else if(neutrino_type=="GR1D"){
-		if(rank0) cout << "#   Using GR1D neutrino opacities, assumed to match the grid" << endl;
+		if(verbose) cout << "#   Using GR1D neutrino opacities, assumed to match the grid" << endl;
 		num_nut_species = 3;
 	}
 	else{
@@ -210,7 +204,7 @@ void Transport::init(Lua* lua)
 	}
 
 	// create the species arrays
-	if(rank0) cout << "# Setting up misc. transport tools..." << endl;
+	if(verbose) cout << "# Setting up misc. transport tools..." << endl;
 	for(int i=0; i<num_nut_species; i++){
 		Species* neutrinos_tmp;
 		if     (neutrino_type == "NuLib")    neutrinos_tmp = new Neutrino_NuLib;
@@ -236,7 +230,7 @@ void Transport::init(Lua* lua)
 	else if(grid_type == "Grid3DCart"         ) grid = new Grid3DCart;
 	else if(grid_type == "GridGR1D"           ) cout << "#   Using GridGR1D" << endl; // already set up in GR1Dinterface.cpp
 	else{
-		if(rank0) std::cout << "# ERROR: the requested grid type is not implemented." << std::endl;
+		if(verbose) std::cout << "# ERROR: the requested grid type is not implemented." << std::endl;
 		exit(3);}
 	grid->init(lua, this);
 
@@ -280,7 +274,7 @@ void Transport::init(Lua* lua)
 	n_escape.resize(species_list.size(),0);
 	if(species_list.size() == 0)
 	{
-		if(rank0) cout << "ERROR: you must simulate at least one species of particle." << endl;
+		if(MPI_myID==0) cout << "ERROR: you must simulate at least one species of particle." << endl;
 		exit(7);
 	}
 
@@ -293,7 +287,7 @@ void Transport::init(Lua* lua)
 	//=================//
 	// SET UP THE CORE //
 	//=================//
-	if(rank0) cout << "# Initializing the core...";
+	if(verbose) cout << "# Initializing the core...";
 	r_core = lua->scalar<double>("r_core");   // cm
 	if(n_emit_core_per_bin>0){
 		vector<double> core_lum_multiplier = lua->vector<double>("core_lum_multiplier");
@@ -308,32 +302,28 @@ void Transport::init(Lua* lua)
 			species_list[s]->mu_core = mu_core[s] * pc::MeV_to_ergs; // erg;
 		}
 	}
-	if(rank0) cout << "finished." << endl;
+	if(verbose) cout << "finished." << endl;
 
 	// check the parameters
-	if(rank0) cout << "# Checking parameters...";
+	if(verbose) cout << "# Checking parameters...";
 	check_parameters();
-	if(rank0) cout << "finished." << endl;
+	if(verbose) cout << "finished." << endl;
 
 	// explicitly set global radiation quantities to 0
-	N_core_lab.resize(species_list.size());
+	N_core_emit.resize(species_list.size());
 	L_net_esc.resize(species_list.size());
-	N_net_lab.resize(species_list.size());
+	N_net_emit.resize(species_list.size());
 	N_net_esc.resize(species_list.size());
 	for(unsigned s=0; s<species_list.size(); s++){
-		N_core_lab[s] = 0;
+		N_core_emit[s] = 0;
 		L_net_esc[s] = 0;
-		N_net_lab[s] = 0;
+		N_net_emit[s] = 0;
 		N_net_esc[s] = 0;
 	}
-	particle_total_energy = 0;
-	particle_core_abs_energy = 0;
-	particle_rouletted_energy = 0;
-	particle_escape_energy = 0;
-}
+	}
 
 void Transport::check_parameters() const{
-	if(use_scattering_kernels && randomwalk_sphere_size>0)
+	if(use_scattering_kernels && do_randomwalk)
 		cout << "WARNING: Assumptions in random walk approximation are incompatible with inelastic scattering." << endl;
 }
 
@@ -342,28 +332,22 @@ void Transport::check_parameters() const{
 //------------------------------------------------------------
 void Transport::step()
 {
-	//assert(particles.empty());
-
 	// reset radiation quantities
-	if(rank0 && verbose) cout << "# Clearing radiation..." << endl;
+	if(verbose) cout << "# Clearing radiation..." << endl;
 	reset_radiation();
 
 	// emit, propagate, and normalize. steady_state means no propagation time limit.
 	for(int i=0; i<n_subcycles; i++){
-	  if(rank0 && verbose) cout << "# === Subcycle " << i+1 << "/" << n_subcycles << " ===" << endl;
+	  if(verbose) cout << "# === Subcycle " << i+1 << "/" << n_subcycles << " ===" << endl;
 		emit_particles();
 		propagate_particles();
 	}
-	if(MPI_nprocs>1) reduce_radiation();      // so each processor has necessary info to solve its zones
+	if(MPI_nprocs>1) sum_to_proc0();      // so each processor has necessary info to solve its zones
 	normalize_radiative_quantities();
-	if(do_annihilation) calculate_annihilation();
 
-	// solve for T_gas and Ye structure
-	if(equilibrium_T || equilibrium_Ye){
-		if(equilibrium_T || equilibrium_Ye) solve_eq_zone_values();  // solve T,Ye s.t. E_abs=E_emit and N_abs=N_emit
-		else update_zone_quantities();         // update T,Ye based on heat capacity and number of leptons
-	}
-	if(MPI_nprocs>1) synchronize_gas();       // each processor broadcasts its solved zones to the other processors
+	// solve for T_gas and Ye structure and calculate annihilation rates
+	if(do_annihilation) calculate_annihilation();
+	if(equilibrium_T || equilibrium_Ye) solve_eq_zone_values();  // solve T,Ye s.t. E_abs=E_emit and N_abs=N_emit
 }
 
 
@@ -371,7 +355,7 @@ void Transport::step()
 // write all the necessary output
 //---------------------------------
 void Transport::write(const int it) const{
-	if(rank0){
+	if(MPI_myID==0){
 		// write zone state when appropriate
 		if(write_zones_every>0) if(it%write_zones_every==0 && write_zones_every>0){
 			if(verbose) cout << "# writing zone file " << it << endl;
@@ -390,9 +374,9 @@ void Transport::reset_radiation(){
 		grid->spectrum[i].wipe();
 		n_active[i] = 0;
 		n_escape[i] = 0;
-		N_core_lab[i] = 0;
+		N_core_emit[i] = 0;
 		L_net_esc[i] = 0;
-		N_net_lab[i] = 0;
+		N_net_emit[i] = 0;
 		N_net_esc[i] = 0;
 	}
 
@@ -401,7 +385,7 @@ void Transport::reset_radiation(){
 	grid->fourforce_abs.wipe();
 	grid->fourforce_emit.wipe();
 
-	if(rank0) cout << "# Setting zone transport quantities" << endl;
+	if(verbose) cout << "# Setting zone transport quantities" << endl;
 	for(unsigned s=0; s<species_list.size(); s++){
 		#pragma omp parallel for
 		for(unsigned z_ind=0;z_ind<grid->rho.size();z_ind++)
@@ -440,7 +424,9 @@ void Transport::reset_radiation(){
 //-----------------------------
 // calculate annihilation rates
 //-----------------------------
-void Transport::calculate_annihilation() const{
+void Transport::calculate_annihilation(){
+	for(unsigned i=0; i<species_list.size(); i++) grid->distribution[i]->mpi_scatter(my_zone_end);
+	grid->Q_annihil.mpi_gather(my_zone_end);
 //	if(rank0 && verbose) cout << "# Calculating annihilation rates...";
 //
 //	// remember what zones I'm responsible for
@@ -545,17 +531,16 @@ void Transport::calculate_annihilation() const{
 // normalize the radiative quantities
 //----------------------------------------------------------------------------
 void Transport::normalize_radiative_quantities(){
-	if(verbose && rank0) cout << "# Normalizing Radiative Quantities" << endl;
+	if(verbose) cout << "# Normalizing Radiative Quantities" << endl;
 	double net_visc_heating = 0;
 	double net_neut_heating = 0;
 
 	// normalize zone quantities
-	double multiplier = (double)n_subcycles;
-	double inv_multiplier = 1.0/multiplier;
+	double inv_multiplier = 1.0/(double)n_subcycles;
     #pragma omp parallel for reduction(+:net_visc_heating,net_neut_heating)
 	for(unsigned z_ind=0;z_ind<grid->rho.size();z_ind++)
 	{
-		double inv_mult_four_vol = 1.0/(multiplier * grid->zone_4volume(z_ind)); // Lorentz invariant - same in lab and comoving frames. Assume lab_dt=1.0
+		double inv_mult_four_vol = inv_multiplier / grid->zone_4volume(z_ind); // Lorentz invariant - same in lab and comoving frames. Assume lab_dt=1.0
 		PRINT_ASSERT(inv_mult_four_vol,>=,0);
 
 		grid->fourforce_abs[z_ind] *= inv_mult_four_vol;       // erg      --> erg/ccm/s
@@ -580,9 +565,9 @@ void Transport::normalize_radiative_quantities(){
 	// normalize global quantities
 	for(unsigned s=0; s<species_list.size(); s++){
 		grid->spectrum[s].rescale(inv_multiplier); // erg/s in each bin. Assume lab_dt=1.0
-		N_core_lab[s] *= inv_multiplier; // assume lab_dt=1.0
+		N_core_emit[s] *= inv_multiplier; // assume lab_dt=1.0
 		L_net_esc[s] *= inv_multiplier; // assume lab_dt=1.0
-		N_net_lab[s] *= inv_multiplier; // assume lab_dt=1.0
+		N_net_emit[s] *= inv_multiplier; // assume lab_dt=1.0
 		N_net_esc[s] *= inv_multiplier; // assume lab_dt=1.0
 	}
 	particle_total_energy *= inv_multiplier;
@@ -591,7 +576,7 @@ void Transport::normalize_radiative_quantities(){
 	particle_escape_energy *= inv_multiplier;
 
 	// output useful stuff
-	if(rank0 && verbose){
+	if(verbose){
 		int total_active = 0;
 		for(unsigned i=0; i<species_list.size(); i++) total_active += n_active[i];
 		cout << "#   " << total_active << " particles on all ranks" << endl;
@@ -614,7 +599,7 @@ void Transport::normalize_radiative_quantities(){
 
 		if(n_emit_core_per_bin>0){
 			cout << "#   { ";
-			for(unsigned s=0; s<N_core_lab.size(); s++) cout << setw(12) << N_core_lab[s] << "  ";
+			for(unsigned s=0; s<N_core_emit.size(); s++) cout << setw(12) << N_core_emit[s] << "  ";
 			cout << "} 1/s N_core" << endl;
 		}
 
@@ -627,7 +612,7 @@ void Transport::normalize_radiative_quantities(){
 		cout << "} MeV E_avg_esc (lab)" << endl;
 
 		cout << "#   { ";
-		for(unsigned s=0; s<N_net_lab.size(); s++) cout << setw(12) << N_net_lab[s] << "  ";
+		for(unsigned s=0; s<N_net_emit.size(); s++) cout << setw(12) << N_net_emit[s] << "  ";
 		cout << "} 1/s N_emit (lab)" << endl;
 
 		cout << "#   { ";
@@ -637,152 +622,35 @@ void Transport::normalize_radiative_quantities(){
 }
 
 
-//----------------------------------------------------------------------------
-// sum up the number of particles in all species
-//----------------------------------------------------------------------------
-int Transport::total_particles() const{
-	return particles.size();
-}
-
-
-//------------------------------------------------------------
-// Combine the radiation tallies in all zones
-// from all processors using MPI reduce
-// after this, radiation quantities on all procs match
-//------------------------------------------------------------
-void hierarchical_reduce(const int MPI_myID, const int proc, double* send, double* receive, const int size){
-	const int tag=0;
-	MPI_Reduce(send, receive, size, MPI_DOUBLE, MPI_SUM, proc, MPI_COMM_WORLD);
-	if(proc>0){
-		if(MPI_myID==0) MPI_Recv(receive, size, MPI_DOUBLE, proc, tag, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-		if(MPI_myID==proc) MPI_Send(receive, size, MPI_DOUBLE, 0, tag, MPI_COMM_WORLD);
-	}
-}
-
-void Transport::reduce_radiation()
+void Transport::sum_to_proc0()
 {
-	if(verbose && rank0) cout << "# Reducing Radiation" << endl;
+	if(verbose) cout << "# Reducing Radiation" << endl;
 
-	// reduce the global radiation scalars
-	if(verbose && rank0) cout << "#   global scalars" << endl;
-	double sendsingle = 0;
-	const int proc=0;
+	// scalars
+	if(verbose) cout << "#   Summing scalars to proc 0" << endl;
+	MPI_Reduce(&particle_total_energy,     MPI_IN_PLACE,                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&particle_rouletted_energy, MPI_IN_PLACE,                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&particle_core_abs_energy,  MPI_IN_PLACE,                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&particle_escape_energy,    MPI_IN_PLACE,                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&L_net_esc.front(),         MPI_IN_PLACE,   L_net_esc.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&N_net_esc.front(),         MPI_IN_PLACE,   N_net_esc.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&N_net_emit.front(),        MPI_IN_PLACE,  N_net_emit.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&N_core_emit.front(),       MPI_IN_PLACE, N_core_emit.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&n_escape.front(),          MPI_IN_PLACE,    n_escape.size(), MPI_LONG,   MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&n_active.front(),          MPI_IN_PLACE,    n_active.size(), MPI_LONG,   MPI_SUM, 0, MPI_COMM_WORLD);
 	
-	sendsingle = particle_total_energy;
-	hierarchical_reduce(MPI_myID, proc, &sendsingle, &particle_total_energy, 1);
-	
-	sendsingle = particle_rouletted_energy;
-	hierarchical_reduce(MPI_myID, proc, &sendsingle, &particle_rouletted_energy,1);
-	
-	sendsingle = particle_core_abs_energy;
-	hierarchical_reduce(MPI_myID, proc,&sendsingle,&particle_core_abs_energy,1);
-	
-	sendsingle = particle_escape_energy;
-	hierarchical_reduce(MPI_myID, proc,&sendsingle,&particle_escape_energy,1);
-	
-	vector<double> send(species_list.size(),0);
-	vector<double> receive(species_list.size(),0);
-	
-	for(unsigned i=0; i<species_list.size(); i++) send[i] = L_net_esc[i];
-	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),L_net_esc.size());
-	
-	for(unsigned i=0; i<species_list.size(); i++) send[i] = N_core_lab[i];
-	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),N_core_lab.size());
-	
-	for(unsigned i=0; i<species_list.size(); i++) send[i] = N_net_esc[i];
-	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),N_net_esc.size());
+	// volumetric quantities
+	if(verbose) cout << "#   Summing interaction rates to proc 0" << endl;
+	grid->fourforce_abs.mpi_sum();
+	grid->fourforce_emit.mpi_sum();
+	grid->l_abs.mpi_sum();
+	grid->l_emit.mpi_sum();
 
-	for(unsigned i=0; i<species_list.size(); i++) send[i] = N_net_lab[i];
-	hierarchical_reduce(MPI_myID, proc, &send.front(),&receive.front(),N_net_lab.size());
-	
-	// reduce the spectra
-	if(verbose && rank0) cout << "#   spectra" << endl;
-	for(unsigned i=0; i<species_list.size(); i++)
-	  grid->spectrum[i].MPI_average();
-	  
-	// reduce the numbers of particles active/escaped
-	if(verbose && rank0) cout << "#   particle numbers" << endl;
-	vector<long> sendint(species_list.size(),0);
-	vector<long> receiveint(species_list.size(),0);
-	
-	for(unsigned i=0; i<species_list.size(); i++) sendint[i] = n_escape[i];
-	MPI_Reduce(&sendint.front(), &receiveint.front(), n_escape.size(), MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-	for(unsigned i=0; i<species_list.size(); i++) n_escape[i] = receiveint[i];
-	
-	for(unsigned i=0; i<species_list.size(); i++) sendint[i] = n_active[i];
-	MPI_Reduce(&sendint.front(), &receiveint.front(), n_active.size(), MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-	for(unsigned i=0; i<species_list.size(); i++) n_active[i] = receiveint[i];
-	
-	//-- EACH PROCESSOR GETS THE REDUCTION INFORMATION IT NEEDS
-	if(verbose && rank0) cout << "#   fluid" << endl;
-	
-	// reduce distribution
-	for(unsigned s=0; s<species_list.size(); s++)
-		grid->distribution[s]->MPI_average();
-
-
-	for(int proc=0; proc<MPI_nprocs; proc++){
-
-	  int my_begin = ( proc==0 ? 0 : my_zone_end[proc-1] );
-	  int my_end = my_zone_end[proc];
-	  int size = my_end - my_begin;
- 	  	  
-	  // set the computation size and create the send/receive vectors
-	  send.resize(size);
-	  receive.resize(size);
-	  
-	  // reduce fourforce
-	  grid->fourforce_abs.MPI_combine();
-	  grid->fourforce_emit.MPI_combine();
-	  grid->l_abs.MPI_combine();
-	  grid->l_emit.MPI_combine();
-
-	  // format for single reduce
-	  //my_begin = ( proc==0 ? 0 : my_zone_end[proc-1] );
-	  //my_end = my_zone_end[proc];
-	  //for(int i=my_begin; i<my_end; i++) send[i-my_begin] = grid->z[i].l_emit;
-	  //MPI_Reduce(&send.front(), &receive.front(), size, MPI_DOUBLE, MPI_SUM, proc, MPI_COMM_WORLD);
-	  //for(int i=my_begin; i<my_end; i++) grid->z[i].l_emit = receive[i-my_begin] / (double)MPI_nprocs;
-	}
-}
-
-// after this, only the processor's chunk of radiation quantities
-// is correct, but all gas quantities are correct.
-void Transport::synchronize_gas()
-{
-	if(verbose && rank0) cout << "# Synchronizing Gas" << endl;
-	vector<double> buffer;
-	int my_begin, my_end, size;
-
-	//-- EACH PROCESSOR SENDS THE GRID INFORMATION IT SOLVED
-	for(int proc=0; proc<MPI_nprocs; proc++){
-
-		// set the begin and end indices so a process covers range [begin,end)
-		my_begin = ( proc==0 ? 0 : my_zone_end[proc-1] );
-		my_end = my_zone_end[proc];
-
-		// set the computation size and create the send/receive vectors
-		size = my_end - my_begin;
-		buffer.resize(size);
-
-		// broadcast T_gas
-		if(equilibrium_T){
-			if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->T[i];
-			MPI_Bcast(&buffer.front(), size, MPI_DOUBLE, proc, MPI_COMM_WORLD);
-			if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->T[i] = buffer[i-my_begin];
-		}
-
-		// broadcast Ye
-		if(equilibrium_Ye){
-			if(proc==MPI_myID) for(int i=my_begin; i<my_end; i++) buffer[i-my_begin] = grid->Ye[i];
-			MPI_Bcast(&buffer.front(), size, MPI_DOUBLE, proc, MPI_COMM_WORLD);
-			if(proc!=MPI_myID) for(int i=my_begin; i<my_end; i++) grid->Ye[i] = buffer[i-my_begin];
-		}
-
-		// broadcast Q_annihil
-		if(do_annihilation){
-			MPI_Bcast(&grid->Q_annihil[my_begin], size, MPI_DOUBLE, proc, MPI_COMM_WORLD);
-		}
+	// reduce the spectra and distribution functions
+	if(verbose) cout << "#   Summing distribution function & spectra to needed proc and 0" << endl;
+	for(unsigned i=0; i<species_list.size(); i++){
+		  grid->spectrum[i].mpi_sum();
+		  grid->distribution[i]->mpi_sum();
 	}
 }
 
@@ -791,38 +659,6 @@ void Transport::synchronize_gas()
 double Transport::zone_comoving_visc_heat_rate(const int z_ind) const{
 	if(visc_specific_heat_rate >= 0) return visc_specific_heat_rate * grid->zone_rest_mass(z_ind);
 	else                             return grid->H_vis[z_ind]    * grid->zone_rest_mass(z_ind);
-}
-
-
-// update zone quantities based on heat capacity and lepton capacity
-void Transport::update_zone_quantities(){
-	if(verbose && rank0) cout << "# Updating Zone Quantities" << endl;
-	// remember what zones I'm responsible for
-	int start = ( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
-	int end = my_zone_end[MPI_myID];
-
-	// solve radiative equilibrium temperature and Ye (but only in the zones I'm responsible for)
-	// don't solve if out of density bounds
-    #pragma omp parallel for schedule(guided)
-	for (int i=start; i<end; i++) if( (grid->rho[i] >= rho_min) && (grid->rho[i] <= rho_max) )
-	{
-		// adjust the temperature based on the heat capacity (erg/K)
-		if(equilibrium_T){
-			// PRINT_ASSERT(z.heat_cap,>,0);
-			// z.T_gas += (z->e_abs-z->e_emit) / z->heat_cap;
-			// PRINT_ASSERT(z->T_gas,>=,T_min);
-			// PRINT_ASSERT(z->T_gas,<=,T_max);
-		}
-
-		// adjust the Ye based on the lepton capacity (number of leptons)
-		if(equilibrium_Ye){
-			double Nbary = grid->zone_rest_mass(i) / mean_mass(i);
-			PRINT_ASSERT(Nbary,>,0);
-			grid->Ye[i] += (grid->l_abs[i] - grid->l_emit[i]) / Nbary;
-			PRINT_ASSERT(grid->Ye[i],>=,Ye_min);
-			PRINT_ASSERT(grid->Ye[i],<=,Ye_max);
-		}
-	}
 }
 
 string Transport::filename(const char* filebase, const int iw, const char* suffix){

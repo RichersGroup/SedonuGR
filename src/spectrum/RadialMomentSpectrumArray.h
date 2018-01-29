@@ -108,18 +108,24 @@ public:
 	}
 
 	//--------------------------------------------------------------
-	// MPI average the spectrum contents
+	// MPI scatter the spectrum contents.
+	// Must rescale zone stop list to account for number of groups
 	//--------------------------------------------------------------
-	// only process 0 gets the reduced spectrum to print
-	void MPI_average(){
-		data.MPI_combine();
+	void mpi_scatter(vector<unsigned>& zone_stop_list){
+		unsigned ngroups = data.axes[nuGridIndex].size();
+		vector<unsigned> stop_list = zone_stop_list;
+		for(unsigned i=0; i<stop_list.size(); i++) stop_list[i] *= ngroups;
+		data.mpi_scatter(stop_list);
+	}
+	void mpi_sum(){
+		data.mpi_sum();
 	}
 
 
 	//--------------------------------------------------------------
 	// Write data to specified location in an HDF5 file
 	//--------------------------------------------------------------
-	void write_hdf5_data(H5::H5File file, const string name) const {
+	void write_hdf5_data(H5::H5File file, const string name) {
 		data.write_HDF5(file, name);
 	}
 

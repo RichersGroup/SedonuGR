@@ -49,12 +49,11 @@ protected:
 	// MPI stuff
 	int MPI_nprocs;
 	int MPI_myID;
-	void reduce_radiation();
-	void synchronize_gas();
+	void sum_to_proc0();
 	std::vector<unsigned> my_zone_end;
 
 	// subroutine for calculating timescales
-	void calculate_annihilation() const;
+	void calculate_annihilation();
 
 	// main function to emit particles
 	void emit_particles();
@@ -91,9 +90,6 @@ protected:
 	void   normalize_radiative_quantities();
 	double brent_method(const int zone_index, double (*eq_function)(double, void*), const double min, const double max);
 
-	// update temperature and Ye (if !steady_state)
-	void update_zone_quantities();
-
 	// stored minimum and maximum values to assure safety
 	int max_particles;
 
@@ -104,7 +100,7 @@ protected:
 	// random walk parameters
 	CDFArray randomwalk_diffusion_time;
 	LocateArray randomwalk_xaxis;
-	double randomwalk_sphere_size;
+	int do_randomwalk;
 	double randomwalk_min_optical_depth;
 	double randomwalk_max_x;
 	int randomwalk_sumN;
@@ -112,8 +108,6 @@ protected:
 
 	// output parameters
 	int write_zones_every;
-	int write_rays_every;
-	int write_spectra_every;
 
 	// global radiation quantities
 	double particle_total_energy;
@@ -161,11 +155,10 @@ public:
 
 	// how many times do we emit+propagate each timestep?
 	int n_subcycles;
-	int rank0;
 
 	// global radiation quantities
-	std::vector<double> N_core_lab;
-	std::vector<double> N_net_lab;
+	std::vector<double> N_core_emit;
+	std::vector<double> N_net_emit;
 	std::vector<double> N_net_esc;
 	std::vector<double> L_net_esc;
 	std::vector<long> n_active;
@@ -189,7 +182,6 @@ public:
 	// in-simulation functions to be used by main
 	void step();
 	void write(const int it) const;
-	int  total_particles() const;
 	void write_rays(const int it);
 	static std::string filename(const char* filebase, const int iw, const char* suffix);
 	static double mean_mass(const double Ye);
