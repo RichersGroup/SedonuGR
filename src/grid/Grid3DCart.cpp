@@ -356,7 +356,6 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	vector<double> tmp_gyy(dataset_nzones,0.0);
 	vector<double> tmp_gyz(dataset_nzones,0.0);
 	vector<double> tmp_gzz(dataset_nzones,0.0);
-	//vector<double> tmp_vol(dataset_nzones,0.0);
 	dataset = file.openDataSet(groupname.str()+"Ye");
 	dataset.read(&tmp_Ye[0],H5::PredType::IEEE_F64LE);
 	dataset = file.openDataSet(groupname.str()+"rho");
@@ -390,8 +389,6 @@ void Grid3DCart::read_THC_file(Lua* lua)
 		dataset.read(&(tmp_gyz[0]),H5::PredType::IEEE_F64LE);
 		dataset = file.openDataSet(groupname.str()+"gzz");
 		dataset.read(&(tmp_gzz[0]),H5::PredType::IEEE_F64LE);
-		//dataset = file.openDataSet(groupname.str()+"vol");
-		//dataset.read(&(tmp_vol[0]),H5::PredType::IEEE_F64LE);
 	}
 
 	#pragma omp parallel for
@@ -445,7 +442,6 @@ void Grid3DCart::read_THC_file(Lua* lua)
 			g3[z_ind][iyy] = tmp_gyy[dataset_ind];
 			g3[z_ind][iyz] = tmp_gyz[dataset_ind];
 			g3[z_ind][izz] = tmp_gzz[dataset_ind];
-			//sqrtdetg3[z_ind] = tmp_vol[dataset_ind];
 			christoffel[z_ind] = NaN; // NEED TO INVERT METRIC TO CALCULATE GAMMA
 		}
 
