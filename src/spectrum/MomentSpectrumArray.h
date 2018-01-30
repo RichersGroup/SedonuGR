@@ -128,6 +128,27 @@ public:
 		data.add(data_indices, tmp);
 	}
 
+	double reconstruct_f(const unsigned dir_ind[ndims_spatial+1], const double k[3]) const{
+		unsigned index = data.direct_index(dir_ind);
+		Tuple<double,n_total_elements> M = data[index];
+		const double x=k[0], y=k[1], z=k[2];
+		const double E=M[0];
+		const double Fx=M[1], Fy=M[2], Fz=M[3];
+		const double Pxx=M[4], Pxy=M[5], Pxz=M[6], Pyy=M[7], Pyz=M[8], Pzz=M[9];
+		const double Lxxx=M[10], Lxxy=M[11], Lxxz=M[12], Lxyy=M[13], Lxyz=M[14];
+		const double Lxzz=M[15], Lyyy=M[16], Lyyz=M[17], Lyzz=M[18], Lzzz=M[19];
+
+		double f = E;
+		f += 3. * (x*Fx + y*Fy * z*Fz);
+		f += 15./2. * (x*x*Pxx + y*y*Pyy + z*z*Pzz
+				+ 2.*(x*y*Pxy + x*z*Pxz + y*z*Pyz) - E/3.);
+		f += 35./2. * (x*x*x*Lxxx + y*y*y*Lyyy + z*z*z*Lzzz
+				+ 3. * (x*x*(z*Lxxz + y*Lxxy) + y*y*(x*Lxyy + z*Lyyz) + z*z*(x*Lxzz + y*Lyzz))
+				+ 6.*x*y*z*Lxyz - 3./5.*(x*Fx + y*Fy + z*Fz));
+
+		return f/(4.*physical_constants::pi);
+	}
+
 
 	void rescale(const double r) {
 		for(unsigned i=0; i<data.size(); i++) data[i] *= r;
@@ -147,11 +168,11 @@ public:
 	// MPI scatter the spectrum contents.
 	// Must rescale zone stop list to account for number of groups
 	//--------------------------------------------------------------
-	void mpi_scatter(vector<unsigned>& zone_stop_list){
+	void mpi_sum_scatter(vector<unsigned>& zone_stop_list){
 		unsigned ngroups = data.axes[nuGridIndex].size();
 		vector<unsigned> stop_list = zone_stop_list;
 		for(unsigned i=0; i<stop_list.size(); i++) stop_list[i] *= ngroups;
-		data.mpi_scatter(stop_list);
+		data.mpi_sum_scatter(stop_list);
 	}
 	void mpi_sum(){
 		data.mpi_sum();

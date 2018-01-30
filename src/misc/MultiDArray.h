@@ -20,9 +20,6 @@ public:
 	vector< Tuple< Tuple<double,nelements> ,ndims> > dydx;
 	Tuple<unsigned int,ndims> stride;
 
-	// MPI requests
-	vector<MPI_Request> mpi_requests;
-
 	MultiDArray(){}
 
 	void set_axes(const vector<Axis>& axes){
@@ -38,7 +35,6 @@ public:
 	}
 
 	MultiDArray<nelements,ndims> operator =(const MultiDArray<nelements,ndims>& input){
-		PRINT_ASSERT(mpi_requests.size(),==,0);
 		PRINT_ASSERT(input.axes.size(),==,ndims);
 		this->axes = input.axes;
 		this->stride = input.stride;
@@ -49,7 +45,6 @@ public:
 
 
 	unsigned direct_index(const unsigned ind[ndims]) const{
-		PRINT_ASSERT(mpi_requests.size(),==,0);
 		int result = 0;
 		for(int i=0; i<ndims; i++){
 			PRINT_ASSERT(ind[i],<,axes[i].size());
@@ -59,7 +54,6 @@ public:
 		return result;
 	}
 	void indices(const int z_ind, unsigned ind[ndims]) const{
-		PRINT_ASSERT(mpi_requests.size(),==,0);
 		unsigned leftover=z_ind;
 		PRINT_ASSERT(leftover,<,y0.size());
 		for(int i=0; i<ndims; i++){
@@ -71,17 +65,14 @@ public:
 
 	// get center value based on grid index
 	const Tuple<double,nelements>& operator[](const unsigned i) const {
-		PRINT_ASSERT(mpi_requests.size(),==,0);
 		return y0[i];
 	}
 	Tuple<double,nelements>& operator[](const unsigned i){
-		PRINT_ASSERT(mpi_requests.size(),==,0);
 		return y0[i];
 	}
 
 	// get interpolated value
 	Tuple<double,nelements> interpolate(const double x[ndims], const unsigned int ind[ndims]) const{
-		PRINT_ASSERT(mpi_requests.size(),==,0);
 		unsigned z_ind = direct_index(ind);
 		Tuple<double,nelements> result = y0[z_ind];
 		if(dydx.size()>0) for(int i=0; i<ndims; i++){
@@ -93,7 +84,6 @@ public:
 
 	// set the slopes
 	void calculate_slopes(const double minval, const double maxval){
-		mpi_wait();
 		PRINT_ASSERT(maxval,>=,minval);
 		dydx.resize(y0.size());
 
@@ -192,7 +182,6 @@ public:
 	}
 
 	void wipe(){
-		mpi_wait();
 		#pragma omp parallel
 		{
 			#pragma omp for
@@ -214,45 +203,44 @@ public:
 	}
 
 	void add(const unsigned ind[ndims], const Tuple<double,nelements> to_add){
-		PRINT_ASSERT(mpi_requests.size(),==,0);
 		unsigned lin_ind = direct_index(ind);
 		direct_add(lin_ind, to_add);
 	}
 	void direct_add(const unsigned lin_ind, const Tuple<double,nelements> to_add){
-		PRINT_ASSERT(mpi_requests.size(),==,0);
 		for(unsigned i=0; i<nelements; i++){
 			#pragma omp atomic
 			y0[lin_ind][i] += to_add[i];
 		}
 	}
 
+	void mpi_sum_scatter(vector<unsigned>& stop_list){
+		PRINT_ASSERT(stop_list[stop_list.size()-1],==,y0.size());
+		int MPI_nprocs, MPI_myID;
+		MPI_Comm_size(MPI_COMM_WORLD, &MPI_nprocs);
+		MPI_Comm_rank(MPI_COMM_WORLD, &MPI_myID);
+		for(unsigned p=0; p<MPI_nprocs; p++){
+			const unsigned istart = (p==0 ? 0 : stop_list[p-1]);
+			const unsigned ndoubles = (stop_list[p]-istart) * nelements;
+			if(MPI_myID==p)
+				MPI_Reduce(MPI_IN_PLACE, &y0[istart], ndoubles, MPI_DOUBLE, MPI_SUM, p, MPI_COMM_WORLD);
+			else
+				MPI_Reduce(&y0[istart],         NULL, ndoubles, MPI_DOUBLE, MPI_SUM, p, MPI_COMM_WORLD);
+		}
+
+		// and bring everything to proc0 as well
+		mpi_gather(stop_list);
+	}
+
 	void mpi_sum(){
-		mpi_wait();
-		mpi_requests.resize(1);
-		MPI_Ireduce(MPI_IN_PLACE, &y0.front(), y0.size()*nelements, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD, &mpi_requests[0]);
+		int MPI_myID;
+		MPI_Comm_rank(MPI_COMM_WORLD, &MPI_myID);
+		if(MPI_myID==0)
+			MPI_Reduce(MPI_IN_PLACE, &y0.front(), y0.size()*nelements, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		else
+			MPI_Reduce(&y0.front(),         NULL, y0.size()*nelements, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	}
 
 	void mpi_gather(vector<unsigned>& stop_list){
-		mpi_wait();
-		int MPI_nprocs, MPI_myID;
-		MPI_Comm_size(MPI_COMM_WORLD, &MPI_nprocs);
-		MPI_Comm_rank(MPI_COMM_WORLD, &MPI_myID);
-		PRINT_ASSERT(stop_list.size(),==,MPI_nprocs);
-		PRINT_ASSERT(stop_list[stop_list.size()-1],==,y0.size());
-		int tag=0;
-
-		vector<int> sendcounts(MPI_nprocs), displs(MPI_nprocs);
-		displs[0] = 0;
-		sendcounts[0] = stop_list[0];
-		for(unsigned i=1; i<MPI_nprocs; i++){
-			displs[i] = stop_list[i-1];
-			sendcounts[i] = stop_list[i] - stop_list[i-1];
-		}
-		MPI_Gatherv(MPI_IN_PLACE, -1/*ignored with MPI_IN_PLACE*/, MPI_DOUBLE, &y0[0],&sendcounts[0],&displs[0], MPI_DOUBLE,0,MPI_COMM_WORLD);
-	}
-
-	void mpi_scatter(vector<unsigned>& stop_list){
-		mpi_wait();
 		int MPI_nprocs, MPI_myID;
 		MPI_Comm_size(MPI_COMM_WORLD, &MPI_nprocs);
 		MPI_Comm_rank(MPI_COMM_WORLD, &MPI_myID);
@@ -266,19 +254,13 @@ public:
 			displs[i] = stop_list[i-1];
 			sendcounts[i] = stop_list[i] - stop_list[i-1];
 		}
-		MPI_Scatterv(&y0[0],&sendcounts[0], &displs[0], MPI_DOUBLE, MPI_IN_PLACE, -1/*ignored with MPI_IN_PLACE*/, MPI_DOUBLE, 0,MPI_COMM_WORLD);
-	}
-
-	void mpi_wait(){
-		for(unsigned i=0; i<mpi_requests.size(); i++){
-			MPI_Status status;
-			MPI_Wait(&mpi_requests[i], &status);
-		}
-		mpi_requests.resize(0);
+		if(MPI_myID==0)
+			MPI_Gatherv(MPI_IN_PLACE, -1, MPI_DOUBLE, &y0[0],&sendcounts.front(),&displs.front(), MPI_DOUBLE,0,MPI_COMM_WORLD);
+		else
+			MPI_Gatherv(&y0[displs[MPI_myID]], sendcounts[MPI_myID], MPI_DOUBLE, NULL, NULL, NULL, MPI_DOUBLE,0,MPI_COMM_WORLD);
 	}
 
 	void write_HDF5(H5::H5File file, const string name) {
-		mpi_wait();
 		hsize_t dims[ndims+1];
 		for(unsigned i=0; i<ndims; i++) dims[i] = axes[i].size(); // number of bins
 		H5::DataSpace dataspace;

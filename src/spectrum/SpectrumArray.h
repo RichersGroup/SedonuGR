@@ -48,7 +48,7 @@ public:
 	virtual void count(const EinsteinHelper* eh, const double E) = 0;
 
 	// MPI functions
-	virtual void mpi_scatter(vector<unsigned>& zone_stop_list) = 0;
+	virtual void mpi_sum_scatter(vector<unsigned>& zone_stop_list) = 0;
 	virtual void mpi_sum() = 0;
 
 	// Count a packets

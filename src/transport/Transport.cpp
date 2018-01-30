@@ -320,7 +320,7 @@ void Transport::init(Lua* lua)
 		N_net_emit[s] = 0;
 		N_net_esc[s] = 0;
 	}
-	}
+}
 
 void Transport::check_parameters() const{
 	if(use_scattering_kernels && do_randomwalk)
@@ -425,7 +425,6 @@ void Transport::reset_radiation(){
 // calculate annihilation rates
 //-----------------------------
 void Transport::calculate_annihilation(){
-	for(unsigned i=0; i<species_list.size(); i++) grid->distribution[i]->mpi_scatter(my_zone_end);
 	grid->Q_annihil.mpi_gather(my_zone_end);
 //	if(rank0 && verbose) cout << "# Calculating annihilation rates...";
 //
@@ -627,30 +626,44 @@ void Transport::sum_to_proc0()
 	if(verbose) cout << "# Reducing Radiation" << endl;
 
 	// scalars
-	if(verbose) cout << "#   Summing scalars to proc 0" << endl;
-	MPI_Reduce(&particle_total_energy,     MPI_IN_PLACE,                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(&particle_rouletted_energy, MPI_IN_PLACE,                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(&particle_core_abs_energy,  MPI_IN_PLACE,                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(&particle_escape_energy,    MPI_IN_PLACE,                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(&L_net_esc.front(),         MPI_IN_PLACE,   L_net_esc.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(&N_net_esc.front(),         MPI_IN_PLACE,   N_net_esc.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(&N_net_emit.front(),        MPI_IN_PLACE,  N_net_emit.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(&N_core_emit.front(),       MPI_IN_PLACE, N_core_emit.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(&n_escape.front(),          MPI_IN_PLACE,    n_escape.size(), MPI_LONG,   MPI_SUM, 0, MPI_COMM_WORLD);
-	MPI_Reduce(&n_active.front(),          MPI_IN_PLACE,    n_active.size(), MPI_LONG,   MPI_SUM, 0, MPI_COMM_WORLD);
-	
+	if(verbose) cout << "#   Summing scalars" << endl;
+	if(MPI_myID==0){
+		MPI_Reduce(MPI_IN_PLACE, &particle_total_energy,     1,                  MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(MPI_IN_PLACE, &particle_rouletted_energy, 1,                  MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(MPI_IN_PLACE, &particle_core_abs_energy,  1,                  MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(MPI_IN_PLACE, &particle_escape_energy,    1,                  MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(MPI_IN_PLACE, &L_net_esc.front(),         L_net_esc.size(),   MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(MPI_IN_PLACE, &N_net_esc.front(),         N_net_esc.size(),   MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(MPI_IN_PLACE, &N_net_emit.front(),        N_net_emit.size(),  MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(MPI_IN_PLACE, &N_core_emit.front(),       N_core_emit.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(MPI_IN_PLACE, &n_escape.front(),          n_escape.size(),    MPI_LONG,   MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(MPI_IN_PLACE, &n_active.front(),          n_active.size(),    MPI_LONG,   MPI_SUM, 0, MPI_COMM_WORLD);
+	}
+	else{
+		MPI_Reduce(&particle_total_energy,     NULL,                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(&particle_rouletted_energy, NULL,                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(&particle_core_abs_energy,  NULL,                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(&particle_escape_energy,    NULL,                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(&L_net_esc.front(),         NULL,   L_net_esc.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(&N_net_esc.front(),         NULL,   N_net_esc.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(&N_net_emit.front(),        NULL,  N_net_emit.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(&N_core_emit.front(),       NULL, N_core_emit.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(&n_escape.front(),          NULL,    n_escape.size(), MPI_LONG,   MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(&n_active.front(),          NULL,    n_active.size(), MPI_LONG,   MPI_SUM, 0, MPI_COMM_WORLD);
+	}
 	// volumetric quantities
-	if(verbose) cout << "#   Summing interaction rates to proc 0" << endl;
-	grid->fourforce_abs.mpi_sum();
-	grid->fourforce_emit.mpi_sum();
-	grid->l_abs.mpi_sum();
-	grid->l_emit.mpi_sum();
+	if(verbose) cout << "#   Summing interaction rates" << endl;
+	grid->fourforce_abs.mpi_sum_scatter(my_zone_end);
+	grid->fourforce_emit.mpi_sum_scatter(my_zone_end);
+	grid->l_abs.mpi_sum_scatter(my_zone_end);
+	grid->l_emit.mpi_sum_scatter(my_zone_end);
 
 	// reduce the spectra and distribution functions
 	if(verbose) cout << "#   Summing distribution function & spectra to needed proc and 0" << endl;
 	for(unsigned i=0; i<species_list.size(); i++){
-		  grid->spectrum[i].mpi_sum();
-		  grid->distribution[i]->mpi_sum();
+		if(verbose) cout << "#     Working on species " << i << endl;
+		grid->spectrum[i].mpi_sum();
+		grid->distribution[i]->mpi_sum();
 	}
 }
 

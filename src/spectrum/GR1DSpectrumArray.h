@@ -114,11 +114,11 @@ public:
 	// MPI scatter the spectrum contents.
 	// Must rescale zone stop list to account for number of groups
 	//--------------------------------------------------------------
-	void mpi_scatter(vector<unsigned>& zone_stop_list){
+	void mpi_sum_scatter(vector<unsigned>& zone_stop_list){
 		unsigned ngroups = data.axes[1].size();
 		vector<unsigned> stop_list = zone_stop_list;
 		for(unsigned i=0; i<stop_list.size(); i++) stop_list[i] *= ngroups;
-		data.mpi_scatter(stop_list);
+		data.mpi_sum_scatter(stop_list);
 	}
 	void mpi_sum(){
 		data.mpi_sum();

@@ -44,9 +44,6 @@ double      Ye_eq_function(double Ye, void* params);
 //-------------------------------------------------------------
 void Transport::solve_eq_zone_values()
 {
-	grid->fourforce_abs.mpi_wait();
-	grid->Q_annihil.mpi_wait();
-
 	if(verbose) cout << "# Solving for equilibrium values" << endl;
 	PRINT_ASSERT(equilibrium_tolerance,>,0);
 
