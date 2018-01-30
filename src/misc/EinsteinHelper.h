@@ -223,6 +223,7 @@ public:
 			p.kup[i] -= dk_dlambda[i]*dlambda;
 			PRINT_ASSERT(p.kup[i],==,p.kup[i]);
 			p.xup[i] +=      p.kup[i]*dlambda;
+			PRINT_ASSERT(p.xup[i],==,p.xup[i]);
 		}
 		PRINT_ASSERT(p.kup[3],<,INFINITY);
 	}
