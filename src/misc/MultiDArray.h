@@ -73,6 +73,7 @@ public:
 
 	// get interpolated value
 	Tuple<double,nelements> interpolate(const double x[ndims], const unsigned int ind[ndims]) const{
+		for(unsigned i=0; i<ndims; i++) PRINT_ASSERT(x[i],==,x[i]);
 		unsigned z_ind = direct_index(ind);
 		Tuple<double,nelements> result = y0[z_ind];
 		if(dydx.size()>0) for(int i=0; i<ndims; i++){
@@ -283,29 +284,24 @@ template<unsigned int ndims>
 class ScalarMultiDArray : public MultiDArray<1,ndims>{
 public:
 	void add(const unsigned ind[ndims], const double to_add){
-		PRINT_ASSERT(this->mpi_requests.size(),==,0);
 		unsigned lin_ind = this->direct_index(ind);
 		direct_add(lin_ind, to_add);
 	}
 	void direct_add(const unsigned lin_ind, const double to_add){
-		PRINT_ASSERT(this->mpi_requests.size(),==,0);
 		#pragma omp atomic
 		this->y0[lin_ind][0] += to_add;
 	}
 
 	// get center value based on grid index
 	const double& operator[](const unsigned i) const {
-		PRINT_ASSERT(this->mpi_requests.size(),==,0);
 		return this->y0[i][0];
 	}
 	double& operator[](const unsigned i){
-		PRINT_ASSERT(this->mpi_requests.size(),==,0);
 		return this->y0[i][0];
 	}
 
 	// get interpolated value
 	double interpolate(const double x[ndims], const unsigned int ind[ndims]) const{
-		PRINT_ASSERT(this->mpi_requests.size(),==,0);
 		Tuple<double,1> result = MultiDArray<1,ndims>::interpolate(x,ind);
 		return result[0];
 	}
