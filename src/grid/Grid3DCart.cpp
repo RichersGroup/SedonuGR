@@ -74,18 +74,20 @@ void Grid3DCart::read_model_file(Lua* lua)
 	if(DO_GR){
 		betaup.calculate_slopes(-INFINITY,INFINITY);
 		g3.calculate_slopes(-INFINITY,INFINITY);
-		//sqrtdetg3.calculate_slopes(0,INFINITY); // this shouldn't be interpolated
 		lapse.calculate_slopes(0,INFINITY); // will be done later as well, but need it now for the christoffel symbols
 
 		// get temporary array of betalow
 		MultiDArray<3,3> betalow;
 		betalow.set_axes(betaup.axes);
+		#pragma omp parallel for
 		for(unsigned z_ind=0; z_ind<betalow.size(); z_ind++){
 			ThreeMetric gammadown;
 			gammadown.data = g3[z_ind];
 			gammadown.lower(betaup[z_ind], betalow[z_ind]);
+			sqrtdetg3[z_ind] = sqrt(gammadown.det());
 		}
 		betalow.calculate_slopes(-INFINITY,INFINITY);
+		//sqrtdetg3.calculate_slopes(0,INFINITY); // this shouldn't be interpolated
 
 
 		//===================================//
@@ -94,20 +96,6 @@ void Grid3DCart::read_model_file(Lua* lua)
 		if(sim->verbose) cout << "# Calculating connection coefficients...";
 		#pragma omp parallel for
 		for(unsigned z_ind=0; z_ind<christoffel.size(); z_ind++){
-			// get inverse of metric
-			ThreeMetric gammadown, gammaup;
-			gammadown.data = g3[z_ind];
-			sqrtdetg3[z_ind] = sqrt(gammadown.det());
-			gammaup = gammadown.inverse();
-			double ginv[4][4];
-			double a2 = lapse[z_ind]*lapse[z_ind];
-			PRINT_ASSERT(a2,>,0);
-			PRINT_ASSERT(a2,<,INFINITY);
-			ginv[3][3] = -1./a2;
-			for(unsigned i=0; i<3; i++){
-				ginv[i][3] = ginv[3][i] = betaup[z_ind][i] / a2;
-				for(unsigned j=0; j<3; j++) ginv[i][j] = gammaup.get(i,j) - betaup[z_ind][i]*betaup[z_ind][j]/a2;
-			}
 
 			double dg[4][4][4]; // 1st index is the differentiation direction
 			// no time derivatives
@@ -146,19 +134,16 @@ void Grid3DCart::read_model_file(Lua* lua)
 			// get the high-index Christoffel symbols
 			for(unsigned a=0; a<4; a++){
 				unsigned offset = a*10;
-				for(unsigned i=0; i<10; i++) christoffel[z_ind][offset+i] = 0;
-				for(unsigned b=0; b<4; b++){
-					christoffel[z_ind][offset+ixx] += ginv[a][b] * christoffel_low[b][0][0];
-					christoffel[z_ind][offset+ixy] += ginv[a][b] * christoffel_low[b][0][1];
-					christoffel[z_ind][offset+ixz] += ginv[a][b] * christoffel_low[b][0][2];
-					christoffel[z_ind][offset+iyy] += ginv[a][b] * christoffel_low[b][1][1];
-					christoffel[z_ind][offset+iyz] += ginv[a][b] * christoffel_low[b][1][2];
-					christoffel[z_ind][offset+izz] += ginv[a][b] * christoffel_low[b][2][2];
-					christoffel[z_ind][offset+itt] += ginv[a][b] * christoffel_low[b][3][3];
-					christoffel[z_ind][offset+ixt] += ginv[a][b] * christoffel_low[b][0][3];
-					christoffel[z_ind][offset+iyt] += ginv[a][b] * christoffel_low[b][1][3];
-					christoffel[z_ind][offset+izt] += ginv[a][b] * christoffel_low[b][2][3];
-				}
+				christoffel[z_ind][offset+ixx] = christoffel_low[a][0][0];
+				christoffel[z_ind][offset+ixy] = christoffel_low[a][0][1];
+				christoffel[z_ind][offset+ixz] = christoffel_low[a][0][2];
+				christoffel[z_ind][offset+iyy] = christoffel_low[a][1][1];
+				christoffel[z_ind][offset+iyz] = christoffel_low[a][1][2];
+				christoffel[z_ind][offset+izz] = christoffel_low[a][2][2];
+				christoffel[z_ind][offset+itt] = christoffel_low[a][3][3];
+				christoffel[z_ind][offset+ixt] = christoffel_low[a][0][3];
+				christoffel[z_ind][offset+iyt] = christoffel_low[a][1][3];
+				christoffel[z_ind][offset+izt] = christoffel_low[a][2][3];
 			}
 		}
 
@@ -789,7 +774,30 @@ double Grid3DCart::zone_lorentz_factor(const int z_ind) const{
 }
 
 void Grid3DCart::get_connection_coefficients(EinsteinHelper* eh) const{
-	if(DO_GR) eh->christoffel.data = christoffel[eh->z_ind];
+	if(DO_GR){
+		// get inverse of metric
+		ThreeMetric gammaup = eh->g.gammalow.inverse();
+		double ginv[4][4];
+		double a2 = eh->g.alpha * eh->g.alpha;
+		PRINT_ASSERT(a2,>,0);
+		PRINT_ASSERT(a2,<,INFINITY);
+		ginv[3][3] = -1./a2;
+		for(unsigned i=0; i<3; i++){
+			ginv[i][3] = ginv[3][i] = eh->g.betaup[i] / a2;
+			for(unsigned j=0; j<3; j++) ginv[i][j] = gammaup.get(i,j) - eh->g.betaup[i]*eh->g.betaup[j]/a2;
+		}
+
+		// raise Christoffel symbol first index
+		for(unsigned i=0; i<40; i++) eh->christoffel.data[i] = 0;
+		for(unsigned a=0; a<4; a++){
+			unsigned offsetA = 10*a;
+			for(unsigned b=0; b<4; b++){
+				unsigned offsetB = 10*b;
+				for(unsigned ij=0; ij<10; ij++)
+					eh->christoffel.data[offsetA+ij] += ginv[a][b] * christoffel[eh->z_ind][offsetB+ij];
+			}
+		}
+	}
 }
 void Grid3DCart::interpolate_shift(const double xup[4], double betaup_out[3], const unsigned dir_ind[NDIMS]) const{
 	if(DO_GR){

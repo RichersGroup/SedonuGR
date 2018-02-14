@@ -730,9 +730,9 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 		for(unsigned i=0; i<NDIMS; i++)	PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
 
 		// metric and its derivatives
-		grid->get_connection_coefficients(eh);
 		grid->interpolate_metric(eh->p.xup, &(eh->g), eh->dir_ind);
 		eh->g.update();
+		grid->get_connection_coefficients(eh);
 
 		// four-velocity and tetrad
 		double v[3];
