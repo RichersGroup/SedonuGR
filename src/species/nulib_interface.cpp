@@ -113,7 +113,6 @@ int     read_Ielectron;
 int     read_epannihil;
 int     read_delta;
 int     output_scattering_kernels;
-int     output_epannihil_kernels;
 
 // The format of the fortran variables the fortran compiler provides
 // assumes C and Fortran compilers are the same
@@ -279,7 +278,6 @@ void nulib_init(string filename, int use_scattering_kernels){
 	read_epannihil = 0;
 	read_delta = 0;
 	output_scattering_kernels = use_scattering_kernels;
-	output_epannihil_kernels = 0; // I haven't implemented this
     if(use_scattering_kernels == 0) {
     	// you should be using transport opacities with isotropic scattering
     	PRINT_ASSERT(hdf5_dataset_exists(filename.c_str(),"/scattering_delta"),==,false);
@@ -289,6 +287,7 @@ void nulib_init(string filename, int use_scattering_kernels){
     else{
     	if(hdf5_dataset_exists(filename.c_str(),"/scattering_delta")) read_delta = 1;
     	if(hdf5_dataset_exists(filename.c_str(),"/inelastic_phi0"))   read_Ielectron = 1;
+    	if(hdf5_dataset_exists(filename.c_str(),"/epannihil_phi0"))   read_epannihil = 1;
     }
 
 	nulibtable_reader_((char*)filename.c_str(), &read_Ielectron, &read_epannihil, &read_delta, filename.length());
@@ -380,6 +379,61 @@ void nulib_get_iscatter_kernels(
 	}
 }
 
+/************************/
+/* Annihilation kernels */
+/************************/
+void nulib_get_epannihil_kernels(
+		const double rho, // g/ccm
+		const double temp, // K
+		const double ye,
+		const int nulibID,
+		vector< vector<double> >& phi0, // 2pi h^-3 c^-4 phi0 delta(E^3/3)/deltaE [group in][group out] units 1/cm/erg
+		vector< vector<double> >& phi1){  // units 1/cm/erg   [group_in][group_out]
+
+	// fetch the relevant table from nulib. NuLib only accepts doubles.
+	double temp_MeV = temp * pc::k_MeV; // MeV
+	int lns = nulibID+1;                // fortran array indices start with 1
+
+	//PRINT_ASSERT(nulibtable_nIeta,>,0);
+	//PRINT_ASSERT(nulibtable_nItemp,>,0);
+	PRINT_ASSERT(nulibID,>=,0);
+
+	// get the chemical potential
+	double munue = nulib_eos_munue(rho,temp,ye); // MeV
+	double eta = munue/temp_MeV;
+	eta = max(eta,pow(10.0,nulibtable_logIeta_min));
+	PRINT_ASSERT(eta,<=,pow(10.0,nulibtable_logIeta_max));
+
+	int n_legendre_coefficients = 2;
+	int ngroups = nulibtable_number_groups;
+	double phi[n_legendre_coefficients][ngroups][ngroups]; //[a][j][i] = legendre index a, out group i, and in group j (ccm/s)
+
+	// read the kernels from nulib
+	if(read_Ielectron>0){
+		PRINT_ASSERT(temp_MeV,<=,pow(10.0,nulibtable_logItemp_max));
+		PRINT_ASSERT(temp_MeV,>=,pow(10.0,nulibtable_logItemp_min));
+		nulibtable_epannihil_single_species_range_energy_(&temp_MeV, &eta, &lns, (double*)phi,
+				&ngroups, &ngroups, &n_legendre_coefficients);
+	}
+
+	// set the arrays.
+	double constants = pow(pc::h,3) * pow(pc::c,4) / (4.*pc::pi);
+	for(int igin=0; igin<nulibtable_number_groups; igin++){
+		for(int igout=0; igout<nulibtable_number_groups; igout++){
+			double E1 = nulibtable_ebottom[igout] * pc::MeV_to_ergs;
+			double E2 = nulibtable_etop[   igout] * pc::MeV_to_ergs;
+			double dE = E2-E1;
+			double dE3 = E2*E2*E2 - E1*E1*E1;
+			double coeff = (dE3/3.0) / constants / dE;
+
+			if(read_Ielectron){
+				phi0[igin][igout] = phi[0][igout][igin] * coeff;
+				phi1[igin][igout] = phi[1][igout][igin] * coeff;
+				PRINT_ASSERT(phi1[igin][igout],<=,3.*phi0[igin][igout]);
+			}
+		}
+	}
+}
 /**********************/
 /* get_nut_eas_arrays */
 /**********************/
@@ -448,15 +502,7 @@ void nulib_get_eas_arrays(
 		// set inelastic kernels if they exist in the table
 		if(output_scattering_kernels!=0)
 			nulib_get_iscatter_kernels(rho,temp,ye,nulibID,nut_scatopac,phiTilde,scattering_delta);
-		if(output_epannihil_kernels > 0){
-			cout << "ERROR - annihilation kernels not implemented" << endl;
-			exit(1);
-		}
 	}
-
-	// how are we organizing the data?
-	bool use_scattering_kernels = true;
-
 }
 
 
@@ -626,54 +672,4 @@ double nulib_eos_mue(const double rho /* g/ccm */, const double temp /* K */, co
 	}
 }
 
-
-/****************************************/
-/* Pair production/annihilation kernels */
-/****************************************/
-void nulib_get_epannihil_kernels(const double rho,                    /* g/ccm */
-								 const double temp,                   /* K */
-								 const double ye, const int nulibID,
-								 vector< vector< vector<double> > >& phi_production,	 /* ccm/s */ // phi[legendre_index][this_group][anti-group]
-								 vector< vector< vector<double> > >& phi_annihilation){  /* ccm/s */ // phi[legendre_index][this_group][anti-group]
-
-	PRINT_ASSERT(temp,<=,pow(10.0,nulibtable_logItemp_max));
-	PRINT_ASSERT(temp,>=,pow(10.0,nulibtable_logItemp_min));
-	PRINT_ASSERT(nulibID,>=,0);
-
-	// fetch the relevant table from nulib. NuLib only accepts doubles.
-	double temp_MeV = temp * pc::k_MeV; // MeV
-	int lns = nulibID+1;                // fortran array indices start with 1
-
-	// get the chemical potential
-	double munue = nulib_eos_munue(rho,temp,ye); // MeV
-	double eta = munue/temp_MeV;
-	PRINT_ASSERT(eta,>=,pow(10.0,nulibtable_logIeta_min));
-	PRINT_ASSERT(eta,<=,pow(10.0,nulibtable_logIeta_max));
-
-	// apparently it's valid to declare array sizes at runtime like this... if it breaks, use malloc
-	int ngroups = nulibtable_number_groups;
-	double eas[4][ngroups][ngroups]; //[a][j][i] = kernels for nulib_ID's group i and the anti-group j (ccm/s).
-									 // for a, 0->phi_0^p  1->phi_0^a  2->phi_1^p  3->phi_1^a
-
-	// read the kernels from nulib
-	int n_legendre_coefficients = 2;
-	int n_phis = 2*n_legendre_coefficients;
-	nulibtable_epannihil_single_species_range_energy_(&temp_MeV, &eta, &lns, (double*)eas, &ngroups, &ngroups, &n_phis);
-
-	// assign values to phi_production and phi_annihilation
-	phi_production.resize  (n_legendre_coefficients);
-	phi_annihilation.resize(n_legendre_coefficients);
-	for(int l=0; l<n_legendre_coefficients; l++){
-		phi_production  [l].resize(ngroups);
-		phi_annihilation[l].resize(ngroups);
-		for(int j=0; j<ngroups; j++){
-			phi_production  [l][j].resize(ngroups);
-			phi_annihilation[l][j].resize(ngroups);
-			for(int i=0; i<ngroups; i++){
-				phi_production  [l][j][i] = eas[2*l  ][j][i];
-				phi_annihilation[l][j][i] = eas[2*l+1][j][i];
-			}
-		}
-	}
-}
 
