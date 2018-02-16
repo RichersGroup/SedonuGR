@@ -273,7 +273,7 @@ int nulib_get_nspecies(){
 /**************/
 /* nulib_init */
 /**************/
-void nulib_init(string filename, int use_scattering_kernels){
+void nulib_init(string filename, int use_scattering_kernels, int use_annihil_kernels){
 	read_Ielectron = 0;
 	read_epannihil = 0;
 	read_delta = 0;
@@ -287,16 +287,20 @@ void nulib_init(string filename, int use_scattering_kernels){
     else{
     	if(hdf5_dataset_exists(filename.c_str(),"/scattering_delta")) read_delta = 1;
     	if(hdf5_dataset_exists(filename.c_str(),"/inelastic_phi0"))   read_Ielectron = 1;
-    	if(hdf5_dataset_exists(filename.c_str(),"/epannihil_phi0"))   read_epannihil = 1;
+    }
+
+    if(use_annihil_kernels==1){
+    	assert(hdf5_dataset_exists(filename.c_str(),"/epannihil_phi0"));
+    	read_epannihil = 1;
     }
 
 	nulibtable_reader_((char*)filename.c_str(), &read_Ielectron, &read_epannihil, &read_delta, filename.length());
 	nulibtable_set_globals();
 
 	// output some facts about the table
-//	int my_rank=-1;
-//	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-//	if(my_rank==0){
+	int my_rank=-1;
+	MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
+	if(my_rank==0){
 		cout << "#   rho range: {" << nulib_get_rhomin() << "," << nulib_get_rhomax() << "} g/ccm" << endl;
 		cout << "#   T   range: {" << nulib_get_Tmin()*pc::k_MeV << "," << nulib_get_Tmax()*pc::k_MeV << "} MeV" << endl;
 		cout << "#   Ye  range: {" << nulib_get_Yemin() << "," << nulib_get_Yemax() << "}" << endl;
@@ -307,7 +311,7 @@ void nulib_init(string filename, int use_scattering_kernels){
 		cout << "#   n_E     = " << nulibtable_number_groups << endl;
 		cout << "#   n_Ieta  = " << nulibtable_nIeta << endl;
 		cout << "#   n_Itemp = " << nulibtable_nItemp << endl;
-//	}
+	}
 }
 
 
@@ -408,7 +412,7 @@ void nulib_get_epannihil_kernels(
 	eta = max(eta,pow(10.0,nulibtable_logIeta_min));
 	PRINT_ASSERT(eta,<=,pow(10.0,nulibtable_logIeta_max));
 
-	int n_legendre_coefficients = 2;
+	int n_legendre_coefficients = 2*2;
 	int ngroups = nulibtable_number_groups;
 	double phi_tmp[n_legendre_coefficients][ngroups][ngroups]; //[a][j][i] = legendre index a, out group i, and in group j (ccm/s)
 
@@ -430,8 +434,8 @@ void nulib_get_epannihil_kernels(
 			double dE3 = E2*E2*E2 - E1*E1*E1;
 			double coeff = (dE3/3.0) / constants / dE;
 
-			phi[0][igin][igout] = phi_tmp[0][igout][igin] * coeff;
-			phi[1][igin][igout] = phi_tmp[1][igout][igin] * coeff;
+			phi[0][igin][igout] = phi_tmp[1][igout][igin] * coeff;
+			phi[1][igin][igout] = phi_tmp[3][igout][igin] * coeff;
 			PRINT_ASSERT(phi[1][igin][igout],<=,3.*phi[0][igin][igout]);
 		}
 	}

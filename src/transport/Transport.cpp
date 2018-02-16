@@ -163,7 +163,7 @@ void Transport::init(Lua* lua)
 		// read the fortran module into memory
 		if(verbose) cout << "# Initializing NuLib..." << endl;
 		string nulib_table = lua->scalar<string>("nulib_table");
-		nulib_init(nulib_table,use_scattering_kernels);
+		nulib_init(nulib_table,use_scattering_kernels,do_annihilation);
 
 		// eos
 		string eos_filename = lua->scalar<string>("nulib_eos");
@@ -446,6 +446,7 @@ void Transport::calculate_annihilation(){
 
 		// get the kernels
 		vector< vector< vector< vector<double> > > > phi; // [s][order][gin][gout]
+		phi.resize(species_list.size());
 		for(unsigned s=0; s<species_list.size(); s++)
 			species_list[s]->get_annihil_kernels(grid->rho[z_ind], grid->T[z_ind], grid->Ye[z_ind], grid->nu_grid_axis, phi[s]);
 

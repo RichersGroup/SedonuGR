@@ -291,7 +291,7 @@ public:
 			const SpectrumArray* in_dist,  // erg/ccm (integrated over angular bin and energy bin)
 			const vector< vector<vector<double> > >& phi, // cm^3/s [order][igin][igout]
 			const unsigned weight,
-			Tuple<double,4>& fourforce){
+			Tuple<double,4>& fourforce) const{
 
 		const MomentSpectrumArray<NDIMS>* nubar_dist = (MomentSpectrumArray<NDIMS>*)in_dist;
 		PRINT_ASSERT(phi.size(),==,2);
@@ -305,7 +305,7 @@ public:
 		const double constants = 1./(pc::h * pow(pc::c,6) * (double)weight);
 
 		for(unsigned i=0; i<nnu; i++){
-			double nu = nu_axis->mid[i-base_ind];
+			double nu = nu_axis->mid[i];
 			for(unsigned j=0; j<nnu; j++){
 				double nubar = nu_axis->mid[j];
 
