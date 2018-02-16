@@ -276,7 +276,7 @@ void Grid::init(Lua* lua, Transport* insim)
 	scattering_phi0.resize(sim->species_list.size());
 	spectrum.resize(sim->species_list.size());
 	vector<Axis> axes = xAxes;
-	if(do_annihilation) Q_annihil.set_axes(axes);
+	if(do_annihilation) fourforce_annihil.set_axes(axes);
 	fourforce_abs.set_axes(axes);
 	fourforce_emit.set_axes(axes);
 	l_abs.set_axes(axes);
@@ -345,7 +345,7 @@ void Grid::write_zones(const int iw)
 	if(DO_GR){
 		lapse.write_HDF5(file,"lapse");
 	}
-	if(do_annihilation>0) Q_annihil.write_HDF5(file,"annihilation_rate(erg|ccm|s,tet)");
+	if(do_annihilation>0) fourforce_annihil.write_HDF5(file,"annihilation_4force(erg|ccm|s,tet)");
 	for(unsigned s=0; s<distribution.size(); s++){
 		distribution[s]->write_hdf5_data(file, "distribution"+to_string(s)+"(erg|ccm,tet)");
 		spectrum[s].write_hdf5_data(file,"spectrum"+to_string(s)+"(erg|s)");

@@ -42,8 +42,7 @@ void nulib_get_eas_arrays(double rho, double temp, double ye, int nulibID,
 		vector<vector<double> >& normalized_phi, vector< vector<double> >& phi1_phi0);
 void nulib_get_epannihil_kernels(
 		const double rho, const double temp, const double ye, const int nulibID,
-		vector< vector<double> >& phi0,
-		vector< vector<double> >& phi1);
+		vector< vector< vector<double> > >& phi);
 void nulib_get_pure_emis(double rho, double temp, double ye, int nulibID, vector<double>& pure_emis);
 void nulib_get_nu_grid(Axis& nut_nu_grid);
 int nulib_get_nspecies();

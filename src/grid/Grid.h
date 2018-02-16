@@ -98,13 +98,12 @@ public:
 	vector<SpectrumArray*> distribution;  // radiation energy density for each species in lab frame (erg/ccm. Integrated over bin frequency and direction)
 
 	ScalarMultiDArray<NDIMS> lapse;
-	ScalarMultiDArray<NDIMS> Q_annihil; // annihilation energy deposition rate (erg/ccm/s) (lab frame)
 	ScalarMultiDArray<NDIMS> rho;       // density (g/cm^3)
 	ScalarMultiDArray<NDIMS> T;         // gas temperature (K)
 	ScalarMultiDArray<NDIMS> Ye;        // electron fraction
 	ScalarMultiDArray<NDIMS> H_vis;     // specific heating rate (erg/s/g)
 
-	MultiDArray<4,NDIMS> fourforce_abs, fourforce_emit;
+	MultiDArray<4,NDIMS> fourforce_abs, fourforce_emit, fourforce_annihil;
 	ScalarMultiDArray<NDIMS> l_abs, l_emit; // lepton number emission rate (cm^-3 s^-1) (comoving frame)
 
 

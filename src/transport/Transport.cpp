@@ -425,104 +425,77 @@ void Transport::reset_radiation(){
 // calculate annihilation rates
 //-----------------------------
 void Transport::calculate_annihilation(){
-	grid->Q_annihil.mpi_gather(my_zone_end);
-//	if(rank0 && verbose) cout << "# Calculating annihilation rates...";
-//
-//	// remember what zones I'm responsible for
-//	int start = ( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
-//	int end = my_zone_end[MPI_myID];
-//	PRINT_ASSERT(end,>=,start);
-//	PRINT_ASSERT(start,>=,0);
-//	PRINT_ASSERT(end,<=,(int)grid->z.size());
-//
-//	vector<double> H_nunu_lab(species_list.size(),0);
-//
-//    #pragma omp parallel for schedule(guided)
-//	for(int z_ind=start; z_ind<end; z_ind++){
-//
-//		// based on nulib's prescription for which species each distribution represents
-//		unsigned s_nue    = 0;
-//		unsigned s_nubare = 1;
-//		PRINT_ASSERT(species_list[s_nue]->weight,==,species_list[s_nubare]->weight);
-//		double Q_tmp = 0;
-//		double vol = grid->zone_4volume(z_ind);
-//		double zone_annihil_net = 0;
-//		Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_nue],
-//				 (PolarSpectrumArray*)grid->z[z_ind].distribution[s_nubare],
-//				 true,species_list[s_nue]->weight);
-//		zone_annihil_net += Q_tmp;
-//		#pragma omp atomic
-//		H_nunu_lab[0] += Q_tmp*vol;
-//		PRINT_ASSERT(H_nunu_lab[1],==,0);
-//
-//		if(species_list.size()==3){
-//			unsigned s_nux = 2;
-//			Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_nux],
-//					(PolarSpectrumArray*)grid->z[z_ind].distribution[s_nux],
-//					false,species_list[s_nux]->weight);
-//			zone_annihil_net += 2.0 * Q_tmp;
-//			#pragma omp atomic
-//			H_nunu_lab[2] += 2.0 * Q_tmp*vol;
-//		}
-//
-//		else if(species_list.size()==4){
-//			unsigned s_nux = 2;
-//			unsigned s_nubarx = 3;
-//			PRINT_ASSERT(species_list[s_nux]->weight,==,species_list[s_nubarx]->weight);
-//			Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_nux   ],
-//					(PolarSpectrumArray*)grid->z[z_ind].distribution[s_nubarx],
-//					false,species_list[s_nux]->weight);
-//			zone_annihil_net += 2.0 * Q_tmp;
-//			#pragma omp atomic
-//			H_nunu_lab[2] += 2.0 * Q_tmp*vol;
-//			PRINT_ASSERT(H_nunu_lab[3],==,0);
-//		}
-//
-//		else if(species_list.size()==6){
-//			unsigned s_numu = 2;
-//			unsigned s_nubarmu = 3;
-//			unsigned s_nutau = 4;
-//			unsigned s_nubartau = 5;
-//			PRINT_ASSERT(species_list[s_numu]->weight,==,species_list[s_nubarmu]->weight);
-//			PRINT_ASSERT(species_list[s_nutau]->weight,==,species_list[s_nubartau]->weight);
-//			Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_numu   ],
-//					(PolarSpectrumArray*)grid->z[z_ind].distribution[s_nubarmu],
-//					  false,species_list[s_numu]->weight);
-//			zone_annihil_net += Q_tmp;
-//			#pragma omp atomic
-//			H_nunu_lab[2] += Q_tmp*vol;
-//			PRINT_ASSERT(H_nunu_lab[3],==,0);
-//			Q_tmp = Neutrino::annihilation_rate((PolarSpectrumArray*)grid->z[z_ind].distribution[s_nutau   ],
-//					(PolarSpectrumArray*)grid->z[z_ind].distribution[s_nubartau],
-//					  false,species_list[s_nutau]->weight);
-//			zone_annihil_net += Q_tmp;
-//			#pragma omp atomic
-//			H_nunu_lab[4] += Q_tmp*vol;
-//			PRINT_ASSERT(H_nunu_lab[5],==,0);
-//		}
-//		else{
-//			cout << "ERROR: wrong species list size in calculate_annihilation" << endl;
-//			exit(34);
-//		}
-//
-//		// set the value in grid
-//		grid->z[z_ind].Q_annihil = zone_annihil_net;
-//	}
-//
-//	// synchronize global quantities between processors
-//	vector<double> send(species_list.size(),0);
-//	vector<double> receive(species_list.size(),0);
-//	for(unsigned s=0; s<species_list.size(); s++) send[s] = H_nunu_lab[s];
-//	MPI_Allreduce(&send.front(), &receive.front(), species_list.size(), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-//	for(unsigned s=0; s<species_list.size(); s++) H_nunu_lab[s] = receive[s];
-//
-//	// write to screen
-//	if(rank0) cout << "finished." << endl;
-//	if(rank0 && verbose) {
-//		cout << "#   { ";
-//		for(unsigned s=0; s<species_list.size(); s++) cout << H_nunu_lab[s] << " ";
-//		cout << " } erg/s H_annihil" << endl;
-//	}
+	grid->fourforce_annihil.mpi_gather(my_zone_end);
+	if(verbose) cout << "# Calculating annihilation rates...";
+
+	// remember what zones I'm responsible for
+	int start = ( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
+	int end = my_zone_end[MPI_myID];
+	PRINT_ASSERT(end,>=,start);
+	PRINT_ASSERT(start,>=,0);
+	PRINT_ASSERT(end,<=,(int)grid->rho.size());
+
+	double H_nunu_tet = 0;
+
+    #pragma omp parallel for reduction(+:H_nunu_tet)
+	for(int z_ind=start; z_ind<end; z_ind++){
+
+		// get the directional indices
+		unsigned dir_ind[NDIMS];
+		grid->rho.indices(z_ind,dir_ind);
+
+		// get the kernels
+		vector< vector< vector< vector<double> > > > phi; // [s][order][gin][gout]
+		for(unsigned s=0; s<species_list.size(); s++)
+			species_list[s]->get_annihil_kernels(grid->rho[z_ind], grid->T[z_ind], grid->Ye[z_ind], grid->nu_grid_axis, phi[s]);
+
+		// get the list of species
+		vector<Tuple<unsigned,2> > pairs;
+		switch(species_list.size()){
+		case 2:
+			pairs.resize(1);
+			pairs[0][0]=0; pairs[0][1]=1;
+			break;
+		case 3:
+			pairs.resize(2);
+			pairs[0][0]=0; pairs[0][1]=1;
+			pairs[1][0]=2; pairs[1][1]=2;
+			break;
+		case 4:
+			pairs.resize(2);
+			pairs[0][0]=0; pairs[0][1]=1;
+			pairs[1][0]=2; pairs[1][1]=3;
+			break;
+		case 6:
+			pairs.resize(3);
+			pairs[0][0]=0; pairs[0][1]=1;
+			pairs[1][0]=2; pairs[1][1]=3;
+			pairs[2][0]=4; pairs[2][1]=5;
+			break;
+		default:
+			assert(0); // these should be the only options
+		}
+
+		for(unsigned p=0; p<pairs.size(); p++){
+			unsigned s0=pairs[p][0], s1=pairs[p][1];
+			PRINT_ASSERT(species_list[s0]->weight,==,species_list[s1]->weight);
+
+			grid->distribution[s0]->annihilation_rate(dir_ind,
+					grid->distribution[s1],
+					phi[s0], species_list[s0]->weight,
+					grid->fourforce_annihil[z_ind]);
+		}
+		H_nunu_tet += grid->fourforce_annihil[z_ind][3];
+	}
+
+	// synchronize global quantities between processors
+	MPI_Allreduce(MPI_IN_PLACE, &H_nunu_tet, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+	// write to screen
+	if(verbose) {
+		cout << "finished." << endl;
+		cout << "#   " << H_nunu_tet << " erg/s H_annihil" << endl;
+	}
 }
 
 

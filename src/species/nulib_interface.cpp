@@ -387,8 +387,12 @@ void nulib_get_epannihil_kernels(
 		const double temp, // K
 		const double ye,
 		const int nulibID,
-		vector< vector<double> >& phi0, // 2pi h^-3 c^-4 phi0 delta(E^3/3)/deltaE [group in][group out] units 1/cm/erg
-		vector< vector<double> >& phi1){  // units 1/cm/erg   [group_in][group_out]
+		vector< vector< vector<double> > >& phi){ // 2pi h^-3 c^-4 phi0 delta(E^3/3)/deltaE [group in][group out] units 1/cm/erg
+
+	// set up phi vector
+	phi.resize(2);
+	for(unsigned i=0; i<2; i++)
+		phi[i] = vector< vector<double> >(nulibtable_number_groups, vector<double>(nulibtable_number_groups,0));
 
 	// fetch the relevant table from nulib. NuLib only accepts doubles.
 	double temp_MeV = temp * pc::k_MeV; // MeV
@@ -406,13 +410,13 @@ void nulib_get_epannihil_kernels(
 
 	int n_legendre_coefficients = 2;
 	int ngroups = nulibtable_number_groups;
-	double phi[n_legendre_coefficients][ngroups][ngroups]; //[a][j][i] = legendre index a, out group i, and in group j (ccm/s)
+	double phi_tmp[n_legendre_coefficients][ngroups][ngroups]; //[a][j][i] = legendre index a, out group i, and in group j (ccm/s)
 
 	// read the kernels from nulib
 	if(read_Ielectron>0){
 		PRINT_ASSERT(temp_MeV,<=,pow(10.0,nulibtable_logItemp_max));
 		PRINT_ASSERT(temp_MeV,>=,pow(10.0,nulibtable_logItemp_min));
-		nulibtable_epannihil_single_species_range_energy_(&temp_MeV, &eta, &lns, (double*)phi,
+		nulibtable_epannihil_single_species_range_energy_(&temp_MeV, &eta, &lns, (double*)phi_tmp,
 				&ngroups, &ngroups, &n_legendre_coefficients);
 	}
 
@@ -426,14 +430,13 @@ void nulib_get_epannihil_kernels(
 			double dE3 = E2*E2*E2 - E1*E1*E1;
 			double coeff = (dE3/3.0) / constants / dE;
 
-			if(read_Ielectron){
-				phi0[igin][igout] = phi[0][igout][igin] * coeff;
-				phi1[igin][igout] = phi[1][igout][igin] * coeff;
-				PRINT_ASSERT(phi1[igin][igout],<=,3.*phi0[igin][igout]);
-			}
+			phi[0][igin][igout] = phi_tmp[0][igout][igin] * coeff;
+			phi[1][igin][igout] = phi_tmp[1][igout][igin] * coeff;
+			PRINT_ASSERT(phi[1][igin][igout],<=,3.*phi[0][igin][igout]);
 		}
 	}
 }
+
 /**********************/
 /* get_nut_eas_arrays */
 /**********************/

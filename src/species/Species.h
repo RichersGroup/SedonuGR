@@ -68,8 +68,7 @@ public:
 
 	// set the emissivity, absorption opacity, and scattering opacity
 	virtual void set_eas(const unsigned z_ind, Grid* grid) const = 0;
-
-	static double annihilation_rate(const vector<double> dir_ind,const PolarSpectrumArray<NDIMS>* nu_dist, const PolarSpectrumArray<NDIMS>* nbar_dist, const bool electron_type, const int weight);
+	virtual void get_annihil_kernels(const double rho, const double T, const double Ye, const Axis& nuAxis, vector< vector< vector<double> > >& phi) const;
 };
 
 

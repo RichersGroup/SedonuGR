@@ -31,8 +31,10 @@
 #include "SpectrumArray.h"
 #include "H5Cpp.h"
 #include <fstream>
+#include <sstream>
 
 using namespace std;
+namespace pc = physical_constants;
 
 template<unsigned ndims_spatial>
 class MomentSpectrumArray : public SpectrumArray {
@@ -53,6 +55,42 @@ private:
 	MultiDArray<n_total_elements, ndims_spatial+1> data;
 
 public:
+
+	unsigned direct_index(const unsigned dir_ind[ndims_spatial+1]) const{
+		return data.direct_index(dir_ind);
+	}
+	double getE(const unsigned ind) const{
+		return data[ind][0];
+	}
+	double getF(const unsigned ind, const unsigned i) const{
+		return data[ind][i+1];
+	}
+	double getP(const unsigned ind, const unsigned i, const unsigned j) const{
+		switch((i+1)*(j+1)){
+		case 1:
+			return data[ind][4];
+			break;
+		case 2:
+			return data[ind][5];
+			break;
+		case 3:
+			return data[ind][6];
+			break;
+		case 4:
+			return data[ind][7];
+			break;
+		case 6:
+			return data[ind][8];
+			break;
+		case 9:
+			return data[ind][9];
+			break;
+		}
+
+		// should not get past switch statement
+		assert(0);
+		return NaN;
+	}
 
 	//---------------------------------------------------
 	// increment tensor indices for any symmetric tensor
@@ -198,7 +236,7 @@ public:
 		vector<float> tmp;
 
 		// set up the dfunc group
-		stringstream datasetname, indicesname;
+		std::stringstream datasetname, indicesname;
 
 		// SET UP DATASPACE FOR EACH MOMENT
 		for (unsigned rank=0; rank<nranks; rank++) {
@@ -248,6 +286,55 @@ public:
 		return result;
 	}
 
+	void annihilation_rate(
+			const unsigned dir_ind[NDIMS],       // spatial directional indices for the zone we're getting the rate at
+			const SpectrumArray* in_dist,  // erg/ccm (integrated over angular bin and energy bin)
+			const vector< vector<vector<double> > >& phi, // cm^3/s [order][igin][igout]
+			const unsigned weight,
+			Tuple<double,4>& fourforce){
+
+		const MomentSpectrumArray<NDIMS>* nubar_dist = (MomentSpectrumArray<NDIMS>*)in_dist;
+		PRINT_ASSERT(phi.size(),==,2);
+
+		unsigned tmp_ind[NDIMS+1];
+		for(unsigned i=0; i<NDIMS; i++) tmp_ind[i] = dir_ind[i];
+		tmp_ind[NDIMS] = 0;
+		const unsigned base_ind = direct_index(tmp_ind);
+		const Axis* nu_axis = &(data.axes[nuGridIndex]);
+		const unsigned nnu = nu_axis->size();
+		const double constants = 1./(pc::h * pow(pc::c,6) * (double)weight);
+
+		for(unsigned i=0; i<nnu; i++){
+			double nu = nu_axis->mid[i-base_ind];
+			for(unsigned j=0; j<nnu; j++){
+				double nubar = nu_axis->mid[j];
+
+				const double coeff = nu*nu * nubar*nubar * constants;
+
+				// basic spherically symmetric
+				double tmp0 = getE(i+base_ind)*nubar_dist->getE(j+base_ind);
+				double tmp1 = 0;
+				for(unsigned k=0; k<3; k++) tmp1 += getF(i+base_ind,k)*nubar_dist->getF(j+base_ind,k);
+				fourforce[3] += coeff*(nu+nubar) * (0.5*phi[0][i][j]*tmp0 + 1.5*phi[1][i][j]*tmp1);
+
+				// space components
+				for(unsigned a=0; a<3; a++){
+					tmp0 = nu    * getF(i+base_ind,a) * nubar_dist->getE(j+base_ind) +
+						   nubar * getE(i+base_ind)   * nubar_dist->getF(j+base_ind,a);
+					tmp1 = 0;
+					for(unsigned b=0; b<3; b++){
+						tmp1 += nu    * getP(i+base_ind,a,b) * nubar_dist->getF(j+base_ind,b);
+						tmp1 += nubar * getF(i+base_ind,b)   * nubar_dist->getP(j+base_ind,a,b);
+					}
+					fourforce[a] += coeff * (0.5*phi[0][i][j]*tmp0 + 1.5*phi[1][i][j]*tmp1);
+				}
+			}
+		}
+
+		// sanity checks
+		PRINT_ASSERT(fourforce[3],>=,0);
+		for(unsigned i=0; i<3; i++) PRINT_ASSERT(abs(fourforce[i]),<=,fourforce[3]);
+	}
 };
 
 #endif

@@ -41,6 +41,7 @@ public:
 
 	void myInit(Lua* lua);
 	void set_eas(const unsigned z_ind, Grid* grid) const;
+	void get_annihil_kernels(const double rho, const double T, const double Ye, const Axis& nuAxis, vector< vector< vector<double> > >& phi) const;
 };
 
 #endif

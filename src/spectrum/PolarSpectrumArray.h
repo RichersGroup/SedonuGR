@@ -57,7 +57,12 @@ public:
 	unsigned phiGridIndex, nuGridIndex, muGridIndex;
 	unsigned nphi, nnu, nmu;
 
-
+	unsigned direct_index(const unsigned dir_ind[ndims_spatial+3]) const{
+		return data.direct_index(dir_ind);
+	}
+	unsigned get(const unsigned index) const{
+		return data[index];
+	}
 
 	unsigned size() const{
 		return data.size();
@@ -233,6 +238,135 @@ public:
 			result += data[i];
 		return result;
 	}
+
+	static double cos_angle_between(const double mu1, const double mu2, const double phi1, const double phi2){
+		PRINT_ASSERT(mu1,<=,1.0);
+		PRINT_ASSERT(mu1,>=,-1.0);
+		PRINT_ASSERT(mu2,<=,1.0);
+		PRINT_ASSERT(mu2,>=,-1.0);
+		double result = mu1*mu2 + sqrt((1.0-mu1*mu1)*(1.0-mu2*mu2))*cos(phi2-phi1); // Bruenn 1985 eq. A7
+
+		// make sure numerical error doesn't push it beyond {-1,1}
+		result = min(result, 1.0);
+		result = max(result,-1.0);
+		return result;
+	}
+	void annihilation_rate(
+			const unsigned dir_ind[NDIMS],       // directional indices for the zone we're getting the rate at
+			const SpectrumArray* in_dist,  // erg/ccm (integrated over angular bin and energy bin)
+			const vector< vector<vector<double> > >& phi, // cm^3/s [order][igin][igout]
+			const unsigned weight,
+			Tuple<double,4>& fourforce) const{
+
+		const PolarSpectrumArray<NDIMS>* nubar_dist = (PolarSpectrumArray<NDIMS>*)in_dist;
+		PRINT_ASSERT(phi.size(),==,3);
+
+		PRINT_ASSERT(size(),==,nubar_dist->size());
+		PRINT_ASSERT(nnu,==,nubar_dist->nnu);
+		PRINT_ASSERT(nmu,==,nubar_dist->nmu);
+		PRINT_ASSERT(nphi,==,nubar_dist->nphi);
+
+		const Axis* nuAxis = &(data.axes[nuGridIndex]);
+		const Axis* muAxis = &(data.axes[muGridIndex]);
+		const Axis* phiAxis = &(data.axes[phiGridIndex]);
+
+		// calculate angle between distribution function angles beforehand
+		double costheta[nmu][nphi][nmu][nphi];
+		for(unsigned mu=0; mu<nmu; mu++){
+			for(unsigned phi=0; phi<nphi; phi++){
+
+				double avg_mu  = muAxis->mid[mu];
+				double avg_phi = phiAxis->mid[phi];
+
+				for(unsigned mubar=0; mubar<nmu; mubar++){
+					for(unsigned phibar=0; phibar<nphi; phibar++){
+
+						//unsigned indexbar = nubar_dist->index(0,mubar,phibar);
+						double avg_mubar  = muAxis->mid[mubar];
+						double avg_phibar = phiAxis->mid[phibar];
+
+						costheta[mu][phi][mubar][phibar] = cos_angle_between(avg_mu,avg_mubar,avg_phi,avg_phibar);
+					}
+				}
+			}
+		}
+
+		// some useful constants
+		double twomec2 = 2.0*pc::m_e*pc::c*pc::c;
+		double mec22 = pc::m_e*pc::m_e * pc::c*pc::c*pc::c*pc::c;
+		double invweight = 1./(double)weight;
+
+		// set up index arrays
+		unsigned index[NDIMS + 3];
+		unsigned indexbar[NDIMS + 3];
+		for(int i=0; i<NDIMS; i++){
+			index[i] = dir_ind[i];
+			indexbar[i] = dir_ind[i];
+		}
+
+		// integrate over all bins
+		for(unsigned inu=0; inu<nnu; inu++){
+			double avg_e = nuAxis->mid[inu]*pc::h; // erg
+			index[nuGridIndex] = inu;
+			for(unsigned inubar=0; inubar<nnu; inubar++){
+				double avg_ebar = nuAxis->mid[inubar]*pc::h; // erg
+				indexbar[nuGridIndex] = inu;
+				unsigned indbar = nubar_dist->direct_index(indexbar);
+
+				double eebar = avg_e * avg_ebar;
+				if(avg_e*avg_ebar > mec22){
+
+					// neutrino direction loops
+					for(unsigned imu=0; imu<nmu; imu++){
+						index[muGridIndex] = imu;
+						const double z = muAxis->mid[imu];
+						const double sintheta = sqrt(1. - muAxis->mid[imu]*muAxis->mid[imu]);
+						for(unsigned iphi=0; iphi<nphi; iphi++){
+							index[phiGridIndex] = iphi;
+							unsigned ind = direct_index(index);
+							const double x = sintheta * cos(phiAxis->mid[iphi]);
+							const double y = sintheta * sin(phiAxis->mid[iphi]);
+
+							// antineutrino direction loops
+							for(unsigned imubar=0; imubar<nmu; imubar++){
+								indexbar[nubar_dist->nuGridIndex] = imubar;
+								const double zbar = muAxis->mid[imubar];
+								const double sinthetabar = sqrt(1. - muAxis->mid[imubar]*muAxis->mid[imubar]);
+								for(unsigned iphibar=0; iphibar<nphi; iphibar++){
+									indexbar[nubar_dist->nuGridIndex] = iphibar;
+									const double xbar = sinthetabar * cos(phiAxis->mid[iphibar]);
+									const double ybar = sinthetabar * sin(phiAxis->mid[iphibar]);
+
+									double cost = costheta[imu][iphi][imubar][iphibar];
+									if(eebar*(1.-cost) > mec22){
+										double nudist_edens    = get(ind); // erg/ccm
+										double nubardist_edens = nubar_dist->get(indbar); // erg/ccm
+
+										double Q = 0.5*phi[0][inu][inubar] +
+												   1.5*phi[1][inu][inubar] * cost +
+												   2.5*phi[2][inu][inubar] * 0.5*(3.*cost*cost-1.);
+										Q *= nudist_edens * nubardist_edens * invweight;
+
+										// angular distribution
+										fourforce[0] += Q * (x + xbar);
+										fourforce[1] += Q * (y + ybar);
+										fourforce[2] += Q * (z + zbar);
+										fourforce[3] += Q;
+
+									} // if
+								} // phibar
+							} // mubar
+						} // phi
+					} // mu
+				} // if
+			} // nubar
+		} // nu
+
+		// sanity checks
+		PRINT_ASSERT(fourforce[3],>=,0);
+		for(unsigned i=0; i<3; i++) PRINT_ASSERT(abs(fourforce[i]),<=,fourforce[3]);
+	}
+
 };
 
 #endif

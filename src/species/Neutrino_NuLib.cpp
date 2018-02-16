@@ -80,3 +80,7 @@ void Neutrino_NuLib::set_eas(const unsigned z_ind, Grid* grid) const
 			}
 	}
 }
+
+void Neutrino_NuLib::get_annihil_kernels(const double rho, const double T, const double Ye, const Axis& nuAxis, vector< vector< vector<double> > >& phi) const{
+	nulib_get_epannihil_kernels(rho, T, Ye, ID, phi);
+}
