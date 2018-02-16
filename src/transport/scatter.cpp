@@ -208,7 +208,7 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double k
 	// uniformly sample within zone
 	unsigned global_index = grid->scattering_phi0[eh->p.s].direct_index(dir_ind);
 	double out_nu = rangen.uniform(grid->nu_grid_axis.bottom(igout), grid->nu_grid_axis.top[igout]);
-	double phi_interpolated = grid->scattering_phi0[eh->p.s].dydx[global_index][NDIMS+1][0]*(out_nu - nubar) + phi0avg;
+	double phi_interpolated = phi0avg; // + grid->scattering_phi0[eh->p.s].dydx[global_index][NDIMS+1][0]*(out_nu - nubar);
 	eh->p.N *= phi_interpolated / phi0avg;
 
 	// get scattering delta

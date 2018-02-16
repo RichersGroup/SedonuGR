@@ -408,11 +408,13 @@ void Transport::reset_radiation(){
 				for(unsigned igin=0; igin<grid->nu_grid_axis.size(); igin++){
 					dir_ind[NDIMS] = igin;
 					hypervec[NDIMS] = grid->nu_grid_axis.mid[igin];
-					grid->scat_opac[s][igin] = 0;
+					unsigned global_ind = grid->scat_opac[s].direct_index(dir_ind);
+					grid->scat_opac[s][global_ind] = 0;
 					for(unsigned igout=0; igout<grid->nu_grid_axis.size(); igout++){
 						dir_ind[NDIMS+1] = igout;
 						hypervec[NDIMS+1] = 0.5 * (grid->nu_grid_axis.bottom(igout) + grid->nu_grid_axis.top[igout]);
-						grid->scat_opac[s][igin] += grid->scattering_phi0[s].interpolate(hypervec,dir_ind) * grid->nu_grid_axis.delta(igout);
+						grid->scat_opac[s][global_ind] += grid->scattering_phi0[s].interpolate(hypervec,dir_ind) * grid->nu_grid_axis.delta(igout);
+						PRINT_ASSERT(grid->scat_opac[s][global_ind],>,0);
 					}
 				}
 			}
