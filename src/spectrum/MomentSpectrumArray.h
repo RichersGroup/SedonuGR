@@ -315,7 +315,9 @@ public:
 				double tmp0 = getE(i+base_ind)*nubar_dist->getE(j+base_ind);
 				double tmp1 = 0;
 				for(unsigned k=0; k<3; k++) tmp1 += getF(i+base_ind,k)*nubar_dist->getF(j+base_ind,k);
-				fourforce[3] += coeff*(nu+nubar) * (0.5*phi[0][i][j]*tmp0 + 1.5*phi[1][i][j]*tmp1);
+				double this_dep = coeff*(nu+nubar) * (0.5*phi[0][i][j]*tmp0 + 1.5*phi[1][i][j]*tmp1);
+				PRINT_ASSERT(this_dep,>=,0);
+				fourforce[3] += this_dep;
 
 				// space components
 				for(unsigned a=0; a<3; a++){

@@ -384,6 +384,7 @@ void Transport::reset_radiation(){
 	grid->l_emit.wipe();
 	grid->fourforce_abs.wipe();
 	grid->fourforce_emit.wipe();
+	grid->fourforce_annihil.wipe();
 
 	if(verbose) cout << "# Setting zone transport quantities" << endl;
 	for(unsigned s=0; s<species_list.size(); s++){

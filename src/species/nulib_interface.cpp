@@ -417,7 +417,7 @@ void nulib_get_epannihil_kernels(
 	double phi_tmp[n_legendre_coefficients][ngroups][ngroups]; //[a][j][i] = legendre index a, out group i, and in group j (ccm/s)
 
 	// read the kernels from nulib
-	if(read_Ielectron>0){
+	if(read_epannihil>0){
 		PRINT_ASSERT(temp_MeV,<=,pow(10.0,nulibtable_logItemp_max));
 		PRINT_ASSERT(temp_MeV,>=,pow(10.0,nulibtable_logItemp_min));
 		nulibtable_epannihil_single_species_range_energy_(&temp_MeV, &eta, &lns, (double*)phi_tmp,
@@ -436,7 +436,8 @@ void nulib_get_epannihil_kernels(
 
 			phi[0][igin][igout] = phi_tmp[1][igout][igin] * coeff;
 			phi[1][igin][igout] = phi_tmp[3][igout][igin] * coeff;
-			PRINT_ASSERT(phi[1][igin][igout],<=,3.*phi[0][igin][igout]);
+			PRINT_ASSERT(phi[0][igin][igout],>=,0);
+			PRINT_ASSERT(abs(phi[1][igin][igout]),<=,phi[0][igin][igout]); // mathematically impossible to have phi1/phi0>9
 		}
 	}
 }
