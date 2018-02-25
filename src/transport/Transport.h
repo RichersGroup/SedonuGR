@@ -173,7 +173,7 @@ public:
 	void set_cdf_to_BB(const double T, const double chempot, CDFArray& emis);
 	static void isotropic_kup_tet(const double nu, double kup_tet[4], ThreadRNG *rangen);
 	static void isotropic_direction(double D[3], ThreadRNG *rangen);
-	double R_randomwalk(const double kx_kttet, const double ux, const double dlab, const double D);
+	double R_randomwalk(const double kx_kttet, const double kt_kttet, const double ux, const double dlab, const double D);
 
 	// set things up
 	void init(Lua* lua);

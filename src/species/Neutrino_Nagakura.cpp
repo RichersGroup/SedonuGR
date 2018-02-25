@@ -96,68 +96,69 @@ void Neutrino_Nagakura::set_eas(const unsigned zone_index, Grid* grid) const
     	dir_ind[NDIMS] = inu;
     	unsigned global_index = grid->abs_opac[ID].direct_index(dir_ind);
 
-            int itmp;
-            double e=0, a=0, s=0;
+    	int itmp;
+    	double e=0, a=0, s=0;
 
-            opac_file >> itmp; // group number
-            PRINT_ASSERT(inu,==,itmp);
+    	opac_file >> itmp; // group number
+    	PRINT_ASSERT(inu,==,itmp);
 
-            double dtmp;
-            if(ID==0){
-                    // electron type
-                    opac_file >> e; // emissivity (erg/ccm/s)
-                    opac_file >> a;
-                    opac_file >> s;
+    	double dtmp;
+    	if(ID==0){
+    		// electron type
+    		opac_file >> e; // emissivity (erg/ccm/s)
+    		opac_file >> a;
+    		opac_file >> s;
 
-                    // anti-electron type
-                    opac_file >> dtmp;
-                    opac_file >> dtmp;
-                    opac_file >> dtmp;
+    		// anti-electron type
+    		opac_file >> dtmp;
+    		opac_file >> dtmp;
+    		opac_file >> dtmp;
 
-                    // heavy lepton type
-                    opac_file >> dtmp;
-                    opac_file >> dtmp;
-                    opac_file >> dtmp;
-            }
-            else if(ID==1){
-                    // electron type
-                    opac_file >> dtmp;
-                    opac_file >> dtmp;
-                    opac_file >> dtmp;
+    		// heavy lepton type
+    		opac_file >> dtmp;
+    		opac_file >> dtmp;
+    		opac_file >> dtmp;
+    	}
+    	else if(ID==1){
+    		// electron type
+    		opac_file >> dtmp;
+    		opac_file >> dtmp;
+    		opac_file >> dtmp;
 
-                    // anti-electron type
-                    opac_file >> e; // emissivity (erg/ccm/s)
-                    opac_file >> a;
-                    opac_file >> s;
+    		// anti-electron type
+    		opac_file >> e; // emissivity (erg/ccm/s)
+    		opac_file >> a;
+    		opac_file >> s;
 
-                    // heavy lepton type
-                    opac_file >> dtmp;
-                    opac_file >> dtmp;
-                    opac_file >> dtmp;
-            }
-            else if(ID==2){
-                    // electron type
-                    opac_file >> dtmp;
-                    opac_file >> dtmp;
-                    opac_file >> dtmp;
+    		// heavy lepton type
+    		opac_file >> dtmp;
+    		opac_file >> dtmp;
+    		opac_file >> dtmp;
+    	}
+    	else if(ID==2){
+    		// electron type
+    		opac_file >> dtmp;
+    		opac_file >> dtmp;
+    		opac_file >> dtmp;
 
-                    // electron type
-                    opac_file >> dtmp;
-                    opac_file >> dtmp;
-                    opac_file >> dtmp;
+    		// electron type
+    		opac_file >> dtmp;
+    		opac_file >> dtmp;
+    		opac_file >> dtmp;
 
-                    // heavy lepton type
-                    opac_file >> e; // emissivity (erg/ccm/s)
-                    opac_file >> a;
-                    opac_file >> s;
-            }
-            else{
-                    cout << "ERROR: Neutrino ID not recognized!" << endl;
-                    assert(false);
-            }
-            grid->BB[ID][global_index] = e / pow(pc::c,2); // #/cm^2/s/sr/(Hz^3/3)
-            grid->abs_opac[ID][global_index] = a;
-            grid->scat_opac[ID][global_index] = s;
+    		// heavy lepton type
+    		opac_file >> e; // emissivity (erg/ccm/s)
+    		opac_file >> a;
+    		opac_file >> s;
+    	}
+    	else{
+    		cout << "ERROR: Neutrino ID not recognized!" << endl;
+    		assert(false);
+    	}
+    	grid->BB[ID][global_index] = e / a; // erg/cm^2/s/sr
+    	grid->BB[ID][global_index] /= pc::h * pow(grid->nu_grid_axis.mid[inu],3) * grid->nu_grid_axis.delta(inu); // #/cm^2/s/sr/(Hz^3/3)
+    	grid->abs_opac[ID][global_index] = a;
+    	grid->scat_opac[ID][global_index] = s;
     }
     opac_file.close();
 }

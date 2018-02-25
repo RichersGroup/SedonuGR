@@ -106,7 +106,10 @@ void Transport::emit_zones_by_bin(){
 	}
 
 	int n_created = particles.size() - size_before;
+	double total_neutrinos = 0;
+	for(unsigned i=0; i<species_list.size(); i++) total_neutrinos += N_net_emit[i];
 	if(verbose) cout << "#   emit_zones_by_bin() created " << n_created << " particles on rank 0 ("
+			<< total_neutrinos << " neutrinos) ("
 			<< n_attempted-n_created << " rouletted immediately)" << endl;
 }
 
@@ -153,6 +156,7 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 	eh.p.N *= grid->zone_lab_3volume(eh.z_ind) * sqrt(eh.g.gammalow.det()) * (-eh.g.ndot(eh.u)); // comoving volume (d3x * volfac * Lorentz factor)
 	eh.p.N *= weight * 1/*s*/ * 4.*pc::pi/*sr*/ * grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/;
 	PRINT_ASSERT(eh.p.N,>=,0);
+	PRINT_ASSERT(eh.p.N,<,1e99);
 
 	// add to particle vector
 	window(&eh);

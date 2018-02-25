@@ -132,14 +132,18 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 		for(int k=9; k<=165; k++) infile >> trash;
 
 		// convert units
-		vr[z_ind] *= xAxes[0].mid[z_ind];
 		T[z_ind] /= pc::k_MeV;
+
+		// GR variables
+		lapse[z_ind] = 1.0;
+		X[z_ind] = 1.0;
 
 		// sanity checks
 		PRINT_ASSERT(rho[z_ind],>=,0.0);
 		PRINT_ASSERT(T[z_ind],>=,0.0);
 		PRINT_ASSERT(Ye[z_ind],>=,0.0);
 		PRINT_ASSERT(Ye[z_ind],<=,1.0);
+		PRINT_ASSERT(vr[z_ind],<,pc::c);
 	}
 }
 
@@ -418,7 +422,7 @@ double Grid1DSphere::d_boundary(const EinsteinHelper *eh) const{
 }
 double Grid1DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 	double R=INFINITY;
-	double D = eh->scatopac / (3.*pc::c);
+	double D = pc::c / (3.*eh->scatopac);
 
 	double ktest[4] = {eh->p.xup[0], eh->p.xup[1], eh->p.xup[2], 0};
 	const double r = radius(eh->p.xup);
@@ -438,7 +442,7 @@ double Grid1DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 		if(sgn>0) drlab = xAxes[0].top[eh->dir_ind[0]] - r;
 		if(sgn<0) drlab = xAxes[0].bottom(eh->dir_ind[0]) - r;
 
-		R = min(R, sim->R_randomwalk(kr/kup_tet_t, ur, drlab, D));
+		R = min(R, sim->R_randomwalk(kr/kup_tet_t, ktest[3]/kup_tet_t, ur, drlab, D));
 	}
 
 	PRINT_ASSERT(R,>=,0);

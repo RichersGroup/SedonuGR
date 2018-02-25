@@ -224,6 +224,7 @@ void Transport::propagate(EinsteinHelper *eh) const{
 	{
 		PRINT_ASSERT(eh->z_ind,>=,0);
 		PRINT_ASSERT(eh->p.N,>,0);
+		PRINT_ASSERT(eh->p.N,<,1e99);
 		PRINT_ASSERT(eh->p.kup[3],>,0);
 		PRINT_ASSERT(eh->kup_tet[3],>,0);
 		PRINT_ASSERT(eh->p.kup[3],<,INFINITY);
