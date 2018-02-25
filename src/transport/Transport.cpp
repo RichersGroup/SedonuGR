@@ -415,7 +415,7 @@ void Transport::reset_radiation(){
 						dir_ind[NDIMS+1] = igout;
 						hypervec[NDIMS+1] = 0.5 * (grid->nu_grid_axis.bottom(igout) + grid->nu_grid_axis.top[igout]);
 						grid->scat_opac[s][global_ind] += grid->scattering_phi0[s].interpolate(hypervec,dir_ind) * grid->nu_grid_axis.delta(igout);
-						PRINT_ASSERT(grid->scat_opac[s][global_ind],>,0);
+						PRINT_ASSERT(grid->scat_opac[s][global_ind],>=,0);
 					}
 				}
 			}

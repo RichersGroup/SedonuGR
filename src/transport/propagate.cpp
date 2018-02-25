@@ -40,6 +40,7 @@ void Transport::propagate_particles()
 	if(verbose) cout << "# Propagating particles..." << endl;
 
 	unsigned ndone=0;
+	unsigned last_percent = 0;
 	const unsigned nparticles = particles.size();
 
 	//--- MOVE THE PARTICLES AROUND ---
@@ -68,11 +69,16 @@ void Transport::propagate_particles()
 			grid->spectrum[eh.p.s].count(&eh, eh.p.N * nu*pc::h);
 		}
 
-		#pragma omp atomic
-		ndone++;
-		if(verbose && ndone%10000==0)
-			cout << "\r"<<ndone<<"/"<<nparticles << " (" << (double)ndone/(double)nparticles*100<<"\%)";
-
+		if(verbose){
+			#pragma omp atomic
+			ndone++;
+			unsigned this_percent = (double)ndone/(double)nparticles*100.;
+			if(this_percent > last_percent){
+				last_percent = this_percent;
+				#pragma omp critical
+				cout << "\r"<<ndone<<"/"<<nparticles << " (" << last_percent<<"\%)" << flush;
+			}
+		}
 		PRINT_ASSERT(eh.p.fate, !=, moving);
 		particles[i] = eh.p;
 	} //#pragma omp parallel for
