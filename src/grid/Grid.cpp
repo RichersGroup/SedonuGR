@@ -325,7 +325,7 @@ void Grid::write_zones(const int iw)
 	file.createGroup("/axes");
 
 	// axes
-	for(int dir=0; dir<3; dir++){
+	for(int dir=0; dir<NDIMS; dir++){
 		string datasetname = string("/axes/x")+to_string(dir)+string("(cm)");
 		xAxes[dir].write_HDF5(datasetname, file);
 	}
