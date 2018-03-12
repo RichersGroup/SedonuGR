@@ -90,6 +90,7 @@ void Species::init(Lua* lua, Transport* simulation)
 	myInit(lua);
 }
 
+// cm^3/s
 void Species::get_annihil_kernels(const double rho, const double T, const double Ye, const Axis& nuAxis, vector< vector< vector<double> > >& phi) const{
 	// constants
 	using namespace pc;
@@ -106,7 +107,7 @@ void Species::get_annihil_kernels(const double rho, const double T, const double
 	double twomec2 = 2.0*pc::m_e*pc::c*pc::c;
 	double C3mec4 = C3*mec2*mec2;
 	double C1pC2_3 = C1pC2/3.0;
-	double mec22 = pc::m_e*pc::m_e * pc::c*pc::c*pc::c*pc::c;
+	double mec22 = mec2*mec2;
 	unsigned nnu = nuAxis.size();
 
 	phi.resize(3);
@@ -119,16 +120,22 @@ void Species::get_annihil_kernels(const double rho, const double T, const double
 		for(unsigned inubar=0; inubar<nnu; inubar++){
 			double avg_ebar = nuAxis.mid[inubar]*pc::h; // erg
 
-			double C3mec4_eebar = C3mec4/(avg_e*avg_ebar);
-			double sume_m_twomec2 = avg_e + avg_ebar - twomec2;
 			double eebar = avg_e * avg_ebar;
-			double A = sume_m_twomec2* pc::sigma0*pc::c / (4.*mec2*mec2);
+			double C3mec4_eebar = C3mec4/eebar;
+			// phi(mu) = A( B(1-mu)^2 + C(1-mu))
+			double A = pc::sigma0*pc::c * eebar/(twomec2*twomec2); // cm^3/s
 			double B = C1pC2_3;
 			double C = C3mec4_eebar;
-			if(avg_e*avg_ebar > mec22){
+			if(eebar > mec22){
 				phi[0][inu][inubar] =  2.*A*(4.*B/3. + C);
 				phi[1][inu][inubar] = -2./3.*A*(2.*B + C);
 				phi[2][inu][inubar] =  4./15.*A*B;
+				PRINT_ASSERT(phi[0][inu][inubar],>=,0);
+				// sanity checks. format: coeff*phi*P(n,x)
+				PRINT_ASSERT((1./2.*phi[0][inu][inubar] + 3./2.*phi[1][inu][inubar]*( 1  ) + 5./2.*phi[2][inu][inubar]*(1   ))/phi[0][inu][inubar],>=,-TINY); // x= 1
+				PRINT_ASSERT((1./2.*phi[0][inu][inubar] + 3./2.*phi[1][inu][inubar]*(-1  ) + 5./2.*phi[2][inu][inubar]*(1   ))/phi[0][inu][inubar],>=,-TINY); // x=-1
+				PRINT_ASSERT((1./2.*phi[0][inu][inubar] + 3./2.*phi[1][inu][inubar]*( 0  ) + 5./2.*phi[2][inu][inubar]*(-0.5))/phi[0][inu][inubar],>=,-TINY); // x= 0
+
 			}
 		}
 	}
