@@ -60,7 +60,7 @@ public:
 	unsigned direct_index(const unsigned dir_ind[ndims_spatial+3]) const{
 		return data.direct_index(dir_ind);
 	}
-	unsigned get(const unsigned index) const{
+	double get(const unsigned index) const{
 		return data[index];
 	}
 
@@ -294,12 +294,11 @@ public:
 		// some useful constants
 		double twomec2 = 2.0*pc::m_e*pc::c*pc::c;
 		double mec22 = pc::m_e*pc::m_e * pc::c*pc::c*pc::c*pc::c;
-		double invweight = 1./(double)weight;
 
 		// set up index arrays
-		unsigned index[NDIMS + 3];
-		unsigned indexbar[NDIMS + 3];
-		for(int i=0; i<NDIMS; i++){
+		unsigned index[ndims_spatial + 3];
+		unsigned indexbar[ndims_spatial + 3];
+		for(int i=0; i<ndims_spatial; i++){
 			index[i] = dir_ind[i];
 			indexbar[i] = dir_ind[i];
 		}
@@ -310,57 +309,56 @@ public:
 			index[nuGridIndex] = inu;
 			for(unsigned inubar=0; inubar<nnu; inubar++){
 				double avg_ebar = nuAxis->mid[inubar]*pc::h; // erg
-				indexbar[nuGridIndex] = inu;
-				unsigned indbar = nubar_dist->direct_index(indexbar);
+				indexbar[nuGridIndex] = inubar;
 
 				double eebar = avg_e * avg_ebar;
-				if(avg_e*avg_ebar > mec22){
+				double phi2 = -1./5. * (phi[0][inu][inubar] + 3.*phi[1][inu][inubar]);
 
-					// neutrino direction loops
-					for(unsigned imu=0; imu<nmu; imu++){
-						index[muGridIndex] = imu;
-						const double z = muAxis->mid[imu];
-						const double sintheta = sqrt(1. - muAxis->mid[imu]*muAxis->mid[imu]);
-						for(unsigned iphi=0; iphi<nphi; iphi++){
-							index[phiGridIndex] = iphi;
-							unsigned ind = direct_index(index);
-							const double x = sintheta * cos(phiAxis->mid[iphi]);
-							const double y = sintheta * sin(phiAxis->mid[iphi]);
+				// neutrino direction loops
+				for(unsigned imu=0; imu<nmu; imu++){
+					index[muGridIndex] = imu;
+					const double z = muAxis->mid[imu];
+					const double sintheta = sqrt(1. - muAxis->mid[imu]*muAxis->mid[imu]);
+					for(unsigned iphi=0; iphi<nphi; iphi++){
+						index[phiGridIndex] = iphi;
+						unsigned ind = direct_index(index);
+						const double x = sintheta * cos(phiAxis->mid[iphi]);
+						const double y = sintheta * sin(phiAxis->mid[iphi]);
 
-							// antineutrino direction loops
-							for(unsigned imubar=0; imubar<nmu; imubar++){
-								indexbar[nubar_dist->nuGridIndex] = imubar;
-								const double zbar = muAxis->mid[imubar];
-								const double sinthetabar = sqrt(1. - muAxis->mid[imubar]*muAxis->mid[imubar]);
-								for(unsigned iphibar=0; iphibar<nphi; iphibar++){
-									indexbar[nubar_dist->nuGridIndex] = iphibar;
-									const double xbar = sinthetabar * cos(phiAxis->mid[iphibar]);
-									const double ybar = sinthetabar * sin(phiAxis->mid[iphibar]);
+						// antineutrino direction loops
+						for(unsigned imubar=0; imubar<nmu; imubar++){
+							indexbar[nubar_dist->muGridIndex] = imubar;
+							const double zbar = muAxis->mid[imubar];
+							const double sinthetabar = sqrt(1. - muAxis->mid[imubar]*muAxis->mid[imubar]);
+							for(unsigned iphibar=0; iphibar<nphi; iphibar++){
+								indexbar[nubar_dist->phiGridIndex] = iphibar;
+								unsigned indbar = nubar_dist->direct_index(indexbar);
+								const double xbar = sinthetabar * cos(phiAxis->mid[iphibar]);
+								const double ybar = sinthetabar * sin(phiAxis->mid[iphibar]);
 
-									double cost = costheta[imu][iphi][imubar][iphibar];
-									if(eebar*(1.-cost) > mec22){
-										double nudist_edens    = get(ind); // erg/ccm
-										double nubardist_edens = nubar_dist->get(indbar); // erg/ccm
+								double cost = costheta[imu][iphi][imubar][iphibar];
+								double nudist_edens    = get(ind); // erg/ccm
+								double nubardist_edens = nubar_dist->get(indbar); // erg/ccm
 
-										double Q = 0.5*phi[0][inu][inubar] +
-												   1.5*phi[1][inu][inubar] * cost +
-												   2.5*phi[2][inu][inubar] * 0.5*(3.*cost*cost-1.);
-										Q *= nudist_edens * nubardist_edens * invweight;
+								double Q = 0.5*phi[0][inu][inubar] +
+										1.5*phi[1][inu][inubar] * cost +
+										2.5*phi2 * 0.5*(3.*cost*cost-1.); // ccm/s
+								Q *= nudist_edens * nubardist_edens / eebar; // #/ccm/s
+								//PRINT_ASSERT(Q,>=,0);
 
-										// angular distribution
-										fourforce[0] += Q * (x + xbar);
-										fourforce[1] += Q * (y + ybar);
-										fourforce[2] += Q * (z + zbar);
-										fourforce[3] += Q;
+								// angular distribution
+								fourforce[0] += Q * (avg_e*x + avg_ebar*xbar); // erg/ccm/s
+								fourforce[1] += Q * (avg_e*y + avg_ebar*ybar);
+								fourforce[2] += Q * (avg_e*z + avg_ebar*zbar);
+								fourforce[3] += Q * (avg_e   + avg_ebar     );
 
-									} // if
-								} // phibar
-							} // mubar
-						} // phi
-					} // mu
-				} // if
+							} // phibar
+						} // mubar
+					} // phi
+				} // mu
 			} // nubar
 		} // nu
+		for(unsigned i=0; i<4; i++) fourforce[i] /= weight;
 
 		// sanity checks
 		PRINT_ASSERT(fourforce[3],>=,0);

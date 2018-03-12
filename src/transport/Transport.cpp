@@ -429,7 +429,7 @@ void Transport::reset_radiation(){
 //-----------------------------
 void Transport::calculate_annihilation(){
 	grid->fourforce_annihil.mpi_gather(my_zone_end);
-	if(verbose) cout << "# Calculating annihilation rates...";
+	if(verbose) cout << "# Calculating annihilation rates..." << flush;
 
 	// remember what zones I'm responsible for
 	int start = ( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
@@ -489,7 +489,7 @@ void Transport::calculate_annihilation(){
 					phi[s0], species_list[s0]->weight,
 					grid->fourforce_annihil[z_ind]);
 		}
-		H_nunu_tet += grid->fourforce_annihil[z_ind][3];
+		H_nunu_tet += grid->fourforce_annihil[z_ind][3] * grid->zone_4volume(z_ind);
 	}
 
 	// synchronize global quantities between processors

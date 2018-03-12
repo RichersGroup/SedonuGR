@@ -91,6 +91,44 @@ public:
 		assert(0);
 		return NaN;
 	}
+	double getL(const unsigned ind, const unsigned i, const unsigned j, const unsigned k) const{
+		switch((i+1)*(j+1)*(k+1)){
+		case 1:
+			return data[ind][10]; //Lxxx=data[index][10]
+			break;
+		case 2:
+			return data[ind][11]; //Lxxy=data[index][11]
+			break;
+		case 3:
+			return data[ind][12]; //Lxxz=data[index][12]
+			break;
+		case 4:
+			return data[ind][13]; //Lxyy=data[index][13]
+			break;
+		case 6:
+			return data[ind][14]; //Lxyz=data[index][14]
+			break;
+		case 9:
+			return data[ind][15]; //Lxzz=data[index][15]
+			break;
+		case 8:
+			return data[ind][16]; //Lyyy=data[index][16]
+			break;
+		case 12:
+			return data[ind][17]; //Lyyz=data[index][17]
+			break;
+		case 18:
+			return data[ind][18]; //Lyzz=data[index][18]
+			break;
+		case 27:
+			return data[ind][19]; //Lzzz=data[index][19]
+			break;
+		}
+
+		// should not get past switch statement
+		assert(0);
+		return NaN;
+	}
 
 	//---------------------------------------------------
 	// increment tensor indices for any symmetric tensor
@@ -294,7 +332,7 @@ public:
 			Tuple<double,4>& fourforce) const{
 
 		const MomentSpectrumArray<NDIMS>* nubar_dist = (MomentSpectrumArray<NDIMS>*)in_dist;
-		PRINT_ASSERT(phi.size(),==,2);
+		PRINT_ASSERT(phi.size(),>=,2);
 
 		unsigned tmp_ind[NDIMS+1];
 		for(unsigned i=0; i<NDIMS; i++) tmp_ind[i] = dir_ind[i];
@@ -302,41 +340,55 @@ public:
 		const unsigned base_ind = direct_index(tmp_ind);
 		const Axis* nu_axis = &(data.axes[nuGridIndex]);
 		const unsigned nnu = nu_axis->size();
-		const double constants = 1./(pc::h * pow(pc::c,6) * (double)weight);
 
 		for(unsigned i=0; i<nnu; i++){
-			double nu = nu_axis->mid[i];
+			double avg_e = pc::h * nu_axis->mid[i];
 			for(unsigned j=0; j<nnu; j++){
-				double nubar = nu_axis->mid[j];
-
-				const double coeff = nu*nu * nubar*nubar * constants;
+				double avg_ebar = pc::h * nu_axis->mid[j];
+				double eebar = avg_e*avg_ebar;
+				double phi2 = -1./5. * (phi[0][i][j] + 3.*phi[1][i][j]);
 
 				// basic spherically symmetric
-				double tmp0 = getE(i+base_ind)*nubar_dist->getE(j+base_ind);
-				double tmp1 = 0;
-				for(unsigned k=0; k<3; k++) tmp1 += getF(i+base_ind,k)*nubar_dist->getF(j+base_ind,k);
-				double this_dep = coeff*(nu+nubar) * (0.5*phi[0][i][j]*tmp0 + 1.5*phi[1][i][j]*tmp1);
-				PRINT_ASSERT(this_dep,>=,0);
+				double tmp0 = getE(i+base_ind)*nubar_dist->getE(j+base_ind) / eebar; // #/cm^6
+				PRINT_ASSERT(tmp0,>=,0);
+				double tmp1=0, tmp2=0;
+				for(unsigned k=0; k<3; k++){
+					tmp1 += getF(i+base_ind,k)*nubar_dist->getF(j+base_ind,k) / eebar; // #/cm^6
+					for(unsigned l=0; l<3; l++) tmp2 += 3.*getP(i+base_ind,k,l)*nubar_dist->getP(j+base_ind,k,l)/eebar;
+					tmp2 -= tmp0;
+					tmp2 *= 0.5;
+					PRINT_ASSERT(abs(getF(i+base_ind,k)),<=,getE(i+base_ind));
+					PRINT_ASSERT(abs(nubar_dist->getF(i+base_ind,k)),<=,nubar_dist->getE(i+base_ind));
+				}
+				double this_dep = (avg_e + avg_ebar) * (0.5*phi[0][i][j]*tmp0 + 1.5*phi[1][i][j]*tmp1 + 2.5*phi2*tmp2); // erg/cm^3/s
 				fourforce[3] += this_dep;
 
 				// space components
 				for(unsigned a=0; a<3; a++){
-					tmp0 = nu    * getF(i+base_ind,a) * nubar_dist->getE(j+base_ind) +
-						   nubar * getE(i+base_ind)   * nubar_dist->getF(j+base_ind,a);
-					tmp1 = 0;
+					tmp0 = avg_e    * getF(i+base_ind,a) * nubar_dist->getE(j+base_ind)   / eebar + // erg/cm^6
+						   avg_ebar * getE(i+base_ind)   * nubar_dist->getF(j+base_ind,a) / eebar;
+					tmp1=0;
+					tmp2=0;
 					for(unsigned b=0; b<3; b++){
-						tmp1 += nu    * getP(i+base_ind,a,b) * nubar_dist->getF(j+base_ind,b);
-						tmp1 += nubar * getF(i+base_ind,b)   * nubar_dist->getP(j+base_ind,a,b);
+						tmp1 += avg_e    * getP(i+base_ind,a,b) * nubar_dist->getF(j+base_ind,  b) / eebar; // erg/cm^6
+						tmp1 += avg_ebar * getF(i+base_ind,  b) * nubar_dist->getP(j+base_ind,a,b) / eebar;
+						for(unsigned c=0; c<3; c++){
+							tmp2 += avg_e    * 3.*getL(i+base_ind,a,b,c)*nubar_dist->getP(j+base_ind,  b,c)/eebar;
+							tmp2 += avg_ebar * 3.*getP(i+base_ind,  b,c)*nubar_dist->getL(j+base_ind,a,b,c)/eebar;
+						}
+						tmp2 -= tmp0;
+						tmp2 *= 0.5;
 					}
-					fourforce[a] += coeff * (0.5*phi[0][i][j]*tmp0 + 1.5*phi[1][i][j]*tmp1);
+					fourforce[a] += 0.5*phi[0][i][j]*tmp0 + 1.5*phi[1][i][j]*tmp1 + 2.5*phi2*tmp2; // erg/ccm/s
 				}
 			}
 		}
 
 		// sanity checks
-		PRINT_ASSERT(fourforce[3],>=,0);
-		for(unsigned i=0; i<3; i++) PRINT_ASSERT(abs(fourforce[i]),<=,fourforce[3]);
+		for(unsigned i=0; i<4; i++) fourforce[i] /= weight;
+		//PRINT_ASSERT(fourforce[3],>=,0); // not always true, since moment reconstruction and annihilation kernel are not exact
 	}
+
 };
 
 #endif
