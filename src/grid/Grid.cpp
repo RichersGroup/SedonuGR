@@ -64,7 +64,9 @@ void Grid::init(Lua* lua, Transport* insim)
 
 	// read the model file or fill in custom model
 	read_model_file(lua);
+	sqrt_vdotv.set_axes(xAxes);
 	for(unsigned i=0; i<rho.size(); i++){
+		// modify problematic fluid quantities
 		if(rho[i] > sim->rho_max){
 			cout << "WARNING: resetting rho["<<i<<"] from "<<rho[i]<<" to "<<sim->rho_max<<endl;
 			rho[i] = sim->rho_max;
@@ -89,7 +91,13 @@ void Grid::init(Lua* lua, Transport* insim)
 			cout << "WARNING: resetting Ye["<<i<<"] from "<<Ye[i]<<" to "<<sim->Ye_min<<endl;
 			Ye[i] = sim->Ye_min;
 		}
+
+		// fill in sqrt_vdotv
+		double gamma = zone_lorentz_factor(i);
+		PRINT_ASSERT(gamma,>=,1.0);
+		sqrt_vdotv[i] = pc::c * sqrt(1. - 1./(gamma*gamma));
 	}
+	sqrt_vdotv.calculate_slopes(0,pc::c);
 
 	// read some parameters
 	int do_relativity = lua->scalar<int>("do_relativity");
@@ -335,6 +343,7 @@ void Grid::write_zones(const int iw)
 
 	// write fluid quantities
 	rho.write_HDF5(file,"rho(g|ccm,tet)");
+	sqrt_vdotv.write_HDF5(file,"sqrt_vdotv(cm|s,lab)");
 	T.write_HDF5(file,"T_gas(MeV,tet)");
 	Ye.write_HDF5(file,"Ye");
 	H_vis.write_HDF5(file,"H_vis(erg|s|g,tet)");

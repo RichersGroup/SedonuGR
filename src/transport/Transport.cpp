@@ -712,8 +712,11 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 		grid->get_connection_coefficients(eh);
 
 		// four-velocity and tetrad
-		double v[3];
+		double v[3], vmag, vmag_corrected;
 		grid->interpolate_fluid_velocity(eh->p.xup,v,eh->dir_ind);
+		vmag = sqrt(eh->g.dot<3>(v,v));
+		vmag_corrected = grid->sqrt_vdotv.interpolate(eh->p.xup,eh->dir_ind);
+		for(unsigned i=0; i<3; i++) v[i] *= vmag_corrected / vmag;
 		eh->set_fourvel(v);
 		eh->set_tetrad_basis(grid->tetrad_rotation);
 

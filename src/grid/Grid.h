@@ -102,6 +102,7 @@ public:
 	ScalarMultiDArray<NDIMS> T;         // gas temperature (K)
 	ScalarMultiDArray<NDIMS> Ye;        // electron fraction
 	ScalarMultiDArray<NDIMS> H_vis;     // specific heating rate (erg/s/g)
+	ScalarMultiDArray<NDIMS> sqrt_vdotv; // sqrt(v.v) (cm/s)
 
 	MultiDArray<4,NDIMS> fourforce_abs, fourforce_emit, fourforce_annihil;
 	ScalarMultiDArray<NDIMS> l_abs, l_emit; // lepton number emission rate (cm^-3 s^-1) (comoving frame)
