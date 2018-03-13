@@ -755,13 +755,16 @@ void Transport::random_core_x(double x3[3]) const{
 double Transport::R_randomwalk(const double kx_kttet, const double kt_kttet, const double ux, const double dlab, const double D){
 	PRINT_ASSERT(dlab*kx_kttet,>,0); // the displacement and the k vector should be in the same direction
 	double b = kx_kttet - kt_kttet * ux;
-	const double a = ux*pc::c * randomwalk_max_x / D / b;
-	const double c = dlab / b;
+	double a = ux*pc::c * randomwalk_max_x / D;
+	double c = dlab;
 	double R = NaN;
-	if(4.*a*c > 1.) R = 0; // if no solution, say randomwalk can't be done
+	if(4.*a*c > b*b) R = 0; // if no solution, say randomwalk can't be done
 	else{
-		if(b<0) R =    (-1. + sqrt(1. - 4.*a*c)) / (2.*a); // (moving forward)
-		if(b>0) R = abs(-1. - sqrt(1. - 4.*a*c)) / (2.*a); // (moving backward)
+		double term1 = -b / (2.*a);
+		double term2 = sqrt(b*b - 4.*a*c) / (2.*a);
+		R = term1 + term2;
+		if(R<0) R = term1 - term2;
+		else PRINT_ASSERT(term1-term2,<,0);
 	}
 	PRINT_ASSERT(R,>=,0);
 	return R;
