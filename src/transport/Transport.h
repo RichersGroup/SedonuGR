@@ -104,7 +104,6 @@ protected:
 	double randomwalk_min_optical_depth;
 	double randomwalk_max_x;
 	int randomwalk_sumN;
-	int randomwalk_n_isotropic;
 
 	// output parameters
 	int write_zones_every;

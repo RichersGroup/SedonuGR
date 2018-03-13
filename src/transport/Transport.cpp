@@ -88,7 +88,6 @@ Transport::Transport(){
 	randomwalk_min_optical_depth = NaN;
 	randomwalk_max_x = NaN;
 	randomwalk_sumN = -MAXLIM;
-	randomwalk_n_isotropic = -MAXLIM;
 	use_scattering_kernels = -MAXLIM;
 }
 
@@ -139,7 +138,6 @@ void Transport::init(Lua* lua)
 	if(do_randomwalk){
 		randomwalk_min_optical_depth = lua->scalar<double>("randomwalk_min_optical_depth");
 		init_randomwalk_cdf(lua);
-		randomwalk_n_isotropic = lua->scalar<int>("randomwalk_n_isotropic");
 	}
 	min_packet_number = lua->scalar<double>("min_packet_number");
 
