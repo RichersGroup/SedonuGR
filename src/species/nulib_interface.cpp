@@ -428,14 +428,8 @@ void nulib_get_epannihil_kernels(
 	double constants = pow(pc::h,3) * pow(pc::c,4) / (4.*pc::pi);
 	for(int igin=0; igin<nulibtable_number_groups; igin++){
 		for(int igout=0; igout<nulibtable_number_groups; igout++){
-			double E1 = nulibtable_ebottom[igout] * pc::MeV_to_ergs;
-			double E2 = nulibtable_etop[   igout] * pc::MeV_to_ergs;
-			double dE = E2-E1;
-			double dE3 = E2*E2*E2 - E1*E1*E1;
-			double coeff = (dE3/3.0) / constants / dE;
-
-			phi[0][igin][igout] = phi_tmp[1][igout][igin] * coeff;
-			phi[1][igin][igout] = phi_tmp[3][igout][igin] * coeff;
+			phi[0][igin][igout] = phi_tmp[1][igout][igin];
+			phi[1][igin][igout] = phi_tmp[3][igout][igin];
 			PRINT_ASSERT(phi[0][igin][igout],>=,0);
 			PRINT_ASSERT(abs(phi[1][igin][igout]),<=,phi[0][igin][igout]); // mathematically impossible to have phi1/phi0>9
 		}
