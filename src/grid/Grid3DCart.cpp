@@ -50,10 +50,12 @@ Grid3DCart::Grid3DCart(){
 }
 
 void Grid3DCart::write_child_zones(H5::H5File file){
-	betaup.write_HDF5(file,"shiftup");
-	g3.write_HDF5(file,"threemetric");
-	christoffel.write_HDF5(file,"christoffel");
-	sqrtdetg3.write_HDF5(file,"sqrtdetg3");
+	if(DO_GR){
+		betaup.write_HDF5(file,"shiftup");
+		g3.write_HDF5(file,"threemetric");
+		christoffel.write_HDF5(file,"christoffel");
+		sqrtdetg3.write_HDF5(file,"sqrtdetg3");
+	}
 	v.write_HDF5(file,"threevelocity(cm|s)");
 }
 

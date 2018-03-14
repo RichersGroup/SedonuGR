@@ -153,7 +153,8 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 	grid->grid_coordinates(eh.p.xup,hypervec);
 	hypervec[NDIMS] = eh.nu();
 	eh.p.N = grid->BB[s].interpolate(hypervec,eh.dir_ind) * eh.absopac; // #/s/cm^3/sr/(Hz^3/3)
-	eh.p.N *= grid->zone_lab_3volume(eh.z_ind) * sqrt(eh.g.gammalow.det()) * (-eh.g.ndot(eh.u)); // comoving volume (d3x * volfac * Lorentz factor)
+	eh.p.N *= grid->zone_lab_3volume(eh.z_ind);
+	if(DO_GR) eh.p.N *= sqrt(eh.g.gammalow.det()) * (-eh.g.ndot(eh.u)); // comoving volume (d3x * volfac * Lorentz factor)
 	eh.p.N *= weight * 1/*s*/ * 4.*pc::pi/*sr*/ * grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/;
 	PRINT_ASSERT(eh.p.N,>=,0);
 	PRINT_ASSERT(eh.p.N,<,1e99);
