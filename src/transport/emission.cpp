@@ -171,7 +171,7 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 		#pragma omp atomic
 		N_net_emit[eh.p.s] += eh.p.N;
 		#pragma omp atomic
-		grid->l_emit[z_ind] += eh.p.N * species_list[eh.p.s]->lepton_number * pc::c;
+		grid->l_emit[z_ind] -= eh.p.N * species_list[eh.p.s]->lepton_number;
 		for(unsigned i=0; i<4; i++){
 			#pragma omp atomic
 			grid->fourforce_emit[z_ind][i] -= kup_tet[i];
