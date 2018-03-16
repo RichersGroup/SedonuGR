@@ -491,6 +491,7 @@ void Transport::calculate_annihilation(){
 	}
 
 	// synchronize global quantities between processors
+	grid->fourforce_annihil.mpi_sum();
 	MPI_Allreduce(MPI_IN_PLACE, &H_nunu_tet, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
 	// write to screen
