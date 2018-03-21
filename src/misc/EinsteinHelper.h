@@ -52,13 +52,11 @@ public:
 		PRINT_ASSERT(g.dot<4>(p.kup,p.kup)/(p.kup[3]*p.kup[3]),<,TINY);
 	}
 	void renormalize_kup(){
-		if(p.kup[3]==p.kup[3]){ // only if kup has been set already
-			g.normalize_null(p.kup);
-			coord_to_tetrad(p.kup, kup_tet);
-			Metric::normalize_null_Minkowski(kup_tet);
-			PRINT_ASSERT(kup_tet[3],>,0);
-			PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet,kup_tet)/(kup_tet[3]*kup_tet[3]),<,TINY);
-		}
+		g.normalize_null(p.kup);
+		coord_to_tetrad(p.kup, kup_tet);
+		Metric::normalize_null_Minkowski(kup_tet);
+		PRINT_ASSERT(kup_tet[3],>,0);
+		PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet,kup_tet)/(kup_tet[3]*kup_tet[3]),<,TINY);
 	}
 
 	// return the Lorentz factor W
@@ -194,10 +192,12 @@ public:
 	}
 
 	void integrate_geodesic(){
+		PRINT_ASSERT(abs(g.dot<4>(p.kup,p.kup)) / (p.kup[3]*p.kup[3]), <=, TINY);
 		double dlambda = ds_com / (pc::h*nu());
 		PRINT_ASSERT(dlambda,>=,0);
 
 		double dk_dlambda[4] = {0,0,0,0};
+		double dx_dlambda[4] = {0,0,0,0};
 		if(DO_GR){
 			// rk4
 			double dk_dlambda0[4];
@@ -215,14 +215,17 @@ public:
 			for(unsigned i=0; i<4; i++) k3[i] = p.kup[i] + 1.0*dlambda*dk_dlambda2[i];
 			christoffel.contract2(k1,dk_dlambda3);
 
-			for(unsigned i=0; i<4; i++) dk_dlambda[i] = 1./6.*dk_dlambda0[i] + 1./3.*dk_dlambda1[i] + 1./3.*dk_dlambda2[i] + 1./6.*dk_dlambda3[i];
+			for(unsigned i=0; i<4; i++){
+				dk_dlambda[i] = 1./6.*dk_dlambda0[i] + 1./3.*dk_dlambda1[i] + 1./3.*dk_dlambda2[i] + 1./6.*dk_dlambda3[i];
+				dx_dlambda[i] = 1./6.*p.kup[i]       + 1./3.*k1[i]          + 1./3.*k2[i]          + 1./6.*k3[i];
+			}
 		}
 
 		// get new x,k
 		for(int i=0; i<4; i++){
 			p.kup[i] -= dk_dlambda[i]*dlambda;
+			p.xup[i] += dx_dlambda[i]*dlambda;
 			PRINT_ASSERT(p.kup[i],==,p.kup[i]);
-			p.xup[i] +=      p.kup[i]*dlambda;
 			PRINT_ASSERT(p.xup[i],==,p.xup[i]);
 		}
 		PRINT_ASSERT(p.kup[3],<,INFINITY);
