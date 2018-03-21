@@ -209,11 +209,11 @@ public:
 
 			double k2[4], dk_dlambda2[4];
 			for(unsigned i=0; i<4; i++) k2[i] = p.kup[i] + 0.5*dlambda*dk_dlambda1[i];
-			christoffel.contract2(k1,dk_dlambda2);
+			christoffel.contract2(k2,dk_dlambda2);
 
 			double k3[4], dk_dlambda3[4];
 			for(unsigned i=0; i<4; i++) k3[i] = p.kup[i] + 1.0*dlambda*dk_dlambda2[i];
-			christoffel.contract2(k1,dk_dlambda3);
+			christoffel.contract2(k3,dk_dlambda3);
 
 			for(unsigned i=0; i<4; i++){
 				dk_dlambda[i] = 1./6.*dk_dlambda0[i] + 1./3.*dk_dlambda1[i] + 1./3.*dk_dlambda2[i] + 1./6.*dk_dlambda3[i];
