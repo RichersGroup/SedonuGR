@@ -182,6 +182,39 @@ public:
 	}
 
 	template<unsigned n>
+	void raise(const double xdown[], double xup[]) const{
+		if(DO_GR){
+			const double inv_alpha2 = 1./(alpha*alpha);
+			const double betaup_alpha2[3] = {betaup[0]*inv_alpha2, betaup[1]*inv_alpha2, betaup[2]*inv_alpha2};
+			ThreeMetric gammaup = gammalow.inverse();
+
+			xup[0] =(gammaup.data[ixx] - betaup[0]*betaup_alpha2[0]) * xdown[0] +
+					(gammaup.data[ixy] - betaup[0]*betaup_alpha2[1]) * xdown[1] +
+					(gammaup.data[ixz] - betaup[0]*betaup_alpha2[2]) * xdown[2];
+
+			xup[1] =(gammaup.data[ixy] - betaup[1]*betaup_alpha2[0]) * xdown[0] +
+					(gammaup.data[iyy] - betaup[1]*betaup_alpha2[1]) * xdown[1] +
+					(gammaup.data[iyz] - betaup[1]*betaup_alpha2[2]) * xdown[2];
+
+			xup[2] =(gammaup.data[ixz] - betaup[2]*betaup_alpha2[0]) * xdown[0] +
+					(gammaup.data[iyz] - betaup[2]*betaup_alpha2[1]) * xdown[1] +
+					(gammaup.data[izz] - betaup[2]*betaup_alpha2[2]) * xdown[2];
+
+			if(n==4){
+				xup[3]  = - xdown[3] * inv_alpha2;
+				for(unsigned i=0; i<3; i++){
+					xup[3] += xdown[i] * betaup_alpha2[i];
+					xup[i] += xdown[3] * betaup_alpha2[i];
+				}
+			}
+		}
+		else{
+			for(unsigned i=0; i<3; i++) xup[i] = xdown[i];
+			if(n==4) xup[3] = -xdown[3];
+		}
+	}
+
+	template<unsigned n>
 	static double contract(const double xup[n], const double xdown[n]){
 		double result = 0;
 		for(int i=0; i<n; i++) result += xup[i]*xdown[i];
