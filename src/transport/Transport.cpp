@@ -76,7 +76,6 @@ Transport::Transport(){
 	r_core = NaN;
 	n_emit_core_per_bin = -MAXLIM;
 	do_visc = -MAXLIM;
-	do_relativity = -MAXLIM;
 	n_emit_zones_per_bin = -MAXLIM;
 	visc_specific_heat_rate = NaN;
 	n_subcycles = -MAXLIM;
@@ -114,7 +113,6 @@ void Transport::init(Lua* lua)
 
 	// figure out what emission models we're using
 	do_visc      = lua->scalar<int>("do_visc");
-	do_relativity = lua->scalar<int>("do_relativity");
 	if(do_visc) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");
 	n_subcycles = lua->scalar<int>("n_subcycles");
 	PRINT_ASSERT(n_subcycles,>=,1);

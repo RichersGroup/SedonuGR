@@ -147,7 +147,6 @@ public:
 
 	// items for zone emission
 	int do_visc;
-	int do_relativity;
 	int use_scattering_kernels;
 	int n_emit_zones_per_bin;
 	double visc_specific_heat_rate;

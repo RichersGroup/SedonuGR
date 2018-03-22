@@ -58,8 +58,6 @@ void Transport::propagate_particles()
 		if(eh.p.fate == moving) propagate(&eh);
 		if(eh.p.fate == escaped){
 			const double nu = eh.nu(); // uses last-known metric
-			double D[3] = {eh.p.kup[0], eh.p.kup[1], eh.p.kup[2]};
-			Metric::normalize_Minkowski<3>(D);
 			#pragma omp atomic
 			n_escape[eh.p.s]++;
 			#pragma omp atomic
@@ -263,7 +261,4 @@ void Transport::propagate(EinsteinHelper *eh) const{
 		if(eh->p.fate==moving) boundary_conditions(eh);
 		PRINT_ASSERT(eh->p.N,<,1e99);
 	}
-
-	// copy particle back out of LorentzHelper
-	PRINT_ASSERT(eh->p.fate, !=, moving);
 }
