@@ -56,9 +56,6 @@ void Grid1DSphere::read_model_file(Lua* lua)
 	}
 
 	reflect_outer = lua->scalar<int>("reflect_outer");
-
-	vr.calculate_slopes(-INFINITY,INFINITY);
-	X.calculate_slopes(0,INFINITY);
 }
 
 void Grid1DSphere::write_child_zones(H5::H5File file){
@@ -349,27 +346,27 @@ void Grid1DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void Grid1DSphere::interpolate_fluid_velocity(const double x[3], double v[3], const unsigned dir_ind[NDIMS]) const
+void Grid1DSphere::interpolate_fluid_velocity(EinsteinHelper *eh) const
 {
 	// radius in zone
-	double r = radius(x);
+	double r = radius(eh->p.xup);
 
 	// assuming radial velocity (may want to interpolate here)
 	// (the other two components are ignored and mean nothing)
-	double vr_interp = vr.interpolate(&r,dir_ind);
-	v[0] = x[0]/r*vr_interp;
-	v[1] = x[1]/r*vr_interp;
-	v[2] = x[2]/r*vr_interp;
+	double vr_interp = vr.interpolate(eh->icube_vol);
+	eh->v[0] = eh->p.xup[0]/r*vr_interp;
+	eh->v[1] = eh->p.xup[1]/r*vr_interp;
+	eh->v[2] = eh->p.xup[2]/r*vr_interp;
 
 	// check for pathological case
 	if (r == 0)
 	{
-		v[0] = 0;
-		v[1] = 0;
-		v[2] = 0;
+		eh->v[0] = 0;
+		eh->v[1] = 0;
+		eh->v[2] = 0;
 	}
 
-	PRINT_ASSERT(Metric::dot_Minkowski<3>(v,v),<=,pc::c*pc::c);
+	PRINT_ASSERT(Metric::dot_Minkowski<3>(eh->v,eh->v),<=,pc::c*pc::c);
 }
 
 
@@ -392,7 +389,7 @@ void Grid1DSphere::symmetry_boundaries(EinsteinHelper *eh) const{
 		eh->p.kup[0] -= 2.*kr * eh->p.xup[0]/R;
 		eh->p.kup[1] -= 2.*kr * eh->p.xup[1]/R;
 		eh->p.kup[2] -= 2.*kr * eh->p.xup[2]/R;
-		eh->g.normalize_null(eh->p.kup);
+		eh->g.normalize_null_preservedownt(eh->p.kup);
 
 		// put the particle just inside the boundary
 		double newR = rmax - TINY*dr;
@@ -432,7 +429,7 @@ double Grid1DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector
 		for(unsigned i=0; i<3; i++) ktest[i] *= sgn;
-		eh->g.normalize_null(ktest);
+		eh->g.normalize_null_preservedownt(ktest);
 
 		// get the time component of the tetrad test vector
 		double kup_tet_t = -eh->g.dot<4>(ktest,eh->u);
@@ -465,29 +462,29 @@ void Grid1DSphere::dims(hsize_t dims[1], const int size) const{
 }
 
 
-void Grid1DSphere::interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const{
-	const double r = radius(xup);
-	const double Xloc = X.interpolate(&r,dir_ind);//1./sqrt(1.-1./r);//
+void Grid1DSphere::interpolate_3metric(EinsteinHelper* eh) const{
+	const double r = radius(eh->p.xup);
+	const double Xloc = X.interpolate(eh->icube_vol);//1./sqrt(1.-1./r);//
 	double tmp = (Xloc*Xloc-1.0) / (r*r);
 
-	gammalow->data[ixx] = xup[0]*xup[0] * tmp;
-	gammalow->data[iyy] = xup[1]*xup[1] * tmp;
-	gammalow->data[izz] = xup[2]*xup[2] * tmp;
-	gammalow->data[ixy] = xup[0]*xup[1] * tmp;
-	gammalow->data[ixz] = xup[0]*xup[2] * tmp;
-	gammalow->data[iyz] = xup[1]*xup[2] * tmp;
+	eh->g.gammalow.data[ixx] = eh->p.xup[0]*eh->p.xup[0] * tmp;
+	eh->g.gammalow.data[iyy] = eh->p.xup[1]*eh->p.xup[1] * tmp;
+	eh->g.gammalow.data[izz] = eh->p.xup[2]*eh->p.xup[2] * tmp;
+	eh->g.gammalow.data[ixy] = eh->p.xup[0]*eh->p.xup[1] * tmp;
+	eh->g.gammalow.data[ixz] = eh->p.xup[0]*eh->p.xup[2] * tmp;
+	eh->g.gammalow.data[iyz] = eh->p.xup[1]*eh->p.xup[2] * tmp;
 
-	gammalow->data[ixx] += 1.0;
-	gammalow->data[iyy] += 1.0;
-	gammalow->data[izz] += 1.0;
+	eh->g.gammalow.data[ixx] += 1.0;
+	eh->g.gammalow.data[iyy] += 1.0;
+	eh->g.gammalow.data[izz] += 1.0;
 }
 
 void Grid1DSphere::get_connection_coefficients(EinsteinHelper* eh) const{
 	const double r = radius(eh->p.xup);
-	const double alpha = lapse.interpolate(eh->p.xup,eh->dir_ind); //sqrt(1.-1./r); //
-	const double Xloc = X.interpolate(eh->p.xup, eh->dir_ind); //1./alpha; //
-	const double dadr = lapse.dydx[eh->z_ind][0][0]; //Xloc / (2.*r*r);//
-	const double dXdr = X.dydx[eh->z_ind][0][0]; //-Xloc*Xloc*Xloc / (2.*r*r);//
+	const double alpha = lapse.interpolate(eh->icube_vol); //sqrt(1.-1./r); //
+	const double Xloc  = X.interpolate(eh->icube_vol); //1./alpha; //
+	const double dadr  = lapse.interpolate_slopes(eh->icube_vol)[0]; //Xloc / (2.*r*r);//
+	const double dXdr  = X.interpolate_slopes(eh->icube_vol)[0]; //-Xloc*Xloc*Xloc / (2.*r*r);//
 
 	double tmp;
 	double* xup = eh->p.xup;
@@ -537,10 +534,10 @@ double Grid1DSphere::zone_lorentz_factor(const int z_ind) const{
 	double vdotv = vr[z_ind]*vr[z_ind] * X[z_ind] / (pc::c*pc::c);
 	return 1. / sqrt(1.-vdotv);
 }
-void Grid1DSphere::interpolate_shift(const double xup[4], double betaup[3], const unsigned dir_ind[NDIMS]) const{ // default Minkowski
-	betaup[0] = 0;
-	betaup[1] = 0;
-	betaup[2] = 0;
+void Grid1DSphere::interpolate_shift(EinsteinHelper* eh) const{ // default Minkowski
+	eh->g.betaup[0] = 0;
+	eh->g.betaup[1] = 0;
+	eh->g.betaup[2] = 0;
 }
 void Grid1DSphere::grid_coordinates(const double xup[3], double coords[NDIMS]) const{
 	coords[0] = radius(xup);

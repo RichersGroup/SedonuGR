@@ -50,7 +50,7 @@ void Transport::propagate_particles()
 		EinsteinHelper eh;
 		eh.p = particles[i];
 		update_eh_background(&eh);
-		if(eh.z_ind >= 0) grid->interpolate_opacity(&eh);
+		update_eh_k_opac(&eh);
 
 		// save final data
 		#pragma omp atomic
@@ -111,7 +111,7 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 
 	// FIND D_ZONE= ====================================================================
 	double d_boundary = grid->d_boundary(eh);
-	double d_zone = grid->zone_min_length(eh->z_ind); // REPLACE WITH detg^1/6
+	double d_zone = grid->zone_min_length(eh->z_ind) / sqrt(Metric::dot_Minkowski<3>(eh->p.kup,eh->p.kup)) * eh->kup_tet[3];
 	d_boundary = min(max(d_boundary, d_zone*min_step_size), d_zone*max_step_size);
 	PRINT_ASSERT(d_zone, >, 0);
 	*event = nothing;
@@ -150,10 +150,11 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 void Transport::boundary_conditions(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->p.fate,==,moving);
 
-	if(r_core>0 && grid->radius(eh->p.xup)<r_core) eh->p.fate = absorbed;
+	if(r_core>0 && radius(eh->p.xup)<r_core) eh->p.fate = absorbed;
 	else if(eh->z_ind<0){
 		grid->symmetry_boundaries(eh);
 		update_eh_background(eh);
+		update_eh_k_opac(eh);
 		if(eh->z_ind < 0) eh->p.fate = escaped;
 	}
 }
@@ -196,22 +197,57 @@ void Transport::tally_radiation(const EinsteinHelper *eh) const{
 
 void Transport::move(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->ds_com,>=,0);
+	PRINT_ASSERT(abs(eh->g.dot<4>(eh->p.kup,eh->p.kup)) / (eh->p.kup[3]*eh->p.kup[3]), <=, TINY);
 	// FOR SCHWARZSCHILD PATH TEST
 	//for(unsigned i=0; i<4; i++) cout << eh->p.xup[i] << "\t";
 	//for(unsigned i=0; i<4; i++) cout << eh->p.kup[i] << "\t";
 	//for(unsigned i=0; i<4; i++) cout << eh->kup_tet[i] << "\t";
 	//cout << eh->nu() << endl;
 
-	// translate the particle
-	eh->integrate_geodesic();
+	// convert ds_com into dlambda
+	double dlambda = eh->ds_com / eh->kup_tet[3];
+	PRINT_ASSERT(dlambda,>=,0);
 
-	// appropriately reduce the particle's energy
-	eh->p.N *= exp(-eh->absopac * eh->ds_com);
+	// get dk_dlambda at current position
+	double dk_dlambda[4] = {0,0,0,0};
+	if(DO_GR){
+		eh->christoffel.contract2(eh->p.kup,dk_dlambda);
+		for(unsigned i=0; i<4; i++) dk_dlambda[i] *= -1;
+	}
+
+	// get 2nd order x, 1st order estimate for k
+	double knew[4];
+	for(unsigned i=0; i<4; i++){
+		knew[i] = eh->p.kup[i] + dk_dlambda[i]*dlambda;
+		double order1 = eh->p.kup[i]*dlambda;
+		double order2 = 0.5*dk_dlambda[i]*dlambda*dlambda;
+		eh->p.xup[i] += order1 + (abs(order2/order1)<1. ? order2 : 0);
+		PRINT_ASSERT(eh->p.xup[i],==,eh->p.xup[i]);
+	}
+
+	// get new background data
+	update_eh_background(eh);
+
+	// apply second order correction to k
+	if(DO_GR and eh->z_ind>0){
+		double dk_dlambda_2[4];
+		eh->christoffel.contract2(knew,dk_dlambda_2);
+		for(unsigned i=0; i<4; i++){
+			dk_dlambda_2[i] *= -1;
+			eh->p.kup[i] += 0.5*dlambda * (dk_dlambda[i] + dk_dlambda_2[i]);
+			PRINT_ASSERT(eh->p.kup[i],==,eh->p.kup[i]);
+		}
+	}
+	PRINT_ASSERT(eh->p.kup[3],<,INFINITY);
+	double old_absopac = eh->absopac;
+	update_eh_k_opac(eh);
+
+	// appropriately reduce the particle's energy from absorption
+	double actual_ds_com = 0.5 * (eh->ds_com + dlambda*eh->kup_tet[3]);
+	double absopac = 0.5*(eh->absopac + old_absopac);
+	eh->p.N *= exp(-absopac * actual_ds_com);
 	window(eh);
 	if(eh->p.fate==moving) PRINT_ASSERT(eh->p.N,>,0);
-
-	update_eh_background(eh);
-	if(eh->z_ind >= 0) grid->interpolate_opacity(eh);
 }
 
 
@@ -259,6 +295,8 @@ void Transport::propagate(EinsteinHelper *eh) const{
 
 		if(eh->p.fate==moving) window(eh);
 		if(eh->p.fate==moving) boundary_conditions(eh);
+		if(eh->p.fate==moving) PRINT_ASSERT(abs(eh->g.dot<4>(eh->p.kup,eh->p.kup)) / (eh->p.kup[3]*eh->p.kup[3]), <=, TINY);
+
 		PRINT_ASSERT(eh->p.N,<,1e99);
 	}
 }

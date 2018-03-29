@@ -64,7 +64,6 @@ void Grid::init(Lua* lua, Transport* insim)
 
 	// read the model file or fill in custom model
 	read_model_file(lua);
-	sqrt_vdotv.set_axes(xAxes);
 	for(unsigned i=0; i<rho.size(); i++){
 		// modify problematic fluid quantities
 		if(rho[i] > sim->rho_max){
@@ -95,12 +94,9 @@ void Grid::init(Lua* lua, Transport* insim)
 		// fill in sqrt_vdotv
 		double gamma = zone_lorentz_factor(i);
 		PRINT_ASSERT(gamma,>=,1.0);
-		sqrt_vdotv[i] = pc::c * sqrt(1. - 1./(gamma*gamma));
 	}
-	sqrt_vdotv.calculate_slopes(0,pc::c);
 
 	// read some parameters
-	int do_relativity = lua->scalar<int>("do_relativity");
 	int write_zones_every = lua->scalar<int>("write_zones_every");
 	do_annihilation = lua->scalar<int>("do_annihilation");
 
@@ -318,8 +314,6 @@ void Grid::init(Lua* lua, Transport* insim)
 			scattering_phi0[s].set_axes(axes);
 		}
 	}
-
-	if(DO_GR) lapse.calculate_slopes(0,INFINITY);
 }
 
 void Grid::write_zones(const int iw)
@@ -343,7 +337,6 @@ void Grid::write_zones(const int iw)
 
 	// write fluid quantities
 	rho.write_HDF5(file,"rho(g|ccm,tet)");
-	sqrt_vdotv.write_HDF5(file,"sqrt_vdotv(cm|s,lab)");
 	T.write_HDF5(file,"T_gas(MeV,tet)");
 	Ye.write_HDF5(file,"Ye");
 	H_vis.write_HDF5(file,"H_vis(erg|s|g,tet)");
@@ -384,28 +377,23 @@ double Grid::total_rest_mass() const{
 }
 
 // radius given coordinates
-double Grid::radius(const double x[4]){
-	return sqrt(Metric::dot_Minkowski<3>(x,x));
-}
-
 double Grid::zone_4volume(const int z_ind) const{
 	return zone_lab_3volume(z_ind) * (DO_GR ? lapse[z_ind] : 1.0);
 }
 
-void Grid::interpolate_metric(const double xup[4], Metric* g, const unsigned dir_ind[NDIMS]) const{
+void Grid::interpolate_metric(EinsteinHelper *eh) const{
 	if(DO_GR){
 		// first, the lapse
-		double grid_coords[NDIMS];
-		grid_coordinates(xup,grid_coords);
-		double r = radius(xup);
-		g->alpha = lapse.interpolate(grid_coords,dir_ind);//sqrt(1.-1./r);//
-		PRINT_ASSERT(g->alpha,>,0);
+		eh->g.alpha = lapse.interpolate(eh->icube_vol);
+		PRINT_ASSERT(eh->g.alpha,>,0);
 
-		// second, the shift
-		interpolate_shift(xup, g->betaup, dir_ind);
+		// second, the shift and three-metric
+		interpolate_shift(eh);
+		interpolate_3metric(eh);
 
-		// third, the three-metric
-		interpolate_3metric(xup, &g->gammalow, dir_ind);
+		// fill in the rest of the metric values
+		eh->g.update();
+		get_connection_coefficients(eh);
 	}
 }
 
@@ -416,36 +404,14 @@ void Grid::interpolate_metric(const double xup[4], Metric* g, const unsigned dir
 //-----------------------------------------------------------------
 void Grid::interpolate_opacity(EinsteinHelper *eh) const
 {
-	PRINT_ASSERT(eh->z_ind,>=,-1);
+	PRINT_ASSERT(eh->z_ind,>=,0);
 
-	// update frequency index
-	eh->dir_ind[NDIMS] = min(nu_grid_axis.bin(eh->nu()), (int)nu_grid_axis.size()-1);
-	double hypervec[NDIMS+1];
-	for(unsigned i=0; i<NDIMS; i++) hypervec[i] = eh->grid_coords[i];
-	hypervec[NDIMS] = eh->nu();
+	eh->absopac  =  abs_opac[eh->p.s].interpolate(eh->icube_spec);
+	eh->scatopac = scat_opac[eh->p.s].interpolate(eh->icube_spec);
 
-	eh->eas_ind = abs_opac[eh->p.s].direct_index(eh->dir_ind);
-	double nu = eh->nu();
-	double a = abs_opac[eh->p.s].interpolate(hypervec,eh->dir_ind);
-	double s = scat_opac[eh->p.s].interpolate(hypervec,eh->dir_ind);
-
-	// sanity checks
-	if(a<0 || s<0){
-		hypervec[NDIMS] = nu_grid_axis.mid[eh->dir_ind[NDIMS]];
-		double acenter = abs_opac[eh->p.s].interpolate(hypervec,eh->dir_ind);
-		double scenter = scat_opac[eh->p.s].interpolate(hypervec,eh->dir_ind);
-		PRINT_ASSERT(acenter,>,0);
-		PRINT_ASSERT(scenter,>,0);
-		PRINT_ASSERT(abs(a)/acenter,<,TINY);
-		PRINT_ASSERT(abs(s)/scenter,<,TINY);
-	}
-
-	a = max(0.0,a);
-	s = max(0.0,s);
-	PRINT_ASSERT(a,<,INFINITY);
-	PRINT_ASSERT(s,<,INFINITY);
-
-	eh->absopac  = max(0.,a);
-	eh->scatopac = max(0.,s);
+	PRINT_ASSERT(eh->absopac,<,INFINITY);
+	PRINT_ASSERT(eh->scatopac,<,INFINITY);
+	PRINT_ASSERT(eh->absopac,>=,0);
+	PRINT_ASSERT(eh->scatopac,>=,0);
 }
 

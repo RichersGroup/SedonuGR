@@ -88,12 +88,12 @@ void Transport::init_randomwalk_cdf(Lua* lua){
 
 	randomwalk_diffusion_time.resize(npoints);
 	randomwalk_diffusion_time.interpolation_order = interpolation_order;
-	randomwalk_xaxis.init(0,randomwalk_max_x,npoints, linear);
+	randomwalk_xaxis = Axis(0,randomwalk_max_x,npoints);
 
 	#pragma omp parallel for
 	for(int i=1; i<=npoints; i++){
 		double sum = 0;
-		double x = randomwalk_xaxis.x[i];
+		double x = randomwalk_xaxis.top[i];
 
 		for(int n=1; n<=sumN; n++){
 			double tmp = 2.0 * exp(-x * (n*pc::pi)*(n*pc::pi)/3.0);
@@ -182,39 +182,32 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double k
 	PRINT_ASSERT(grid->scattering_phi0[eh->p.s].size(),>,0);
 	PRINT_ASSERT(kup_tet_old[3],==,eh->kup_tet[3]);
 
-	// get spatial component of directional indices
-	unsigned dir_ind[NDIMS+2];
+	// set up the interpolation cube
 	double hyperloc[NDIMS+2];
-	for(unsigned i=0; i<NDIMS; i++){
-		hyperloc[i] = eh->p.xup[i];
-		dir_ind[i] = eh->dir_ind[i];
+	unsigned dir_ind[NDIMS+2];
+	for(unsigned i=0; i<=NDIMS; i++){
+			hyperloc[i] = eh->grid_coords[i];
+			dir_ind[i] = eh->dir_ind[i];
 	}
-	dir_ind[NDIMS] = eh->dir_ind[NDIMS];
+	InterpolationCube<NDIMS+2> icube_kernel;
 
-	// get outgoing energy bin w/ rejection sampling
-	unsigned igout;
-	double P, phi0avg, nubar;
-	do{
-		igout = rangen.uniform_discrete(0, grid->nu_grid_axis.size()-1);
-		dir_ind[NDIMS+1] = igout;
-		nubar = 0.5 * (grid->nu_grid_axis.top[igout] + grid->nu_grid_axis.bottom(igout));
-		hyperloc[NDIMS] = grid->nu_grid_axis.mid[dir_ind[NDIMS]];
-		hyperloc[NDIMS+1] = nubar;
-		phi0avg = grid->scattering_phi0[eh->p.s].interpolate(hyperloc,dir_ind);
-		P = phi0avg * grid->nu_grid_axis.delta(igout) / grid->scat_opac[eh->p.s][eh->eas_ind];
-		PRINT_ASSERT(P,<=,1.0);
-	} while(rangen.uniform() > P);
+	// fill a CDF with interpolated phi0 and sample outgoing frequency
+	CDFArray outnu(1); // linear interpolation
+	outnu.resize(grid->nu_grid_axis.size());
+	for(unsigned i=0; i<outnu.size(); i++){
+		hyperloc[NDIMS+1] = grid->nu_grid_axis.mid[i];
+		dir_ind[NDIMS+1] = i;
+		grid->scattering_phi0[eh->p.s].set_InterpolationCube(&icube_kernel,hyperloc,dir_ind);
+		double phi0 = grid->scattering_phi0[eh->p.s].interpolate(icube_kernel);
+		outnu.set_value(i, phi0 * grid->nu_grid_axis.delta(i));
+	}
+	outnu.normalize();
+	dir_ind[NDIMS+1] = outnu.get_index(rangen.uniform());
+	hyperloc[NDIMS+1] = outnu.invert(rangen.uniform(),&grid->nu_grid_axis,dir_ind[NDIMS+1]);
 
-	// uniformly sample within zone
-	unsigned global_index = grid->scattering_phi0[eh->p.s].direct_index(dir_ind);
-	double out_nu = rangen.uniform(grid->nu_grid_axis.bottom(igout), grid->nu_grid_axis.top[igout]);
-	double phi_interpolated = phi0avg; // + grid->scattering_phi0[eh->p.s].dydx[global_index][NDIMS+1][0]*(out_nu - nubar);
-	eh->p.N *= phi_interpolated / phi0avg;
-
-	// get scattering delta
-	hyperloc[NDIMS] = eh->nu();
-	hyperloc[NDIMS+1] = out_nu;
-	double delta = grid->scattering_delta[eh->p.s].interpolate(hyperloc,dir_ind);
+	// interpolate the kernel anisotropy
+	grid->scattering_delta[eh->p.s].set_InterpolationCube(&icube_kernel,hyperloc,dir_ind);
+	double delta = grid->scattering_delta[eh->p.s].interpolate(icube_kernel);
 	PRINT_ASSERT(fabs(delta),<,3.0);
 
 	// sample the new direction, but only if not absurdly forward/backward peaked
@@ -223,13 +216,13 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double k
 		double kup_tet_new[4];
 		double costheta=0;
 		do{
-			isotropic_kup_tet(out_nu, kup_tet_new, &rangen);
+			isotropic_kup_tet(hyperloc[NDIMS+1], kup_tet_new, &rangen);
 			costheta = Metric::dot_Minkowski<3>(kup_tet_new,kup_tet_old) / (kup_tet_old[3]*kup_tet_new[3]);
 		} while(reject_direction(costheta, delta, &rangen));
 		eh->set_kup_tet(kup_tet_new);
 		PRINT_ASSERT(eh->p.N,<,1e99);
 	}
 	else{
-		eh->scale_p_frequency(out_nu/eh->nu());
+		eh->scale_p_frequency(hyperloc[NDIMS+1]/eh->nu());
 	}
 }

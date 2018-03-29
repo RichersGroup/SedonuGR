@@ -107,7 +107,7 @@ int CDFArray::get_index(const double yval) const
 // i==-1 means at the left boundary
 // assumes the cdf is monotonic
 //-----------------------------------------------------
-double CDFArray::inverse_tangent(const int i, const LocateArray* xgrid) const{
+double CDFArray::inverse_tangent(const int i, const Axis* xgrid) const{
 	int N = size();
 	PRINT_ASSERT(i,>=,-1);
 	PRINT_ASSERT(i,<=,(int)size()-1);
@@ -126,7 +126,7 @@ double CDFArray::inverse_tangent(const int i, const LocateArray* xgrid) const{
 	}
 	return result;
 }
-double CDFArray::tangent(const int i, const LocateArray* xgrid) const{
+double CDFArray::tangent(const int i, const Axis* xgrid) const{
 	int N = size();
 	PRINT_ASSERT(i,>=,-1);
 	PRINT_ASSERT(i,<=,(int)size()-1);
@@ -149,17 +149,17 @@ double CDFArray::tangent(const int i, const LocateArray* xgrid) const{
 // return secant line between two points
 // (CDF is x value, xgrid is y value)
 //--------------------------------------
-double CDFArray::inverse_secant(const int i, const int j, const LocateArray* xgrid) const{
+double CDFArray::inverse_secant(const int i, const int j, const Axis* xgrid) const{
 	return 1.0 / secant(i,j,xgrid);
 }
-double CDFArray::secant(const int i, const int j, const LocateArray* xgrid) const{
+double CDFArray::secant(const int i, const int j, const Axis* xgrid) const{
 	PRINT_ASSERT(i>=-1,&&,i<(int)size()-1);
 	PRINT_ASSERT(j>=0, &&,j<(int)size()  );
 	PRINT_ASSERT(j,>,i);
 
 	double result = 0.0;
-	if(i==-1) result = (y[j]-0.0 ) / ((*xgrid)[j]-xgrid->min );
-	else      result = (y[j]-y[i]) / ((*xgrid)[j]-(*xgrid)[i]);
+	if(i==-1) result = (y[j]-0.0 ) / (xgrid->top[j]-xgrid->min );
+	else      result = (y[j]-y[i]) / (xgrid->top[j]-xgrid->top[i]);
 	return result;
 }
 
@@ -210,7 +210,7 @@ double h11p(const double t){
 	PRINT_ASSERT(t,<=,1.0);
 	return t*(3.0*t-2.0);
 }
-double CDFArray::invert(const double rand, const LocateArray* xgrid, const int i_in) const{
+double CDFArray::invert(const double rand, const Axis* xgrid, const int i_in) const{
 	double result = 0;
 	assert(interpolation_order==1 || interpolation_order==3 || interpolation_order==0);
 	if     (interpolation_order==0) result = invert_piecewise(rand,xgrid,i_in);
@@ -219,7 +219,7 @@ double CDFArray::invert(const double rand, const LocateArray* xgrid, const int i
 	PRINT_ASSERT(result,>,0);
 	return result;
 }
-double CDFArray::interpolate_pdf(const double x, const LocateArray* xgrid) const
+double CDFArray::interpolate_pdf(const double x, const Axis* xgrid) const
 {
 	double result = 0;
 	assert(interpolation_order==1 || interpolation_order==3 || interpolation_order==0);
@@ -229,7 +229,7 @@ double CDFArray::interpolate_pdf(const double x, const LocateArray* xgrid) const
 	PRINT_ASSERT(result,>=,0);
 	return result;
 }
-double CDFArray::invert_cubic(const double rand, const LocateArray* xgrid, const int i_in) const
+double CDFArray::invert_cubic(const double rand, const Axis* xgrid, const int i_in) const
 // INCONSISTENCY - the emissivity is integrated assuming piecewise constant.
 // This is inconsistent with cubic interpolation.
 {
@@ -241,9 +241,9 @@ double CDFArray::invert_cubic(const double rand, const LocateArray* xgrid, const
 
 	// check for degenerate case (left and right values are equal)
 	double yRight = y[i];
-	double xRight = (*xgrid)[i];
+	double xRight = xgrid->top[i];
 	double yLeft = (i>0 ?        y[i-1] : 0         );
-	double xLeft = (i>0 ? (*xgrid)[i-1] : xgrid->min);
+	double xLeft = (i>0 ? xgrid->top[i-1] : xgrid->min);
 	if(yRight == yLeft) return yRight;
 
 	// get left and right tangents
@@ -281,21 +281,21 @@ double CDFArray::invert_cubic(const double rand, const LocateArray* xgrid, const
 	PRINT_ASSERT(xRight,>=,result);
 	return result;
 }
-double CDFArray::interpolate_pdf_cubic(const double x, const LocateArray* xgrid) const
+double CDFArray::interpolate_pdf_cubic(const double x, const Axis* xgrid) const
 {
 	PRINT_ASSERT(x,>=,xgrid->min);
-	PRINT_ASSERT(x,<=,xgrid->x[xgrid->size()-1]);
+	PRINT_ASSERT(x,<=,xgrid->top[xgrid->size()-1]);
 
 	// get the upper index
-	int i = xgrid->locate(x);
+	int i = xgrid->bin(x);
 	PRINT_ASSERT(i,<,(int)size());
 	PRINT_ASSERT(i,>=,0);
 
 	// check for degenerate case (left and right values are equal)
 	double yRight = y[i];
-	double xRight = (*xgrid)[i];
-	double yLeft = (i>0 ?        y[i-1] : 0         );
-	double xLeft = (i>0 ? (*xgrid)[i-1] : xgrid->min);
+	double xRight = xgrid->top[i];
+	double yLeft = (i>0 ?          y[i-1] : 0         );
+	double xLeft = (i>0 ? xgrid->top[i-1] : xgrid->min);
 	if(yRight == yLeft) return yRight;
 
 	// get left and right tangents
@@ -332,13 +332,13 @@ double CDFArray::interpolate_pdf_cubic(const double x, const LocateArray* xgrid)
 	//PRINT_ASSERT(yRight,>=,result);
 	return result;
 }
-double CDFArray::interpolate_pdf_linear(const double x, const LocateArray* xgrid) const
+double CDFArray::interpolate_pdf_linear(const double x, const Axis* xgrid) const
 {
 	PRINT_ASSERT(x,>=,xgrid->min);
-	PRINT_ASSERT(x,<=,xgrid->x[xgrid->size()-1]);
+	PRINT_ASSERT(x,<=,xgrid->top[xgrid->size()-1]);
 
 	// get the upper/lower indices
-	int upper = xgrid->locate(x);
+	int upper = xgrid->bin(x);
 	PRINT_ASSERT(upper,>=,0);
 	int lower = upper-1;
 	PRINT_ASSERT(lower,<,(int)xgrid->size());
@@ -347,13 +347,13 @@ double CDFArray::interpolate_pdf_linear(const double x, const LocateArray* xgrid
 	double x1,x2,y1,y2;
 	if(upper==0){
 		x1 = xgrid->min;
-		x2 = (*xgrid)[0];
+		x2 = xgrid->top[0];
 		y1 = 0;
 		y2 = y[0];
 	}
 	else{
-		x1 = (*xgrid)[lower];
-		x2 = (*xgrid)[upper];
+		x1 = xgrid->top[lower];
+		x2 = xgrid->top[upper];
 		y1 = y[lower];
 		y2 = y[upper];
 	}
@@ -364,7 +364,7 @@ double CDFArray::interpolate_pdf_linear(const double x, const LocateArray* xgrid
 	//PRINT_ASSERT(result >= xgrid->min);
 	return result;
 }
-double CDFArray::invert_linear(const double rand, const LocateArray* xgrid, const int i_in) const
+double CDFArray::invert_linear(const double rand, const Axis* xgrid, const int i_in) const
 {
 	PRINT_ASSERT(rand,>=,0);
 	PRINT_ASSERT(rand,<=,1);
@@ -373,10 +373,10 @@ double CDFArray::invert_linear(const double rand, const LocateArray* xgrid, cons
 	PRINT_ASSERT(i,>=,0);
 
 	// check for degenerate case (left and right values are equal)
-	double xLeft = (i>0 ? (*xgrid)[i-1] : xgrid->min);
-	double yLeft = (i>0 ?        y[i-1] : 0         );
+	double xLeft = (i>0 ? xgrid->top[i-1] : xgrid->min);
+	double yLeft = (i>0 ?          y[i-1] : 0         );
 	double yRight = y[i];
-	double xRight = (*xgrid)[i];
+	double xRight = xgrid->top[i];
 	if(yRight == yLeft) return yRight;
 
 	// get the slope between the two adjacent points
@@ -391,7 +391,7 @@ double CDFArray::invert_linear(const double rand, const LocateArray* xgrid, cons
 	PRINT_ASSERT(xRight,>=,result);
 	return result;
 }
-double CDFArray::invert_piecewise(const double rand, const LocateArray* xgrid, const int i_in) const
+double CDFArray::invert_piecewise(const double rand, const Axis* xgrid, const int i_in) const
 {
 	PRINT_ASSERT(rand,>=,0);
 	PRINT_ASSERT(rand,<=,1);
@@ -399,16 +399,16 @@ double CDFArray::invert_piecewise(const double rand, const LocateArray* xgrid, c
 	PRINT_ASSERT(i,<,(int)size());
 	PRINT_ASSERT(i,>=,0);
 
-	return xgrid->center(i);
+	return xgrid->mid[i];
 }
-double CDFArray::interpolate_pdf_piecewise(const double x, const LocateArray* xgrid) const
+double CDFArray::interpolate_pdf_piecewise(const double x, const Axis* xgrid) const
 {
 	PRINT_ASSERT(x,>=,xgrid->min);
-	PRINT_ASSERT(x,<=,xgrid->x[xgrid->size()-1]);
+	PRINT_ASSERT(x,<=,xgrid->top[xgrid->size()-1]);
 
 	//if(x<(*xgrid)[0]) return 0.0;
 
-	int upper = xgrid->locate(x);
+	int upper = xgrid->bin(x);
 	PRINT_ASSERT(upper,>=,0);
 	int lower = upper-1;
 	PRINT_ASSERT(lower,<,(int)xgrid->size());

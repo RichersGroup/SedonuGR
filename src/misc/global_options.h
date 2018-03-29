@@ -38,8 +38,9 @@
 #include <iostream>
 #include "physical_constants.h"
 #include "H5Cpp.h"
+#include <cmath>
 
-#define NDIMS 1
+#define NDIMS 3
 #define DO_GR 1
 
 //using real = float; // or float
@@ -47,6 +48,10 @@
 #define NaN std::numeric_limits<double>::quiet_NaN()
 #define MAXLIM std::numeric_limits<int>::max()
 #define TINY 1e-5
+
+inline double radius(const double x[4]){
+	return sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+}
 
 inline std::string trim(const std::string s)
 {

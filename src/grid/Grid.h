@@ -102,7 +102,6 @@ public:
 	ScalarMultiDArray<NDIMS> T;         // gas temperature (K)
 	ScalarMultiDArray<NDIMS> Ye;        // electron fraction
 	ScalarMultiDArray<NDIMS> H_vis;     // specific heating rate (erg/s/g)
-	ScalarMultiDArray<NDIMS> sqrt_vdotv; // sqrt(v.v) (cm/s)
 
 	MultiDArray<4,NDIMS> fourforce_abs, fourforce_emit, fourforce_annihil;
 	ScalarMultiDArray<NDIMS> l_abs, l_emit; // lepton number emission rate (cm^-3 s^-1) (comoving frame)
@@ -114,9 +113,6 @@ public:
 	// write out zone information
 	void write_zones(const int iw);
 	virtual void write_child_zones(H5::H5File file) =0;
-
-	// radius using naieve coord transformation
-	static double radius(const double xup[4]);
 
 	// get directional indices from the zone index
 	virtual void    zone_directional_indices(const int z_ind, vector<unsigned>& dir_ind) const=0;
@@ -139,7 +135,7 @@ public:
 	double total_rest_mass() const;
 
 	// give the velocity vector at this point (PARTICLE COORDINATES)
-	virtual void interpolate_fluid_velocity(const double xup[4], double v[3], const unsigned dir_ind[NDIMS]) const = 0;
+	virtual void interpolate_fluid_velocity(EinsteinHelper* eh) const = 0;
 
 	// boundary conditions
 	virtual void symmetry_boundaries(EinsteinHelper *eh) const=0;
@@ -153,9 +149,9 @@ public:
 	// GR functions
 	virtual void grid_coordinates(const double xup[3], double coords[NDIMS]) const=0;
 	virtual void get_connection_coefficients(EinsteinHelper* eh) const=0; // Gamma^alhpa_mu_nu
-	virtual void interpolate_shift(const double xup[4], double betaup[3], const unsigned dir_ind[NDIMS]) const=0;
-	virtual void interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const=0;
-	void interpolate_metric(const double xup[4], Metric* g, const unsigned dir_ind[NDIMS]) const;
+	virtual void interpolate_shift(EinsteinHelper* eh) const=0;
+	virtual void interpolate_3metric(EinsteinHelper* eh) const=0;
+	void interpolate_metric(EinsteinHelper* eh) const;
 };
 
 

@@ -8,16 +8,91 @@
 
 using namespace std;
 
-//=====================//
-// INTERPOLATION ARRAY //
-//=====================//
+//===================//
+// InterpolationCube //
+//===================//
+template<unsigned ndims>
+class InterpolationCube{
+public:
+
+	const static unsigned ncorners = (1<<ndims);
+	constexpr static unsigned index(const unsigned LR[ndims]){
+		unsigned result = 0;
+		for(unsigned d=0; d<ndims; d++){
+			PRINT_ASSERT(abs(LR[d]),<=,1);
+			result = result << 1; // shift bit left
+			result += LR[d]; // rightmost bit 1 if right value
+		}
+	}
+	constexpr static bool isRightIndex(unsigned i, unsigned d){ // 1 if right, 0 if left
+		return bool( (i & ( 1 << d )) >> d );
+	}
+	double xLR[ndims][2];
+	unsigned indices[ncorners];
+	double weights[ncorners];
+	double slope_weights[ndims][ncorners];
+
+	InterpolationCube(){
+		for(unsigned d=0; d<ndims; d++)	xLR[d][0] = xLR[d][1] = NaN;
+		for(unsigned i=0; i<ncorners; i++){
+			indices[i] = -1;
+			weights[i] = NaN;
+			for(unsigned d=0; d<ndims; d++)
+				slope_weights[d][i] = NaN;
+		}
+	}
+
+	bool inside_box(const double x[ndims]) const{
+		bool result = true;
+		for(unsigned d=0; d<ndims; d++){
+			result = result && (x[d]>=xLR[d][0]);
+			result = result && (x[d]<=xLR[d][1]);
+		}
+		return result;
+	}
+
+	void set_weights(const double x[ndims]){
+
+		// total volume
+		double V=1;
+		for(unsigned d=0; d<ndims; d++){
+			double dx = xLR[d][1] - xLR[d][0];
+			V *= dx;
+		}
+
+		for(unsigned i=0; i<ncorners; i++){
+
+			// volume/area associated with each point/line
+			double dVol=1, dA[ndims];
+			for(unsigned d=0; d<ndims; d++) dA[d] = 1.;
+			for(unsigned d=0; d<ndims; d++){
+				unsigned LR = not isRightIndex(i,d); // 1 if left, 0 if right
+				double dx = x[d] - xLR[d][LR];
+				dVol *= dx;
+				for(unsigned d_deriv=0; d_deriv<ndims; d_deriv++)
+					if(d_deriv != d) dA[d_deriv] *= dx;
+			}
+
+			// weights
+			weights[i] = abs(dVol/V); // avoids if statement in above loop for sign
+			for(unsigned d=0; d<ndims; d++){
+				unsigned LR = not isRightIndex(i,d);
+				slope_weights[d][i] = (LR==1 ? 1.0 : -1.0) * abs(dA[d]/V);
+			}
+		}
+	}
+};
+
+
+//=============//
+// MultiDArray //
+//=============//
 template<unsigned nelements, unsigned int ndims>
 class MultiDArray{
 public:
 
 	vector< Tuple<double,nelements> > y0;
 	vector<Axis> axes;
-	vector< Tuple< Tuple<double,nelements> ,ndims> > dydx;
 	Tuple<unsigned int,ndims> stride;
 
 	MultiDArray(){}
@@ -38,7 +113,6 @@ public:
 		PRINT_ASSERT(input.axes.size(),==,ndims);
 		this->axes = input.axes;
 		this->stride = input.stride;
-		this->dydx = input.dydx;
 		this->y0 = input.y0;
 		return *this;
 	}
@@ -71,128 +145,90 @@ public:
 		return y0[i];
 	}
 
-	// get interpolated value
-	Tuple<double,nelements> interpolate(const double x[ndims], const unsigned int ind[ndims]) const{
-		for(unsigned i=0; i<ndims; i++) PRINT_ASSERT(x[i],==,x[i]);
-		unsigned z_ind = direct_index(ind);
-		Tuple<double,nelements> result = y0[z_ind];
-		if(dydx.size()>0) for(int i=0; i<ndims; i++){
-			result += dydx[z_ind][i] * (x[i] - axes[i].mid[ind[i]]);
+	// dummy template allows it to compile with any value of NDIMS
+	template<unsigned dummy>
+	Tuple<double,nelements> interpolate(const InterpolationCube<dummy>& icube) const{
+		PRINT_ASSERT(icube.ncorners,==,(1<<ndims));
+
+		Tuple<double,nelements> result;
+		result = 0;
+		for(unsigned i=0; i<icube.ncorners; i++){
+			PRINT_ASSERT(icube.indices[i],>=,0);
+			result += y0[icube.indices[i]] * icube.weights[i];
 		}
-		for(unsigned e=0; e<nelements; e++) PRINT_ASSERT(abs(result[e]),<,INFINITY);
+		for(unsigned e=0; e<nelements; e++) PRINT_ASSERT(result[e],==,result[e]);
 		return result;
 	}
 
-	// set the slopes
-	void calculate_slopes(const double minval, const double maxval){
-		PRINT_ASSERT(maxval,>=,minval);
-		dydx.resize(y0.size());
+	// dummy template allows it to compile with any value of NDIMS
+	template<unsigned dummy>
+	Tuple<Tuple<double,nelements>,ndims> interpolate_slopes(const InterpolationCube<dummy>& icube) const{
+		PRINT_ASSERT(icube.ncorners,==,(1<<ndims));
 
-		#pragma omp parallel for
-		for(unsigned int z=0; z<dydx.size(); z++){
-			unsigned int ind[ndims], indp[ndims], indm[ndims];
-			unsigned int zp, zm;
-			double x, xp, xm;
-			Tuple<double,nelements> y, yp, ym;
-			double dxL, dxR;
-			Tuple<double,nelements> dyL, dyR;
-			Tuple<double,nelements> sL, sR;
-			Tuple<double,nelements> slope;
+		Tuple<Tuple<double,nelements>,ndims> result;
+		for(unsigned d=0; d<ndims; d++){
+			result[d] = 0;
+			for(unsigned i=0; i<icube.ncorners; i++){
+				PRINT_ASSERT(icube.indices[i],>=,0);
+				result[d] += y0[icube.indices[i]] * icube.slope_weights[d][i];
+			}
+		}
+		for(unsigned d=0; d<ndims; d++)
+			for(unsigned e=0; e<nelements; e++)
+				PRINT_ASSERT(result[d][e],==,result[d][e]);
+		return result;
+	}
 
-			y=y0[z];
-			indices(z, ind);
-			for(unsigned int i=0; i<ndims; i++){
-				if(axes[i].size()==1){
-					dydx[z][i] = 0;
-					continue;
+	// dummy template allows it to compile with any value of NDIMS
+	template<unsigned dummy>
+	void set_InterpolationCube(InterpolationCube<dummy>* icube, const double x[ndims], const unsigned dir_ind_center[ndims]) const{
+		if(not icube->inside_box(x)){
+
+			// set boundary coordinates
+			int dir_ind_left[ndims], dir_ind_right[ndims];
+			for(unsigned d=0; d<ndims; d++){
+				dir_ind_left[d] = (x[d]>axes[d].mid[dir_ind_center[d]] ? dir_ind_center[d] : dir_ind_center[d]-1);
+				dir_ind_right[d] = dir_ind_left[d]+1;
+				if(dir_ind_left[d] < 0){
+					dir_ind_left[d] = 0;
+					PRINT_ASSERT(dir_ind_right[d],==,dir_ind_left[d]);
+					icube->xLR[d][0] = axes[d].min;
+					icube->xLR[d][1] = axes[d].mid[dir_ind_right[d]];
+				}
+				else if(dir_ind_right[d] >= axes[d].size()){
+					dir_ind_right[d] = axes[d].size()-1;
+					PRINT_ASSERT(dir_ind_left[d],==,dir_ind_right[d]);
+					icube->xLR[d][0] = axes[d].mid[dir_ind_left[d]];
+					icube->xLR[d][1] = axes[d].max();
+				}
+				else{
+					icube->xLR[d][0] = axes[d].mid[dir_ind_left[d] ];
+					icube->xLR[d][1] = axes[d].mid[dir_ind_right[d]];
 				}
 
-				// get the index for the plus and minus values
-				for(unsigned int j=0; j<ndims; j++){
-					indp[j] = ind[j];
-					indm[j] = ind[j];
-				}
-
-				// get plus and minus values
-				x=axes[i].mid[ind[i]];
-				if(ind[i] > 0){
-					indm[i] = ind[i]-1;
-					zm = direct_index(indm);
-					xm = axes[i].mid[indm[i]];
-					ym = y0[zm];
-					dxL = x-xm;
-					dyL = y-ym;
-					sL = dyL/dxL;
-				}
-				if(ind[i] < axes[i].size()-1){
-					indp[i] = ind[i]+1;
-					if(indp[i]>=axes[i].size()) sR=0;
-					else{
-						zp = direct_index(indp);
-						xp = axes[i].mid[indp[i]];
-						yp = y0[zp];
-						dxR = xp-x;
-						dyR = yp-y;
-						sR = dyR/dxR;
-					}
-				}
-
-
-				// get the actual slope
-				if(ind[i]==0) slope = sR;
-				else if(ind[i]==axes[i].size()-1) slope = sL;
-				else slope = (sL*dxR + sR*dxL) / (dxR+dxL);
-
-				dydx[z][i] = slope;
+				// sanity checks
+				PRINT_ASSERT(icube->xLR[d][1],>,icube->xLR[d][0]);
+				PRINT_ASSERT(x[d],<=,icube->xLR[d][1]);
+				PRINT_ASSERT(x[d],>=,icube->xLR[d][0]);
 			}
 
-
-			// check min/max values
-			for(unsigned e=0; e<nelements; e++){
-				double ybig = y[e];
-				double ysmall = y[e];
-				PRINT_ASSERT(y[e],<=,maxval);
-				PRINT_ASSERT(y[e],>=,minval);
-
-				for(unsigned i=0; i<ndims; i++){
-					if(dydx[z][i][e] >= 0){
-						ybig   += dydx[z][i][e] * (axes[i].top[ind[i]]    - axes[i].mid[ind[i]]);
-						ysmall += dydx[z][i][e] * (axes[i].bottom(ind[i]) - axes[i].mid[ind[i]]);
-					}
-					else{
-						ybig   += dydx[z][i][e] * (axes[i].bottom(ind[i]) - axes[i].mid[ind[i]]);
-						ysmall += dydx[z][i][e] * (axes[i].top[ind[i]]    - axes[i].mid[ind[i]]);
-					}
-				}
-				PRINT_ASSERT(ybig,>=,y[e]);
-				PRINT_ASSERT(ysmall,<=,y[e]);
-
-				for(unsigned i=0; i<ndims; i++){
-					const double oldslope= dydx[z][i][e];
-					if(ybig > maxval){
-						dydx[z][i][e] = oldslope * (maxval-y[e]) / (ybig - y[e]);
-						PRINT_ASSERT(ysmall,>=,minval);
-					}
-					if(ysmall < minval){
-						dydx[z][i][e] = oldslope * (y[e]-minval) / (y[e]-ysmall);
-						PRINT_ASSERT(ybig,<=,maxval);
-					}
-				}
+			// set the global index of the values on the corners
+			unsigned dir_ind[ndims];
+			for(unsigned i=0; i<icube->ncorners; i++){
+				for(unsigned d=0; d<ndims; d++)
+					dir_ind[d] = (InterpolationCube<ndims>::isRightIndex(i,d) ? dir_ind_right[d] : dir_ind_left[d]);
+				icube->indices[i] = direct_index(dir_ind);
 			}
+
+			// calculate the weights associated with each corner
+			icube->set_weights(x);
 		}
 	}
 
 	void wipe(){
-		#pragma omp parallel
-		{
-			#pragma omp for
-			for(unsigned z=0; z<y0.size(); z++)
-				y0[z] = 0;
-			#pragma omp for collapse(2)
-			for(unsigned z=0; z<dydx.size(); z++)
-				for(unsigned i=0; i<ndims; i++)
-					dydx[z][i] = 0;
-		}
+		#pragma omp parallel for
+		for(unsigned z=0; z<y0.size(); z++)
+			y0[z] = 0;
 	}
 
 	unsigned size() const{
@@ -280,6 +316,10 @@ public:
 	}
 };
 
+
+//===================//
+// ScalarMultiDArray //
+//===================//
 template<unsigned int ndims>
 class ScalarMultiDArray : public MultiDArray<1,ndims>{
 public:
@@ -300,10 +340,18 @@ public:
 		return this->y0[i][0];
 	}
 
-	// get interpolated value
-	double interpolate(const double x[ndims], const unsigned int ind[ndims]) const{
-		Tuple<double,1> result = MultiDArray<1,ndims>::interpolate(x,ind);
-		return result[0];
+	template<unsigned dummy>
+	double interpolate(const InterpolationCube<dummy>& icube) const{
+		return MultiDArray<1,ndims>::interpolate(icube)[0];
+	}
+	template<unsigned dummy>
+	Tuple<double,ndims> interpolate_slopes(const InterpolationCube<dummy>& icube) const{
+		Tuple<Tuple<double,1>,ndims> result;
+		result = MultiDArray<1,ndims>::interpolate_slopes(icube);
+
+		Tuple<double,ndims> return_value;
+		for(unsigned i=0; i<ndims; i++) return_value[i] = result[i][0];
+		return return_value;
 	}
 };
 

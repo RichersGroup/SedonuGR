@@ -54,10 +54,6 @@ void Grid2DSphere::read_model_file(Lua* lua)
 		cout << "ERROR: model type unknown." << endl;
 		exit(8);
 	}
-
-	vr.calculate_slopes(-INFINITY,INFINITY);
-	vtheta.calculate_slopes(-INFINITY,INFINITY);
-	vphi.calculate_slopes(-INFINITY,INFINITY);
 }
 void Grid2DSphere::write_child_zones(H5::H5File file){
 	vr.write_HDF5(file,"vr(cm|s)");
@@ -570,9 +566,9 @@ int Grid2DSphere::zone_index(const double x[3]) const
 
 	// check if off the boundaries
 	if(r     <  xAxes[0].min                    ) return -1;
-	if(r     >= xAxes[0].top[xAxes[0].size()-1]        ) return -2;
-	if(theta <  xAxes[1].min                ) return -2;
-	if(theta >= xAxes[1].top[xAxes[1].size()-1]) return -2;
+	if(r     >= xAxes[0].top[xAxes[0].size()-1]        ) return -1;
+	if(theta <  xAxes[1].min                ) return -1;
+	if(theta >= xAxes[1].top[xAxes[1].size()-1]) return -1;
 
 	// find in zone array using stl algorithm upper_bound and subtracting iterators
 	const int i =     xAxes[0].bin(r    );
@@ -661,7 +657,7 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector
 		for(unsigned i=0; i<3; i++) ktest[i] *= sgn;
-		eh->g.normalize_null(ktest);
+		eh->g.normalize_null_preservedownt(ktest);
 		const double kr = radius(ktest);
 
 		// get the time component of the tetrad test vector
@@ -681,7 +677,7 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector
 		for(unsigned i=0; i<3; i++) ktest[i] *= sgn;
-		eh->g.normalize_null(ktest);
+		eh->g.normalize_null_preservedownt(ktest);
 		double ktheta = radius(ktest2);
 
 		// get the time component of the tetrad test vector
@@ -810,9 +806,10 @@ void Grid2DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3
 //------------------------------------------------------------
 // get the cartesian velocity vector (cm/s)
 //------------------------------------------------------------
-void Grid2DSphere::interpolate_fluid_velocity(const double x[3], double v[3], const unsigned dir_ind[NDIMS]) const
+void Grid2DSphere::interpolate_fluid_velocity(EinsteinHelper *eh) const
 {
 	// radius in zone
+	double *x = eh->p.xup;
 	double r    = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 	double rhat = sqrt(x[0]*x[0] + x[1]*x[1]);
 	int along_axis = (rhat/r < TINY);
@@ -822,9 +819,9 @@ void Grid2DSphere::interpolate_fluid_velocity(const double x[3], double v[3], co
 
 	// Based on position, calculate what the 3-velocity is
 	double xvec[2] = {r,theta};
-	double tmp_vr     = vr.interpolate(xvec,dir_ind);
-	double tmp_vtheta = vtheta.interpolate(xvec,dir_ind);
-	double tmp_vphi   = vphi.interpolate(xvec,dir_ind);
+	double tmp_vr     = vr.interpolate(eh->icube_vol);
+	double tmp_vtheta = vtheta.interpolate(eh->icube_vol);
+	double tmp_vphi   = vphi.interpolate(eh->icube_vol);
 
 	double vr_cart[3];
 	vr_cart[0] = tmp_vr * x[0]/r;
@@ -842,13 +839,13 @@ void Grid2DSphere::interpolate_fluid_velocity(const double x[3], double v[3], co
 	vphi_cart[2] = 0;
 
 	// remember, symmetry axis is along the z-axis
-	for(int i=0; i<3; i++) v[i] = vr_cart[i] + vtheta_cart[i] + vphi_cart[i];
+	for(int i=0; i<3; i++) eh->v[i] = vr_cart[i] + vtheta_cart[i] + vphi_cart[i];
 
 	// check for pathological case
 	if (r == 0){ // set everything to 0
-		v[0] = 0;
-		v[1] = 0;
-		v[2] = 0;
+		eh->v[0] = 0;
+		eh->v[1] = 0;
+		eh->v[2] = 0;
 	}
 }
 
@@ -856,7 +853,7 @@ void Grid2DSphere::interpolate_fluid_velocity(const double x[3], double v[3], co
 //------------------------------------------------------------
 // Reflect off the symmetry boundaries
 //------------------------------------------------------------
-void Grid2DSphere::symmetry_boundaries(EinsteinHelper *lh) const{
+void Grid2DSphere::symmetry_boundaries(EinsteinHelper *eh) const{
 // not implemented - does nothing
 }
 
@@ -888,20 +885,20 @@ void Grid2DSphere::get_connection_coefficients(EinsteinHelper* eh) const{ // def
 	PRINT_ASSERT(DO_GR,==,0);
 	eh->christoffel.data = 0;
 }
-void Grid2DSphere::interpolate_shift(const double xup[4], double betaup[3], const unsigned dir_ind[NDIMS]) const{ // default Minkowski
+void Grid2DSphere::interpolate_shift(EinsteinHelper *eh) const{ // default Minkowski
 	PRINT_ASSERT(DO_GR,==,0);
-	betaup[0] = 0;
-	betaup[1] = 0;
-	betaup[2] = 0;
+	eh->g.betaup[0] = 0;
+	eh->g.betaup[1] = 0;
+	eh->g.betaup[2] = 0;
 }
-void Grid2DSphere::interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const{ // default Minkowski
+void Grid2DSphere::interpolate_3metric(EinsteinHelper *eh) const{ // default Minkowski
 	PRINT_ASSERT(DO_GR,==,0);
-	gammalow->data[ixx] = 1.0;
-	gammalow->data[iyy] = 1.0;
-	gammalow->data[izz] = 1.0;
-	gammalow->data[ixy] = 0.0;
-	gammalow->data[ixz] = 0.0;
-	gammalow->data[iyz] = 0.0;
+	eh->g.gammalow.data[ixx] = 1.0;
+	eh->g.gammalow.data[iyy] = 1.0;
+	eh->g.gammalow.data[izz] = 1.0;
+	eh->g.gammalow.data[ixy] = 0.0;
+	eh->g.gammalow.data[ixz] = 0.0;
+	eh->g.gammalow.data[iyz] = 0.0;
 }
 void Grid2DSphere::grid_coordinates(const double xup[3], double coords[NDIMS]) const{
 	coords[0] = radius(xup);

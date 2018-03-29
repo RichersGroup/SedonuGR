@@ -99,7 +99,7 @@ protected:
 
 	// random walk parameters
 	CDFArray randomwalk_diffusion_time;
-	LocateArray randomwalk_xaxis;
+	Axis randomwalk_xaxis;
 	int do_randomwalk;
 	double randomwalk_min_optical_depth;
 	double randomwalk_max_x;
@@ -176,6 +176,7 @@ public:
 	// set things up
 	void init(Lua* lua);
 	void update_eh_background(EinsteinHelper* eh) const;
+	void update_eh_k_opac(EinsteinHelper* eh) const;
 
 	// in-simulation functions to be used by main
 	void step();

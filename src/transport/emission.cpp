@@ -135,6 +135,7 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 	grid->sample_in_zone(z_ind,&rangen,eh.p.xup);
 	eh.p.xup[3] = 0;
 	update_eh_background(&eh);
+	if(eh.z_ind < 0) return;
 
 	// sample the frequency
 	double nu3_min = pow(grid->nu_grid_axis.bottom(g), 3);
@@ -146,13 +147,10 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 	double kup_tet[4];
 	isotropic_kup_tet(nu,kup_tet,&rangen);
 	eh.set_kup_tet(kup_tet);
-	grid->interpolate_opacity(&eh);
+	update_eh_k_opac(&eh);
 
 	// set the particle number
-	double hypervec[NDIMS+1];
-	grid->grid_coordinates(eh.p.xup,hypervec);
-	hypervec[NDIMS] = eh.nu();
-	eh.p.N = grid->BB[s].interpolate(hypervec,eh.dir_ind) * eh.absopac; // #/s/cm^3/sr/(Hz^3/3)
+	eh.p.N = grid->BB[s].interpolate(eh.icube_spec) * eh.absopac; // #/s/cm^3/sr/(Hz^3/3)
 	eh.p.N *= grid->zone_lab_3volume(eh.z_ind);
 	if(DO_GR) eh.p.N *= sqrt(eh.g.gammalow.det()) * (-eh.g.ndot(eh.u)); // comoving volume (d3x * volfac * Lorentz factor)
 	eh.p.N *= weight * 1/*s*/ * 4.*pc::pi/*sr*/ * grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/;

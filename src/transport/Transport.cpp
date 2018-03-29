@@ -388,20 +388,14 @@ void Transport::reset_radiation(){
 		for(unsigned z_ind=0;z_ind<grid->rho.size();z_ind++)
 			species_list[s]->set_eas(z_ind,grid);
 
-		//grid->abs_opac[s].calculate_slopes(0,INFINITY);
-		//grid->BB[s].calculate_slopes(0,1); // energy densities come out wrong if I interpolate...
-
 		// if using scattering kernels, have to keep kernel and opacity consistent
 		if(use_scattering_kernels){
-			//grid->scattering_phi0[s].calculate_slopes(0,INFINITY);
-			//grid->scattering_delta[s].calculate_slopes(-3,3);
-
 			#pragma omp parallel for
 			for(unsigned z_ind=0; z_ind<grid->rho.size(); z_ind++){
 				unsigned dir_ind[NDIMS+2];
 				double hypervec[NDIMS+2];
 				grid->rho.indices(z_ind,dir_ind);
-				for(unsigned i=0; i<NDIMS; i++) hypervec[i] = grid->rho.axes[i].mid[dir_ind[i]];
+				for(unsigned i=0; i<NDIMS; i++) hypervec[i] = grid->xAxes[i].mid[dir_ind[i]];
 				for(unsigned igin=0; igin<grid->nu_grid_axis.size(); igin++){
 					dir_ind[NDIMS] = igin;
 					hypervec[NDIMS] = grid->nu_grid_axis.mid[igin];
@@ -409,14 +403,14 @@ void Transport::reset_radiation(){
 					grid->scat_opac[s][global_ind] = 0;
 					for(unsigned igout=0; igout<grid->nu_grid_axis.size(); igout++){
 						dir_ind[NDIMS+1] = igout;
-						hypervec[NDIMS+1] = 0.5 * (grid->nu_grid_axis.bottom(igout) + grid->nu_grid_axis.top[igout]);
-						grid->scat_opac[s][global_ind] += grid->scattering_phi0[s].interpolate(hypervec,dir_ind) * grid->nu_grid_axis.delta(igout);
+						hypervec[NDIMS+1] = grid->nu_grid_axis.mid[igout];
+						unsigned direct_index = grid->scattering_phi0[s].direct_index(dir_ind);
+						grid->scat_opac[s][global_ind] += grid->scattering_phi0[s][direct_index] * grid->nu_grid_axis.delta(igout);
 						PRINT_ASSERT(grid->scat_opac[s][global_ind],>=,0);
 					}
 				}
 			}
 		}
-		//grid->scat_opac[s].calculate_slopes(0,INFINITY);
 	}
 }
 
@@ -702,23 +696,37 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 		// spatial indices
 		grid->rho.indices(eh->z_ind, eh->dir_ind);
 		for(unsigned i=0; i<NDIMS; i++)	PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
+		grid->rho.set_InterpolationCube(&(eh->icube_vol),eh->grid_coords,eh->dir_ind);
 
 		// metric and its derivatives
-		grid->interpolate_metric(eh->p.xup, &(eh->g), eh->dir_ind);
-		eh->g.update();
-		grid->get_connection_coefficients(eh);
+		grid->interpolate_metric(eh);
+		if(eh->g.gtt >= 0){
+			eh->z_ind = -1;
+			eh->p.fate = absorbed;
+		}
 
-		// four-velocity and tetrad
-		double v[3], vmag, vmag_corrected;
-		grid->interpolate_fluid_velocity(eh->p.xup,v,eh->dir_ind);
-		vmag = sqrt(eh->g.dot<3>(v,v));
-		vmag_corrected = grid->sqrt_vdotv.interpolate(eh->p.xup,eh->dir_ind);
-		for(unsigned i=0; i<3; i++) v[i] *= vmag_corrected / vmag;
-		eh->set_fourvel(v);
+		// four-velocity
+		double vmag, vmag_corrected;
+		grid->interpolate_fluid_velocity(eh);
+		eh->set_fourvel();
+
+		// set tetrad
 		eh->set_tetrad_basis(grid->tetrad_rotation);
+	}
+}
 
-		// make sure kup is consistent with the new background
+// make sure kup is consistent with the new background
+// interpolate reaction rates
+void Transport::update_eh_k_opac(EinsteinHelper* eh) const{
+	PRINT_ASSERT(eh->p.kup[3],>=,0);
+	if(eh->z_ind >= 0){
+		PRINT_ASSERT(eh->p.kup,==,eh->p.kup);
 		eh->renormalize_kup();
+		eh->grid_coords[NDIMS] = min(eh->nu(), grid->nu_grid_axis.max());
+		eh->dir_ind[NDIMS] = min(grid->nu_grid_axis.bin(eh->nu()), (int)grid->nu_grid_axis.size()-1);
+		eh->eas_ind = grid->abs_opac[eh->p.s].direct_index(eh->dir_ind);
+		grid->abs_opac[eh->p.s].set_InterpolationCube(&(eh->icube_spec),eh->grid_coords,eh->dir_ind);
+		grid->interpolate_opacity(eh);
 	}
 }
 
@@ -757,14 +765,18 @@ double Transport::R_randomwalk(const double kx_kttet, const double kt_kttet, con
 	double a = ux*pc::c * randomwalk_max_x / D;
 	double c = dlab;
 	double R = NaN;
-	if(4.*a*c > b*b) R = 0; // if no solution, say randomwalk can't be done
+	double rad = 4.*a*c > b*b;
+	if(rad<0) R = 0; // if no solution, say randomwalk can't be done
+	else if(abs(4.*a*c/(b*b)) < sqrt(TINY)){
+		R = c / b;
+	}
 	else{
 		double term1 = -b / (2.*a);
-		double term2 = sqrt(b*b - 4.*a*c) / (2.*a);
+		double term2 = sqrt(rad) / (2.*a);
 		R = term1 + term2;
 		if(R<0) R = term1 - term2;
-		else PRINT_ASSERT(term1-term2,<,0);
+		//else PRINT_ASSERT(term1-term2,<,0);
 	}
-	PRINT_ASSERT(R,>=,0);
+	R = max(0.,R);
 	return R;
 }

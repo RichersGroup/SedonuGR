@@ -29,7 +29,7 @@
 #define _CDF_H 1
 
 #include <vector>
-#include "LocateArray.h"
+#include "Axis.h"
 
 //**********************************************************
 // CDF == Cumulative Distribution Function
@@ -46,18 +46,18 @@ class CDFArray
 private:
 
 	std::vector<double> y;
-	double tangent(const int i, const LocateArray* xgrid) const;
-	double secant(const int i, const int j, const LocateArray* xgrid) const;
-	double inverse_tangent(const int i, const LocateArray* xgrid) const;
-	double inverse_secant(const int i, const int j, const LocateArray* xgrid) const;
+	double tangent(const int i, const Axis* xgrid) const;
+	double secant(const int i, const int j, const Axis* xgrid) const;
+	double inverse_tangent(const int i, const Axis* xgrid) const;
+	double inverse_secant(const int i, const int j, const Axis* xgrid) const;
 
-	double invert_cubic(const double z, const LocateArray* xgrid, const int i_in=-1) const;    // sample value from the CDF, when passed a random #
-	double invert_linear(const double z, const LocateArray* xgrid, const int i_in=-1) const;
-	double invert_piecewise(const double z, const LocateArray* xgrid, const int i_in=-1) const;
+	double invert_cubic(const double z, const Axis* xgrid, const int i_in=-1) const;    // sample value from the CDF, when passed a random #
+	double invert_linear(const double z, const Axis* xgrid, const int i_in=-1) const;
+	double invert_piecewise(const double z, const Axis* xgrid, const int i_in=-1) const;
 
-	double interpolate_pdf_piecewise(const double x, const LocateArray* xgrid) const;
-	double interpolate_pdf_linear(const double x, const LocateArray* xgrid) const;
-	double interpolate_pdf_cubic(const double x, const LocateArray* xgrid) const;
+	double interpolate_pdf_piecewise(const double x, const Axis* xgrid) const;
+	double interpolate_pdf_linear(const double x, const Axis* xgrid) const;
+	double interpolate_pdf_cubic(const double x, const Axis* xgrid) const;
 
 public:
 
@@ -73,10 +73,10 @@ public:
 	void   set_value(const int i, const double f);     // set the actual (not CDF) value
 	double get_value(const int i) const;               // Get the actual (not CDF) value
 
-	double interpolate_pdf(const double x, const LocateArray* xgrid) const;          // interpolate the CDF to get the CDF value at the x value
+	double interpolate_pdf(const double x, const Axis* xgrid) const;          // interpolate the CDF to get the CDF value at the x value
 
 	void   normalize();         // normalize the cdf, so that final value = 1. Sets N.
-	double invert(const double z, const LocateArray* xgrid, const int i_in=-1) const;
+	double invert(const double z, const Axis* xgrid, const int i_in=-1) const;
 	int    get_index(const double z) const;    // sample index from the CDF, when passed a random #
 	void   print() const;
 	void   wipe();

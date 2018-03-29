@@ -5,6 +5,7 @@
 #include "Particle.h"
 #include "Metric.h"
 #include "physical_constants.h"
+#include "MultiDArray.h"
 
 namespace pc = physical_constants;
 using namespace std;
@@ -19,9 +20,14 @@ public:
 	Christoffel christoffel;
 	double u[4]; // dimensionless, up index
 
+	// things with which to do interpolation
+	InterpolationCube<NDIMS  > icube_vol; // for metric quantities
+	InterpolationCube<NDIMS+1> icube_spec; // for eas
+
 	// intermediate quantities
 	double e[4][4]; // [tet(low)][coord(up)]
-	double grid_coords[NDIMS];
+	double grid_coords[NDIMS+1];
+	double v[3];
 	double kup_tet[4];
 	double absopac, scatopac;
 	double ds_com;
@@ -42,21 +48,21 @@ public:
 		eas_ind = -MAXLIM;
 		for(unsigned i=0; i<NDIMS+1; i++)
 			dir_ind[i] = MAXLIM;
+		for(unsigned i=0; i<3; i++) v[i] = NaN;
 	}
 
 	void set_kup_tet(const double kup_tet_in[4]){
 		PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet_in,kup_tet_in)/(kup_tet_in[3]*kup_tet_in[3]),<,TINY);
 		for(unsigned i=0; i<4; i++) kup_tet[i] = kup_tet_in[i];
 		tetrad_to_coord(kup_tet,p.kup);
-		g.normalize_null(p.kup);
+		g.normalize_null_preserveupt(p.kup);
 		PRINT_ASSERT(g.dot<4>(p.kup,p.kup)/(p.kup[3]*p.kup[3]),<,TINY);
 	}
 	void renormalize_kup(){
-		g.normalize_null(p.kup);
+		g.normalize_null_changeupt(p.kup);
 		coord_to_tetrad(p.kup, kup_tet);
-		Metric::normalize_null_Minkowski(kup_tet);
 		PRINT_ASSERT(kup_tet[3],>,0);
-		PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet,kup_tet)/(kup_tet[3]*kup_tet[3]),<,TINY);
+		Metric::normalize_null_Minkowski(kup_tet);
 	}
 
 	// return the Lorentz factor W
@@ -73,7 +79,7 @@ public:
 	}
 
 	// get four velocity from three velocity
-	void set_fourvel(const double v[3]){
+	void set_fourvel(){
 		const double vdimless[3] = {v[0]/pc::c, v[1]/pc::c, v[2]/pc::c};
 		double W = lorentzFactor(&g,vdimless);
 		u[3] = W / (DO_GR ? g.alpha : 1.0);
@@ -191,45 +197,6 @@ public:
 		for(unsigned i=0; i<4; i++) p.kup[i] *= scale;
 	}
 
-	void integrate_geodesic(){
-		PRINT_ASSERT(abs(g.dot<4>(p.kup,p.kup)) / (p.kup[3]*p.kup[3]), <=, TINY);
-		double dlambda = ds_com / (pc::h*nu());
-		PRINT_ASSERT(dlambda,>=,0);
-
-		double dk_dlambda[4] = {0,0,0,0};
-		double dx_dlambda[4] = {0,0,0,0};
-		if(DO_GR){
-			// rk4
-			double dk_dlambda0[4];
-			christoffel.contract2(p.kup,dk_dlambda0);
-
-			double k1[4], dk_dlambda1[4];
-			for(unsigned i=0; i<4; i++) k1[i] = p.kup[i] + 0.5*dlambda*dk_dlambda0[i];
-			christoffel.contract2(k1,dk_dlambda1);
-
-			double k2[4], dk_dlambda2[4];
-			for(unsigned i=0; i<4; i++) k2[i] = p.kup[i] + 0.5*dlambda*dk_dlambda1[i];
-			christoffel.contract2(k2,dk_dlambda2);
-
-			double k3[4], dk_dlambda3[4];
-			for(unsigned i=0; i<4; i++) k3[i] = p.kup[i] + 1.0*dlambda*dk_dlambda2[i];
-			christoffel.contract2(k3,dk_dlambda3);
-
-			for(unsigned i=0; i<4; i++){
-				dk_dlambda[i] = 1./6.*dk_dlambda0[i] + 1./3.*dk_dlambda1[i] + 1./3.*dk_dlambda2[i] + 1./6.*dk_dlambda3[i];
-				dx_dlambda[i] = 1./6.*p.kup[i]       + 1./3.*k1[i]          + 1./3.*k2[i]          + 1./6.*k3[i];
-			}
-		}
-
-		// get new x,k
-		for(int i=0; i<4; i++){
-			p.kup[i] -= dk_dlambda[i]*dlambda;
-			p.xup[i] += dx_dlambda[i]*dlambda;
-			PRINT_ASSERT(p.kup[i],==,p.kup[i]);
-			PRINT_ASSERT(p.xup[i],==,p.xup[i]);
-		}
-		PRINT_ASSERT(p.kup[3],<,INFINITY);
-	}
 };
 
 #endif

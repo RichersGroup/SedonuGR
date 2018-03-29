@@ -45,7 +45,7 @@ class Grid2DSphere: public Grid
 private:
 	// store location of the outer edges of the zone.
 	// order of zone array: r is increased fastest
-	ScalarMultiDArray<2> vr, vtheta, vphi; // cm/s
+	ScalarMultiDArray<NDIMS> vr, vtheta, vphi; // cm/s
 
 public:
 
@@ -65,7 +65,7 @@ public:
 	void zone_directional_indices (const int z_ind, vector<unsigned>& dir_ind                    ) const;
 	double zone_lorentz_factor    (const int z_ind                                               ) const;
 	void sample_in_zone (const int z_ind, ThreadRNG* rangen, double x[3]) const;
-	void interpolate_fluid_velocity(const double x[3], double v[3], const unsigned dir_ind[NDIMS]) const;
+	void interpolate_fluid_velocity(EinsteinHelper* eh                                           ) const;
 	void symmetry_boundaries      (EinsteinHelper *eh                                            ) const;
 	double zone_radius            (const int z_ind) const;
 	void dims                     (hsize_t dims[2], const int size) const;
@@ -76,8 +76,8 @@ public:
 
 	// GR functions
 	void get_connection_coefficients(EinsteinHelper* eh) const; // Gamma^alhpa_mu_nu
-	void interpolate_shift(const double xup[4], double betaup[3], const unsigned dir_ind[NDIMS]) const;
-	void interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const;
+	void interpolate_shift(EinsteinHelper* eh) const;
+	void interpolate_3metric(EinsteinHelper* eh) const;
 	void grid_coordinates(const double xup[3], double coords[NDIMS]) const;
  };
 

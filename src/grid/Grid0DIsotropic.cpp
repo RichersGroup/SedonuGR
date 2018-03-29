@@ -132,11 +132,11 @@ void Grid0DIsotropic::sample_in_zone(const int z_ind, ThreadRNG* rangen, double 
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void Grid0DIsotropic::interpolate_fluid_velocity(const double x[3], double v[3], const unsigned dir_ind[NDIMS]) const
+void Grid0DIsotropic::interpolate_fluid_velocity(EinsteinHelper* eh) const
 {
-	v[0] = 0;
-	v[1] = 0;
-	v[2] = 0;
+	eh->v[0] = 0;
+	eh->v[1] = 0;
+	eh->v[2] = 0;
 }
 
 
@@ -174,18 +174,18 @@ double Grid0DIsotropic::d_randomwalk(const EinsteinHelper *eh) const{
 void Grid0DIsotropic::get_connection_coefficients(EinsteinHelper* eh) const{ // default Minkowski
 	eh->christoffel.data = 0;
 }
-void Grid0DIsotropic::interpolate_shift(const double xup[4], double betaup[3], const unsigned dir_ind[NDIMS]) const{ // default Minkowski
-	betaup[0] = 0;
-	betaup[1] = 0;
-	betaup[2] = 0;
+void Grid0DIsotropic::interpolate_shift(EinsteinHelper* eh) const{ // default Minkowski
+	eh->g.betaup[0] = 0;
+	eh->g.betaup[1] = 0;
+	eh->g.betaup[2] = 0;
 }
-void Grid0DIsotropic::interpolate_3metric(const double xup[4], ThreeMetric* gammalow, const unsigned dir_ind[NDIMS]) const{ // default Minkowski
-	gammalow->data[ixx] = 1.0;
-	gammalow->data[iyy] = 1.0;
-	gammalow->data[izz] = 1.0;
-	gammalow->data[ixy] = 0.0;
-	gammalow->data[ixz] = 0.0;
-	gammalow->data[iyz] = 0.0;
+void Grid0DIsotropic::interpolate_3metric(EinsteinHelper* eh) const{ // default Minkowski
+	eh->g.gammalow.data[ixx] = 1.0;
+	eh->g.gammalow.data[iyy] = 1.0;
+	eh->g.gammalow.data[izz] = 1.0;
+	eh->g.gammalow.data[ixy] = 0.0;
+	eh->g.gammalow.data[ixz] = 0.0;
+	eh->g.gammalow.data[iyz] = 0.0;
 }
 
 void Grid0DIsotropic::grid_coordinates(const double xup[3], double coords[NDIMS]) const{

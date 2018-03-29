@@ -38,7 +38,6 @@ class GridGR1D: public Grid1DSphere
 
 private:
 	// store location of the outer edge of the zone.
-	//LocateArray r_out;
 	int ghosts1;
 
 public:
