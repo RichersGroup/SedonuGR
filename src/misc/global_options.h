@@ -118,7 +118,8 @@ public:
 
   const T& operator[](const unsigned int i) const {return vals[i];}
   T& operator[](const unsigned int i){return vals[i];}
-  Tuple<T,len>& operator=(const Tuple<T,len> input){
+  template<typename Tin>
+  Tuple<T,len>& operator=(const Tuple<Tin,len> input){
 	  for(unsigned i=0; i<len; i++) this->vals[i] = input.vals[i];
 	  return *this;
   }
@@ -135,17 +136,20 @@ public:
 	  double inv_scale = 1./scale;
 	  return operator*(inv_scale);
   }
-  const Tuple<T,len> operator+(const Tuple<T,len> input) const{
+  template<typename Tin>
+  const Tuple<T,len> operator+(const Tuple<Tin,len> input) const{
 	  Tuple<T,len> result = *this;
 	  for(unsigned i=0; i<len; i++) result.vals[i] += input.vals[i];
 	  return result;
   }
-  const Tuple<T,len> operator-(const Tuple<T,len> input) const{
+  template<typename Tin>
+  const Tuple<T,len> operator-(const Tuple<Tin,len> input) const{
 	  Tuple<T,len> result = *this;
 	  for(unsigned i=0; i<len; i++) result.vals[i] -= input.vals[i];
 	  return result;
   }
-  Tuple<T,len>& operator+=(const Tuple<T,len> input){
+  template<typename Tin>
+  Tuple<T,len>& operator+=(const Tuple<Tin,len> input){
 	  for(unsigned i=0; i<len; i++) this->vals[i] += input.vals[i];
 	  return *this;
   }

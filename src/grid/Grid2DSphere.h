@@ -45,7 +45,7 @@ class Grid2DSphere: public Grid
 private:
 	// store location of the outer edges of the zone.
 	// order of zone array: r is increased fastest
-	ScalarMultiDArray<NDIMS> vr, vtheta, vphi; // cm/s
+	ScalarMultiDArray<double,NDIMS> vr, vtheta, vphi; // cm/s
 
 public:
 

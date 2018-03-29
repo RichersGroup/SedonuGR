@@ -52,7 +52,7 @@ private:
 	// values represent bin upper walls (the single locate_array.min value is the leftmost wall)
 	// underflow is combined into leftmost bin (right of the locate_array.min)
 	// overflow is combined into the rightmost bin (left of locate_array[size-1])
-	MultiDArray<n_total_elements, ndims_spatial+1> data;
+	MultiDArray<double,n_total_elements, ndims_spatial+1> data;
 
 public:
 

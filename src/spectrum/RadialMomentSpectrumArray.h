@@ -43,7 +43,7 @@ private:
 	// values represent bin upper walls (the single locate_array.min value is the leftmost wall)
 	// underflow is combined into leftmost bin (right of the locate_array.min)
 	// overflow is combined into the rightmost bin (left of locate_array[size-1])
-	MultiDArray<4,ndims_spatial+1> data; // 0, r, rr, rrr
+	MultiDArray<double,4,ndims_spatial+1> data; // 0, r, rr, rrr
 
 	static const unsigned nranks = 4;
 	static const unsigned nuGridIndex = 3;

@@ -87,11 +87,11 @@ public:
 //=============//
 // MultiDArray //
 //=============//
-template<unsigned nelements, unsigned int ndims>
+template<typename T, unsigned nelements, unsigned int ndims>
 class MultiDArray{
 public:
 
-	vector< Tuple<double,nelements> > y0;
+	vector< Tuple<T,nelements> > y0;
 	vector<Axis> axes;
 	Tuple<unsigned int,ndims> stride;
 
@@ -109,7 +109,7 @@ public:
 		if(ndims==0) y0.resize(1);
 	}
 
-	MultiDArray<nelements,ndims> operator =(const MultiDArray<nelements,ndims>& input){
+	MultiDArray<T,nelements,ndims> operator =(const MultiDArray<T,nelements,ndims>& input){
 		PRINT_ASSERT(input.axes.size(),==,ndims);
 		this->axes = input.axes;
 		this->stride = input.stride;
@@ -141,7 +141,7 @@ public:
 	const Tuple<double,nelements>& operator[](const unsigned i) const {
 		return y0[i];
 	}
-	Tuple<double,nelements>& operator[](const unsigned i){
+	Tuple<T,nelements>& operator[](const unsigned i){
 		return y0[i];
 	}
 
@@ -320,14 +320,14 @@ public:
 //===================//
 // ScalarMultiDArray //
 //===================//
-template<unsigned int ndims>
-class ScalarMultiDArray : public MultiDArray<1,ndims>{
+template<typename T, unsigned int ndims>
+class ScalarMultiDArray : public MultiDArray<T,1,ndims>{
 public:
-	void add(const unsigned ind[ndims], const double to_add){
+	void add(const unsigned ind[ndims], const T to_add){
 		unsigned lin_ind = this->direct_index(ind);
 		direct_add(lin_ind, to_add);
 	}
-	void direct_add(const unsigned lin_ind, const double to_add){
+	void direct_add(const unsigned lin_ind, const T to_add){
 		#pragma omp atomic
 		this->y0[lin_ind][0] += to_add;
 	}
@@ -336,20 +336,20 @@ public:
 	const double& operator[](const unsigned i) const {
 		return this->y0[i][0];
 	}
-	double& operator[](const unsigned i){
+	T& operator[](const unsigned i){
 		return this->y0[i][0];
 	}
 
 	template<unsigned dummy>
 	double interpolate(const InterpolationCube<dummy>& icube) const{
-		return MultiDArray<1,ndims>::interpolate(icube)[0];
+		return MultiDArray<T,1,ndims>::interpolate(icube)[0];
 	}
 	template<unsigned dummy>
 	Tuple<double,ndims> interpolate_slopes(const InterpolationCube<dummy>& icube) const{
-		Tuple<Tuple<double,1>,ndims> result;
-		result = MultiDArray<1,ndims>::interpolate_slopes(icube);
+		Tuple<Tuple<T,1>,ndims> result;
+		result = MultiDArray<T,1,ndims>::interpolate_slopes(icube);
 
-		Tuple<double,ndims> return_value;
+		Tuple<T,ndims> return_value;
 		for(unsigned i=0; i<ndims; i++) return_value[i] = result[i][0];
 		return return_value;
 	}

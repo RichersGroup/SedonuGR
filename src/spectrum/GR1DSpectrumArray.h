@@ -50,7 +50,7 @@ private:
 public:
 
 	static const unsigned nelements = 6;
-	MultiDArray<nelements,2> data;
+	MultiDArray<double,nelements,2> data;
 
 	//--------------------------------------------------------------
 	// Initialization and Allocation

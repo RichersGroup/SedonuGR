@@ -43,7 +43,7 @@ protected:
 	int reflect_outer;
 
 	// ds^2 = -alpha dt^2 + X^2 dr^2 + dOmega^2
-	ScalarMultiDArray<NDIMS> X, vr;
+	ScalarMultiDArray<double,NDIMS> X, vr;
 
 public:
 

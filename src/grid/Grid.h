@@ -89,22 +89,22 @@ public:
 	vector<Axis> xAxes;
 
 	// vectors over neutrino species
-	vector<ScalarMultiDArray<NDIMS+1> > BB;        // #/s/cm^2/sr/(Hz^3/3)
-	vector<ScalarMultiDArray<NDIMS+1> > abs_opac;  // 1/cm
-	vector<ScalarMultiDArray<NDIMS+1> > scat_opac; // 1/cm
-	vector<ScalarMultiDArray<NDIMS+2> > scattering_delta; // phi1/phi0 for sampling outgoing direction [Ein,Eout]
-	vector<ScalarMultiDArray<NDIMS+2> > scattering_phi0; // opacity per outgoing frequency [Ein,Eout]
+	vector<ScalarMultiDArray<double,NDIMS+1> > BB;        // #/s/cm^2/sr/(Hz^3/3)
+	vector<ScalarMultiDArray<double,NDIMS+1> > abs_opac;  // 1/cm
+	vector<ScalarMultiDArray<double,NDIMS+1> > scat_opac; // 1/cm
+	vector<ScalarMultiDArray<double,NDIMS+2> > scattering_delta; // phi1/phi0 for sampling outgoing direction [Ein,Eout]
+	vector<ScalarMultiDArray<double,NDIMS+2> > scattering_phi0; // opacity per outgoing frequency [Ein,Eout]
 	vector<PolarSpectrumArray<0> > spectrum;
 	vector<SpectrumArray*> distribution;  // radiation energy density for each species in lab frame (erg/ccm. Integrated over bin frequency and direction)
 
-	ScalarMultiDArray<NDIMS> lapse;
-	ScalarMultiDArray<NDIMS> rho;       // density (g/cm^3)
-	ScalarMultiDArray<NDIMS> T;         // gas temperature (K)
-	ScalarMultiDArray<NDIMS> Ye;        // electron fraction
-	ScalarMultiDArray<NDIMS> H_vis;     // specific heating rate (erg/s/g)
+	ScalarMultiDArray<double,NDIMS> lapse;
+	ScalarMultiDArray<double,NDIMS> rho;       // density (g/cm^3)
+	ScalarMultiDArray<double,NDIMS> T;         // gas temperature (K)
+	ScalarMultiDArray<double,NDIMS> Ye;        // electron fraction
+	ScalarMultiDArray<double,NDIMS> H_vis;     // specific heating rate (erg/s/g)
 
-	MultiDArray<4,NDIMS> fourforce_abs, fourforce_emit, fourforce_annihil;
-	ScalarMultiDArray<NDIMS> l_abs, l_emit; // lepton number emission rate (cm^-3 s^-1) (comoving frame)
+	MultiDArray<double,4,NDIMS> fourforce_abs, fourforce_emit, fourforce_annihil;
+	ScalarMultiDArray<double,NDIMS> l_abs, l_emit; // lepton number emission rate (cm^-3 s^-1) (comoving frame)
 
 
 	// set everything up
