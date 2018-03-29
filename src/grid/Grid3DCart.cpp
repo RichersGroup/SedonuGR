@@ -739,7 +739,7 @@ void Grid3DCart::get_connection_coefficients(EinsteinHelper* eh) const{
 		for(unsigned a=0; a<4; a++)
 			for(unsigned i=0; i<4; i++)
 				for(unsigned j=0; j<4; j++){
-					christoffel_low[a][i][j] = 0.5 * (dg[j][i][a] + dg[i][a][j] - dg[a][i][j]);
+					christoffel_low[a][i][j] = 0.5 * (dg[j][i][a] + dg[i][a][j] - dg[a][i][j]); // note - last term should be zero when contracted with kk, but we leave it in for clarity
 					PRINT_ASSERT(abs(christoffel_low[a][i][j]),<,INFINITY);
 				}
 
