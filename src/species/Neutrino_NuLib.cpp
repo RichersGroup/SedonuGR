@@ -73,7 +73,7 @@ void Neutrino_NuLib::set_eas(const unsigned z_ind, Grid* grid) const
 		grid->BB[ID][global_index] /= pc::h * pow(grid->nu_grid_axis.mid[ig],3) * grid->nu_grid_axis.delta(ig); // #/cm^2/s/sr/(Hz^3/3)
 
 		if(grid->scattering_delta[ID].size()>0){
-			PRINT_ASSERT(EoutCDF[ig].get(ngroups-1),==,1.0);
+			PRINT_ASSERT(abs(EoutCDF[ig].get(ngroups-1)-1.),<,TINY);
 			PRINT_ASSERT(EoutCDF[ig].N,==,tmp_scatopac[ig]);
 			for(unsigned og=0; og<ngroups; og++){
 				dir_ind[NDIMS+1] = og;

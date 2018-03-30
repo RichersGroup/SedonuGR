@@ -49,6 +49,7 @@ void Transport::propagate_particles()
 		// propagate each particle with an EinsteinHelper
 		EinsteinHelper eh;
 		eh.p = particles[i];
+		eh.N0 = eh.p.N;
 		update_eh_background(&eh);
 		update_eh_k_opac(&eh);
 

@@ -16,6 +16,7 @@ class EinsteinHelper{
 public:
 	// essential variables interpolated from grid
 	Particle p;
+	double N0;
 	Metric g;
 	Christoffel christoffel;
 	double u[4]; // dimensionless, up index
@@ -41,6 +42,7 @@ public:
 			for(unsigned j=0; j<4; j++)
 				e[i][j] = NaN;
 		}
+		N0 = NaN;
 		absopac = NaN;
 		scatopac = NaN;
 		ds_com = NaN;

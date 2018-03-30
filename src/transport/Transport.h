@@ -137,7 +137,7 @@ public:
 	Grid *grid;
 
 	// minimum neutrino packet energy
-	double min_packet_number;
+	double min_packet_weight;
 
 	// items for core emission
 	double r_core;

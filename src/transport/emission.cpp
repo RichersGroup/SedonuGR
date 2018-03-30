@@ -156,6 +156,7 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 	eh.p.N *= weight * 1/*s*/ * 4.*pc::pi/*sr*/ * grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/;
 	PRINT_ASSERT(eh.p.N,>=,0);
 	PRINT_ASSERT(eh.p.N,<,1e99);
+	eh.N0 = eh.p.N;
 
 	// add to particle vector
 	window(&eh);
@@ -223,6 +224,7 @@ void Transport::create_surface_particle(const double weight, const unsigned int 
 			* grid->nu_grid_axis.delta3(g)/3.0 //        Hz^3/3
 			* multiplier                 // overall scaling
 			* weight;                    // 1/number of samples
+	eh.N0 = eh.p.N;
 
 
 

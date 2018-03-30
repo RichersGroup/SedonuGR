@@ -70,7 +70,7 @@ Transport::Transport(){
 	min_step_size = NaN;
 	max_step_size = NaN;
 	do_randomwalk = -MAXLIM;
-	min_packet_number = NaN;
+	min_packet_weight = NaN;
 	do_annihilation = -MAXLIM;
 	grid = NULL;
 	r_core = NaN;
@@ -137,7 +137,7 @@ void Transport::init(Lua* lua)
 		randomwalk_min_optical_depth = lua->scalar<double>("randomwalk_min_optical_depth");
 		init_randomwalk_cdf(lua);
 	}
-	min_packet_number = lua->scalar<double>("min_packet_number");
+	min_packet_weight = lua->scalar<double>("min_packet_weight");
 
 	// output parameters
 	write_zones_every   = lua->scalar<double>("write_zones_every");
@@ -387,30 +387,6 @@ void Transport::reset_radiation(){
 		#pragma omp parallel for
 		for(unsigned z_ind=0;z_ind<grid->rho.size();z_ind++)
 			species_list[s]->set_eas(z_ind,grid);
-
-		// if using scattering kernels, have to keep kernel and opacity consistent
-		if(use_scattering_kernels){
-			#pragma omp parallel for
-			for(unsigned z_ind=0; z_ind<grid->rho.size(); z_ind++){
-				unsigned dir_ind[NDIMS+2];
-				double hypervec[NDIMS+2];
-				grid->rho.indices(z_ind,dir_ind);
-				for(unsigned i=0; i<NDIMS; i++) hypervec[i] = grid->xAxes[i].mid[dir_ind[i]];
-				for(unsigned igin=0; igin<grid->nu_grid_axis.size(); igin++){
-					dir_ind[NDIMS] = igin;
-					hypervec[NDIMS] = grid->nu_grid_axis.mid[igin];
-					unsigned global_ind = grid->scat_opac[s].direct_index(dir_ind);
-					grid->scat_opac[s][global_ind] = 0;
-					for(unsigned igout=0; igout<grid->nu_grid_axis.size(); igout++){
-						dir_ind[NDIMS+1] = igout;
-						hypervec[NDIMS+1] = grid->nu_grid_axis.mid[igout];
-						unsigned direct_index = grid->scattering_EoutCDF[s].direct_index(dir_ind);
-						grid->scat_opac[s][global_ind] += grid->scattering_EoutCDF[s][direct_index] * grid->nu_grid_axis.delta(igout);
-						PRINT_ASSERT(grid->scat_opac[s][global_ind],>=,0);
-					}
-				}
-			}
-		}
 	}
 }
 

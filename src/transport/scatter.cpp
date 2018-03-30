@@ -40,13 +40,13 @@ void Transport::window(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->p.fate,!=,rouletted);
 
 	// Roulette if too low energy
-	while(eh->p.N<=min_packet_number && eh->p.fate==moving){
+	while(eh->p.N/eh->N0 <= min_packet_weight and eh->p.fate==moving){
 		if(rangen.uniform() < 0.5) eh->p.fate = rouletted;
 		else eh->p.N *= 2.0;
 	}
 
 	if(eh->p.fate == moving){
-		PRINT_ASSERT(eh->p.N,>=,min_packet_number);
+		PRINT_ASSERT(eh->p.N/eh->N0,>=,min_packet_weight);
 		PRINT_ASSERT(eh->p.N,<,INFINITY);
 		PRINT_ASSERT(eh->p.N,>,0);
 	}
@@ -201,7 +201,7 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double k
 		double phi0 = grid->scattering_EoutCDF[eh->p.s].interpolate(icube_kernel);
 		outnu.set(i, phi0);
 	}
-	PRINT_ASSERT(outnu.get(grid->nu_grid_axis.size()-1),==,1.0);
+	PRINT_ASSERT(abs(outnu.get(grid->nu_grid_axis.size()-1)-1.),<,TINY);
 	dir_ind[NDIMS+1] = outnu.get_index(rangen.uniform());
 	hyperloc[NDIMS+1] = outnu.invert(rangen.uniform(),&grid->nu_grid_axis,dir_ind[NDIMS+1]);
 
