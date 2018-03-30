@@ -92,8 +92,8 @@ public:
 	vector<ScalarMultiDArray<double,NDIMS+1> > BB;        // #/s/cm^2/sr/(Hz^3/3)
 	vector<ScalarMultiDArray<double,NDIMS+1> > abs_opac;  // 1/cm
 	vector<ScalarMultiDArray<double,NDIMS+1> > scat_opac; // 1/cm
-	vector<ScalarMultiDArray<double,NDIMS+2> > scattering_delta; // phi1/phi0 for sampling outgoing direction [Ein,Eout]
-	vector<ScalarMultiDArray<double,NDIMS+2> > scattering_phi0; // opacity per outgoing frequency [Ein,Eout]
+	vector<ScalarMultiDArray<float,NDIMS+2> > scattering_delta; // phi1/phi0 for sampling outgoing direction [Ein,Eout]
+	vector<ScalarMultiDArray<float,NDIMS+2> > scattering_EoutCDF; // opacity per outgoing frequency [Ein,Eout]
 	vector<PolarSpectrumArray<0> > spectrum;
 	vector<SpectrumArray*> distribution;  // radiation energy density for each species in lab frame (erg/ccm. Integrated over bin frequency and direction)
 

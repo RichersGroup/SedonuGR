@@ -33,6 +33,7 @@
 #include "global_options.h"
 #include "H5Cpp.h"
 #include "Axis.h"
+#include "CDFArray.h"
 
 using namespace std;
 namespace pc = physical_constants;
@@ -324,7 +325,7 @@ void nulib_get_iscatter_kernels(
 		const double ye,
 		const int nulibID,
 		vector<double>& nut_scatopac, // 1/cm   opac[group in] Input AND output
-		vector< vector<double> >& phi0Tilde, // 2pi h^-3 c^-4 phi0 delta(E^3/3)/deltaE [group in][group out] units 1/cm/erg Output.
+		vector< CDFArray >& EoutCDF, // Norm phi0 delta(E^3/3) [group in][group out] Output.
 		vector< vector<double> >& scattering_delta){  // 3.*phi1/phi0   [group_in][group_out] Input AND output.
 
 	// fetch the relevant table from nulib. NuLib only accepts doubles.
@@ -361,7 +362,7 @@ void nulib_get_iscatter_kernels(
 			double E2 = nulibtable_etop[   igout] * pc::MeV_to_ergs;
 			double dE = E2-E1;
 			double dE3 = E2*E2*E2 - E1*E1*E1;
-			double coeff = (dE3/3.0) / constants / dE;
+			double coeff = (dE3/3.0) / constants;
 
 			double inelastic_phi0=0, inelastic_phi1=0;
 			if(read_Ielectron){
@@ -371,15 +372,16 @@ void nulib_get_iscatter_kernels(
 			}
 			// add elastic scatter opacity to the kernel
 			if(igin == igout){
-				inelastic_phi0 += nut_scatopac[igin]/dE;
+				inelastic_phi0 += nut_scatopac[igin];
 				if(nulibtable_number_easvariables==4)
-					inelastic_phi1 += nut_scatopac[igin]/dE * scattering_delta[igin][igin] / 3.0; // scattering_delta set in nulib_get_eas_arrays
-				nut_scatopac[igin] = NaN; // scattering opacity is accounted for in kernel - must make total opacity consistent with kernel in Transport.cpp
+					inelastic_phi1 += nut_scatopac[igin] * scattering_delta[igin][igin] / 3.0; // scattering_delta set in nulib_get_eas_arrays
 			}
-			phi0Tilde[igin][igout] = inelastic_phi0;
+			EoutCDF[igin].set_value(igout, inelastic_phi0);
 			scattering_delta[igin][igout] = (inelastic_phi0==0 ? 0 : 3. * inelastic_phi1 / inelastic_phi0);
 			PRINT_ASSERT(abs(scattering_delta[igin][igout]),<=,3.0);
 		}
+		EoutCDF[igin].normalize();
+		nut_scatopac[igin] = EoutCDF[igin].N;
 	}
 }
 
@@ -447,7 +449,7 @@ void nulib_get_eas_arrays(
 		vector<double>& nut_BB,         // erg/cm^2/s/sr
 		vector<double>& nut_absopac,    // cm^-1
 		vector<double>& nut_scatopac,   // cm^-1
-		vector< vector<double> >& phiTilde, // 2pi h^-3 c^-4 phi0 delta(E^3/3) [group in][group out] units 1/cm
+		vector< CDFArray >& EoutCDF, // Norm phi0 delta(E^3/3) [group in][group out]
 		vector< vector<double> >& scattering_delta){
 
 	PRINT_ASSERT(rho,>=,0);
@@ -503,7 +505,7 @@ void nulib_get_eas_arrays(
 
 		// set inelastic kernels if they exist in the table
 		if(output_scattering_kernels!=0)
-			nulib_get_iscatter_kernels(rho,temp,ye,nulibID,nut_scatopac,phiTilde,scattering_delta);
+			nulib_get_iscatter_kernels(rho,temp,ye,nulibID,nut_scatopac,EoutCDF,scattering_delta);
 	}
 }
 

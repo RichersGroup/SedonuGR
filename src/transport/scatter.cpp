@@ -179,7 +179,7 @@ bool reject_direction(const double mu, const double delta, ThreadRNG* rangen){
 void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double kup_tet_old[4]) const{
 	PRINT_ASSERT(use_scattering_kernels,>,0);
 	PRINT_ASSERT(grid->scattering_delta[eh->p.s].size(),>,0);
-	PRINT_ASSERT(grid->scattering_phi0[eh->p.s].size(),>,0);
+	PRINT_ASSERT(grid->scattering_EoutCDF[eh->p.s].size(),>,0);
 	PRINT_ASSERT(kup_tet_old[3],==,eh->kup_tet[3]);
 
 	// set up the interpolation cube
@@ -192,16 +192,16 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double k
 	InterpolationCube<NDIMS+2> icube_kernel;
 
 	// fill a CDF with interpolated phi0 and sample outgoing frequency
-	CDFArray outnu(1); // linear interpolation
+	CDFArray outnu(3); // cubic monotonic interpolation
 	outnu.resize(grid->nu_grid_axis.size());
 	for(unsigned i=0; i<outnu.size(); i++){
 		hyperloc[NDIMS+1] = grid->nu_grid_axis.mid[i];
 		dir_ind[NDIMS+1] = i;
-		grid->scattering_phi0[eh->p.s].set_InterpolationCube(&icube_kernel,hyperloc,dir_ind);
-		double phi0 = grid->scattering_phi0[eh->p.s].interpolate(icube_kernel);
-		outnu.set_value(i, phi0 * grid->nu_grid_axis.delta(i));
+		grid->scattering_EoutCDF[eh->p.s].set_InterpolationCube(&icube_kernel,hyperloc,dir_ind);
+		double phi0 = grid->scattering_EoutCDF[eh->p.s].interpolate(icube_kernel);
+		outnu.set(i, phi0);
 	}
-	outnu.normalize();
+	PRINT_ASSERT(outnu.get(grid->nu_grid_axis.size()-1),==,1.0);
 	dir_ind[NDIMS+1] = outnu.get_index(rangen.uniform());
 	hyperloc[NDIMS+1] = outnu.invert(rangen.uniform(),&grid->nu_grid_axis,dir_ind[NDIMS+1]);
 

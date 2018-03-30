@@ -59,9 +59,10 @@ void Neutrino_NuLib::set_eas(const unsigned z_ind, Grid* grid) const
 
 	vector<double> tmp_absopac(ngroups), tmp_scatopac(ngroups), tmp_BB(ngroups);
 	vector< vector<double> > tmp_delta(ngroups, vector<double>(ngroups));
-	vector< vector<double> > tmp_phi0(ngroups, vector<double>(ngroups));
+	vector<CDFArray> EoutCDF(ngroups);
+	for(unsigned i=0; i<ngroups; i++) EoutCDF[i].resize(ngroups);
 	nulib_get_eas_arrays(grid->rho[z_ind], grid->T[z_ind], grid->Ye[z_ind], ID,
-			tmp_BB, tmp_absopac, tmp_scatopac, tmp_phi0, tmp_delta);
+			tmp_BB, tmp_absopac, tmp_scatopac, EoutCDF, tmp_delta);
 
 	for(unsigned ig=0; ig<ngroups; ig++){
 		dir_ind[NDIMS] = ig;
@@ -71,13 +72,16 @@ void Neutrino_NuLib::set_eas(const unsigned z_ind, Grid* grid) const
 		grid->BB[ID][global_index] = tmp_BB[ig]; // erg/cm^2/s/sr - convert in next line
 		grid->BB[ID][global_index] /= pc::h * pow(grid->nu_grid_axis.mid[ig],3) * grid->nu_grid_axis.delta(ig); // #/cm^2/s/sr/(Hz^3/3)
 
-		if(grid->scattering_delta[ID].size()>0)
+		if(grid->scattering_delta[ID].size()>0){
+			PRINT_ASSERT(EoutCDF[ig].get(ngroups-1),==,1.0);
+			PRINT_ASSERT(EoutCDF[ig].N,==,tmp_scatopac[ig]);
 			for(unsigned og=0; og<ngroups; og++){
 				dir_ind[NDIMS+1] = og;
 				global_index = grid->scattering_delta[ID].direct_index(dir_ind);
 				grid->scattering_delta[ID][global_index] = tmp_delta[ig][og];
-				grid->scattering_phi0[ID][global_index] = tmp_phi0[ig][og] * pc::h;
+				grid->scattering_EoutCDF[ID][global_index] = EoutCDF[ig].get(og);
 			}
+		}
 	}
 }
 

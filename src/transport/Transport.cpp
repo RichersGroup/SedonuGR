@@ -404,8 +404,8 @@ void Transport::reset_radiation(){
 					for(unsigned igout=0; igout<grid->nu_grid_axis.size(); igout++){
 						dir_ind[NDIMS+1] = igout;
 						hypervec[NDIMS+1] = grid->nu_grid_axis.mid[igout];
-						unsigned direct_index = grid->scattering_phi0[s].direct_index(dir_ind);
-						grid->scat_opac[s][global_ind] += grid->scattering_phi0[s][direct_index] * grid->nu_grid_axis.delta(igout);
+						unsigned direct_index = grid->scattering_EoutCDF[s].direct_index(dir_ind);
+						grid->scat_opac[s][global_ind] += grid->scattering_EoutCDF[s][direct_index] * grid->nu_grid_axis.delta(igout);
 						PRINT_ASSERT(grid->scat_opac[s][global_ind],>=,0);
 					}
 				}
