@@ -48,8 +48,9 @@ void Transport::solve_eq_zone_values()
 	PRINT_ASSERT(equilibrium_tolerance,>,0);
 
 	// remember what zones I'm responsible for
-	int start = ( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
-	int end = my_zone_end[MPI_myID];
+	if(MPI_myID != 0) return; // fast enough not to have to parallelize
+	int start = 0;//( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
+	int end = grid->rho.size();//my_zone_end[MPI_myID];
 	PRINT_ASSERT(end,>=,start);
 	PRINT_ASSERT(start,>=,0);
 	PRINT_ASSERT(end,<=,(int)grid->rho.size());

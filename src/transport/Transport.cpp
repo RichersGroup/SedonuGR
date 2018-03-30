@@ -319,7 +319,7 @@ void Transport::init(Lua* lua)
 }
 
 void Transport::check_parameters() const{
-	if(use_scattering_kernels && do_randomwalk)
+	if(verbose && use_scattering_kernels && do_randomwalk)
 		cout << "WARNING: Assumptions in random walk approximation are incompatible with inelastic scattering." << endl;
 }
 
@@ -398,8 +398,9 @@ void Transport::calculate_annihilation(){
 	if(verbose) cout << "# Calculating annihilation rates..." << flush;
 
 	// remember what zones I'm responsible for
-	int start = ( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
-	int end = my_zone_end[MPI_myID];
+	if(MPI_myID != 0) return; // fast enough not to have to parallelize
+	int start = 0;//( MPI_myID==0 ? 0 : my_zone_end[MPI_myID - 1] );
+	int end = grid->rho.size();//my_zone_end[MPI_myID];
 	PRINT_ASSERT(end,>=,start);
 	PRINT_ASSERT(start,>=,0);
 	PRINT_ASSERT(end,<=,(int)grid->rho.size());
@@ -597,10 +598,10 @@ void Transport::sum_to_proc0()
 	}
 	// volumetric quantities
 	if(verbose) cout << "#   Summing interaction rates" << endl;
-	grid->fourforce_abs.mpi_sum_scatter(my_zone_end);
-	grid->fourforce_emit.mpi_sum_scatter(my_zone_end);
-	grid->l_abs.mpi_sum_scatter(my_zone_end);
-	grid->l_emit.mpi_sum_scatter(my_zone_end);
+	grid->fourforce_abs.mpi_sum(); // mpi_sum_scatter(my_zone_end)
+	grid->fourforce_emit.mpi_sum();// mpi_sum_scatter(my_zone_end)
+	grid->l_abs.mpi_sum();// mpi_sum_scatter(my_zone_end)
+	grid->l_emit.mpi_sum();// mpi_sum_scatter(my_zone_end)
 
 	// reduce the spectra and distribution functions
 	if(verbose) cout << "#   Summing distribution function & spectra to needed proc and 0" << endl;

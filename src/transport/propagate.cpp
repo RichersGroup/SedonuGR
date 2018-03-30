@@ -239,6 +239,7 @@ void Transport::move(EinsteinHelper *eh) const{
 			PRINT_ASSERT(eh->p.kup[i],==,eh->p.kup[i]);
 		}
 	}
+	eh->p.kup[3] = max(eh->p.kup[3],0.); // can overshoot in extreme spacetimes
 	PRINT_ASSERT(eh->p.kup[3],<,INFINITY);
 	double old_absopac = eh->absopac;
 	update_eh_k_opac(eh);
