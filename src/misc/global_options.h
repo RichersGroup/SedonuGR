@@ -119,7 +119,7 @@ public:
   const T& operator[](const unsigned int i) const {return vals[i];}
   T& operator[](const unsigned int i){return vals[i];}
   template<typename Tin>
-  Tuple<T,len>& operator=(const Tuple<Tin,len> input){
+  Tuple<T,len>& operator=(const Tuple<Tin,len>& input){
 	  for(unsigned i=0; i<len; i++) this->vals[i] = input.vals[i];
 	  return *this;
   }
@@ -137,19 +137,19 @@ public:
 	  return operator*(inv_scale);
   }
   template<typename Tin>
-  const Tuple<T,len> operator+(const Tuple<Tin,len> input) const{
+  const Tuple<T,len> operator+(const Tuple<Tin,len>& input) const{
 	  Tuple<T,len> result = *this;
 	  for(unsigned i=0; i<len; i++) result.vals[i] += input.vals[i];
 	  return result;
   }
   template<typename Tin>
-  const Tuple<T,len> operator-(const Tuple<Tin,len> input) const{
+  const Tuple<T,len> operator-(const Tuple<Tin,len>& input) const{
 	  Tuple<T,len> result = *this;
 	  for(unsigned i=0; i<len; i++) result.vals[i] -= input.vals[i];
 	  return result;
   }
   template<typename Tin>
-  Tuple<T,len>& operator+=(const Tuple<Tin,len> input){
+  Tuple<T,len>& operator+=(const Tuple<Tin,len>& input){
 	  for(unsigned i=0; i<len; i++) this->vals[i] += input.vals[i];
 	  return *this;
   }
