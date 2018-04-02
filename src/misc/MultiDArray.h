@@ -147,35 +147,59 @@ public:
 
 	// dummy template allows it to compile with any value of NDIMS
 	template<unsigned dummy>
-	Tuple<double,nelements> interpolate(const InterpolationCube<dummy>& icube) const{
+	Tuple<T,nelements> interpolate(const InterpolationCube<dummy>& icube) const{
 		PRINT_ASSERT(icube.ncorners,==,(1<<ndims));
 
-		Tuple<double,nelements> result;
-		result = 0;
-		for(unsigned i=0; i<icube.ncorners; i++){
+		Tuple<T,nelements> result;
+		result = y0[icube.indices[0]] * icube.weights[0];
+		for(unsigned i=1; i<icube.ncorners; i++){
 			PRINT_ASSERT(icube.indices[i],>=,0);
-			result += y0[icube.indices[i]] * icube.weights[i];
+			Tuple<T,nelements> tmp = y0[icube.indices[i]] * icube.weights[i];
+			result += tmp;
 		}
-		for(unsigned e=0; e<nelements; e++) PRINT_ASSERT(result[e],==,result[e]);
 		return result;
 	}
 
 	// dummy template allows it to compile with any value of NDIMS
 	template<unsigned dummy>
-	Tuple<Tuple<double,nelements>,ndims> interpolate_slopes(const InterpolationCube<dummy>& icube) const{
+	Tuple<Tuple<T,nelements>,ndims> interpolate_slopes(const InterpolationCube<dummy>& icube) const{
 		PRINT_ASSERT(icube.ncorners,==,(1<<ndims));
 
-		Tuple<Tuple<double,nelements>,ndims> result;
+		Tuple<Tuple<T,nelements>,ndims> result;
 		for(unsigned d=0; d<ndims; d++){
-			result[d] = 0;
-			for(unsigned i=0; i<icube.ncorners; i++){
+			result[d] = y0[icube.indices[0]] * icube.slope_weights[d][0];;
+			for(unsigned i=1; i<icube.ncorners; i++){
 				PRINT_ASSERT(icube.indices[i],>=,0);
 				result[d] += y0[icube.indices[i]] * icube.slope_weights[d][i];
 			}
 		}
-		for(unsigned d=0; d<ndims; d++)
-			for(unsigned e=0; e<nelements; e++)
-				PRINT_ASSERT(result[d][e],==,result[d][e]);
+		return result;
+	}
+
+	Tuple<T,nelements> slope(const unsigned z_ind, const unsigned direction) const{
+		Tuple<T,nelements> result, yL, yR, y=y0[z_ind];
+		double dxL=NaN, dxR=NaN;
+		unsigned dir_ind[ndims];
+		indices(z_ind,dir_ind);
+		unsigned dir_indR[ndims], dir_indL[ndims];
+		for(unsigned i=0; i<ndims; i++)
+			dir_indR[i] = dir_indL[i] = dir_ind[i];
+		dir_indR[direction] = dir_ind[direction]+1;
+		dir_indL[direction] = dir_ind[direction]-1;
+
+		if(dir_ind[direction] <= axes[direction].size()-2){
+			yR = y0[direct_index(dir_ind)];
+			dxR = axes[direction].delta(dir_ind[direction]);
+		}
+		if(dir_ind[direction] >= 1){
+			yL = y0[direct_index(dir_indL)];
+			dxL = axes[direction].delta(dir_indL[direction]);
+		}
+
+		if(dxL>0 and dxR>0) result = ((y-yL)*dxR/dxL + (yR-y)*dxL/dxR)/(dxL+dxR);
+		else if(dxL>0) result = (y-yL)/dxL;
+		else result = (yR-y)/dxR;
+
 		return result;
 	}
 
@@ -239,11 +263,11 @@ public:
 		return ndims;
 	}
 
-	void add(const unsigned ind[ndims], const Tuple<double,nelements> to_add){
+	void add(const unsigned ind[ndims], const Tuple<T,nelements> to_add){
 		unsigned lin_ind = direct_index(ind);
 		direct_add(lin_ind, to_add);
 	}
-	void direct_add(const unsigned lin_ind, const Tuple<double,nelements> to_add){
+	void direct_add(const unsigned lin_ind, const Tuple<T,nelements> to_add){
 		for(unsigned i=0; i<nelements; i++){
 			#pragma omp atomic
 			y0[lin_ind][i] += to_add[i];
@@ -341,7 +365,7 @@ public:
 	}
 
 	template<unsigned dummy>
-	double interpolate(const InterpolationCube<dummy>& icube) const{
+	T interpolate(const InterpolationCube<dummy>& icube) const{
 		return MultiDArray<T,1,ndims>::interpolate(icube)[0];
 	}
 	template<unsigned dummy>
