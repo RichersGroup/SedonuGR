@@ -58,28 +58,25 @@ void Neutrino_NuLib::set_eas(const unsigned z_ind, Grid* grid) const
 	grid->rho.indices(z_ind,dir_ind);
 
 	vector<double> tmp_absopac(ngroups), tmp_scatopac(ngroups), tmp_BB(ngroups);
-	vector< vector<double> > tmp_delta(ngroups, vector<double>(ngroups));
-	vector<CDFArray> EoutCDF(ngroups);
-	for(unsigned i=0; i<ngroups; i++) EoutCDF[i].resize(ngroups);
+	vector< vector<double> > tmp_delta(ngroups, vector<double>(ngroups)); //[igin][igout]
+	vector< vector<double> > tmp_phi0(ngroups, vector<double>(ngroups));  //[igin][igout]
 	nulib_get_eas_arrays(grid->rho[z_ind], grid->T[z_ind], grid->Ye[z_ind], ID,
-			tmp_BB, tmp_absopac, tmp_scatopac, EoutCDF, tmp_delta);
+			tmp_BB, tmp_absopac, tmp_scatopac, tmp_phi0, tmp_delta);
 
-	for(unsigned ig=0; ig<ngroups; ig++){
-		dir_ind[NDIMS] = ig;
-		unsigned global_index = grid->abs_opac[ID].direct_index(dir_ind);
-		grid->abs_opac[ID][global_index] = tmp_absopac[ig];
-		grid->scat_opac[ID][global_index] = tmp_scatopac[ig];
-		grid->BB[ID][global_index] = tmp_BB[ig]; // erg/cm^2/s/sr - convert in next line
-		grid->BB[ID][global_index] /= pc::h * pow(grid->nu_grid_axis.mid[ig],3) * grid->nu_grid_axis.delta(ig); // #/cm^2/s/sr/(Hz^3/3)
+	for(unsigned igin=0; igin<ngroups; igin++){
+		dir_ind[NDIMS] = igin;
+		unsigned global_index1 = grid->abs_opac[ID].direct_index(dir_ind);
+		grid->abs_opac[ID][global_index1] = tmp_absopac[igin];
+		grid->scat_opac[ID][global_index1] = tmp_scatopac[igin];
+		grid->BB[ID][global_index1] = tmp_BB[igin]; // erg/cm^2/s/sr - convert in next line
+		grid->BB[ID][global_index1] /= pc::h * pow(grid->nu_grid_axis.mid[igin],3) * grid->nu_grid_axis.delta(igin); // #/cm^2/s/sr/(Hz^3/3)
 
 		if(grid->scattering_delta[ID].size()>0){
-			PRINT_ASSERT(abs(EoutCDF[ig].get(ngroups-1)-1.),<,TINY);
-			PRINT_ASSERT(EoutCDF[ig].N,==,tmp_scatopac[ig]);
-			for(unsigned og=0; og<ngroups; og++){
-				dir_ind[NDIMS+1] = og;
-				global_index = grid->scattering_delta[ID].direct_index(dir_ind);
-				grid->scattering_delta[ID][global_index] = tmp_delta[ig][og];
-				grid->scattering_EoutCDF[ID][global_index] = EoutCDF[ig].get(og);
+			for(unsigned igout=0; igout<ngroups; igout++){
+				grid->partial_scat_opac[ID][igout][global_index1] = tmp_phi0[igin][igout];
+				dir_ind[NDIMS+1] = igout;
+				unsigned global_index2 = grid->scattering_delta[ID].direct_index(dir_ind);
+				grid->scattering_delta[ID][global_index2] = tmp_delta[igin][igout];
 			}
 		}
 	}

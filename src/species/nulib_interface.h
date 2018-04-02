@@ -39,7 +39,7 @@ using namespace std;
 void nulib_init(string filename, int include_Ielectron, int do_annihil);
 void nulib_get_eas_arrays(double rho, double temp, double ye, int nulibID,
 		vector<double>& nut_BB, vector<double>& nut_absopac, vector<double>& nut_scatopac,
-		vector<CDFArray>& EoutCDF, vector< vector<double> >& phi1_phi0);
+		vector< vector<double> >& phi0, vector< vector<double> >& phi1_phi0);
 void nulib_get_epannihil_kernels(
 		const double rho, const double temp, const double ye, const int nulibID,
 		vector< vector< vector<double> > >& phi);

@@ -277,7 +277,7 @@ void Grid::init(Lua* lua, Transport* insim)
 	scat_opac.resize(sim->species_list.size());
 	BB.resize(sim->species_list.size());
 	scattering_delta.resize(sim->species_list.size());
-	scattering_EoutCDF.resize(sim->species_list.size());
+	partial_scat_opac.resize(sim->species_list.size());
 	spectrum.resize(sim->species_list.size());
 	vector<Axis> axes = xAxes;
 	if(do_annihilation) fourforce_annihil.set_axes(axes);
@@ -308,11 +308,14 @@ void Grid::init(Lua* lua, Transport* insim)
 	}
 
 	if(sim->use_scattering_kernels==1){
-		axes.push_back(nu_grid_axis);
 		for(int s=0; s<sim->species_list.size(); s++){
-			scattering_delta[s].set_axes(axes);
-			scattering_EoutCDF[s].set_axes(axes);
+			partial_scat_opac[s].resize(nu_grid_axis.size());
+			for(unsigned igout=0; igout<nu_grid_axis.size(); igout++)
+				partial_scat_opac[s][igout].set_axes(axes);
 		}
+		axes.push_back(nu_grid_axis);
+		for(int s=0; s<sim->species_list.size(); s++)
+			scattering_delta[s].set_axes(axes);
 	}
 }
 

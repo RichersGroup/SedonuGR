@@ -179,38 +179,40 @@ bool reject_direction(const double mu, const double delta, ThreadRNG* rangen){
 void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double kup_tet_old[4]) const{
 	PRINT_ASSERT(use_scattering_kernels,>,0);
 	PRINT_ASSERT(grid->scattering_delta[eh->p.s].size(),>,0);
-	PRINT_ASSERT(grid->scattering_EoutCDF[eh->p.s].size(),>,0);
 	PRINT_ASSERT(kup_tet_old[3],==,eh->kup_tet[3]);
 
-	// set up the interpolation cube
+	// rejection sampling to get outgoing frequency bin.
+	unsigned igout;
+	double P;
+	do{
+		igout = rangen.uniform_discrete(0, grid->nu_grid_axis.size()-1);
+		P = grid->partial_scat_opac[eh->p.s][igout].interpolate(eh->icube_spec) / eh->scatopac;
+		PRINT_ASSERT(P,<=,1.0);
+		PRINT_ASSERT(P,>=,0.0);
+	} while(rangen.uniform() > P);
+
+	// if scattering to same group don't change energy. Otherwise, distribute uniformily
+	double outnu;
+	if(igout != eh->dir_ind[NDIMS])
+		outnu = rangen.uniform(grid->nu_grid_axis.bottom(igout), grid->nu_grid_axis.top[igout]);
+	else
+		outnu = eh->grid_coords[NDIMS];
+
+	// interpolate the kernel anisotropy
 	double hyperloc[NDIMS+2];
 	unsigned dir_ind[NDIMS+2];
 	for(unsigned i=0; i<=NDIMS; i++){
 			hyperloc[i] = eh->grid_coords[i];
 			dir_ind[i] = eh->dir_ind[i];
 	}
+	dir_ind[NDIMS+1] = igout;
+	hyperloc[NDIMS+1] = outnu;
 	InterpolationCube<NDIMS+2> icube_kernel;
-
-	// fill a CDF with interpolated phi0 and sample outgoing frequency
-	CDFArray outnu(3); // cubic monotonic interpolation
-	outnu.resize(grid->nu_grid_axis.size());
-	for(unsigned i=0; i<outnu.size(); i++){
-		hyperloc[NDIMS+1] = grid->nu_grid_axis.mid[i];
-		dir_ind[NDIMS+1] = i;
-		grid->scattering_EoutCDF[eh->p.s].set_InterpolationCube(&icube_kernel,hyperloc,dir_ind);
-		double phi0 = grid->scattering_EoutCDF[eh->p.s].interpolate(icube_kernel);
-		outnu.set(i, phi0);
-	}
-	PRINT_ASSERT(abs(outnu.get(grid->nu_grid_axis.size()-1)-1.),<,TINY);
-	dir_ind[NDIMS+1] = outnu.get_index(rangen.uniform());
-	hyperloc[NDIMS+1] = outnu.invert(rangen.uniform(),&grid->nu_grid_axis,dir_ind[NDIMS+1]);
-
-	// interpolate the kernel anisotropy
 	grid->scattering_delta[eh->p.s].set_InterpolationCube(&icube_kernel,hyperloc,dir_ind);
 	double delta = grid->scattering_delta[eh->p.s].interpolate(icube_kernel);
 	PRINT_ASSERT(fabs(delta),<,3.0);
 
-	// sample the new direction, but only if not absurdly forward/backward peaked
+	// rejection sample the new direction, but only if not absurdly forward/backward peaked
 	// (delta=2.8 corresponds to a possible factor of 10 in the neutrino weight)
 	if(fabs(delta) < 2.8){
 		double kup_tet_new[4];
