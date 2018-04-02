@@ -70,12 +70,77 @@ void Grid3DCart::read_model_file(Lua* lua)
 		exit(8);
 	}
 
-	// get sqrtdetg3
-	#pragma omp parallel for
-	for(unsigned z_ind=0; z_ind<sqrtdetg3.size(); z_ind++){
-		ThreeMetric gammadown;
-		gammadown.data = g3[z_ind];
-		sqrtdetg3[z_ind] = sqrt(gammadown.det());
+	if(DO_GR){
+		//===================================//
+		// calculate connection coefficients //
+		//===================================//
+
+		double dg[4][4][4]; // 1st index is the differentiation direction
+		// no time derivatives
+		for(unsigned i=0; i<4; i++) for(unsigned j=0; j<4; j++){
+			dg[3][i][j] = 0;
+		}
+
+		christoffel.set_axes(xAxes);
+		#pragma omp parallel for
+		for(unsigned z_ind=0; z_ind<lapse.size(); z_ind++){
+			Metric g;
+			g.alpha = lapse[z_ind];
+			for(unsigned i=0; i<3; i++) g.betaup[i] = betaup[z_ind][i];
+			g.gammalow.data = g3[z_ind];
+			g.update();
+			sqrtdetg3[z_ind] = sqrt(g.gammalow.det());
+
+			for(unsigned a=0; a<3; a++){
+				// spatial derivatives
+				Tuple<double,6> dg3_dx     =     g3.slope(z_ind,a);
+				Tuple<double,1> da_dx      =  lapse.slope(z_ind,a);
+				Tuple<double,3> dbetaup_dx = betaup.slope(z_ind,a);
+
+				// xx parts
+				dg[a][0][0]             = dg3_dx[ixx]; // [direction][element]
+				dg[a][1][1]             = dg3_dx[iyy];
+				dg[a][2][2]             = dg3_dx[izz];
+				dg[a][0][1]=dg[a][1][0] = dg3_dx[ixy];
+				dg[a][0][2]=dg[a][2][0] = dg3_dx[ixz];
+				dg[a][1][2]=dg[a][2][1] = dg3_dx[iyz];
+
+				// xt and tt parts
+				dg[a][3][3] = -2.*g.alpha*da_dx[0];
+				Tuple<double,3> dbetalow_dx;
+				g.gammalow.lower(dbetaup_dx,dbetalow_dx);
+				for(unsigned j=0; j<3; j++){
+					dg[a][3][3] += 2. * g.betalow[j] * dbetaup_dx[j]; // [direction][element]
+					dg[a][3][j]=dg[a][j][3] = dbetalow_dx[j];
+				}
+			}
+
+			// get the low-index Christoffel symbols
+			double christoffel_low[4][4][4];
+			for(unsigned a=0; a<4; a++)
+				for(unsigned i=0; i<4; i++)
+					for(unsigned j=0; j<4; j++){
+						christoffel_low[a][i][j] = 0.5 * (dg[j][i][a] + dg[i][a][j] - dg[a][i][j]); // note - last term should be zero when contracted with kk, but we leave it in for clarity
+						PRINT_ASSERT(abs(christoffel_low[a][i][j]),<,INFINITY);
+					}
+
+			// raise Christoffel symbol first index
+			for(unsigned i=0; i<40; i++) christoffel[z_ind] = 0;
+			for(unsigned a=0; a<4; a++){
+				unsigned offsetA = 10*a;
+				for(unsigned b=0; b<4; b++){
+					for(unsigned i=0; i<4; i++)
+						for(unsigned j=i; j<4; j++){
+							unsigned ij = Metric::index(i,j);
+							christoffel[z_ind][offsetA+ij] += g.get_inverse(a,b) * christoffel_low[b][i][j];
+						}
+				}
+			}
+
+			// check results
+			for(unsigned i=0; i<40; i++)
+				PRINT_ASSERT(abs(christoffel[z_ind][i]),<,INFINITY);
+		}
 	}
 }
 
@@ -701,65 +766,7 @@ double Grid3DCart::zone_lorentz_factor(const int z_ind) const{
 }
 
 void Grid3DCart::get_connection_coefficients(EinsteinHelper* eh) const{
-	if(DO_GR){
-		//===================================//
-		// calculate connection coefficients // // also calculate detg
-		//===================================//
-
-		double dg[4][4][4]; // 1st index is the differentiation direction
-		// no time derivatives
-		for(unsigned i=0; i<4; i++) for(unsigned j=0; j<4; j++){
-			dg[3][i][j] = 0;
-		}
-		// spatial derivatives
-		Tuple< Tuple<double,6>, NDIMS> dg3_dx     =     g3.interpolate_slopes(eh->icube_vol);
-		Tuple< double,          NDIMS> da_dx      =  lapse.interpolate_slopes(eh->icube_vol);
-		Tuple< Tuple<double,3>, NDIMS> dbetaup_dx = betaup.interpolate_slopes(eh->icube_vol);
-		for(unsigned a=0; a<3; a++){
-			// xx parts
-			dg[a][0][0]             = dg3_dx[a][ixx]; // [direction][element]
-			dg[a][1][1]             = dg3_dx[a][iyy];
-			dg[a][2][2]             = dg3_dx[a][izz];
-			dg[a][0][1]=dg[a][1][0] = dg3_dx[a][ixy];
-			dg[a][0][2]=dg[a][2][0] = dg3_dx[a][ixz];
-			dg[a][1][2]=dg[a][2][1] = dg3_dx[a][iyz];
-
-			// xt and tt parts
-			dg[a][3][3] = -2.*eh->g.alpha*da_dx[a];
-			Tuple<double,3> dbetalow_dx;
-			eh->g.gammalow.lower(dbetaup_dx[a],dbetalow_dx);
-			for(unsigned j=0; j<3; j++){
-				dg[a][3][3] += 2. * eh->g.betalow[j] * dbetaup_dx[a][j]; // [direction][element]
-				dg[a][3][j]=dg[a][j][3] = dbetalow_dx[j];
-			}
-		}
-
-		// get the low-index Christoffel symbols
-		double christoffel_low[4][4][4];
-		for(unsigned a=0; a<4; a++)
-			for(unsigned i=0; i<4; i++)
-				for(unsigned j=0; j<4; j++){
-					christoffel_low[a][i][j] = 0.5 * (dg[j][i][a] + dg[i][a][j] - dg[a][i][j]); // note - last term should be zero when contracted with kk, but we leave it in for clarity
-					PRINT_ASSERT(abs(christoffel_low[a][i][j]),<,INFINITY);
-				}
-
-		// raise Christoffel symbol first index
-		for(unsigned i=0; i<40; i++) eh->christoffel.data[i] = 0;
-		for(unsigned a=0; a<4; a++){
-			unsigned offsetA = 10*a;
-			for(unsigned b=0; b<4; b++){
-				for(unsigned i=0; i<4; i++)
-					for(unsigned j=i; j<4; j++){
-						unsigned ij = Metric::index(i,j);
-						eh->christoffel.data[offsetA+ij] += eh->g.get_inverse(a,b) * christoffel_low[b][i][j];
-					}
-			}
-		}
-
-		// check results
-		for(unsigned i=0; i<40; i++)
-			PRINT_ASSERT(abs(eh->christoffel.data[i]),<,INFINITY);
-	}
+	eh->christoffel.data = christoffel.interpolate(eh->icube_vol);
 }
 void Grid3DCart::interpolate_shift(EinsteinHelper* eh) const{
 	if(DO_GR){
