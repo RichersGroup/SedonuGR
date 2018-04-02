@@ -67,27 +67,27 @@ void Grid::init(Lua* lua, Transport* insim)
 	for(unsigned i=0; i<rho.size(); i++){
 		// modify problematic fluid quantities
 		if(rho[i] > sim->rho_max){
-			cout << "WARNING: resetting rho["<<i<<"] from "<<rho[i]<<" to "<<sim->rho_max<<endl;
+			if(sim->verbose) cout << "WARNING: resetting rho["<<i<<"] from "<<rho[i]<<" to "<<sim->rho_max<<endl;
 			rho[i] = sim->rho_max;
 		}
 		if(rho[i] < sim->rho_min){
-			cout << "WARNING: resetting rho["<<i<<"] from "<<rho[i]<<" to "<<sim->rho_min<<endl;
+			if(sim->verbose) cout << "WARNING: resetting rho["<<i<<"] from "<<rho[i]<<" to "<<sim->rho_min<<endl;
 			rho[i] = sim->rho_min;
 		}
 		if(T[i] > sim->T_max){
-			cout << "WARNING: resetting T["<<i<<"] from "<<T[i]<<" to "<<sim->T_max<<endl;
+			if(sim->verbose) cout << "WARNING: resetting T["<<i<<"] from "<<T[i]<<" to "<<sim->T_max<<endl;
 			T[i] = sim->T_max;
 		}
 		if(T[i] < sim->T_min){
-			cout << "WARNING: resetting T["<<i<<"] from "<<T[i]<<" to "<<sim->T_min<<endl;
+			if(sim->verbose) cout << "WARNING: resetting T["<<i<<"] from "<<T[i]<<" to "<<sim->T_min<<endl;
 			T[i] = sim->T_min;
 		}
 		if(Ye[i] > sim->Ye_max){
-			cout << "WARNING: resetting Ye["<<i<<"] from "<<Ye[i]<<" to "<<sim->Ye_max<<endl;
+			if(sim->verbose) cout << "WARNING: resetting Ye["<<i<<"] from "<<Ye[i]<<" to "<<sim->Ye_max<<endl;
 			Ye[i] = sim->Ye_max;
 		}
 		if(Ye[i] < sim->Ye_min){
-			cout << "WARNING: resetting Ye["<<i<<"] from "<<Ye[i]<<" to "<<sim->Ye_min<<endl;
+			if(sim->verbose) cout << "WARNING: resetting Ye["<<i<<"] from "<<Ye[i]<<" to "<<sim->Ye_min<<endl;
 			Ye[i] = sim->Ye_min;
 		}
 
