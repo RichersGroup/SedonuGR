@@ -89,6 +89,7 @@ void Grid3DCart::read_model_file(Lua* lua)
 			for(unsigned i=0; i<3; i++) g.betaup[i] = betaup[z_ind][i];
 			g.gammalow.data = g3[z_ind];
 			g.update();
+			g.set_inverse();
 			sqrtdetg3[z_ind] = sqrt(g.gammalow.det());
 
 			for(unsigned a=0; a<3; a++){

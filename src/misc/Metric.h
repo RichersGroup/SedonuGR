@@ -135,8 +135,10 @@ public:
 		if(DO_GR){
 			lower<3>(betaup, betalow);
 			gtt = DO_GR ? -alpha*alpha + contract<3>(betaup, betalow) : -1.0;
-			gammaup = gammalow.inverse();
 		}
+	}
+	void set_inverse(){
+		if(DO_GR) gammaup = gammalow.inverse();
 	}
 
 	double get(const unsigned i, const unsigned j) const{
@@ -146,6 +148,7 @@ public:
 		else return gammalow.get(i,j);
 	}
 	double get_inverse(const unsigned i, const unsigned j) const{
+		PRINT_ASSERT(gammaup.get(0,0),==,gammaup.get(0,0));
 		if(i==3 and j==3) return -1./(alpha*alpha);
 		else if(i==3) return betaup[j]/(alpha*alpha);
 		else if(j==3) return betaup[i]/(alpha*alpha);
