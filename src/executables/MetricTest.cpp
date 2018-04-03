@@ -186,7 +186,7 @@ int main(){
 	print_test(tmp[3],3./2.);
 
 	for(unsigned i=0; i<4; i++) tmp[i] = kup4[i];
-	g.normalize_null(tmp);
+	g.normalize_null_changeupt(tmp);
 	cout << " * nullnorm[0]=";
 	print_test(tmp[0],kup4[0]);
 	cout << " * nullnorm[1]=";
@@ -230,19 +230,17 @@ int main(){
 	kup4[3] = 3;
 	cout << "kup={" << kup4[0] << ","<<kup4[1]<<","<<kup4[2]<<","<<kup4[3]<<"}" << endl;
 
-	double betalow[3];
-	g.get_betalow(betalow);
 	cout << " * betalow[0]=";
-	print_test(betalow[0],0.1);
+	print_test(g.betalow[0],0.1);
 	cout << " * betalow[1]=";
-	print_test(betalow[1],0.2);
+	print_test(g.betalow[1],0.2);
 	cout << " * betalow[2]=";
-	print_test(betalow[2],0.3);
+	print_test(g.betalow[2],0.3);
 	dotp = g.dot<3>(g.betaup,g.betaup);
 	cout << " * beta.beta=";
 	print_test(dotp,.14);
 
-	double gtt = g.get_gtt();
+	double gtt = g.gtt;
 	cout << " * gtt=";
 	print_test(gtt, -0.86);
 
@@ -272,10 +270,22 @@ int main(){
 	print_test(tmp[3],3./sqrt(dotp));
 
 	for(unsigned i=0; i<4; i++) tmp[i] = kup4[i];
-	g.normalize_null(tmp);
+	g.normalize_null_changeupt(tmp);
 	dotp = g.dot<4>(tmp,tmp);
 	cout << " * null.null=";
 	print_test(dotp,0);
+	cout << "{ ";
+	for(unsigned i=0; i<4; i++) cout << tmp[i] << " ";
+	cout << "}" << endl;
+
+	for(unsigned i=0; i<4; i++) tmp[i] = kup4[i];
+	g.normalize_null_preserveupt(tmp);
+	dotp = g.dot<4>(tmp,tmp);
+	cout << " * null.null=";
+	print_test(dotp,0);
+	cout << "{ ";
+	for(unsigned i=0; i<4; i++) cout << tmp[i] << " ";
+	cout << "}" << endl;
 
 	return 0;
 }
