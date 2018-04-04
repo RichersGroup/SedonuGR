@@ -203,6 +203,7 @@ void Transport::move(EinsteinHelper *eh) const{
 	//for(unsigned i=0; i<4; i++) cout << eh->p.xup[i] << "\t";
 	//for(unsigned i=0; i<4; i++) cout << eh->p.kup[i] << "\t";
 	//for(unsigned i=0; i<4; i++) cout << eh->kup_tet[i] << "\t";
+	//cout << eh->g.gtt << "\t";
 	//cout << eh->nu() << endl;
 
 	// convert ds_com into dlambda
@@ -232,6 +233,7 @@ void Transport::move(EinsteinHelper *eh) const{
 	// apply second order correction to k
 	if(DO_GR and eh->z_ind>0){
 		double dk_dlambda_2[4];
+		eh->g.normalize_null_changeupt(knew);
 		eh->christoffel.contract2(knew,dk_dlambda_2);
 		for(unsigned i=0; i<4; i++){
 			dk_dlambda_2[i] *= -1;
