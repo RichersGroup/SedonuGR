@@ -57,7 +57,7 @@ public:
 		PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet_in,kup_tet_in)/(kup_tet_in[3]*kup_tet_in[3]),<,TINY);
 		for(unsigned i=0; i<4; i++) kup_tet[i] = kup_tet_in[i];
 		tetrad_to_coord(kup_tet,p.kup);
-		g.normalize_null_preserveupt(p.kup);
+		g.normalize_null_changeupt(p.kup);
 		PRINT_ASSERT(g.dot<4>(p.kup,p.kup)/(p.kup[3]*p.kup[3]),<,TINY);
 	}
 	void renormalize_kup(){
