@@ -76,7 +76,7 @@ public:
 			// weights
 			weights[i] = abs(dVol/V); // avoids if statement in above loop for sign
 			for(unsigned d=0; d<ndims; d++){
-				unsigned LR = not isRightIndex(i,d);
+				unsigned LR = isRightIndex(i,d);
 				slope_weights[d][i] = (LR==1 ? 1.0 : -1.0) * abs(dA[d]/V);
 			}
 		}
@@ -243,10 +243,10 @@ public:
 					dir_ind[d] = (InterpolationCube<ndims>::isRightIndex(i,d) ? dir_ind_right[d] : dir_ind_left[d]);
 				icube->indices[i] = direct_index(dir_ind);
 			}
-
-			// calculate the weights associated with each corner
-			icube->set_weights(x);
 		}
+
+		// calculate the weights associated with each corner
+		icube->set_weights(x);
 	}
 
 	void wipe(){
