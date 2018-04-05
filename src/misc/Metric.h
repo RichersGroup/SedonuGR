@@ -113,13 +113,11 @@ public:
 		case 3:
 			return ixz;
 		case 4:
-			return iyy;
+			return (i+j==2 ? iyy : ixt);
 		case 6:
 			return iyz;
 		case 9:
 			return izz;
-		case 5:
-			return ixt;
 		case 8:
 			return iyt;
 		case 12:
