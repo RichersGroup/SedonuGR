@@ -489,43 +489,24 @@ void Grid1DSphere::get_connection_coefficients(EinsteinHelper* eh) const{
 	double tmp;
 	double* xup = eh->p.xup;
 	Tuple<double,40>& ch = eh->christoffel.data;
+	ch = 0;
 
 	// spatial parts
-	unsigned offset;
 	for(int a=0; a<3; a++){
-		offset = 10*a;
-		ch[offset+itt] = alpha * dadr / (r*Xloc*Xloc) * xup[a];
-		ch[offset+ixt] = 0;
-		ch[offset+iyt] = 0;
-		ch[offset+izt] = 0;
+		ch[Christoffel::index(a,3,3)] = alpha * dadr / (r*Xloc*Xloc) * xup[a];
 
 		tmp = (1. - Xloc*Xloc + r*Xloc*dXdr) / (r*r*r*Xloc*Xloc) * xup[a]/r;
-		ch[offset+ixx] = xup[0]*xup[0] * tmp;
-		ch[offset+iyy] = xup[1]*xup[1] * tmp;
-		ch[offset+izz] = xup[2]*xup[2] * tmp;
-		ch[offset+ixy] = xup[0]*xup[1] * tmp;
-		ch[offset+ixz] = xup[0]*xup[2] * tmp;
-		ch[offset+iyz] = xup[1]*xup[2] * tmp;
+		for(unsigned i=0; i<3; i++) for(unsigned j=i; j<3; j++)
+			ch[Christoffel::index(a,i,j)] = xup[i]*xup[j] * tmp;
 
 		tmp = -(1.-Xloc*Xloc) / (r*Xloc*Xloc) * xup[a]/r;
-		ch[offset+ixx] += tmp;
-		ch[offset+iyy] += tmp;
-		ch[offset+izz] += tmp;
+		for(unsigned i=0; i<3; i++)
+			ch[Christoffel::index(a,i,i)] += tmp;
 	}
 	// time part
-	offset = 30;
 	tmp = dadr / (r * alpha);
-	ch[offset+itt] = 0;
-	ch[offset+ixt] = xup[0] * tmp;
-	ch[offset+iyt] = xup[1] * tmp;
-	ch[offset+izt] = xup[2] * tmp;
-	ch[offset+ixx] = 0;
-	ch[offset+iyy] = 0;
-	ch[offset+izz] = 0;
-	ch[offset+ixy] = 0;
-	ch[offset+ixz] = 0;
-	ch[offset+iyz] = 0;
-
+	for(unsigned i=0; i<3; i++)
+		ch[Christoffel::index(3,3,i)] = xup[i] * tmp;
 
 	for(unsigned i=0; i<40; i++) PRINT_ASSERT(ch[i],==,ch[i]);
 }
