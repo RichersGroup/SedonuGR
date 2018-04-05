@@ -126,20 +126,18 @@ void Grid3DCart::read_model_file(Lua* lua)
 					}
 
 			// raise Christoffel symbol first index
-			for(unsigned i=0; i<40; i++) christoffel[z_ind] = 0;
-			for(unsigned a=0; a<4; a++){
-				unsigned offsetA = 10*a;
+			for(unsigned i=0; i<30; i++) christoffel[z_ind] = 0;
+			for(unsigned a=0; a<3; a++){
 				for(unsigned b=0; b<4; b++){
 					for(unsigned i=0; i<4; i++)
 						for(unsigned j=i; j<4; j++){
-							unsigned ij = Metric::index(i,j);
-							christoffel[z_ind][offsetA+ij] += g.get_inverse(a,b) * christoffel_low[b][i][j];
+							christoffel[z_ind][Christoffel::index(a,i,j)] += g.get_inverse(a,b) * christoffel_low[b][i][j];
 						}
 				}
 			}
 
 			// check results
-			for(unsigned i=0; i<40; i++)
+			for(unsigned i=0; i<30; i++)
 				PRINT_ASSERT(abs(christoffel[z_ind][i]),<,INFINITY);
 		}
 	}

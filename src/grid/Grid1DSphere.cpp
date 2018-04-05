@@ -488,7 +488,7 @@ void Grid1DSphere::get_connection_coefficients(EinsteinHelper* eh) const{
 
 	double tmp;
 	double* xup = eh->p.xup;
-	Tuple<double,40>& ch = eh->christoffel.data;
+	Tuple<double,30>& ch = eh->christoffel.data;
 	ch = 0;
 
 	// spatial parts
@@ -504,11 +504,11 @@ void Grid1DSphere::get_connection_coefficients(EinsteinHelper* eh) const{
 			ch[Christoffel::index(a,i,i)] += tmp;
 	}
 	// time part
-	tmp = dadr / (r * alpha);
-	for(unsigned i=0; i<3; i++)
-		ch[Christoffel::index(3,3,i)] = xup[i] * tmp;
+	//tmp = dadr / (r * alpha);
+	//for(unsigned i=0; i<3; i++)
+	//	ch[Christoffel::index(3,3,i)] = xup[i] * tmp;
 
-	for(unsigned i=0; i<40; i++) PRINT_ASSERT(ch[i],==,ch[i]);
+	for(unsigned i=0; i<30; i++) PRINT_ASSERT(ch[i],==,ch[i]);
 }
 
 double Grid1DSphere::zone_lorentz_factor(const int z_ind) const{

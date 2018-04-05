@@ -321,7 +321,7 @@ public:
 	// first index is up, others are down
 	// 0-9 = 0 first index, 10-19 = 1 first index, 20-29 = 2 first index, 20-23 - third index
 	// 3 first index not included
-	Tuple<double, 40> data;
+	Tuple<double, 30> data;
 
 	static unsigned index(const unsigned a, const unsigned i, const unsigned j){
 		PRINT_ASSERT(a,<=,3);
@@ -333,12 +333,13 @@ public:
 	}
 
 	void contract2(const double kup[4], double result[4]) const{
-		for(unsigned a=0; a<4; a++){
+		for(unsigned a=0; a<3; a++){
 			result[a] = 0;
 			for(unsigned i=0; i<4; i++)
 				for(unsigned j=0; j<4; j++)
 					result[a] += data[index(a,i,j)] * kup[i]*kup[j];
 		}
+		result[3] = NaN;
 	}
 };
 #endif
