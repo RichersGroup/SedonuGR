@@ -1,6 +1,7 @@
 -- Included Physics
 
 do_visc       = 0
+do_randomwalk = 0
 do_relativity = 0
 do_GR = 1
 do_annihilation = 0
@@ -72,15 +73,14 @@ core_lum_multiplier = 1.0
 
 verbose       = 0
 max_n_iter =  1
-min_step_size = 0.01
-max_step_size = 0.1
+min_step_size = 0.001
+max_step_size = 0.01
 
 -- Biasing
 
 importance_bias = 0
 bias_path_length = 0
-min_packet_number = 0
-max_packet_number = 1e99
+min_packet_weight = 0
 exponential_decay = 0
 
 -- Random Walk

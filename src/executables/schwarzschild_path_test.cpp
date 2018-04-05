@@ -65,7 +65,7 @@ int main(int argc, char **argv)
 	public:
 		void set_particle(EinsteinHelper& eh){
 			particles.resize(1);
-			particles[0] = eh;
+			particles[0] = eh.p;
 		}
 		virtual void move(EinsteinHelper *eh){
 			for(unsigned i=0; i<4; i++) cout << eh->p.xup[i] << "\t";
@@ -100,8 +100,8 @@ int main(int argc, char **argv)
 	eh.p.fate = moving;
 
 	sim.update_eh_background(&eh);
-	eh.g.normalize_null(&eh.p.kup[0]);
-	eh.renormalize_kup();
+	eh.g.normalize_null_preserveupt(eh.p.kup);
+	sim.update_eh_k_opac(&eh);
 
 	sim.grid->interpolate_opacity(&eh);
 
