@@ -211,6 +211,7 @@ void Transport::create_surface_particle(const double weight, const unsigned int 
 		isotropic_kup_tet(nu,kup_tet,&rangen);
 	} while(Metric::dot_Minkowski<3>(eh.p.xup,kup_tet) < 0);
 	eh.set_kup_tet(kup_tet);
+	update_eh_k_opac(&eh);
 
 	//get the number of neutrinos in the particle
 	double T = species_list[s]->T_core;
