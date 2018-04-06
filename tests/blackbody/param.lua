@@ -2,6 +2,7 @@
 
 do_GR = 0
 do_visc       = 0
+do_randomwalk = 1
 do_relativity = 1
 do_annihilation = 0
 use_scattering_kernels = 0
@@ -73,9 +74,7 @@ max_step_size = 0.4
 
 importance_bias = 0
 bias_path_length = 0
-min_packet_number = 1e10
-max_packet_number = 1e99
-exponential_decay = 1
+min_packet_weight = 0.01
 
 -- Random Walk
 

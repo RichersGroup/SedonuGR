@@ -206,7 +206,7 @@ public:
 	// dummy template allows it to compile with any value of NDIMS
 	template<unsigned dummy>
 	void set_InterpolationCube(InterpolationCube<dummy>* icube, const double x[ndims], const unsigned dir_ind_center[ndims]) const{
-		if(not icube->inside_box(x)){
+		if(not icube->inside_box(x) || ndims==0){
 
 			// set boundary coordinates
 			int dir_ind_left[ndims], dir_ind_right[ndims];

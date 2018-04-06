@@ -34,10 +34,10 @@ using namespace std;
 namespace pc = physical_constants;
 
 Grid0DIsotropic::Grid0DIsotropic(){
-	PRINT_ASSERT(NDIMS,==,1);
+	PRINT_ASSERT(NDIMS,==,0);
 	grid_type = "Grid0DIsotropic";
 	tetrad_rotation = cartesian;
-	xAxes.resize(1);
+	xAxes.resize(0);
 }
 
 //------------------------------------------------------------
@@ -46,7 +46,6 @@ Grid0DIsotropic::Grid0DIsotropic(){
 void Grid0DIsotropic::read_model_file(Lua* lua)
 {
 	// number of zones
-	xAxes[0] = Axis(-INFINITY,INFINITY,1);
 	rho.set_axes(xAxes);
 	T.set_axes(xAxes);
 	Ye.set_axes(xAxes);
