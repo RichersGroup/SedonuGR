@@ -233,7 +233,7 @@ void Transport::move(EinsteinHelper *eh) const{
 	// apply second order correction to k
 	if(DO_GR and eh->z_ind>0){
 		double dk_dlambda_2[4];
-		eh->g.normalize_null_changeupt(knew);
+		eh->g.normalize_null_preserveupt(knew);
 		eh->christoffel.contract2(knew,dk_dlambda_2);
 		for(unsigned i=0; i<4; i++){
 			dk_dlambda_2[i] *= -1;
@@ -241,8 +241,7 @@ void Transport::move(EinsteinHelper *eh) const{
 			PRINT_ASSERT(eh->p.kup[i],==,eh->p.kup[i]);
 		}
 	}
-	eh->p.kup[3] = max(eh->p.kup[3],0.); // can overshoot in extreme spacetimes
-	PRINT_ASSERT(eh->p.kup[3],<,INFINITY);
+	PRINT_ASSERT(abs(eh->p.kup[3]),<,INFINITY);
 	double old_absopac = eh->absopac;
 	update_eh_k_opac(eh);
 

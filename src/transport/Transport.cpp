@@ -695,7 +695,10 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 // make sure kup is consistent with the new background
 // interpolate reaction rates
 void Transport::update_eh_k_opac(EinsteinHelper* eh) const{
-	PRINT_ASSERT(eh->p.kup[3],>=,0);
+	if(eh->p.kup[3] <= 0){
+		eh->p.fate = absorbed;
+		eh->z_ind = -1;
+	}
 	if(eh->z_ind >= 0){
 		PRINT_ASSERT(eh->p.kup,==,eh->p.kup);
 		eh->renormalize_kup();

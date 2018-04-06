@@ -61,7 +61,7 @@ public:
 		PRINT_ASSERT(g.dot<4>(p.kup,p.kup)/(p.kup[3]*p.kup[3]),<,TINY);
 	}
 	void renormalize_kup(){
-		g.normalize_null_changeupt(p.kup);
+		g.normalize_null_preserveupt(p.kup);
 		coord_to_tetrad(p.kup, kup_tet);
 		PRINT_ASSERT(kup_tet[3],>,0);
 		Metric::normalize_null_Minkowski(kup_tet);
