@@ -1,9 +1,11 @@
+
 -- Included Physics
 
 do_GR         = 0
 do_visc       = 0
 do_relativity = 0
 do_annihilation = 0
+do_randomwalk = 0
 use_scattering_kernels = 1
 radiative_eq  = 1
 reflect_outer = 0
@@ -15,9 +17,14 @@ equilibrium_Ye = 0
 
 -- Opacity and Emissivity
 
-neutrino_type = "NuLib"
-nulib_table = "NuLib.h5"
-nulib_eos = "LS220.h5"
+neutrino_type = "grey"
+nugrid_n = 20
+nugrid_start = 0
+nugrid_stop = 150
+grey_opac = 0
+grey_abs_frac = 0
+--nulib_table = "NuLib.h5"
+--nulib_eos = "SFHo.h5"
 opac_interp_method = 0
 cdf_interpolation_order = 1
 cdf_cutoff    = 0
@@ -59,11 +66,11 @@ max_time_hours = -1
 
 -- Inner Source
 
-r_core = 9.99999e5
+r_core = 10e5
 core_emit_method = 1
-T_core = {10,10,10}
-core_chem_pot = {10,-10,0}
-core_lum_multiplier = {1.0,1.0,1.0}
+T_core = {10,10}
+core_chem_pot = {10,-10}
+core_lum_multiplier = {1.0,1.0}
 
 -- General Controls
 
@@ -74,11 +81,7 @@ max_step_size = 0.4
 
 -- Biasing
 
-importance_bias = 0
-bias_path_length = 0
-min_packet_number = 0
-max_packet_number = 1e99
-exponential_decay = 0
+min_packet_weight = 0
 
 -- Random Walk
 

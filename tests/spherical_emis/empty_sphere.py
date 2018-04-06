@@ -4,8 +4,8 @@ km = 1.0e5
 nx = 1
 r_in = 0
 
-R = 10*km
-rho = 10
+R = 1e4*km
+rho = 0
 temp = 10*MeV
 Ye = 0.5
 v0 = 0
