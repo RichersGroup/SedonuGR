@@ -40,7 +40,7 @@ void Transport::window(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->p.fate,!=,rouletted);
 
 	// Roulette if too low energy
-	while(eh->p.N/eh->N0 <= min_packet_weight and eh->p.fate==moving){
+	while(eh->p.N/eh->N0 < min_packet_weight and eh->p.fate==moving){
 		if(rangen.uniform() < 0.5) eh->p.fate = rouletted;
 		else eh->p.N *= 2.0;
 	}
