@@ -248,7 +248,6 @@ public:
 	}
 
 	void normalize_null_preserveupt(double x[4]) const{
-		PRINT_ASSERT(x[3],>=,0);
 		double result = NaN;
 		if(DO_GR){
 			double A = dot<3>(x,x);
@@ -265,7 +264,6 @@ public:
 			for(unsigned i=0; i<3; i++) x[i] *= result;
 		}
 		PRINT_ASSERT(abs(dot<4>(x,x))/(x[3]*x[3]),<,TINY);
-		PRINT_ASSERT(x[3],>=,0);
 	}
 
 	void normalize_null_changeupt(double x[4]) const{
