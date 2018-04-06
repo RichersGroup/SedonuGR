@@ -271,7 +271,7 @@ void Transport::propagate(EinsteinHelper *eh) const{
 		PRINT_ASSERT(eh->p.kup[3],>,0);
 		PRINT_ASSERT(eh->kup_tet[3],>,0);
 		PRINT_ASSERT(eh->p.kup[3],<,INFINITY);
-		PRINT_ASSERT(eh->kup_tet[3],<,INFINITY);
+		PRINT_ASSERT(eh->nu(),<,10.*grid->nu_grid_axis.max());
 		for(unsigned i=0; i<NDIMS; i++) PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
 
 		// decide which event happens
