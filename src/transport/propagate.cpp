@@ -217,8 +217,10 @@ void Transport::move(EinsteinHelper *eh) const{
 		for(unsigned i=0; i<4; i++) dk_dlambda[i] *= -1;
 	}
 
-	// get 2nd order new x
-	for(unsigned i=0; i<3; i++){
+	// get 2nd order x, 1st order estimate for k
+	double knew[4];
+	for(unsigned i=0; i<4; i++){
+		knew[i] = eh->p.kup[i] + dk_dlambda[i]*dlambda;
 		double order1 = eh->p.kup[i]*dlambda;
 		double order2 = 0.5*dk_dlambda[i]*dlambda*dlambda;
 		eh->p.xup[i] += order1 + (abs(order2/order1)<1. ? order2 : 0);
@@ -228,20 +230,19 @@ void Transport::move(EinsteinHelper *eh) const{
 	// get new background data
 	update_eh_background(eh);
 
-	// get 2nd order new k and time coordinate
+	// apply second order correction to k
 	if(DO_GR and eh->z_ind>0){
-	  double dk_dlambda_2[4], knew[4];
-		eh->p.xup[3] += 0.5*dlambda * eh->p.kup[3];
-		for(unsigned i=0; i<4; i++) knew[i] = eh->p.kup[i] + dk_dlambda[i]*dlambda;
+		double dk_dlambda_2[4];
 		eh->g.normalize_null_changeupt(knew);
 		eh->christoffel.contract2(knew,dk_dlambda_2);
-		for(unsigned i=0; i<3; i++){
+		for(unsigned i=0; i<4; i++){
 			dk_dlambda_2[i] *= -1;
 			eh->p.kup[i] += 0.5*dlambda * (dk_dlambda[i] + dk_dlambda_2[i]);
 			PRINT_ASSERT(eh->p.kup[i],==,eh->p.kup[i]);
 		}
-		eh->p.xup[3] += 0.5*dlambda * eh->p.kup[3];
 	}
+	eh->p.kup[3] = max(eh->p.kup[3],0.); // can overshoot in extreme spacetimes
+	PRINT_ASSERT(eh->p.kup[3],<,INFINITY);
 	double old_absopac = eh->absopac;
 	update_eh_k_opac(eh);
 
