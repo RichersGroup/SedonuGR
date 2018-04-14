@@ -46,7 +46,7 @@ private:
 	MultiDArray<double,4,ndims_spatial+1> data; // 0, r, rr, rrr
 
 	static const unsigned nranks = 4;
-	static const unsigned nuGridIndex = 3;
+	static const unsigned nuGridIndex = ndims_spatial;
 
 public:
 
