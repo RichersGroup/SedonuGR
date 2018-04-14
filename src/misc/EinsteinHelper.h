@@ -57,7 +57,7 @@ public:
 		PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet_in,kup_tet_in)/(kup_tet_in[3]*kup_tet_in[3]),<,TINY);
 		for(unsigned i=0; i<4; i++) kup_tet[i] = kup_tet_in[i];
 		tetrad_to_coord(kup_tet,p.kup);
-		g.normalize_null_changeupt(p.kup);
+		g.normalize_null_preserveupt(p.kup);
 		PRINT_ASSERT(g.dot<4>(p.kup,p.kup)/(p.kup[3]*p.kup[3]),<,TINY);
 	}
 	void renormalize_kup(){
@@ -120,27 +120,27 @@ public:
 	    
 	    // pathological case
 	    if(rp==0){
-	      e[0][2] = p.xup[2]>0 ? 1.0 : -1.0; // radial in z direction
-	      e[1][0] = 1.0; // theta in x direction
+	      e[0][0] = 1.0; // theta in x direction
 	      e[1][1] = 1.0; // phi in y direction
+	      e[2][2] = p.xup[2]>0 ? 1.0 : -1.0; // radial in z direction
 	    }
 	    else{
-	      // radial vector
-	      e[0][0] = p.xup[0];
-	      e[0][1] = p.xup[1];
-	      e[0][2] = p.xup[2];
+	      // theta vector (multiplying all components by rp*r so no divide by zeros)
+	      e[0][0] = p.xup[0] * p.xup[2];
+	      e[0][1] = p.xup[1] * p.xup[2];
+	      e[0][2] = -rp * rp;
 	      e[0][3] = 0;
 	      
-	      // theta vector (multiplying all components by rp*r so no divide by zeros)
-	      e[1][0] = p.xup[0] * p.xup[2];
-	      e[1][1] = p.xup[1] * p.xup[2];
-	      e[1][2] = -rp * rp;
-	      e[1][3] = 0;
-	      
 	      // phi vector (multiplying through by rp so no divide by zero)
-	      e[2][0] = -p.xup[1];
-	      e[2][1] =  p.xup[0];;
-	      e[2][2] = 0;
+	      e[1][0] = -p.xup[1];
+	      e[1][1] =  p.xup[0];;
+	      e[1][2] = 0;
+	      e[1][3] = 0;
+
+	      // radial vector
+	      e[2][0] = p.xup[0];
+	      e[2][1] = p.xup[1];
+	      e[2][2] = p.xup[2];
 	      e[2][3] = 0;
 	    }
 	  }
@@ -151,19 +151,19 @@ public:
 	  g.normalize(e[3]);
 	  
 	  // use x0 as a trial vector
-	  g.orthogonalize<4>(e[0],e[3]);
-	  g.normalize(e[0]);
-	  
+	  g.orthogonalize<4>(e[2],e[3]);
+	  g.normalize(e[2]);
+
 	  // use x1 as a trial vector
 	  g.orthogonalize<4>(e[1],e[3]);
-	  g.orthogonalize<4>(e[1],e[0]);
+	  g.orthogonalize<4>(e[1],e[2]);
 	  g.normalize(e[1]);
-	  
+	
 	  // use x2 as a trial vector
-	  g.orthogonalize<4>(e[2],e[3]);
-	  g.orthogonalize<4>(e[2],e[0]);
-	  g.orthogonalize<4>(e[2],e[1]);
-	  g.normalize(e[2]);
+	  g.orthogonalize<4>(e[0],e[3]);
+	  g.orthogonalize<4>(e[0],e[2]);
+	  g.orthogonalize<4>(e[0],e[1]);
+	  g.normalize(e[0]);
 	  
 	  // sanity checks
 	  PRINT_ASSERT(fabs(g.dot<4>(e[0],e[1])),<,TINY);
