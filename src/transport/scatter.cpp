@@ -215,8 +215,8 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double k
 
 	// rejection sample the new direction, but only if not absurdly forward/backward peaked
 	// (delta=2.8 corresponds to a possible factor of 10 in the neutrino weight)
+	double kup_tet_new[4];
 	if(fabs(delta) < 2.8){
-		double kup_tet_new[4];
 		double costheta=0;
 		do{
 			isotropic_kup_tet(hyperloc[NDIMS+1], kup_tet_new, &rangen);
@@ -227,5 +227,10 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double k
 	}
 	else{
 		eh->scale_p_frequency(hyperloc[NDIMS+1]/eh->nu());
+		if(delta<0){
+			kup_tet_new[3] = hyperloc[NDIMS+1]*pc::h;
+			for(unsigned i=0; i<3; i++) kup_tet_new[i] = -eh->kup_tet[i];
+			eh->set_kup_tet(kup_tet_new);
+		}
 	}
 }
