@@ -39,6 +39,8 @@ int main(int argc, char* argv[]){
 		exit(1);
 	}
 
+	MPI_Init( &argc, &argv );
+
 	//set test inputs
 	double rho        = atof(argv[2]);           // g/cm^3
 	double T          = atof(argv[3])/pc::k_MeV; // K
@@ -50,7 +52,7 @@ int main(int argc, char* argv[]){
 	//read in the nulib table
 	cout << "initializing nulib" << endl;
 	string filename = argv[1];
-	nulib_init(filename,0);
+	nulib_init(filename,0,0);
 
 	// grids
 	Axis nu_grid; // Hz
@@ -76,11 +78,11 @@ int main(int argc, char* argv[]){
 
 	unsigned ngroups = nu_grid.size();
 
-	ScalarMultiDArray<1> BB;        // #/s/cm^2/sr/(Hz^3/3)
-	ScalarMultiDArray<1> abs_opac;  // 1/cm
-	ScalarMultiDArray<1> scat_opac; // 1/cm
-	ScalarMultiDArray<2> scattering_delta; // phi1/phi0 for sampling outgoing direction [Ein,Eout]
-	ScalarMultiDArray<2> scattering_phi0; // opacity per outgoing frequency [Ein,Eout]
+	ScalarMultiDArray<double,1> BB;        // #/s/cm^2/sr/(Hz^3/3)
+	ScalarMultiDArray<double,1> abs_opac;  // 1/cm
+	ScalarMultiDArray<double,1> scat_opac; // 1/cm
+	ScalarMultiDArray<double,2> scattering_delta; // phi1/phi0 for sampling outgoing direction [Ein,Eout]
+	ScalarMultiDArray<double,2> scattering_phi0; // opacity per outgoing frequency [Ein,Eout]
 
 	vector<Axis> axes;
 	axes.push_back(nu_grid);
@@ -115,11 +117,12 @@ int main(int argc, char* argv[]){
 			}
 	}
 
-
+	InterpolationCube<1> icube;
 	unsigned nubin = nu_grid.bin(myfreq);
-	cout << "BB = " << BB.interpolate(&myfreq, &nubin) << " #/s/cm^2/sr/(Hz^3/3)" << endl;
-	cout << "a = " << abs_opac.interpolate(&myfreq,&nubin)   << " 1/cm" << endl;
-	cout << "s = " << scat_opac.interpolate(&myfreq, &nubin)  << " 1/cm" << endl;
+	BB.set_InterpolationCube(&icube,&myfreq,&nubin);
+	cout << "BB = " << BB.interpolate(icube) << " #/s/cm^2/sr/(Hz^3/3)" << endl;
+	cout << "a = " << abs_opac.interpolate(icube)   << " 1/cm" << endl;
+	cout << "s = " << scat_opac.interpolate(icube)  << " 1/cm" << endl;
 
 	return 0;
 }
