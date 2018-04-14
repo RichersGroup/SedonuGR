@@ -246,9 +246,11 @@ void Transport::move(EinsteinHelper *eh) const{
 	update_eh_k_opac(eh);
 
 	// appropriately reduce the particle's energy from absorption
-	double actual_ds_com = 0.5 * (eh->ds_com + dlambda*eh->kup_tet[3]);
-	double absopac = 0.5*(eh->absopac + old_absopac);
-	eh->p.N *= exp(-absopac * actual_ds_com);
+	double ds_com_new = dlambda*eh->kup_tet[3];
+	double eta1 = 1./3. * (eh->ds_com*old_absopac + ds_com_new*eh->absopac);
+	double eta2 = 1./6. * (eh->ds_com*eh->absopac + ds_com_new*old_absopac);
+	double eta = eta1 + eta2;
+	eh->p.N *= exp(-eta);
 	window(eh);
 	if(eh->p.fate==moving) PRINT_ASSERT(eh->p.N,>,0);
 }
