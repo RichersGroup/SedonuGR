@@ -1,4 +1,0 @@
-This test simply generates plots of NuLib's opacity and emissivity data. Assumes "make tests" has been run in the base directory. Execute "make" to generate the data and the plots.
-
- - "eas" = emissivity, absorption opacity, and scattering opacity
- - variables following the first part of the name indicate what it's plotted against
