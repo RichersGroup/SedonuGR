@@ -150,7 +150,7 @@ void Transport::create_thermal_particle(const int z_ind,const double weight, con
 	update_eh_k_opac(&eh);
 
 	// set the particle number
-	eh.p.N = grid->BB[s].interpolate(eh.icube_spec) * eh.absopac; // #/s/cm^3/sr/(Hz^3/3)
+	eh.p.N = grid->BB[s][eh.eas_ind]/*.interpolate(eh.icube_spec)*/ * eh.absopac; // #/s/cm^3/sr/(Hz^3/3)
 	eh.p.N *= grid->zone_lab_3volume(eh.z_ind);
 	if(DO_GR) eh.p.N *= sqrt(eh.g.gammalow.det()) * (-eh.g.ndot(eh.u)); // comoving volume (d3x * volfac * Lorentz factor)
 	eh.p.N *= weight * 1/*s*/ * 4.*pc::pi/*sr*/ * grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/;
