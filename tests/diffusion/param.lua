@@ -5,6 +5,7 @@ do_relativity = 0
 do_annihilation = 0
 radiative_eq  = 0
 reflect_outer = 0
+use_scattering_kernels = 0
 
 -- Equilibrium Solving
 
@@ -54,35 +55,34 @@ output_hdf5 = 1
 
 max_particles  = 2e7
 n_subcycles = 10
-do_emit_by_bin = 0
-n_emit_core    = 1e5
-n_emit_therm   = 0
+n_emit_core_per_bin    = 1e5
+n_emit_therm_per_bin   = 0
 
 -- Inner Source
 
 r_core = 1
 core_emit_method = 1
-T_core = 10
-core_nue_chem_pot = 0
-core_lum_multiplier = 1.0
+T_core = {10,10}
+core_chem_pot = {0,0}
+core_lum_multiplier = {1,1}
 
 -- General Controls
 
 verbose       = 1
 max_n_iter =  1
-step_size = 0.001
+min_step_size = 0.01
+max_step_size = 0.1
 max_time_hours = -1
 
 -- Biasing
 
 importance_bias = 0
 bias_path_length = 0
-min_packet_energy = 1e0
-max_packet_energy = 1e99
-exponential_decay = 0
+min_packet_weight = 1
 
 -- Random Walk
 
+do_randomwalk = 1
 randomwalk_sphere_size = 1.0
 randomwalk_max_x = 2
 randomwalk_sumN = 1000

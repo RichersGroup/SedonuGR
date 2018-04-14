@@ -3,6 +3,8 @@ import sys
 dx0 = 0.005
 Rmin = 1
 Rmax = 1.1
+alpha = 1.0
+X = 1.0
 
 Rlist = []
 R=Rmin
@@ -12,4 +14,4 @@ while R<Rmax:
 
 print('1D_sphere',len(Rlist),Rmin)
 for i  in range(len(Rlist)):
-    print(Rlist[i], 1, 0, 0, 0, 0, 0)
+    print(Rlist[i], 1, 0, 0, 0, alpha, X)

@@ -13,12 +13,12 @@ sigma = 200
 # read in data
 filename = "fluid_00001.h5"
 f = h5py.File(filename, "r")
-edens = np.array(f.get("distribution(erg|ccm,lab)")[:,0,0,0]) # r, s, e, moment
-flux  = np.array(f.get("distribution(erg|ccm,lab)")[:,0,0,1]) # r, s, e, moment
+edens = np.array(f.get("distribution0(erg|ccm,tet)")[:,0,0]) # r, e, moment
+flux  = np.array(f.get("distribution0(erg|ccm,tet)")[:,0,1]) # r, e, moment
 nr = len(edens)
 
 # set up the grid
-rgrid = f.get("r(cm)")
+rgrid = f.get("axes/x0(cm)[edge]")
 rcenter = np.zeros(nr)
 rcenter2 = np.zeros(nr-1)
 rcenter3 = np.zeros(nr-2)
@@ -63,7 +63,7 @@ min2 = min(fick_flux)
 max1 = max(flux)
 max2 = max(fick_flux)
 ax0 = fig.add_axes(rect0)
-ax0.axis([min(rgrid), max(rgrid), 0, 4e22])#min(min1,min2), max(max1,max2)])
+ax0.axis([min(rgrid), max(rgrid), min(min1,min2), max(max1,max2)])#0, 4e22])#
 
 minorLocator = AutoMinorLocator()
 
