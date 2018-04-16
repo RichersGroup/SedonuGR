@@ -177,11 +177,15 @@ double temp_eq_function(double T, void *params)
 	// set the zone temperature
 	sim->grid->T[z_ind] = T;
 
+	// set up indices
+	unsigned dir_ind[NDIMS+1];
+	sim->grid->rho.indices(z_ind,dir_ind);
+
 	// include the emission from all species
-	for(unsigned i=0; i<sim->species_list.size(); i++)
+	for(unsigned s=0; s<sim->species_list.size(); s++)
 	{
 		// reset the eas variables in this zone
-		sim->species_list[i]->set_eas(z_ind, sim->grid);
+		sim->species_list[s]->set_eas(z_ind, sim->grid);
 
 		// integrate emission over frequency (angle
 		// integration gives the 4*PI) to get total
@@ -189,6 +193,16 @@ double temp_eq_function(double T, void *params)
 		// held constant for this (assumed not to change
 		// much from the last time step).
 		// E_emitted += 4.0*pc::pi * sim->species_list[i]->integrate_zone_emis(z_ind);
+		for(unsigned g=0; g<sim->grid->nu_grid_axis.size(); g++){
+			// get eas global index
+			dir_ind[NDIMS] = g;
+			unsigned eas_ind = sim->grid->abs_opac[s].direct_index(dir_ind);
+
+			// get this zone's contribution to the emitted leptons
+			double tmp = sim->grid->BB[s][eas_ind]/*.interpolate(eh.icube_spec)*/ * sim->grid->abs_opac[s][eas_ind]; // #/s/cm^3/sr/(Hz^3/3)
+			tmp *= 4.*pc::pi/*sr*/ * sim->grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/ * pc::h*sim->grid->nu_grid_axis.mid[g]/*erg*/;
+			E_emitted += tmp;
+		}
 	}
 
 	// radiative equillibrium condition: "emission equals absorbtion"
@@ -225,20 +239,32 @@ double Ye_eq_function(double Ye, void *params)
 	// set the zone temperature
 	sim->grid->Ye[z_ind] = Ye;
 
+	// set up indices
+	unsigned dir_ind[NDIMS+1];
+	sim->grid->rho.indices(z_ind,dir_ind);
+
 	// include the emission from all species
-	for(unsigned i=0; i<sim->species_list.size(); i++) if(sim->species_list[i]->lepton_number!=0)
+	for(unsigned s=0; s<sim->species_list.size(); s++) if(sim->species_list[s]->lepton_number!=0)
 	{
 		// reset the eas variables in this zone
 		// OPTIMIZE - only set the emissivity variable
-		sim->species_list[i]->set_eas(z_ind, sim->grid);
+		sim->species_list[s]->set_eas(z_ind, sim->grid);
 
 		// integrate emissison over frequency (angle
 		// integration gives the 4*PI) to get total
 		// radiation energy emitted. Opacities are
 		// held constant for this (assumed not to change
 		// much from the last time step).
-		// minus sign since integrate_zone_lepton_emis will return a negative number
-		//l_emitted += 4.0*pc::pi * sim->species_list[i]->integrate_zone_lepton_emis(z_ind);
+		for(unsigned g=0; g<sim->grid->nu_grid_axis.size(); g++){
+			// get eas global index
+			dir_ind[NDIMS] = g;
+			unsigned eas_ind = sim->grid->abs_opac[s].direct_index(dir_ind);
+
+			// get this zone's contribution to the emitted leptons
+			double tmp = sim->grid->BB[s][eas_ind]/*.interpolate(eh.icube_spec)*/ * sim->grid->abs_opac[s][eas_ind]; // #/s/cm^3/sr/(Hz^3/3)
+			tmp *= 4.*pc::pi/*sr*/ * sim->grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/ * (float)sim->species_list[s]->lepton_number;
+			l_emitted += tmp;
+		}
 	}
 
 	// radiative equillibrium condition: "emission equals absorbtion"
