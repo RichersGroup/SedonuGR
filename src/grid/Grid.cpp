@@ -340,7 +340,7 @@ void Grid::write_zones(const int iw)
 
 	// write fluid quantities
 	rho.write_HDF5(file,"rho(g|ccm,tet)");
-	T.write_HDF5(file,"T_gas(MeV,tet)");
+	T.write_HDF5(file,"T_gas(K,tet)");
 	Ye.write_HDF5(file,"Ye");
 	H_vis.write_HDF5(file,"H_vis(erg|s|g,tet)");
 	fourforce_abs.write_HDF5(file,"four-force[abs](erg|ccm|s,tet)");
