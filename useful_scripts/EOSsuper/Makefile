@@ -1,7 +1,7 @@
 SOURCES=nuc_eos_press.cc testeos.cc readtable.cc nuc_eos_press_cs2.cc nuc_eos_dpdrhoe_dpderho.cc nuc_eos_short.cc nuc_eos_full.cc
 CSOURCES= 
 INCLUDES=nuc_eos.hh helpers.hh 
-HDF5_DIR=/usr/local/hdf5_fortran_cxx
+HDF5_DIR=/usr/local/hdf5-1.8.17_gnu-5.4.0/hdf5
 HDF5INCS=-I$(HDF5_DIR)/include
 HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5
 GSL_BASE=$(GSL_DIR)
@@ -26,7 +26,11 @@ CPPFLAGS=-g -O0 -ansi -Wall -fopenmp -std=c++11 $(EXTRAINCS) -DHAVEGR
 CFLAGS=-g -O0 -std=gnu99 -ansi -Wall -fopenmp
 EXTRALIBS=-lm -L/usr/local/lib -lgsl -lgslcblas -Wl,-rpath,$(HDF5DIR)/lib
 
-all: nuc_eos.a Munue_of_RhoTempYe Ye_of_RhoTempMunue All_of_RhoTempYe
+all: nuc_eos.a Munue_of_RhoTempYe Ye_of_RhoTempMunue All_of_RhoTempYe many_Ye
+
+many_Ye: $(OBJECTS) $(COBJECTS) $(INCLUDES)
+	$(CPPC) $(CPPFLAGS) $(HDF5INCS) -c many_Ye.cc -o many_Ye.o
+	$(CPPC) $(CPPFLAGS) -o many_Ye $(OBJECTS) $(COBJECTS) $(HDF5LIBS) $(EXTRALIBS) many_Ye.o
 
 Munue_of_RhoTempYe: $(OBJECTS) $(COBJECTS) $(INCLUDES)
 	$(CPPC) $(CPPFLAGS) $(HDF5INCS) -c Munue_of_RhoTempYe.cc -o Munue_of_RhoTempYe.o
@@ -56,4 +60,4 @@ nuc_eos.a: $(OBJECTS)
 clean:
 	rm -f *.o
 	rm -rf *.cc.*
-	rm Munue_of_RhoTempYe Ye_of_RhoTempMunue All_of_RhoTempYe
+	rm Munue_of_RhoTempYe Ye_of_RhoTempMunue All_of_RhoTempYe many_Ye

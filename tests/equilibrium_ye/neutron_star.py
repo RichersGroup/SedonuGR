@@ -10,9 +10,11 @@ rho_max = 2e12
 ye_max = 0.2
 
 temp = 5*MeV
+lapse = 1.
+X = 1.
 
 print('1D_sphere',nx,R_min)
 
 for i  in range(1,nx+1):
     R = R_min + i*dx
-    print(R, rho_max*(1-(R/R_max)**2), temp, ye_max,0,0,0)
+    print(R, rho_max*(1-(R/R_max)**2), temp, ye_max,0,lapse,X)

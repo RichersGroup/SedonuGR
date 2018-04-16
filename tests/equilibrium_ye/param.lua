@@ -2,9 +2,11 @@
 
 do_visc       = 0
 do_relativity = 0
+do_randomwalk = 0
 do_annihilation = 0
 radiative_eq  = 1
 reflect_outer = 1
+use_scattering_kernels = 0
 
 -- Equilibrium Solving
 
@@ -53,9 +55,8 @@ output_hdf5 = 0
 
 max_particles  = 0
 n_subcycles = 1
-do_emit_by_bin = 0
-n_emit_core    = 0
-n_emit_therm   = 0
+n_emit_therm_per_bin  = 0
+n_emit_core_per_bin = 0
 
 -- Inner Source
 
@@ -69,16 +70,15 @@ core_lum_multiplier = 0.0
 
 verbose       = 1
 max_n_iter = 1
-step_size = 0.01
+min_step_size = 0.01
+max_step_size = 0.1
 max_time_hours = -1
 
 -- Biasing
 
 importance_bias = 0
 bias_path_length = 0
-min_packet_energy = 1e24
-max_packet_energy = 1e99
-exponential_decay = 0
+min_packet_weight = 0.01
 
 -- Random Walk
 
