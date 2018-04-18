@@ -92,7 +92,7 @@ void Transport::solve_eq_zone_values()
 			if(equilibrium_Ye)
 			{
 				Ye_last_iter = grid->Ye[z_ind];
-				grid->Ye[z_ind] = brent_method(z_ind, Ye_eq_function, (max(Ye_last_iter/2.,Ye_min), min(Ye_last_iter,Ye_max));
+				grid->Ye[z_ind] = brent_method(z_ind, Ye_eq_function, max(Ye_last_iter/2.,Ye_min), min(Ye_last_iter,Ye_max));
 				PRINT_ASSERT(grid->Ye[z_ind],>=,Ye_min);
 				PRINT_ASSERT(grid->Ye[z_ind],<=,Ye_max);
 				Ye_error = fabs( (grid->Ye[z_ind] - Ye_last_iter) / (Ye_last_iter) );
