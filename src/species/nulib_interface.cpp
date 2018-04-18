@@ -380,7 +380,8 @@ void nulib_get_iscatter_kernels(
 			phi0[igin][igout] = inelastic_phi0;
 			nut_scatopac[igin] += inelastic_phi0;
 			scattering_delta[igin][igout] = (inelastic_phi0==0 ? 0 : 3. * inelastic_phi1 / inelastic_phi0);
-			PRINT_ASSERT(abs(scattering_delta[igin][igout]),<=,3.0);
+			PRINT_ASSERT(abs(scattering_delta[igin][igout]),<=,3.0+TINY);
+			scattering_delta[igin][igout] = min(3., max(-3., scattering_delta[igin][igout]));
 		}
 	}
 }
