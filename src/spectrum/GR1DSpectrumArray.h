@@ -77,8 +77,8 @@ public:
 	//--------------------------------------------------------------
 	// count a particle
 	////--------------------------------------------------------------
-	void count(const EinsteinHelper* eh, const double E) {
-	  double D[3] = {eh->kup_tet[0], eh->kup_tet[1], eh->kup_tet[2]};
+	void count(const double kup_tet[4], const unsigned dir_ind[NDIMS+1], const double E) {
+	  double D[3] = {kup_tet[0], kup_tet[1], kup_tet[2]};
 	  Metric::normalize_Minkowski<3>(D);
 		PRINT_ASSERT(E, >=, 0);
 		PRINT_ASSERT(E, <, INFINITY);
@@ -91,7 +91,7 @@ public:
 		tmp[3] =  E * (D[0]*D[0] + D[1]*D[1])*0.5; // average of P^tt and P^pp
 		tmp[4] =  E * D[2]*D[2]*D[2]; // W^rrr
 		tmp[5] =  E * D[2]*(D[0]*D[0] + D[1]*D[1])*0.5; // average of W^rtt and W^rpp
-		data.add(eh->dir_ind,tmp);
+		data.add(dir_ind,tmp);
 	}
 
 
