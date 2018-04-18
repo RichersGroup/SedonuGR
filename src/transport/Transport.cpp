@@ -733,8 +733,12 @@ void Transport::isotropic_kup_tet(const double nu, double kup_tet[4], ThreadRNG 
 }
 
 void Transport::random_core_x(double x3[3]) const{
-	double a_phot = r_core * (1. + TINY);
 	isotropic_direction(x3,&rangen);
+	double test_x3[3];
+	for(unsigned i=0; i<3; i++) test_x3[i] = x3[i] * r_core * (1. + TINY);
+	unsigned z_ind = grid->zone_index(test_x3);
+	PRINT_ASSERT(z_ind,>=,0);
+	double a_phot = r_core + grid->zone_min_length(z_ind)*TINY;
 	for(unsigned i=0; i<3; i++) x3[i] *= a_phot;
 }
 
