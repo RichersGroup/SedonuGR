@@ -1,7 +1,6 @@
 .PHONY: all clean
 
 all:
-	python shell.py
 	python run_many.py
 
 clean:

@@ -44,15 +44,15 @@ double run_test(const int nsteps, const bool rank0, const double rho, const doub
 	if(rank0) cout << endl << "Currently running: rho=" << rho << "g/ccm T_core=" << T_MeV << "MeV Ye=" << target_ye << endl;
 
 	// set the fluid properties
-	sim.grid->z[0].rho = rho;
+	sim.grid->rho[0] = rho;
 	double error = 1.2;
-	if(sim.equilibrium_T>0 ) sim.grid->z[0].T  = min(T_MeV/pc::k_MeV*error,sim.T_max);
-	else               sim.grid->z[0].T  = T_MeV/pc::k_MeV;
-	if(sim.equilibrium_Ye>0) sim.grid->z[0].Ye = min(target_ye*error,sim.Ye_max);
-	else               sim.grid->z[0].Ye = target_ye;
+	if(sim.equilibrium_T>0 ) sim.grid->T[0]  = min(T_MeV/pc::k_MeV*error,sim.T_max);
+	else               sim.grid->T[0]  = T_MeV/pc::k_MeV;
+	if(sim.equilibrium_Ye>0) sim.grid->Ye[0] = min(target_ye*error,sim.Ye_max);
+	else               sim.grid->Ye[0] = target_ye;
 
-	sim.grid->z[0].T = T_MeV/pc::k_MeV; //min(T_MeV/pc::k_MeV*1.1,100/pc::k_MeV);
-	sim.grid->z[0].Ye = target_ye; //min(target_ye*1.1,0.55);
+	sim.grid->T[0] = T_MeV/pc::k_MeV; //min(T_MeV/pc::k_MeV*1.1,100/pc::k_MeV);
+	sim.grid->Ye[0] = target_ye; //min(target_ye*1.1,0.55);
 	double T_core = T_MeV/pc::k_MeV;
 
 	// reconfigure the core
@@ -68,11 +68,15 @@ double run_test(const int nsteps, const bool rank0, const double rho, const doub
 
 	// check max optical depth
 	double max_opac = 0;
-	for(unsigned z_ind=0; z_ind<sim.grid->z.size(); z_ind++){
+	unsigned dir_ind[2];
+	for(unsigned z_ind=0; z_ind<sim.grid->rho.size(); z_ind++){
+		dir_ind[0] = z_ind;
 		for(unsigned s=0; s<sim.species_list.size(); s++){
 			for(unsigned g=0; g<sim.grid->nu_grid_axis.size(); g++){
-				double abs_opac = sim.species_list[s]->abs_opac[z_ind][g];
-				double scat_opac = sim.species_list[s]->scat_opac[z_ind][g];
+				dir_ind[1] = g;
+				unsigned global_index = sim.grid->abs_opac[s].direct_index(dir_ind);
+				double abs_opac = sim.grid->abs_opac[s][global_index];
+				double scat_opac = sim.grid->scat_opac[s][global_index];
 				double opac = abs_opac + scat_opac;
 				if(opac>max_opac) max_opac = opac;
 			}
@@ -85,8 +89,17 @@ double run_test(const int nsteps, const bool rank0, const double rho, const doub
 	for(int i=0; i<nsteps; i++) sim.step();
 
 	// write the data out to file
-	outf << rho << "\t" << T_MeV << "\t" << target_ye << "\t" << munue*pc::ergs_to_MeV << "\t";
-	if(rank0) sim.grid->write_line(outf,0);
+	if(rank0){
+		outf << rho << "\t";
+		outf << T_MeV << "\t";
+		outf << target_ye << "\t";
+		outf << sim.grid->rho[0] << "\t";
+		outf << sim.grid->T[0]*pc::k_MeV << "\t";
+		outf << sim.grid->Ye[0] << "\t";
+		outf << munue*pc::ergs_to_MeV << "\t";
+		outf << endl;
+	}
+	//if(rank0) sim.grid->write_line(outf,0);
 	return optical_depth;
 }
 
