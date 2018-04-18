@@ -28,8 +28,8 @@ public:
 	// intermediate quantities
 	double e[4][4]; // [tet(low)][coord(up)]
 	double grid_coords[NDIMS+1];
-	double v[3];
-	double kup_tet[4];
+	double v[3]; // cm/s
+	double kup_tet[4]; // erg
 	double absopac, scatopac;
 	double ds_com;
 	unsigned dir_ind[NDIMS+1]; // spatial, nu_in
