@@ -379,10 +379,10 @@ void Grid1DSphere::symmetry_boundaries(EinsteinHelper *eh) const{
 	double R = radius(eh->p.xup);
 	if(reflect_outer && R>xAxes[0].top[xAxes[0].size()-1]){
 		double r0 = (xAxes[0].size()>1 ? xAxes[0].top[xAxes[0].size()-2] : xAxes[0].min);
-		double rmax = xAxes[0].top[xAxes[0].size()-1];
+		double rmax = xAxes[0].max();
 		double dr = rmax - r0;
 
-		double kr;
+		double kr = 0;
 		for(int i=0; i<3; i++) kr += eh->p.xup[i]/R * eh->p.kup[i];
 
 		// invert the radial component of the velocity
