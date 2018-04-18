@@ -84,7 +84,7 @@ void Transport::solve_eq_zone_values()
 			if(equilibrium_T)
 			{
 				T_last_iter  = grid->T[z_ind];
-				grid->T[z_ind] = brent_method(z_ind, temp_eq_function, T_min,  T_max);
+				grid->T[z_ind] = brent_method(z_ind, temp_eq_function, max(T_last_iter/2.,T_min),  min(T_last_iter*2.,T_max));
 				PRINT_ASSERT(grid->T[z_ind],>=,T_min);
 				PRINT_ASSERT(grid->T[z_ind],<=,T_max);
 				T_error  = fabs( (grid->T[z_ind] - T_last_iter ) / (T_last_iter ) );
@@ -92,7 +92,7 @@ void Transport::solve_eq_zone_values()
 			if(equilibrium_Ye)
 			{
 				Ye_last_iter = grid->Ye[z_ind];
-				grid->Ye[z_ind] = brent_method(z_ind, Ye_eq_function, Ye_min, Ye_max);
+				grid->Ye[z_ind] = brent_method(z_ind, Ye_eq_function, (max(Ye_last_iter/2.,Ye_min), min(Ye_last_iter,Ye_max));
 				PRINT_ASSERT(grid->Ye[z_ind],>=,Ye_min);
 				PRINT_ASSERT(grid->Ye[z_ind],<=,Ye_max);
 				Ye_error = fabs( (grid->Ye[z_ind] - Ye_last_iter) / (Ye_last_iter) );
