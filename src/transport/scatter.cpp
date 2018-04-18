@@ -138,7 +138,6 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	eh->set_kup_tet(kup_tet);
 	eh->ds_com = Rcom;
 	eh->p.N = Naverage;
-	if(Rcom < INFINITY) tally_radiation(eh);
 	move(eh);
 	eh->p.N = Nfinal;
 

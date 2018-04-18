@@ -65,7 +65,7 @@ void Transport::propagate_particles()
 			L_net_esc[eh.p.s] += eh.p.N * nu*pc::h;
 			#pragma omp atomic
 			N_net_esc[eh.p.s] += eh.p.N;
-			grid->spectrum[eh.p.s].count(&eh, eh.p.N * nu*pc::h);
+			grid->spectrum[eh.p.s].count(eh.kup_tet, eh.dir_ind, eh.p.N * nu*pc::h);
 		}
 
 		if(verbose){
@@ -160,42 +160,6 @@ void Transport::boundary_conditions(EinsteinHelper *eh) const{
 	}
 }
 
-void Transport::tally_radiation(const EinsteinHelper *eh) const{
-	PRINT_ASSERT(eh->z_ind, >=, 0);
-	PRINT_ASSERT(eh->z_ind, <, grid->rho.size());
-	PRINT_ASSERT(eh->ds_com, >=, 0);
-	PRINT_ASSERT(eh->p.N, >, 0);
-	PRINT_ASSERT(eh->nu(), >, 0);
-	double to_add = 0;
-	double decay_factor = 1.0 - exp(-eh->absopac * eh->ds_com); //same in both frames
-
-	// tally in contribution to zone's distribution function (lab frame)
-	if(eh->absopac>0) to_add = eh->p.N / eh->absopac * decay_factor;
-	else to_add = eh->p.N * eh->ds_com;
-	to_add *= eh->nu()*pc::h;
-	PRINT_ASSERT(to_add,<,INFINITY);
-
-	grid->distribution[eh->p.s]->count(eh, to_add);
-
-	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
-	to_add = eh->p.N * decay_factor;
-	PRINT_ASSERT(to_add,>=,0);
-
-	Tuple<double,4> tmp_fourforce;
-	for(unsigned i=0; i<4; i++){
-		#pragma omp atomic
-		grid->fourforce_abs[eh->z_ind][i] += eh->kup_tet[i] * to_add;
-	}
-
-	// store absorbed lepton number (same in both frames, except for the
-	// factor of this_d which is divided out later
-	if(species_list[eh->p.s]->lepton_number != 0){
-		to_add *= species_list[eh->p.s]->lepton_number;
-		#pragma omp atomic
-		grid->l_abs[eh->z_ind] += to_add;
-	}
-}
-
 void Transport::move(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->ds_com,>=,0);
 	PRINT_ASSERT(abs(eh->g.dot<4>(eh->p.kup,eh->p.kup)) / (eh->p.kup[3]*eh->p.kup[3]), <=, TINY);
@@ -205,6 +169,19 @@ void Transport::move(EinsteinHelper *eh) const{
 	//for(unsigned i=0; i<4; i++) cout << eh->kup_tet[i] << "\t";
 	//cout << eh->g.gtt << "\t";
 	//cout << eh->nu() << endl;
+
+	// save old values
+	double old_xup[4], old_kup[4], old_kup_tet[4];
+	for(unsigned i=0; i<4; i++){
+		old_xup[i] = eh->p.xup[i];
+		old_kup[i] = eh->p.kup[i];
+		old_kup_tet[i] = eh->kup_tet[i];
+	}
+	double old_absopac = eh->absopac;
+	double old_N = eh->p.N;
+	unsigned old_z_ind = eh->z_ind;
+	unsigned old_dir_ind[NDIMS+1];
+	for(unsigned i=0; i<NDIMS+1; i++) old_dir_ind[i] = eh->dir_ind[i];
 
 	// convert ds_com into dlambda
 	double dlambda = eh->ds_com / eh->kup_tet[3];
@@ -218,10 +195,10 @@ void Transport::move(EinsteinHelper *eh) const{
 	}
 
 	// get 2nd order x, 1st order estimate for k
-	double knew[4];
+	double kup1[4];
 	for(unsigned i=0; i<4; i++){
-		knew[i] = eh->p.kup[i] + dk_dlambda[i]*dlambda;
-		double order1 = eh->p.kup[i]*dlambda;
+		kup1[i] = old_kup[i] + dk_dlambda[i]*dlambda;
+		double order1 = old_kup[i]*dlambda;
 		double order2 = 0.5*dk_dlambda[i]*dlambda*dlambda;
 		eh->p.xup[i] += order1 + (abs(order2/order1)<1. ? order2 : 0);
 		PRINT_ASSERT(eh->p.xup[i],==,eh->p.xup[i]);
@@ -232,27 +209,52 @@ void Transport::move(EinsteinHelper *eh) const{
 
 	// apply second order correction to k
 	if(DO_GR and eh->z_ind>0){
-		double dk_dlambda_2[4];
-		eh->g.normalize_null_preserveupt(knew);
-		eh->christoffel.contract2(knew,dk_dlambda_2);
+		double dk_dlambda_2[4], kup2[4];
+		eh->g.normalize_null_preserveupt(eh->p.kup);
+		eh->christoffel.contract2(eh->p.kup,dk_dlambda_2);
 		for(unsigned i=0; i<4; i++){
 			dk_dlambda_2[i] *= -1;
-			eh->p.kup[i] += 0.5*dlambda * (dk_dlambda[i] + dk_dlambda_2[i]);
+			kup2[i] = old_kup[i] + dlambda*dk_dlambda_2[i];
+			eh->p.kup[i] = 0.5 * (kup1[i] + kup2[i]);
 			PRINT_ASSERT(eh->p.kup[i],==,eh->p.kup[i]);
 		}
 	}
 	PRINT_ASSERT(abs(eh->p.kup[3]),<,INFINITY);
-	double old_absopac = eh->absopac;
 	update_eh_k_opac(eh);
 
 	// appropriately reduce the particle's energy from absorption
+	// assumes kup_tet and absopac vary linearly along the trajectory
 	double ds_com_new = dlambda*eh->kup_tet[3];
-	double eta1 = 1./3. * (eh->ds_com*old_absopac + ds_com_new*eh->absopac);
-	double eta2 = 1./6. * (eh->ds_com*eh->absopac + ds_com_new*old_absopac);
-	double eta = eta1 + eta2;
-	eh->p.N *= exp(-eta);
+	double tau1 = 1./3. * (eh->ds_com*old_absopac + ds_com_new*eh->absopac);
+	double tau2 = 1./6. * (eh->ds_com*eh->absopac + ds_com_new*old_absopac);
+	double tau = tau1 + tau2;
+	eh->p.N *= exp(-tau);
+	double dN = old_N - eh->p.N;
 	window(eh);
-	if(eh->p.fate==moving) PRINT_ASSERT(eh->p.N,>,0);
+
+	// get average k
+	double avg_kup_tet[4];
+	for(unsigned i=0; i<4; i++) avg_kup_tet[i] = 0.5 * (old_kup_tet[i] + eh->kup_tet[i]);
+
+	// tally in contribution to zone's distribution function (lab frame)
+	// use average N and integrate assuming kt_tet varies linearly over the step
+	double avg_N = (tau>TINY ? dN/tau : old_N);
+	double integral_k2dlambda = dlambda/3. * (old_kup_tet[3]*old_kup_tet[3] + old_kup_tet[3]*eh->kup_tet[3] + eh->kup_tet[3]*eh->kup_tet[3]);
+	grid->distribution[eh->p.s]->count(avg_kup_tet, old_dir_ind, avg_N*integral_k2dlambda);
+
+	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
+	Tuple<double,4> tmp_fourforce;
+	for(unsigned i=0; i<4; i++){
+		#pragma omp atomic
+		grid->fourforce_abs[old_z_ind][i] += dN * avg_kup_tet[i];
+	}
+
+	// store absorbed lepton number (same in both frames, except for the
+	// factor of this_d which is divided out later
+	if(species_list[eh->p.s]->lepton_number != 0){
+		#pragma omp atomic
+		grid->l_abs[old_z_ind] += dN * species_list[eh->p.s]->lepton_number;
+	}
 }
 
 
@@ -283,14 +285,12 @@ void Transport::propagate(EinsteinHelper *eh) const{
 		PRINT_ASSERT(eh->p.N,>,0);
 		switch(event){
 		case nothing:
-			tally_radiation(eh);
 			move(eh);
 			break;
 		case randomwalk:
 			random_walk(eh);
 			break;
 		case interact:
-			tally_radiation(eh);
 			move(eh);
 			if(eh->z_ind>0) scatter(eh);
 			break;
