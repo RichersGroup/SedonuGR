@@ -209,8 +209,8 @@ void Transport::create_surface_particle(const double weight, const unsigned int 
 	double kup_tet[4];
 	do{
 		isotropic_kup_tet(nu,kup_tet,&rangen);
-	} while(Metric::dot_Minkowski<3>(eh.p.xup,kup_tet) < 0);
-	eh.set_kup_tet(kup_tet);
+		eh.set_kup_tet(kup_tet);
+	} while(Metric::dot_Minkowski<3>(eh.p.xup,eh.p.kup) < 0);
 	update_eh_k_opac(&eh);
 
 	//get the number of neutrinos in the particle
@@ -221,7 +221,7 @@ void Transport::create_surface_particle(const double weight, const unsigned int 
 	eh.p.N = number_blackbody(T,mu,nu)   // #/s/cm^2/sr/(Hz^3/3)
 			* 1                          //   s
 			* (4.0*pc::pi*r_core*r_core) //     cm^2
-			* pc::pi                     //          sr
+			* pc::pi                     //          sr (including factor of 1/2 for integrating over cos(theta)
 			* grid->nu_grid_axis.delta3(g)/3.0 //        Hz^3/3
 			* multiplier                 // overall scaling
 			* weight;                    // 1/number of samples

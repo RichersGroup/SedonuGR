@@ -740,6 +740,7 @@ void Transport::random_core_x(double x3[3]) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	double a_phot = r_core + grid->zone_min_length(z_ind)*TINY;
 	for(unsigned i=0; i<3; i++) x3[i] *= a_phot;
+	PRINT_ASSERT(radius(x3),>=,r_core);
 }
 
 // given k^x/k_tet^t and u^x and the lab-frame distance to the boundary, return the largest random walk sphere size
