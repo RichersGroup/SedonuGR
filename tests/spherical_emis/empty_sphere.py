@@ -1,17 +1,20 @@
-MeV = 1.1605e10
-km = 1.0e5
+import numpy as np
+nx = 9*80
+rs = 1.0
+rin = 1
 
-nx = 1
-r_in = 0
-
-R = 1e4*km
+R = 100
 rho = 0
-temp = 10*MeV
-Ye = 0.5
-v0 = 0
-alpha = 1
-X = 1
+temp = 0
+Ye = 0
+vr=0
 
-print('1D_sphere', nx,r_in)
-print(R, rho, temp, 0.5, v0, alpha, X)
+print('1D_sphere', nx,rin)
+dr = (R-rin)/nx
+for i in range(nx):
+    rout = rin + dr*(i+1  )
+    rmid = rin + dr*(i+0.5)
+    alpha = np.sqrt(1.0-rs/rmid)
+    X = 1.0/alpha
+    print(rout, rho, temp, Ye, vr, alpha, X)
 

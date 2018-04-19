@@ -60,13 +60,13 @@ output_hdf5 = 0
 max_particles  = 2e7
 n_subcycles = 1
 do_emit_by_bin = 1
-n_emit_core_per_bin    = 100
+n_emit_core_per_bin    = 1000
 n_emit_therm_per_bin   = 0
 max_time_hours = -1
 
 -- Inner Source
 
-r_core = 10e5
+r_core = 1.5
 core_emit_method = 1
 T_core = {10,10}
 core_chem_pot = {10,-10}
