@@ -409,13 +409,15 @@ double Grid1DSphere::d_boundary(const EinsteinHelper *eh) const{
 	const double z = eh->p.xup[2];
 
 	// get component of k in the radial direction
-	double kr = eh->g.dot<4>(eh->e[0],eh->p.kup);
+	double kr = eh->g.dot<4>(eh->e[2],eh->p.kup);
 
 	double dlambda = INFINITY;
-	if(kr>0) dlambda = (xAxes[0].top[eh->z_ind] - r   ) / kr;
-	if(kr<0) dlambda = (r = xAxes[0].bottom(eh->z_ind)) / kr;
+	if(kr>0) dlambda = (xAxes[0].top[eh->z_ind]    - r) / kr;
+	if(kr<0) dlambda = (xAxes[0].bottom(eh->z_ind) - r) / kr;
 
-	return dlambda * eh->kup_tet[3];
+	double ds_com = dlambda * eh->kup_tet[3];
+	PRINT_ASSERT(ds_com,>=,0);
+	return ds_com;
 }
 double Grid1DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 	double R=INFINITY;
