@@ -187,8 +187,9 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double k
 	do{
 		igout = rangen.uniform_discrete(0, grid->nu_grid_axis.size()-1);
 		P = grid->partial_scat_opac[eh->p.s][igout].interpolate(eh->icube_spec) / eh->scatopac;
-		PRINT_ASSERT(P,<=,1.0);
+		PRINT_ASSERT(P-1.0,<=,TINY);
 		PRINT_ASSERT(P,>=,0.0);
+		P = min(1.0,P);
 	} while(rangen.uniform() > P);
 
 	// if scattering to same group don't change energy. Otherwise, distribute uniformily
