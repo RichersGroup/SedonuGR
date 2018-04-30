@@ -112,7 +112,7 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 	  cout << "#   nr=" << xAxes[0].size() << "\trmin=" << xAxes[0].min << "\trmax=" << xAxes[0].top[xAxes[0].size()-1] << endl;
 
 	// read the fluid properties
-	for(int z_ind=0; z_ind<xAxes[0].size(); z_ind++){
+	for(unsigned z_ind=0; z_ind<xAxes[0].size(); z_ind++){
 		double trash;
 
 		// read the contents of a single line
@@ -185,7 +185,6 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 	PRINT_ASSERT(rmin,>=,0);
 	for(int z_ind=0; z_ind<n_zones; z_ind++)
 	{
-		double alpha, x;
 		infile >> rtop[z_ind];
 		infile >> tmp_rho[z_ind];
 		infile >> tmp_T[z_ind];
@@ -302,7 +301,7 @@ void Grid1DSphere::zone_directional_indices(const int z_ind, vector<unsigned>& d
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	PRINT_ASSERT(dir_ind.size(),==,(int)dimensionality());
+	PRINT_ASSERT(dir_ind.size(),==,dimensionality());
 	dir_ind[0] = z_ind;
 }
 
@@ -404,9 +403,6 @@ double Grid1DSphere::d_boundary(const EinsteinHelper *eh) const{
 	double r = radius(eh->p.xup);
 	PRINT_ASSERT(r,<=,xAxes[0].top[eh->z_ind]);
 	PRINT_ASSERT(r,>=,xAxes[0].bottom(eh->z_ind));
-	const double x = eh->p.xup[0];
-	const double y = eh->p.xup[1];
-	const double z = eh->p.xup[2];
 
 	// get component of k in the radial direction
 	double kr = eh->g.dot<4>(eh->e[2],eh->p.kup);

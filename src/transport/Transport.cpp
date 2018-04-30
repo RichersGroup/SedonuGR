@@ -66,7 +66,7 @@ Transport::Transport(){
 	Ye_max = NaN;
 	rho_min = NaN;
 	rho_max = NaN;
-	max_particles = -MAXLIM;
+	max_particles = 0;
 	min_step_size = NaN;
 	max_step_size = NaN;
 	do_randomwalk = -MAXLIM;
@@ -207,6 +207,7 @@ void Transport::init(Lua* lua)
 		else if(neutrino_type == "grey" )    neutrinos_tmp = new Neutrino_grey;
 		else if(neutrino_type == "Nagakura") neutrinos_tmp = new Neutrino_Nagakura;
 		else if(neutrino_type == "GR1D")     neutrinos_tmp = new Neutrino_GR1D;
+		else exit(1);
 		neutrinos_tmp->ID = i;
 		neutrinos_tmp->num_species = num_nut_species;
 		species_list.push_back(neutrinos_tmp);
@@ -263,7 +264,7 @@ void Transport::init(Lua* lua)
 	//==========================//
 	// INITIALIZE THE NEUTRINOS //
 	//==========================//
-	for(unsigned i=0; i<species_list.size(); i++) species_list[i]->init(lua, this);
+	for(unsigned i=0; i<species_list.size(); i++) species_list[i]->init(lua);
 
 	// complain if we're not simulating anything
 	n_active.resize(species_list.size(),0);
@@ -683,7 +684,6 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 		}
 
 		// four-velocity
-		double vmag, vmag_corrected;
 		grid->interpolate_fluid_velocity(eh);
 		eh->set_fourvel();
 
@@ -736,7 +736,7 @@ void Transport::random_core_x(double x3[3]) const{
 	isotropic_direction(x3,&rangen);
 	double test_x3[3];
 	for(unsigned i=0; i<3; i++) test_x3[i] = x3[i] * r_core * (1. + TINY);
-	unsigned z_ind = grid->zone_index(test_x3);
+	int z_ind = grid->zone_index(test_x3);
 	PRINT_ASSERT(z_ind,>=,0);
 	double a_phot = r_core + grid->zone_min_length(z_ind)*TINY;
 	for(unsigned i=0; i<3; i++) x3[i] *= a_phot;

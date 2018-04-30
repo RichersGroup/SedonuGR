@@ -53,13 +53,11 @@ int main(int argc, char **argv)
 	int MPI_myID;
 	MPI_Init( &argc, &argv );
 	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
-	const int rank0 = (MPI_myID == 0);
 
 	// open up the lua parameter file
 	Lua lua;
 	string script_file = string(argv[1]);
 	lua.init( script_file );
-	double r_sch = lua.scalar<double>("Grid1DSchwarzschild_r_sch");
 
 	class testTransport : public Transport{
 	public:

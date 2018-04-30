@@ -136,14 +136,13 @@ public:
 	static void increment_tensor_indices(unsigned tensor_indices[], const unsigned rank) {
 		PRINT_ASSERT(rank,>=,0);
 		PRINT_ASSERT(rank,<,nranks);
-		if (rank == 0)
+		if(rank == 0)
 			return;
 		tensor_indices[0]++;
-		for (int which_index = 0; which_index < rank - 1; which_index++) {
-			if (tensor_indices[which_index] > index_range - 1) {
+		for(unsigned which_index=0; which_index < rank-1; which_index++) {
+			if(tensor_indices[which_index] > index_range - 1) {
 				tensor_indices[which_index + 1]++;
-				for (int which_index_2 = 0; which_index_2 < which_index + 1;
-						which_index_2++)
+				for(unsigned which_index_2=0; which_index_2 < which_index+1; which_index_2++)
 					tensor_indices[which_index_2] = tensor_indices[which_index + 1];
 			}
 		}
@@ -158,7 +157,7 @@ public:
 		vector<Axis> axes(ndims_spatial+1);
 
 		// spatial axes
-		for(int i=0; i<ndims_spatial; i++) axes[i] = spatial_axes[i];
+		for(unsigned i=0; i<ndims_spatial; i++) axes[i] = spatial_axes[i];
 
 		// frequency axis
 		axes[nuGridIndex] = nu_grid;
@@ -185,7 +184,7 @@ public:
 		Metric::normalize_Minkowski<3>(D);
 		
 		unsigned data_indices[data.Ndims()];
-		for(int i=0; i<ndims_spatial; i++) data_indices[i] = dir_ind[i];
+		for(unsigned i=0; i<ndims_spatial; i++) data_indices[i] = dir_ind[i];
 		data_indices[nuGridIndex] = dir_ind[NDIMS];
 
 		// increment moments
@@ -196,7 +195,7 @@ public:
 			for(unsigned r = 0; r<rank; r++) tensor_indices[r] = 0;
 			for(unsigned i=0; i<n_independent_elements[rank]; i++) {
 				tmp[tuple_index] = E;
-				for(int r = 0; r<rank; r++) tmp[tuple_index] *= D[tensor_indices[r]];
+				for(unsigned r=0; r<rank; r++) tmp[tuple_index] *= D[tensor_indices[r]];
 				increment_tensor_indices(tensor_indices, rank);
 				tuple_index++;
 			}
@@ -267,7 +266,6 @@ public:
 	void write_hdf5_coordinates(H5::H5File file,
 			const string name) const {
 		// useful quantities
-		hsize_t dims[1];
 		H5::DataSpace dataspace;
 		H5::DataSet dataset;
 		H5::Group group;
@@ -289,11 +287,11 @@ public:
 			dataset = file.createDataSet(indicesname.str(), H5::PredType::STD_I32LE,
 					dataspace);
 			unsigned tensor_indices[rank];
-			for (int r = 0; r < rank; r++)
+			for (unsigned r = 0; r < rank; r++)
 				tensor_indices[r] = 0;
 			int indices2D[n_independent_elements[rank]][rank];
-			for (int i = 0; i < n_independent_elements[rank]; i++) {
-				for (int r = 0; r < rank; r++)
+			for (unsigned i=0; i < n_independent_elements[rank]; i++) {
+				for (unsigned r=0; r < rank; r++)
 					indices2D[i][r] = tensor_indices[r];
 				increment_tensor_indices(tensor_indices, rank);
 			}
@@ -304,7 +302,7 @@ public:
 	}
 	void add_isotropic(const unsigned dir_ind[NDIMS+1], const double E){
 		unsigned indices[data.Ndims()];
-		for(int i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
+		for(unsigned i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
 		indices[nuGridIndex] = dir_ind[ndims_spatial];
 
 		// increment moments

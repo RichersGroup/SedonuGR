@@ -46,7 +46,7 @@ Neutrino_GR1D::Neutrino_GR1D(){
 //----------------------------------------------------------------
 // called from species_general::init (neutrino-specific stuff)
 //----------------------------------------------------------------
-void Neutrino_GR1D::myInit(Lua* lua)
+void Neutrino_GR1D::myInit(Lua* /*lua*/)
 {
 // do nothing
 }
@@ -77,7 +77,7 @@ void Neutrino_GR1D::set_nu_grid(Lua* lua, Axis* nu_grid){
 	file.close();
 
 	// adjust units
-	for(int i=0; i<nu_grid->size(); i++){
+	for(unsigned i=0; i<nu_grid->size(); i++){
 		tops[i] /= pc::h_MeV;
 		mid[i] /= pc::h_MeV;
 	}
@@ -87,7 +87,7 @@ void Neutrino_GR1D::set_nu_grid(Lua* lua, Axis* nu_grid){
 //-----------------------------------------------------------------
 // set emissivity, abs. opacity, and scat. opacity in zones
 //-----------------------------------------------------------------
-void Neutrino_GR1D::set_eas(const unsigned z_ind, Grid* grid) const
+void Neutrino_GR1D::set_eas(const unsigned /*z_ind*/, Grid* /*grid*/) const
 {
 	// do nothing - opacities are set externally
 }
@@ -95,14 +95,14 @@ void Neutrino_GR1D::set_eas(const unsigned z_ind, Grid* grid) const
 int extract_MC_index(const int z_ind, const int ID, const int nspecies, const int inu, const int ngroups){
 	return inu + ID*ngroups + z_ind*ngroups*nspecies;
 }
-void Neutrino_GR1D::set_eas_external(const double* easarray, const double GR1D_tau_crit, bool* extract_MC, const double rshock){
+void Neutrino_GR1D::set_eas_external(const double* easarray, const double /*GR1D_tau_crit*/, bool* /*extract_MC*/, const double /*rshock*/){
 	PRINT_ASSERT(ghosts1,>=,0);
-	PRINT_ASSERT(n_GR1D_zones,>=,sim->grid->rho.size());
+	PRINT_ASSERT(n_GR1D_zones,>=,(int)sim->grid->rho.size());
 	const int ngroups=sim->grid->nu_grid_axis.size();
 	const int nspecies = sim->species_list.size();
 
 	// first, get opacities everywhere
-	for(int z_ind=0; z_ind<sim->grid->rho.size(); z_ind++){
+	for(int z_ind=0; z_ind<(int)sim->grid->rho.size(); z_ind++){
 		for(int inu=0; inu<ngroups; inu++){
 			unsigned dir_ind[NDIMS+1];
 			sim->grid->rho.indices(z_ind,dir_ind);

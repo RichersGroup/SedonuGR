@@ -99,7 +99,7 @@ inline bool hdf5_dataset_exists(const char* filename, const char* datasetname){
 #ifndef NDEBUG
 #define PRINT_ASSERT(a,op,b)                         \
 do {                                                 \
-	if(!(a op b)) std::cout << (a) << " " << (b) << std::endl; \
+	if(!((a) op (b))) std::cout << (a) << " " << (b) << std::endl; \
 	assert(a op b);                                  \
 } while (0)
 #else

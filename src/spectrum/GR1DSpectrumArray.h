@@ -57,7 +57,7 @@ public:
 	//--------------------------------------------------------------
 	void init(const vector<Axis>& spatial_axes, const Axis& nu_grid) {
 		vector<Axis> axes;
-		for(int i=0; i<spatial_axes.size(); i++) axes.push_back(spatial_axes[i]);
+		for(unsigned i=0; i<spatial_axes.size(); i++) axes.push_back(spatial_axes[i]);
 
 		axes.push_back(nu_grid);
 
@@ -134,7 +134,7 @@ public:
 	//--------------------------------------------------------------
 	// Write distribution function coordinates to an HDF5 file
 	//--------------------------------------------------------------
-	void write_hdf5_coordinates(H5::H5File file, const string name) const {
+	void write_hdf5_coordinates(H5::H5File /*file*/, const string /*name*/) const {
 		// no extra axes for moment array
 	}
 

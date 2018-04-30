@@ -38,7 +38,7 @@
 using namespace std;
 namespace pc = physical_constants;
 
-void run_test(const bool rank0, const double rho, const double T, const double ye, const double v[3], Transport& sim, ofstream& outf){
+void run_test(const bool rank0, const double rho, const double T, const double ye, Transport& sim, ofstream& outf){
 	if(rank0) cout << endl << "Currently running: rho=" << rho << "g/ccm T=" << T << "MeV Ye=" << ye << endl;
 
 	// set the fluid properties
@@ -84,7 +84,6 @@ int main(int argc, char **argv)
 	double max_logrho, min_logrho, rho0;
 	double max_logT  , min_logT  , T0;
 	double max_ye    , min_ye    , ye0;
-	double v[3];
 	int n_rho, n_T, n_ye;
 	PRINT_ASSERT(argc,==,15);
 	sscanf(argv[2 ], "%lf", &min_logrho);
@@ -133,21 +132,21 @@ int main(int argc, char **argv)
 	//==============//
 	for(int i=0; i<n_rho; i++){
 		double logrho = min_logrho + i*dlogrho;
-		run_test(rank0,pow(10,logrho),T0,ye0,v,sim,outf);
+		run_test(rank0,pow(10,logrho),T0,ye0,sim,outf);
 	}
 	//==================//
 	// TEMPERATURE LOOP //
 	//==================//
 	for(int i=0; i<n_T; i++){
 		double logT = min_logT + i*dlogT;
-		run_test(rank0,rho0,pow(10,logT),ye0,v,sim,outf);
+		run_test(rank0,rho0,pow(10,logT),ye0,sim,outf);
 	}
 	//=========//
 	// YE LOOP //
 	//=========//
 	for(int i=0; i<n_ye; i++){
 		double ye = min_ye + i*dye;
-		run_test(rank0,rho0,T0,ye,v,sim,outf);
+		run_test(rank0,rho0,T0,ye,sim,outf);
 	}
 
 	//===================//

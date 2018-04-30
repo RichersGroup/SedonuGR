@@ -90,7 +90,7 @@ protected:
 	double brent_method(const int zone_index, double (*eq_function)(double, void*), const double min, const double max);
 
 	// stored minimum and maximum values to assure safety
-	int max_particles;
+	unsigned max_particles;
 
 	// simulation parameters
 	double min_step_size, max_step_size;

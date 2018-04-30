@@ -92,7 +92,7 @@ void Neutrino_Nagakura::set_eas(const unsigned zone_index, Grid* grid) const
     string line;
     getline(opac_file,line);
 
-    for(int inu=0; inu<grid->nu_grid_axis.size(); inu++){
+    for(unsigned inu=0; inu<grid->nu_grid_axis.size(); inu++){
     	dir_ind[NDIMS] = inu;
     	unsigned global_index = grid->abs_opac[ID].direct_index(dir_ind);
 
@@ -100,7 +100,7 @@ void Neutrino_Nagakura::set_eas(const unsigned zone_index, Grid* grid) const
     	double e=0, a=0, s=0;
 
     	opac_file >> itmp; // group number
-    	PRINT_ASSERT(inu,==,itmp);
+    	PRINT_ASSERT((int)inu,==,itmp);
 
     	double dtmp;
     	if(ID==0){

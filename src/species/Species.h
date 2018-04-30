@@ -64,7 +64,7 @@ public:
 	double core_lum_multiplier;
 
 	// set everything up
-	void init(Lua* lua, Transport* sim);
+	void init(Lua* lua);
 
 	// set the emissivity, absorption opacity, and scattering opacity
 	virtual void set_eas(const unsigned z_ind, Grid* grid) const = 0;

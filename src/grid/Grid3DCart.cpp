@@ -388,7 +388,6 @@ void Grid3DCart::read_THC_file(Lua* lua)
 		unsigned hdf5_dir_ind[3];
 		for(int d=0; d<3; d++){
 			hdf5_dir_ind[d] = offset[d] + dir_ind[d];
-			PRINT_ASSERT(hdf5_dir_ind[d],>=,0);
 			PRINT_ASSERT(offset[d],>=,0);
 		}
 
@@ -443,7 +442,7 @@ int Grid3DCart::zone_index(const double x[3]) const
 	for(int i=0; i<3; i++){
 		dir_ind[i] = xAxes[i].bin(x[i]);
 		PRINT_ASSERT(dir_ind[i],>=,0);
-		PRINT_ASSERT(dir_ind[i],<,xAxes[i].size());
+		PRINT_ASSERT(dir_ind[i],<,(int)xAxes[i].size());
 	}
 
 	int z_ind = zone_index(dir_ind[0],dir_ind[1],dir_ind[2]);
@@ -460,9 +459,9 @@ int Grid3DCart::zone_index(const int i, const int j, const int k) const{
 	PRINT_ASSERT(i,>=,0);
 	PRINT_ASSERT(j,>=,0);
 	PRINT_ASSERT(k,>=,0);
-	PRINT_ASSERT(i,<,xAxes[0].size());
-	PRINT_ASSERT(j,<,xAxes[1].size());
-	PRINT_ASSERT(k,<,xAxes[2].size());
+	PRINT_ASSERT(i,<,(int)xAxes[0].size());
+	PRINT_ASSERT(j,<,(int)xAxes[1].size());
+	PRINT_ASSERT(k,<,(int)xAxes[2].size());
 	const int z_ind = i*xAxes[1].size()*xAxes[2].size() + j*xAxes[2].size() + k;
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	return z_ind;
@@ -481,10 +480,8 @@ void Grid3DCart::zone_directional_indices(const int z_ind, vector<unsigned>& dir
 	dir_ind[1] = (z_ind % (xAxes[1].size()*xAxes[2].size())) / xAxes[2].size();
 	dir_ind[2] =  z_ind % xAxes[2].size();
 
-	for(int i=0; i<3; i++){
-		PRINT_ASSERT(dir_ind[i],>=,0);
+	for(int i=0; i<3; i++)
 		PRINT_ASSERT(dir_ind[i],<,xAxes[i].size());
-	}
 }
 
 
@@ -665,9 +662,7 @@ void Grid3DCart::get_deltas(const int z_ind, double delta[3], const int size) co
 
 
 double Grid3DCart::zone_left_boundary(const unsigned dir, const unsigned dir_ind) const{
-	PRINT_ASSERT(dir,>=,0);
 	PRINT_ASSERT(dir,<,3);
-	PRINT_ASSERT(dir_ind,>=,0);
 
 	double boundary = xAxes[dir].bottom(dir_ind);
 	PRINT_ASSERT(boundary,<=,xAxes[dir].max());
@@ -675,9 +670,7 @@ double Grid3DCart::zone_left_boundary(const unsigned dir, const unsigned dir_ind
 	return boundary;
 }
 double Grid3DCart::zone_right_boundary(const unsigned dir, const unsigned dir_ind) const{
-	PRINT_ASSERT(dir,>=,0);
 	PRINT_ASSERT(dir,<,3);
-	PRINT_ASSERT(dir_ind,>=,0);
 
 	double boundary = xAxes[dir].top[dir_ind];
 	PRINT_ASSERT(boundary,<=,xAxes[dir].max()*(1.0+TINY));

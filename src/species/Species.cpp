@@ -50,7 +50,7 @@ Species::Species(){
 	core_lum_multiplier = NaN;
 }
 
-void Species::init(Lua* lua, Transport* simulation)
+void Species::init(Lua* lua)
 {
 	// set lepton number
 	if(ID == 0)   lepton_number =  1;
@@ -79,11 +79,6 @@ void Species::init(Lua* lua, Transport* simulation)
 		cout << "ERROR: Sedona does not know how to deal with a neutrino ID of " << ID << "." << endl;
 		exit(16);}
 
-	// initialize MPI parallelism
-	int MPI_myID;
-	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
-	const int rank0 = (MPI_myID == 0);
-
 	//============================//
 	// CALL CHILD'S INIT FUNCTION //
 	//============================//
@@ -91,7 +86,7 @@ void Species::init(Lua* lua, Transport* simulation)
 }
 
 // cm^3/s
-void Species::get_annihil_kernels(const double rho, const double T, const double Ye, const Axis& nuAxis, vector< vector< vector<double> > >& phi) const{
+void Species::get_annihil_kernels(const double /*rho*/, const double /*T*/, const double /*Ye*/, const Axis& nuAxis, vector< vector< vector<double> > >& phi) const{
 	// constants
 	using namespace pc;
 	double mec2 = m_e*c*c; // erg

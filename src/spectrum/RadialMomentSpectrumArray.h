@@ -53,9 +53,9 @@ public:
 	//--------------------------------------------------------------
 	// Initialization and Allocation
 	//--------------------------------------------------------------
-	void init(const vector<Axis>& spatial_axes, const Axis& nu_grid, const int max_rank) {
+	void init(const vector<Axis>& spatial_axes, const Axis& nu_grid) {
 		vector<Axis> axes;
-		for(int i=0; i<spatial_axes.size(); i++) axes.push_back(spatial_axes[i]);
+		for(unsigned i=0; i<spatial_axes.size(); i++) axes.push_back(spatial_axes[i]);
 
 		axes.push_back(nu_grid);
 
@@ -81,7 +81,7 @@ public:
 		Metric::normalize_Minkowski<3>(D);
 
 		unsigned indices[data.Ndims()];
-		for(int i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
+		for(unsigned i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
 		indices[nuGridIndex] = dir_ind[NDIMS];
 
 		// increment moments
@@ -132,13 +132,13 @@ public:
 	//--------------------------------------------------------------
 	// Write distribution function coordinates to an HDF5 file
 	//--------------------------------------------------------------
-	void write_hdf5_coordinates(H5::H5File file, const string name) const {
+	void write_hdf5_coordinates(H5::H5File /*file*/, const string /*name*/) const {
 		// no extra axes for moment array
 	}
 
 	void add_isotropic(const unsigned dir_ind[NDIMS+1], const double E){
 		unsigned indices[data.Ndims()];
-		for(int i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
+		for(unsigned i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
 		indices[nuGridIndex] = dir_ind[ndims_spatial];
 
 		// increment moments

@@ -41,7 +41,7 @@ void Transport::emit_particles()
 {
 	// complain if we're out of room for particles
 	assert(n_emit_core_per_bin>0 || n_emit_zones_per_bin>=0);
-	int n_emit = (n_emit_core_per_bin + n_emit_zones_per_bin*grid->rho.size()) * species_list.size()*grid->nu_grid_axis.size();
+	unsigned n_emit = (n_emit_core_per_bin + n_emit_zones_per_bin*grid->rho.size()) * species_list.size()*grid->nu_grid_axis.size();
 	if (particles.size() + n_emit > max_particles){
 		if(MPI_myID==0){
 			cout << "Total particles: " << particles.size() << endl;
@@ -120,12 +120,11 @@ void Transport::emit_zones_by_bin(){
 // Useful for thermal radiation emitted all througout
 // the grid
 //------------------------------------------------------------
-void Transport::create_thermal_particle(const int z_ind,const double weight, const unsigned int s, const unsigned int g)
+void Transport::create_thermal_particle(const int z_ind,const double weight, const unsigned s, const unsigned g)
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->rho.size());
-	PRINT_ASSERT(s,>=,0);
-	PRINT_ASSERT(s,<,(int)species_list.size());
+	PRINT_ASSERT(s,<,species_list.size());
 
 	EinsteinHelper eh;
 	eh.p.fate = moving;
@@ -194,8 +193,7 @@ void Transport::create_surface_particle(const double weight, const unsigned int 
 {
 	PRINT_ASSERT(weight,>,0);
 	PRINT_ASSERT(weight,!=,INFINITY);
-	PRINT_ASSERT(s,>=,0);
-	PRINT_ASSERT(s,<,(int)species_list.size());
+	PRINT_ASSERT(s,<,species_list.size());
 
 	EinsteinHelper eh;
 	eh.p.fate = moving;

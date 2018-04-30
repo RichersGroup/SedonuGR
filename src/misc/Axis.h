@@ -23,9 +23,9 @@ public:
 		this->min = min;
 		this->top = top;
 		this->mid = mid;
-		for(int i=0; i<top.size(); i++){
+		for(unsigned i=0; i<top.size(); i++){
 			PRINT_ASSERT(top[i],>,mid[i]);
-			PRINT_ASSERT(mid[i],>, i==0 ? min : top[i-1]);
+			PRINT_ASSERT(mid[i],>, (i==0) ? min : top[i-1]);
 		}
 	}
 	Axis(const double min, const double max, const unsigned nbins){
@@ -35,7 +35,7 @@ public:
 		if(nbins==1) top[0] = max;
 		else{
 			double del = (max-min) / (double)nbins;
-			for(int i=0; i<nbins; i++){
+			for(unsigned i=0; i<nbins; i++){
 				top[i] = min + (i+1)*del;
 				mid[i] = min + ((double)i + 0.5)*del;
 			}
@@ -63,16 +63,16 @@ public:
 		}
 	}
 
-	double bottom(const int i) const{
+	double bottom(const unsigned i) const{
 		PRINT_ASSERT(i,<,size());
 		return i==0 ? min : top[i-1];
 	}
 
-	double delta(const int i) const{
+	double delta(const unsigned i) const{
 		PRINT_ASSERT(i,<,size());
 		return top[i] - bottom(i);
 	}
-	double delta3(const int i) const{
+	double delta3(const unsigned i) const{
 		PRINT_ASSERT(i,<,size());
 		return top[i]*top[i]*top[i] - bottom(i)*bottom(i)*bottom(i);
 	}

@@ -11,7 +11,7 @@ class ThreeMetric{
 public:
 	Tuple<double,6> data;
 
-	static double index(const unsigned i, const unsigned j){
+	static int index(const unsigned i, const unsigned j){
 		PRINT_ASSERT(i,<,3);
 		PRINT_ASSERT(j,<,3);
 		switch( (j+1)*(i+1) ){
@@ -22,11 +22,13 @@ public:
 		case 3:
 			return ixz;
 		case 4:
-			return iyy;
+			return (i+j==2 ? iyy : ixt);
 		case 6:
 			return iyz;
 		case 9:
 			return izz;
+		default:
+			return -1;
 		}
 	}
 
@@ -102,7 +104,7 @@ public:
 		}
 	}
 
-	static unsigned index(const unsigned i, const unsigned j){
+	static int index(const unsigned i, const unsigned j){
 		PRINT_ASSERT(i,<,4);
 		PRINT_ASSERT(j,<,4);
 		switch( (j+1)*(i+1) ){
@@ -124,6 +126,8 @@ public:
 			return izt;
 		case 16:
 			return itt;
+		default:
+			return -1;
 		}
 	}
 
@@ -186,7 +190,7 @@ public:
 	template<unsigned n>
 	static double contract(const double xup[n], const double xdown[n]){
 		double result = 0;
-		for(int i=0; i<n; i++) result += xup[i]*xdown[i];
+		for(unsigned i=0; i<n; i++) result += xup[i]*xdown[i];
 		return result;
 	}
 
@@ -210,7 +214,7 @@ public:
 	// normalize a four vector to have a norm of +/-1
 	void normalize(double x[4]) const{
 		double invnorm = sqrt(fabs(1./dot<4>(x,x)));
-		for(int i=0; i<4; i++) x[i] *= invnorm;
+		for(unsigned i=0; i<4; i++) x[i] *= invnorm;
 	}
 
 	// make a vector null
@@ -285,7 +289,7 @@ public:
 	template<unsigned n>
 	void orthogonalize(double v[n], const double e[n]) const{
 		double projection = dot<n>(v,e) / dot<n>(e,e);
-		for(int mu=0; mu<n; mu++) v[mu] -= projection * e[mu];
+		for(unsigned mu=0; mu<n; mu++) v[mu] -= projection * e[mu];
 	}
 
 	// vector operations

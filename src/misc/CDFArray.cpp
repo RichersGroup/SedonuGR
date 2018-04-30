@@ -321,7 +321,7 @@ double CDFArray::interpolate_pdf_cubic(const double x, const Axis* xgrid) const
 	// return interpolated function
 	double h = xRight-xLeft;
 	double t = (x-xLeft)/h;
-	double dtdx = h;
+	//double dtdx = h;
 	PRINT_ASSERT(t,>=,0);
 	PRINT_ASSERT(t,<=,1);
 	double result = yLeft*h00(t) + h*mLeft*h10(t) + yRight*h01(t) + h*mRight*h11(t);

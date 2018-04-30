@@ -112,7 +112,7 @@ public:
 		vector<Axis> axes;
 
 		// spatial axes
-		for(int i=0; i<spatial_axes.size(); i++) axes.push_back(spatial_axes[i]);
+		for(unsigned i=0; i<spatial_axes.size(); i++) axes.push_back(spatial_axes[i]);
 
 		axes.push_back(wg);
 		nuGridIndex = axes.size()-1;
@@ -146,7 +146,7 @@ public:
 		PRINT_ASSERT(kup_tet[3],>=,0);
 
 		unsigned indices[data.Ndims()];
-		for(int i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
+		for(unsigned i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
 		indices[nuGridIndex] = dir_ind[NDIMS];
 		
 		double mu = kup_tet[2] / kup_tet[3];
@@ -162,7 +162,7 @@ public:
 		if(phi>= pc::pi) phi -= 2.0*pc::pi;
 		int phi_bin = data.axes[phiGridIndex].bin(phi);
 		phi_bin = max(phi_bin, 0);
-		phi_bin = min((unsigned)phi_bin, data.axes[phiGridIndex].size()-1);
+		phi_bin = min(phi_bin, (int)data.axes[phiGridIndex].size()-1);
 		indices[phiGridIndex] = phi_bin;
 
 		data.add(indices, E);
@@ -210,7 +210,6 @@ public:
 	//--------------------------------------------------------------
 	void write_hdf5_coordinates(H5::H5File file, const string name) const{
 		// useful quantities
-		hsize_t dims[1];
 		H5::DataSpace dataspace;
 		H5::DataSet dataset;
 		vector<float> tmp;
@@ -221,7 +220,7 @@ public:
 	
 	void add_isotropic(const unsigned dir_ind[NDIMS+1], const double E){
 		unsigned indices[data.Ndims()];
-		for(int i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
+		for(unsigned i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
 		indices[nuGridIndex] = dir_ind[ndims_spatial];
 		indices[muGridIndex] = 0;
 		indices[phiGridIndex] = 0;
@@ -291,14 +290,10 @@ public:
 			}
 		}
 
-		// some useful constants
-		double twomec2 = 2.0*pc::m_e*pc::c*pc::c;
-		double mec22 = pc::m_e*pc::m_e * pc::c*pc::c*pc::c*pc::c;
-
 		// set up index arrays
 		unsigned index[ndims_spatial + 3];
 		unsigned indexbar[ndims_spatial + 3];
-		for(int i=0; i<ndims_spatial; i++){
+		for(unsigned i=0; i<ndims_spatial; i++){
 			index[i] = dir_ind[i];
 			indexbar[i] = dir_ind[i];
 		}

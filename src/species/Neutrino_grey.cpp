@@ -54,7 +54,6 @@ void Neutrino_grey::myInit(Lua* lua)
 //-----------------------------------------------------------------
 void Neutrino_grey::set_eas(const unsigned z_ind, Grid* grid) const
 {
-	unsigned ngroups = grid->BB[ID].axes[NDIMS].size();
 	unsigned dir_ind[NDIMS+1];
 	grid->rho.indices(z_ind,dir_ind);
 

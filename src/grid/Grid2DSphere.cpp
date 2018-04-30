@@ -622,10 +622,6 @@ double Grid2DSphere::d_boundary(const EinsteinHelper* eh) const{
 	const double r = radius(eh->p.xup);
 	PRINT_ASSERT(r,<=,xAxes[0].top[eh->z_ind]);
 	PRINT_ASSERT(r,>=,xAxes[0].bottom(eh->z_ind));
-	const double x = eh->p.xup[0];
-	const double y = eh->p.xup[1];
-	const double z = eh->p.xup[2];
-	const double rp = sqrt(x*x + y*y);
 	const double theta = Grid2DSphere_theta(eh->p.xup);
 
 	// get component of k in the radial direction
@@ -745,10 +741,10 @@ void Grid2DSphere::zone_directional_indices(const int z_ind, vector<unsigned>& d
 	PRINT_ASSERT(dir_ind.size(),==,2);
 	dir_ind[0] = z_ind / xAxes[1].size(); // r index
 	dir_ind[1] = z_ind % xAxes[1].size(); // theta index
-	PRINT_ASSERT(dir_ind[0],>=,0);
-	PRINT_ASSERT(dir_ind[1],>=,0);
-	PRINT_ASSERT(dir_ind[0],<,(int)    xAxes[0].size());
-	PRINT_ASSERT(dir_ind[1],<,(int)xAxes[1].size());
+	PRINT_ASSERT((int)dir_ind[0],>=,0);
+	PRINT_ASSERT((int)dir_ind[1],>=,0);
+	PRINT_ASSERT(dir_ind[0],<,xAxes[0].size());
+	PRINT_ASSERT(dir_ind[1],<,xAxes[1].size());
 }
 
 
@@ -818,7 +814,6 @@ void Grid2DSphere::interpolate_fluid_velocity(EinsteinHelper *eh) const
 	theta = min(pc::pi, theta);
 
 	// Based on position, calculate what the 3-velocity is
-	double xvec[2] = {r,theta};
 	double tmp_vr     = vr.interpolate(eh->icube_vol);
 	double tmp_vtheta = vtheta.interpolate(eh->icube_vol);
 	double tmp_vphi   = vphi.interpolate(eh->icube_vol);
@@ -853,7 +848,7 @@ void Grid2DSphere::interpolate_fluid_velocity(EinsteinHelper *eh) const
 //------------------------------------------------------------
 // Reflect off the symmetry boundaries
 //------------------------------------------------------------
-void Grid2DSphere::symmetry_boundaries(EinsteinHelper *eh) const{
+void Grid2DSphere::symmetry_boundaries(EinsteinHelper* /*eh*/) const{
 // not implemented - does nothing
 }
 
@@ -878,7 +873,7 @@ void Grid2DSphere::dims(hsize_t dims[2], const int size) const{
 	dims[1] = xAxes[1].size();
 }
 
-double Grid2DSphere::zone_lorentz_factor(const int z_ind) const{
+double Grid2DSphere::zone_lorentz_factor(const int /*z_ind*/) const{
 	abort(); // NOT IMPLEMENTED
 }
 void Grid2DSphere::get_connection_coefficients(EinsteinHelper* eh) const{ // default Minkowski

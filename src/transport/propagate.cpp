@@ -171,9 +171,8 @@ void Transport::move(EinsteinHelper *eh) const{
 	//cout << eh->nu() << endl;
 
 	// save old values
-	double old_xup[4], old_kup[4], old_kup_tet[4];
+	double old_kup[4], old_kup_tet[4];
 	for(unsigned i=0; i<4; i++){
-		old_xup[i] = eh->p.xup[i];
 		old_kup[i] = eh->p.kup[i];
 		old_kup_tet[i] = eh->kup_tet[i];
 	}
@@ -243,7 +242,6 @@ void Transport::move(EinsteinHelper *eh) const{
 	grid->distribution[eh->p.s]->count(avg_kup_tet, old_dir_ind, avg_N*integral_k2dlambda);
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
-	Tuple<double,4> tmp_fourforce;
 	for(unsigned i=0; i<4; i++){
 		#pragma omp atomic
 		grid->fourforce_abs[old_z_ind][i] += dN * avg_kup_tet[i];

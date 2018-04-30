@@ -61,7 +61,7 @@ void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const i
 
 	// set up the transport module (includes the grid)
 	(*sim)->init(&lua);
-	for(int s=0; s<(*sim)->species_list.size(); s++){
+	for(unsigned s=0; s<(*sim)->species_list.size(); s++){
 		Neutrino_GR1D* tmpSpecies =static_cast<Neutrino_GR1D*>((*sim)->species_list[s]);
 		tmpSpecies->ghosts1 = *ghosts1;
 		tmpSpecies->n_GR1D_zones = *n_GR1D_zones;
@@ -90,7 +90,7 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 	static_cast<GridGR1D*>((*sim)->grid)->set_fluid(rho, T, Ye, v1);
 
 	bool extract_MC[nr][ns][ne];
-	for(int s=0; s<(*sim)->species_list.size(); s++)
+	for(unsigned s=0; s<(*sim)->species_list.size(); s++)
 		static_cast<Neutrino_GR1D*>((*sim)->species_list[s])->set_eas_external(eas,GR1D_tau_crit,&(extract_MC[0][0][0]),*rshock);
 
 	// do MC calculation
@@ -119,20 +119,20 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 			dir_ind[0] = z_ind;
 			int indr = z_ind+nghost_GR1D;
 			const double X = metricX[indr];
-			int inds = indr + s*nr_GR1D;
+			//int inds = indr + s*nr_GR1D;
 			for(int ie=0; ie<ne; ie++){
 				dir_ind[1] = ie;
 				if(extract_MC[z_ind][s][ie]){
-					int inde = inds + ie*ns*nr_GR1D;
-					int indexE    = inde + 0*indlast;
-					int indexFr   = inde + 1*indlast;
-					int indexPrr  = inde + 2*indlast;
-					int indexPtt  = inde + 0*indlast;
-					int indexWrrr = inde + 1*indlast;
-					int indexWttr = inde + 2*indlast;
+					//int inde = inds + ie*ns*nr_GR1D;
+					//int indexE    = inde + 0*indlast;
+					//int indexFr   = inde + 1*indlast;
+					//int indexPrr  = inde + 2*indlast;
+					//int indexPtt  = inde + 0*indlast;
+					//int indexWrrr = inde + 1*indlast;
+					//int indexWttr = inde + 2*indlast;
 					//int indexChi  = inde + 3*indlast;
-					int indexPrr_pm = inde + 2*indlast + 0*ne*ns*nr_GR1D*3;
-					int indexChi_pm = inde + 0*indlast + 0*ne*ns*nr_GR1D*1;
+					//int indexPrr_pm = inde + 2*indlast + 0*ne*ns*nr_GR1D*3;
+					//int indexChi_pm = inde + 0*indlast + 0*ne*ns*nr_GR1D*1;
 
 					// load up new arrays
 					unsigned index = tmpSpectrum->data.direct_index(dir_ind);
@@ -151,8 +151,8 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 
 					double W_constraint = X*X*Wrrr + 2.*Wttr;
 					double inv_W_constraint = 1.0 / W_constraint;
-					double Wrrr_Fr = abs(W_constraint)>0 ? Wrrr / W_constraint : 1./X/X;
-					double Wttr_Fr = abs(W_constraint)>0 ? Wttr / W_constraint : 0.0;
+					//double Wrrr_Fr = abs(W_constraint)>0 ? Wrrr / W_constraint : 1./X/X;
+					//double Wttr_Fr = abs(W_constraint)>0 ? Wttr / W_constraint : 0.0;
 					new_Wrrr_Fr[z_ind][s][ie] = abs(inv_W_constraint)<INFINITY ? Wrrr * inv_W_constraint : 1./X/X;
 					new_Wttr_Fr[z_ind][s][ie] = abs(inv_W_constraint)<INFINITY ? Wttr * inv_W_constraint : 0.0;
 					//if(abs(inv_W_constraint) == INFINITY && z_ind<150) cout << "warning - inv_W_constraint==INFINITY ir=" << z_ind << " s=" << s << " ie=" << ie << endl;
@@ -168,7 +168,7 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 			int inds = indr + s*nr_GR1D;
 			for(int ie=0; ie<ne; ie++){
 				int inde = inds + ie*ns*nr_GR1D;
-				int indexE    = inde + 0*indlast;
+				//int indexE    = inde + 0*indlast;
 				int indexFr   = inde + 1*indlast;
 				int indexPrr  = inde + 2*indlast;
 				int indexPtt  = inde + 0*indlast;
@@ -176,7 +176,7 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 				int indexWttr = inde + 2*indlast;
 				//int indexChi  = inde + 3*indlast;
 				int indexPrr_pm = inde + 2*indlast + 0*ne*ns*nr_GR1D*3;
-				int indexChi_pm = inde + 0*indlast + 0*ne*ns*nr_GR1D*1;
+				//int indexChi_pm = inde + 0*indlast + 0*ne*ns*nr_GR1D*1;
 
 				if(extract_MC[z_ind][s][ie]){
 					// spatial smoothing

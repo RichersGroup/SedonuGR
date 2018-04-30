@@ -42,7 +42,7 @@ Neutrino_NuLib::Neutrino_NuLib(){
 //----------------------------------------------------------------
 // called from species_general::init (neutrino-specific stuff)
 //----------------------------------------------------------------
-void Neutrino_NuLib::myInit(Lua* lua)
+void Neutrino_NuLib::myInit(Lua* /*lua*/)
 {
 // do nothing
 }
@@ -82,6 +82,6 @@ void Neutrino_NuLib::set_eas(const unsigned z_ind, Grid* grid) const
 	}
 }
 
-void Neutrino_NuLib::get_annihil_kernels(const double rho, const double T, const double Ye, const Axis& nuAxis, vector< vector< vector<double> > >& phi) const{
+void Neutrino_NuLib::get_annihil_kernels(const double rho, const double T, const double Ye, const Axis& /*nuAxis*/, vector< vector< vector<double> > >& phi) const{
 	nulib_get_epannihil_kernels(rho, T, Ye, ID, phi);
 }

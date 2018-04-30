@@ -62,14 +62,14 @@ void Grid0DIsotropic::read_model_file(Lua* lua)
 	PRINT_ASSERT(Ye[0],<=,1.0);
 }
 
-void Grid0DIsotropic::write_child_zones(H5::H5File file){
+void Grid0DIsotropic::write_child_zones(H5::H5File /*file*/){
 	// nothing to write.
 }
 
 //------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
-int Grid0DIsotropic::zone_index(const double x[3]) const
+int Grid0DIsotropic::zone_index(const double[] /*x[3]*/) const
 {
 	return 0;
 }
@@ -98,7 +98,7 @@ double  Grid0DIsotropic::zone_min_length(const int z_ind) const
 // ------------------------------------------------------------
 // find the coordinates of the zone in geometrical coordinates
 // ------------------------------------------------------------
-void Grid0DIsotropic::zone_coordinates(const int z_ind, double r[0], const int rsize) const{
+void Grid0DIsotropic::zone_coordinates(const int z_ind, double[] /*r[0]*/, const int rsize) const{
 	PRINT_ASSERT(z_ind,==,0);
 	PRINT_ASSERT(rsize,==,0);
 }
@@ -117,7 +117,7 @@ void Grid0DIsotropic::zone_directional_indices(const int z_ind, vector<unsigned>
 //------------------------------------------------------------
 // sample a random position within the spherical shell
 //------------------------------------------------------------
-void Grid0DIsotropic::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3]) const
+void Grid0DIsotropic::sample_in_zone(const int z_ind, ThreadRNG* /*rangen*/, double x[3]) const
 {
 	PRINT_ASSERT(z_ind,==,0);
 
@@ -143,11 +143,11 @@ void Grid0DIsotropic::interpolate_fluid_velocity(EinsteinHelper* eh) const
 // Reflect off symmetry plane
 //------------------------------------------------------------
 
-void Grid0DIsotropic::symmetry_boundaries(EinsteinHelper *eh) const{
+void Grid0DIsotropic::symmetry_boundaries(EinsteinHelper* /*eh*/) const{
 	// does nothing - no boundary
 }
 
-double Grid0DIsotropic::zone_radius(const int z_ind) const{
+double Grid0DIsotropic::zone_radius(const int /*z_ind*/) const{
 	return 0;
 }
 
@@ -159,14 +159,14 @@ void Grid0DIsotropic::dims(hsize_t dims[0], const int size) const{
 	PRINT_ASSERT(size,==,(int)dimensionality());
 }
 
-double Grid0DIsotropic::zone_lorentz_factor(const int z_ind) const{
+double Grid0DIsotropic::zone_lorentz_factor(const int /*z_ind*/) const{
 	return 1.0;
 }
 // returning 0 causes the min distance to take over in propagate.cpp::which_event
-double Grid0DIsotropic::d_boundary(const EinsteinHelper *eh) const{
+double Grid0DIsotropic::d_boundary(const EinsteinHelper* /*eh*/) const{
 	return 0;
 }
-double Grid0DIsotropic::d_randomwalk(const EinsteinHelper *eh) const{
+double Grid0DIsotropic::d_randomwalk(const EinsteinHelper* /*eh*/) const{
 	return INFINITY;
 }
 
@@ -187,6 +187,6 @@ void Grid0DIsotropic::interpolate_3metric(EinsteinHelper* eh) const{ // default 
 	eh->g.gammalow.data[iyz] = 0.0;
 }
 
-void Grid0DIsotropic::grid_coordinates(const double xup[3], double coords[NDIMS]) const{
+void Grid0DIsotropic::grid_coordinates(const double[] /*xup[3]*/, double coords[NDIMS]) const{
 	coords[0] = 0;
 }

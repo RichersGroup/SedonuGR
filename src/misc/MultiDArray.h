@@ -101,7 +101,7 @@ public:
 		this->axes = axes;
 		PRINT_ASSERT(axes.size(),==,ndims);
 		int size = 1;
-		for(int i=ndims-1; i>=0; i--){
+		for(unsigned i=ndims-1; i>=0; i--){
 			stride[i] = size;
 			size *= axes[i].size();
 		}
@@ -119,8 +119,8 @@ public:
 
 
 	unsigned direct_index(const unsigned ind[ndims]) const{
-		int result = 0;
-		for(int i=0; i<ndims; i++){
+		unsigned result = 0;
+		for(unsigned i=0; i<ndims; i++){
 			PRINT_ASSERT(ind[i],<,axes[i].size());
 			result += ind[i]*stride[i];
 		}
@@ -130,7 +130,7 @@ public:
 	void indices(const int z_ind, unsigned ind[ndims]) const{
 		unsigned leftover=z_ind;
 		PRINT_ASSERT(leftover,<,y0.size());
-		for(int i=0; i<ndims; i++){
+		for(unsigned i=0; i<ndims; i++){
 			ind[i] = leftover / stride[i];
 			leftover -= ind[i]*stride[i];
 			PRINT_ASSERT(ind[i],<,axes[i].size());
@@ -188,14 +188,15 @@ public:
 		dir_indL[direction] = dir_ind[direction]-1;
 
 		if(dir_ind[direction] <= axes[direction].size()-2){
-			yR = y0[direct_index(dir_ind)];
-			dxR = axes[direction].delta(dir_ind[direction]);
+			yR = y0[direct_index(dir_indR)];                 // value at z_ind+1
+			dxR = axes[direction].delta(dir_ind[direction]); // (top-bottom) of z_ind
 		}
 		if(dir_ind[direction] >= 1){
-			yL = y0[direct_index(dir_indL)];
-			dxL = axes[direction].delta(dir_indL[direction]);
+			yL = y0[direct_index(dir_indL)];                  // value at z_ind-1
+			dxL = axes[direction].delta(dir_indL[direction]); // (top-bottom) of z_ind-1
 		}
 
+		PRINT_ASSERT(dxL>0,or,dxR>0);
 		if(dxL>0 and dxR>0) result = ((y-yL)*dxR/dxL + (yR-y)*dxL/dxR)/(dxL+dxR);
 		else if(dxL>0) result = (y-yL)/dxL;
 		else result = (yR-y)/dxR;
@@ -219,7 +220,7 @@ public:
 					icube->xLR[d][0] = axes[d].min;
 					icube->xLR[d][1] = axes[d].mid[dir_ind_right[d]];
 				}
-				else if(dir_ind_right[d] >= axes[d].size()){
+				else if(dir_ind_right[d] >= (int)axes[d].size()){
 					dir_ind_right[d] = axes[d].size()-1;
 					PRINT_ASSERT(dir_ind_left[d],==,dir_ind_right[d]);
 					icube->xLR[d][0] = axes[d].mid[dir_ind_left[d]];
@@ -279,7 +280,7 @@ public:
 		int MPI_nprocs, MPI_myID;
 		MPI_Comm_size(MPI_COMM_WORLD, &MPI_nprocs);
 		MPI_Comm_rank(MPI_COMM_WORLD, &MPI_myID);
-		for(unsigned p=0; p<MPI_nprocs; p++){
+		for(int p=0; p<MPI_nprocs; p++){
 			const unsigned istart = (p==0 ? 0 : stop_list[p-1]);
 			const unsigned ndoubles = (stop_list[p]-istart) * nelements;
 			if(MPI_myID==p)
@@ -305,13 +306,13 @@ public:
 		int MPI_nprocs, MPI_myID;
 		MPI_Comm_size(MPI_COMM_WORLD, &MPI_nprocs);
 		MPI_Comm_rank(MPI_COMM_WORLD, &MPI_myID);
-		PRINT_ASSERT(stop_list.size(),==,MPI_nprocs);
+		PRINT_ASSERT((int)stop_list.size(),==,MPI_nprocs);
 		PRINT_ASSERT(stop_list[stop_list.size()-1],==,y0.size());
 
 		vector<int> sendcounts(MPI_nprocs), displs(MPI_nprocs);
 		displs[0] = 0;
 		sendcounts[0] = stop_list[0];
-		for(unsigned i=1; i<MPI_nprocs; i++){
+		for(int i=1; i<MPI_nprocs; i++){
 			displs[i] = stop_list[i-1];
 			sendcounts[i] = stop_list[i] - stop_list[i-1];
 		}

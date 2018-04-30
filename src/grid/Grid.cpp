@@ -97,7 +97,6 @@ void Grid::init(Lua* lua, Transport* insim)
 	}
 
 	// read some parameters
-	int write_zones_every = lua->scalar<int>("write_zones_every");
 	do_annihilation = lua->scalar<int>("do_annihilation");
 
 	// complain if the grid is obviously not right
@@ -189,7 +188,7 @@ void Grid::init(Lua* lua, Transport* insim)
     vector<double> bintops = vector<double>(0);
     distribution.resize(insim->species_list.size());
 
-    for(int s=0; s<insim->species_list.size(); s++){
+    for(unsigned s=0; s<insim->species_list.size(); s++){
 
     	//-- POLAR SPECTRUM -----------------
     	if(distribution_type == "Polar"){
@@ -251,9 +250,8 @@ void Grid::init(Lua* lua, Transport* insim)
 
     	//-- RADIAL MOMENT SPECTRUM --------------------
     	else if(distribution_type == "RadialMoments"){
-    		int order = lua->scalar<int>("distribution_moment_order");
     		distribution[s] = new RadialMomentSpectrumArray<NDIMS>;
-    		((RadialMomentSpectrumArray<NDIMS>*)distribution[s])->init(xAxes,nu_grid_axis, order);
+    		((RadialMomentSpectrumArray<NDIMS>*)distribution[s])->init(xAxes,nu_grid_axis);
     	}
 
     	//-- RADIAL MOMENT SPECTRUM --------------------
@@ -287,7 +285,7 @@ void Grid::init(Lua* lua, Transport* insim)
 	l_emit.set_axes(axes);
 
 	axes.push_back(nu_grid_axis);
-	for(int s=0; s<sim->species_list.size(); s++){
+	for(unsigned s=0; s<sim->species_list.size(); s++){
 		BB[s].set_axes(axes);
 		abs_opac[s].set_axes(axes);
 		scat_opac[s].set_axes(axes);
@@ -308,13 +306,13 @@ void Grid::init(Lua* lua, Transport* insim)
 	}
 
 	if(sim->use_scattering_kernels==1){
-		for(int s=0; s<sim->species_list.size(); s++){
+		for(unsigned s=0; s<sim->species_list.size(); s++){
 			partial_scat_opac[s].resize(nu_grid_axis.size());
 			for(unsigned igout=0; igout<nu_grid_axis.size(); igout++)
 				partial_scat_opac[s][igout].set_axes(axes);
 		}
 		axes.push_back(nu_grid_axis);
-		for(int s=0; s<sim->species_list.size(); s++)
+		for(unsigned s=0; s<sim->species_list.size(); s++)
 			scattering_delta[s].set_axes(axes);
 	}
 }
