@@ -389,7 +389,7 @@ void Grid1DSphere::symmetry_boundaries(EinsteinHelper *eh) const{
 		eh->p.kup[0] -= 2.*kr * eh->p.xup[0]/R;
 		eh->p.kup[1] -= 2.*kr * eh->p.xup[1]/R;
 		eh->p.kup[2] -= 2.*kr * eh->p.xup[2]/R;
-		eh->g.normalize_null_preservedownt(eh->p.kup);
+		//eh->g.normalize_null_preservedownt(eh->p.kup);
 
 		// put the particle just inside the boundary
 		double newR = rmax - TINY*dr;
