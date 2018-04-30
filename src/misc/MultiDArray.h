@@ -101,7 +101,7 @@ public:
 		this->axes = axes;
 		PRINT_ASSERT(axes.size(),==,ndims);
 		int size = 1;
-		for(unsigned i=ndims-1; i>=0; i--){
+		for(int i=ndims-1; i>=0; i--){
 			stride[i] = size;
 			size *= axes[i].size();
 		}
@@ -178,6 +178,7 @@ public:
 
 	Tuple<T,nelements> slope(const unsigned z_ind, const unsigned direction) const{
 		Tuple<T,nelements> result, yL, yR, y=y0[z_ind];
+		yL = yR = NaN;
 		double dxL=NaN, dxR=NaN;
 		unsigned dir_ind[ndims];
 		indices(z_ind,dir_ind);
