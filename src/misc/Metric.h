@@ -22,7 +22,7 @@ public:
 		case 3:
 			return ixz;
 		case 4:
-			return (i+j==2 ? iyy : ixt);
+			return iyy;
 		case 6:
 			return iyz;
 		case 9:
