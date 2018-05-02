@@ -23,6 +23,7 @@ public:
 			result = result << 1; // shift bit left
 			result += LR[d]; // rightmost bit 1 if right value
 		}
+		return result;
 	}
 	constexpr static bool isRightIndex(unsigned i, unsigned d){ // 1 if right, 0 if left
 		return bool( (i & ( 1 << d )) >> d );
