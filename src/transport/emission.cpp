@@ -41,11 +41,13 @@ void Transport::emit_particles()
 {
 	// complain if we're out of room for particles
 	assert(n_emit_core_per_bin>0 || n_emit_zones_per_bin>=0);
-	unsigned n_emit = (n_emit_core_per_bin + n_emit_zones_per_bin*grid->rho.size()) * species_list.size()*grid->nu_grid_axis.size();
-	if (particles.size() + n_emit > max_particles){
+	unsigned my_n_emit_core_per_bin  = 1 + (n_emit_core_per_bin  - 1) / MPI_nprocs; // ceil(n_emit_core_per_bin  / MPI_nprocs)
+	unsigned my_n_emit_zones_per_bin = 1 + (n_emit_zones_per_bin - 1) / MPI_nprocs; // ceil(n_emit_zones_per_bin / MPI_nprocs)
+	unsigned my_n_emit = (my_n_emit_core_per_bin + my_n_emit_zones_per_bin*grid->rho.size()) * species_list.size()*grid->nu_grid_axis.size();
+	if (particles.size() + my_n_emit > max_particles){
 		if(MPI_myID==0){
 			cout << "Total particles: " << particles.size() << endl;
-			cout << "n_emit: " << n_emit << endl;
+			cout << "my_n_emit: " << my_n_emit << endl;
 			cout << "max_particles: " << max_particles << endl;
 			cout << "# ERROR: Not enough particle space\n";
 		}
@@ -66,18 +68,20 @@ void Transport::emit_particles()
 //------------------------------------------------------------
 void Transport::emit_inner_source_by_bin(){
 	int size_before = particles.size();
-	int n_attempted = 0;
 	double weight = 1./((double)n_emit_core_per_bin);
 
-	#pragma omp parallel for reduction(+:n_attempted)
+	#pragma omp parallel for schedule(guided) collapse(3)
 	for(unsigned s=0; s<species_list.size(); s++){
-		n_attempted += n_emit_core_per_bin * grid->nu_grid_axis.size();
 		for(unsigned g=0; g<grid->nu_grid_axis.size(); g++){
-			for(int k=0; k<n_emit_core_per_bin; k++) create_surface_particle(weight,s,g);
+			for(int k=0; k<n_emit_core_per_bin; k++){
+				unsigned id = k + n_emit_core_per_bin*g + n_emit_core_per_bin*grid->nu_grid_axis.size()*s;
+				if(id%MPI_nprocs == 0) create_surface_particle(weight,s,g);
+			}
 		}
 	}
 
 	int n_created = particles.size()-size_before;
+	int n_attempted = species_list.size() * grid->nu_grid_axis.size() * n_emit_core_per_bin;
 	if(verbose) cout << "#   emit_inner_source_by_bin() created = " << n_created << " particles on rank 0 ("
 			<< n_attempted-n_created << " rouletted during emission)" << endl;
 }
@@ -91,7 +95,7 @@ void Transport::emit_zones_by_bin(){
 	int n_attempted = 0;
 	double weight = 1./((double)n_emit_zones_per_bin);
 
-	#pragma omp parallel for reduction(+:n_attempted)
+	#pragma omp parallel for reduction(+:n_attempted) schedule(guided)
 	for (unsigned z_ind=MPI_myID; z_ind<grid->rho.size(); z_ind+=MPI_nprocs) if(grid->zone_radius(z_ind) >= r_core){
 
 		for(unsigned s=0; s<species_list.size(); s++){
