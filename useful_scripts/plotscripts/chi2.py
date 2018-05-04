@@ -10,55 +10,90 @@ random.seed()
 ##########
 normalDirection = 0 # which direction is normal to the plotting plane? 0:x 1:y 2:z
 normalIndex = 0 # index of zone in normalDirection direction
-nfiles = 3
+nfiles = 10
 fileroot = "fluid_"
+
+qlist = [
+    "Pxx",
+#    "Pyy",
+#    "Pzz",
+    "Pxy",
+#    "Pxz",
+#    "Pyz",
+#    "Lxxx",
+#    "Lxxy",
+#    "Lxxz",
+#    "Lxyy",
+#    "Lxyz",
+#    "Lxzz",
+#    "Lyyy",
+#    "Lyyz",
+#    "Lyzz",
+#    "Lzzz"
+    ]
+q_dof = 5
+#ndof = 12 # all
+#ndof = 5  # P
+#ndof = 7  # L
+#ndof = 2  # Pii (diag)
+#ndof = 3  # Pik (off-diag)
+#ndof = 3  # Liii (3diag)
 
 #####################
 # CLOSURE FUNCTIONS #
 #####################
-dof_P = 5
-def append_P_data(this_data, f, dset, ig):
-    this_data.append(dset[:,:,:,ig,4]) # xx
-    this_data.append(dset[:,:,:,ig,5]) # xy
-    this_data.append(dset[:,:,:,ig,6]) # xz
-    this_data.append(dset[:,:,:,ig,7]) # yy
-    this_data.append(dset[:,:,:,ig,8]) # yz
-    this_data.append(dset[:,:,:,ig,9]) # zz
-def append_P_theory(this_theory, f, dset, ig):
-    E = dset[:,:,:,ig,0]
-    #F = np.array(f[dsetname][:,:,:,ig,1:4])
-    this_theory.append(E/3.) # xx
-    this_theory.append(E*0.) # xy
-    this_theory.append(E*0.) # xz
-    this_theory.append(E/3.) # yy
-    this_theory.append(E*0.) # yz
-    this_theory.append(E/3.) # zz
-
-dof_L = 7
-def append_L_data(this_data, f, dset, ig):
-    this_data.append(dset[:,:,:,ig,10]) # xxx
-    this_data.append(dset[:,:,:,ig,11]) # xxy
-    this_data.append(dset[:,:,:,ig,12]) # xxz
-    this_data.append(dset[:,:,:,ig,13]) # xyy
-    this_data.append(dset[:,:,:,ig,14]) # xyz
-    this_data.append(dset[:,:,:,ig,15]) # xzz
-    this_data.append(dset[:,:,:,ig,16]) # yyy
-    this_data.append(dset[:,:,:,ig,17]) # yyz
-    this_data.append(dset[:,:,:,ig,18]) # yzz
-    this_data.append(dset[:,:,:,ig,19]) # zzz
-def append_L_theory(this_theory, f, dset, ig):
+def append_data_theory(this_data, this_theory, dset, ig, q):
     E = dset[:,:,:,ig,0]
     F = dset[:,:,:,ig,1:4]
-    this_theory.append(F[:,:,:,0]/3.) # xxx
-    this_theory.append(F[:,:,:,1]/3.) # xxy
-    this_theory.append(F[:,:,:,2]/3.) # xxz
-    this_theory.append(F[:,:,:,0]/3.) # xyy
-    this_theory.append(E[:,:,:]*0.  ) # xyz
-    this_theory.append(F[:,:,:,0]/3.) # xzz
-    this_theory.append(F[:,:,:,1]/3.) # yyy
-    this_theory.append(F[:,:,:,2]/3.) # yyz
-    this_theory.append(F[:,:,:,1]/3.) # yzz
-    this_theory.append(F[:,:,:,2]/3.) # zzz
+    if(q=="Pxx"):
+        this_data.append(dset[:,:,:,ig,4])
+        this_theory.append(E/3.)
+    if(q=="Pxy"):
+        this_data.append(dset[:,:,:,ig,5])
+        this_theory.append(E*0.)
+    if(q=="Pxz"):
+        this_data.append(dset[:,:,:,ig,6])
+        this_theory.append(E*0.)
+    if(q=="Pyy"):
+        this_data.append(dset[:,:,:,ig,7])
+        this_theory.append(E/3.)
+    if(q=="Pyz"):
+        this_data.append(dset[:,:,:,ig,8])
+        this_theory.append(E*0.)
+    if(q=="Pzz"):
+        this_data.append(dset[:,:,:,ig,9])
+        this_theory.append(E/3.)
+    if(q=="Lxxx"):
+        this_data.append(dset[:,:,:,ig,10])
+        this_theory.append(F[:,:,:,0]/3.)
+    if(q=="Lxxy"):
+        this_data.append(dset[:,:,:,ig,11])
+        this_theory.append(F[:,:,:,1]/3.)
+    if(q=="Lxxz"):
+        this_data.append(dset[:,:,:,ig,12])
+        this_theory.append(F[:,:,:,2]/3.)
+    if(q=="Lxyy"):
+        this_data.append(dset[:,:,:,ig,13])
+        this_theory.append(F[:,:,:,0]/3.)
+    if(q=="Lxyz"):
+        this_data.append(dset[:,:,:,ig,14])
+        this_theory.append(E[:,:,:]*0.  )
+    if(q=="Lxzz"):
+        this_data.append(dset[:,:,:,ig,15])
+        this_theory.append(F[:,:,:,0]/3.)
+    if(q=="Lyyy"):
+        this_data.append(dset[:,:,:,ig,16])
+        this_theory.append(F[:,:,:,1]/3.)
+    if(q=="Lyyz"):
+        this_data.append(dset[:,:,:,ig,17])
+        this_theory.append(F[:,:,:,2]/3.)
+    if(q=="Lyzz"):
+        this_data.append(dset[:,:,:,ig,18])
+        this_theory.append(F[:,:,:,1]/3.)
+    if(q=="Lzzz"):
+        this_data.append(dset[:,:,:,ig,19])
+        this_theory.append(F[:,:,:,2]/3.)
+        
 
 ###############
 # SELECT DATA #
@@ -69,95 +104,121 @@ ygrid = np.array(f["axes/x1(cm)[edge]"])
 zgrid = np.array(f["axes/x2(cm)[edge]"])
 Egrid = np.array(f["axes/frequency(Hz)[mid]"])
 
-# get the metric information
-#g3 = np.array(f["threemetric"])
-#lapse = np.array(f["lapse"])
-#tmp = np.array(f["shiftup"])
-#shiftup = np.array([
-#    tmp[:,:,:,0],
-#    tmp[:,:,:,1],
-#    tmp[:,:,:,2]
-#    ])
-#print(np.shape(shiftup))
-#shiftdown = np.array([
-#    tmp[:,:,:,0]*g3[:,:,:,0] + tmp[:,:,:,1]*g3[:,:,:,3] + tmp[:,:,:,2]*g3[:,:,:,4],
-#    tmp[:,:,:,0]*g3[:,:,:,3] + tmp[:,:,:,1]*g3[:,:,:,1] + tmp[:,:,:,2]*g3[:,:,:,5],
-#    tmp[:,:,:,0]*g3[:,:,:,4] + tmp[:,:,:,1]*g3[:,:,:,5] + tmp[:,:,:,2]*g3[:,:,:,2]
-#    ])
-#print(np.shape(shiftdown))
-#gtt = -lapse + sum(shiftup*shiftdown,axis=0)
-#wherebad = np.where(gtt>0)
-
 # neutrino energy density
-for fi in range(1,nfiles+1):
-    this_data = []
-    this_theory = []
-    filename = fileroot+("%05d"%fi)+".h5"
-    print(filename)
-    f = h5py.File(filename)
+for iq,q in zip(range(len(qlist)), qlist):
+    print(q)
+    this_dof = 0
+    for fi in range(1,nfiles+1):
+        this_data = []
+        this_theory = []
+        filename = fileroot+("%05d"%fi)+".h5"
+        print(" ",filename)
+        f = h5py.File(filename)
 
-    for s in range(3):
-        #print("  s="+str(s))
-        dset = np.array(f["distribution"+str(s)+"(erg|ccm,tet)"])
-        for ig in range(len(Egrid)):
-            #print("    ig="+str(ig))
-            
-            # neutrino pressure tensor
-            #dof += dof_P
-            append_P_data(    this_data, f, dset, ig)
-            append_P_theory(this_theory, f, dset, ig)
+        for s in range(3):
+            #print("  s="+str(s))
+            dset = np.array(f["distribution"+str(s)+"(erg|ccm,tet)"])
+            for ig in range(len(Egrid)):
+                #print("    ig="+str(ig))
+                append_data_theory(this_data, this_theory, dset, ig, q)
+                this_dof += 1
 
-            # neutrino L tensor
-            #dof += dof_L
-            append_L_data(    this_data, f, dset, ig)
-            append_L_theory(this_theory, f, dset, ig)
-            
-    this_data = np.array(this_data)
-    this_theory = np.array(this_theory)
-    if fi==1:
-        data    = this_data
-        data2   = this_data**2
-        theory  = this_theory
-        theory2 = this_theory**2
+        this_data = np.array(this_data)
+        this_theory = np.array(this_theory)
+        if fi==1:
+            data    = this_data
+            data2   = this_data**2
+            theory  = this_theory
+            theory2 = this_theory**2
+        else:
+            data    += this_data
+            data2   += this_data**2
+            theory  += this_theory
+            theory2 += this_theory**2
+        f.close()
+
+    data     /= nfiles
+    theory   /= nfiles
+    data2    /= nfiles
+    theory2  /= nfiles
+    this_dof /= nfiles
+    stddev2 = (data2 - data**2) + (theory2 - theory**2)
+    stddev2[np.where(stddev2==0)] = -1.
+
+    # report quality
+    print("  this_dof: ",this_dof)
+    nx = np.shape(data)
+    print("  shape: ",nx)
+    badGridCell = np.full(np.shape(data[0]), False, dtype=bool)
+    for igs in range(nx[0]): # looping over energies and species
+        badGridCell = np.logical_or(badGridCell, stddev2[igs]<0 )
+    wherebad = np.where(badGridCell)
+    wheregood = np.where(np.logical_not(badGridCell) )
+    indices = np.array(wherebad)
+    ir = sqrt(np.sum(indices*indices,axis=0))
+    print("  max index radius: ",np.max(ir))
+    print("  min index radius: ",np.min(ir))
+    print(" ",len(ir)," bad points")
+
+    # get chi2
+    chi2 = np.sum((data-theory)**2 / stddev2, axis=0) / this_dof
+    min_index = [wheregood[i][np.argmin(chi2[wheregood])] for i in range(3)]
+    max_index = [wheregood[i][np.argmax(chi2[wheregood])] for i in range(3)]
+    print("  min X2: ",np.min(chi2[min_index[0],min_index[1],min_index[2]]),min_index)
+    print("  max X2: ",np.min(chi2[max_index[0],max_index[1],max_index[2]]),max_index)    
+    avg_chi2 = np.sum(chi2[wheregood]) / np.size(chi2[wheregood])
+    print("  avg X2: ",avg_chi2)
+
+    # uncertainty-weighted relative error
+    UWRE_cell = np.sum( np.abs(data-theory)/(np.abs(data)+np.abs(theory)), axis=0)
+    weights_cell = np.sum(np.ones(np.shape(data)),axis=0)
+    UWRE = np.sum(UWRE_cell[wheregood])
+    weights = np.sum(weights_cell[wheregood])
+    print("  UWRE: ",UWRE/weights)
+    
+    # accumulate onto net chi2
+    if(iq==0):
+        sum_chi2 = chi2 * this_dof
+        sum_badGridCell = badGridCell
+        sum_UWRE = UWRE_cell
+        sum_weights = weights_cell
     else:
-        data    += this_data
-        data2   += this_data**2
-        theory  += this_theory
-        theory2 += this_theory**2
-    f.close()
+        sum_chi2 += chi2 * this_dof
+        sum_badGridCell = np.logical_or(sum_badGridCell, badGridCell)
+        sum_UWRE += UWRE_cell
+        sum_weights += weights_cell
+    print()
 
-data    /= nfiles
-theory  /= nfiles
-data2   /= nfiles
-theory2 /= nfiles
-data_stddev2   =   data2 -   data**2
-theory_stddev2 = theory2 - theory**2
-diff2_stddev2 = (data-theory)**2 / (data_stddev2 + theory_stddev2)
-diff2_stddev2[np.where(diff2_stddev2!=diff2_stddev2)] = 0
-
-# get the number of degrees of freedom
-ndof = dof_P + dof_L #len(data[:,0,0,0])
-print("ndof: ",ndof)
-nx = np.shape(data[0,:,:,:])
-print("shape: ",nx)
-dof = np.array( [[[np.count_nonzero(diff2_stddev2[:,k,j,i]) for i in range(nx[0])] for j in range(nx[1])] for k in range(nx[2])] )
-wherebad = np.where(dof < ndof)
-wheregood = np.where(dof==ndof)
-
-# get chi2
-chi2 = np.sum(diff2_stddev2, axis=0) / ndof
-print("min X2: ",np.min(chi2[wheregood]))
-print("max X2: ",np.max(chi2), np.unravel_index(np.argmax(chi2),np.shape(chi2)))
-
-avg_chi2 = np.sum(chi2[wheregood]) / np.size(chi2[wheregood])
-print("avg X2: ",avg_chi2)
+print("============================")
+print("= Total over all variables =")
+print("============================")
 
 # report quality
+tot_dof = this_dof * q_dof
+print("q_dof: ",q_dof)
+print("tot_dof: ",tot_dof)
+wherebad  = np.where(sum_badGridCell)
+wheregood = np.where(np.logical_not(sum_badGridCell))
 indices = np.array(wherebad)
 ir = sqrt(np.sum(indices*indices,axis=0))
 print("max index radius: ",np.max(ir))
 print("min index radius: ",np.min(ir))
 print(len(ir)," bad points")
+
+# compute total chi2
+sum_chi2 /= tot_dof
+min_index = [wheregood[i][np.argmin(sum_chi2[wheregood])] for i in range(3)]
+max_index = [wheregood[i][np.argmax(sum_chi2[wheregood])] for i in range(3)]
+print("min X2: ",np.min(sum_chi2[min_index[0],min_index[1],min_index[2]]),min_index)
+print("max X2: ",np.min(sum_chi2[max_index[0],max_index[1],max_index[2]]),max_index)
+avg_chi2 = np.sum(sum_chi2[wheregood]) / np.size(sum_chi2[wheregood])
+print("avg X2: ",avg_chi2)
+
+# uncertainty-weighted relative error
+UWRE = np.sum(sum_UWRE[wheregood])
+weights = np.sum(sum_weights[wheregood])
+print("UWRE: ",UWRE/weights)
+
 exit()
 
 
