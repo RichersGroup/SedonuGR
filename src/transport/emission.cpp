@@ -70,9 +70,11 @@ void Transport::emit_inner_source_by_bin(){
 	int size_before = particles.size();
 	double weight = 1./((double)n_emit_core_per_bin);
 
+	const unsigned ns = species_list.size();
+	const unsigned ng = grid->nu_grid_axis.size();
 	#pragma omp parallel for schedule(guided) collapse(3)
-	for(unsigned s=0; s<species_list.size(); s++){
-		for(unsigned g=0; g<grid->nu_grid_axis.size(); g++){
+	for(unsigned s=0; s<ns; s++){
+		for(unsigned g=0; g<ng; g++){
 			for(int k=0; k<n_emit_core_per_bin; k++){
 				unsigned id = k + n_emit_core_per_bin*g + n_emit_core_per_bin*grid->nu_grid_axis.size()*s;
 				if(id%MPI_nprocs == 0) create_surface_particle(weight,s,g);
