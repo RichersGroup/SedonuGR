@@ -66,7 +66,6 @@ Transport::Transport(){
 	Ye_max = NaN;
 	rho_min = NaN;
 	rho_max = NaN;
-	max_particles = 0;
 	min_step_size = NaN;
 	max_step_size = NaN;
 	do_randomwalk = -MAXLIM;
@@ -230,10 +229,6 @@ void Transport::init(Lua* lua)
 		if(verbose) std::cout << "# ERROR: the requested grid type is not implemented." << std::endl;
 		exit(3);}
 	grid->init(lua, this);
-
-	// Reserve all the memory we might need right now. Speeds up particle additions.
-	max_particles = lua->scalar<int>("max_particles");
-	particles.reserve(max_particles);
 
 	//===============//
 	// GENERAL SETUP //

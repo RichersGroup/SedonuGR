@@ -46,6 +46,12 @@ void Transport::propagate_particles()
 	//--- MOVE THE PARTICLES AROUND ---
 	#pragma omp parallel for schedule(dynamic)
 	for(unsigned i=0; i<nparticles; i++){
+                if(particles[i].fate != moving){
+                        #pragma omp atomic
+                        ndone++;
+			continue;
+                }
+
 		// propagate each particle with an EinsteinHelper
 		EinsteinHelper eh;
 		eh.p = particles[i];
@@ -75,7 +81,7 @@ void Transport::propagate_particles()
 			if(this_percent > last_percent){
 				last_percent = this_percent;
 				#pragma omp critical
-				cout << "\r"<<ndone<<"/"<<nparticles << " (" << last_percent<<"\%)" << flush;
+				cout << "\r"<<ndone<<"/"<<nparticles << " (" << last_percent<<"%)" << flush;
 			}
 		}
 		PRINT_ASSERT(eh.p.fate, !=, moving);

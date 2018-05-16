@@ -63,8 +63,8 @@ protected:
 	void emit_zones_by_bin();
 
 	// what kind of particle to create?
-	void create_surface_particle(const double Ep, const unsigned int s, const unsigned int g);
-	void create_thermal_particle(const int zone_index, const double weight, const unsigned int s, const unsigned int g);
+	Particle create_surface_particle(const double Ep, const unsigned int s, const unsigned int g);
+	Particle create_thermal_particle(const int zone_index, const double weight, const unsigned int s, const unsigned int g);
 
 	// propagate the particles
 	void propagate_particles();
@@ -88,9 +88,6 @@ protected:
 	void   solve_eq_zone_values();
 	void   normalize_radiative_quantities();
 	double brent_method(const int zone_index, double (*eq_function)(double, void*), const double min, const double max);
-
-	// stored minimum and maximum values to assure safety
-	unsigned max_particles;
 
 	// simulation parameters
 	double min_step_size, max_step_size;
