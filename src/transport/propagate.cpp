@@ -105,8 +105,9 @@ void Transport::propagate_particles()
 	particle_rouletted_energy = roulette;
 	particle_escape_energy = esc;
 
-	// remove the dead particles
-	particles.resize(0);
+	// remove the dead particles, erase the memory
+	vector<Particle> empty;
+	particles.swap(empty);
 }
 
 //--------------------------------------------------------
