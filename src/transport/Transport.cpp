@@ -349,7 +349,7 @@ void Transport::step()
 void Transport::write(const int it) const{
 	if(MPI_myID==0){
 		// write zone state when appropriate
-		if(write_zones_every>0) if(it%write_zones_every==0 && write_zones_every>0){
+		if(write_zones_every>0) if(it%write_zones_every==0 && write_zones_every>0 && it>0){
 			if(verbose) cout << "# writing zone file " << it << endl;
 			grid->write_zones(it);
 		}
