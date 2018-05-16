@@ -670,6 +670,7 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 		grid->rho.indices(eh->z_ind, eh->dir_ind);
 		for(unsigned i=0; i<NDIMS; i++)	PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
 		grid->rho.set_InterpolationCube(&(eh->icube_vol),eh->grid_coords,eh->dir_ind);
+		eh->icube_vol.set_slope_weights(eh->grid_coords);
 
 		// metric and its derivatives
 		grid->interpolate_metric(eh);

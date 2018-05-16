@@ -19,7 +19,6 @@ public:
 	constexpr static unsigned index(const unsigned LR[ndims]){
 		unsigned result = 0;
 		for(unsigned d=0; d<ndims; d++){
-			PRINT_ASSERT(abs(LR[d]),<=,1);
 			result = result << 1; // shift bit left
 			result += LR[d]; // rightmost bit 1 if right value
 		}
@@ -64,18 +63,41 @@ public:
 		for(unsigned i=0; i<ncorners; i++){
 
 			// volume/area associated with each point/line
-			double dVol=1, dA[ndims];
-			for(unsigned d=0; d<ndims; d++) dA[d] = 1.;
+			double dVol=1;
 			for(unsigned d=0; d<ndims; d++){
 				unsigned LR = not isRightIndex(i,d); // 1 if left, 0 if right
 				double dx = x[d] - xLR[d][LR];
 				dVol *= dx;
+			}
+
+			// weights
+			weights[i] = abs(dVol/V); // avoids if statement in above loop for sign
+		}
+	}
+
+
+	void set_slope_weights(const double x[ndims]){
+
+		// total volume
+		double V=1;
+		for(unsigned d=0; d<ndims; d++){
+			double dx = xLR[d][1] - xLR[d][0];
+			V *= dx;
+		}
+
+		for(unsigned i=0; i<ncorners; i++){
+
+			// volume/area associated with each point/line
+			double dVol=1, dA[ndims];
+			for(unsigned d_deriv=0; d_deriv<ndims; d_deriv++) dA[d_deriv] = 1.;
+			for(unsigned d=0; d<ndims; d++){
+				unsigned LR = not isRightIndex(i,d); // 1 if left, 0 if right
+				double dx = x[d] - xLR[d][LR];
 				for(unsigned d_deriv=0; d_deriv<ndims; d_deriv++)
 					if(d_deriv != d) dA[d_deriv] *= dx;
 			}
 
 			// weights
-			weights[i] = abs(dVol/V); // avoids if statement in above loop for sign
 			for(unsigned d=0; d<ndims; d++){
 				unsigned LR = isRightIndex(i,d);
 				slope_weights[d][i] = (LR==1 ? 1.0 : -1.0) * abs(dA[d]/V);
