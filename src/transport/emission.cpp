@@ -46,13 +46,12 @@ void Transport::emit_particles()
 
 	// sanity checks
 	for(unsigned i=0; i<particles.size(); i++){
-		Particle* p = &particles[i];
-		if(p->fate==moving){
+		if(particles.fate[i]==moving){
 			for(unsigned j=0; j<4; j++){
-				PRINT_ASSERT(p->xup[j],==,p->xup[j]);
-				PRINT_ASSERT(p->kup[j],==,p->kup[j]);
+				PRINT_ASSERT(particles.xup[j][i],==,particles.xup[j][i]);
+				PRINT_ASSERT(particles.kup[j][i],==,particles.kup[j][i]);
 			}
-			PRINT_ASSERT(p->N,==,p->N);
+			PRINT_ASSERT(particles.N[i],==,particles.N[i]);
 		}
 	}
 }
@@ -81,8 +80,8 @@ void Transport::emit_inner_source_by_bin(){
 				unsigned global_id = k + n_emit_core_per_bin*g + n_emit_core_per_bin*ng*s;
 				if(global_id%MPI_nprocs == MPI_myID){
 					unsigned local_index = size_before + global_id/MPI_nprocs;
-					create_surface_particle(particles[local_index], weight,s,g);
-					if(particles[local_index].fate == moving) n_created++;
+					create_surface_particle(particles, weight,s,g, local_index);
+					if(particles.fate[local_index] == moving) n_created++;
 				}
 			}
 		}
@@ -118,10 +117,10 @@ void Transport::emit_zones_by_bin(){
 					unsigned global_id = k + n_emit_zones_per_bin*g + n_emit_zones_per_bin*ng*s + n_emit_zones_per_bin*ng*ns*z_ind;
 					if(global_id%MPI_nprocs == MPI_myID){
 						unsigned local_index = size_before + global_id/MPI_nprocs;
-						create_thermal_particle(particles[local_index], z_ind,weight,s,g);
-						if(particles[local_index].fate == moving){
+						create_thermal_particle(particles, z_ind,weight,s,g, local_index);
+						if(particles.fate[local_index] == moving){
 							n_created++;
-							for(unsigned d=0; d<4; d++) PRINT_ASSERT(particles[local_index].xup[d],==,particles[local_index].xup[d]);
+							for(unsigned d=0; d<4; d++) PRINT_ASSERT(particles.xup[d][local_index],==,particles.xup[d][local_index]);
 						}
 					}
 
@@ -144,7 +143,7 @@ void Transport::emit_zones_by_bin(){
 // Useful for thermal radiation emitted all througout
 // the grid
 //------------------------------------------------------------
-void Transport::create_thermal_particle(Particle& output, const int z_ind,const double weight, const unsigned s, const unsigned g)
+void Transport::create_thermal_particle(ParticleList& output, const int z_ind,const double weight, const unsigned s, const unsigned g, const unsigned list_index)
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->rho.size());
@@ -159,9 +158,9 @@ void Transport::create_thermal_particle(Particle& output, const int z_ind,const 
 	eh.xup[3] = 0;
 	update_eh_background(&eh);
 	if(eh.z_ind<0 || radius(eh.xup)<r_core){
-		output.kup[3] = 0;
-		output.N = 0;
-		output.fate = rouletted;
+		output.kup[3][list_index] = 0;
+		output.N[list_index] = 0;
+		output.fate[list_index] = rouletted;
 		return;
 	}
 
@@ -201,7 +200,7 @@ void Transport::create_thermal_particle(Particle& output, const int z_ind,const 
 			grid->fourforce_emit[z_ind][i] -= eh.N * kup_tet[i];
 		}
 	}
-	eh.get_Particle(output);
+	eh.get_Particle(output, list_index);
 }
 
 
@@ -216,7 +215,7 @@ bool reject_direction(const EinsteinHelper* eh, ThreadRNG* rangen){
 	double costheta = xdotk / sqrt(xdotx * kdotk);
 	return (rangen->uniform() > costheta);
 }
-void Transport::create_surface_particle(Particle& output, const double weight, const unsigned int s, const unsigned int g)
+void Transport::create_surface_particle(ParticleList& output, const double weight, const unsigned int s, const unsigned int g, const unsigned list_index)
 {
 	PRINT_ASSERT(weight,>,0);
 	PRINT_ASSERT(weight,!=,INFINITY);
@@ -267,5 +266,5 @@ void Transport::create_surface_particle(Particle& output, const double weight, c
 	    #pragma omp atomic
 		N_core_emit[eh.s] += eh.N;
 	}
-	eh.get_Particle(output);
+	eh.get_Particle(output, list_index);
 }

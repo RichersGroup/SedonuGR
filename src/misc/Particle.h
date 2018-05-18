@@ -35,6 +35,8 @@
 
 enum ParticleFate  {moving, escaped, absorbed, rouletted};
 
+using namespace std;
+
 // particle class
 class Particle
 {
@@ -76,4 +78,37 @@ public:
 
 };
 
+// particle class
+class ParticleList
+{
+
+public:
+
+	ParticleList(){
+		xup.resize(4);
+		kup.resize(4);
+	}
+
+	vector<vector<double> > xup;         // x,y,z,ct position (cm)
+	vector<vector<double> > kup;         // 4-wavevector (erg) //old definition:(2pi nu/c)
+	vector<double>            N;         // total number of neutrinos in packet
+	vector<int>               s;         // species number
+	vector<ParticleFate>   fate;
+
+	void resize(const unsigned newsize){
+		PRINT_ASSERT(xup.size(),==,4);
+		PRINT_ASSERT(kup.size(),==,4);
+		for(unsigned i=0; i<4; i++){
+			xup[i].resize(newsize);
+			kup[i].resize(newsize);
+		}
+		N.resize(newsize);
+		s.resize(newsize);
+		fate.resize(newsize);
+	}
+
+	inline unsigned size() const{
+		return N.size();
+	}
+};
 #endif

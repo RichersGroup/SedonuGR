@@ -46,7 +46,7 @@ void Transport::propagate_particles()
 	//--- MOVE THE PARTICLES AROUND ---
 	#pragma omp parallel for schedule(dynamic)
 	for(unsigned i=0; i<nparticles; i++){
-		if(particles[i].fate != moving){
+		if(particles.fate[i] != moving){
 			#pragma omp atomic
 			ndone++;
 			continue;
@@ -54,7 +54,7 @@ void Transport::propagate_particles()
 
 		// propagate each particle with an EinsteinHelper
 		EinsteinHelper eh;
-		eh.set_Particle(particles[i]);
+		eh.set_Particle(particles, i);
 		eh.N0 = eh.N;
 		update_eh_background(&eh);
 		update_eh_k_opac(&eh);
@@ -85,7 +85,7 @@ void Transport::propagate_particles()
 			}
 		}
 		PRINT_ASSERT(eh.fate, !=, moving);
-		eh.get_Particle(particles[i]);
+		eh.get_Particle(particles, i);
 	} //#pragma omp parallel for
 	if(verbose) cout << endl;
 
@@ -93,12 +93,12 @@ void Transport::propagate_particles()
 	double tot=0,core=0,roulette=0,esc=0;
 	#pragma omp parallel for reduction(+:tot,core,roulette,esc)
 	for(unsigned i=0; i<particles.size(); i++){
-		PRINT_ASSERT(particles[i].fate,!=,moving);
-		const double e  = particles[i].N * particles[i].kup[3];
-		if(particles[i].fate!=rouletted) tot       += e;
-		if(particles[i].fate==escaped  ) esc       += e;
-		if(particles[i].fate==absorbed ) core      += e;
-		if(particles[i].fate==rouletted) roulette  += e;
+		PRINT_ASSERT(particles.fate[i],!=,moving);
+		const double e  = particles.N[i] * particles.kup[3][i];
+		if(particles.fate[i]!=rouletted) tot       += e;
+		if(particles.fate[i]==escaped  ) esc       += e;
+		if(particles.fate[i]==absorbed ) core      += e;
+		if(particles.fate[i]==rouletted) roulette  += e;
 	}
 	particle_total_energy = tot;
 	particle_core_abs_energy = core;
@@ -106,8 +106,7 @@ void Transport::propagate_particles()
 	particle_escape_energy = esc;
 
 	// remove the dead particles, erase the memory
-	vector<Particle> empty;
-	particles.swap(empty);
+	particles.resize(0);
 }
 
 //--------------------------------------------------------

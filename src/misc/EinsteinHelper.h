@@ -205,22 +205,22 @@ public:
 		for(unsigned i=0; i<4; i++) kup[i] *= scale;
 	}
 
-	void get_Particle(Particle& pout){
-		pout.N = N;
-		pout.s = s;
-		pout.fate = fate;
+	void get_Particle(ParticleList& pout, const unsigned list_index) const{
+		pout.N[list_index] = N;
+		pout.s[list_index] = s;
+		pout.fate[list_index] = fate;
 		for(unsigned i=0; i<4; i++){
-			pout.xup[i] = xup[i];
-			pout.kup[i] = kup[i];
+			pout.xup[i][list_index] = xup[i];
+			pout.kup[i][list_index] = kup[i];
 		}
 	}
-	void set_Particle(const Particle& pin){
-		N = pin.N;
-		s = pin.s;
-		fate = pin.fate;
+	void set_Particle(const ParticleList& pin, const unsigned list_index){
+		N = pin.N[list_index];
+		s = pin.s[list_index];
+		fate = pin.fate[list_index];
 		for(unsigned i=0; i<4; i++){
-			xup[i] = pin.xup[i];
-			kup[i] = pin.kup[i];
+			xup[i] = pin.xup[i][list_index];
+			kup[i] = pin.kup[i][list_index];
 		}
 	}
 };
