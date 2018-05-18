@@ -38,47 +38,6 @@ enum ParticleFate  {moving, escaped, absorbed, rouletted};
 using namespace std;
 
 // particle class
-class Particle
-{
-
-public:
-
-	Particle(){
-		for(int i=0; i<4; i++){
-			xup[i] = NaN;
-			kup[i] = NaN;
-		}
-		N = NaN;
-		s = -1;
-		fate = moving;
-	}
-
-	double xup[4];          // x,y,z,ct position (cm)
-	double kup[4];          // 4-wavevector (erg) //old definition:(2pi nu/c)
-	double       N;         // total number of neutrinos in packet
-	int          s;         // species number
-	ParticleFate fate;
-
-	void print() const
-	{
-		printf("%10.3e %10.3e %10.3e %10.3e | %10.3e %10.3e %10.3e %10.3e | %10.3e %i %i\n",
-				xup[0],xup[1],xup[2],xup[3],kup[0],kup[1],kup[2],kup[3],N,s,fate);
-	}
-
-	Particle operator =(const Particle& p){
-		for(unsigned i=0; i<4; i++){
-			xup[i] = p.xup[i];
-			kup[i] = p.kup[i];
-		}
-		N = p.N;
-		s = p.s;
-		fate = p.fate;
-		return *this;
-	}
-
-};
-
-// particle class
 class ParticleList
 {
 
