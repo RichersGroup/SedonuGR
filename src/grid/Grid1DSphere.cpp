@@ -348,14 +348,14 @@ void Grid1DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3
 void Grid1DSphere::interpolate_fluid_velocity(EinsteinHelper *eh) const
 {
 	// radius in zone
-	double r = radius(eh->p.xup);
+	double r = radius(eh->xup);
 
 	// assuming radial velocity (may want to interpolate here)
 	// (the other two components are ignored and mean nothing)
 	double vr_interp = vr.interpolate(eh->icube_vol);
-	eh->v[0] = eh->p.xup[0]/r*vr_interp;
-	eh->v[1] = eh->p.xup[1]/r*vr_interp;
-	eh->v[2] = eh->p.xup[2]/r*vr_interp;
+	eh->v[0] = eh->xup[0]/r*vr_interp;
+	eh->v[1] = eh->xup[1]/r*vr_interp;
+	eh->v[2] = eh->xup[2]/r*vr_interp;
 
 	// check for pathological case
 	if (r == 0)
@@ -375,37 +375,37 @@ void Grid1DSphere::interpolate_fluid_velocity(EinsteinHelper *eh) const
 //------------------------------------------------------------
 void Grid1DSphere::symmetry_boundaries(EinsteinHelper *eh) const{
 	// reflect from outer boundary
-	double R = radius(eh->p.xup);
+	double R = radius(eh->xup);
 	if(reflect_outer && R>xAxes[0].top[xAxes[0].size()-1]){
 		double r0 = (xAxes[0].size()>1 ? xAxes[0].top[xAxes[0].size()-2] : xAxes[0].min);
 		double rmax = xAxes[0].max();
 		double dr = rmax - r0;
 
 		double kr = 0;
-		for(int i=0; i<3; i++) kr += eh->p.xup[i]/R * eh->p.kup[i];
+		for(int i=0; i<3; i++) kr += eh->xup[i]/R * eh->kup[i];
 
 		// invert the radial component of the velocity
-		eh->p.kup[0] -= 2.*kr * eh->p.xup[0]/R;
-		eh->p.kup[1] -= 2.*kr * eh->p.xup[1]/R;
-		eh->p.kup[2] -= 2.*kr * eh->p.xup[2]/R;
-		//eh->g.normalize_null_preservedownt(eh->p.kup);
+		eh->kup[0] -= 2.*kr * eh->xup[0]/R;
+		eh->kup[1] -= 2.*kr * eh->xup[1]/R;
+		eh->kup[2] -= 2.*kr * eh->xup[2]/R;
+		//eh->g.normalize_null_preservedownt(eh->kup);
 
 		// put the particle just inside the boundary
 		double newR = rmax - TINY*dr;
-		for(unsigned i=0; i<3; i++)	eh->p.xup[i] *= newR/R;
+		for(unsigned i=0; i<3; i++)	eh->xup[i] *= newR/R;
 
 		// must be inside the boundary, or will get flagged as escaped
-		PRINT_ASSERT(zone_index(eh->p.xup),>=,0);
+		PRINT_ASSERT(zone_index(eh->xup),>=,0);
 	}
 }
 
 double Grid1DSphere::d_boundary(const EinsteinHelper *eh) const{
-	double r = radius(eh->p.xup);
+	double r = radius(eh->xup);
 	PRINT_ASSERT(r,<=,xAxes[0].top[eh->z_ind]);
 	PRINT_ASSERT(r,>=,xAxes[0].bottom(eh->z_ind));
 
 	// get component of k in the radial direction
-	double kr = eh->g.dot<4>(eh->e[2],eh->p.kup);
+	double kr = eh->g.dot<4>(eh->e[2],eh->kup);
 
 	double dlambda = INFINITY;
 	if(kr>0) dlambda = (xAxes[0].top[eh->z_ind]    - r) / kr;
@@ -419,8 +419,8 @@ double Grid1DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 	double R=INFINITY;
 	double D = pc::c / (3.*eh->scatopac);
 
-	double ktest[4] = {eh->p.xup[0], eh->p.xup[1], eh->p.xup[2], 0};
-	const double r = radius(eh->p.xup);
+	double ktest[4] = {eh->xup[0], eh->xup[1], eh->xup[2], 0};
+	const double r = radius(eh->xup);
 	const double kr = r;
 	const double ur = radius(eh->u);
 
@@ -461,16 +461,16 @@ void Grid1DSphere::dims(hsize_t dims[1], const int size) const{
 
 
 void Grid1DSphere::interpolate_3metric(EinsteinHelper* eh) const{
-	const double r = radius(eh->p.xup);
+	const double r = radius(eh->xup);
 	const double Xloc = X.interpolate(eh->icube_vol);//1./sqrt(1.-1./r);//
 	double tmp = (Xloc*Xloc-1.0) / (r*r);
 
-	eh->g.gammalow.data[ixx] = eh->p.xup[0]*eh->p.xup[0] * tmp;
-	eh->g.gammalow.data[iyy] = eh->p.xup[1]*eh->p.xup[1] * tmp;
-	eh->g.gammalow.data[izz] = eh->p.xup[2]*eh->p.xup[2] * tmp;
-	eh->g.gammalow.data[ixy] = eh->p.xup[0]*eh->p.xup[1] * tmp;
-	eh->g.gammalow.data[ixz] = eh->p.xup[0]*eh->p.xup[2] * tmp;
-	eh->g.gammalow.data[iyz] = eh->p.xup[1]*eh->p.xup[2] * tmp;
+	eh->g.gammalow.data[ixx] = eh->xup[0]*eh->xup[0] * tmp;
+	eh->g.gammalow.data[iyy] = eh->xup[1]*eh->xup[1] * tmp;
+	eh->g.gammalow.data[izz] = eh->xup[2]*eh->xup[2] * tmp;
+	eh->g.gammalow.data[ixy] = eh->xup[0]*eh->xup[1] * tmp;
+	eh->g.gammalow.data[ixz] = eh->xup[0]*eh->xup[2] * tmp;
+	eh->g.gammalow.data[iyz] = eh->xup[1]*eh->xup[2] * tmp;
 
 	eh->g.gammalow.data[ixx] += 1.0;
 	eh->g.gammalow.data[iyy] += 1.0;
@@ -478,14 +478,14 @@ void Grid1DSphere::interpolate_3metric(EinsteinHelper* eh) const{
 }
 
 void Grid1DSphere::get_connection_coefficients(EinsteinHelper* eh) const{
-	const double r = radius(eh->p.xup);
+	const double r = radius(eh->xup);
 	const double alpha = lapse.interpolate(eh->icube_vol); //sqrt(1.-1./r); //
 	const double Xloc  = X.interpolate(eh->icube_vol); //1./alpha; //
 	const double dadr  = lapse.interpolate_slopes(eh->icube_vol)[0]; //Xloc / (2.*r*r);//
 	const double dXdr  = X.interpolate_slopes(eh->icube_vol)[0]; //-Xloc*Xloc*Xloc / (2.*r*r);//
 
 	double tmp;
-	double* xup = eh->p.xup;
+	double* xup = eh->xup;
 	Tuple<double,40>& ch = eh->christoffel.data;
 	ch = 0;
 

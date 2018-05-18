@@ -15,7 +15,8 @@ enum TetradRotation {cartesian, spherical};
 class EinsteinHelper{
 public:
 	// essential variables interpolated from grid
-	Particle p;
+	double xup[4], kup[4], N, s;
+	ParticleFate fate;
 	double N0;
 	Metric g;
 	Christoffel christoffel;
@@ -37,12 +38,17 @@ public:
 
 	EinsteinHelper(){
 		for(unsigned i=0; i<4; i++){
+			xup[i] = NaN;
+			kup[i] = NaN;
 			u[i] = NaN;
 			kup_tet[i] = NaN;
 			for(unsigned j=0; j<4; j++)
 				e[i][j] = NaN;
 		}
 		N0 = NaN;
+		N = NaN;
+		s = -MAXLIM;
+		fate = moving;
 		absopac = NaN;
 		scatopac = NaN;
 		ds_com = NaN;
@@ -56,13 +62,13 @@ public:
 	void set_kup_tet(const double kup_tet_in[4]){
 		PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet_in,kup_tet_in)/(kup_tet_in[3]*kup_tet_in[3]),<,TINY);
 		for(unsigned i=0; i<4; i++) kup_tet[i] = kup_tet_in[i];
-		tetrad_to_coord(kup_tet,p.kup);
-		g.normalize_null_preserveupt(p.kup);
-		PRINT_ASSERT(g.dot<4>(p.kup,p.kup)/(p.kup[3]*p.kup[3]),<,TINY);
+		tetrad_to_coord(kup_tet,kup);
+		g.normalize_null_preserveupt(kup);
+		PRINT_ASSERT(g.dot<4>(kup,kup)/(kup[3]*kup[3]),<,TINY);
 	}
 	void renormalize_kup(){
-		g.normalize_null_preserveupt(p.kup);
-		coord_to_tetrad(p.kup, kup_tet);
+		g.normalize_null_preserveupt(kup);
+		coord_to_tetrad(kup, kup_tet);
 		PRINT_ASSERT(kup_tet[3],>,0);
 		Metric::normalize_null_Minkowski(kup_tet);
 	}
@@ -116,31 +122,31 @@ public:
 	  }
 
 	  else if(rotation == spherical){
-	    const double rp = sqrt(p.xup[0]*p.xup[0] + p.xup[1]*p.xup[1]);
+	    const double rp = sqrt(xup[0]*xup[0] + xup[1]*xup[1]);
 	    
 	    // pathological case
 	    if(rp==0){
 	      e[0][0] = 1.0; // theta in x direction
 	      e[1][1] = 1.0; // phi in y direction
-	      e[2][2] = p.xup[2]>0 ? 1.0 : -1.0; // radial in z direction
+	      e[2][2] = xup[2]>0 ? 1.0 : -1.0; // radial in z direction
 	    }
 	    else{
 	      // theta vector (multiplying all components by rp*r so no divide by zeros)
-	      e[0][0] = p.xup[0] * p.xup[2];
-	      e[0][1] = p.xup[1] * p.xup[2];
+	      e[0][0] = xup[0] * xup[2];
+	      e[0][1] = xup[1] * xup[2];
 	      e[0][2] = -rp * rp;
 	      e[0][3] = 0;
 	      
 	      // phi vector (multiplying through by rp so no divide by zero)
-	      e[1][0] = -p.xup[1];
-	      e[1][1] =  p.xup[0];;
+	      e[1][0] = -xup[1];
+	      e[1][1] =  xup[0];;
 	      e[1][2] = 0;
 	      e[1][3] = 0;
 
 	      // radial vector
-	      e[2][0] = p.xup[0];
-	      e[2][1] = p.xup[1];
-	      e[2][2] = p.xup[2];
+	      e[2][0] = xup[0];
+	      e[2][1] = xup[1];
+	      e[2][2] = xup[2];
 	      e[2][3] = 0;
 	    }
 	  }
@@ -196,9 +202,27 @@ public:
 	}
 
 	void scale_p_frequency(const double scale){
-		for(unsigned i=0; i<4; i++) p.kup[i] *= scale;
+		for(unsigned i=0; i<4; i++) kup[i] *= scale;
 	}
 
+	void get_Particle(Particle& pout){
+		pout.N = N;
+		pout.s = s;
+		pout.fate = fate;
+		for(unsigned i=0; i<4; i++){
+			pout.xup[i] = xup[i];
+			pout.kup[i] = kup[i];
+		}
+	}
+	void set_Particle(const Particle& pin){
+		N = pin.N;
+		s = pin.s;
+		fate = pin.fate;
+		for(unsigned i=0; i<4; i++){
+			xup[i] = pin.xup[i];
+			kup[i] = pin.kup[i];
+		}
+	}
 };
 
 #endif

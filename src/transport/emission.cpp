@@ -81,7 +81,7 @@ void Transport::emit_inner_source_by_bin(){
 				unsigned global_id = k + n_emit_core_per_bin*g + n_emit_core_per_bin*ng*s;
 				if(global_id%MPI_nprocs == MPI_myID){
 					unsigned local_index = size_before + global_id/MPI_nprocs;
-					particles[local_index] = create_surface_particle(weight,s,g);
+					create_surface_particle(particles[local_index], weight,s,g);
 					if(particles[local_index].fate == moving) n_created++;
 				}
 			}
@@ -118,7 +118,7 @@ void Transport::emit_zones_by_bin(){
 					unsigned global_id = k + n_emit_zones_per_bin*g + n_emit_zones_per_bin*ng*s + n_emit_zones_per_bin*ng*ns*z_ind;
 					if(global_id%MPI_nprocs == MPI_myID){
 						unsigned local_index = size_before + global_id/MPI_nprocs;
-						particles[local_index] = create_thermal_particle(z_ind,weight,s,g);
+						create_thermal_particle(particles[local_index], z_ind,weight,s,g);
 						if(particles[local_index].fate == moving){
 							n_created++;
 							for(unsigned d=0; d<4; d++) PRINT_ASSERT(particles[local_index].xup[d],==,particles[local_index].xup[d]);
@@ -144,25 +144,25 @@ void Transport::emit_zones_by_bin(){
 // Useful for thermal radiation emitted all througout
 // the grid
 //------------------------------------------------------------
-Particle Transport::create_thermal_particle(const int z_ind,const double weight, const unsigned s, const unsigned g)
+void Transport::create_thermal_particle(Particle& output, const int z_ind,const double weight, const unsigned s, const unsigned g)
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->rho.size());
 	PRINT_ASSERT(s,<,species_list.size());
 	
 	EinsteinHelper eh;
-	eh.p.fate = moving;
-	eh.p.s = s;
+	eh.fate = moving;
+	eh.s = s;
 
 	// random sample position in zone
-	grid->sample_in_zone(z_ind,&rangen,eh.p.xup);
-	eh.p.xup[3] = 0;
+	grid->sample_in_zone(z_ind,&rangen,eh.xup);
+	eh.xup[3] = 0;
 	update_eh_background(&eh);
-	if(eh.z_ind<0 || radius(eh.p.xup)<r_core){
-		eh.p.kup[3] = 0;
-		eh.p.N = 0;
-		eh.p.fate = rouletted;
-		return eh.p;
+	if(eh.z_ind<0 || radius(eh.xup)<r_core){
+		output.kup[3] = 0;
+		output.N = 0;
+		output.fate = rouletted;
+		return;
 	}
 
 	// sample the frequency
@@ -178,30 +178,30 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 	update_eh_k_opac(&eh);
 
 	// set the particle number
-	eh.p.N = grid->BB[s][eh.eas_ind]/*.interpolate(eh.icube_spec)*/ * eh.absopac; // #/s/cm^3/sr/(Hz^3/3)
-	eh.p.N *= grid->zone_lab_3volume(eh.z_ind);
-	if(DO_GR) eh.p.N *= sqrt(eh.g.gammalow.det()) * (-eh.g.ndot(eh.u)); // comoving volume (d3x * volfac * Lorentz factor)
-	eh.p.N *= weight * 1/*s*/ * 4.*pc::pi/*sr*/ * grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/;
-	PRINT_ASSERT(eh.p.N,>=,0);
-	PRINT_ASSERT(eh.p.N,<,1e99);
-	eh.N0 = eh.p.N;
+	eh.N = grid->BB[s][eh.eas_ind]/*.interpolate(eh.icube_spec)*/ * eh.absopac; // #/s/cm^3/sr/(Hz^3/3)
+	eh.N *= grid->zone_lab_3volume(eh.z_ind);
+	if(DO_GR) eh.N *= sqrt(eh.g.gammalow.det()) * (-eh.g.ndot(eh.u)); // comoving volume (d3x * volfac * Lorentz factor)
+	eh.N *= weight * 1/*s*/ * 4.*pc::pi/*sr*/ * grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/;
+	PRINT_ASSERT(eh.N,>=,0);
+	PRINT_ASSERT(eh.N,<,1e99);
+	eh.N0 = eh.N;
 
 	// add to particle vector
 	window(&eh);
-	if(eh.p.fate == moving){
-		PRINT_ASSERT(eh.p.N,>,0);
+	if(eh.fate == moving){
+		PRINT_ASSERT(eh.N,>,0);
 
 		// count up the emitted energy in each zone
 		#pragma omp atomic
-		N_net_emit[eh.p.s] += eh.p.N;
+		N_net_emit[eh.s] += eh.N;
 		#pragma omp atomic
-		grid->l_emit[z_ind] -= eh.p.N * species_list[eh.p.s]->lepton_number;
+		grid->l_emit[z_ind] -= eh.N * species_list[eh.s]->lepton_number;
 		for(unsigned i=0; i<4; i++){
 			#pragma omp atomic
-			grid->fourforce_emit[z_ind][i] -= eh.p.N * kup_tet[i];
+			grid->fourforce_emit[z_ind][i] -= eh.N * kup_tet[i];
 		}
 	}
-	return eh.p;
+	eh.get_Particle(output);
 }
 
 
@@ -210,25 +210,25 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 // emitted isotropically outward in the comoving frame. 
 //------------------------------------------------------------
 bool reject_direction(const EinsteinHelper* eh, ThreadRNG* rangen){
-	double xdotx = eh->g.dot<3>(eh->p.xup, eh->p.xup);
-	double kdotk = eh->g.dot<3>(eh->p.kup, eh->p.kup);
-	double xdotk = eh->g.dot<3>(eh->p.xup, eh->p.kup);
+	double xdotx = eh->g.dot<3>(eh->xup, eh->xup);
+	double kdotk = eh->g.dot<3>(eh->kup, eh->kup);
+	double xdotk = eh->g.dot<3>(eh->xup, eh->kup);
 	double costheta = xdotk / sqrt(xdotx * kdotk);
 	return (rangen->uniform() > costheta);
 }
-Particle Transport::create_surface_particle(const double weight, const unsigned int s, const unsigned int g)
+void Transport::create_surface_particle(Particle& output, const double weight, const unsigned int s, const unsigned int g)
 {
 	PRINT_ASSERT(weight,>,0);
 	PRINT_ASSERT(weight,!=,INFINITY);
 	PRINT_ASSERT(s,<,species_list.size());
 
 	EinsteinHelper eh;
-	eh.p.fate = moving;
-	eh.p.s = s;
+	eh.fate = moving;
+	eh.s = s;
 
 	// pick initial position on photosphere
-	random_core_x(eh.p.xup);
-	eh.p.xup[3] = 0;
+	random_core_x(eh.xup);
+	eh.xup[3] = 0;
 	update_eh_background(&eh);
 
 	// sample the frequency
@@ -250,22 +250,22 @@ Particle Transport::create_surface_particle(const double weight, const unsigned 
 	double mu = species_list[s]->mu_core;
 	double multiplier = species_list[s]->core_lum_multiplier * species_list[s]->weight;
 	PRINT_ASSERT(nu,>,0);
-	eh.p.N = number_blackbody(T,mu,nu)   // #/s/cm^2/sr/(Hz^3/3)
+	eh.N = number_blackbody(T,mu,nu)   // #/s/cm^2/sr/(Hz^3/3)
 			* 1                          //   s
 			* (4.0*pc::pi*r_core*r_core) //     cm^2
 			* pc::pi                     //          sr (including factor of 1/2 for integrating over cos(theta)
 			* grid->nu_grid_axis.delta3(g)/3.0 //        Hz^3/3
 			* multiplier                 // overall scaling
 			* weight;                    // 1/number of samples
-	eh.N0 = eh.p.N;
+	eh.N0 = eh.N;
 
 
 
 	// add to particle vector
 	window(&eh);
-	if(eh.p.fate == moving){
+	if(eh.fate == moving){
 	    #pragma omp atomic
-		N_core_emit[eh.p.s] += eh.p.N;
+		N_core_emit[eh.s] += eh.N;
 	}
-	return eh.p;
+	eh.get_Particle(output);
 }

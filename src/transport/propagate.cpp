@@ -54,24 +54,24 @@ void Transport::propagate_particles()
 
 		// propagate each particle with an EinsteinHelper
 		EinsteinHelper eh;
-		eh.p = particles[i];
-		eh.N0 = eh.p.N;
+		eh.set_Particle(particles[i]);
+		eh.N0 = eh.N;
 		update_eh_background(&eh);
 		update_eh_k_opac(&eh);
 
 		// save final data
 		#pragma omp atomic
-		n_active[eh.p.s]++;
-		if(eh.p.fate == moving) propagate(&eh);
-		if(eh.p.fate == escaped){
+		n_active[eh.s]++;
+		if(eh.fate == moving) propagate(&eh);
+		if(eh.fate == escaped){
 			const double nu = eh.nu(); // uses last-known metric
 			#pragma omp atomic
-			n_escape[eh.p.s]++;
+			n_escape[eh.s]++;
 			#pragma omp atomic
-			L_net_esc[eh.p.s] += eh.p.N * nu*pc::h;
+			L_net_esc[eh.s] += eh.N * nu*pc::h;
 			#pragma omp atomic
-			N_net_esc[eh.p.s] += eh.p.N;
-			grid->spectrum[eh.p.s].count(eh.kup_tet, eh.dir_ind, eh.p.N * nu*pc::h);
+			N_net_esc[eh.s] += eh.N;
+			grid->spectrum[eh.s].count(eh.kup_tet, eh.dir_ind, eh.N * nu*pc::h);
 		}
 
 		if(verbose){
@@ -84,8 +84,8 @@ void Transport::propagate_particles()
 				cout << "\r"<<ndone<<"/"<<nparticles << " (" << last_percent<<"%)" << flush;
 			}
 		}
-		PRINT_ASSERT(eh.p.fate, !=, moving);
-		particles[i] = eh.p;
+		PRINT_ASSERT(eh.fate, !=, moving);
+		eh.get_Particle(particles[i]);
 	} //#pragma omp parallel for
 	if(verbose) cout << endl;
 
@@ -114,12 +114,12 @@ void Transport::propagate_particles()
 // Decide what happens to the particle
 //--------------------------------------------------------
 void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
-	PRINT_ASSERT(eh->p.N, >, 0);
+	PRINT_ASSERT(eh->N, >, 0);
 	PRINT_ASSERT(eh->z_ind,>=,0);
 
 	// FIND D_ZONE= ====================================================================
 	double d_boundary = grid->d_boundary(eh);
-	double d_zone = grid->zone_min_length(eh->z_ind) / sqrt(Metric::dot_Minkowski<3>(eh->p.kup,eh->p.kup)) * eh->kup_tet[3];
+	double d_zone = grid->zone_min_length(eh->z_ind) / sqrt(Metric::dot_Minkowski<3>(eh->kup,eh->kup)) * eh->kup_tet[3];
 	d_boundary = min(max(d_boundary, d_zone*min_step_size), d_zone*max_step_size);
 	PRINT_ASSERT(d_zone, >, 0);
 	*event = nothing;
@@ -156,23 +156,23 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 
 
 void Transport::boundary_conditions(EinsteinHelper *eh) const{
-	PRINT_ASSERT(eh->p.fate,==,moving);
+	PRINT_ASSERT(eh->fate,==,moving);
 
-	if(r_core>0 && radius(eh->p.xup)<r_core) eh->p.fate = absorbed;
+	if(r_core>0 && radius(eh->xup)<r_core) eh->fate = absorbed;
 	else if(eh->z_ind<0){
 		grid->symmetry_boundaries(eh);
 		update_eh_background(eh);
 		update_eh_k_opac(eh);
-		if(eh->z_ind < 0) eh->p.fate = escaped;
+		if(eh->z_ind < 0) eh->fate = escaped;
 	}
 }
 
 void Transport::move(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->ds_com,>=,0);
-	PRINT_ASSERT(abs(eh->g.dot<4>(eh->p.kup,eh->p.kup)) / (eh->p.kup[3]*eh->p.kup[3]), <=, TINY);
+	PRINT_ASSERT(abs(eh->g.dot<4>(eh->kup,eh->kup)) / (eh->kup[3]*eh->kup[3]), <=, TINY);
 	// FOR SCHWARZSCHILD PATH TEST
-	//for(unsigned i=0; i<4; i++) cout << eh->p.xup[i] << "\t";
-	//for(unsigned i=0; i<4; i++) cout << eh->p.kup[i] << "\t";
+	//for(unsigned i=0; i<4; i++) cout << eh->xup[i] << "\t";
+	//for(unsigned i=0; i<4; i++) cout << eh->kup[i] << "\t";
 	//for(unsigned i=0; i<4; i++) cout << eh->kup_tet[i] << "\t";
 	//cout << eh->g.gtt << "\t";
 	//cout << eh->nu() << endl;
@@ -180,11 +180,11 @@ void Transport::move(EinsteinHelper *eh) const{
 	// save old values
 	double old_kup[4], old_kup_tet[4];
 	for(unsigned i=0; i<4; i++){
-		old_kup[i] = eh->p.kup[i];
+		old_kup[i] = eh->kup[i];
 		old_kup_tet[i] = eh->kup_tet[i];
 	}
 	double old_absopac = eh->absopac;
-	double old_N = eh->p.N;
+	double old_N = eh->N;
 	unsigned old_z_ind = eh->z_ind;
 	unsigned old_dir_ind[NDIMS+1];
 	for(unsigned i=0; i<NDIMS+1; i++) old_dir_ind[i] = eh->dir_ind[i];
@@ -196,7 +196,7 @@ void Transport::move(EinsteinHelper *eh) const{
 	// get dk_dlambda at current position
 	double dk_dlambda[4] = {0,0,0,0};
 	if(DO_GR){
-		eh->christoffel.contract2(eh->p.kup,dk_dlambda);
+		eh->christoffel.contract2(eh->kup,dk_dlambda);
 		for(unsigned i=0; i<4; i++) dk_dlambda[i] *= -1;
 	}
 
@@ -206,8 +206,8 @@ void Transport::move(EinsteinHelper *eh) const{
 		kup1[i] = old_kup[i] + dk_dlambda[i]*dlambda;
 		double order1 = old_kup[i]*dlambda;
 		double order2 = 0.5*dk_dlambda[i]*dlambda*dlambda;
-		eh->p.xup[i] += order1 + (abs(order2/order1)<1. ? order2 : 0);
-		PRINT_ASSERT(eh->p.xup[i],==,eh->p.xup[i]);
+		eh->xup[i] += order1 + (abs(order2/order1)<1. ? order2 : 0);
+		PRINT_ASSERT(eh->xup[i],==,eh->xup[i]);
 	}
 
 	// get new background data
@@ -216,16 +216,16 @@ void Transport::move(EinsteinHelper *eh) const{
 	// apply second order correction to k
 	if(DO_GR and eh->z_ind>0){
 		double dk_dlambda_2[4], kup2[4];
-		eh->g.normalize_null_preserveupt(eh->p.kup);
-		eh->christoffel.contract2(eh->p.kup,dk_dlambda_2);
+		eh->g.normalize_null_preserveupt(eh->kup);
+		eh->christoffel.contract2(eh->kup,dk_dlambda_2);
 		for(unsigned i=0; i<4; i++){
 			dk_dlambda_2[i] *= -1;
 			kup2[i] = old_kup[i] + dlambda*dk_dlambda_2[i];
-			eh->p.kup[i] = 0.5 * (kup1[i] + kup2[i]);
-			PRINT_ASSERT(eh->p.kup[i],==,eh->p.kup[i]);
+			eh->kup[i] = 0.5 * (kup1[i] + kup2[i]);
+			PRINT_ASSERT(eh->kup[i],==,eh->kup[i]);
 		}
 	}
-	PRINT_ASSERT(abs(eh->p.kup[3]),<,INFINITY);
+	PRINT_ASSERT(abs(eh->kup[3]),<,INFINITY);
 	update_eh_k_opac(eh);
 
 	// appropriately reduce the particle's energy from absorption
@@ -234,8 +234,8 @@ void Transport::move(EinsteinHelper *eh) const{
 	double tau1 = 1./3. * (eh->ds_com*old_absopac + ds_com_new*eh->absopac);
 	double tau2 = 1./6. * (eh->ds_com*eh->absopac + ds_com_new*old_absopac);
 	double tau = tau1 + tau2;
-	eh->p.N *= exp(-tau);
-	double dN = old_N - eh->p.N;
+	eh->N *= exp(-tau);
+	double dN = old_N - eh->N;
 	window(eh);
 
 	// get average k
@@ -246,7 +246,7 @@ void Transport::move(EinsteinHelper *eh) const{
 	// use average N and integrate assuming kt_tet varies linearly over the step
 	double avg_N = (tau>TINY ? dN/tau : old_N);
 	double integral_k2dlambda = dlambda/3. * (old_kup_tet[3]*old_kup_tet[3] + old_kup_tet[3]*eh->kup_tet[3] + eh->kup_tet[3]*eh->kup_tet[3]);
-	grid->distribution[eh->p.s]->count(avg_kup_tet, old_dir_ind, avg_N*integral_k2dlambda);
+	grid->distribution[eh->s]->count(avg_kup_tet, old_dir_ind, avg_N*integral_k2dlambda);
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
 	for(unsigned i=0; i<4; i++){
@@ -256,9 +256,9 @@ void Transport::move(EinsteinHelper *eh) const{
 
 	// store absorbed lepton number (same in both frames, except for the
 	// factor of this_d which is divided out later
-	if(species_list[eh->p.s]->lepton_number != 0){
+	if(species_list[eh->s]->lepton_number != 0){
 		#pragma omp atomic
-		grid->l_abs[old_z_ind] += dN * species_list[eh->p.s]->lepton_number;
+		grid->l_abs[old_z_ind] += dN * species_list[eh->s]->lepton_number;
 	}
 }
 
@@ -270,16 +270,16 @@ void Transport::move(EinsteinHelper *eh) const{
 void Transport::propagate(EinsteinHelper *eh) const{
 	ParticleEvent event;
 
-	PRINT_ASSERT(eh->p.fate, ==, moving);
+	PRINT_ASSERT(eh->fate, ==, moving);
 
-	while (eh->p.fate == moving)
+	while (eh->fate == moving)
 	{
 		PRINT_ASSERT(eh->z_ind,>=,0);
-		PRINT_ASSERT(eh->p.N,>,0);
-		PRINT_ASSERT(eh->p.N,<,1e99);
-		PRINT_ASSERT(eh->p.kup[3],>,0);
+		PRINT_ASSERT(eh->N,>,0);
+		PRINT_ASSERT(eh->N,<,1e99);
+		PRINT_ASSERT(eh->kup[3],>,0);
 		PRINT_ASSERT(eh->kup_tet[3],>,0);
-		PRINT_ASSERT(eh->p.kup[3],<,INFINITY);
+		PRINT_ASSERT(eh->kup[3],<,INFINITY);
 		PRINT_ASSERT(eh->nu(),<,10.*grid->nu_grid_axis.max());
 		for(unsigned i=0; i<NDIMS; i++) PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
 
@@ -287,7 +287,7 @@ void Transport::propagate(EinsteinHelper *eh) const{
 		which_event(eh,&event);
 
 		// move particle the distance
-		PRINT_ASSERT(eh->p.N,>,0);
+		PRINT_ASSERT(eh->N,>,0);
 		switch(event){
 		case nothing:
 			move(eh);
@@ -303,10 +303,10 @@ void Transport::propagate(EinsteinHelper *eh) const{
 			assert(0);
 		}
 
-		if(eh->p.fate==moving) window(eh);
-		if(eh->p.fate==moving) boundary_conditions(eh);
-		if(eh->p.fate==moving) PRINT_ASSERT(abs(eh->g.dot<4>(eh->p.kup,eh->p.kup)) / (eh->p.kup[3]*eh->p.kup[3]), <=, TINY);
+		if(eh->fate==moving) window(eh);
+		if(eh->fate==moving) boundary_conditions(eh);
+		if(eh->fate==moving) PRINT_ASSERT(abs(eh->g.dot<4>(eh->kup,eh->kup)) / (eh->kup[3]*eh->kup[3]), <=, TINY);
 
-		PRINT_ASSERT(eh->p.N,<,1e99);
+		PRINT_ASSERT(eh->N,<,1e99);
 	}
 }

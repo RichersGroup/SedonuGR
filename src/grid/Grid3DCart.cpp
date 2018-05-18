@@ -559,10 +559,10 @@ double Grid3DCart::d_boundary(const EinsteinHelper *eh) const{
 	double dlambda[3] = {INFINITY,INFINITY,INFINITY};
 	for(unsigned d=0; d<3; d++){
 		unsigned i = eh->dir_ind[d];
-		PRINT_ASSERT(eh->p.xup[d],<=,zone_right_boundary(d,i));
-		PRINT_ASSERT(eh->p.xup[d],>=, zone_left_boundary(d,i));
-		if(eh->p.kup[d] < 0) dlambda[d] = ( zone_left_boundary(d,i) - eh->p.xup[d]) / eh->p.kup[d];
-		if(eh->p.kup[d] > 0) dlambda[d] = (zone_right_boundary(d,i) - eh->p.xup[d]) / eh->p.kup[d];
+		PRINT_ASSERT(eh->xup[d],<=,zone_right_boundary(d,i));
+		PRINT_ASSERT(eh->xup[d],>=, zone_left_boundary(d,i));
+		if(eh->kup[d] < 0) dlambda[d] = ( zone_left_boundary(d,i) - eh->xup[d]) / eh->kup[d];
+		if(eh->kup[d] > 0) dlambda[d] = (zone_right_boundary(d,i) - eh->xup[d]) / eh->kup[d];
 		PRINT_ASSERT(dlambda[d],>=,0);
 	}
 
@@ -589,8 +589,8 @@ double Grid3DCart::d_randomwalk(const EinsteinHelper *eh) const{
 
 			// get the min distance from the boundary in direction i. Negative if moving left
 			double dxlab=0;
-			if(sgn>0) dxlab = xAxes[i].top[eh->dir_ind[i]] - eh->p.xup[i];
-			if(sgn<0) dxlab = xAxes[i].bottom(eh->dir_ind[i]) - eh->p.xup[i];
+			if(sgn>0) dxlab = xAxes[i].top[eh->dir_ind[i]] - eh->xup[i];
+			if(sgn<0) dxlab = xAxes[i].bottom(eh->dir_ind[i]) - eh->xup[i];
 
 			R = min(R, sim->R_randomwalk(ktest[i]/kup_tet_t, ktest[3]/kup_tet_t, eh->u[i], dxlab, D));
 		}
@@ -683,12 +683,12 @@ double Grid3DCart::zone_right_boundary(const unsigned dir, const unsigned dir_in
 // Reflect off revlecting boundary condition
 //------------------------------------------------------------
 void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
-	PRINT_ASSERT(eh->p.fate,==,moving);
+	PRINT_ASSERT(eh->fate,==,moving);
 
 	// initialize the arrays
 	double kup[4], xup[4];
-	for(int i=0; i<4; i++) xup[i] = eh->p.xup[i];
-	for(int i=0; i<4; i++) kup[i] = eh->p.kup[i];
+	for(int i=0; i<4; i++) xup[i] = eh->xup[i];
+	for(int i=0; i<4; i++) kup[i] = eh->kup[i];
 
 
 	// invert the radial component of the velocity, put the particle just inside the boundary
@@ -740,8 +740,8 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
 
 	// assign the arrays
 	for(unsigned i=0; i<4; i++){
-		eh->p.xup[i] = xup[i];
-		eh->p.kup[i] = kup[i];
+		eh->xup[i] = xup[i];
+		eh->kup[i] = kup[i];
 	}
 }
 

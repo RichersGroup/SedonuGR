@@ -408,8 +408,8 @@ void Grid::interpolate_opacity(EinsteinHelper *eh) const
 	PRINT_ASSERT(eh->z_ind,>=,0);
 	PRINT_ASSERT(eh->grid_coords[NDIMS],>,0);
 
-	eh->absopac  =  abs_opac[eh->p.s].interpolate(eh->icube_spec);
-	eh->scatopac = scat_opac[eh->p.s].interpolate(eh->icube_spec);
+	eh->absopac  =  abs_opac[eh->s].interpolate(eh->icube_spec);
+	eh->scatopac = scat_opac[eh->s].interpolate(eh->icube_spec);
 
 	PRINT_ASSERT(eh->absopac,<,INFINITY);
 	PRINT_ASSERT(eh->scatopac,<,INFINITY);

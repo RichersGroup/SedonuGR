@@ -662,8 +662,8 @@ void Transport::set_cdf_to_BB(const double T, const double chempot, CDFArray& em
 
 void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that depend only on particle position
 	// zone index
-	eh->z_ind = grid->zone_index(eh->p.xup);
-	grid->grid_coordinates(eh->p.xup,eh->grid_coords);
+	eh->z_ind = grid->zone_index(eh->xup);
+	grid->grid_coordinates(eh->xup,eh->grid_coords);
 
 	if(eh->z_ind >= 0){
 		// spatial indices
@@ -676,7 +676,7 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 		grid->interpolate_metric(eh);
 		if(eh->g.gtt >= 0){
 			eh->z_ind = -1;
-			eh->p.fate = absorbed;
+			eh->fate = absorbed;
 		}
 
 		// four-velocity
@@ -691,17 +691,17 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 // make sure kup is consistent with the new background
 // interpolate reaction rates
 void Transport::update_eh_k_opac(EinsteinHelper* eh) const{
-	if(eh->p.kup[3] <= 0){
-		eh->p.fate = absorbed;
+	if(eh->kup[3] <= 0){
+		eh->fate = absorbed;
 		eh->z_ind = -1;
 	}
 	if(eh->z_ind >= 0){
-		PRINT_ASSERT(eh->p.kup,==,eh->p.kup);
+		PRINT_ASSERT(eh->kup,==,eh->kup);
 		eh->renormalize_kup();
 		eh->grid_coords[NDIMS] = min(eh->nu(), grid->nu_grid_axis.max());
 		eh->dir_ind[NDIMS] = min(grid->nu_grid_axis.bin(eh->nu()), (int)grid->nu_grid_axis.size()-1);
-		eh->eas_ind = grid->abs_opac[eh->p.s].direct_index(eh->dir_ind);
-		grid->abs_opac[eh->p.s].set_InterpolationCube(&(eh->icube_spec),eh->grid_coords,eh->dir_ind);
+		eh->eas_ind = grid->abs_opac[eh->s].direct_index(eh->dir_ind);
+		grid->abs_opac[eh->s].set_InterpolationCube(&(eh->icube_spec),eh->grid_coords,eh->dir_ind);
 		grid->interpolate_opacity(eh);
 	}
 }

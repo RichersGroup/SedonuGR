@@ -619,20 +619,20 @@ double Grid2DSphere::zone_lab_3volume(const int z_ind) const
 // returning 0 causes the min distance to take over in propagate.cpp::which_event
 
 double Grid2DSphere::d_boundary(const EinsteinHelper* eh) const{
-	const double r = radius(eh->p.xup);
+	const double r = radius(eh->xup);
 	PRINT_ASSERT(r,<=,xAxes[0].top[eh->z_ind]);
 	PRINT_ASSERT(r,>=,xAxes[0].bottom(eh->z_ind));
-	const double theta = Grid2DSphere_theta(eh->p.xup);
+	const double theta = Grid2DSphere_theta(eh->xup);
 
 	// get component of k in the radial direction
-	double kr = eh->g.dot<4>(eh->e[0],eh->p.kup);
+	double kr = eh->g.dot<4>(eh->e[0],eh->kup);
 	double dlambda_r = INFINITY;
 	if(kr>0) dlambda_r = (xAxes[0].top[eh->dir_ind[0]] - r   ) / kr;
 	if(kr<0) dlambda_r = (r - xAxes[0].bottom(eh->dir_ind[0])) / kr;
 	dlambda_r = abs(dlambda_r);
 
 	// get component of k in the theta direction
-	double kt = eh->g.dot<4>(eh->e[1],eh->p.kup);
+	double kt = eh->g.dot<4>(eh->e[1],eh->kup);
 	double dlambda_t = INFINITY;
 	if(kt>0) dlambda_t = r * (xAxes[1].top[eh->dir_ind[1]]  - theta  ) / kt;
 	if(kt<0) dlambda_t = r * (theta - xAxes[1].bottom(eh->dir_ind[1])) / kt;
@@ -644,11 +644,11 @@ double Grid2DSphere::d_boundary(const EinsteinHelper* eh) const{
 double Grid2DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 	double R=INFINITY;
 	double D = eh->scatopac / (3.*pc::c);
-	double x=eh->p.xup[0], y=eh->p.xup[1], z=eh->p.xup[2];
+	double x=eh->xup[0], y=eh->xup[1], z=eh->xup[2];
 
 
 	double ktest[4] = {x, y, z, 0};
-	const double r = radius(eh->p.xup);
+	const double r = radius(eh->xup);
 	const double ur = radius(eh->u);
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector
@@ -669,7 +669,7 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 
 	double rp = sqrt(x*x + y*y);
 	double ktest2[4] = {x*z, y*z, -rp*rp, 0};
-	double theta = Grid2DSphere_theta(eh->p.xup);
+	double theta = Grid2DSphere_theta(eh->xup);
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector
 		for(unsigned i=0; i<3; i++) ktest[i] *= sgn;
@@ -805,7 +805,7 @@ void Grid2DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3
 void Grid2DSphere::interpolate_fluid_velocity(EinsteinHelper *eh) const
 {
 	// radius in zone
-	double *x = eh->p.xup;
+	double *x = eh->xup;
 	double r    = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 	double rhat = sqrt(x[0]*x[0] + x[1]*x[1]);
 	int along_axis = (rhat/r < TINY);

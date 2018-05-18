@@ -36,27 +36,27 @@ namespace pc = physical_constants;
 
 // decide whether to kill a particle
 void Transport::window(EinsteinHelper *eh) const{
-	PRINT_ASSERT(eh->p.N,>=,0);
-	PRINT_ASSERT(eh->p.fate,!=,rouletted);
+	PRINT_ASSERT(eh->N,>=,0);
+	PRINT_ASSERT(eh->fate,!=,rouletted);
 
 	// Roulette if too low energy
-	if(eh->p.N == 0) eh->p.fate = rouletted;
-	else while(eh->p.N/eh->N0 < min_packet_weight and eh->p.fate==moving){
-		if(rangen.uniform() < 0.5) eh->p.fate = rouletted;
-		else eh->p.N *= 2.0;
+	if(eh->N == 0) eh->fate = rouletted;
+	else while(eh->N/eh->N0 < min_packet_weight and eh->fate==moving){
+		if(rangen.uniform() < 0.5) eh->fate = rouletted;
+		else eh->N *= 2.0;
 	}
 
-	if(eh->p.fate == moving){
-		PRINT_ASSERT(eh->p.N/eh->N0,>=,min_packet_weight);
-		PRINT_ASSERT(eh->p.N,<,INFINITY);
-		PRINT_ASSERT(eh->p.N,>,0);
+	if(eh->fate == moving){
+		PRINT_ASSERT(eh->N/eh->N0,>=,min_packet_weight);
+		PRINT_ASSERT(eh->N,<,INFINITY);
+		PRINT_ASSERT(eh->N,>,0);
 	}
 }
 
 // choose which type of scattering event to do
 void Transport::scatter(EinsteinHelper *eh) const{
 	// store the old direction
-	double Nold = eh->p.N;
+	double Nold = eh->N;
 	double kup_tet_old[4];
 	for(unsigned i=0; i<4; i++) kup_tet_old[i] = eh->kup_tet[i];
 	PRINT_ASSERT(kup_tet_old[3],==,eh->kup_tet[3]);
@@ -71,7 +71,7 @@ void Transport::scatter(EinsteinHelper *eh) const{
 	}
 
 	for(unsigned i=0; i<4; i++){
-		grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i]*Nold - eh->kup_tet[i]*eh->p.N);
+		grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i]*Nold - eh->kup_tet[i]*eh->N);
 	}
 }
 
@@ -113,7 +113,7 @@ void Transport::init_randomwalk_cdf(Lua* lua){
 void Transport::random_walk(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->scatopac,>,0);
 	PRINT_ASSERT(eh->absopac,>=,0);
-	PRINT_ASSERT(eh->p.N,>=,0);
+	PRINT_ASSERT(eh->N,>=,0);
 	PRINT_ASSERT(eh->nu(),>=,0);
 
 	const double Rcom = eh->ds_com;
@@ -125,21 +125,21 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 
 	// move along with the fluid
 	double dtau = path_length_com / pc::c;
-	for(unsigned i=0; i<4; i++) eh->p.xup[i] += dtau * eh->u[i];
+	for(unsigned i=0; i<4; i++) eh->xup[i] += dtau * eh->u[i];
 
 	// determine the average and final neutrino numbers
 	double opt_depth = eh->absopac * path_length_com;
-	double Nfinal = eh->p.N * exp(-opt_depth);
-	double Naverage = (eh->p.N - Nfinal) / (opt_depth);
+	double Nfinal = eh->N * exp(-opt_depth);
+	double Naverage = (eh->N - Nfinal) / (opt_depth);
 
 	// select a random direction
 	double kup_tet[4];
 	isotropic_kup_tet(eh->nu(),kup_tet,&rangen);
 	eh->set_kup_tet(kup_tet);
 	eh->ds_com = Rcom;
-	eh->p.N = Naverage;
+	eh->N = Naverage;
 	move(eh);
-	eh->p.N = Nfinal;
+	eh->N = Nfinal;
 
 	// select a random outward direction
 	double kup_tet_final[4] = {0,0,0, kup_tet[3]};
@@ -152,7 +152,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	// contribute energy isotropically
 	double Eiso;
 	Eiso = pc::h*eh->nu() * Naverage * (path_length_com - Rcom);
-	grid->distribution[eh->p.s]->add_isotropic(eh->dir_ind, Eiso);
+	grid->distribution[eh->s]->add_isotropic(eh->dir_ind, Eiso);
 }
 
 //-------------------------------------------------------------
@@ -178,7 +178,7 @@ bool reject_direction(const double mu, const double delta, ThreadRNG* rangen){
 }
 void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double kup_tet_old[4]) const{
 	PRINT_ASSERT(use_scattering_kernels,>,0);
-	PRINT_ASSERT(grid->scattering_delta[eh->p.s].size(),>,0);
+	PRINT_ASSERT(grid->scattering_delta[eh->s].size(),>,0);
 	PRINT_ASSERT(kup_tet_old[3],==,eh->kup_tet[3]);
 
 	// rejection sampling to get outgoing frequency bin.
@@ -186,7 +186,7 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double k
 	double P;
 	do{
 		igout = rangen.uniform_discrete(0, grid->nu_grid_axis.size()-1);
-		P = grid->partial_scat_opac[eh->p.s][igout].interpolate(eh->icube_spec) / eh->scatopac;
+		P = grid->partial_scat_opac[eh->s][igout].interpolate(eh->icube_spec) / eh->scatopac;
 		PRINT_ASSERT(P-1.0,<=,TINY);
 		PRINT_ASSERT(P,>=,0.0);
 		P = min(1.0,P);
@@ -209,8 +209,8 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double k
 	dir_ind[NDIMS+1] = igout;
 	hyperloc[NDIMS+1] = outnu;
 	InterpolationCube<NDIMS+2> icube_kernel;
-	grid->scattering_delta[eh->p.s].set_InterpolationCube(&icube_kernel,hyperloc,dir_ind);
-	double delta = grid->scattering_delta[eh->p.s].interpolate(icube_kernel);
+	grid->scattering_delta[eh->s].set_InterpolationCube(&icube_kernel,hyperloc,dir_ind);
+	double delta = grid->scattering_delta[eh->s].interpolate(icube_kernel);
 	PRINT_ASSERT(fabs(delta),<,3.0);
 
 	// rejection sample the new direction, but only if not absurdly forward/backward peaked
@@ -223,7 +223,7 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double k
 			costheta = Metric::dot_Minkowski<3>(kup_tet_new,kup_tet_old) / (kup_tet_old[3]*kup_tet_new[3]);
 		} while(reject_direction(costheta, delta, &rangen));
 		eh->set_kup_tet(kup_tet_new);
-		PRINT_ASSERT(eh->p.N,<,1e99);
+		PRINT_ASSERT(eh->N,<,1e99);
 	}
 	else{
 		eh->scale_p_frequency(hyperloc[NDIMS+1]/eh->nu());

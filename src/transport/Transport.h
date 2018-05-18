@@ -63,8 +63,8 @@ protected:
 	void emit_zones_by_bin();
 
 	// what kind of particle to create?
-	Particle create_surface_particle(const double Ep, const unsigned int s, const unsigned int g);
-	Particle create_thermal_particle(const int zone_index, const double weight, const unsigned int s, const unsigned int g);
+	void create_surface_particle(Particle& output, const double Ep, const unsigned int s, const unsigned int g);
+	void create_thermal_particle(Particle& output, const int zone_index, const double weight, const unsigned int s, const unsigned int g);
 
 	// propagate the particles
 	void propagate_particles();
