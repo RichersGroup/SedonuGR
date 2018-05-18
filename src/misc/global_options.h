@@ -39,6 +39,7 @@
 #include "physical_constants.h"
 #include "H5Cpp.h"
 #include <cmath>
+#include <atomic>
 
 #define NDIMS 3
 #define DO_GR 1
@@ -51,6 +52,23 @@
 
 inline double radius(const double x[4]){
 	return sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+}
+
+template<typename T>
+inline void ATOMIC_ADD(T* inout, const T to_add){
+  T oldval, newval;
+  long long* ptr_old = (long long*)(&oldval);
+  long long* ptr_new = (long long*)(&newval);
+  long long* ptr_inout = (long long*) inout;
+  do{
+    oldval = *inout;
+    newval = oldval + to_add;
+  }
+  while (!__sync_bool_compare_and_swap(ptr_inout, *ptr_old, *ptr_new));
+}
+template<typename T1, typename T2>
+inline void ATOMIC_ADD(T1* inout, const T2 to_add){
+  __sync_fetch_and_add(inout, (T1)to_add);
 }
 
 inline std::string trim(const std::string s)
@@ -159,6 +177,7 @@ public:
 	  return *this;
   }
 };
+
 
 
 #endif
