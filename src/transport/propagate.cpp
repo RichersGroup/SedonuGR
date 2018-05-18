@@ -46,11 +46,11 @@ void Transport::propagate_particles()
 	//--- MOVE THE PARTICLES AROUND ---
 	#pragma omp parallel for schedule(dynamic)
 	for(unsigned i=0; i<nparticles; i++){
-                if(particles[i].fate != moving){
-                        #pragma omp atomic
-                        ndone++;
+		if(particles[i].fate != moving){
+			#pragma omp atomic
+			ndone++;
 			continue;
-                }
+		}
 
 		// propagate each particle with an EinsteinHelper
 		EinsteinHelper eh;

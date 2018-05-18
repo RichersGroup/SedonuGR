@@ -46,14 +46,14 @@ void Transport::emit_particles()
 
 	// sanity checks
 	for(unsigned i=0; i<particles.size(); i++){
-	  Particle* p = &particles[i];
-	  if(p->fate==moving){
-	    for(unsigned j=0; j<4; j++){
-	      PRINT_ASSERT(p->xup[j],==,p->xup[j]);
-	      PRINT_ASSERT(p->kup[j],==,p->kup[j]);
-	     }
-	    PRINT_ASSERT(p->N,==,p->N);
-	  }
+		Particle* p = &particles[i];
+		if(p->fate==moving){
+			for(unsigned j=0; j<4; j++){
+				PRINT_ASSERT(p->xup[j],==,p->xup[j]);
+				PRINT_ASSERT(p->kup[j],==,p->kup[j]);
+			}
+			PRINT_ASSERT(p->N,==,p->N);
+		}
 	}
 }
 
@@ -80,10 +80,10 @@ void Transport::emit_inner_source_by_bin(){
 			for(int k=0; k<n_emit_core_per_bin; k++){
 				unsigned global_id = k + n_emit_core_per_bin*g + n_emit_core_per_bin*ng*s;
 				if(global_id%MPI_nprocs == MPI_myID){
-				  unsigned local_index = size_before + global_id/MPI_nprocs;
-				  particles[local_index] = create_surface_particle(weight,s,g);
-				  if(particles[local_index].fate == moving) n_created++;
-                                }
+					unsigned local_index = size_before + global_id/MPI_nprocs;
+					particles[local_index] = create_surface_particle(weight,s,g);
+					if(particles[local_index].fate == moving) n_created++;
+				}
 			}
 		}
 	}
@@ -111,23 +111,23 @@ void Transport::emit_zones_by_bin(){
 	unsigned n_created = 0;
 	#pragma omp parallel for reduction(+:n_created) schedule(guided) collapse(4)
 	for (unsigned z_ind=0; z_ind<nz; z_ind++){
-	  for(unsigned s=0; s<ns; s++){
-	    for(unsigned g=0; g<ng; g++){
-	      for(int k=0; k<n_emit_zones_per_bin; k++){
+		for(unsigned s=0; s<ns; s++){
+			for(unsigned g=0; g<ng; g++){
+				for(int k=0; k<n_emit_zones_per_bin; k++){
 
-		unsigned global_id = k + n_emit_zones_per_bin*g + n_emit_zones_per_bin*ng*s + n_emit_zones_per_bin*ng*ns*z_ind;
-		if(global_id%MPI_nprocs == MPI_myID){
-		  unsigned local_index = size_before + global_id/MPI_nprocs;
-		  particles[local_index] = create_thermal_particle(z_ind,weight,s,g);
-		  if(particles[local_index].fate == moving){
-                       n_created++;
-		       for(unsigned d=0; d<4; d++) PRINT_ASSERT(particles[local_index].xup[d],==,particles[local_index].xup[d]);
-}
+					unsigned global_id = k + n_emit_zones_per_bin*g + n_emit_zones_per_bin*ng*s + n_emit_zones_per_bin*ng*ns*z_ind;
+					if(global_id%MPI_nprocs == MPI_myID){
+						unsigned local_index = size_before + global_id/MPI_nprocs;
+						particles[local_index] = create_thermal_particle(z_ind,weight,s,g);
+						if(particles[local_index].fate == moving){
+							n_created++;
+							for(unsigned d=0; d<4; d++) PRINT_ASSERT(particles[local_index].xup[d],==,particles[local_index].xup[d]);
+						}
+					}
+
+				}
+			}
 		}
-
-	      }
-	    }
-	  }
 	}
 	  
 	double total_neutrinos = 0;
@@ -159,10 +159,10 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 	eh.p.xup[3] = 0;
 	update_eh_background(&eh);
 	if(eh.z_ind<0 || radius(eh.p.xup)<r_core){
-	  eh.p.kup[3] = 0;
-	  eh.p.N = 0;
-	  eh.p.fate = rouletted;
-	  return eh.p;
+		eh.p.kup[3] = 0;
+		eh.p.N = 0;
+		eh.p.fate = rouletted;
+		return eh.p;
 	}
 
 	// sample the frequency
