@@ -87,7 +87,7 @@ void Transport::propagate_particles()
 		PRINT_ASSERT(eh.p.fate, !=, moving);
 		particles[i] = eh.p;
 	} //#pragma omp parallel for
-	cout << endl;
+	if(verbose) cout << endl;
 
 
 	double tot=0,core=0,roulette=0,esc=0;
