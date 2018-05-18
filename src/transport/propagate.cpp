@@ -44,7 +44,7 @@ void Transport::propagate_particles()
 	const unsigned nparticles = particles.size();
 
 	//--- MOVE THE PARTICLES AROUND ---
-#pragma omp parallel for schedule(nonmonotonic:dynamic)
+	#pragma omp parallel for schedule(dynamic)
 	for(unsigned i=0; i<nparticles; i++){
                 if(particles[i].fate != moving){
                         #pragma omp atomic

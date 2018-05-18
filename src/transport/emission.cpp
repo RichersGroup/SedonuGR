@@ -74,7 +74,7 @@ void Transport::emit_inner_source_by_bin(){
 	particles.resize(size_before + n_emit_this_rank);
 
 	unsigned n_created = 0;
-#pragma omp parallel for schedule(nonmonotonic:guided) collapse(3) reduction(+:n_created)
+	#pragma omp parallel for schedule(guided) collapse(3) reduction(+:n_created)
 	for(unsigned s=0; s<ns; s++){
 		for(unsigned g=0; g<ng; g++){
 			for(int k=0; k<n_emit_core_per_bin; k++){
@@ -109,7 +109,7 @@ void Transport::emit_zones_by_bin(){
 	particles.resize(size_before + n_emit_this_rank);
 
 	unsigned n_created = 0;
-#pragma omp parallel for reduction(+:n_created) schedule(nonmonotonic:guided) collapse(4)
+	#pragma omp parallel for reduction(+:n_created) schedule(guided) collapse(4)
 	for (unsigned z_ind=0; z_ind<nz; z_ind++){
 	  for(unsigned s=0; s<ns; s++){
 	    for(unsigned g=0; g<ng; g++){
