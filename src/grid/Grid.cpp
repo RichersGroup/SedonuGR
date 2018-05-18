@@ -180,7 +180,7 @@ void Grid::init(Lua* lua, Transport* insim)
     //==================================//
     // set up the spectrum in each zone //
     //==================================//
-    if(rank0) cout << "#   Setting up the distribution function...";
+    if(rank0) cout << "#   Setting up the distribution function..." << flush;
     string distribution_type = lua->scalar<string>("distribution_type");
 
     double minval = 0;
@@ -268,7 +268,7 @@ void Grid::init(Lua* lua, Transport* insim)
 
     }
 
-    if(rank0) cout << "finished." << endl;
+    if(rank0) cout << "finished." << endl << flush;
 
 	// set up the data structures
 	abs_opac.resize(sim->species_list.size());

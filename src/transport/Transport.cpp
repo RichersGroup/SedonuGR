@@ -101,12 +101,12 @@ void Transport::init(Lua* lua)
 	MPI_Comm_size( MPI_COMM_WORLD, &MPI_nprocs );
 	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID  );
 	if(MPI_myID==0){
-		cout << "# Initializing transport..." << endl;
-		cout << "#   Using " << MPI_nprocs << " MPI ranks" << endl;
+	        cout << "# Initializing transport..." << endl << flush;
+		cout << "#   Using " << MPI_nprocs << " MPI ranks" << endl << flush;
             #ifdef _OPENMP
 		    #pragma omp parallel
 		    #pragma omp single
-		    cout << "#   Using " << omp_get_num_threads()  << " threads on each MPI rank." << endl;
+		    cout << "#   Using " << omp_get_num_threads()  << " threads on each MPI rank." << endl << flush;
             #endif
 	}
 
@@ -156,7 +156,7 @@ void Transport::init(Lua* lua)
 	string neutrino_type = lua->scalar<string>("neutrino_type");
 	if(neutrino_type=="NuLib"){ // get everything from NuLib
 		// read the fortran module into memory
-		if(verbose) cout << "# Initializing NuLib..." << endl;
+	        if(verbose) cout << "# Initializing NuLib..." << endl << flush;
 		string nulib_table = lua->scalar<string>("nulib_table");
 		nulib_init(nulib_table,use_scattering_kernels,do_annihilation);
 
@@ -199,7 +199,7 @@ void Transport::init(Lua* lua)
 	}
 
 	// create the species arrays
-	if(verbose) cout << "# Setting up misc. transport tools..." << endl;
+	if(verbose) cout << "# Setting up misc. transport tools..." << endl << flush;
 	for(int i=0; i<num_nut_species; i++){
 		Species* neutrinos_tmp;
 		if     (neutrino_type == "NuLib")    neutrinos_tmp = new Neutrino_NuLib;
@@ -279,7 +279,7 @@ void Transport::init(Lua* lua)
 	//=================//
 	// SET UP THE CORE //
 	//=================//
-	if(verbose) cout << "# Initializing the core...";
+	if(verbose) cout << "# Initializing the core..." << flush;
 	r_core = lua->scalar<double>("r_core");   // cm
 	if(n_emit_core_per_bin>0){
 		vector<double> core_lum_multiplier = lua->vector<double>("core_lum_multiplier");
@@ -294,12 +294,12 @@ void Transport::init(Lua* lua)
 			species_list[s]->mu_core = mu_core[s] * pc::MeV_to_ergs; // erg;
 		}
 	}
-	if(verbose) cout << "finished." << endl;
+	if(verbose) cout << "finished." << endl << flush;
 
 	// check the parameters
-	if(verbose) cout << "# Checking parameters...";
+	if(verbose) cout << "# Checking parameters..." << flush;
 	check_parameters();
-	if(verbose) cout << "finished." << endl;
+	if(verbose) cout << "finished." << endl << flush;
 
 	// explicitly set global radiation quantities to 0
 	N_core_emit.resize(species_list.size());
@@ -378,7 +378,7 @@ void Transport::reset_radiation(){
 	grid->fourforce_emit.wipe();
 	grid->fourforce_annihil.wipe();
 
-	if(verbose) cout << "# Setting zone transport quantities" << endl;
+	if(verbose) cout << "# Setting zone transport quantities" << endl << flush;
 	for(unsigned s=0; s<species_list.size(); s++){
 		#pragma omp parallel for
 		for(unsigned z_ind=0;z_ind<grid->rho.size();z_ind++)
@@ -461,8 +461,8 @@ void Transport::calculate_annihilation(){
 
 	// write to screen
 	if(verbose) {
-		cout << "finished." << endl;
-		cout << "#   " << H_nunu_tet << " erg/s H_annihil" << endl;
+	        cout << "finished." << endl << flush;
+		cout << "#   " << H_nunu_tet << " erg/s H_annihil" << endl << flush;
 	}
 }
 
