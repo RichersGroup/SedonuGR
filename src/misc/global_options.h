@@ -129,6 +129,7 @@ public:
   }
   const Tuple<T,len> operator*(const double scale) const{
 	  Tuple<T,len> result = *this;
+	  #pragma omp simd
 	  for(unsigned i=0; i<len; i++) result.vals[i] *= scale;
 	  return result;
   }
