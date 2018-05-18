@@ -69,7 +69,7 @@ void Grid0DIsotropic::write_child_zones(H5::H5File /*file*/){
 //------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
-int Grid0DIsotropic::zone_index(const double[] /*x[3]*/) const
+int Grid0DIsotropic::zone_index(const Tuple<double,4>& /*x*/) const
 {
 	return 0;
 }
@@ -117,7 +117,7 @@ void Grid0DIsotropic::zone_directional_indices(const int z_ind, vector<unsigned>
 //------------------------------------------------------------
 // sample a random position within the spherical shell
 //------------------------------------------------------------
-void Grid0DIsotropic::sample_in_zone(const int z_ind, ThreadRNG* /*rangen*/, double x[3]) const
+void Grid0DIsotropic::sample_in_zone(const int z_ind, ThreadRNG* /*rangen*/, Tuple<double,4>& x) const
 {
 	PRINT_ASSERT(z_ind,==,0);
 
@@ -187,6 +187,6 @@ void Grid0DIsotropic::interpolate_3metric(EinsteinHelper* eh) const{ // default 
 	eh->g.gammalow.data[iyz] = 0.0;
 }
 
-void Grid0DIsotropic::grid_coordinates(const double[] /*xup[3]*/, double coords[NDIMS]) const{
+void Grid0DIsotropic::grid_coordinates(const Tuple<double,4>& /*xup*/, double coords[NDIMS]) const{
 	coords[0] = 0;
 }

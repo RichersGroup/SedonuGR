@@ -708,15 +708,15 @@ void Transport::update_eh_k_opac(EinsteinHelper* eh) const{
 
 
 // Randomly generate new direction isotropically in comoving frame
-void Transport::isotropic_direction(double D[3], ThreadRNG *rangen){
+void Transport::isotropic_direction(Tuple<double,3>& D, ThreadRNG *rangen){
 	D[0] = 2.*rangen->uniform() - 1.;
 	D[1] = 2.*rangen->uniform() - 1.;
 	D[2] = 2.*rangen->uniform() - 1.;
 	Metric::normalize_Minkowski<3>(D);
 }
 
-void Transport::isotropic_kup_tet(const double nu, double kup_tet[4], ThreadRNG *rangen){
-	double D[3];
+void Transport::isotropic_kup_tet(const double nu, Tuple<double,4>& kup_tet, ThreadRNG *rangen){
+	Tuple<double,3> D;
 	isotropic_direction(D,rangen);
 
 	double tmp = nu*pc::h;
@@ -728,15 +728,17 @@ void Transport::isotropic_kup_tet(const double nu, double kup_tet[4], ThreadRNG 
 	PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet,kup_tet)/(kup_tet[3]*kup_tet[3]),<,TINY);
 }
 
-void Transport::random_core_x(double x3[3]) const{
+void Transport::random_core_x(Tuple<double,4>& x) const{
+	x[3] = 0;
+	Tuple<double,3> x3;
 	isotropic_direction(x3,&rangen);
-	double test_x3[3];
-	for(unsigned i=0; i<3; i++) test_x3[i] = x3[i] * r_core * (1. + TINY);
-	int z_ind = grid->zone_index(test_x3);
+
+	for(unsigned i=0; i<3; i++) x[i] = x3[i] * r_core * (1. + TINY);
+	int z_ind = grid->zone_index(x);
 	PRINT_ASSERT(z_ind,>=,0);
 	double a_phot = r_core + grid->zone_min_length(z_ind)*TINY;
-	for(unsigned i=0; i<3; i++) x3[i] *= a_phot;
-	PRINT_ASSERT(radius(x3),>=,r_core);
+	for(unsigned i=0; i<3; i++) x[i] *= a_phot;
+	PRINT_ASSERT(radius(x),>=,r_core);
 }
 
 // given k^x/k_tet^t and u^x and the lab-frame distance to the boundary, return the largest random walk sphere size

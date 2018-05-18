@@ -235,7 +235,7 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 //------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
-int Grid1DSphere::zone_index(const double x[3]) const
+int Grid1DSphere::zone_index(const Tuple<double,4>& x) const
 {
 	PRINT_ASSERT(rho.size(),>,0);
 	double r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
@@ -309,7 +309,7 @@ void Grid1DSphere::zone_directional_indices(const int z_ind, vector<unsigned>& d
 //------------------------------------------------------------
 // sample a random position within the spherical shell
 //------------------------------------------------------------
-void Grid1DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3]) const
+void Grid1DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, Tuple<double,4>& x) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
@@ -419,7 +419,7 @@ double Grid1DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 	double R=INFINITY;
 	double D = pc::c / (3.*eh->scatopac);
 
-	double ktest[4] = {eh->xup[0], eh->xup[1], eh->xup[2], 0};
+	Tuple<double,4> ktest = {eh->xup[0], eh->xup[1], eh->xup[2], 0};
 	const double r = radius(eh->xup);
 	const double kr = r;
 	const double ur = radius(eh->u);
@@ -485,26 +485,25 @@ void Grid1DSphere::get_connection_coefficients(EinsteinHelper* eh) const{
 	const double dXdr  = X.interpolate_slopes(eh->icube_vol)[0]; //-Xloc*Xloc*Xloc / (2.*r*r);//
 
 	double tmp;
-	double* xup = eh->xup;
 	Tuple<double,40>& ch = eh->christoffel.data;
 	ch = 0;
 
 	// spatial parts
 	for(int a=0; a<3; a++){
-		ch[Christoffel::index(a,3,3)] = alpha * dadr / (r*Xloc*Xloc) * xup[a];
+		ch[Christoffel::index(a,3,3)] = alpha * dadr / (r*Xloc*Xloc) * eh->xup[a];
 
-		tmp = (1. - Xloc*Xloc + r*Xloc*dXdr) / (r*r*r*Xloc*Xloc) * xup[a]/r;
+		tmp = (1. - Xloc*Xloc + r*Xloc*dXdr) / (r*r*r*Xloc*Xloc) * eh->xup[a]/r;
 		for(unsigned i=0; i<3; i++) for(unsigned j=i; j<3; j++)
-			ch[Christoffel::index(a,i,j)] = xup[i]*xup[j] * tmp;
+			ch[Christoffel::index(a,i,j)] = eh->xup[i]*eh->xup[j] * tmp;
 
-		tmp = -(1.-Xloc*Xloc) / (r*Xloc*Xloc) * xup[a]/r;
+		tmp = -(1.-Xloc*Xloc) / (r*Xloc*Xloc) * eh->xup[a]/r;
 		for(unsigned i=0; i<3; i++)
 			ch[Christoffel::index(a,i,i)] += tmp;
 	}
 	// time part
 	tmp = dadr / (r * alpha);
 	for(unsigned i=0; i<3; i++)
-		ch[Christoffel::index(3,3,i)] = xup[i] * tmp;
+		ch[Christoffel::index(3,3,i)] = eh->xup[i] * tmp;
 
 	for(unsigned i=0; i<40; i++) PRINT_ASSERT(ch[i],==,ch[i]);
 }
@@ -518,6 +517,6 @@ void Grid1DSphere::interpolate_shift(EinsteinHelper* eh) const{ // default Minko
 	eh->g.betaup[1] = 0;
 	eh->g.betaup[2] = 0;
 }
-void Grid1DSphere::grid_coordinates(const double xup[3], double coords[NDIMS]) const{
+void Grid1DSphere::grid_coordinates(const Tuple<double,4>& xup, double coords[NDIMS]) const{
 	coords[0] = radius(xup);
 }

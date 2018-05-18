@@ -91,8 +91,8 @@ public:
 //========//
 class Metric{
 public:
-	double gtt, betalow[3];
-	double alpha, betaup[3];
+	Tuple<double,3> betalow, betaup;
+	double gtt, alpha;
 	ThreeMetric gammalow, gammaup;
 
 	Metric(){
@@ -157,8 +157,10 @@ public:
 		else return gammaup.get(i,j) - betaup[i]*betaup[j]/(alpha*alpha);
 	}
 
-	template<unsigned n>
-	void lower(const double xup[], double xdown[]) const{
+	template<unsigned n, unsigned n1, unsigned n2>
+	void lower(const Tuple<double,n1>& xup, Tuple<double,n2>& xdown) const{
+		PRINT_ASSERT(n,<=,n1);
+		PRINT_ASSERT(n,<=,n2);
 		if(DO_GR){
 			for(unsigned i=0; i<n; i++){
 				xdown[i] = 0;
@@ -173,7 +175,7 @@ public:
 	}
 
 	template<unsigned n>
-	void raise(const double xdown[], double xup[]) const{
+	void raise(const Tuple<double,n>& xdown, Tuple<double,n>& xup) const{
 		if(DO_GR){
 			for(unsigned i=0; i<n; i++){
 				xup[i] = 0;
@@ -187,18 +189,22 @@ public:
 		}
 	}
 
-	template<unsigned n>
-	static double contract(const double xup[n], const double xdown[n]){
+	template<unsigned n, unsigned n1, unsigned n2>
+	static double contract(const Tuple<double,n1>& xup, const Tuple<double,n2>& xdown){
+		PRINT_ASSERT(n,<=,n1);
+		PRINT_ASSERT(n,<=,n2);
 		double result = 0;
 		for(unsigned i=0; i<n; i++) result += xup[i]*xdown[i];
 		return result;
 	}
 
 	// dot product
-	template<unsigned n>
-	double dot(const double x1up[n], const double x2up[n]) const{
+	template<unsigned n, unsigned n1, unsigned n2>
+	double dot(const Tuple<double,n1>& x1up, const Tuple<double,n2>& x2up) const{
+		PRINT_ASSERT(n,<=,n1);
+		PRINT_ASSERT(n,<=,n2);
 		if(DO_GR){
-			double x2low[n];
+			Tuple<double,n> x2low;
 			lower<n>(x2up, x2low);
 			double result = contract<n>(x1up, x2low);
 			return result;
@@ -207,22 +213,22 @@ public:
 	}
 
 	// dot the normal observer's four-velocity with a four vector
-	double ndot(const double x[4]) const{
+	double ndot(const Tuple<double,4>& x) const{
 		return -alpha * x[3];
 	}
 
 	// normalize a four vector to have a norm of +/-1
-	void normalize(double x[4]) const{
+	void normalize(Tuple<double,4>& x) const{
 		double invnorm = sqrt(fabs(1./dot<4>(x,x)));
 		for(unsigned i=0; i<4; i++) x[i] *= invnorm;
 	}
 
 	// make a vector null
-	void normalize_null_preservedownt(double x[4]) const{
+	void normalize_null_preservedownt(Tuple<double,4>& x) const{
 		PRINT_ASSERT(x[3],>=,0);
 		double result = NaN;
 		if(DO_GR){
-			double xlow[4];
+			Tuple<double,4> xlow;
 			lower<4>(x,xlow);
 			double C = get_inverse(3,3) * xlow[3]*xlow[3];
 			double B=0, A=0;
@@ -251,7 +257,7 @@ public:
 		PRINT_ASSERT(x[3],>=,0);
 	}
 
-	void normalize_null_preserveupt(double x[4]) const{
+	void normalize_null_preserveupt(Tuple<double,4>& x) const{
 		double result = NaN;
 		if(DO_GR){
 			double A = dot<3>(x,x);
@@ -270,7 +276,7 @@ public:
 		PRINT_ASSERT(abs(dot<4>(x,x))/(x[3]*x[3]),<,TINY);
 	}
 
-	void normalize_null_changeupt(double x[4]) const{
+	void normalize_null_changeupt(Tuple<double,4>& x) const{
 		double result = NaN;
 		if(DO_GR){
 			const double invA = 1./gtt;
@@ -287,14 +293,16 @@ public:
 
 	// make four vector v orthogonal to four vector v
 	template<unsigned n>
-	void orthogonalize(double v[n], const double e[n]) const{
+	void orthogonalize(Tuple<double,n>& v, const Tuple<double,n>& e) const{
 		double projection = dot<n>(v,e) / dot<n>(e,e);
 		for(unsigned mu=0; mu<n; mu++) v[mu] -= projection * e[mu];
 	}
 
 	// vector operations
-	template<unsigned s>
-	static double dot_Minkowski(const double a[], const double b[]){
+	template<unsigned s, unsigned n1, unsigned n2>
+	static double dot_Minkowski(const Tuple<double,n1>& a, const Tuple<double,n2>& b){
+		PRINT_ASSERT(s,<=,n1);
+		PRINT_ASSERT(s,<=,n2);
 		double product = 0;
 		for(unsigned i=0; i<3; i++) product += a[i]*b[i];
 		if(s==4) product -= a[3]*b[3];
@@ -303,13 +311,13 @@ public:
 
 	// normalize a vector
 	template<unsigned s>
-	static void normalize_Minkowski(double a[]){
+	static void normalize_Minkowski(Tuple<double,s>& a){
 		double inv_magnitude = 1./sqrt(fabs( dot_Minkowski<s>(a,a) ));
 		PRINT_ASSERT(inv_magnitude,<,INFINITY);
 		for(unsigned i=0; i<s; i++) a[i] *= inv_magnitude;
 	}
 
-	static void normalize_null_Minkowski(double a[4]){
+	static void normalize_null_Minkowski(Tuple<double,4>& a){
 		double spatial_norm = dot_Minkowski<3>(a,a);
 		a[3] = sqrt(spatial_norm);
 	}
@@ -334,7 +342,7 @@ public:
 		data = NaN;
 	}
 
-	void contract2(const double kup[4], double result[4]) const{
+	void contract2(const Tuple<double,4>& kup, Tuple<double,4>& result) const{
 		for(unsigned a=0; a<4; a++){
 			result[a] = 0;
 			for(unsigned i=0; i<4; i++)

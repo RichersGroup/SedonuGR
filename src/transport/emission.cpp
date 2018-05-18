@@ -171,7 +171,7 @@ void Transport::create_thermal_particle(ParticleList& output, const int z_ind,co
 	double nu = pow(nu3, 1./3.);
 
 	// emit isotropically in comoving frame
-	double kup_tet[4];
+	Tuple<double,4> kup_tet;
 	isotropic_kup_tet(nu,kup_tet,&rangen);
 	eh.set_kup_tet(kup_tet);
 	update_eh_k_opac(&eh);
@@ -237,7 +237,7 @@ void Transport::create_surface_particle(ParticleList& output, const double weigh
 	double nu = pow(nu3, 1./3.);
 
 	// sample outward direction
-	double kup_tet[4];
+	Tuple<double,4> kup_tet;
 	do{
 		isotropic_kup_tet(nu,kup_tet,&rangen);
 		eh.set_kup_tet(kup_tet);

@@ -193,7 +193,7 @@ void Transport::move(EinsteinHelper *eh) const{
 	PRINT_ASSERT(dlambda,>=,0);
 
 	// get dk_dlambda at current position
-	double dk_dlambda[4] = {0,0,0,0};
+	Tuple<double,4> dk_dlambda = {0,0,0,0};
 	if(DO_GR){
 		eh->christoffel.contract2(eh->kup,dk_dlambda);
 		for(unsigned i=0; i<4; i++) dk_dlambda[i] *= -1;
@@ -214,7 +214,7 @@ void Transport::move(EinsteinHelper *eh) const{
 
 	// apply second order correction to k
 	if(DO_GR and eh->z_ind>0){
-		double dk_dlambda_2[4], kup2[4];
+		Tuple<double,4> dk_dlambda_2, kup2;
 		eh->g.normalize_null_preserveupt(eh->kup);
 		eh->christoffel.contract2(eh->kup,dk_dlambda_2);
 		for(unsigned i=0; i<4; i++){
@@ -238,7 +238,7 @@ void Transport::move(EinsteinHelper *eh) const{
 	window(eh);
 
 	// get average k
-	double avg_kup_tet[4];
+	Tuple<double,4> avg_kup_tet;
 	for(unsigned i=0; i<4; i++) avg_kup_tet[i] = 0.5 * (old_kup_tet[i] + eh->kup_tet[i]);
 
 	// tally in contribution to zone's distribution function (lab frame)

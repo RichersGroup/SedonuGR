@@ -43,16 +43,11 @@ class ParticleList
 
 public:
 
-	ParticleList(){
-		xup.resize(4);
-		kup.resize(4);
-	}
-
-	vector<vector<double> > xup;         // x,y,z,ct position (cm)
-	vector<vector<double> > kup;         // 4-wavevector (erg) //old definition:(2pi nu/c)
-	vector<double>            N;         // total number of neutrinos in packet
-	vector<int>               s;         // species number
-	vector<ParticleFate>   fate;
+	Tuple<vector<double>, 4> xup;         // x,y,z,ct position (cm)
+	Tuple<vector<double>, 4> kup;         // 4-wavevector (erg) //old definition:(2pi nu/c)
+	vector<double>             N;         // total number of neutrinos in packet
+	vector<int>                s;         // species number
+	vector<ParticleFate>    fate;
 
 	void resize(const unsigned newsize){
 		PRINT_ASSERT(xup.size(),==,4);

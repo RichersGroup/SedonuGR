@@ -45,7 +45,7 @@ public:
 	virtual ~SpectrumArray() {}
 
 	// record some data
-	virtual void count(const double kup_tet[4], const unsigned dir_ind[NDIMS+1], const double E) = 0;
+	virtual void count(const Tuple<double,4>& kup_tet, const unsigned dir_ind[NDIMS+1], const double E) = 0;
 
 	// MPI functions
 	virtual void mpi_sum_scatter(vector<unsigned>& zone_stop_list) = 0;

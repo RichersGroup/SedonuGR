@@ -548,14 +548,14 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	}
 }
 
-double Grid2DSphere_theta(const double x[3]){
+double Grid2DSphere_theta(const Tuple<double,4>& x){
 	return atan2(sqrt(x[0]*x[0] + x[1]*x[1]), x[2]);
 }
 
 //------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
-int Grid2DSphere::zone_index(const double x[3]) const
+int Grid2DSphere::zone_index(const Tuple<double,4>& x) const
 {
 	double r  = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 	double theta = Grid2DSphere_theta(x);
@@ -647,7 +647,7 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 	double x=eh->xup[0], y=eh->xup[1], z=eh->xup[2];
 
 
-	double ktest[4] = {x, y, z, 0};
+	Tuple<double,4> ktest = {x, y, z, 0};
 	const double r = radius(eh->xup);
 	const double ur = radius(eh->u);
 	for(int sgn=1; sgn>0; sgn*=-1){
@@ -668,7 +668,7 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 	}
 
 	double rp = sqrt(x*x + y*y);
-	double ktest2[4] = {x*z, y*z, -rp*rp, 0};
+	Tuple<double,4> ktest2 = {x*z, y*z, -rp*rp, 0};
 	double theta = Grid2DSphere_theta(eh->xup);
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector
@@ -751,7 +751,7 @@ void Grid2DSphere::zone_directional_indices(const int z_ind, vector<unsigned>& d
 //------------------------------------------------------------
 // sample a random cartesian position within the spherical shell
 //------------------------------------------------------------
-void Grid2DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3]) const
+void Grid2DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, Tuple<double,4>& x) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
@@ -805,11 +805,10 @@ void Grid2DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3
 void Grid2DSphere::interpolate_fluid_velocity(EinsteinHelper *eh) const
 {
 	// radius in zone
-	double *x = eh->xup;
-	double r    = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
-	double rhat = sqrt(x[0]*x[0] + x[1]*x[1]);
+	double r    = sqrt(eh->xup[0]*eh->xup[0] + eh->xup[1]*eh->xup[1] + eh->xup[2]*eh->xup[2]);
+	double rhat = sqrt(eh->xup[0]*eh->xup[0] + eh->xup[1]*eh->xup[1]);
 	int along_axis = (rhat/r < TINY);
-	double theta = pc::pi/2.0 - atan2(x[2], rhat);
+	double theta = pc::pi/2.0 - atan2(eh->xup[2], rhat);
 	theta = max(0.0,theta);
 	theta = min(pc::pi, theta);
 
@@ -819,18 +818,18 @@ void Grid2DSphere::interpolate_fluid_velocity(EinsteinHelper *eh) const
 	double tmp_vphi   = vphi.interpolate(eh->icube_vol);
 
 	double vr_cart[3];
-	vr_cart[0] = tmp_vr * x[0]/r;
-	vr_cart[1] = tmp_vr * x[1]/r;
-	vr_cart[2] = tmp_vr * x[2]/r;
+	vr_cart[0] = tmp_vr * eh->xup[0]/r;
+	vr_cart[1] = tmp_vr * eh->xup[1]/r;
+	vr_cart[2] = tmp_vr * eh->xup[2]/r;
 
 	double vtheta_cart[3];
-	vtheta_cart[0] =  (along_axis ? 0 : tmp_vtheta * x[2]/r * x[0]/rhat );
-	vtheta_cart[1] =  (along_axis ? 0 : tmp_vtheta * x[2]/r * x[1]/rhat );
+	vtheta_cart[0] =  (along_axis ? 0 : tmp_vtheta * eh->xup[2]/r * eh->xup[0]/rhat );
+	vtheta_cart[1] =  (along_axis ? 0 : tmp_vtheta * eh->xup[2]/r * eh->xup[1]/rhat );
 	vtheta_cart[2] = -tmp_vtheta * rhat/r;
 
 	double vphi_cart[3];
-	vphi_cart[0] = (along_axis ? 0 : -tmp_vphi * x[1]/rhat );
-	vphi_cart[1] = (along_axis ? 0 :  tmp_vphi * x[0]/rhat );
+	vphi_cart[0] = (along_axis ? 0 : -tmp_vphi * eh->xup[1]/rhat );
+	vphi_cart[1] = (along_axis ? 0 :  tmp_vphi * eh->xup[0]/rhat );
 	vphi_cart[2] = 0;
 
 	// remember, symmetry axis is along the z-axis
@@ -895,7 +894,7 @@ void Grid2DSphere::interpolate_3metric(EinsteinHelper *eh) const{ // default Min
 	eh->g.gammalow.data[ixz] = 0.0;
 	eh->g.gammalow.data[iyz] = 0.0;
 }
-void Grid2DSphere::grid_coordinates(const double xup[3], double coords[NDIMS]) const{
+void Grid2DSphere::grid_coordinates(const Tuple<double,4>& xup, double coords[NDIMS]) const{
 	coords[0] = radius(xup);
 	coords[1] = Grid2DSphere_theta(xup);
 }

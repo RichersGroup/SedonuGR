@@ -44,14 +44,14 @@ public:
 	void read_model_file(Lua* lua);
 
 	// required functions
-	int  zone_index                (const double x[4]                                 ) const;
+	int  zone_index                (const Tuple<double,4>& x                                 ) const;
 	double zone_lab_3volume        (const int z_ind                                   ) const;
 	double zone_min_length         (const int z_ind                                   ) const;
 	double d_boundary(const EinsteinHelper *eh) const;
 	double d_randomwalk(const EinsteinHelper *eh) const;
 	void zone_coordinates          (const int z_ind, double r[0], const int rsize     ) const;
 	void zone_directional_indices  (const int z_ind, vector<unsigned>& dir_ind        ) const;
-	void sample_in_zone            (const int z_ind, ThreadRNG* rangen, double xup[4] ) const;
+	void sample_in_zone            (const int z_ind, ThreadRNG* rangen, Tuple<double,4>& xup) const;
 	void interpolate_fluid_velocity(EinsteinHelper* eh                                ) const;
 	void symmetry_boundaries       (EinsteinHelper *eh                                ) const;
 	double zone_radius             (const int z_ind                                   ) const;
@@ -65,7 +65,7 @@ public:
 	void get_connection_coefficients(EinsteinHelper* eh) const; // Gamma^alhpa_mu_nu
 	void interpolate_shift(EinsteinHelper* eh) const;
 	void interpolate_3metric(EinsteinHelper* eh) const;
-	void grid_coordinates(const double xup[3], double coords[NDIMS]) const;
+	void grid_coordinates(const Tuple<double,4>& xup, double coords[NDIMS]) const;
 };
 
 

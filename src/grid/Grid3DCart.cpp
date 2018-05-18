@@ -428,7 +428,7 @@ void Grid3DCart::read_THC_file(Lua* lua)
 //------------------------------------------------------------
 // Overly simple search to find zone
 //------------------------------------------------------------
-int Grid3DCart::zone_index(const double x[3]) const
+int Grid3DCart::zone_index(const Tuple<double,4>& x) const
 {
 	// check for off grid
 	for(int i=0; i<3; i++){
@@ -504,7 +504,7 @@ double Grid3DCart::zone_lab_3volume(const int z_ind) const
 //------------------------------------------------------------
 // sample a random position within the cubical cell
 //------------------------------------------------------------
-void Grid3DCart::sample_in_zone(const int z_ind, ThreadRNG* rangen, double x[3]) const
+void Grid3DCart::sample_in_zone(const int z_ind, ThreadRNG* rangen, Tuple<double,4>& x) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
@@ -578,7 +578,7 @@ double Grid3DCart::d_randomwalk(const EinsteinHelper *eh) const{
 	for(unsigned i=0; i<3; i++){
 		for(int sgn=1; sgn>0; sgn*=-1){
 			// get a null test vector
-			double ktest[4] = {0,0,0,0};
+			Tuple<double,4> ktest = {0,0,0,0};
 			ktest[i] = sgn;
 			eh->g.normalize_null_changeupt(ktest);
 			if(ktest[3]<0) for(unsigned i=0; i<4; i++) ktest[i] *= -1;
@@ -750,7 +750,7 @@ double Grid3DCart::zone_lorentz_factor(const int z_ind) const{
 	if(DO_GR) g.gammalow.data = g3[z_ind];
 	else g.gammalow.data = NaN;
 
-	double threevel[3];
+	Tuple<double,3> threevel;
 	for(unsigned i=0; i<3; i++) threevel[i] = v[z_ind][i]/pc::c;
 
 	double result = EinsteinHelper::lorentzFactor(&g,threevel);
@@ -771,7 +771,7 @@ void Grid3DCart::interpolate_shift(EinsteinHelper* eh) const{
 void Grid3DCart::interpolate_3metric(EinsteinHelper* eh) const{
 	if(DO_GR) eh->g.gammalow.data = g3.interpolate(eh->icube_vol);
 }
-void Grid3DCart::grid_coordinates(const double xup[3], double coords[NDIMS]) const{
+void Grid3DCart::grid_coordinates(const Tuple<double,4>& xup, double coords[NDIMS]) const{
 	coords[0] = xup[0];
 	coords[1] = xup[1];
 	coords[2] = xup[2];

@@ -120,7 +120,7 @@ public:
 	virtual hsize_t dimensionality          () const=0;
 
 	// describe zone
-	virtual int    zone_index      (const double xup[4])                    const=0;
+	virtual int    zone_index      (const Tuple<double,4>& xup)              const=0;
 	virtual double zone_lab_3volume(const int z_ind)                        const=0;
 	virtual double zone_min_length (const int z_ind)                        const=0;
 	virtual double zone_radius     (const int z_ind)                        const=0;
@@ -144,10 +144,10 @@ public:
 	void interpolate_opacity(EinsteinHelper *eh) const;
 
 	// help with spawning particles
-	virtual void sample_in_zone(const int z_ind, ThreadRNG *rangen, double xup[3]) const = 0;
+	virtual void sample_in_zone(const int z_ind, ThreadRNG *rangen, Tuple<double,4>& xup) const = 0;
 
 	// GR functions
-	virtual void grid_coordinates(const double xup[3], double coords[NDIMS]) const=0;
+	virtual void grid_coordinates(const Tuple<double,4>& xup, double coords[NDIMS]) const=0;
 	virtual void get_connection_coefficients(EinsteinHelper* eh) const=0; // Gamma^alhpa_mu_nu
 	virtual void interpolate_shift(EinsteinHelper* eh) const=0;
 	virtual void interpolate_3metric(EinsteinHelper* eh) const=0;

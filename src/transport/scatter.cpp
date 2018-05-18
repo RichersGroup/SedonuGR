@@ -57,7 +57,7 @@ void Transport::window(EinsteinHelper *eh) const{
 void Transport::scatter(EinsteinHelper *eh) const{
 	// store the old direction
 	double Nold = eh->N;
-	double kup_tet_old[4];
+	Tuple<double,4> kup_tet_old;
 	for(unsigned i=0; i<4; i++) kup_tet_old[i] = eh->kup_tet[i];
 	PRINT_ASSERT(kup_tet_old[3],==,eh->kup_tet[3]);
 	
@@ -65,7 +65,7 @@ void Transport::scatter(EinsteinHelper *eh) const{
 	if(use_scattering_kernels) sample_scattering_final_state(eh,kup_tet_old);
 	else{
 		// sample new direction
-		double kup_tet[4];
+		Tuple<double,4> kup_tet;
 		isotropic_kup_tet(eh->nu(),kup_tet,&rangen);
 		eh->set_kup_tet(kup_tet);
 	}
@@ -133,7 +133,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	double Naverage = (eh->N - Nfinal) / (opt_depth);
 
 	// select a random direction
-	double kup_tet[4];
+	Tuple<double,4> kup_tet;
 	isotropic_kup_tet(eh->nu(),kup_tet,&rangen);
 	eh->set_kup_tet(kup_tet);
 	eh->ds_com = Rcom;
@@ -142,11 +142,12 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	eh->N = Nfinal;
 
 	// select a random outward direction
-	double kup_tet_final[4] = {0,0,0, kup_tet[3]};
+	Tuple<double,4> kup_tet_final = {0,0,0, kup_tet[3]};
+	Tuple<double,3> direction;
 	do{
-		isotropic_direction(kup_tet_final,&rangen);
-	} while(Metric::dot_Minkowski<3>(kup_tet_final,kup_tet) < 0);
-	for(unsigned i=0; i<3; i++) kup_tet_final[i] *= kup_tet_final[3];
+		isotropic_direction(direction,&rangen);
+	} while(Metric::dot_Minkowski<3>(direction,kup_tet) < 0);
+	for(unsigned i=0; i<3; i++) kup_tet_final[i] = direction[i] * kup_tet_final[3];
 	eh->set_kup_tet(kup_tet_final);
 
 	// contribute energy isotropically
@@ -176,7 +177,7 @@ bool reject_direction(const double mu, const double delta, ThreadRNG* rangen){
 	if(rangen->uniform() > pdfval) return true;
 	else return false;
 }
-void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double kup_tet_old[4]) const{
+void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<double,4>& kup_tet_old) const{
 	PRINT_ASSERT(use_scattering_kernels,>,0);
 	PRINT_ASSERT(grid->scattering_delta[eh->s].size(),>,0);
 	PRINT_ASSERT(kup_tet_old[3],==,eh->kup_tet[3]);
@@ -215,7 +216,7 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const double k
 
 	// rejection sample the new direction, but only if not absurdly forward/backward peaked
 	// (delta=2.8 corresponds to a possible factor of 10 in the neutrino weight)
-	double kup_tet_new[4];
+	Tuple<double,4> kup_tet_new;
 	if(fabs(delta) < 2.8){
 		double costheta=0;
 		do{

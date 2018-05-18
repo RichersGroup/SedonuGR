@@ -141,7 +141,7 @@ public:
 	//--------------------------------------------------------------
 	// count a particle
 	////--------------------------------------------------------------
-	void count(const double kup_tet[4], const unsigned dir_ind[NDIMS+1], const double E){
+	void count(const Tuple<double,4>& kup_tet, const unsigned dir_ind[NDIMS+1], const double E){
 		PRINT_ASSERT(E,>=,0);
 		PRINT_ASSERT(kup_tet[3],>=,0);
 

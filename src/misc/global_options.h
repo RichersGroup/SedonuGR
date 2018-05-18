@@ -43,16 +43,13 @@
 
 #define NDIMS 3
 #define DO_GR 1
+#define CHUNKSIZE 8
 
 //using real = float; // or float
 //const MPI_Datatype MPI_real = ( sizeof(real)==4 ? MPI_FLOAT : MPI_DOUBLE );
 #define NaN std::numeric_limits<double>::quiet_NaN()
 #define MAXLIM std::numeric_limits<int>::max()
 #define TINY 1e-5
-
-inline double radius(const double x[4]){
-	return sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
-}
 
 template<typename T>
 inline void ATOMIC_ADD(T* inout, const T to_add){
@@ -132,7 +129,7 @@ class Tuple{
 public:
   T vals[len];
 
-  unsigned int size() const{return size;}
+  inline unsigned int size() const{return len;}
 
   const T& operator[](const unsigned int i) const {return vals[i];}
   T& operator[](const unsigned int i){return vals[i];}
@@ -176,9 +173,28 @@ public:
 	  for(unsigned i=0; i<len; i++) this->vals[i] *= scale;
 	  return *this;
   }
+  template<typename Tin>
+  bool operator==(const Tuple<Tin,len>& input){
+	  bool isequal = true;
+	  for(unsigned i=0; i<len; i++) isequal = isequal && (this->vals[i] == input.vals[i]);
+	  return isequal;
+  }
 };
 
+template<typename T, unsigned n>
+inline std::ostream& operator<<(std::ostream& out, const Tuple<T,n>& tuple){
+	out << "[ ";
+	for(unsigned i=0; i<n; i++) out << tuple[n] << " ";
+	out << "]";
+    return out;
+}
 
+inline double radius(const Tuple<double,4>& x){
+	return sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+}
+inline double radius(const double x[3]){
+	return sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+}
 
 #endif
 

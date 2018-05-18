@@ -177,10 +177,10 @@ public:
 	//--------------------------------------------------------------
 	// count a particle
 	////--------------------------------------------------------------
-	void count(const double kup_tet[4], const unsigned dir_ind[NDIMS+1], const double E) {
+	void count(const Tuple<double,4>& kup_tet, const unsigned dir_ind[NDIMS+1], const double E) {
 		PRINT_ASSERT(E, >=, 0);
 		PRINT_ASSERT(E, <, INFINITY);
-		double D[3] = {kup_tet[0], kup_tet[1], kup_tet[2]};
+		Tuple<double,3> D = {kup_tet[0], kup_tet[1], kup_tet[2]};
 		Metric::normalize_Minkowski<3>(D);
 		
 		unsigned data_indices[data.Ndims()];

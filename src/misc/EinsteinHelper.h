@@ -15,22 +15,23 @@ enum TetradRotation {cartesian, spherical};
 class EinsteinHelper{
 public:
 	// essential variables interpolated from grid
-	double xup[4], kup[4], N, s;
+	Tuple<double,4> xup;
+	Tuple<double,4> kup, kup_tet; // erg
+	Tuple<double,4> u; // dimensionless, up index
+	Tuple<double,3> v; // cm/s
+	double N, s;
 	ParticleFate fate;
 	double N0;
 	Metric g;
 	Christoffel christoffel;
-	double u[4]; // dimensionless, up index
 
 	// things with which to do interpolation
 	InterpolationCube<NDIMS  > icube_vol; // for metric quantities
 	InterpolationCube<NDIMS+1> icube_spec; // for eas
 
 	// intermediate quantities
-	double e[4][4]; // [tet(low)][coord(up)]
+	Tuple<double,4> e[4]; // [tet(low)][coord(up)]
 	double grid_coords[NDIMS+1];
-	double v[3]; // cm/s
-	double kup_tet[4]; // erg
 	double absopac, scatopac;
 	double ds_com;
 	unsigned dir_ind[NDIMS+1]; // spatial, nu_in
@@ -59,7 +60,7 @@ public:
 		for(unsigned i=0; i<3; i++) v[i] = NaN;
 	}
 
-	void set_kup_tet(const double kup_tet_in[4]){
+	void set_kup_tet(const Tuple<double,4>& kup_tet_in){
 		PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet_in,kup_tet_in)/(kup_tet_in[3]*kup_tet_in[3]),<,TINY);
 		for(unsigned i=0; i<4; i++) kup_tet[i] = kup_tet_in[i];
 		tetrad_to_coord(kup_tet,kup);
@@ -74,7 +75,7 @@ public:
 	}
 
 	// return the Lorentz factor W
-	static double lorentzFactor(const Metric* g, const double v[3]){
+	static double lorentzFactor(const Metric* g, const Tuple<double,3>& v){
 		double result = 1. / sqrt(1. - g->dot<3>(v,v));
 		PRINT_ASSERT(result,>=,1);
 		return result;
@@ -88,7 +89,7 @@ public:
 
 	// get four velocity from three velocity
 	void set_fourvel(){
-		const double vdimless[3] = {v[0]/pc::c, v[1]/pc::c, v[2]/pc::c};
+		const Tuple<double,3> vdimless = {v[0]/pc::c, v[1]/pc::c, v[2]/pc::c};
 		double W = lorentzFactor(&g,vdimless);
 		u[3] = W / (DO_GR ? g.alpha : 1.0);
 		PRINT_ASSERT(u[3],>,0);
@@ -180,12 +181,12 @@ public:
 	  PRINT_ASSERT(fabs(g.dot<4>(e[2],e[3])),<,TINY);
 	}
 
-	void coord_to_tetrad(const double kup_coord[4], double kup_tet[4]) const{
+	void coord_to_tetrad(const Tuple<double,4>& kup_coord, Tuple<double,4>& kup_tet) const{
 		for(int mu=0; mu<4; mu++) kup_tet[mu] = g.dot<4>(kup_coord,e[mu]);
 		kup_tet[3] *= -1.; // k.e = kdown_tet. Must raise index.
 	}
 
-	void tetrad_to_coord(const double kup_tet[4], double kup_coord[4]) const{
+	void tetrad_to_coord(const Tuple<double,4>& kup_tet, Tuple<double,4>& kup_coord) const{
 		for(int mu=0; mu<4; mu++){
 			kup_coord[mu] = 0;
 			for(int nu=0; nu<4; nu++)
@@ -194,7 +195,7 @@ public:
 	}
 
 	template<unsigned n>
-	double dot_tetrad(const double x1[n], const double x2[n]){
+	double dot_tetrad(const Tuple<double,4>& x1, const Tuple<double,4>& x2){
 		double result = 0;
 		for(unsigned i=0; i<3; i++) result += x1[n]*x2[n];
 		if(n==4) result -= x1[2]*x2[3];
@@ -202,7 +203,7 @@ public:
 	}
 
 	void scale_p_frequency(const double scale){
-		for(unsigned i=0; i<4; i++) kup[i] *= scale;
+		kup *= scale;
 	}
 
 	void get_Particle(ParticleList& pout, const unsigned list_index) const{
