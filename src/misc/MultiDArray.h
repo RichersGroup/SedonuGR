@@ -275,7 +275,7 @@ public:
 	}
 
 	void wipe(){
-		#pragma omp parallel for
+		#pragma omp parallel for simd
 		for(unsigned z=0; z<y0.size(); z++)
 			y0[z] = 0;
 	}
