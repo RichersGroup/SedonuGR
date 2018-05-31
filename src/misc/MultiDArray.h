@@ -88,7 +88,7 @@ public:
 		for(unsigned i=0; i<ncorners; i++){
 
 			// volume/area associated with each point/line
-			double dVol=1, dA[ndims];
+			double dA[ndims];
 			for(unsigned d_deriv=0; d_deriv<ndims; d_deriv++) dA[d_deriv] = 1.;
 			for(unsigned d=0; d<ndims; d++){
 				unsigned LR = not isRightIndex(i,d); // 1 if left, 0 if right
