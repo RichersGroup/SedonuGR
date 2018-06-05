@@ -143,9 +143,9 @@ public:
 	  return *this;
   }
   const Tuple<T,len> operator*(const double scale) const{
-	  Tuple<T,len> result = *this;
+	  Tuple<T,len> result;// = *this;
 	  #pragma omp simd
-	  for(unsigned i=0; i<len; i++) result.vals[i] *= scale;
+	  for(unsigned i=0; i<len; i++) result.vals[i] = this->vals[i] * scale;
 	  return result;
   }
   const Tuple<T,len> operator/(const double scale) const{
@@ -154,14 +154,14 @@ public:
   }
   template<typename Tin>
   const Tuple<T,len> operator+(const Tuple<Tin,len>& input) const{
-	  Tuple<T,len> result = *this;
-	  for(unsigned i=0; i<len; i++) result.vals[i] += input.vals[i];
+	  Tuple<T,len> result;// = *this;
+	  for(unsigned i=0; i<len; i++) result.vals[i] = this->vals[i] + input.vals[i];
 	  return result;
   }
   template<typename Tin>
   const Tuple<T,len> operator-(const Tuple<Tin,len>& input) const{
-	  Tuple<T,len> result = *this;
-	  for(unsigned i=0; i<len; i++) result.vals[i] -= input.vals[i];
+	  Tuple<T,len> result;// = *this;
+	  for(unsigned i=0; i<len; i++) result.vals[i] = this->vals[i] - input.vals[i];
 	  return result;
   }
   template<typename Tin>
