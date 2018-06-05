@@ -288,11 +288,11 @@ public:
 		return ndims;
 	}
 
-	void add(const unsigned ind[ndims], const Tuple<T,nelements> to_add){
+	void add(const unsigned ind[ndims], const Tuple<T,nelements>& to_add){
 		unsigned lin_ind = direct_index(ind);
 		direct_add(lin_ind, to_add);
 	}
-	void direct_add(const unsigned lin_ind, const Tuple<T,nelements> to_add){
+	void direct_add(const unsigned lin_ind, const Tuple<T,nelements>& to_add){
 		for(unsigned i=0; i<nelements; i++){
 			#pragma omp atomic
 			y0[lin_ind][i] += to_add[i];
