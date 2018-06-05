@@ -135,10 +135,12 @@ public:
   T& operator[](const unsigned int i){return vals[i];}
   template<typename Tin>
   Tuple<T,len>& operator=(const Tuple<Tin,len>& input){
+	  #pragma omp simd
 	  for(unsigned i=0; i<len; i++) this->vals[i] = input.vals[i];
 	  return *this;
   }
   Tuple<T,len>& operator=(const double input){
+	  #pragma omp simd
 	  for(unsigned i=0; i<len; i++) this->vals[i] = input;
 	  return *this;
   }
@@ -155,27 +157,32 @@ public:
   template<typename Tin>
   const Tuple<T,len> operator+(const Tuple<Tin,len>& input) const{
 	  Tuple<T,len> result;// = *this;
+	  #pragma omp simd
 	  for(unsigned i=0; i<len; i++) result.vals[i] = this->vals[i] + input.vals[i];
 	  return result;
   }
   template<typename Tin>
   const Tuple<T,len> operator-(const Tuple<Tin,len>& input) const{
 	  Tuple<T,len> result;// = *this;
+	  #pragma omp simd
 	  for(unsigned i=0; i<len; i++) result.vals[i] = this->vals[i] - input.vals[i];
 	  return result;
   }
   template<typename Tin>
   Tuple<T,len>& operator+=(const Tuple<Tin,len>& input){
+	  #pragma omp simd
 	  for(unsigned i=0; i<len; i++) this->vals[i] += input.vals[i];
 	  return *this;
   }
   Tuple<T,len>& operator*=(const double scale){
+	  #pragma omp simd
 	  for(unsigned i=0; i<len; i++) this->vals[i] *= scale;
 	  return *this;
   }
   template<typename Tin>
   bool operator==(const Tuple<Tin,len>& input){
 	  bool isequal = true;
+	  #pragma omp simd
 	  for(unsigned i=0; i<len; i++) isequal = isequal && (this->vals[i] == input.vals[i]);
 	  return isequal;
   }
