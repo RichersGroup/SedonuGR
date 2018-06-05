@@ -142,8 +142,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	eh->N = Nfinal;
 
 	// select a random outward direction
-	Tuple<double,4> kup_tet_final;
-	for(size_t i=0; i<3; i++) kup_tet_final[i] = 0;
+	Tuple<double,4> kup_tet_final = 0.0;
 	kup_tet_final[3] = kup_tet[3];
 	Tuple<double,3> direction;
 	do{

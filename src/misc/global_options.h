@@ -129,10 +129,15 @@ template<typename T, unsigned len>
 class Tuple : public std::array<T,len>{
 public:
 
+	Tuple(){}
+
+	Tuple(T in){
+		#pragma omp simd
+		for(size_t i=0; i<len; i++) this->operator[](i) = in;
+	}
+
   inline unsigned int size() const{return len;}
 
-  //const T& operator[](const unsigned int i) const {return vals[i];}
-  //T& operator[](const unsigned int i){return vals[i];}
   template<typename Tin>
   Tuple<T,len>& operator=(const Tuple<Tin,len>& input){
 	  #pragma omp simd
