@@ -177,11 +177,8 @@ void Transport::move(EinsteinHelper *eh) const{
 	//cout << eh->nu() << endl;
 
 	// save old values
-	double old_kup[4], old_kup_tet[4];
-	for(unsigned i=0; i<4; i++){
-		old_kup[i] = eh->kup[i];
-		old_kup_tet[i] = eh->kup_tet[i];
-	}
+	Tuple<double,4> old_kup = eh->kup;
+	Tuple<double,4> old_kup_tet = eh->kup_tet;
 	double old_absopac = eh->absopac;
 	double old_N = eh->N;
 	unsigned old_z_ind = eh->z_ind;
@@ -196,16 +193,15 @@ void Transport::move(EinsteinHelper *eh) const{
 	Tuple<double,4> dk_dlambda;
 	if(DO_GR){
 		eh->christoffel.contract2(eh->kup,dk_dlambda);
-		for(unsigned i=0; i<4; i++) dk_dlambda[i] *= -1;
+		dk_dlambda *= -1;
 	}
 
 	// get 2nd order x, 1st order estimate for k
-	double kup1[4];
+	Tuple<double,4> kup1 = old_kup + dk_dlambda * dlambda;
+	Tuple<double,4> order1 = old_kup * dlambda;
+	Tuple<double,4> order2 = dk_dlambda * dlambda*dlambda * 0.5;
 	for(unsigned i=0; i<4; i++){
-		kup1[i] = old_kup[i] + dk_dlambda[i]*dlambda;
-		double order1 = old_kup[i]*dlambda;
-		double order2 = 0.5*dk_dlambda[i]*dlambda*dlambda;
-		eh->xup[i] += order1 + (abs(order2/order1)<1. ? order2 : 0);
+		eh->xup[i] += order1[i] + (abs(order2[i]/order1[i])<1. ? order2[i] : 0);
 		PRINT_ASSERT(eh->xup[i],==,eh->xup[i]);
 	}
 
@@ -214,13 +210,13 @@ void Transport::move(EinsteinHelper *eh) const{
 
 	// apply second order correction to k
 	if(DO_GR and eh->z_ind>0){
-		Tuple<double,4> dk_dlambda_2, kup2;
+		Tuple<double,4> dk_dlambda_2;
 		eh->g.normalize_null_preserveupt(eh->kup);
 		eh->christoffel.contract2(eh->kup,dk_dlambda_2);
+		dk_dlambda_2 *= -1;
+		Tuple<double,4> kup2 = old_kup + dk_dlambda_2*dlambda;
+		eh->kup = (kup1 + kup2) * 0.5;
 		for(unsigned i=0; i<4; i++){
-			dk_dlambda_2[i] *= -1;
-			kup2[i] = old_kup[i] + dlambda*dk_dlambda_2[i];
-			eh->kup[i] = 0.5 * (kup1[i] + kup2[i]);
 			PRINT_ASSERT(eh->kup[i],==,eh->kup[i]);
 		}
 	}
@@ -238,8 +234,7 @@ void Transport::move(EinsteinHelper *eh) const{
 	window(eh);
 
 	// get average k
-	Tuple<double,4> avg_kup_tet;
-	for(unsigned i=0; i<4; i++) avg_kup_tet[i] = 0.5 * (old_kup_tet[i] + eh->kup_tet[i]);
+	Tuple<double,4> avg_kup_tet = (old_kup_tet + eh->kup_tet) * 0.5;
 
 	// tally in contribution to zone's distribution function (lab frame)
 	// use average N and integrate assuming kt_tet varies linearly over the step
