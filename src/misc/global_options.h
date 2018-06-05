@@ -174,15 +174,11 @@ public:
 	  return result;
   }
   template<typename Tin>
-  Tuple<T,len>& operator+=(const Tuple<Tin,len>& input){
-	  #pragma omp simd
-	  for(unsigned i=0; i<len; i++) this->operator[](i) += input[i];
-	  return *this;
+  void operator+=(const Tuple<Tin,len>& input){
+	  *this = (*this) + input;
   }
-  Tuple<T,len>& operator*=(const double scale){
-	  #pragma omp simd
-	  for(unsigned i=0; i<len; i++) this->operator[](i) *= scale;
-	  return *this;
+  void operator*=(const double scale){
+	  *this = (*this) * scale;
   }
   template<typename Tin>
   bool operator==(const Tuple<Tin,len>& input){
