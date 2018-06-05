@@ -578,7 +578,8 @@ double Grid3DCart::d_randomwalk(const EinsteinHelper *eh) const{
 	for(unsigned i=0; i<3; i++){
 		for(int sgn=1; sgn>0; sgn*=-1){
 			// get a null test vector
-			Tuple<double,4> ktest = {0,0,0,0};
+			Tuple<double,4> ktest;
+			for(size_t j=0; j<4; j++) ktest[j] = 0;
 			ktest[i] = sgn;
 			eh->g.normalize_null_changeupt(ktest);
 			if(ktest[3]<0) for(unsigned i=0; i<4; i++) ktest[i] *= -1;

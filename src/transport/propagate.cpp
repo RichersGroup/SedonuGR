@@ -193,7 +193,7 @@ void Transport::move(EinsteinHelper *eh) const{
 	PRINT_ASSERT(dlambda,>=,0);
 
 	// get dk_dlambda at current position
-	Tuple<double,4> dk_dlambda = {0,0,0,0};
+	Tuple<double,4> dk_dlambda;
 	if(DO_GR){
 		eh->christoffel.contract2(eh->kup,dk_dlambda);
 		for(unsigned i=0; i<4; i++) dk_dlambda[i] *= -1;

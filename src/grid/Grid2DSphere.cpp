@@ -647,7 +647,11 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 	double x=eh->xup[0], y=eh->xup[1], z=eh->xup[2];
 
 
-	Tuple<double,4> ktest = {x, y, z, 0};
+	Tuple<double,4> ktest;
+	ktest[0] = x;
+	ktest[1] = y;
+	ktest[2] = z;
+	ktest[3] = 0;
 	const double r = radius(eh->xup);
 	const double ur = radius(eh->u);
 	for(int sgn=1; sgn>0; sgn*=-1){
@@ -668,7 +672,11 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 	}
 
 	double rp = sqrt(x*x + y*y);
-	Tuple<double,4> ktest2 = {x*z, y*z, -rp*rp, 0};
+	Tuple<double,4> ktest2;
+	ktest2[0] = x*z;
+	ktest2[1] = y*z;
+	ktest2[2] = -rp*rp;
+	ktest2[3] = 0;
 	double theta = Grid2DSphere_theta(eh->xup);
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector

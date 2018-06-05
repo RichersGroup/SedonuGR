@@ -419,7 +419,9 @@ double Grid1DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 	double R=INFINITY;
 	double D = pc::c / (3.*eh->scatopac);
 
-	Tuple<double,4> ktest = {eh->xup[0], eh->xup[1], eh->xup[2], 0};
+	Tuple<double,4> ktest;
+	for(size_t i=0; i<3; i++) ktest[i] = eh->xup[i];
+	ktest[3] = 0;
 	const double r = radius(eh->xup);
 	const double kr = r;
 	const double ur = radius(eh->u);

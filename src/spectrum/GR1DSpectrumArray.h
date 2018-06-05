@@ -78,7 +78,8 @@ public:
 	// count a particle
 	////--------------------------------------------------------------
 	void count(const Tuple<double,4>& kup_tet, const unsigned dir_ind[NDIMS+1], const double E) {
-		Tuple<double,3> D = {kup_tet[0], kup_tet[1], kup_tet[2]};
+		Tuple<double,3> D;
+		for(size_t i=0; i<3; i++) D[i] = kup_tet[i];
 		Metric::normalize_Minkowski<3>(D);
 		PRINT_ASSERT(E, >=, 0);
 		PRINT_ASSERT(E, <, INFINITY);
