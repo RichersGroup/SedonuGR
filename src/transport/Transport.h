@@ -152,10 +152,10 @@ public:
 	int n_subcycles;
 
 	// global radiation quantities
-	std::vector<double> N_core_emit;
-	std::vector<double> N_net_emit;
-	std::vector<double> N_net_esc;
-	std::vector<double> L_net_esc;
+	std::vector<ATOMIC<double> > N_core_emit;
+	std::vector<ATOMIC<double> > N_net_emit;
+	std::vector<ATOMIC<double> > N_net_esc;
+	std::vector<ATOMIC<double> > L_net_esc;
 	std::vector<ATOMIC<long> > n_active;
 	std::vector<ATOMIC<long> > n_escape;
 

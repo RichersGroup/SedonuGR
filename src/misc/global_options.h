@@ -140,6 +140,19 @@ class ATOMIC : public std::atomic<T>
   ATOMIC& operator=(const ATOMIC<T>& other) {
     this->store(other.load(std::memory_order_relaxed), std::memory_order_relaxed);
     return *this;
+    }
+
+  void operator+=(T in) {
+    T current = this->load();
+    while (!this->compare_exchange_weak(current, current + in, std::memory_order_relaxed));
+  }
+  void operator-=(T in) {
+    T current = this->load();
+    while (!this->compare_exchange_weak(current, current - in, std::memory_order_relaxed));
+  }
+  template<typename Tin>
+  void operator*=(Tin in) {
+    operator=((*this)*in);
   }
 };
 
@@ -156,6 +169,11 @@ public:
 	Tuple(T in){
 		#pragma omp simd
 		for(size_t i=0; i<len; i++) this->operator[](i) = in;
+	}
+	template<typename Tin>
+	  Tuple(Tuple<Tin,len> in){
+		#pragma omp simd
+		for(size_t i=0; i<len; i++) this->operator[](i) = in[i];
 	}
 
   inline unsigned int size() const{return len;}

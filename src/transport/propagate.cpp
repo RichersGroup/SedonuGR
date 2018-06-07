@@ -65,9 +65,7 @@ void Transport::propagate_particles()
 		if(eh.fate == escaped){
 			const double nu = eh.nu(); // uses last-known metric
 			n_escape[eh.s]++;
-			#pragma omp atomic
 			L_net_esc[eh.s] += eh.N * nu*pc::h;
-			#pragma omp atomic
 			N_net_esc[eh.s] += eh.N;
 			grid->spectrum[eh.s].count(eh.kup_tet, eh.dir_ind, eh.N * nu*pc::h);
 		}
@@ -242,14 +240,12 @@ void Transport::move(EinsteinHelper *eh) const{
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
 	for(unsigned i=0; i<4; i++){
-		#pragma omp atomic
 		grid->fourforce_abs[old_z_ind][i] += dN * avg_kup_tet[i];
 	}
 
 	// store absorbed lepton number (same in both frames, except for the
 	// factor of this_d which is divided out later
 	if(species_list[eh->s]->lepton_number != 0){
-		#pragma omp atomic
 		grid->l_abs[old_z_ind] += dN * species_list[eh->s]->lepton_number;
 	}
 }

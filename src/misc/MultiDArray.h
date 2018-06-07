@@ -161,7 +161,7 @@ public:
 	}
 
 	// get center value based on grid index
-	const Tuple<double,nelements>& operator[](const unsigned i) const {
+	const Tuple<T,nelements>& operator[](const unsigned i) const {
 		return y0[i];
 	}
 	Tuple<T,nelements>& operator[](const unsigned i){
@@ -294,7 +294,6 @@ public:
 	}
 	void direct_add(const unsigned lin_ind, const Tuple<T,nelements>& to_add){
 		for(unsigned i=0; i<nelements; i++){
-			#pragma omp atomic
 			y0[lin_ind][i] += to_add[i];
 		}
 	}
@@ -377,12 +376,11 @@ public:
 		direct_add(lin_ind, to_add);
 	}
 	void direct_add(const unsigned lin_ind, const T to_add){
-		#pragma omp atomic
 		this->y0[lin_ind][0] += to_add;
 	}
 
 	// get center value based on grid index
-	const double& operator[](const unsigned i) const {
+	const T& operator[](const unsigned i) const {
 		return this->y0[i][0];
 	}
 	T& operator[](const unsigned i){

@@ -191,12 +191,9 @@ void Transport::create_thermal_particle(ParticleList& output, const int z_ind,co
 		PRINT_ASSERT(eh.N,>,0);
 
 		// count up the emitted energy in each zone
-		#pragma omp atomic
 		N_net_emit[eh.s] += eh.N;
-		#pragma omp atomic
 		grid->l_emit[z_ind] -= eh.N * species_list[eh.s]->lepton_number;
 		for(unsigned i=0; i<4; i++){
-			#pragma omp atomic
 			grid->fourforce_emit[z_ind][i] -= eh.N * kup_tet[i];
 		}
 	}
@@ -263,7 +260,6 @@ void Transport::create_surface_particle(ParticleList& output, const double weigh
 	// add to particle vector
 	window(&eh);
 	if(eh.fate == moving){
-	    #pragma omp atomic
 		N_core_emit[eh.s] += eh.N;
 	}
 	eh.get_Particle(output, list_index);

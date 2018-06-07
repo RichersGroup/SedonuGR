@@ -53,7 +53,7 @@ private:
 
 public:
 
-	ScalarMultiDArray<double,ndims_spatial+3> data;
+	ScalarMultiDArray<ATOMIC<double>,ndims_spatial+3> data;
 	unsigned phiGridIndex, nuGridIndex, muGridIndex;
 	unsigned nphi, nnu, nmu;
 

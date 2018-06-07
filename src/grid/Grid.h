@@ -103,8 +103,9 @@ public:
 	ScalarMultiDArray<double,NDIMS> Ye;        // electron fraction
 	ScalarMultiDArray<double,NDIMS> H_vis;     // specific heating rate (erg/s/g)
 
-	MultiDArray<double,4,NDIMS> fourforce_abs, fourforce_emit, fourforce_annihil;
-	ScalarMultiDArray<double,NDIMS> l_abs, l_emit; // lepton number emission rate (cm^-3 s^-1) (comoving frame)
+	MultiDArray<ATOMIC<double>,4,NDIMS> fourforce_abs, fourforce_emit;
+	MultiDArray<double,4,NDIMS> fourforce_annihil;
+	ScalarMultiDArray<ATOMIC<double>,NDIMS> l_abs, l_emit; // lepton number emission rate (cm^-3 s^-1) (comoving frame)
 
 
 	// set everything up
