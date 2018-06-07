@@ -60,12 +60,10 @@ void Transport::propagate_particles()
 		update_eh_k_opac(&eh);
 
 		// save final data
-		#pragma omp atomic
 		n_active[eh.s]++;
 		if(eh.fate == moving) propagate(&eh);
 		if(eh.fate == escaped){
 			const double nu = eh.nu(); // uses last-known metric
-			#pragma omp atomic
 			n_escape[eh.s]++;
 			#pragma omp atomic
 			L_net_esc[eh.s] += eh.N * nu*pc::h;

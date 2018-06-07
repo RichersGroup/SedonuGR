@@ -122,6 +122,28 @@ do {                                                 \
 #define PRINT_ASSERT(a,op,b)
 #endif
 
+template<typename T>
+class ATOMIC : public std::atomic<T>
+{
+ public:
+  //defaultinitializes value
+  ATOMIC() = default;
+
+  constexpr ATOMIC(T desired) :
+  std::atomic<T>(desired)
+    {}
+
+  constexpr ATOMIC(const ATOMIC<T>& other) :
+  ATOMIC(other.load(std::memory_order_relaxed))
+    {}
+
+  ATOMIC& operator=(const ATOMIC<T>& other) {
+    this->store(other.load(std::memory_order_relaxed), std::memory_order_relaxed);
+    return *this;
+  }
+};
+
+
 //=======//
 // TUPLE //
 //=======//

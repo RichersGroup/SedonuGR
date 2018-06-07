@@ -28,6 +28,7 @@
 #ifndef _TRANSPORT_H
 #define _TRANSPORT_H
 #include <vector>
+#include <atomic>
 #include "Particle.h"
 #include "Lua.h"
 #include "CDFArray.h"
@@ -155,8 +156,8 @@ public:
 	std::vector<double> N_net_emit;
 	std::vector<double> N_net_esc;
 	std::vector<double> L_net_esc;
-	std::vector<long> n_active;
-	std::vector<long> n_escape;
+	std::vector<ATOMIC<long> > n_active;
+	std::vector<ATOMIC<long> > n_escape;
 
 
 	// random number generator
