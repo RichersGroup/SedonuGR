@@ -57,13 +57,13 @@ public:
 	void set_kup_tet(const Tuple<double,4>& kup_tet_in){
 		PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet_in,kup_tet_in)/(kup_tet_in[3]*kup_tet_in[3]),<,TINY);
 		for(unsigned i=0; i<4; i++) kup_tet[i] = kup_tet_in[i];
-		tetrad_to_coord(kup_tet,kup);
+		kup = tetrad_to_coord(kup_tet);
 		g.normalize_null_preserveupt(kup);
 		PRINT_ASSERT(g.dot<4>(kup,kup)/(kup[3]*kup[3]),<,TINY);
 	}
 	void renormalize_kup(){
 		g.normalize_null_preserveupt(kup);
-		coord_to_tetrad(kup, kup_tet);
+		kup_tet = coord_to_tetrad(kup);
 		PRINT_ASSERT(kup_tet[3],>,0);
 		Metric::normalize_null_Minkowski(kup_tet);
 	}
@@ -175,17 +175,21 @@ public:
 	  PRINT_ASSERT(fabs(g.dot<4>(e[2],e[3])),<,TINY);
 	}
 
-	void coord_to_tetrad(const Tuple<double,4>& kup_coord, Tuple<double,4>& kup_tet) const{
+	Tuple<double,4> coord_to_tetrad(const Tuple<double,4>& kup_coord) const{
+	        Tuple<double,4> kup_tet;
 		for(int mu=0; mu<4; mu++) kup_tet[mu] = g.dot<4>(kup_coord,e[mu]);
 		kup_tet[3] *= -1.; // k.e = kdown_tet. Must raise index.
+		return kup_tet;
 	}
 
-	void tetrad_to_coord(const Tuple<double,4>& kup_tet, Tuple<double,4>& kup_coord) const{
+	Tuple<double,4> tetrad_to_coord(const Tuple<double,4>& kup_tet) const{
+	        Tuple<double,4> kup_coord;
 		for(int mu=0; mu<4; mu++){
 			kup_coord[mu] = 0;
 			for(int nu=0; nu<4; nu++)
 				kup_coord[mu] += kup_tet[nu] * e[nu][mu];
 		}
+		return kup_coord;
 	}
 
 	template<unsigned n>
