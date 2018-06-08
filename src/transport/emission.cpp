@@ -154,7 +154,7 @@ void Transport::create_thermal_particle(ParticleList& output, const int z_ind,co
 	eh.s = s;
 
 	// random sample position in zone
-	grid->sample_in_zone(z_ind,&rangen,eh.xup);
+	eh.xup = grid->sample_in_zone(z_ind,&rangen);
 	eh.xup[3] = 0;
 	update_eh_background(&eh);
 	if(eh.z_ind<0 || radius(eh.xup)<r_core){

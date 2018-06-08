@@ -759,7 +759,7 @@ void Grid2DSphere::zone_directional_indices(const int z_ind, vector<unsigned>& d
 //------------------------------------------------------------
 // sample a random cartesian position within the spherical shell
 //------------------------------------------------------------
-void Grid2DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, Tuple<double,4>& x) const
+Tuple<double,4> Grid2DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
@@ -801,9 +801,11 @@ void Grid2DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen, Tuple<doub
 	double phi = 2.0*pc::pi*rand[2];
 
 	// set the real 3-d coordinates. remember, z is along the symmetry axis
+	Tuple<double,4> x;
 	x[0] = radius*sin_theta*cos(phi);
 	x[1] = radius*sin_theta*sin(phi);
 	x[2] = radius*mu;
+	return x;
 }
 
 

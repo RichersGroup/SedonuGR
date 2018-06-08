@@ -117,14 +117,16 @@ void Grid0DIsotropic::zone_directional_indices(const int z_ind, vector<unsigned>
 //------------------------------------------------------------
 // sample a random position within the spherical shell
 //------------------------------------------------------------
-void Grid0DIsotropic::sample_in_zone(const int z_ind, ThreadRNG* /*rangen*/, Tuple<double,4>& x) const
+Tuple<double,4> Grid0DIsotropic::sample_in_zone(const int z_ind, ThreadRNG* /*rangen*/) const
 {
 	PRINT_ASSERT(z_ind,==,0);
 
 	// set the double 3-d coordinates
+	Tuple<double,4> x;
 	x[0] = 0;
 	x[1] = 0;
 	x[2] = 0;
+	return x;
 }
 
 

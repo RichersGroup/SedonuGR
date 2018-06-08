@@ -51,7 +51,7 @@ public:
 	double d_randomwalk(const EinsteinHelper *eh) const;
 	void zone_coordinates          (const int z_ind, double r[0], const int rsize     ) const;
 	void zone_directional_indices  (const int z_ind, vector<unsigned>& dir_ind        ) const;
-	void sample_in_zone            (const int z_ind, ThreadRNG* rangen, Tuple<double,4>& xup) const;
+	Tuple<double,4> sample_in_zone (const int z_ind, ThreadRNG* rangen                ) const;
 	void interpolate_fluid_velocity(EinsteinHelper* eh                                ) const;
 	void symmetry_boundaries       (EinsteinHelper *eh                                ) const;
 	double zone_radius             (const int z_ind                                   ) const;

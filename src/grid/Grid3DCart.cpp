@@ -504,7 +504,7 @@ double Grid3DCart::zone_lab_3volume(const int z_ind) const
 //------------------------------------------------------------
 // sample a random position within the cubical cell
 //------------------------------------------------------------
-void Grid3DCart::sample_in_zone(const int z_ind, ThreadRNG* rangen, Tuple<double,4>& x) const
+Tuple<double,4> Grid3DCart::sample_in_zone(const int z_ind, ThreadRNG* rangen) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
@@ -523,6 +523,7 @@ void Grid3DCart::sample_in_zone(const int z_ind, ThreadRNG* rangen, Tuple<double
 	get_deltas(z_ind,delta,3);
 
 	// set the random location
+	Tuple<double,4> x;
 	for(int i=0; i<3; i++){
 		x[i] = zone_left_boundary(i,dir_ind[i]) + delta[i]*rand[i];
 
@@ -534,6 +535,7 @@ void Grid3DCart::sample_in_zone(const int z_ind, ThreadRNG* rangen, Tuple<double
 		x[i] = min(x[i], zone_right_boundary(i,dir_ind[i]));
 		x[i] = max(x[i],  zone_left_boundary(i,dir_ind[i]));
 	}
+	return x;
 }
 
 

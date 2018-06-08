@@ -145,7 +145,7 @@ public:
 	void interpolate_opacity(EinsteinHelper *eh) const;
 
 	// help with spawning particles
-	virtual void sample_in_zone(const int z_ind, ThreadRNG *rangen, Tuple<double,4>& xup) const = 0;
+	virtual Tuple<double,4> sample_in_zone(const int z_ind, ThreadRNG *rangen) const = 0;
 
 	// GR functions
 	virtual void grid_coordinates(const Tuple<double,4>& xup, double coords[NDIMS]) const=0;

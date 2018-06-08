@@ -76,7 +76,7 @@ public:
 	double zone_min_length          (const int z_ind                                               ) const;
 	void   zone_coordinates         (const int z_ind, double r[3], const int rsize                 ) const;
 	void   zone_directional_indices (const int z_ind, vector<unsigned>& dir_ind                    ) const;
-	void   sample_in_zone (const int z_ind, ThreadRNG* rangen, Tuple<double,4>& x) const;
+	Tuple<double,4> sample_in_zone (const int z_ind, ThreadRNG* rangen                ) const;
 	void   interpolate_fluid_velocity(EinsteinHelper* eh) const;
 	void   symmetry_boundaries      (EinsteinHelper *eh                                            ) const;
 	double zone_lorentz_factor      (const int z_ind                                               ) const;
