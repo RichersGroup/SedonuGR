@@ -49,11 +49,11 @@ private:
 	int    rotate_hemisphere[2];
 	int    rotate_quadrant;
 
-	MultiDArray<double,3,3> betaup; // shift
-	MultiDArray<double,6,3> g3;  // three-metric
-	ScalarMultiDArray<double,3> sqrtdetg3; // sqrt of determinant of three-metric
+	MultiDArray<double,3,NDIMS> betaup; // shift
+	MultiDArray<double,6,NDIMS> g3;  // three-metric
+	ScalarMultiDArray<double,NDIMS> sqrtdetg3; // sqrt of determinant of three-metric
 
-	MultiDArray<double,3,3> v;
+	MultiDArray<double,3,NDIMS> v;
 
 public:
 
