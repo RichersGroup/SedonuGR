@@ -54,7 +54,6 @@ private:
 	ScalarMultiDArray<double,3> sqrtdetg3; // sqrt of determinant of three-metric
 
 	MultiDArray<double,3,3> v;
-	MultiDArray<double,40,3> christoffel;
 
 public:
 
