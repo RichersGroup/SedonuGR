@@ -1,6 +1,3 @@
 [submodule "external/NuLib"]
 	path = external/NuLib
 	url = git://github.com/evanoconnor/NuLib.git
-[submodule "external/VecMathLib"]
-	path = external/VecMathLib
-	url = https://github.com/eschnett/VecMathLib.git
