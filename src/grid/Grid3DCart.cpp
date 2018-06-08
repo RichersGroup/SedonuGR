@@ -763,8 +763,58 @@ double Grid3DCart::zone_lorentz_factor(const int z_ind) const{
 }
 
 Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
+  double dg[4][4][4];
+  Tuple<Tuple<double,6>,NDIMS> dg3_dx = g3.interpolate_slopes(eh.icube_vol);
+  Tuple<Tuple<double,1>,NDIMS> da_dx = lapse.interpolate_slopes(eh.icube_vol);
+  Tuple<Tuple<double,3>,NDIMS> dbetaup_dx = betaup.interpolate_slopes(eh.icube_vol);
+
+  for(unsigned a=0; a<3; a++){
+
+    // xx parts
+    dg[a][0][0]             = dg3_dx[ixx][a]; // [direction][element]
+    dg[a][1][1]             = dg3_dx[iyy][a];
+    dg[a][2][2]             = dg3_dx[izz][a];
+    dg[a][0][1]=dg[a][1][0] = dg3_dx[ixy][a];
+    dg[a][0][2]=dg[a][2][0] = dg3_dx[ixz][a];
+    dg[a][1][2]=dg[a][2][1] = dg3_dx[iyz][a];
+
+    // xt and tt parts
+    dg[a][3][3] = -2.*eh.g.alpha*da_dx[0][a];
+    Tuple<double,3> dbetalow_dx;
+    eh.g.gammalow.lower(dbetaup_dx[a],dbetalow_dx);
+    for(unsigned j=0; j<3; j++){
+      dg[a][3][3] += 2. * eh.g.betalow[j] * dbetaup_dx[j][a]; // [direction][element]
+      dg[a][3][j]=dg[a][j][3] = dbetalow_dx[j];
+    }
+  }
+
+  // get the low-index Christoffel symbols
+  double christoffel_low[4][4][4];
+  for(unsigned a=0; a<4; a++)
+    for(unsigned i=0; i<4; i++)
+      for(unsigned j=0; j<4; j++){
+	christoffel_low[a][i][j] = 0.5 * (dg[j][i][a] + dg[i][a][j] - dg[a][i][j]); // note - last term should be zero when contracted with kk, but we leave it in for clarity
+	PRINT_ASSERT(abs(christoffel_low[a][i][j]),<,INFINITY);
+      }
+
+  // raise Christoffel symbol first index
   Christoffel ch;
-  ch.data = christoffel.interpolate(eh.icube_vol);
+  ch.data = 0;
+  for(unsigned a=0; a<4; a++){
+    unsigned offsetA = 10*a;
+    for(unsigned b=0; b<4; b++){
+      for(unsigned i=0; i<4; i++)
+	for(unsigned j=i; j<4; j++){
+	  unsigned ij = Metric::index(i,j);
+	  ch.data[offsetA+ij] += eh.g.get_inverse(a,b) * christoffel_low[b][i][j];
+	}
+    }
+  }
+
+  // check results
+  for(unsigned i=0; i<40; i++)
+    PRINT_ASSERT(abs(ch.data[i]),<,INFINITY);
+
   return ch.contract2(eh.kup);
 }
 void Grid3DCart::interpolate_shift(EinsteinHelper* eh) const{
