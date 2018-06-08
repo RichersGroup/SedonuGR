@@ -479,35 +479,37 @@ void Grid1DSphere::interpolate_3metric(EinsteinHelper* eh) const{
 	eh->g.gammalow.data[izz] += 1.0;
 }
 
-void Grid1DSphere::get_connection_coefficients(EinsteinHelper* eh) const{
-	const double r = radius(eh->xup);
-	const double alpha = lapse.interpolate(eh->icube_vol); //sqrt(1.-1./r); //
-	const double Xloc  = X.interpolate(eh->icube_vol); //1./alpha; //
-	const double dadr  = lapse.interpolate_slopes(eh->icube_vol)[0]; //Xloc / (2.*r*r);//
-	const double dXdr  = X.interpolate_slopes(eh->icube_vol)[0]; //-Xloc*Xloc*Xloc / (2.*r*r);//
+Tuple<double,4> Grid1DSphere::dk_dlambda(const EinsteinHelper& eh) const{
+	const double r = radius(eh.xup);
+	const double alpha = lapse.interpolate(eh.icube_vol); //sqrt(1.-1./r); //
+	const double Xloc  = X.interpolate(eh.icube_vol); //1./alpha; //
+	const double dadr  = lapse.interpolate_slopes(eh.icube_vol)[0]; //Xloc / (2.*r*r);//
+	const double dXdr  = X.interpolate_slopes(eh.icube_vol)[0]; //-Xloc*Xloc*Xloc / (2.*r*r);//
 
 	double tmp;
-	Tuple<double,40>& ch = eh->christoffel.data;
-	ch = 0;
+	Christoffel ch;
+	ch.data = 0;
 
 	// spatial parts
 	for(int a=0; a<3; a++){
-		ch[Christoffel::index(a,3,3)] = alpha * dadr / (r*Xloc*Xloc) * eh->xup[a];
+		ch.data[Christoffel::index(a,3,3)] = alpha * dadr / (r*Xloc*Xloc) * eh.xup[a];
 
-		tmp = (1. - Xloc*Xloc + r*Xloc*dXdr) / (r*r*r*Xloc*Xloc) * eh->xup[a]/r;
+		tmp = (1. - Xloc*Xloc + r*Xloc*dXdr) / (r*r*r*Xloc*Xloc) * eh.xup[a]/r;
 		for(unsigned i=0; i<3; i++) for(unsigned j=i; j<3; j++)
-			ch[Christoffel::index(a,i,j)] = eh->xup[i]*eh->xup[j] * tmp;
+			ch.data[Christoffel::index(a,i,j)] = eh.xup[i]*eh.xup[j] * tmp;
 
-		tmp = -(1.-Xloc*Xloc) / (r*Xloc*Xloc) * eh->xup[a]/r;
+		tmp = -(1.-Xloc*Xloc) / (r*Xloc*Xloc) * eh.xup[a]/r;
 		for(unsigned i=0; i<3; i++)
-			ch[Christoffel::index(a,i,i)] += tmp;
+			ch.data[Christoffel::index(a,i,i)] += tmp;
 	}
 	// time part
 	tmp = dadr / (r * alpha);
 	for(unsigned i=0; i<3; i++)
-		ch[Christoffel::index(3,3,i)] = eh->xup[i] * tmp;
+		ch.data[Christoffel::index(3,3,i)] = eh.xup[i] * tmp;
 
-	for(unsigned i=0; i<40; i++) PRINT_ASSERT(ch[i],==,ch[i]);
+	for(unsigned i=0; i<40; i++) PRINT_ASSERT(ch.data[i],==,ch.data[i]);
+
+	return ch.contract2(eh.kup);
 }
 
 double Grid1DSphere::zone_lorentz_factor(const int z_ind) const{

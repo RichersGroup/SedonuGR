@@ -760,8 +760,10 @@ double Grid3DCart::zone_lorentz_factor(const int z_ind) const{
 	return result;
 }
 
-void Grid3DCart::get_connection_coefficients(EinsteinHelper* eh) const{
-	eh->christoffel.data = christoffel.interpolate(eh->icube_vol);
+Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
+  Christoffel ch;
+  ch.data = christoffel.interpolate(eh.icube_vol);
+  return ch.contract2(eh.kup);
 }
 void Grid3DCart::interpolate_shift(EinsteinHelper* eh) const{
 	if(DO_GR){

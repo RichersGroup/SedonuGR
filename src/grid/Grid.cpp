@@ -394,7 +394,6 @@ void Grid::interpolate_metric(EinsteinHelper *eh) const{
 
 		// fill in the rest of the metric values
 		eh->g.update();
-		get_connection_coefficients(eh);
 	}
 }
 

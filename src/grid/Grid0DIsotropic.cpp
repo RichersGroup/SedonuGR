@@ -170,8 +170,10 @@ double Grid0DIsotropic::d_randomwalk(const EinsteinHelper* /*eh*/) const{
 	return INFINITY;
 }
 
-void Grid0DIsotropic::get_connection_coefficients(EinsteinHelper* eh) const{ // default Minkowski
-	eh->christoffel.data = 0;
+Tuple<double,4> Grid0DIsotropic::dk_dlambda(const EinsteinHelper& eh) const{ // default Minkowski
+  Christoffel ch;
+  ch.data = 0;
+  return ch.contract2(eh.kup);
 }
 void Grid0DIsotropic::interpolate_shift(EinsteinHelper* eh) const{ // default Minkowski
 	eh->g.betaup[0] = 0;

@@ -883,9 +883,11 @@ void Grid2DSphere::dims(hsize_t dims[2], const int size) const{
 double Grid2DSphere::zone_lorentz_factor(const int /*z_ind*/) const{
 	abort(); // NOT IMPLEMENTED
 }
-void Grid2DSphere::get_connection_coefficients(EinsteinHelper* eh) const{ // default Minkowski
+Tuple<double,4> Grid2DSphere::dk_dlambda(const EinsteinHelper& eh) const{ // default Minkowski
 	PRINT_ASSERT(DO_GR,==,0);
-	eh->christoffel.data = 0;
+	Christoffel ch;
+	ch.data = 0;
+	return ch.contract2(eh.kup);
 }
 void Grid2DSphere::interpolate_shift(EinsteinHelper *eh) const{ // default Minkowski
 	PRINT_ASSERT(DO_GR,==,0);

@@ -23,7 +23,6 @@ public:
 	ParticleFate fate;
 	double N0;
 	Metric g;
-	Christoffel christoffel;
 
 	// things with which to do interpolation
 	InterpolationCube<NDIMS  > icube_vol; // for metric quantities

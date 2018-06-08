@@ -88,7 +88,7 @@ public:
 	void write_child_zones(H5::H5File file);
 
 	// GR functions
-	void get_connection_coefficients(EinsteinHelper* eh) const; // Gamma^alhpa_mu_nu
+	Tuple<double,4> dk_dlambda(const EinsteinHelper& eh) const; // Gamma^alhpa_mu_nu
 	void interpolate_shift(EinsteinHelper* eh) const;
 	void interpolate_3metric(EinsteinHelper* eh) const;
 	void grid_coordinates(const Tuple<double,4>& xup, double coords[NDIMS]) const;
