@@ -714,12 +714,12 @@ Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
   for(unsigned a=0; a<3; a++){
 
     // xx parts
-    dg[a][0][0]             = dg3_dx[ixx][a]; // [direction][element]
-    dg[a][1][1]             = dg3_dx[iyy][a];
-    dg[a][2][2]             = dg3_dx[izz][a];
-    dg[a][0][1]=dg[a][1][0] = dg3_dx[ixy][a];
-    dg[a][0][2]=dg[a][2][0] = dg3_dx[ixz][a];
-    dg[a][1][2]=dg[a][2][1] = dg3_dx[iyz][a];
+    dg[a][0][0]             = dg3_dx[a][ixx]; // [direction][element]
+    dg[a][1][1]             = dg3_dx[a][iyy];
+    dg[a][2][2]             = dg3_dx[a][izz];
+    dg[a][0][1]=dg[a][1][0] = dg3_dx[a][ixy];
+    dg[a][0][2]=dg[a][2][0] = dg3_dx[a][ixz];
+    dg[a][1][2]=dg[a][2][1] = dg3_dx[a][iyz];
 
     // xt and tt parts
     dg[a][3][3] = -2.*eh.g.alpha*da_dx[a];
