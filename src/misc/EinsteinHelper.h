@@ -200,10 +200,6 @@ public:
 		return result;
 	}
 
-	void scale_p_frequency(const double scale){
-		kup *= scale;
-	}
-
 	void get_Particle(ParticleList& pout, const unsigned list_index) const{
 		pout.N[list_index] = N;
 		pout.s[list_index] = s;

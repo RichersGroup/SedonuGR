@@ -224,15 +224,11 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<do
 			isotropic_kup_tet(hyperloc[NDIMS+1], kup_tet_new, &rangen);
 			costheta = Metric::dot_Minkowski<3>(kup_tet_new,kup_tet_old) / (kup_tet_old[3]*kup_tet_new[3]);
 		} while(reject_direction(costheta, delta, &rangen));
-		eh->set_kup_tet(kup_tet_new);
-		PRINT_ASSERT(eh->N,<,1e99);
 	}
 	else{
-		eh->scale_p_frequency(hyperloc[NDIMS+1]/eh->nu());
-		if(delta<0){
-			kup_tet_new[3] = hyperloc[NDIMS+1]*pc::h;
-			for(unsigned i=0; i<3; i++) kup_tet_new[i] = -eh->kup_tet[i];
-			eh->set_kup_tet(kup_tet_new);
-		}
+	        kup_tet_new = eh->kup_tet * hyperloc[NDIMS+1] / eh->nu();
+		if(delta<0) for(unsigned i=0; i<3; i++) kup_tet_new[i] = -eh->kup_tet[i];
 	}
+	eh->set_kup_tet(kup_tet_new);
+	PRINT_ASSERT(eh->N,<,1e99);
 }
