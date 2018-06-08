@@ -184,24 +184,43 @@ public:
 		for(size_t i=0; i<3; i++) D[i] = kup_tet[i];
 		Metric::normalize_Minkowski<3>(D);
 		
-		unsigned data_indices[data.Ndims()];
-		for(unsigned i=0; i<ndims_spatial; i++) data_indices[i] = dir_ind[i];
-		data_indices[nuGridIndex] = dir_ind[NDIMS];
+		/* unsigned data_indices[data.Ndims()]; */
+		/* for(unsigned i=0; i<ndims_spatial; i++) data_indices[i] = dir_ind[i]; */
+		/* data_indices[nuGridIndex] = dir_ind[NDIMS]; */
 
 		// increment moments
 		Tuple<double, n_total_elements> tmp;
-		unsigned tuple_index=0;
-		for(unsigned rank = 0; rank<nranks; rank++) {
-			unsigned tensor_indices[rank];
-			for(unsigned r = 0; r<rank; r++) tensor_indices[r] = 0;
-			for(unsigned i=0; i<n_independent_elements[rank]; i++) {
-				tmp[tuple_index] = E;
-				for(unsigned r=0; r<rank; r++) tmp[tuple_index] *= D[tensor_indices[r]];
-				increment_tensor_indices(tensor_indices, rank);
-				tuple_index++;
-			}
-		}
-		data.add(data_indices, tmp);
+		tmp[0 ] = E;
+		tmp[1 ] = E*D[0];
+		tmp[2 ] = E*D[1];
+		tmp[3 ] = E*D[2];
+		tmp[4 ] = D[0]*tmp[1];
+		tmp[5 ] = D[0]*tmp[2];
+		tmp[6 ] = D[0]*tmp[3];
+		tmp[7 ] = D[1]*tmp[2];
+		tmp[8 ] = D[1]*tmp[3];
+		tmp[9 ] = D[2]*tmp[3];
+		tmp[10] = D[0]*tmp[4];
+		tmp[11] = D[0]*tmp[5];
+		tmp[12] = D[0]*tmp[6];
+		tmp[13] = D[0]*tmp[7];
+		tmp[14] = D[0]*tmp[8];
+		tmp[15] = D[0]*tmp[9];
+		tmp[16] = D[1]*tmp[7];
+		tmp[17] = D[1]*tmp[8];
+		tmp[18] = D[1]*tmp[9];
+		tmp[19] = D[2]*tmp[9];
+		/* unsigned tuple_index=0; */
+		/* for(unsigned rank = 0; rank<nranks; rank++) { */
+		/* 	unsigned tensor_indices[rank]; */
+		/* 	for(unsigned r = 0; r<rank; r++) tensor_indices[r] = 0; */
+		/* 	for(unsigned i=0; i<n_independent_elements[rank]; i++) { */
+		/* 		for(unsigned r=0; r<rank; r++) tmp[tuple_index] *= D[tensor_indices[r]]; */
+		/* 		increment_tensor_indices(tensor_indices, rank); */
+		/* 		tuple_index++; */
+		/* 	} */
+		/* } */
+		data.add(dir_ind, tmp);
 	}
 
 	double reconstruct_f(const unsigned dir_ind[ndims_spatial+1], const double k[3]) const{
