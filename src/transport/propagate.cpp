@@ -188,7 +188,7 @@ void Transport::move(EinsteinHelper *eh) const{
 	// get dk_dlambda at current position
 	Tuple<double,4> dk_dlambda;
 	if(DO_GR){
-		eh->christoffel.contract2(eh->kup,dk_dlambda);
+	  dk_dlambda = eh->christoffel.contract2(eh->kup);
 		dk_dlambda *= -1;
 	}
 
@@ -206,9 +206,8 @@ void Transport::move(EinsteinHelper *eh) const{
 
 	// apply second order correction to k
 	if(DO_GR and eh->z_ind>0){
-		Tuple<double,4> dk_dlambda_2;
 		eh->g.normalize_null_preserveupt(eh->kup);
-		eh->christoffel.contract2(eh->kup,dk_dlambda_2);
+		Tuple<double,4> dk_dlambda_2 = eh->christoffel.contract2(eh->kup);
 		dk_dlambda_2 *= -1;
 		Tuple<double,4> kup2 = old_kup + dk_dlambda_2*dlambda;
 		eh->kup = (kup1 + kup2) * 0.5;

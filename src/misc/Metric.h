@@ -342,13 +342,15 @@ public:
 		data = NaN;
 	}
 
-	void contract2(const Tuple<double,4>& kup, Tuple<double,4>& result) const{
+	Tuple<double,4> contract2(const Tuple<double,4>& kup) const{
+	        Tuple<double,4> result;
 		for(unsigned a=0; a<4; a++){
 			result[a] = 0;
 			for(unsigned i=0; i<4; i++)
 				for(unsigned j=0; j<4; j++)
 					result[a] += data[index(a,i,j)] * kup[i]*kup[j];
 		}
+		return result;
 	}
 };
 #endif
