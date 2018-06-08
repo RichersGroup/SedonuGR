@@ -19,7 +19,8 @@ public:
 	Tuple<double,4> kup, kup_tet; // erg
 	Tuple<double,4> u; // dimensionless, up index
 	Tuple<double,3> v; // cm/s
-	double N, s;
+	double N;
+	size_t s;
 	ParticleFate fate;
 	double N0;
 	Metric g;
@@ -36,28 +37,22 @@ public:
 	unsigned dir_ind[NDIMS+1]; // spatial, nu_in
 	int z_ind, eas_ind;   // direct access indices
 
-	EinsteinHelper(){
-		for(unsigned i=0; i<4; i++){
-			xup[i] = NaN;
-			kup[i] = NaN;
-			u[i] = NaN;
-			kup_tet[i] = NaN;
-			for(unsigned j=0; j<4; j++)
-				e[i][j] = NaN;
-		}
-		N0 = NaN;
-		N = NaN;
-		s = -MAXLIM;
-		fate = moving;
-		absopac = NaN;
-		scatopac = NaN;
-		ds_com = NaN;
-		z_ind = -MAXLIM;
-		eas_ind = -MAXLIM;
-		for(unsigned i=0; i<NDIMS+1; i++)
-			dir_ind[i] = MAXLIM;
-		for(unsigned i=0; i<3; i++) v[i] = NaN;
-	}
+ EinsteinHelper() :
+	xup(NaN),
+	  kup(NaN),
+	  kup_tet(NaN),
+	  u(NaN),
+	  v(NaN),
+	  N(NaN),
+	  s(-MAXLIM),
+	  fate(moving),
+	  N0(NaN),
+	  e{NaN,NaN,NaN,NaN},
+	  absopac(NaN),
+	  scatopac(NaN),
+	  ds_com(NaN),
+	  z_ind(-MAXLIM),
+	  eas_ind(-MAXLIM) {}
 
 	void set_kup_tet(const Tuple<double,4>& kup_tet_in){
 		PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet_in,kup_tet_in)/(kup_tet_in[3]*kup_tet_in[3]),<,TINY);
