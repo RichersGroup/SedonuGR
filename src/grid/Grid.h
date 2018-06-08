@@ -141,9 +141,6 @@ public:
 	// boundary conditions
 	virtual void symmetry_boundaries(EinsteinHelper *eh) const=0;
 
-	// move the particle
-	void interpolate_opacity(EinsteinHelper *eh) const;
-
 	// help with spawning particles
 	virtual Tuple<double,4> sample_in_zone(const int z_ind, ThreadRNG *rangen) const = 0;
 

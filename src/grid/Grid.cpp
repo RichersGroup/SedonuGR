@@ -383,36 +383,16 @@ double Grid::zone_4volume(const int z_ind) const{
 }
 
 void Grid::interpolate_metric(EinsteinHelper *eh) const{
-	if(DO_GR){
-		// first, the lapse
-		eh->g.alpha = lapse.interpolate(eh->icube_vol);
-		PRINT_ASSERT(eh->g.alpha,>,0);
+  assert(DO_GR);
 
-		// second, the shift and three-metric
-		interpolate_shift(eh);
-		interpolate_3metric(eh);
+  // first, the lapse
+  eh->g.alpha = lapse.interpolate(eh->icube_vol);
+  PRINT_ASSERT(eh->g.alpha,>,0);
 
-		// fill in the rest of the metric values
-		eh->g.update();
-	}
+  // second, the shift and three-metric
+  interpolate_shift(eh);
+  interpolate_3metric(eh);
+
+  // fill in the rest of the metric values
+  eh->g.update();
 }
-
-
-
-//-----------------------------------------------------------------
-// get opacity at the frequency
-//-----------------------------------------------------------------
-void Grid::interpolate_opacity(EinsteinHelper *eh) const
-{
-	PRINT_ASSERT(eh->z_ind,>=,0);
-	PRINT_ASSERT(eh->grid_coords[NDIMS],>,0);
-
-	eh->absopac  =  abs_opac[eh->s].interpolate(eh->icube_spec);
-	eh->scatopac = scat_opac[eh->s].interpolate(eh->icube_spec);
-
-	PRINT_ASSERT(eh->absopac,<,INFINITY);
-	PRINT_ASSERT(eh->scatopac,<,INFINITY);
-	PRINT_ASSERT(eh->absopac,>=,0);
-	PRINT_ASSERT(eh->scatopac,>=,0);
-}
-

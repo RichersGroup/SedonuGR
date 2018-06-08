@@ -59,7 +59,7 @@ public:
 			double dx = xLR[d][1] - xLR[d][0];
 			V *= dx;
 		}
-
+		double sumweights=0;
 		for(unsigned i=0; i<ncorners; i++){
 
 			// volume/area associated with each point/line
@@ -72,7 +72,9 @@ public:
 
 			// weights
 			weights[i] = abs(dVol/V); // avoids if statement in above loop for sign
+			sumweights += weights[i];
 		}
+		PRINT_ASSERT(abs(1.-sumweights),<,TINY);
 	}
 
 
@@ -173,12 +175,12 @@ public:
 	Tuple<T,nelements> interpolate(const InterpolationCube<dummy>& icube) const{
 		PRINT_ASSERT(icube.ncorners,==,(1<<ndims));
 
-		Tuple<T,nelements> result;
-		result = y0[icube.indices[0]] * icube.weights[0];
-		for(unsigned i=1; i<icube.ncorners; i++){
+		Tuple<T,nelements> result = 0;
+		for(unsigned i=0; i<icube.ncorners; i++){
 			PRINT_ASSERT(icube.indices[i],>=,0);
-			Tuple<T,nelements> tmp = y0[icube.indices[i]] * icube.weights[i];
-			result += tmp;
+			PRINT_ASSERT(icube.indices[i],<,size());
+			PRINT_ASSERT(icube.weights[i],<,1.0);
+			result += y0[icube.indices[i]] * icube.weights[i];
 		}
 		return result;
 	}

@@ -673,10 +673,12 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 		eh->icube_vol.set_slope_weights(eh->grid_coords);
 
 		// metric and its derivatives
-		grid->interpolate_metric(eh);
-		if(eh->g.gtt >= 0){
-			eh->z_ind = -1;
-			eh->fate = absorbed;
+		if(DO_GR){
+		  grid->interpolate_metric(eh);
+		  if(eh->g.gtt >= 0){
+		    eh->z_ind = -1;
+		    eh->fate = absorbed;
+		  }
 		}
 
 		// four-velocity
@@ -702,7 +704,9 @@ void Transport::update_eh_k_opac(EinsteinHelper* eh) const{
 		eh->dir_ind[NDIMS] = min(grid->nu_grid_axis.bin(eh->nu()), (int)grid->nu_grid_axis.size()-1);
 		eh->eas_ind = grid->abs_opac[eh->s].direct_index(eh->dir_ind);
 		grid->abs_opac[eh->s].set_InterpolationCube(&(eh->icube_spec),eh->grid_coords,eh->dir_ind);
-		grid->interpolate_opacity(eh);
+		eh->absopac  =  grid->abs_opac[eh->s].interpolate(eh->icube_spec);
+		eh->scatopac = grid->scat_opac[eh->s].interpolate(eh->icube_spec);
+		PRINT_ASSERT(eh->absopac,<,1e10);
 	}
 }
 

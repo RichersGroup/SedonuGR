@@ -134,11 +134,10 @@ public:
 	// fill in values for gtt and betalow
 	// assumes alpha, betaup, and gammalow have been set.
 	void update(){
-		if(DO_GR){
-			lower<3>(betaup, betalow);
-			gtt = DO_GR ? -alpha*alpha + contract<3>(betaup, betalow) : -1.0;
-			gammaup = gammalow.inverse();
-		}
+	  assert(DO_GR);
+	  lower<3>(betaup, betalow);
+	  gtt = DO_GR ? -alpha*alpha + contract<3>(betaup, betalow) : -1.0;
+	  gammaup = gammalow.inverse();
 	}
 
 	double get(const unsigned i, const unsigned j) const{
