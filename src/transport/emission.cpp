@@ -69,7 +69,7 @@ void Transport::emit_inner_source_by_bin(){
 	const unsigned ng = grid->nu_grid_axis.size();
 	const unsigned n_emit = ns*ng*n_emit_core_per_bin;
 	unsigned n_emit_this_rank = n_emit / MPI_nprocs;
-	if(n_emit % MPI_nprocs > MPI_myID) n_emit_this_rank++;
+	if((int)(n_emit % MPI_nprocs) > MPI_myID) n_emit_this_rank++;
 	particles.resize(size_before + n_emit_this_rank);
 
 	unsigned n_created = 0;
@@ -78,7 +78,7 @@ void Transport::emit_inner_source_by_bin(){
 		for(unsigned g=0; g<ng; g++){
 			for(int k=0; k<n_emit_core_per_bin; k++){
 				unsigned global_id = k + n_emit_core_per_bin*g + n_emit_core_per_bin*ng*s;
-				if(global_id%MPI_nprocs == MPI_myID){
+				if((int)(global_id%MPI_nprocs) == MPI_myID){
 					unsigned local_index = size_before + global_id/MPI_nprocs;
 					create_surface_particle(particles, weight,s,g, local_index);
 					if(particles.fate[local_index] == moving) n_created++;
@@ -104,7 +104,7 @@ void Transport::emit_zones_by_bin(){
 	const unsigned nz = grid->rho.size();
 	const unsigned n_emit = ns*ng*nz*n_emit_zones_per_bin;
 	unsigned n_emit_this_rank = n_emit / MPI_nprocs;
-	if(n_emit % MPI_nprocs > MPI_myID) n_emit_this_rank++;
+	if((int)(n_emit % MPI_nprocs) > MPI_myID) n_emit_this_rank++;
 	particles.resize(size_before + n_emit_this_rank);
 
 	unsigned n_created = 0;
@@ -115,7 +115,7 @@ void Transport::emit_zones_by_bin(){
 				for(int k=0; k<n_emit_zones_per_bin; k++){
 
 					unsigned global_id = k + n_emit_zones_per_bin*g + n_emit_zones_per_bin*ng*s + n_emit_zones_per_bin*ng*ns*z_ind;
-					if(global_id%MPI_nprocs == MPI_myID){
+					if((int)(global_id%MPI_nprocs) == MPI_myID){
 						unsigned local_index = size_before + global_id/MPI_nprocs;
 						create_thermal_particle(particles, z_ind,weight,s,g, local_index);
 						if(particles.fate[local_index] == moving){
