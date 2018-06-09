@@ -710,9 +710,12 @@ Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
   Tuple<double,NDIMS> da_dx = lapse.interpolate_slopes(eh.icube_vol);
   Tuple<Tuple<double,3>,NDIMS> dbetaup_dx = betaup.interpolate_slopes(eh.icube_vol);
   Tuple<Tuple<double,3>,NDIMS> dbetalow_dx;
-  
-  for(unsigned a=0; a<3; a++){
 
+  for(unsigned a=0; a<3; a++) 
+    eh.g.gammalow.lower(dbetaup_dx[a],dbetalow_dx[a]);
+  
+  #pragma omp simd
+  for(unsigned a=0; a<3; a++){
     // xx parts
     dg[a][0][0]             = dg3_dx[a][ixx]; // [direction][element]
     dg[a][1][1]             = dg3_dx[a][iyy];
@@ -723,41 +726,31 @@ Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
 
     // xt and tt parts
     dg[a][3][3] = -2.*eh.g.alpha*da_dx[a];
-    eh.g.gammalow.lower(dbetaup_dx[a],dbetalow_dx[a]);
+  }
+
+  // for xt and tt parts
+  #pragma omp simd collapse(2)
+  for(unsigned a=0; a<3; a++){
     for(unsigned j=0; j<3; j++){
       dg[a][3][3] += 2. * eh.g.betalow[j] * dbetaup_dx[a][j]; // [direction][element]
-      dg[a][3][j]=dg[a][j][3] = dbetalow_dx[a][j];
+      dg[a][3][j] = dbetalow_dx[a][j];
+      dg[a][j][3] = dbetalow_dx[a][j];
     }
   }
 
   // get the low-index Christoffel symbols
-  double christoffel_low[4][4][4];
+  Tuple<double,4> dk_dlambda_low = 0;
+  //double christoffel_low[4][4][4];
+  #pragma omp simd collapse(3)
   for(unsigned a=0; a<4; a++)
     for(unsigned i=0; i<4; i++)
-      for(unsigned j=0; j<4; j++){
-	christoffel_low[a][i][j] = 0.5 * (dg[j][i][a] + dg[i][a][j] - dg[a][i][j]);
-	PRINT_ASSERT(abs(christoffel_low[a][i][j]),<,INFINITY);
-      }
+      for(unsigned j=0; j<4; j++)
+	//christoffel_low[a][i][j] = 0.5 * (dg[j][i][a] + dg[i][a][j] - dg[a][i][j]);
+	dk_dlambda_low[a] += (dg[i][a][j] - 0.5*dg[a][i][j]) * eh.kup[i] * eh.kup[j];
 
-  // raise Christoffel symbol first index
-  Christoffel ch;
-  ch.data = 0;
-  for(unsigned a=0; a<4; a++){
-    unsigned offsetA = 10*a;
-    for(unsigned b=0; b<4; b++){
-      for(unsigned i=0; i<4; i++)
-	for(unsigned j=i; j<4; j++){
-	  unsigned ij = Metric::index(i,j);
-	  ch.data[offsetA+ij] += eh.g.get_inverse(a,b) * christoffel_low[b][i][j];
-	}
-    }
-  }
-
-  // check results
-  for(unsigned i=0; i<40; i++)
-    PRINT_ASSERT(abs(ch.data[i]),<,INFINITY);
-
-  return ch.contract2(eh.kup) * -1;
+  Tuple<double,4> dk_dlambda;
+  eh.g.raise(dk_dlambda_low, dk_dlambda);
+  return dk_dlambda * -1.;
 }
 void Grid3DCart::interpolate_shift(EinsteinHelper* eh) const{
 	if(DO_GR){
