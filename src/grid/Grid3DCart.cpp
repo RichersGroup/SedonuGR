@@ -709,7 +709,8 @@ Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
   Tuple<Tuple<double,6>,NDIMS> dg3_dx = g3.interpolate_slopes(eh.icube_vol);
   Tuple<double,NDIMS> da_dx = lapse.interpolate_slopes(eh.icube_vol);
   Tuple<Tuple<double,3>,NDIMS> dbetaup_dx = betaup.interpolate_slopes(eh.icube_vol);
-
+  Tuple<Tuple<double,3>,NDIMS> dbetalow_dx;
+  
   for(unsigned a=0; a<3; a++){
 
     // xx parts
@@ -722,11 +723,10 @@ Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
 
     // xt and tt parts
     dg[a][3][3] = -2.*eh.g.alpha*da_dx[a];
-    Tuple<double,3> dbetalow_dx;
-    eh.g.gammalow.lower(dbetaup_dx[a],dbetalow_dx);
+    eh.g.gammalow.lower(dbetaup_dx[a],dbetalow_dx[a]);
     for(unsigned j=0; j<3; j++){
-      dg[a][3][3] += 2. * eh.g.betalow[j] * dbetaup_dx[j][a]; // [direction][element]
-      dg[a][3][j]=dg[a][j][3] = dbetalow_dx[j];
+      dg[a][3][3] += 2. * eh.g.betalow[j] * dbetaup_dx[a][j]; // [direction][element]
+      dg[a][3][j]=dg[a][j][3] = dbetalow_dx[a][j];
     }
   }
 
@@ -735,7 +735,7 @@ Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
   for(unsigned a=0; a<4; a++)
     for(unsigned i=0; i<4; i++)
       for(unsigned j=0; j<4; j++){
-	christoffel_low[a][i][j] = 0.5 * (dg[j][i][a] + dg[i][a][j] - dg[a][i][j]); // note - last term should be zero when contracted with kk, but we leave it in for clarity
+	christoffel_low[a][i][j] = 0.5 * (dg[j][i][a] + dg[i][a][j] - dg[a][i][j]);
 	PRINT_ASSERT(abs(christoffel_low[a][i][j]),<,INFINITY);
       }
 
@@ -757,7 +757,7 @@ Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
   for(unsigned i=0; i<40; i++)
     PRINT_ASSERT(abs(ch.data[i]),<,INFINITY);
 
-  return ch.contract2(eh.kup);
+  return ch.contract2(eh.kup) * -1;
 }
 void Grid3DCart::interpolate_shift(EinsteinHelper* eh) const{
 	if(DO_GR){

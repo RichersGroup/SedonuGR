@@ -189,7 +189,6 @@ void Transport::move(EinsteinHelper *eh) const{
 	Tuple<double,4> dk_dlambda;
 	if(DO_GR){
 	  dk_dlambda = grid->dk_dlambda(*eh);
-		dk_dlambda *= -1;
 	}
 
 	// get 2nd order x, 1st order estimate for k
@@ -208,7 +207,6 @@ void Transport::move(EinsteinHelper *eh) const{
 	if(DO_GR and eh->z_ind>0){
 		eh->g.normalize_null_preserveupt(eh->kup);
 		Tuple<double,4> dk_dlambda_2 = grid->dk_dlambda(*eh);
-		dk_dlambda_2 *= -1;
 		Tuple<double,4> kup2 = old_kup + dk_dlambda_2*dlambda;
 		eh->kup = (kup1 + kup2) * 0.5;
 		for(unsigned i=0; i<4; i++){
