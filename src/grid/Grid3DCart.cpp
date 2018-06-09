@@ -726,26 +726,19 @@ Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
 
     // xt and tt parts
     dg[a][3][3] = -2.*eh.g.alpha*da_dx[a];
-  }
-
-  // for xt and tt parts
-  #pragma omp simd collapse(2)
-  for(unsigned a=0; a<3; a++){
-    for(unsigned j=0; j<3; j++){
-      dg[a][3][3] += 2. * eh.g.betalow[j] * dbetaup_dx[a][j]; // [direction][element]
-      dg[a][3][j] = dbetalow_dx[a][j];
-      dg[a][j][3] = dbetalow_dx[a][j];
+    for(unsigned i=0; i<3; i++){
+      dg[a][3][3] += 2. * eh.g.betalow[i] * dbetaup_dx[a][i]; // [direction][element]
+      dg[a][3][i] = dbetalow_dx[a][i];
+      dg[a][i][3] = dbetalow_dx[a][i];
     }
   }
 
   // get the low-index Christoffel symbols
   Tuple<double,4> dk_dlambda_low = 0;
-  //double christoffel_low[4][4][4];
   #pragma omp simd collapse(3)
   for(unsigned a=0; a<4; a++)
     for(unsigned i=0; i<4; i++)
       for(unsigned j=0; j<4; j++)
-	//christoffel_low[a][i][j] = 0.5 * (dg[j][i][a] + dg[i][a][j] - dg[a][i][j]);
 	dk_dlambda_low[a] += (dg[i][a][j] - 0.5*dg[a][i][j]) * eh.kup[i] * eh.kup[j];
 
   Tuple<double,4> dk_dlambda;
