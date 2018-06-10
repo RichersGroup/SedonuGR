@@ -6,16 +6,16 @@ TARGET=$(CURDIR)/gomc
 BASEDIR=$(CURDIR)
 
 #compiler configuration
-F90=mpif90 -f90=ifort
-CXX=mpicxx -cxx=icpc
+F90= /opt/intel/compilers_and_libraries_2017.1.132/linux/mpi/intel64/bin/mpif90 -f90=ifort# OMPI_FC=ifort before mpifort
+CXX= /opt/intel/compilers_and_libraries_2017.1.132/linux/mpi/intel64/bin/mpicxx -cxx=icpc# OMPI_CXX=icpc before mpicxx
 
-F90FLAGS= -O3 -g -qopenmp
-CXXFLAGS= -O3 -lifcore -g -std=c++0x -qopenmp #-DNDEBUG
+F90FLAGS= -O3 -g -fopenmp -mavx #-static-mpi #-DNDEBUG
+CXXFLAGS= -O3 -g -std=c++0x -fopenmp -mavx -Wall -Wextra -DNDEBUG -ffast-math # -fopt-info-vec-missed -fopt-info-loop-optimized #-DNDEBUG #-static-mpi 
 
 #GSL
 GSL_BASE=$(GSL_DIR)
 GSL_INCL=-I$(GSL_BASE)/include
-GSL_LIBS=-L$(GSL_BASE)/lib -lgsl -lmkl_intel_lp64 -lmkl_core -lmkl_sequential
+GSL_LIBS=-L$(GSL_BASE)/lib -Wl,-rpath=$(GSL_BASE)/lib -lgsl -lgslcblas
 
 #LUA
 #LUA_BASE=$(CURDIR)/external/lua-5.2.2/install
@@ -23,15 +23,15 @@ LUA_INCL=-I/usr/include/lua5.2
 LUA_LIBS=-llua5.2
 
 #HDF5
-HDF5_DIR=$(CURDIR)/external/hdf5-1.8.18_intel_17.0.1/hdf5
+HDF5_DIR=/usr/local/hdf5-1.8.20_intel18.0.3/hdf5
 HDF5INCS=-I$(HDF5_DIR)/include
-HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5 -lhdf5_fortran -lhdf5_cpp -Wl,-rpath,$(HDF5_DIR)/lib
+HDF5LIBS=-L$(HDF5_DIR)/lib -Wl,-rpath=$(HDF5_DIR)/lib -lhdf5_fortran -lhdf5_cpp -lhdf5
 
 #NuLib
-NULIB_DIR=$(CURDIR)/external/NuLib/src
-NULIB_LIBS=$(NULIB_DIR)/nulib.a $(NULIB_DIR)/nuc_eos/nuc_eos.a #$(NULIB_DIR)/other_eos/helmholtz/helmholtz.o
+NULIB_DIR=~/software/NuLib/src
+NULIB_LIBS=$(NULIB_DIR)/nulib.a $(NULIB_DIR)/nuc_eos/nuc_eos.a -lgfortran #$(NULIB_DIR)/other_eos/helmholtz/helmholtz.o
 HELMHOLTZ_EOS=0
 MODINC="-I ./"
 
 #OTHER
-OTHER_LIBS=
+OTHER_LIBS=-lifcore -limf
