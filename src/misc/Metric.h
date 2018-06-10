@@ -32,9 +32,7 @@ public:
 		}
 	}
 
-	ThreeMetric(){
-		data = NaN;
-	}
+ ThreeMetric() : data(NaN) {}
 
 	double det() const{
 		double result = 0;
@@ -44,13 +42,10 @@ public:
 		return result;
 	}
 	void lower(const Tuple<double,3>& in, Tuple<double,3>& out) const{
-	        out = 0;
-                #pragma omp simd collapse(2)
-		for(unsigned i=0; i<3; i++){
-			for(unsigned j=0; j<3; j++){
-				out[i] += get(i,j)*in[j];
-			}
-		}
+	  out = 0;
+	  out[0] = in[0]*data[ixx] + in[1]*data[ixy] + in[2]*data[ixz];
+	  out[1] = in[0]*data[ixy] + in[1]*data[iyy] + in[2]*data[iyz];
+	  out[2] = in[0]*data[ixz] + in[1]*data[iyz] + in[2]*data[izz];
 	}
 	ThreeMetric inverse() const{
 		gsl_matrix* g = gsl_matrix_alloc(3,3);
@@ -97,7 +92,7 @@ public:
 	double gtt, alpha;
 	ThreeMetric gammalow, gammaup;
 
- Metric() : gtt(NaN), alpha(NaN), betaup(NaN), betalow(NaN) {}
+ Metric() : betalow(NaN), betaup(NaN), gtt(NaN), alpha(NaN){}
 
 	static int index(const unsigned i, const unsigned j){
 		PRINT_ASSERT(i,<,4);
