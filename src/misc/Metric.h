@@ -44,8 +44,9 @@ public:
 		return result;
 	}
 	void lower(const Tuple<double,3>& in, Tuple<double,3>& out) const{
+	        out = 0;
+                #pragma omp simd collapse(2)
 		for(unsigned i=0; i<3; i++){
-			out[i] = 0;
 			for(unsigned j=0; j<3; j++){
 				out[i] += get(i,j)*in[j];
 			}
@@ -53,6 +54,7 @@ public:
 	}
 	ThreeMetric inverse() const{
 		gsl_matrix* g = gsl_matrix_alloc(3,3);
+                #pragma omp simd collapse(2)
 		for(unsigned i=0; i<3; i++)
 			for(unsigned j=0; j<3; j++)
 				gsl_matrix_set(g,i,j, data[index(i,j)]);
@@ -81,7 +83,7 @@ public:
 		return output;
 	}
 
-	double get(const unsigned i, const unsigned j) const{
+	inline double get(const unsigned i, const unsigned j) const{
 		return data[index(i,j)];
 	}
 };
@@ -95,14 +97,7 @@ public:
 	double gtt, alpha;
 	ThreeMetric gammalow, gammaup;
 
-	Metric(){
-		gtt=NaN;
-		alpha = NaN;
-		for(unsigned i=0; i<3; i++){
-			betaup[i] = NaN;
-			betalow[i] = NaN;
-		}
-	}
+ Metric() : gtt(NaN), alpha(NaN), betaup(NaN), betalow(NaN) {}
 
 	static int index(const unsigned i, const unsigned j){
 		PRINT_ASSERT(i,<,4);
@@ -330,19 +325,17 @@ public:
 	// 3 first index not included
 	Tuple<double, 40> data;
 
-	static unsigned index(const unsigned a, const unsigned i, const unsigned j){
+	inline static unsigned index(const unsigned a, const unsigned i, const unsigned j){
 		PRINT_ASSERT(a,<=,3);
 		return 10*a + Metric::index(i,j);
 	}
 
-	Christoffel(){
-		data = NaN;
-	}
+ Christoffel() : data(NaN) {}
 
 	Tuple<double,4> contract2(const Tuple<double,4>& kup) const{
-	        Tuple<double,4> result;
+	        Tuple<double,4> result = 0;
+                #pragma omp simd collapse(3)
 		for(unsigned a=0; a<4; a++){
-			result[a] = 0;
 			for(unsigned i=0; i<4; i++)
 				for(unsigned j=0; j<4; j++)
 					result[a] += data[index(a,i,j)] * kup[i]*kup[j];
