@@ -137,10 +137,10 @@ public:
 		else return gammaup.get(i,j) - betaup[i]*betaup[j]/(alpha*alpha);
 	}
 
-	template<unsigned n, unsigned n1, unsigned n2>
-	void lower(const Tuple<double,n1>& xup, Tuple<double,n2>& xdown) const{
+	template<unsigned n, unsigned n1>
+	Tuple<double,n> lower(const Tuple<double,n1>& xup) const{
 		PRINT_ASSERT(n,<=,n1);
-		PRINT_ASSERT(n,<=,n2);
+		Tuple<double,n> xdown;
 		if(DO_GR){
 			for(unsigned i=0; i<n; i++){
 				xdown[i] = 0;
@@ -152,6 +152,7 @@ public:
 			for(unsigned i=0; i<3; i++) xdown[i] = xup[i];
 			if(n==4) xdown[3] = -xup[3];
 		}
+		return xdown;
 	}
 
 	template<unsigned n>
@@ -186,8 +187,7 @@ public:
 		PRINT_ASSERT(n,<=,n1);
 		PRINT_ASSERT(n,<=,n2);
 		if(DO_GR){
-			Tuple<double,n> x2low;
-			lower<n>(x2up, x2low);
+			Tuple<double,n> x2low = lower<n>(x2up);
 			double result = contract<n>(x1up, x2low);
 			return result;
 		}
@@ -210,8 +210,7 @@ public:
 		PRINT_ASSERT(x[3],>=,0);
 		double result = NaN;
 		if(DO_GR){
-			Tuple<double,4> xlow;
-			lower<4>(x,xlow);
+			Tuple<double,4> xlow = lower<4>(x);
 			double C = get_inverse(3,3) * xlow[3]*xlow[3];
 			double B=0, A=0;
 			for(unsigned i=0; i<3; i++){
