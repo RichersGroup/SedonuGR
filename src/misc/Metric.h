@@ -54,26 +54,18 @@ public:
 			for(unsigned j=0; j<3; j++)
 				gsl_matrix_set(g,i,j, data[index(i,j)]);
 
-		// get LU decomposition
-		int s;
-		gsl_permutation *p = gsl_permutation_alloc(3);
-		gsl_linalg_LU_decomp(g, p, &s);
-
 		// invert and store
-		gsl_matrix* ginv = gsl_matrix_alloc(3,3);
-		gsl_linalg_LU_invert(g, p, ginv);
+		gsl_linalg_cholesky_invert(g);
 		ThreeMetric output;
-		output.data[ixx] = gsl_matrix_get(ginv, 0, 0);
-		output.data[ixy] = gsl_matrix_get(ginv, 0, 1);
-		output.data[ixz] = gsl_matrix_get(ginv, 0, 2);
-		output.data[iyy] = gsl_matrix_get(ginv, 1, 1);
-		output.data[iyz] = gsl_matrix_get(ginv, 1, 2);
-		output.data[izz] = gsl_matrix_get(ginv, 2, 2);
+		output.data[ixx] = gsl_matrix_get(g, 0, 0);
+		output.data[ixy] = gsl_matrix_get(g, 0, 1);
+		output.data[ixz] = gsl_matrix_get(g, 0, 2);
+		output.data[iyy] = gsl_matrix_get(g, 1, 1);
+		output.data[iyz] = gsl_matrix_get(g, 1, 2);
+		output.data[izz] = gsl_matrix_get(g, 2, 2);
 
 		// free the memory
-		gsl_permutation_free(p);
 		gsl_matrix_free(g);
-		gsl_matrix_free(ginv);
 
 		return output;
 	}
