@@ -155,7 +155,8 @@ public:
 	}
 
 	template<unsigned n>
-	void raise(const Tuple<double,n>& xdown, Tuple<double,n>& xup) const{
+	Tuple<double,n> raise(const Tuple<double,n>& xdown) const{
+	        Tuple<double,n> xup;
 		if(DO_GR){
 			for(unsigned i=0; i<n; i++){
 				xup[i] = 0;
@@ -167,6 +168,7 @@ public:
 			for(unsigned i=0; i<3; i++) xup[i] = xdown[i];
 			if(n==4) xup[3] = -xdown[3];
 		}
+		return xup;
 	}
 
 	template<unsigned n, unsigned n1, unsigned n2>
@@ -225,7 +227,7 @@ public:
 			PRINT_ASSERT(result,>,TINY);
 
 			for(unsigned i=0; i<3; i++) xlow[i] *= result;
-			raise<4>(xlow, x);
+			x = raise(xlow);
 			PRINT_ASSERT(dot<4>(x,x)/(x[3]*x[3]),<,TINY);
 			PRINT_ASSERT(x[3],>=,0);
 		}

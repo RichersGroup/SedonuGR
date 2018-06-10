@@ -741,8 +741,7 @@ Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
       for(unsigned j=0; j<4; j++)
 	dk_dlambda_low[a] += (dg[i][a][j] - 0.5*dg[a][i][j]) * eh.kup[i] * eh.kup[j];
 
-  Tuple<double,4> dk_dlambda;
-  eh.g.raise(dk_dlambda_low, dk_dlambda);
+  Tuple<double,4> dk_dlambda = eh.g.raise(dk_dlambda_low);
   return dk_dlambda * -1.;
 }
 void Grid3DCart::interpolate_shift(EinsteinHelper* eh) const{
