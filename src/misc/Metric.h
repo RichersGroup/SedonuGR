@@ -41,11 +41,12 @@ public:
 		result += data[ixz] * (data[ixy]*data[iyz] - data[iyy]*data[ixz]);
 		return result;
 	}
-	void lower(const Tuple<double,3>& in, Tuple<double,3>& out) const{
-	  out = 0;
+	Tuple<double,3> lower(const Tuple<double,3>& in) const{
+	  Tuple<double,3> out;
 	  out[0] = in[0]*data[ixx] + in[1]*data[ixy] + in[2]*data[ixz];
 	  out[1] = in[0]*data[ixy] + in[1]*data[iyy] + in[2]*data[iyz];
 	  out[2] = in[0]*data[ixz] + in[1]*data[iyz] + in[2]*data[izz];
+	  return out;
 	}
 	ThreeMetric inverse() const{
 		gsl_matrix* g = gsl_matrix_alloc(3,3);
@@ -117,7 +118,7 @@ public:
 	// assumes alpha, betaup, and gammalow have been set.
 	void update(){
 	  assert(DO_GR);
-	  lower<3>(betaup, betalow);
+	  betalow = gammalow.lower(betaup);
 	  gtt = DO_GR ? -alpha*alpha + contract<3>(betaup, betalow) : -1.0;
 	  gammaup = gammalow.inverse();
 	}

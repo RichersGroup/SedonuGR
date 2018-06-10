@@ -712,7 +712,7 @@ Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
   Tuple<Tuple<double,3>,NDIMS> dbetalow_dx;
 
   for(unsigned a=0; a<3; a++) 
-    eh.g.gammalow.lower(dbetaup_dx[a],dbetalow_dx[a]);
+    dbetalow_dx[a] = eh.g.gammalow.lower(dbetaup_dx[a]);
   
   #pragma omp simd
   for(unsigned a=0; a<3; a++){
