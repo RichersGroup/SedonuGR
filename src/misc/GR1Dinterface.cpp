@@ -68,7 +68,9 @@ void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const i
 		tmpSpecies->sim = *sim;
 	}
 	//omp_set_dynamic(true);
+#ifdef _OPENMP
 	omp_set_num_threads(1);
+#endif
 }
 
 extern "C"
@@ -94,14 +96,17 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 		static_cast<Neutrino_GR1D*>((*sim)->species_list[s])->set_eas_external(eas,GR1D_tau_crit,&(extract_MC[0][0][0]),*rshock);
 
 	// do MC calculation
+#ifdef _OPENMP
 	char* OMP_NUM_THREADS = std::getenv("OMP_NUM_THREADS");
 	int nthreads=-1;
 	if(OMP_NUM_THREADS!=NULL) nthreads = std::stoi(OMP_NUM_THREADS);
 	else nthreads = omp_get_max_threads();
 	omp_set_num_threads(nthreads);
+#endif
 	if(*iter%GR1D_recalc_every == 0) (*sim)->step();
+#ifdef _OPENMP
 	omp_set_num_threads(1);
-
+#endif
 	// create array for new values so they can be smoothed
 	double new_Prr_E[nr][ns][ne];
 	double new_Ptt_E[nr][ns][ne];
