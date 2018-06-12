@@ -663,31 +663,40 @@ void Transport::set_cdf_to_BB(const double T, const double chempot, CDFArray& em
 void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that depend only on particle position
 	// zone index
 	eh->z_ind = grid->zone_index(eh->xup);
+
+	// boundary conditions
+	if(r_core>0 && radius(eh->xup)<r_core) eh->fate = absorbed;
+	else if(eh->z_ind<0){
+		grid->symmetry_boundaries(eh);
+		eh->z_ind = grid->zone_index(eh->xup);
+		if(eh->z_ind < 0){
+			eh->fate = escaped;
+			return;
+		}
+	}
 	grid->grid_coordinates(eh->xup,eh->grid_coords);
 
-	if(eh->z_ind >= 0){
-		// spatial indices
-		grid->rho.indices(eh->z_ind, eh->dir_ind);
-		for(unsigned i=0; i<NDIMS; i++)	PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
-		grid->rho.set_InterpolationCube(&(eh->icube_vol),eh->grid_coords,eh->dir_ind);
-		eh->icube_vol.set_slope_weights(eh->grid_coords);
+	// spatial indices
+	grid->rho.indices(eh->z_ind, eh->dir_ind);
+	for(unsigned i=0; i<NDIMS; i++)	PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
+	grid->rho.set_InterpolationCube(&(eh->icube_vol),eh->grid_coords,eh->dir_ind);
+	eh->icube_vol.set_slope_weights(eh->grid_coords);
 
-		// metric and its derivatives
-		if(DO_GR){
-		  grid->interpolate_metric(eh);
-		  if(eh->g.gtt >= 0){
-		    eh->z_ind = -1;
-		    eh->fate = absorbed;
-		  }
+	// metric and its derivatives
+	if(DO_GR){
+		grid->interpolate_metric(eh);
+		if(eh->g.gtt >= 0){
+			eh->z_ind = -1;
+			eh->fate = absorbed;
 		}
-
-		// four-velocity
-		grid->interpolate_fluid_velocity(eh);
-		eh->set_fourvel();
-
-		// set tetrad
-		eh->set_tetrad_basis(grid->tetrad_rotation);
 	}
+
+	// four-velocity
+	grid->interpolate_fluid_velocity(eh);
+	eh->set_fourvel();
+
+	// set tetrad
+	eh->set_tetrad_basis(grid->tetrad_rotation);
 }
 
 // make sure kup is consistent with the new background
@@ -696,18 +705,18 @@ void Transport::update_eh_k_opac(EinsteinHelper* eh) const{
 	if(eh->kup[3] <= 0){
 		eh->fate = absorbed;
 		eh->z_ind = -1;
+		return;
 	}
-	if(eh->z_ind >= 0){
-		PRINT_ASSERT(eh->kup,==,eh->kup);
-		eh->renormalize_kup();
-		eh->grid_coords[NDIMS] = min(eh->nu(), grid->nu_grid_axis.max());
-		eh->dir_ind[NDIMS] = min(grid->nu_grid_axis.bin(eh->nu()), (int)grid->nu_grid_axis.size()-1);
-		eh->eas_ind = grid->abs_opac[eh->s].direct_index(eh->dir_ind);
-		grid->abs_opac[eh->s].set_InterpolationCube(&(eh->icube_spec),eh->grid_coords,eh->dir_ind);
-		eh->absopac  =  grid->abs_opac[eh->s].interpolate(eh->icube_spec);
-		eh->scatopac = grid->scat_opac[eh->s].interpolate(eh->icube_spec);
-		PRINT_ASSERT(eh->absopac,<,1e10);
-	}
+
+	PRINT_ASSERT(eh->kup,==,eh->kup);
+	eh->renormalize_kup();
+	eh->grid_coords[NDIMS] = min(eh->nu(), grid->nu_grid_axis.max());
+	eh->dir_ind[NDIMS] = min(grid->nu_grid_axis.bin(eh->nu()), (int)grid->nu_grid_axis.size()-1);
+	eh->eas_ind = grid->abs_opac[eh->s].direct_index(eh->dir_ind);
+	grid->abs_opac[eh->s].set_InterpolationCube(&(eh->icube_spec),eh->grid_coords,eh->dir_ind);
+	eh->absopac  =  grid->abs_opac[eh->s].interpolate(eh->icube_spec);
+	eh->scatopac = grid->scat_opac[eh->s].interpolate(eh->icube_spec);
+	PRINT_ASSERT(eh->absopac,<,1e10);
 }
 
 

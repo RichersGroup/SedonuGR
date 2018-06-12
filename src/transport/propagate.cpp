@@ -149,19 +149,6 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 	PRINT_ASSERT(eh->ds_com, <, INFINITY);
 }
 
-
-void Transport::boundary_conditions(EinsteinHelper *eh) const{
-	PRINT_ASSERT(eh->fate,==,moving);
-
-	if(r_core>0 && radius(eh->xup)<r_core) eh->fate = absorbed;
-	else if(eh->z_ind<0){
-		grid->symmetry_boundaries(eh);
-		update_eh_background(eh);
-		update_eh_k_opac(eh);
-		if(eh->z_ind < 0) eh->fate = escaped;
-	}
-}
-
 void Transport::move(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->ds_com,>=,0);
 	PRINT_ASSERT(abs(eh->g.dot<4>(eh->kup,eh->kup)) / (eh->kup[3]*eh->kup[3]), <=, TINY);
@@ -185,36 +172,22 @@ void Transport::move(EinsteinHelper *eh) const{
 	double dlambda = eh->ds_com / eh->kup_tet[3];
 	PRINT_ASSERT(dlambda,>=,0);
 
-	// get dk_dlambda at current position
-	Tuple<double,4> dk_dlambda;
-	if(DO_GR){
-	  dk_dlambda = grid->dk_dlambda(*eh);
-	}
-
 	// get 2nd order x, 1st order estimate for k
-	Tuple<double,4> kup1 = old_kup + dk_dlambda * dlambda;
 	Tuple<double,4> order1 = old_kup * dlambda;
-	Tuple<double,4> order2 = dk_dlambda * dlambda*dlambda * 0.5;
-	for(unsigned i=0; i<4; i++){
-		eh->xup[i] += order1[i] + (abs(order2[i]/order1[i])<1. ? order2[i] : 0);
-		PRINT_ASSERT(eh->xup[i],==,eh->xup[i]);
+	for(unsigned i=0; i<4; i++)
+		eh->xup[i] += order1[i];
+	if(DO_GR){
+		Tuple<double,4> dk_dlambda = grid->dk_dlambda(*eh);
+		Tuple<double,4> order2 = dk_dlambda * dlambda*dlambda * 0.5;
+		eh->kup = old_kup + dk_dlambda * dlambda;
+		for(unsigned i=0; i<4; i++)
+			eh->xup[i] += (abs(order2[i]/order1[i])<1. ? order2[i] : 0);
 	}
 
 	// get new background data
 	update_eh_background(eh);
-
-	// apply second order correction to k
-	if(DO_GR and eh->z_ind>0){
-		eh->g.normalize_null_preserveupt(eh->kup);
-		Tuple<double,4> dk_dlambda_2 = grid->dk_dlambda(*eh);
-		Tuple<double,4> kup2 = old_kup + dk_dlambda_2*dlambda;
-		eh->kup = (kup1 + kup2) * 0.5;
-		for(unsigned i=0; i<4; i++){
-			PRINT_ASSERT(eh->kup[i],==,eh->kup[i]);
-		}
-	}
-	PRINT_ASSERT(abs(eh->kup[3]),<,INFINITY);
-	update_eh_k_opac(eh);
+	if(eh->fate==moving)
+		update_eh_k_opac(eh);
 
 	// appropriately reduce the particle's energy from absorption
 	// assumes kup_tet and absopac vary linearly along the trajectory
@@ -288,7 +261,6 @@ void Transport::propagate(EinsteinHelper *eh) const{
 		}
 
 		if(eh->fate==moving) window(eh);
-		if(eh->fate==moving) boundary_conditions(eh);
 		if(eh->fate==moving) PRINT_ASSERT(abs(eh->g.dot<4>(eh->kup,eh->kup)) / (eh->kup[3]*eh->kup[3]), <=, TINY);
 
 		PRINT_ASSERT(eh->N,<,1e99);

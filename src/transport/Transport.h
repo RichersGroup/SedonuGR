@@ -73,7 +73,6 @@ protected:
 	virtual void move(EinsteinHelper *eh) const;
 	void reset_radiation();
 	void which_event(EinsteinHelper* eh, ParticleEvent *event) const;
-	void boundary_conditions(EinsteinHelper *eh) const;
 	void scatter(EinsteinHelper *eh) const;
 	void random_walk(EinsteinHelper *eh) const;
 	void init_randomwalk_cdf(Lua* lua);
