@@ -147,7 +147,7 @@ public:
 	// GR functions
 	virtual void grid_coordinates(const Tuple<double,4>& xup, double coords[NDIMS]) const=0;
 	virtual Tuple<double,4> dk_dlambda(const EinsteinHelper& eh) const=0; // Gamma^alhpa_mu_nu
-	virtual void interpolate_shift(EinsteinHelper* eh) const=0;
+	virtual Tuple<double,3> interpolate_shift(const EinsteinHelper& eh) const=0;
 	virtual void interpolate_3metric(EinsteinHelper* eh) const=0;
 	void interpolate_metric(EinsteinHelper* eh) const;
 };

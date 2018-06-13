@@ -390,7 +390,7 @@ void Grid::interpolate_metric(EinsteinHelper *eh) const{
   PRINT_ASSERT(eh->g.alpha,>,0);
 
   // second, the shift and three-metric
-  interpolate_shift(eh);
+  eh->g.betaup = interpolate_shift(*eh);
   interpolate_3metric(eh);
 
   // fill in the rest of the metric values

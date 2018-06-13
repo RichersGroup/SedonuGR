@@ -88,7 +88,7 @@ public:
 
 	// GR functions
 	Tuple<double,4> dk_dlambda(const EinsteinHelper& eh) const; // Gamma^alhpa_mu_nu
-	void interpolate_shift(EinsteinHelper* eh) const;
+	Tuple<double,3> interpolate_shift(const EinsteinHelper& eh) const;
 	void interpolate_3metric(EinsteinHelper* eh) const;
 	void grid_coordinates(const Tuple<double,4>& xup, double coords[NDIMS]) const;
 };

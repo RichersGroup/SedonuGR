@@ -508,10 +508,8 @@ double Grid1DSphere::zone_lorentz_factor(const int z_ind) const{
 	double vdotv = vr[z_ind]*vr[z_ind] * X[z_ind] / (pc::c*pc::c);
 	return 1. / sqrt(1.-vdotv);
 }
-void Grid1DSphere::interpolate_shift(EinsteinHelper* eh) const{ // default Minkowski
-	eh->g.betaup[0] = 0;
-	eh->g.betaup[1] = 0;
-	eh->g.betaup[2] = 0;
+Tuple<double,3> Grid1DSphere::interpolate_shift(const EinsteinHelper& eh) const{ // default Minkowski
+	return Tuple<double,3>(0);
 }
 void Grid1DSphere::grid_coordinates(const Tuple<double,4>& xup, double coords[NDIMS]) const{
 	coords[0] = radius(xup);

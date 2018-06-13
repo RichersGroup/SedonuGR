@@ -174,10 +174,8 @@ Tuple<double,4> Grid0DIsotropic::dk_dlambda(const EinsteinHelper& eh) const{ // 
   ch.data = 0;
   return ch.contract2(eh.kup);
 }
-void Grid0DIsotropic::interpolate_shift(EinsteinHelper* eh) const{ // default Minkowski
-	eh->g.betaup[0] = 0;
-	eh->g.betaup[1] = 0;
-	eh->g.betaup[2] = 0;
+Tuple<double,3> Grid0DIsotropic::interpolate_shift(const EinsteinHelper& eh) const{ // default Minkowski
+	return Tuple<double,3>(0);
 }
 void Grid0DIsotropic::interpolate_3metric(EinsteinHelper* eh) const{ // default Minkowski
 	eh->g.gammalow.data[ixx] = 1.0;

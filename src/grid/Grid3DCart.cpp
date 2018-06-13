@@ -738,11 +738,8 @@ Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
   Tuple<double,4> dk_dlambda = eh.g.raise(dk_dlambda_low);
   return dk_dlambda * -1.;
 }
-void Grid3DCart::interpolate_shift(EinsteinHelper* eh) const{
-	if(DO_GR){
-		Tuple<double,3> tmp = betaup.interpolate(eh->icube_vol);
-		for(unsigned i=0; i<3; i++) eh->g.betaup[i] = tmp[i];
-	}
+Tuple<double,3> Grid3DCart::interpolate_shift(const EinsteinHelper& eh) const{
+	return betaup.interpolate(eh.icube_vol);
 }
 void Grid3DCart::interpolate_3metric(EinsteinHelper* eh) const{
 	if(DO_GR) eh->g.gammalow.data = g3.interpolate(eh->icube_vol);

@@ -880,11 +880,9 @@ Tuple<double,4> Grid2DSphere::dk_dlambda(const EinsteinHelper& eh) const{ // def
 	ch.data = 0;
 	return ch.contract2(eh.kup);
 }
-void Grid2DSphere::interpolate_shift(EinsteinHelper *eh) const{ // default Minkowski
+Tuple<double,3> Grid2DSphere::interpolate_shift(const EinsteinHelper& eh) const{ // default Minkowski
 	PRINT_ASSERT(DO_GR,==,0);
-	eh->g.betaup[0] = 0;
-	eh->g.betaup[1] = 0;
-	eh->g.betaup[2] = 0;
+	return Tuple<double,3>(0);
 }
 void Grid2DSphere::interpolate_3metric(EinsteinHelper *eh) const{ // default Minkowski
 	PRINT_ASSERT(DO_GR,==,0);
