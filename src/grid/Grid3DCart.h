@@ -60,7 +60,7 @@ public:
 	Grid3DCart();
 	virtual ~Grid3DCart() {}
 
-	void get_deltas(const int z_ind, double delta[3], int size) const;
+	Tuple<double,NDIMS> get_deltas(const int z_ind) const;
 
 	void read_model_file(Lua* lua);
 	void read_THC_file(Lua* lua);

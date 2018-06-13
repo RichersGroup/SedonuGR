@@ -429,8 +429,7 @@ double Grid3DCart::zone_lab_3volume(int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	double delta[3];
-	get_deltas(z_ind,delta,3);
+	Tuple<double,NDIMS> delta = get_deltas(z_ind);
 	double result = delta[0] * delta[1] * delta[2];
 	if(DO_GR) result *= sqrtdetg3[z_ind];
 	PRINT_ASSERT(result,>,0);
@@ -455,8 +454,7 @@ Tuple<double,4> Grid3DCart::sample_in_zone(int z_ind, ThreadRNG* rangen) const
 	Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
 
 	// zone deltas in each of three directions
-	double delta[3];
-	get_deltas(z_ind,delta,3);
+	Tuple<double,NDIMS> delta = get_deltas(z_ind);
 
 	// set the random location
 	Tuple<double,4> x;
@@ -483,8 +481,7 @@ double  Grid3DCart::zone_min_length(int z_ind) const
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 
-	double delta[3];
-	get_deltas(z_ind,delta,3);
+	Tuple<double,NDIMS> delta = get_deltas(z_ind);
 
 	double min_ds = min(delta[0], min(delta[1],delta[2]) );
 	return min_ds;
@@ -580,18 +577,19 @@ Tuple<hsize_t,NDIMS> Grid3DCart::dims() const{
 	return dims;
 }
 
-void Grid3DCart::get_deltas(int z_ind, double delta[3], int size) const
+Tuple<double,NDIMS> Grid3DCart::get_deltas(int z_ind) const
 {
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	PRINT_ASSERT(size,==,3);
 
 	// get directional indices
 	Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
 
+	Tuple<double,NDIMS> delta;
 	for(int i=0; i<3; i++){
 		delta[i] =xAxes[i].delta(dir_ind[i]);
 		PRINT_ASSERT(delta[i],>,0);
 	}
+	return delta;
 }
 
 
