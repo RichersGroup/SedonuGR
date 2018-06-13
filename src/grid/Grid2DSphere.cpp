@@ -599,8 +599,7 @@ double Grid2DSphere::zone_lab_3volume(const int z_ind) const
 	PRINT_ASSERT(DO_GR,==,false); // need to include sqrt(detg3)
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	vector<unsigned> dir_ind(2);
-	zone_directional_indices(z_ind,dir_ind);
+	Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 	const double r0     =     xAxes[0].bottom(i);
@@ -702,8 +701,7 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 //------------------------------------------------------------
 double Grid2DSphere::zone_min_length(const int z_ind) const
 {
-	vector<unsigned> dir_ind(2);
-	zone_directional_indices(z_ind,dir_ind);
+	Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 
@@ -723,8 +721,7 @@ Tuple<double,NDIMS> Grid2DSphere::zone_coordinates(const int z_ind) const
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)(xAxes[0].size()*xAxes[1].size()));
 
-	vector<unsigned> dir_ind(2);
-	zone_directional_indices(z_ind, dir_ind);
+	Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
 	const unsigned i = dir_ind[0];
 	const unsigned j = dir_ind[1];
 
@@ -740,17 +737,18 @@ Tuple<double,NDIMS> Grid2DSphere::zone_coordinates(const int z_ind) const
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-void Grid2DSphere::zone_directional_indices(const int z_ind, vector<unsigned>& dir_ind) const
+Tuple<unsigned,NDIMS> Grid2DSphere::zone_directional_indices(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	PRINT_ASSERT(dir_ind.size(),==,2);
+	Tuple<unsigned,NDIMS> dir_ind;
 	dir_ind[0] = z_ind / xAxes[1].size(); // r index
 	dir_ind[1] = z_ind % xAxes[1].size(); // theta index
 	PRINT_ASSERT((int)dir_ind[0],>=,0);
 	PRINT_ASSERT((int)dir_ind[1],>=,0);
 	PRINT_ASSERT(dir_ind[0],<,xAxes[0].size());
 	PRINT_ASSERT(dir_ind[1],<,xAxes[1].size());
+	return dir_ind;
 }
 
 
@@ -768,8 +766,7 @@ Tuple<double,4> Grid2DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen)
 	rand[2] = rangen->uniform();
 
 	// radius and theta indices
-	vector<unsigned> dir_ind(2);
-	zone_directional_indices(z_ind,dir_ind);
+	Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
 	int i = dir_ind[0];
 	int j = dir_ind[1];
 
@@ -858,8 +855,7 @@ double Grid2DSphere::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 
 	// radius and theta indices
-	vector<unsigned> dir_ind(2);
-	zone_directional_indices(z_ind,dir_ind);
+	Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
 	int i = dir_ind[0];
 
 	return xAxes[0].top[i];

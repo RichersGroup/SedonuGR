@@ -298,12 +298,11 @@ Tuple<double,NDIMS> Grid1DSphere::zone_coordinates(const int z_ind) const{
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-void Grid1DSphere::zone_directional_indices(const int z_ind, vector<unsigned>& dir_ind) const
+Tuple<unsigned,NDIMS> Grid1DSphere::zone_directional_indices(int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	PRINT_ASSERT(dir_ind.size(),==,dimensionality());
-	dir_ind[0] = z_ind;
+	return Tuple<unsigned,NDIMS>(z_ind);
 }
 
 

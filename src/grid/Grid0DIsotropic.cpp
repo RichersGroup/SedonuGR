@@ -107,10 +107,10 @@ Tuple<double,NDIMS> Grid0DIsotropic::zone_coordinates(const int z_ind) const{
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-void Grid0DIsotropic::zone_directional_indices(const int z_ind, vector<unsigned>& dir_ind) const
+Tuple<unsigned,NDIMS> Grid0DIsotropic::zone_directional_indices(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,==,0);
-	PRINT_ASSERT(dir_ind.size(),==,0);
+	return Tuple<unsigned,NDIMS>();
 }
 
 

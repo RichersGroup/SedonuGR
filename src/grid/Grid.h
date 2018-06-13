@@ -116,7 +116,7 @@ public:
 	virtual void write_child_zones(H5::H5File file) =0;
 
 	// get directional indices from the zone index
-	virtual void    zone_directional_indices(const int z_ind, vector<unsigned>& dir_ind) const=0;
+	virtual Tuple<unsigned,NDIMS> zone_directional_indices(const int z_ind) const=0;
 	virtual Tuple<hsize_t,NDIMS> dims() const=0;
 	virtual hsize_t dimensionality          () const=0;
 

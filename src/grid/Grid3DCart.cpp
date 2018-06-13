@@ -319,8 +319,7 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	for(int z_ind=0; z_ind<(int)rho.size(); z_ind++){
 
 		// directional indices in Sedonu grid
-		vector<unsigned> dir_ind(NDIMS);
-		zone_directional_indices(z_ind,dir_ind);
+		Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
 
 		// directional indices in hdf5 data
 		unsigned hdf5_dir_ind[3];
@@ -408,18 +407,19 @@ int Grid3DCart::zone_index(const int i, const int j, const int k) const{
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-void Grid3DCart::zone_directional_indices(const int z_ind, vector<unsigned>& dir_ind) const
+Tuple<unsigned,NDIMS> Grid3DCart::zone_directional_indices(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	PRINT_ASSERT(dir_ind.size(),==,NDIMS);
 
+	Tuple<unsigned,NDIMS> dir_ind;
 	dir_ind[0] =  z_ind / (xAxes[1].size()*xAxes[2].size());
 	dir_ind[1] = (z_ind % (xAxes[1].size()*xAxes[2].size())) / xAxes[2].size();
 	dir_ind[2] =  z_ind % xAxes[2].size();
 
 	for(int i=0; i<3; i++)
 		PRINT_ASSERT(dir_ind[i],<,xAxes[i].size());
+	return dir_ind;
 }
 
 
@@ -453,8 +453,7 @@ Tuple<double,4> Grid3DCart::sample_in_zone(const int z_ind, ThreadRNG* rangen) c
 	rand[2] = rangen->uniform();
 
 	// zone directional indices
-	vector<unsigned> dir_ind(3);
-	zone_directional_indices(z_ind,dir_ind);
+	Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
 
 	// zone deltas in each of three directions
 	double delta[3];
@@ -557,8 +556,7 @@ Tuple<double,NDIMS> Grid3DCart::zone_coordinates(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	vector<unsigned> dir_ind(3);
-	zone_directional_indices(z_ind,dir_ind);
+	Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
 
 	Tuple<double,NDIMS> r;
 	for(int i=0; i<3; i++)
@@ -589,8 +587,7 @@ void Grid3DCart::get_deltas(const int z_ind, double delta[3], const int size) co
 	PRINT_ASSERT(size,==,3);
 
 	// get directional indices
-	vector<unsigned> dir_ind(3);
-	zone_directional_indices(z_ind,dir_ind);
+	Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
 
 	for(int i=0; i<3; i++){
 		delta[i] =xAxes[i].delta(dir_ind[i]);
