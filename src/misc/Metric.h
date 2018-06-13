@@ -319,11 +319,11 @@ public:
 		return 10*a + Metric::index(i,j);
 	}
 
- Christoffel() : data(NaN) {}
+	Christoffel() : data(NaN) {}
 
 	Tuple<double,4> contract2(const Tuple<double,4>& kup) const{
-	        Tuple<double,4> result = 0;
-                #pragma omp simd collapse(3)
+		Tuple<double,4> result = 0;
+		#pragma omp simd collapse(3)
 		for(unsigned a=0; a<4; a++){
 			for(unsigned i=0; i<4; i++)
 				for(unsigned j=0; j<4; j++)
