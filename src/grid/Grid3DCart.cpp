@@ -372,7 +372,7 @@ int Grid3DCart::zone_index(const Tuple<double,4>& x) const
 	for(int i=0; i<3; i++){
 		PRINT_ASSERT(x[i],>,xAxes[i].min   - xAxes[i].delta(1));
 		PRINT_ASSERT(x[i],<,xAxes[i].max() + xAxes[i].delta(1));
-		if (x[i]<=xAxes[i].min || x[i]>=xAxes[i].max()) return -1;
+		if (x[i]<xAxes[i].min || x[i]>=xAxes[i].max()) return -1;
 	}
 
 	// get directional indices
