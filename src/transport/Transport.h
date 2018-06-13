@@ -105,7 +105,6 @@ protected:
 	int write_zones_every;
 
 	// global radiation quantities
-	ATOMIC<double> particle_total_energy;
 	ATOMIC<double> particle_rouletted_energy;
 	ATOMIC<double> particle_core_abs_energy;
 	ATOMIC<double> particle_escape_energy;

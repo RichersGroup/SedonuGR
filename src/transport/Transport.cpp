@@ -79,7 +79,6 @@ Transport::Transport(){
 	visc_specific_heat_rate = NaN;
 	n_subcycles = -MAXLIM;
 	write_zones_every = -MAXLIM;
-	particle_total_energy = NaN;
 	particle_core_abs_energy = NaN;
 	particle_rouletted_energy = NaN;
 	particle_escape_energy = NaN;
@@ -378,7 +377,6 @@ void Transport::reset_radiation(){
 	grid->fourforce_emit.wipe();
 	grid->fourforce_annihil.wipe();
 
-	particle_total_energy = 0;
 	particle_core_abs_energy = 0;
 	particle_rouletted_energy = 0;
 	particle_escape_energy = 0;
@@ -515,7 +513,6 @@ void Transport::normalize_radiative_quantities(){
 		N_net_emit[s] *= inv_multiplier; // assume lab_dt=1.0
 		N_net_esc[s] *= inv_multiplier; // assume lab_dt=1.0
 	}
-	particle_total_energy *= inv_multiplier;
 	particle_core_abs_energy *= inv_multiplier;
 	particle_rouletted_energy *= inv_multiplier;
 	particle_escape_energy *= inv_multiplier;
@@ -532,7 +529,7 @@ void Transport::normalize_radiative_quantities(){
 		}
 
 		// particle information (all lab-frame)
-		cout << "#   " << particle_total_energy << " ERG/S TOTAL PARTICLE END ENERGY " << endl; // assume lab_dt=1.0
+		cout << "#   " << particle_rouletted_energy+particle_core_abs_energy+particle_escape_energy << " ERG/S TOTAL PARTICLE END ENERGY " << endl; // assume lab_dt=1.0
 		cout << "#     --> " << particle_rouletted_energy << " ERG/S TOTAL ROULETTED PARTICLE ENERGY " << endl; // assume lab_dt=1.0
 		cout << "#     --> " << particle_core_abs_energy << " ERG/S TOTAL PARTICLE ENERGY ABSORBED BY CORE" << endl; // assume lab_dt=1.0
 		cout << "#     --> " << particle_escape_energy << " ERG/S TOTAL ESCAPED PARTICLE ENERGY " << endl; // assume lab_dt=1.0
@@ -574,7 +571,6 @@ void Transport::sum_to_proc0()
 	// scalars
 	if(verbose) cout << "#   Summing scalars" << endl;
 	if(MPI_myID==0){
-		MPI_Reduce(MPI_IN_PLACE, &particle_total_energy,     1,                  MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 		MPI_Reduce(MPI_IN_PLACE, &particle_rouletted_energy, 1,                  MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 		MPI_Reduce(MPI_IN_PLACE, &particle_core_abs_energy,  1,                  MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 		MPI_Reduce(MPI_IN_PLACE, &particle_escape_energy,    1,                  MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -586,7 +582,6 @@ void Transport::sum_to_proc0()
 		MPI_Reduce(MPI_IN_PLACE, &n_active.front(),          n_active.size(),    MPI_LONG,   MPI_SUM, 0, MPI_COMM_WORLD);
 	}
 	else{
-		MPI_Reduce(&particle_total_energy,     NULL,                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 		MPI_Reduce(&particle_rouletted_energy, NULL,                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 		MPI_Reduce(&particle_core_abs_energy,  NULL,                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 		MPI_Reduce(&particle_escape_energy,    NULL,                  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);

@@ -58,17 +58,7 @@ void Transport::propagate_particles()
 		eh.N0 = eh.N;
 		update_eh_background(&eh);
 		update_eh_k_opac(&eh);
-
-		// save final data
-		n_active[eh.s]++;
-		if(eh.fate == moving) propagate(&eh);
-		if(eh.fate == escaped){
-			const double nu = eh.nu(); // uses last-known metric
-			n_escape[eh.s]++;
-			L_net_esc[eh.s] += eh.N * nu*pc::h;
-			N_net_esc[eh.s] += eh.N;
-			grid->spectrum[eh.s].count(eh.kup_tet, eh.dir_ind, eh.N * nu*pc::h);
-		}
+		propagate(&eh);
 
 		if(verbose){
 			#pragma omp atomic
@@ -213,6 +203,7 @@ void Transport::propagate(EinsteinHelper *eh){
 	ParticleEvent event;
 
 	PRINT_ASSERT(eh->fate, ==, moving);
+	n_active[eh->s]++;
 
 	while (eh->fate == moving)
 	{
@@ -252,14 +243,17 @@ void Transport::propagate(EinsteinHelper *eh){
 
 	PRINT_ASSERT(eh->fate,!=,moving);
 	double e = eh->N * eh->kup[3];
-	if(eh->fate!=rouletted)
-	  particle_total_energy += e;
-
-	if(eh->fate==escaped)
-	  particle_escape_energy += e;
+	if(eh->fate==escaped){
+		PRINT_ASSERT(e,>=,0);
+		particle_escape_energy += e;
+		n_escape[eh->s]++;
+		L_net_esc[eh->s] += e;
+		N_net_esc[eh->s] += eh->N;
+		grid->spectrum[eh->s].count(eh->kup_tet, eh->dir_ind, e);
+	}
 	else if(eh->fate==absorbed)
-	  particle_core_abs_energy += e;
+		particle_core_abs_energy += e;
 	else if(eh->fate==rouletted)
-	  particle_rouletted_energy += e;
+		particle_rouletted_energy += e;
 	else assert(0);
 }
