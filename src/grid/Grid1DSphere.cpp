@@ -67,7 +67,7 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 	// verbocity
 	int MPI_myID;
 	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
-	const int rank0 = (MPI_myID == 0);
+	int rank0 = (MPI_myID == 0);
 	vector<double> bintops, binmid;
 	double trash, minval, tmp;
 
@@ -148,7 +148,7 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 	// verbocity
 	int MPI_myID;
 	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
-	const int rank0 = (MPI_myID == 0);
+	int rank0 = (MPI_myID == 0);
 	if(rank0) cout << "#   Reading 1D model file" << endl;
 
 	// open up the model file, complaining if it fails to open
@@ -256,7 +256,7 @@ int Grid1DSphere::zone_index(const Tuple<double,4>& x) const
 //------------------------------------------------------------
 // return volume of zone z_ind
 //------------------------------------------------------------
-double  Grid1DSphere::zone_lab_3volume(const int z_ind) const
+double  Grid1DSphere::zone_lab_3volume(int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
@@ -270,7 +270,7 @@ double  Grid1DSphere::zone_lab_3volume(const int z_ind) const
 //------------------------------------------------------------
 // return length of zone
 //------------------------------------------------------------
-double  Grid1DSphere::zone_min_length(const int z_ind) const
+double  Grid1DSphere::zone_min_length(int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
@@ -284,7 +284,7 @@ double  Grid1DSphere::zone_min_length(const int z_ind) const
 // ------------------------------------------------------------
 // find the coordinates of the zone in geometrical coordinates
 // ------------------------------------------------------------
-Tuple<double,NDIMS> Grid1DSphere::zone_coordinates(const int z_ind) const{
+Tuple<double,NDIMS> Grid1DSphere::zone_coordinates(int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	double r = 0.5*(xAxes[0].top[z_ind]+xAxes[0].bottom(z_ind));
@@ -309,7 +309,7 @@ Tuple<unsigned,NDIMS> Grid1DSphere::zone_directional_indices(int z_ind) const
 //------------------------------------------------------------
 // sample a random position within the spherical shell
 //------------------------------------------------------------
-Tuple<double,4> Grid1DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen) const
+Tuple<double,4> Grid1DSphere::sample_in_zone(int z_ind, ThreadRNG* rangen) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
@@ -440,7 +440,7 @@ double Grid1DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 	return R;
 }
 
-double Grid1DSphere::zone_radius(const int z_ind) const{
+double Grid1DSphere::zone_radius(int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	return xAxes[0].top[z_ind];
@@ -507,11 +507,11 @@ Tuple<double,4> Grid1DSphere::dk_dlambda(const EinsteinHelper& eh) const{
 	return ch.contract2(eh.kup);
 }
 
-double Grid1DSphere::zone_lorentz_factor(const int z_ind) const{
+double Grid1DSphere::zone_lorentz_factor(int z_ind) const{
 	double vdotv = vr[z_ind]*vr[z_ind] * X[z_ind] / (pc::c*pc::c);
 	return 1. / sqrt(1.-vdotv);
 }
-Tuple<double,3> Grid1DSphere::interpolate_shift(const EinsteinHelper& eh) const{ // default Minkowski
+Tuple<double,3> Grid1DSphere::interpolate_shift(const EinsteinHelper&) const{ // default Minkowski
 	return Tuple<double,3>(0);
 }
 void Grid1DSphere::grid_coordinates(const Tuple<double,4>& xup, double coords[NDIMS]) const{

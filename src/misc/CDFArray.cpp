@@ -376,7 +376,6 @@ double CDFArray::invert_linear(const double rand, const Axis* xgrid, const int i
 	double xLeft = (i>0 ? xgrid->top[i-1] : xgrid->min);
 	double yLeft = (i>0 ?          y[i-1] : 0         );
 	double yRight = y[i];
-	double xRight = xgrid->top[i];
 	if(yRight == yLeft) return yRight;
 
 	// get the slope between the two adjacent points
@@ -388,7 +387,7 @@ double CDFArray::invert_linear(const double rand, const Axis* xgrid, const int i
 	if(i_in<0) result = xLeft + slope*(rand-yLeft);
 	else result = xLeft + rand*slope*(yRight-yLeft);
 	PRINT_ASSERT(xLeft,<=,result);
-	PRINT_ASSERT(xRight,>=,result);
+	PRINT_ASSERT(xgrid->top[i],>=,result);
 	return result;
 }
 double CDFArray::invert_piecewise(const double rand, const Axis* xgrid, const int i_in) const
@@ -410,8 +409,7 @@ double CDFArray::interpolate_pdf_piecewise(const double x, const Axis* xgrid) co
 
 	int upper = xgrid->bin(x);
 	PRINT_ASSERT(upper,>=,0);
-	int lower = upper-1;
-	PRINT_ASSERT(lower,<,(int)xgrid->size());
+	PRINT_ASSERT(upper-1,<,(int)xgrid->size());
 
 	return get_value(upper); //y[lower];
 }

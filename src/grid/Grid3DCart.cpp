@@ -93,7 +93,7 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	// verbocity
 	int MPI_myID;
 	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
-	const int rank0 = (MPI_myID == 0);
+	int rank0 = (MPI_myID == 0);
 
 	// conversion factors
 	double convert_length = 147690.2071535873; // code --> cm
@@ -125,7 +125,7 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	comptype = dataset.getCompType();
 
 	// get the dataset dimensions
-	const int dataset_rank = 3;
+	int dataset_rank = 3;
 	PRINT_ASSERT(space.getSimpleExtentNdims(),==,dataset_rank);                 // 3D array
 	hsize_t hdf5_dims[dataset_rank];
 	space.getSimpleExtentDims(hdf5_dims);
@@ -157,8 +157,7 @@ void Grid3DCart::read_THC_file(Lua* lua)
 		PRINT_ASSERT(xmax[i],>,x0[i]);
 
 		// check that the number of data points is consistent with the range and delta
-		double ntmp = (xmax[i] - x0[i])/dx[i];
-		PRINT_ASSERT(abs(nx[i]-ntmp),<,TINY);
+		PRINT_ASSERT(abs(nx[i] - (xmax[i] - x0[i])/dx[i] ),<,TINY);
 	}
 
 	// modify grid in event of symmetry
@@ -329,7 +328,7 @@ void Grid3DCart::read_THC_file(Lua* lua)
 		}
 
 		// global hdf5 index
-		const int dataset_ind = hdf5_dir_ind[2] + hdf5_dims[2]*hdf5_dir_ind[1] + hdf5_dims[1]*hdf5_dims[2]*hdf5_dir_ind[0];
+		int dataset_ind = hdf5_dir_ind[2] + hdf5_dims[2]*hdf5_dir_ind[1] + hdf5_dims[1]*hdf5_dims[2]*hdf5_dir_ind[0];
 		PRINT_ASSERT((int)dataset_ind,<,(int)(hdf5_dims[0] * hdf5_dims[1] * hdf5_dims[2]));
 		PRINT_ASSERT((int)dataset_ind,>=,0);
 
@@ -392,14 +391,14 @@ int Grid3DCart::zone_index(const Tuple<double,4>& x) const
 //-------------------------------------------------
 // get the zone index from the directional indices
 //-------------------------------------------------
-int Grid3DCart::zone_index(const int i, const int j, const int k) const{
+int Grid3DCart::zone_index(int i, int j, int k) const{
 	PRINT_ASSERT(i,>=,0);
 	PRINT_ASSERT(j,>=,0);
 	PRINT_ASSERT(k,>=,0);
 	PRINT_ASSERT(i,<,(int)xAxes[0].size());
 	PRINT_ASSERT(j,<,(int)xAxes[1].size());
 	PRINT_ASSERT(k,<,(int)xAxes[2].size());
-	const int z_ind = i*xAxes[1].size()*xAxes[2].size() + j*xAxes[2].size() + k;
+	int z_ind = i*xAxes[1].size()*xAxes[2].size() + j*xAxes[2].size() + k;
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	return z_ind;
 }
@@ -407,7 +406,7 @@ int Grid3DCart::zone_index(const int i, const int j, const int k) const{
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-Tuple<unsigned,NDIMS> Grid3DCart::zone_directional_indices(const int z_ind) const
+Tuple<unsigned,NDIMS> Grid3DCart::zone_directional_indices(int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
@@ -426,7 +425,7 @@ Tuple<unsigned,NDIMS> Grid3DCart::zone_directional_indices(const int z_ind) cons
 //------------------------------------------------------------
 // return volume of zone (precomputed)
 //------------------------------------------------------------
-double Grid3DCart::zone_lab_3volume(const int z_ind) const
+double Grid3DCart::zone_lab_3volume(int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
@@ -442,7 +441,7 @@ double Grid3DCart::zone_lab_3volume(const int z_ind) const
 //------------------------------------------------------------
 // sample a random position within the cubical cell
 //------------------------------------------------------------
-Tuple<double,4> Grid3DCart::sample_in_zone(const int z_ind, ThreadRNG* rangen) const
+Tuple<double,4> Grid3DCart::sample_in_zone(int z_ind, ThreadRNG* rangen) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
@@ -479,7 +478,7 @@ Tuple<double,4> Grid3DCart::sample_in_zone(const int z_ind, ThreadRNG* rangen) c
 //------------------------------------------------------------
 // return length of zone
 //------------------------------------------------------------
-double  Grid3DCart::zone_min_length(const int z_ind) const
+double  Grid3DCart::zone_min_length(int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
@@ -552,7 +551,7 @@ Tuple<double,3> Grid3DCart::interpolate_fluid_velocity(const EinsteinHelper& eh)
 //------------------------------------------------------------
 // cell-centered coordinates of zone i
 //------------------------------------------------------------
-Tuple<double,NDIMS> Grid3DCart::zone_coordinates(const int z_ind) const
+Tuple<double,NDIMS> Grid3DCart::zone_coordinates(int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
@@ -565,7 +564,7 @@ Tuple<double,NDIMS> Grid3DCart::zone_coordinates(const int z_ind) const
 }
 
 
-double Grid3DCart::zone_radius(const int z_ind) const{
+double Grid3DCart::zone_radius(int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	Tuple<double,NDIMS> r = zone_coordinates(z_ind);
@@ -581,7 +580,7 @@ Tuple<hsize_t,NDIMS> Grid3DCart::dims() const{
 	return dims;
 }
 
-void Grid3DCart::get_deltas(const int z_ind, double delta[3], const int size) const
+void Grid3DCart::get_deltas(int z_ind, double delta[3], int size) const
 {
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	PRINT_ASSERT(size,==,3);
@@ -680,7 +679,7 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
 	}
 }
 
-double Grid3DCart::zone_lorentz_factor(const int z_ind) const{
+double Grid3DCart::zone_lorentz_factor(int z_ind) const{
 	Metric g;
 	if(DO_GR) g.gammalow.data = g3[z_ind];
 	else g.gammalow.data = NaN;

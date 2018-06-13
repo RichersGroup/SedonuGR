@@ -69,58 +69,42 @@ void Grid0DIsotropic::write_child_zones(H5::H5File){
 //------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
-int Grid0DIsotropic::zone_index(const Tuple<double,4>&) const
-{
+int Grid0DIsotropic::zone_index(const Tuple<double,4>&) const{
 	return 0;
 }
-
 
 //------------------------------------------------------------
 // return volume of zone z_ind
 //------------------------------------------------------------
-double  Grid0DIsotropic::zone_lab_3volume(int z_ind) const
-{
-	PRINT_ASSERT(z_ind,==,0);
+double Grid0DIsotropic::zone_lab_3volume(int) const{
 	return 1.0;
 }
-
 
 //------------------------------------------------------------
 // return length of zone
 //------------------------------------------------------------
-double  Grid0DIsotropic::zone_min_length(int z_ind) const
-{
-	PRINT_ASSERT(z_ind,==,0);
+double Grid0DIsotropic::zone_min_length(int) const{
 	return INFINITY;
 }
-
 
 // ------------------------------------------------------------
 // find the coordinates of the zone in geometrical coordinates
 // ------------------------------------------------------------
-Tuple<double,NDIMS> Grid0DIsotropic::zone_coordinates(int z_ind) const{
-	PRINT_ASSERT(z_ind,==,0);
+Tuple<double,NDIMS> Grid0DIsotropic::zone_coordinates(int) const{
 	return Tuple<double,NDIMS>();
 }
-
 
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-Tuple<unsigned,NDIMS> Grid0DIsotropic::zone_directional_indices(int z_ind) const
-{
-	PRINT_ASSERT(z_ind,==,0);
+Tuple<unsigned,NDIMS> Grid0DIsotropic::zone_directional_indices(int) const{
 	return Tuple<unsigned,NDIMS>();
 }
-
 
 //------------------------------------------------------------
 // sample a random position within the spherical shell
 //------------------------------------------------------------
-Tuple<double,4> Grid0DIsotropic::sample_in_zone(int z_ind, ThreadRNG*) const
-{
-	PRINT_ASSERT(z_ind,==,0);
-
+Tuple<double,4> Grid0DIsotropic::sample_in_zone(int, ThreadRNG*) const{
 	// set the double 3-d coordinates
 	Tuple<double,4> x;
 	x[0] = 0;
@@ -133,15 +117,9 @@ Tuple<double,4> Grid0DIsotropic::sample_in_zone(int z_ind, ThreadRNG*) const
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-Tuple<double,3> Grid0DIsotropic::interpolate_fluid_velocity(const EinsteinHelper& eh) const
-{
+Tuple<double,3> Grid0DIsotropic::interpolate_fluid_velocity(const EinsteinHelper&) const{
 	return Tuple<double,3>(0);
 }
-
-
-//------------------------------------------------------------
-// Reflect off symmetry plane
-//------------------------------------------------------------
 
 void Grid0DIsotropic::symmetry_boundaries(EinsteinHelper*) const{
 	// does nothing - no boundary
@@ -169,7 +147,7 @@ double Grid0DIsotropic::d_randomwalk(const EinsteinHelper&) const{
 	return INFINITY;
 }
 
-Tuple<double,4> Grid0DIsotropic::dk_dlambda(const EinsteinHelper& eh) const{ // default Minkowski
+Tuple<double,4> Grid0DIsotropic::dk_dlambda(const EinsteinHelper&) const{ // default Minkowski
 	return Tuple<double,4>(NaN);
 }
 Tuple<double,3> Grid0DIsotropic::interpolate_shift(const EinsteinHelper&) const{ // default Minkowski
