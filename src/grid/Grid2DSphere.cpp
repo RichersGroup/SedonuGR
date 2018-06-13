@@ -614,33 +614,33 @@ double Grid2DSphere::zone_lab_3volume(const int z_ind) const
 
 // returning 0 causes the min distance to take over in propagate.cpp::which_event
 
-double Grid2DSphere::d_boundary(const EinsteinHelper* eh) const{
-	const double r = radius(eh->xup);
-	PRINT_ASSERT(r,<=,xAxes[0].top[eh->z_ind]);
-	PRINT_ASSERT(r,>=,xAxes[0].bottom(eh->z_ind));
-	const double theta = Grid2DSphere_theta(eh->xup);
+double Grid2DSphere::d_boundary(const EinsteinHelper& eh) const{
+	const double r = radius(eh.xup);
+	PRINT_ASSERT(r,<=,xAxes[0].top[eh.z_ind]);
+	PRINT_ASSERT(r,>=,xAxes[0].bottom(eh.z_ind));
+	const double theta = Grid2DSphere_theta(eh.xup);
 
 	// get component of k in the radial direction
-	double kr = eh->g.dot<4>(eh->e[0],eh->kup);
+	double kr = eh.g.dot<4>(eh.e[0],eh.kup);
 	double dlambda_r = INFINITY;
-	if(kr>0) dlambda_r = (xAxes[0].top[eh->dir_ind[0]] - r   ) / kr;
-	if(kr<0) dlambda_r = (r - xAxes[0].bottom(eh->dir_ind[0])) / kr;
+	if(kr>0) dlambda_r = (xAxes[0].top[eh.dir_ind[0]] - r   ) / kr;
+	if(kr<0) dlambda_r = (r - xAxes[0].bottom(eh.dir_ind[0])) / kr;
 	dlambda_r = abs(dlambda_r);
 
 	// get component of k in the theta direction
-	double kt = eh->g.dot<4>(eh->e[1],eh->kup);
+	double kt = eh.g.dot<4>(eh.e[1],eh.kup);
 	double dlambda_t = INFINITY;
-	if(kt>0) dlambda_t = r * (xAxes[1].top[eh->dir_ind[1]]  - theta  ) / kt;
-	if(kt<0) dlambda_t = r * (theta - xAxes[1].bottom(eh->dir_ind[1])) / kt;
+	if(kt>0) dlambda_t = r * (xAxes[1].top[eh.dir_ind[1]]  - theta  ) / kt;
+	if(kt<0) dlambda_t = r * (theta - xAxes[1].bottom(eh.dir_ind[1])) / kt;
 	dlambda_t = abs(dlambda_t);
 
-	double ds_com = eh->kup_tet[3] * min(dlambda_t, dlambda_r);
+	double ds_com = eh.kup_tet[3] * min(dlambda_t, dlambda_r);
 	return ds_com;
 }
-double Grid2DSphere::d_randomwalk(const EinsteinHelper *eh) const{
+double Grid2DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 	double R=INFINITY;
-	double D = eh->scatopac / (3.*pc::c);
-	double x=eh->xup[0], y=eh->xup[1], z=eh->xup[2];
+	double D = eh.scatopac / (3.*pc::c);
+	double x=eh.xup[0], y=eh.xup[1], z=eh.xup[2];
 
 
 	Tuple<double,4> ktest;
@@ -648,21 +648,21 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 	ktest[1] = y;
 	ktest[2] = z;
 	ktest[3] = 0;
-	const double r = radius(eh->xup);
-	const double ur = radius(eh->u);
+	const double r = radius(eh.xup);
+	const double ur = radius(eh.u);
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector
 		for(unsigned i=0; i<3; i++) ktest[i] *= sgn;
-		eh->g.normalize_null_preservedownt(ktest);
+		eh.g.normalize_null_preservedownt(ktest);
 		const double kr = radius(ktest);
 
 		// get the time component of the tetrad test vector
-		double kup_tet_t = -eh->g.dot<4>(ktest,eh->u);
+		double kup_tet_t = -eh.g.dot<4>(ktest,eh.u);
 
 		// get the min distance from the boundary in direction i. Negative if moving left
 		double drlab=0;
-		if(sgn>0) drlab = xAxes[0].top[eh->dir_ind[0]] - r;
-		if(sgn<0) drlab = xAxes[0].bottom(eh->dir_ind[0]) - r;
+		if(sgn>0) drlab = xAxes[0].top[eh.dir_ind[0]] - r;
+		if(sgn<0) drlab = xAxes[0].bottom(eh.dir_ind[0]) - r;
 
 		R = min(R, sim->R_randomwalk(kr/kup_tet_t, ktest[3]/kup_tet_t, ur, drlab, D));
 	}
@@ -673,20 +673,20 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper *eh) const{
 	ktest2[1] = y*z;
 	ktest2[2] = -rp*rp;
 	ktest2[3] = 0;
-	double theta = Grid2DSphere_theta(eh->xup);
+	double theta = Grid2DSphere_theta(eh.xup);
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector
 		for(unsigned i=0; i<3; i++) ktest[i] *= sgn;
-		eh->g.normalize_null_preservedownt(ktest);
+		eh.g.normalize_null_preservedownt(ktest);
 		double ktheta = radius(ktest2);
 
 		// get the time component of the tetrad test vector
-		double kup_tet_t = -eh->g.dot<4>(ktest,eh->u);
+		double kup_tet_t = -eh.g.dot<4>(ktest,eh.u);
 
 		// get the min distance from the boundary in direction i. Negative if moving left
 		double dthetalab=0;
-		if(sgn>0) dthetalab = xAxes[1].top[eh->dir_ind[1]] - theta;
-		if(sgn<0) dthetalab = xAxes[1].bottom(eh->dir_ind[1]) - theta;
+		if(sgn>0) dthetalab = xAxes[1].top[eh.dir_ind[1]] - theta;
+		if(sgn<0) dthetalab = xAxes[1].bottom(eh.dir_ind[1]) - theta;
 
 		R = min(R, sim->R_randomwalk(ktheta/kup_tet_t, ktest[3]/kup_tet_t, ur, r*dthetalab, D));
 	}
@@ -846,7 +846,7 @@ Tuple<double,3> Grid2DSphere::interpolate_fluid_velocity(const EinsteinHelper& e
 //------------------------------------------------------------
 // Reflect off the symmetry boundaries
 //------------------------------------------------------------
-void Grid2DSphere::symmetry_boundaries(EinsteinHelper* /*eh*/) const{
+void Grid2DSphere::symmetry_boundaries(EinsteinHelper*) const{
 // not implemented - does nothing
 }
 
@@ -880,10 +880,10 @@ Tuple<double,4> Grid2DSphere::dk_dlambda(const EinsteinHelper& eh) const{ // def
 	ch.data = 0;
 	return ch.contract2(eh.kup);
 }
-Tuple<double,3> Grid2DSphere::interpolate_shift(const EinsteinHelper& eh) const{ // default Minkowski
+Tuple<double,3> Grid2DSphere::interpolate_shift(const EinsteinHelper&) const{ // default Minkowski
 	return Tuple<double,3>(NaN);
 }
-Tuple<double,6> Grid2DSphere::interpolate_3metric(const EinsteinHelper& eh) const{ // default Minkowski
+Tuple<double,6> Grid2DSphere::interpolate_3metric(const EinsteinHelper&) const{ // default Minkowski
 	return Tuple<double,6>(NaN);
 }
 void Grid2DSphere::grid_coordinates(const Tuple<double,4>& xup, double coords[NDIMS]) const{

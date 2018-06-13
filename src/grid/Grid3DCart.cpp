@@ -492,27 +492,27 @@ double  Grid3DCart::zone_min_length(const int z_ind) const
 }
 
 // returning 0 causes the min distance to take over in propagate.cpp::which_event
-double Grid3DCart::d_boundary(const EinsteinHelper *eh) const{
+double Grid3DCart::d_boundary(const EinsteinHelper& eh) const{
 
 	// x direction
 	double dlambda[3] = {INFINITY,INFINITY,INFINITY};
 	for(unsigned d=0; d<3; d++){
-		unsigned i = eh->dir_ind[d];
-		PRINT_ASSERT(eh->xup[d],<=,zone_right_boundary(d,i));
-		PRINT_ASSERT(eh->xup[d],>=, zone_left_boundary(d,i));
-		if(eh->kup[d] < 0) dlambda[d] = ( zone_left_boundary(d,i) - eh->xup[d]) / eh->kup[d];
-		if(eh->kup[d] > 0) dlambda[d] = (zone_right_boundary(d,i) - eh->xup[d]) / eh->kup[d];
+		unsigned i = eh.dir_ind[d];
+		PRINT_ASSERT(eh.xup[d],<=,zone_right_boundary(d,i));
+		PRINT_ASSERT(eh.xup[d],>=, zone_left_boundary(d,i));
+		if(eh.kup[d] < 0) dlambda[d] = ( zone_left_boundary(d,i) - eh.xup[d]) / eh.kup[d];
+		if(eh.kup[d] > 0) dlambda[d] = (zone_right_boundary(d,i) - eh.xup[d]) / eh.kup[d];
 		PRINT_ASSERT(dlambda[d],>=,0);
 	}
 
-	double ds_com = min( dlambda[0], min(dlambda[1], dlambda[2])) * eh->kup_tet[3];
+	double ds_com = min( dlambda[0], min(dlambda[1], dlambda[2])) * eh.kup_tet[3];
 	PRINT_ASSERT(ds_com,>=,0);
 	return ds_com;
 }
 
-double Grid3DCart::d_randomwalk(const EinsteinHelper *eh) const{
+double Grid3DCart::d_randomwalk(const EinsteinHelper& eh) const{
 	double R=INFINITY;
-	double D = eh->scatopac / (3.*pc::c);
+	double D = eh.scatopac / (3.*pc::c);
 
 	for(unsigned i=0; i<3; i++){
 		for(int sgn=1; sgn>0; sgn*=-1){
@@ -520,19 +520,19 @@ double Grid3DCart::d_randomwalk(const EinsteinHelper *eh) const{
 			Tuple<double,4> ktest;
 			for(size_t j=0; j<4; j++) ktest[j] = 0;
 			ktest[i] = sgn;
-			eh->g.normalize_null_changeupt(ktest);
+			eh.g.normalize_null_changeupt(ktest);
 			if(ktest[3]<0) for(unsigned i=0; i<4; i++) ktest[i] *= -1;
 
 			// get the time component of the tetrad test vector
-			double kup_tet_t = -eh->g.dot<4>(ktest,eh->u);
+			double kup_tet_t = -eh.g.dot<4>(ktest,eh.u);
 			PRINT_ASSERT(kup_tet_t,>,0);
 
 			// get the min distance from the boundary in direction i. Negative if moving left
 			double dxlab=0;
-			if(sgn>0) dxlab = xAxes[i].top[eh->dir_ind[i]] - eh->xup[i];
-			if(sgn<0) dxlab = xAxes[i].bottom(eh->dir_ind[i]) - eh->xup[i];
+			if(sgn>0) dxlab = xAxes[i].top[eh.dir_ind[i]] - eh.xup[i];
+			if(sgn<0) dxlab = xAxes[i].bottom(eh.dir_ind[i]) - eh.xup[i];
 
-			R = min(R, sim->R_randomwalk(ktest[i]/kup_tet_t, ktest[3]/kup_tet_t, eh->u[i], dxlab, D));
+			R = min(R, sim->R_randomwalk(ktest[i]/kup_tet_t, ktest[3]/kup_tet_t, eh.u[i], dxlab, D));
 		}
 	}
 

@@ -56,19 +56,19 @@ public:
 
 	// required functions
 	int  zone_index               (const Tuple<double,4>& x                                             ) const;
-	double zone_lab_3volume       (const int z_ind                                               ) const;
-	double zone_min_length        (const int z_ind                                               ) const;
-	Tuple<double,NDIMS> zone_coordinates(const int z_ind                              ) const;
-	Tuple<unsigned,NDIMS> zone_directional_indices (const int z_ind) const;
-	Tuple<double,4> sample_in_zone (const int z_ind, ThreadRNG* rangen                ) const;
+	double zone_lab_3volume       (int z_ind                                               ) const;
+	double zone_min_length        (int z_ind                                               ) const;
+	Tuple<double,NDIMS> zone_coordinates(int z_ind                              ) const;
+	Tuple<unsigned,NDIMS> zone_directional_indices (int z_ind) const;
+	Tuple<double,4> sample_in_zone (int z_ind, ThreadRNG* rangen                ) const;
 	Tuple<double,3> interpolate_fluid_velocity(const EinsteinHelper& eh               ) const;
 	void symmetry_boundaries      (EinsteinHelper *eh                                            ) const;
-	double zone_lorentz_factor    (const int z_ind                                               ) const;
-	double zone_radius            (const int z_ind) const;
+	double zone_lorentz_factor    (int z_ind                                               ) const;
+	double zone_radius            (int z_ind) const;
 	Tuple<hsize_t,NDIMS> dims() const;
 	hsize_t dimensionality() const {return 1;};
-	double d_boundary(const EinsteinHelper *eh) const;
-	double d_randomwalk(const EinsteinHelper *eh) const;
+	double d_boundary(const EinsteinHelper& eh) const;
+	double d_randomwalk(const EinsteinHelper& eh) const;
 	void write_child_zones(H5::H5File file);
 
 	// GR functions

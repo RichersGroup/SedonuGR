@@ -62,14 +62,14 @@ void Grid0DIsotropic::read_model_file(Lua* lua)
 	PRINT_ASSERT(Ye[0],<=,1.0);
 }
 
-void Grid0DIsotropic::write_child_zones(H5::H5File /*file*/){
+void Grid0DIsotropic::write_child_zones(H5::H5File){
 	// nothing to write.
 }
 
 //------------------------------------------------------------
 // Return the zone index containing the position x
 //------------------------------------------------------------
-int Grid0DIsotropic::zone_index(const Tuple<double,4>& /*x*/) const
+int Grid0DIsotropic::zone_index(const Tuple<double,4>&) const
 {
 	return 0;
 }
@@ -78,7 +78,7 @@ int Grid0DIsotropic::zone_index(const Tuple<double,4>& /*x*/) const
 //------------------------------------------------------------
 // return volume of zone z_ind
 //------------------------------------------------------------
-double  Grid0DIsotropic::zone_lab_3volume(const int z_ind) const
+double  Grid0DIsotropic::zone_lab_3volume(int z_ind) const
 {
 	PRINT_ASSERT(z_ind,==,0);
 	return 1.0;
@@ -88,7 +88,7 @@ double  Grid0DIsotropic::zone_lab_3volume(const int z_ind) const
 //------------------------------------------------------------
 // return length of zone
 //------------------------------------------------------------
-double  Grid0DIsotropic::zone_min_length(const int z_ind) const
+double  Grid0DIsotropic::zone_min_length(int z_ind) const
 {
 	PRINT_ASSERT(z_ind,==,0);
 	return INFINITY;
@@ -98,7 +98,7 @@ double  Grid0DIsotropic::zone_min_length(const int z_ind) const
 // ------------------------------------------------------------
 // find the coordinates of the zone in geometrical coordinates
 // ------------------------------------------------------------
-Tuple<double,NDIMS> Grid0DIsotropic::zone_coordinates(const int z_ind) const{
+Tuple<double,NDIMS> Grid0DIsotropic::zone_coordinates(int z_ind) const{
 	PRINT_ASSERT(z_ind,==,0);
 	return Tuple<double,NDIMS>();
 }
@@ -107,7 +107,7 @@ Tuple<double,NDIMS> Grid0DIsotropic::zone_coordinates(const int z_ind) const{
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-Tuple<unsigned,NDIMS> Grid0DIsotropic::zone_directional_indices(const int z_ind) const
+Tuple<unsigned,NDIMS> Grid0DIsotropic::zone_directional_indices(int z_ind) const
 {
 	PRINT_ASSERT(z_ind,==,0);
 	return Tuple<unsigned,NDIMS>();
@@ -117,7 +117,7 @@ Tuple<unsigned,NDIMS> Grid0DIsotropic::zone_directional_indices(const int z_ind)
 //------------------------------------------------------------
 // sample a random position within the spherical shell
 //------------------------------------------------------------
-Tuple<double,4> Grid0DIsotropic::sample_in_zone(const int z_ind, ThreadRNG* /*rangen*/) const
+Tuple<double,4> Grid0DIsotropic::sample_in_zone(int z_ind, ThreadRNG*) const
 {
 	PRINT_ASSERT(z_ind,==,0);
 
@@ -143,11 +143,11 @@ Tuple<double,3> Grid0DIsotropic::interpolate_fluid_velocity(const EinsteinHelper
 // Reflect off symmetry plane
 //------------------------------------------------------------
 
-void Grid0DIsotropic::symmetry_boundaries(EinsteinHelper* /*eh*/) const{
+void Grid0DIsotropic::symmetry_boundaries(EinsteinHelper*) const{
 	// does nothing - no boundary
 }
 
-double Grid0DIsotropic::zone_radius(const int /*z_ind*/) const{
+double Grid0DIsotropic::zone_radius(int) const{
 	return 0;
 }
 
@@ -158,14 +158,14 @@ Tuple<hsize_t,NDIMS> Grid0DIsotropic::dims() const{
 	return Tuple<hsize_t,NDIMS>();
 }
 
-double Grid0DIsotropic::zone_lorentz_factor(const int /*z_ind*/) const{
+double Grid0DIsotropic::zone_lorentz_factor(int) const{
 	return 1.0;
 }
 // returning 0 causes the min distance to take over in propagate.cpp::which_event
-double Grid0DIsotropic::d_boundary(const EinsteinHelper* /*eh*/) const{
+double Grid0DIsotropic::d_boundary(const EinsteinHelper&) const{
 	return 0;
 }
-double Grid0DIsotropic::d_randomwalk(const EinsteinHelper* /*eh*/) const{
+double Grid0DIsotropic::d_randomwalk(const EinsteinHelper&) const{
 	return INFINITY;
 }
 
@@ -179,6 +179,6 @@ Tuple<double,6> Grid0DIsotropic::interpolate_3metric(const EinsteinHelper&) cons
 	return Tuple<double,6>(NaN);
 }
 
-void Grid0DIsotropic::grid_coordinates(const Tuple<double,4>& /*xup*/, double coords[NDIMS]) const{
+void Grid0DIsotropic::grid_coordinates(const Tuple<double,4>&, double coords[NDIMS]) const{
 	coords[0] = 0;
 }

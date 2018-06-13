@@ -392,45 +392,45 @@ void Grid1DSphere::symmetry_boundaries(EinsteinHelper *eh) const{
 	}
 }
 
-double Grid1DSphere::d_boundary(const EinsteinHelper *eh) const{
-	double r = radius(eh->xup);
-	PRINT_ASSERT(r,<=,xAxes[0].top[eh->z_ind]);
-	PRINT_ASSERT(r,>=,xAxes[0].bottom(eh->z_ind));
+double Grid1DSphere::d_boundary(const EinsteinHelper& eh) const{
+	double r = radius(eh.xup);
+	PRINT_ASSERT(r,<=,xAxes[0].top[eh.z_ind]);
+	PRINT_ASSERT(r,>=,xAxes[0].bottom(eh.z_ind));
 
 	// get component of k in the radial direction
-	double kr = eh->g.dot<4>(eh->e[2],eh->kup);
+	double kr = eh.g.dot<4>(eh.e[2],eh.kup);
 
 	double dlambda = INFINITY;
-	if(kr>0) dlambda = (xAxes[0].top[eh->z_ind]    - r) / kr;
-	if(kr<0) dlambda = (xAxes[0].bottom(eh->z_ind) - r) / kr;
+	if(kr>0) dlambda = (xAxes[0].top[eh.z_ind]    - r) / kr;
+	if(kr<0) dlambda = (xAxes[0].bottom(eh.z_ind) - r) / kr;
 
-	double ds_com = dlambda * eh->kup_tet[3];
+	double ds_com = dlambda * eh.kup_tet[3];
 	PRINT_ASSERT(ds_com,>=,0);
 	return ds_com;
 }
-double Grid1DSphere::d_randomwalk(const EinsteinHelper *eh) const{
+double Grid1DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 	double R=INFINITY;
-	double D = pc::c / (3.*eh->scatopac);
+	double D = pc::c / (3.*eh.scatopac);
 
 	Tuple<double,4> ktest;
-	for(size_t i=0; i<3; i++) ktest[i] = eh->xup[i];
+	for(size_t i=0; i<3; i++) ktest[i] = eh.xup[i];
 	ktest[3] = 0;
-	const double r = radius(eh->xup);
+	const double r = radius(eh.xup);
 	const double kr = r;
-	const double ur = radius(eh->u);
+	const double ur = radius(eh.u);
 
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector
 		for(unsigned i=0; i<3; i++) ktest[i] *= sgn;
-		eh->g.normalize_null_preservedownt(ktest);
+		eh.g.normalize_null_preservedownt(ktest);
 
 		// get the time component of the tetrad test vector
-		double kup_tet_t = -eh->g.dot<4>(ktest,eh->u);
+		double kup_tet_t = -eh.g.dot<4>(ktest,eh.u);
 
 		// get the min distance from the boundary in direction i. Negative if moving left
 		double drlab=0;
-		if(sgn>0) drlab = xAxes[0].top[eh->dir_ind[0]] - r;
-		if(sgn<0) drlab = xAxes[0].bottom(eh->dir_ind[0]) - r;
+		if(sgn>0) drlab = xAxes[0].top[eh.dir_ind[0]] - r;
+		if(sgn<0) drlab = xAxes[0].bottom(eh.dir_ind[0]) - r;
 
 		R = min(R, sim->R_randomwalk(kr/kup_tet_t, ktest[3]/kup_tet_t, ur, drlab, D));
 	}

@@ -90,10 +90,6 @@ void Grid::init(Lua* lua, Transport* insim)
 			if(sim->verbose) cout << "WARNING: resetting Ye["<<i<<"] from "<<Ye[i]<<" to "<<sim->Ye_min<<endl;
 			Ye[i] = sim->Ye_min;
 		}
-
-		// fill in sqrt_vdotv
-		double gamma = zone_lorentz_factor(i);
-		PRINT_ASSERT(gamma,>=,1.0);
 	}
 
 	// read some parameters

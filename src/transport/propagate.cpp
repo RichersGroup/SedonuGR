@@ -87,7 +87,7 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 	PRINT_ASSERT(eh->z_ind,>=,0);
 
 	// FIND D_ZONE= ====================================================================
-	double d_boundary = grid->d_boundary(eh);
+	double d_boundary = grid->d_boundary(*eh);
 	double d_zone = grid->zone_min_length(eh->z_ind) / sqrt(Metric::dot_Minkowski<3>(eh->kup,eh->kup)) * eh->kup_tet[3];
 	d_boundary = min(max(d_boundary, d_zone*min_step_size), d_zone*max_step_size);
 	PRINT_ASSERT(d_zone, >, 0);
@@ -97,7 +97,7 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 	// FIND D_RANDOMWALK
 	double d_randomwalk = INFINITY;
 	if(do_randomwalk && eh->scatopac*eh->ds_com>randomwalk_min_optical_depth){ // coarse check
-		d_randomwalk = grid->d_randomwalk(eh);
+		d_randomwalk = grid->d_randomwalk(*eh);
 		if(d_randomwalk == INFINITY) d_randomwalk = 1.1*randomwalk_min_optical_depth / eh->scatopac;
 		PRINT_ASSERT(d_randomwalk,>=,0);
 		if(eh->scatopac * d_randomwalk > randomwalk_min_optical_depth){ // real check

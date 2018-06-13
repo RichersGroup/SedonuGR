@@ -73,7 +73,7 @@ protected:
 	int do_annihilation;
 
 	// get the coordinates at the center of the zone z_ind (GRID COORDINATES)
-	virtual Tuple<double,NDIMS> zone_coordinates(const int z_ind) const = 0;
+	virtual Tuple<double,NDIMS> zone_coordinates(int z_ind) const = 0;
 
 public:
 
@@ -122,15 +122,15 @@ public:
 
 	// describe zone
 	virtual int    zone_index      (const Tuple<double,4>& xup)              const=0;
-	virtual double zone_lab_3volume(const int z_ind)                        const=0;
-	virtual double zone_min_length (const int z_ind)                        const=0;
-	virtual double zone_radius     (const int z_ind)                        const=0;
-	virtual double d_boundary  (const EinsteinHelper *eh) const=0;
-	virtual double d_randomwalk(const EinsteinHelper *eh) const=0;
-	virtual double zone_lorentz_factor(const int z_ind                    ) const=0;
-	double         zone_com_3volume(const int z_ind)                        const;
-	double         zone_4volume    (const int z_ind)                        const;
-	double         zone_rest_mass  (const int z_ind)                        const;
+	virtual double zone_lab_3volume(int z_ind)                        const=0;
+	virtual double zone_min_length (int z_ind)                        const=0;
+	virtual double zone_radius     (int z_ind)                        const=0;
+	virtual double d_boundary  (const EinsteinHelper& eh) const=0;
+	virtual double d_randomwalk(const EinsteinHelper& eh) const=0;
+	virtual double zone_lorentz_factor(int z_ind                    ) const=0;
+	double         zone_com_3volume(int z_ind)                        const;
+	double         zone_4volume    (int z_ind)                        const;
+	double         zone_rest_mass  (int z_ind)                        const;
 
 	// global functions
 	double total_rest_mass() const;
@@ -142,7 +142,7 @@ public:
 	virtual void symmetry_boundaries(EinsteinHelper *eh) const=0;
 
 	// help with spawning particles
-	virtual Tuple<double,4> sample_in_zone(const int z_ind, ThreadRNG *rangen) const = 0;
+	virtual Tuple<double,4> sample_in_zone(int z_ind, ThreadRNG *rangen) const = 0;
 
 	// GR functions
 	virtual void grid_coordinates(const Tuple<double,4>& xup, double coords[NDIMS]) const=0;
