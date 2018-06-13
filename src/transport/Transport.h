@@ -69,7 +69,7 @@ protected:
 
 	// propagate the particles
 	void propagate_particles();
-	void propagate(EinsteinHelper* eh) const;
+	void propagate(EinsteinHelper* eh);
 	virtual void move(EinsteinHelper *eh) const;
 	void reset_radiation();
 	void which_event(EinsteinHelper* eh, ParticleEvent *event) const;
@@ -105,10 +105,10 @@ protected:
 	int write_zones_every;
 
 	// global radiation quantities
-	double particle_total_energy;
-	double particle_rouletted_energy;
-	double particle_core_abs_energy;
-	double particle_escape_energy;
+	ATOMIC<double> particle_total_energy;
+	ATOMIC<double> particle_rouletted_energy;
+	ATOMIC<double> particle_core_abs_energy;
+	ATOMIC<double> particle_escape_energy;
 
 	// check parameters
 	void check_parameters() const;

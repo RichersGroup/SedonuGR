@@ -85,22 +85,6 @@ void Transport::propagate_particles()
 	} //#pragma omp parallel for
 	if(verbose) cout << endl;
 
-
-	double tot=0,core=0,roulette=0,esc=0;
-	#pragma omp parallel for reduction(+:tot,core,roulette,esc)
-	for(unsigned i=0; i<particles.size(); i++){
-		PRINT_ASSERT(particles.fate[i],!=,moving);
-		const double e  = particles.N[i] * particles.kup[3][i];
-		if(particles.fate[i]!=rouletted) tot       += e;
-		if(particles.fate[i]==escaped  ) esc       += e;
-		if(particles.fate[i]==absorbed ) core      += e;
-		if(particles.fate[i]==rouletted) roulette  += e;
-	}
-	particle_total_energy = tot;
-	particle_core_abs_energy = core;
-	particle_rouletted_energy = roulette;
-	particle_escape_energy = esc;
-
 	// remove the dead particles, erase the memory
 	particles.resize(0);
 }
@@ -225,7 +209,7 @@ void Transport::move(EinsteinHelper *eh) const{
 // Propagate a single monte carlo particle until
 // it  escapes, is absorbed, or the time step ends
 //--------------------------------------------------------
-void Transport::propagate(EinsteinHelper *eh) const{
+void Transport::propagate(EinsteinHelper *eh){
 	ParticleEvent event;
 
 	PRINT_ASSERT(eh->fate, ==, moving);
@@ -265,4 +249,16 @@ void Transport::propagate(EinsteinHelper *eh) const{
 
 		PRINT_ASSERT(eh->N,<,1e99);
 	}
+
+	PRINT_ASSERT(eh->fate,!=,moving);
+	double e = eh->N * eh->kup[3];
+	if(eh->fate!=rouletted)
+	  particle_total_energy += e;
+	else if(eh->fate==escaped)
+	  particle_core_abs_energy += e;
+	else if(eh->fate==absorbed)
+	  particle_rouletted_energy += e;
+	else if(eh->fate==rouletted)
+	  particle_escape_energy += e;
+	else assert(0);
 }

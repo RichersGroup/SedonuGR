@@ -378,6 +378,11 @@ void Transport::reset_radiation(){
 	grid->fourforce_emit.wipe();
 	grid->fourforce_annihil.wipe();
 
+	particle_total_energy = 0;
+	particle_core_abs_energy = 0;
+	particle_rouletted_energy = 0;
+	particle_escape_energy = 0;
+
 	if(verbose) cout << "# Setting zone transport quantities" << endl << flush;
 	for(unsigned s=0; s<species_list.size(); s++){
 		#pragma omp parallel for
