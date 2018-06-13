@@ -52,39 +52,6 @@
 #define MAXLIM std::numeric_limits<int>::max()
 #define TINY 1e-5
 
-template<typename T>
-inline void ATOMIC_ADD(T* inout, const T to_add){
-  T oldval, newval;
-  long long* ptr_old = (long long*)(&oldval);
-  long long* ptr_new = (long long*)(&newval);
-  long long* ptr_inout = (long long*) inout;
-  do{
-    oldval = *inout;
-    newval = oldval + to_add;
-  }
-  while (!__sync_bool_compare_and_swap(ptr_inout, *ptr_old, *ptr_new));
-}
-template<typename T1, typename T2>
-inline void ATOMIC_ADD(T1* inout, const T2 to_add){
-  __sync_fetch_and_add(inout, (T1)to_add);
-}
-
-inline std::string trim(const std::string s)
-{
-	std::string trimmed = s;
-	std::string::size_type pos = trimmed.find_last_not_of(' ');
-	if(pos != std::string::npos)
-	{
-		if (trimmed.length()!=pos+1)//if there are trailing whitespaces erase them
-			trimmed.erase(pos+1);
-		pos = trimmed.find_first_not_of(' ');
-		if(pos!=0) //if there are leading whitespaces erase them
-			trimmed.erase(0, pos);
-	}
-	else trimmed="";
-	return trimmed;
-}
-
 inline bool hdf5_dataset_exists(const char* filename, const char* datasetname){
 	bool exists = true;
 
@@ -119,7 +86,7 @@ do {                                                 \
 	assert(a op b);                                  \
 } while (0)
 #else
-#define PRINT_ASSERT(a,op,b)
+#define PRINT_ASSERT(a,op,b) do{} while(false)
 #endif
 
 template<typename T>
