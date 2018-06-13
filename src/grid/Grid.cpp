@@ -391,7 +391,7 @@ void Grid::interpolate_metric(EinsteinHelper *eh) const{
 
   // second, the shift and three-metric
   eh->g.betaup = interpolate_shift(*eh);
-  interpolate_3metric(eh);
+  eh->g.gammalow.data = interpolate_3metric(*eh);
 
   // fill in the rest of the metric values
   eh->g.update();

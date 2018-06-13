@@ -881,17 +881,10 @@ Tuple<double,4> Grid2DSphere::dk_dlambda(const EinsteinHelper& eh) const{ // def
 	return ch.contract2(eh.kup);
 }
 Tuple<double,3> Grid2DSphere::interpolate_shift(const EinsteinHelper& eh) const{ // default Minkowski
-	PRINT_ASSERT(DO_GR,==,0);
-	return Tuple<double,3>(0);
+	return Tuple<double,3>(NaN);
 }
-void Grid2DSphere::interpolate_3metric(EinsteinHelper *eh) const{ // default Minkowski
-	PRINT_ASSERT(DO_GR,==,0);
-	eh->g.gammalow.data[ixx] = 1.0;
-	eh->g.gammalow.data[iyy] = 1.0;
-	eh->g.gammalow.data[izz] = 1.0;
-	eh->g.gammalow.data[ixy] = 0.0;
-	eh->g.gammalow.data[ixz] = 0.0;
-	eh->g.gammalow.data[iyz] = 0.0;
+Tuple<double,6> Grid2DSphere::interpolate_3metric(const EinsteinHelper& eh) const{ // default Minkowski
+	return Tuple<double,6>(NaN);
 }
 void Grid2DSphere::grid_coordinates(const Tuple<double,4>& xup, double coords[NDIMS]) const{
 	coords[0] = radius(xup);

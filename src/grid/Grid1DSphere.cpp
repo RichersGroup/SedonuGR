@@ -454,21 +454,24 @@ Tuple<hsize_t,NDIMS> Grid1DSphere::dims() const{
 }
 
 
-void Grid1DSphere::interpolate_3metric(EinsteinHelper* eh) const{
-	const double r = radius(eh->xup);
-	const double Xloc = X.interpolate(eh->icube_vol);//1./sqrt(1.-1./r);//
+Tuple<double,6> Grid1DSphere::interpolate_3metric(const EinsteinHelper& eh) const{
+	const double r = radius(eh.xup);
+	const double Xloc = X.interpolate(eh.icube_vol);//1./sqrt(1.-1./r);//
 	double tmp = (Xloc*Xloc-1.0) / (r*r);
 
-	eh->g.gammalow.data[ixx] = eh->xup[0]*eh->xup[0] * tmp;
-	eh->g.gammalow.data[iyy] = eh->xup[1]*eh->xup[1] * tmp;
-	eh->g.gammalow.data[izz] = eh->xup[2]*eh->xup[2] * tmp;
-	eh->g.gammalow.data[ixy] = eh->xup[0]*eh->xup[1] * tmp;
-	eh->g.gammalow.data[ixz] = eh->xup[0]*eh->xup[2] * tmp;
-	eh->g.gammalow.data[iyz] = eh->xup[1]*eh->xup[2] * tmp;
+	Tuple<double,6> data;
+	data[ixx] = eh.xup[0]*eh.xup[0] * tmp;
+	data[iyy] = eh.xup[1]*eh.xup[1] * tmp;
+	data[izz] = eh.xup[2]*eh.xup[2] * tmp;
+	data[ixy] = eh.xup[0]*eh.xup[1] * tmp;
+	data[ixz] = eh.xup[0]*eh.xup[2] * tmp;
+	data[iyz] = eh.xup[1]*eh.xup[2] * tmp;
 
-	eh->g.gammalow.data[ixx] += 1.0;
-	eh->g.gammalow.data[iyy] += 1.0;
-	eh->g.gammalow.data[izz] += 1.0;
+	data[ixx] += 1.0;
+	data[iyy] += 1.0;
+	data[izz] += 1.0;
+
+	return data;
 }
 
 Tuple<double,4> Grid1DSphere::dk_dlambda(const EinsteinHelper& eh) const{
