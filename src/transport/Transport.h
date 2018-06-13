@@ -45,7 +45,7 @@ class Transport
 protected:
 
 	// this species' list of particles
-	ParticleList particles;
+	vector<Particle> particles;
 
 	// MPI stuff
 	int MPI_nprocs;
@@ -64,8 +64,8 @@ protected:
 	void emit_zones_by_bin();
 
 	// what kind of particle to create?
-	void create_surface_particle(ParticleList& output, const double Ep, const unsigned int s, const unsigned int g, const unsigned list_index);
-	void create_thermal_particle(ParticleList& output, const int zone_index, const double weight, const unsigned int s, const unsigned int g, const unsigned list_index);
+	Particle create_surface_particle(const double Ep, const unsigned int s, const unsigned int g);
+	Particle create_thermal_particle(const int zone_index, const double weight, const unsigned int s, const unsigned int g);
 
 	// propagate the particles
 	void propagate_particles();

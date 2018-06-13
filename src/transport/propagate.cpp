@@ -46,7 +46,7 @@ void Transport::propagate_particles()
 	//--- MOVE THE PARTICLES AROUND ---
 	#pragma omp parallel for schedule(dynamic)
 	for(unsigned i=0; i<nparticles; i++){
-		if(particles.fate[i] != moving){
+		if(particles[i].fate != moving){
 			#pragma omp atomic
 			ndone++;
 			continue;
@@ -54,7 +54,7 @@ void Transport::propagate_particles()
 
 		// propagate each particle with an EinsteinHelper
 		EinsteinHelper eh;
-		eh.set_Particle(particles, i);
+		eh.set_Particle(particles[i]);
 		eh.N0 = eh.N;
 		update_eh_background(&eh);
 		update_eh_k_opac(&eh);
@@ -71,7 +71,7 @@ void Transport::propagate_particles()
 			}
 		}
 		PRINT_ASSERT(eh.fate, !=, moving);
-		eh.get_Particle(particles, i);
+		particles[i] = eh.get_Particle();
 	} //#pragma omp parallel for
 	if(verbose) cout << endl;
 
