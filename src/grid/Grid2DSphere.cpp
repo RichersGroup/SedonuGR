@@ -812,45 +812,39 @@ Tuple<double,4> Grid2DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen)
 //------------------------------------------------------------
 // get the cartesian velocity vector (cm/s)
 //------------------------------------------------------------
-void Grid2DSphere::interpolate_fluid_velocity(EinsteinHelper *eh) const
+Tuple<double,3> Grid2DSphere::interpolate_fluid_velocity(const EinsteinHelper& eh) const
 {
 	// radius in zone
-	double r    = sqrt(eh->xup[0]*eh->xup[0] + eh->xup[1]*eh->xup[1] + eh->xup[2]*eh->xup[2]);
-	double rhat = sqrt(eh->xup[0]*eh->xup[0] + eh->xup[1]*eh->xup[1]);
+	double r    = radius(eh.xup);
+	if(r==0) return Tuple<double,3>(0);
+
+	double rhat = sqrt(eh.xup[0]*eh.xup[0] + eh.xup[1]*eh.xup[1]);
 	int along_axis = (rhat/r < TINY);
-	double theta = pc::pi/2.0 - atan2(eh->xup[2], rhat);
+	double theta = pc::pi/2.0 - atan2(eh.xup[2], rhat);
 	theta = max(0.0,theta);
 	theta = min(pc::pi, theta);
 
 	// Based on position, calculate what the 3-velocity is
-	double tmp_vr     = vr.interpolate(eh->icube_vol);
-	double tmp_vtheta = vtheta.interpolate(eh->icube_vol);
-	double tmp_vphi   = vphi.interpolate(eh->icube_vol);
+	double tmp_vr     = vr.interpolate(eh.icube_vol);
+	double tmp_vtheta = vtheta.interpolate(eh.icube_vol);
+	double tmp_vphi   = vphi.interpolate(eh.icube_vol);
 
-	double vr_cart[3];
-	vr_cart[0] = tmp_vr * eh->xup[0]/r;
-	vr_cart[1] = tmp_vr * eh->xup[1]/r;
-	vr_cart[2] = tmp_vr * eh->xup[2]/r;
+	Tuple<double,3> x3;
+	for(unsigned i=0; i<3; i++) x3[i] = eh.xup[i];
+	Tuple<double,3> vr_cart = x3 * tmp_vr / r;
 
-	double vtheta_cart[3];
-	vtheta_cart[0] =  (along_axis ? 0 : tmp_vtheta * eh->xup[2]/r * eh->xup[0]/rhat );
-	vtheta_cart[1] =  (along_axis ? 0 : tmp_vtheta * eh->xup[2]/r * eh->xup[1]/rhat );
+	Tuple<double,3> vtheta_cart;
+	vtheta_cart[0] =  (along_axis ? 0 : tmp_vtheta * eh.xup[2]/r * eh.xup[0]/rhat );
+	vtheta_cart[1] =  (along_axis ? 0 : tmp_vtheta * eh.xup[2]/r * eh.xup[1]/rhat );
 	vtheta_cart[2] = -tmp_vtheta * rhat/r;
 
-	double vphi_cart[3];
-	vphi_cart[0] = (along_axis ? 0 : -tmp_vphi * eh->xup[1]/rhat );
-	vphi_cart[1] = (along_axis ? 0 :  tmp_vphi * eh->xup[0]/rhat );
+	Tuple<double,3> vphi_cart;
+	vphi_cart[0] = (along_axis ? 0 : -tmp_vphi * eh.xup[1]/rhat );
+	vphi_cart[1] = (along_axis ? 0 :  tmp_vphi * eh.xup[0]/rhat );
 	vphi_cart[2] = 0;
 
 	// remember, symmetry axis is along the z-axis
-	for(int i=0; i<3; i++) eh->v[i] = vr_cart[i] + vtheta_cart[i] + vphi_cart[i];
-
-	// check for pathological case
-	if (r == 0){ // set everything to 0
-		eh->v[0] = 0;
-		eh->v[1] = 0;
-		eh->v[2] = 0;
-	}
+	return vr_cart + vtheta_cart + vphi_cart;
 }
 
 

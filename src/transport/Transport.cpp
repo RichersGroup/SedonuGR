@@ -692,7 +692,7 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 	}
 
 	// four-velocity
-	grid->interpolate_fluid_velocity(eh);
+	eh->v = grid->interpolate_fluid_velocity(*eh);
 	eh->set_fourvel();
 
 	// set tetrad

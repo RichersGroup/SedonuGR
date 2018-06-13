@@ -136,7 +136,7 @@ public:
 	double total_rest_mass() const;
 
 	// give the velocity vector at this point (PARTICLE COORDINATES)
-	virtual void interpolate_fluid_velocity(EinsteinHelper* eh) const = 0;
+	virtual Tuple<double,3> interpolate_fluid_velocity(const EinsteinHelper& eh) const = 0;
 
 	// boundary conditions
 	virtual void symmetry_boundaries(EinsteinHelper *eh) const=0;

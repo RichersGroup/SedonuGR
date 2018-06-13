@@ -544,14 +544,10 @@ double Grid3DCart::d_randomwalk(const EinsteinHelper *eh) const{
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void Grid3DCart::interpolate_fluid_velocity(EinsteinHelper *eh) const
+Tuple<double,3> Grid3DCart::interpolate_fluid_velocity(const EinsteinHelper& eh) const
 {
 	// may want to interpolate here?
-	Tuple<double,3> tmp;
-	tmp = v.interpolate(eh->icube_vol);
-	for(unsigned i=0; i<3; i++) eh->v[i] = tmp[i];
-
-	PRINT_ASSERT(Metric::dot_Minkowski<3>(eh->v,eh->v),<=,pc::c*pc::c);
+	return v.interpolate(eh.icube_vol);
 }
 
 //------------------------------------------------------------

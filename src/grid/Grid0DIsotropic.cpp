@@ -133,11 +133,9 @@ Tuple<double,4> Grid0DIsotropic::sample_in_zone(const int z_ind, ThreadRNG* /*ra
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void Grid0DIsotropic::interpolate_fluid_velocity(EinsteinHelper* eh) const
+Tuple<double,3> Grid0DIsotropic::interpolate_fluid_velocity(const EinsteinHelper& eh) const
 {
-	eh->v[0] = 0;
-	eh->v[1] = 0;
-	eh->v[2] = 0;
+	return Tuple<double,3>(0);
 }
 
 

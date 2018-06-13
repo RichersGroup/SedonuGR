@@ -347,27 +347,18 @@ Tuple<double,4> Grid1DSphere::sample_in_zone(const int z_ind, ThreadRNG* rangen)
 //------------------------------------------------------------
 // get the velocity vector 
 //------------------------------------------------------------
-void Grid1DSphere::interpolate_fluid_velocity(EinsteinHelper *eh) const
+Tuple<double,3> Grid1DSphere::interpolate_fluid_velocity(const EinsteinHelper& eh) const
 {
 	// radius in zone
-	double r = radius(eh->xup);
+	double r = radius(eh.xup);
 
-	// assuming radial velocity (may want to interpolate here)
-	// (the other two components are ignored and mean nothing)
-	double vr_interp = vr.interpolate(eh->icube_vol);
-	eh->v[0] = eh->xup[0]/r*vr_interp;
-	eh->v[1] = eh->xup[1]/r*vr_interp;
-	eh->v[2] = eh->xup[2]/r*vr_interp;
-
-	// check for pathological case
-	if (r == 0)
-	{
-		eh->v[0] = 0;
-		eh->v[1] = 0;
-		eh->v[2] = 0;
+	if(r==0)
+		return Tuple<double,3>(0);
+	else{
+		Tuple<double,3> x3;
+		for(unsigned i=0; i<3; i++) x3[i] = eh.xup[i];
+		return x3 / r * vr.interpolate(eh.icube_vol);
 	}
-
-	PRINT_ASSERT(Metric::dot_Minkowski<3>(eh->v,eh->v),<=,pc::c*pc::c);
 }
 
 
