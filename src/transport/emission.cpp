@@ -149,7 +149,6 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 	PRINT_ASSERT(z_ind,<,(int)grid->rho.size());
 	PRINT_ASSERT(s,<,species_list.size());
 	
-	Particle output;
 	EinsteinHelper eh;
 	eh.fate = moving;
 	eh.s = s;
@@ -159,6 +158,7 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 	eh.xup[3] = 0;
 	update_eh_background(&eh);
 	if(eh.z_ind<0 || radius(eh.xup)<r_core){
+		Particle output;
 		output.kup[3] = 0;
 		output.N = 0;
 		output.fate = rouletted;
@@ -255,8 +255,6 @@ Particle Transport::create_surface_particle(const double weight, const unsigned 
 			* multiplier                 // overall scaling
 			* weight;                    // 1/number of samples
 	eh.N0 = eh.N;
-
-
 
 	// add to particle vector
 	window(&eh);
