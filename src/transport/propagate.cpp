@@ -254,11 +254,12 @@ void Transport::propagate(EinsteinHelper *eh){
 	double e = eh->N * eh->kup[3];
 	if(eh->fate!=rouletted)
 	  particle_total_energy += e;
-	else if(eh->fate==escaped)
-	  particle_core_abs_energy += e;
-	else if(eh->fate==absorbed)
-	  particle_rouletted_energy += e;
-	else if(eh->fate==rouletted)
+
+	if(eh->fate==escaped)
 	  particle_escape_energy += e;
+	else if(eh->fate==absorbed)
+	  particle_core_abs_energy += e;
+	else if(eh->fate==rouletted)
+	  particle_rouletted_energy += e;
 	else assert(0);
 }
