@@ -553,24 +553,24 @@ Tuple<double,3> Grid3DCart::interpolate_fluid_velocity(const EinsteinHelper& eh)
 //------------------------------------------------------------
 // cell-centered coordinates of zone i
 //------------------------------------------------------------
-void Grid3DCart::zone_coordinates(const int z_ind, double r[3], const int rsize) const
+Tuple<double,NDIMS> Grid3DCart::zone_coordinates(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	PRINT_ASSERT(rsize,==,(int)dimensionality());
 	vector<unsigned> dir_ind(3);
 	zone_directional_indices(z_ind,dir_ind);
 
+	Tuple<double,NDIMS> r;
 	for(int i=0; i<3; i++)
 		r[i] = xAxes[i].mid[dir_ind[i]];
+	return r;
 }
 
 
 double Grid3DCart::zone_radius(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	double r[3];
-	zone_coordinates(z_ind,r,3);
+	Tuple<double,NDIMS> r = zone_coordinates(z_ind);
 	return radius(r);
 }
 

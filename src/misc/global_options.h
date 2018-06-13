@@ -237,7 +237,9 @@ inline std::ostream& operator<<(std::ostream& out, const Tuple<T,n>& tuple){
     return out;
 }
 
-inline double radius(const Tuple<double,4>& x){
+template<unsigned n>
+inline double radius(const Tuple<double,n>& x){
+	PRINT_ASSERT(n,>=,3);
 	return sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
 }
 inline double radius(const double x[3]){

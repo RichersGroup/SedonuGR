@@ -284,13 +284,14 @@ double  Grid1DSphere::zone_min_length(const int z_ind) const
 // ------------------------------------------------------------
 // find the coordinates of the zone in geometrical coordinates
 // ------------------------------------------------------------
-void Grid1DSphere::zone_coordinates(const int z_ind, double r[1], const int rsize) const{
+Tuple<double,NDIMS> Grid1DSphere::zone_coordinates(const int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	PRINT_ASSERT(rsize,==,(int)dimensionality());
-	r[0] = 0.5*(xAxes[0].top[z_ind]+xAxes[0].bottom(z_ind));
-	PRINT_ASSERT(r[0],>,0);
-	PRINT_ASSERT(r[0],<,xAxes[0].top[xAxes[0].size()-1]);
+	double r = 0.5*(xAxes[0].top[z_ind]+xAxes[0].bottom(z_ind));
+	PRINT_ASSERT(r,>,0);
+	PRINT_ASSERT(r,<,xAxes[0].top[xAxes[0].size()-1]);
+
+	return Tuple<double,NDIMS>(r);
 }
 
 

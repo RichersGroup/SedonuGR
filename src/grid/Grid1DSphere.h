@@ -58,7 +58,7 @@ public:
 	int  zone_index               (const Tuple<double,4>& x                                             ) const;
 	double zone_lab_3volume       (const int z_ind                                               ) const;
 	double zone_min_length        (const int z_ind                                               ) const;
-	void zone_coordinates         (const int z_ind, double r[1], const int rsize                 ) const;
+	Tuple<double,NDIMS> zone_coordinates(const int z_ind                              ) const;
 	void zone_directional_indices (const int z_ind, vector<unsigned>& dir_ind                    ) const;
 	Tuple<double,4> sample_in_zone (const int z_ind, ThreadRNG* rangen                ) const;
 	Tuple<double,3> interpolate_fluid_velocity(const EinsteinHelper& eh               ) const;

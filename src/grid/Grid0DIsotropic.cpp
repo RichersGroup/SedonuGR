@@ -98,9 +98,9 @@ double  Grid0DIsotropic::zone_min_length(const int z_ind) const
 // ------------------------------------------------------------
 // find the coordinates of the zone in geometrical coordinates
 // ------------------------------------------------------------
-void Grid0DIsotropic::zone_coordinates(const int z_ind, double[] /*r[0]*/, const int rsize) const{
+Tuple<double,NDIMS> Grid0DIsotropic::zone_coordinates(const int z_ind) const{
 	PRINT_ASSERT(z_ind,==,0);
-	PRINT_ASSERT(rsize,==,0);
+	return Tuple<double,NDIMS>();
 }
 
 

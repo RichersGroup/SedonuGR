@@ -61,7 +61,7 @@ public:
 	int    zone_index             (const int i, const int j                                      ) const;
 	double zone_lab_3volume       (const int z_ind                                               ) const;
 	double zone_min_length        (const int z_ind                                               ) const;
-	void zone_coordinates         (const int z_ind, double r[2], const int rsize                 ) const;
+	Tuple<double,NDIMS> zone_coordinates(const int z_ind                              ) const;
 	void zone_directional_indices (const int z_ind, vector<unsigned>& dir_ind                    ) const;
 	double zone_lorentz_factor    (const int z_ind                                               ) const;
 	Tuple<double,4> sample_in_zone (const int z_ind, ThreadRNG* rangen                ) const;

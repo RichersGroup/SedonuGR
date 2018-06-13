@@ -399,8 +399,7 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 				PRINT_ASSERT(z_ind,<,n_zones);
 
 				// zone position
-				double r[2];
-				zone_coordinates(z_ind,r,2);
+				Tuple<double,NDIMS> r = zone_coordinates(z_ind);
 
 				// zone values
 				rho[z_ind]               = dens[proc][kb][jb][ib];
@@ -466,8 +465,7 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 		outf << setw(width) << endl;
 		for(unsigned z_ind=0; z_ind<rho.size(); z_ind++){
 			// zone position
-			double r[2];
-			zone_coordinates(z_ind,r,2);
+			Tuple<double,NDIMS> r = zone_coordinates(z_ind);
 
 			//double gamma = transport::lorentz_factor(z[z_ind].v);
 			//double m_zone = z[z_ind].rho * zone_lab_volume(z_ind)*gamma;
@@ -523,8 +521,7 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 		outf << endl;
 		for(unsigned z_ind=0; z_ind<rho.size(); z_ind++){
 			// zone position
-			double r[2];
-			zone_coordinates(z_ind,r,2);
+			Tuple<double,NDIMS> r = zone_coordinates(z_ind);
 
 			// calculate electron fraction
 			double abar = 1.0 / (z_prot[z_ind] + z_neut[z_ind] + z_alfa[z_ind]/4.0);
@@ -721,11 +718,10 @@ double Grid2DSphere::zone_min_length(const int z_ind) const
 //------------------------------------------------------------
 // Return the cell-center spherical coordinates of the cell
 //------------------------------------------------------------
-void Grid2DSphere::zone_coordinates(const int z_ind, double r[2], const int rsize) const
+Tuple<double,NDIMS> Grid2DSphere::zone_coordinates(const int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)(xAxes[0].size()*xAxes[1].size()));
-	PRINT_ASSERT(rsize,==,2);
 
 	vector<unsigned> dir_ind(2);
 	zone_directional_indices(z_ind, dir_ind);
@@ -734,8 +730,10 @@ void Grid2DSphere::zone_coordinates(const int z_ind, double r[2], const int rsiz
 
 	const double r0     =     xAxes[0].bottom(i);
 	const double theta0 = xAxes[1].bottom(j);
+	Tuple<double,NDIMS> r;
 	r[0] = 0.5 * (r0     +     xAxes[0].top[i]);
 	r[1] = 0.5 * (theta0 + xAxes[1].top[j]);
+	return r;
 }
 
 

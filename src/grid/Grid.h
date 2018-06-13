@@ -73,7 +73,7 @@ protected:
 	int do_annihilation;
 
 	// get the coordinates at the center of the zone z_ind (GRID COORDINATES)
-	virtual void zone_coordinates(const int z_ind, double r[], const int rsize) const = 0;
+	virtual Tuple<double,NDIMS> zone_coordinates(const int z_ind) const = 0;
 
 public:
 
