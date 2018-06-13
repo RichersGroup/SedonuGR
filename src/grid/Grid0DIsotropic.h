@@ -55,7 +55,7 @@ public:
 	Tuple<double,3> interpolate_fluid_velocity(const EinsteinHelper& eh               ) const;
 	void symmetry_boundaries       (EinsteinHelper *eh                                ) const;
 	double zone_radius             (const int z_ind                                   ) const;
-	void dims                      (hsize_t dims[0], const int size                   ) const;
+	Tuple<hsize_t,NDIMS> dims() const;
 	double zone_lorentz_factor     (const int z_ind                                   ) const;
 	hsize_t dimensionality() const {return 0;};
 	void axis_vector(vector<Axis>& axes) const;

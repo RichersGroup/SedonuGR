@@ -450,9 +450,8 @@ double Grid1DSphere::zone_radius(const int z_ind) const{
 //-----------------------------
 // Dimensions of the grid
 //-----------------------------
-void Grid1DSphere::dims(hsize_t dims[1], const int size) const{
-	PRINT_ASSERT(size,==,(int)dimensionality());
-	dims[0] = xAxes[0].size();
+Tuple<hsize_t,NDIMS> Grid1DSphere::dims() const{
+	return Tuple<hsize_t,NDIMS>(xAxes[0].size());
 }
 
 

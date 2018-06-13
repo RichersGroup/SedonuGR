@@ -71,8 +71,7 @@ void Neutrino_Nagakura::set_eas(const unsigned zone_index, Grid* grid) const
 	}
 	else if(grid->grid_type == "Grid2DSphere"){
 		vector<unsigned> dir_ind(2);
-		hsize_t dims[2];
-		grid->dims(dims,2);
+		Tuple<hsize_t,NDIMS> dims = grid->dims();
 		grid->zone_directional_indices(zone_index, dir_ind);
 		filename.str("");
 		filename << opacity_dir << "/opac_r" << dir_ind[0] << "_theta" << (dims[1]-dir_ind[1]-1) << ".dat"; // Hiroki's theta is backwards

@@ -577,9 +577,10 @@ double Grid3DCart::zone_radius(const int z_ind) const{
 //-----------------------------
 // Dimensions of the grid
 //-----------------------------
-void Grid3DCart::dims(hsize_t dims[3], const int size) const{
-	PRINT_ASSERT(size,==,(int)dimensionality());
+Tuple<hsize_t,NDIMS> Grid3DCart::dims() const{
+	Tuple<hsize_t,NDIMS> dims;
 	for(int i=0; i<3; i++) dims[i] = xAxes[i].size();
+	return dims;
 }
 
 void Grid3DCart::get_deltas(const int z_ind, double delta[3], const int size) const

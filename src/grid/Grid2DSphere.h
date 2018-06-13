@@ -68,7 +68,7 @@ public:
 	Tuple<double,3> interpolate_fluid_velocity(const EinsteinHelper& eh               ) const;
 	void symmetry_boundaries      (EinsteinHelper *eh                                            ) const;
 	double zone_radius            (const int z_ind) const;
-	void dims                     (hsize_t dims[2], const int size) const;
+	Tuple<hsize_t,NDIMS> dims() const;
 	hsize_t dimensionality() const {return 2;};
 	double d_boundary(const EinsteinHelper* eh) const;
 	double d_randomwalk(const EinsteinHelper *eh) const;

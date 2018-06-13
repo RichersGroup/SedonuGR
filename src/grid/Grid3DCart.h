@@ -80,7 +80,7 @@ public:
 	void   symmetry_boundaries      (EinsteinHelper *eh                                            ) const;
 	double zone_lorentz_factor      (const int z_ind                                               ) const;
 	double zone_radius              (const int z_ind) const;
-	void dims                       (hsize_t dims[3], const int size) const;
+	Tuple<hsize_t,NDIMS> dims() const;
 	hsize_t dimensionality() const {return 3;};
 	double d_boundary(const EinsteinHelper* eh) const;
 	double d_randomwalk(const EinsteinHelper *eh) const;

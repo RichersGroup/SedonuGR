@@ -117,7 +117,7 @@ public:
 
 	// get directional indices from the zone index
 	virtual void    zone_directional_indices(const int z_ind, vector<unsigned>& dir_ind) const=0;
-	virtual void    dims                    (hsize_t dims[], const int size) const=0;
+	virtual Tuple<hsize_t,NDIMS> dims() const=0;
 	virtual hsize_t dimensionality          () const=0;
 
 	// describe zone

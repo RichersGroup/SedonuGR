@@ -868,10 +868,11 @@ double Grid2DSphere::zone_radius(const int z_ind) const{
 //-----------------------------
 // Dimensions of the grid
 //-----------------------------
-void Grid2DSphere::dims(hsize_t dims[2], const int size) const{
-	PRINT_ASSERT(size,==,(int)dimensionality());
+Tuple<hsize_t,NDIMS> Grid2DSphere::dims() const{
+	Tuple<hsize_t,NDIMS> dims;
 	dims[0] = xAxes[0].size();
 	dims[1] = xAxes[1].size();
+	return dims;
 }
 
 double Grid2DSphere::zone_lorentz_factor(const int /*z_ind*/) const{

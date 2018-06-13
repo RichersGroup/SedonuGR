@@ -154,9 +154,8 @@ double Grid0DIsotropic::zone_radius(const int /*z_ind*/) const{
 //-----------------------------
 // Dimensions of the grid
 //-----------------------------
-void Grid0DIsotropic::dims(hsize_t dims[0], const int size) const{
-	dims[0] = 1;
-	PRINT_ASSERT(size,==,(int)dimensionality());
+Tuple<hsize_t,NDIMS> Grid0DIsotropic::dims() const{
+	return Tuple<hsize_t,NDIMS>();
 }
 
 double Grid0DIsotropic::zone_lorentz_factor(const int /*z_ind*/) const{
