@@ -504,7 +504,7 @@ Tuple<double,4> Grid1DSphere::dk_dlambda(const EinsteinHelper& eh) const{
 
 	for(unsigned i=0; i<40; i++) PRINT_ASSERT(ch.data[i],==,ch.data[i]);
 
-	return ch.contract2(eh.kup);
+	return ch.contract2(eh.kup)*(-1);
 }
 
 double Grid1DSphere::zone_lorentz_factor(int z_ind) const{
