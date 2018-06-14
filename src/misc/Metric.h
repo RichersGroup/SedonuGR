@@ -52,10 +52,11 @@ public:
 		gsl_matrix* g = gsl_matrix_alloc(3,3);
                 #pragma omp simd collapse(2)
 		for(unsigned i=0; i<3; i++)
-			for(unsigned j=0; j<3; j++)
-				gsl_matrix_set(g,i,j, data[index(i,j)]);
+		  for(unsigned j=0; j<3; j++)
+		    gsl_matrix_set(g,i,j, data[index(i,j)]);
 
 		// invert and store
+		gsl_linalg_cholesky_decomp(g);
 		gsl_linalg_cholesky_invert(g);
 		ThreeMetric output;
 		output.data[ixx] = gsl_matrix_get(g, 0, 0);
