@@ -32,8 +32,7 @@ int main(){
 	cout << " * Determinant=";
 	print_test(det,1.0);
 
-	Tuple<double,3> klow;
-	g3.lower(kup,klow);
+	Tuple<double,3> klow = g3.lower(kup);
 	cout << " * klow[0]=";
 	print_test(klow[0],1.);
 	cout << " * klow[1]=";
@@ -71,7 +70,7 @@ int main(){
 	cout << " * Determinant=";
 	print_test(det,0.5);
 
-	g3.lower(kup,klow);
+	klow = g3.lower(kup);
 	cout << " * klow[0]=";
 	print_test(klow[0],0.5);
 	cout << " * klow[1]=";
@@ -93,50 +92,51 @@ int main(){
 	cout << " * g3inv[zz]=";
 	print_test(g3inv.data[izz],1.0);
 
-	cout << "|==============|" << endl;
-	cout << "| 3 Weird Test |" << endl;
-	cout << "|==============|" << endl;
-	g3.data[ixx] = 0;
-	g3.data[iyy] = 0;
-	g3.data[izz] = 0;
-	g3.data[ixy] = 1;
-	g3.data[ixz] = 1;
-	g3.data[iyz] = 1;
-	cout << "kup={" << kup[0] << ","<<kup[1]<<","<<kup[2]<<"}" << endl;
-
-	det = g3.det();
-	cout << " * Determinant=";
-	print_test(det,2.0);
-
-	g3.lower(kup,klow);
-	cout << " * klow[0]=";
-	print_test(klow[0],5);
-	cout << " * klow[1]=";
-	print_test(klow[1],4);
-	cout << " * klow[2]=";
-	print_test(klow[2],3);
-
-	g3inv = g3.inverse();
-	cout << " * g3inv[xx]=";
-	print_test(g3inv.data[ixx],-0.5);
-	cout << " * g3inv[xy]=";
-	print_test(g3inv.data[ixy],0.5);
-	cout << " * g3inv[xz]=";
-	print_test(g3inv.data[ixz],0.5);
-	cout << " * g3inv[yy]=";
-	print_test(g3inv.data[iyy],-0.5);
-	cout << " * g3inv[yz]=";
-	print_test(g3inv.data[iyz],0.5);
-	cout << " * g3inv[zz]=";
-	print_test(g3inv.data[izz],-0.5);
-
-	g3inv.lower(klow,kup);
-	cout << " * kup[0]=";
-	print_test(kup[0],1);
-	cout << " * kup[1]=";
-	print_test(kup[1],2);
-	cout << " * kup[2]=";
-	print_test(kup[2],3);
+// Cholesky decomposition requires a positive definite matrix
+//	cout << "|==============|" << endl;
+//	cout << "| 3 Weird Test |" << endl;
+//	cout << "|==============|" << endl;
+//	g3.data[ixx] = 0;
+//	g3.data[iyy] = 0;
+//	g3.data[izz] = 0;
+//	g3.data[ixy] = 1;
+//	g3.data[ixz] = 1;
+//	g3.data[iyz] = 1;
+//	cout << "kup={" << kup[0] << ","<<kup[1]<<","<<kup[2]<<"}" << endl;
+//
+//	det = g3.det();
+//	cout << " * Determinant=";
+//	print_test(det,2.0);
+//
+//	klow = g3.lower(kup);
+//	cout << " * klow[0]=";
+//	print_test(klow[0],5);
+//	cout << " * klow[1]=";
+//	print_test(klow[1],4);
+//	cout << " * klow[2]=";
+//	print_test(klow[2],3);
+//
+//	g3inv = g3.inverse();
+//	cout << " * g3inv[xx]=";
+//	print_test(g3inv.data[ixx],-0.5);
+//	cout << " * g3inv[xy]=";
+//	print_test(g3inv.data[ixy],0.5);
+//	cout << " * g3inv[xz]=";
+//	print_test(g3inv.data[ixz],0.5);
+//	cout << " * g3inv[yy]=";
+//	print_test(g3inv.data[iyy],-0.5);
+//	cout << " * g3inv[yz]=";
+//	print_test(g3inv.data[iyz],0.5);
+//	cout << " * g3inv[zz]=";
+//	print_test(g3inv.data[izz],-0.5);
+//
+//	kup = g3inv.lower(klow);
+//	cout << " * kup[0]=";
+//	print_test(kup[0],1);
+//	cout << " * kup[1]=";
+//	print_test(kup[1],2);
+//	cout << " * kup[2]=";
+//	print_test(kup[2],3);
 
 	cout << "|==================|" << endl;
 	cout << "| 4 Minkowski Test |" << endl;
@@ -151,15 +151,14 @@ int main(){
 	for(unsigned i=0; i<3; i++) g.betaup[i] = 0;
 	g.alpha = 1.0;
 	g.update();
-	double kup4[4];
+	Tuple<double,4> kup4;
 	kup4[0] = 0;
 	kup4[1] = 1;
 	kup4[2] = 2;
 	kup4[3] = 3;
 	cout << "kup={" << kup4[0] << ","<<kup4[1]<<","<<kup4[2]<<","<<kup4[3]<<"}" << endl;
 
-	double klow4[4];
-	g.lower<4>(kup4,klow4);
+	Tuple<double,4> klow4 = g.lower<4>(kup4);
 	cout << " * klow[0]=";
 	print_test(klow4[0],0.);
 	cout << " * klow[1]=";
@@ -173,7 +172,7 @@ int main(){
 	cout << " * kup4.kup4=";
 	print_test(dotp,-4.);
 
-	double tmp[4];
+	Tuple<double,4> tmp;
 	for(unsigned i=0; i<4; i++) tmp[i] = kup4[i];
 	g.normalize(tmp);
 	cout << " * norm[0]=";
@@ -196,8 +195,16 @@ int main(){
 	cout << " * nullnorm[3]=";
 	print_test(tmp[3],sqrt(5.));
 
-	double u[4] = {1,0,0,2};
-	double e[4] = {1,0,0,0};
+	Tuple<double,4> u;
+	u[0] = 1;
+	u[1] = 0;
+	u[2] = 0;
+	u[3] = 2;
+	Tuple<double,4> e;
+	e[0] = 1;
+	e[1] = 0;
+	e[2] = 0;
+	e[3] = 0;
 	g.orthogonalize<4>(e,u);
 	cout << " * e[0]=";
 	print_test(e[0],4./3.);
@@ -244,7 +251,7 @@ int main(){
 	cout << " * gtt=";
 	print_test(gtt, -0.86);
 
-	g.lower<4>(kup4,klow4);
+	klow4 = g.lower<4>(kup4);
 	cout << " * klow4[0]=";
 	print_test(klow4[0],0.3);
 	cout << " * klow4[1]=";
