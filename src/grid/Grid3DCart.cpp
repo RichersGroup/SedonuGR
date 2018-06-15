@@ -708,20 +708,25 @@ Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
   #pragma omp simd
   for(unsigned a=0; a<3; a++){
     // xx parts
-    dg[a][0][0]             = dg3_dx[a][ixx]; // [direction][element]
-    dg[a][1][1]             = dg3_dx[a][iyy];
-    dg[a][2][2]             = dg3_dx[a][izz];
-    dg[a][0][1]=dg[a][1][0] = dg3_dx[a][ixy];
-    dg[a][0][2]=dg[a][2][0] = dg3_dx[a][ixz];
-    dg[a][1][2]=dg[a][2][1] = dg3_dx[a][iyz];
-
-    // xt and tt parts
-    dg[a][3][3] = -2.*eh.g.alpha*da_dx[a];
-    for(unsigned i=0; i<3; i++){
-      dg[a][3][3] += 2. * eh.g.betalow[i] * dbetaup_dx[a][i]; // [direction][element]
-      dg[a][3][i] = dbetalow_dx[a][i];
-      dg[a][i][3] = dbetalow_dx[a][i];
-    }
+    dg[a][0][0] = dg3_dx[a][ixx]; // [direction][element]
+    dg[a][0][1] = dg3_dx[a][ixy];
+    dg[a][0][2] = dg3_dx[a][ixz];
+    dg[a][0][3] = dbetalow_dx[a][0];
+    dg[a][1][0] = dg3_dx[a][ixy];
+    dg[a][1][1] = dg3_dx[a][iyy];
+    dg[a][1][2] = dg3_dx[a][iyz];
+    dg[a][1][3] = dbetalow_dx[a][1];
+    dg[a][2][0] = dg3_dx[a][ixz];
+    dg[a][2][1] = dg3_dx[a][iyz];
+    dg[a][2][2] = dg3_dx[a][izz];
+    dg[a][2][3] = dbetalow_dx[a][2];
+    dg[a][3][0] = dbetalow_dx[a][0];
+    dg[a][3][1] = dbetalow_dx[a][1];
+    dg[a][3][2] = dbetalow_dx[a][2];
+    dg[a][3][3] = -eh.g.alpha * da_dx[a];
+    for(unsigned i=0; i<3; i++)
+      dg[a][3][3] += eh.g.betalow[i] * dbetaup_dx[a][i]; // [direction][element]
+    dg[a][3][3] *= 2.;
   }
 
   // get the low-index Christoffel symbols
@@ -730,7 +735,7 @@ Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
   for(unsigned a=0; a<4; a++)
     for(unsigned i=0; i<4; i++)
       for(unsigned j=0; j<4; j++)
-	dk_dlambda_low[a] += (dg[i][a][j] - 0.5*dg[a][i][j]) * eh.kup[i] * eh.kup[j];
+    	  dk_dlambda_low[a] += (dg[i][a][j] - 0.5*dg[a][i][j]) * eh.kup[i] * eh.kup[j];
 
   Tuple<double,4> dk_dlambda = eh.g.raise(dk_dlambda_low);
   return dk_dlambda * -1.;
