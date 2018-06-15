@@ -665,7 +665,10 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 	eh->z_ind = grid->zone_index(eh->xup);
 
 	// boundary conditions
-	if(r_core>0 && radius(eh->xup)<r_core) eh->fate = absorbed;
+	if(r_core>0 && radius(eh->xup)<r_core){
+	  eh->fate = absorbed;
+	  return;
+	}
 	else if(eh->z_ind<0){
 		grid->symmetry_boundaries(eh);
 		eh->z_ind = grid->zone_index(eh->xup);
