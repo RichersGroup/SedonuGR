@@ -42,7 +42,7 @@
 #include <atomic>
 #include <array>
 
-#define NDIMS 1
+#define NDIMS 3
 #define DO_GR 1
 
 //using real = float; // or float
@@ -108,7 +108,6 @@ template<typename T>
 class ATOMIC : public std::atomic<T>
 {
  public:
-  //defaultinitializes value
   ATOMIC() = default;
 
   constexpr ATOMIC(T desired) :
@@ -149,12 +148,10 @@ public:
 	Tuple(){}
 
 	Tuple(T in){
-		#pragma omp simd
 		for(size_t i=0; i<len; i++) this->operator[](i) = in;
 	}
 	template<typename Tin>
 	  Tuple(Tuple<Tin,len> in){
-		#pragma omp simd
 		for(size_t i=0; i<len; i++) this->operator[](i) = in[i];
 	}
 
@@ -162,18 +159,15 @@ public:
 
   template<typename Tin>
   Tuple<T,len>& operator=(const Tuple<Tin,len>& input){
-	  #pragma omp simd
 	  for(unsigned i=0; i<len; i++) this->operator[](i) = input[i];
 	  return *this;
   }
   Tuple<T,len>& operator=(const double input){
-	  #pragma omp simd
 	  for(unsigned i=0; i<len; i++) this->operator[](i) = input;
 	  return *this;
   }
   const Tuple<T,len> operator*(const double scale) const{
 	  Tuple<T,len> result;// = *this;
-	  #pragma omp simd
 	  for(unsigned i=0; i<len; i++) result[i] = this->operator[](i) * scale;
 	  return result;
   }
@@ -184,14 +178,12 @@ public:
   template<typename Tin>
   const Tuple<T,len> operator+(const Tuple<Tin,len>& input) const{
 	  Tuple<T,len> result;// = *this;
-	  #pragma omp simd
 	  for(unsigned i=0; i<len; i++) result[i] = this->operator[](i) + input[i];
 	  return result;
   }
   template<typename Tin>
   const Tuple<T,len> operator-(const Tuple<Tin,len>& input) const{
 	  Tuple<T,len> result;// = *this;
-	  #pragma omp simd
 	  for(unsigned i=0; i<len; i++) result[i] = this->operator[](i) - input[i];
 	  return result;
   }
@@ -205,7 +197,6 @@ public:
   template<typename Tin>
   bool operator==(const Tuple<Tin,len>& input){
 	  bool isequal = true;
-	  #pragma omp simd
 	  for(unsigned i=0; i<len; i++) isequal = isequal && (this->operator[](i) == input[i]);
 	  return isequal;
   }
