@@ -63,16 +63,16 @@ int main(int argc, char **argv)
 	public:
 		void set_particle(EinsteinHelper& eh){
 			particles.resize(1);
-			particles[0] = eh.p;
+			particles[0] = eh.get_Particle();
 		}
 		virtual void move(EinsteinHelper *eh){
-			for(unsigned i=0; i<4; i++) cout << eh->p.xup[i] << "\t";
-			for(unsigned i=0; i<4; i++) cout << eh->p.kup[i] << "\t";
+			for(unsigned i=0; i<4; i++) cout << eh->xup[i] << "\t";
+			for(unsigned i=0; i<4; i++) cout << eh->kup[i] << "\t";
 			for(unsigned i=0; i<4; i++) cout << eh->kup_tet[i] << "\t";
 			cout << eh->nu() << endl;
 
 			Transport::move(eh);
-			if(eh->p.xup[0]<0 and eh->p.xup[1]<0) eh->p.fate = absorbed;
+			if(eh->xup[0]<0 and eh->xup[1]<0) eh->fate = absorbed;
 		}
 	};
 
@@ -88,20 +88,14 @@ int main(int argc, char **argv)
 	kup.resize(4);
 	xup = lua.vector<double>("initial_xup");
 	kup = lua.vector<double>("initial_kup");
-	eh.p.xup[3] = 0;
+	eh.xup[3] = 0;
 	for(int i=0; i<4; i++){
-		eh.p.xup[i] = xup[i];
-		eh.p.kup[i] = kup[i];
+		eh.xup[i] = xup[i];
+		eh.kup[i] = kup[i];
 	}
-	eh.p.s = 0;
-	eh.p.N = 1;
-	eh.p.fate = moving;
-
-	sim.update_eh_background(&eh);
-	eh.g.normalize_null_preserveupt(eh.p.kup);
-	sim.update_eh_k_opac(&eh);
-
-	sim.grid->interpolate_opacity(&eh);
+	eh.s = 0;
+	eh.N = 1;
+	eh.fate = moving;
 
 	sim.set_particle(eh);
 	sim.step();
