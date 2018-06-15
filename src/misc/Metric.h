@@ -50,7 +50,6 @@ public:
 	}
 	ThreeMetric inverse() const{
 		gsl_matrix* g = gsl_matrix_alloc(3,3);
-                #pragma omp simd collapse(2)
 		for(unsigned i=0; i<3; i++)
 		  for(unsigned j=0; j<3; j++)
 		    gsl_matrix_set(g,i,j, data[index(i,j)]);
@@ -324,7 +323,6 @@ public:
 
 	Tuple<double,4> contract2(const Tuple<double,4>& kup) const{
 		Tuple<double,4> result = 0;
-		#pragma omp simd collapse(3)
 		for(unsigned a=0; a<4; a++){
 			for(unsigned i=0; i<4; i++)
 				for(unsigned j=0; j<4; j++)
