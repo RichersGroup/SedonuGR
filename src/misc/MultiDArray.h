@@ -16,7 +16,7 @@ class InterpolationCube{
 public:
 
 	const static unsigned ncorners = (1<<ndims);
-	constexpr static unsigned index(const unsigned LR[ndims]){
+	static unsigned index(const unsigned LR[ndims]){
 		unsigned result = 0;
 		for(unsigned d=0; d<ndims; d++){
 			result = result << 1; // shift bit left

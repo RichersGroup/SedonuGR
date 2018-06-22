@@ -46,7 +46,7 @@
 #ifndef _GRID_GENERAL_H
 #define _GRID_GENERAL_H 1
 
-#include "Lua.h"
+#include "LuaRead.h"
 #include "Particle.h"
 #include "ThreadRNG.h"
 #include "H5Cpp.h"

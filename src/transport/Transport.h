@@ -30,7 +30,7 @@
 #include <vector>
 #include <atomic>
 #include "Particle.h"
-#include "Lua.h"
+#include "LuaRead.h"
 #include "CDFArray.h"
 #include "ThreadRNG.h"
 #include "EinsteinHelper.h"

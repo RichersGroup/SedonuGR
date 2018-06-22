@@ -29,7 +29,7 @@
 #include <cmath>
 #include <iostream>
 #include <fstream>
-#include "Lua.h"
+#include "LuaRead.h"
 #include "Transport.h"
 #include "Grid.h"
 #include "nulib_interface.h"

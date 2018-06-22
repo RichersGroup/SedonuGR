@@ -27,7 +27,7 @@
 
 #include <mpi.h>
 #include <string>
-#include "Lua.h"
+#include "LuaRead.h"
 #include "Transport.h"
 
 using namespace std;

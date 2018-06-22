@@ -29,7 +29,7 @@
 #define _SPECIES_H
 
 #include <vector>
-#include "Lua.h"
+#include "LuaRead.h"
 #include "MultiDArray.h"
 #include "Grid.h"
 

@@ -30,7 +30,7 @@
 #include <iomanip>
 #include <fstream>
 #include "Grid.h"
-#include "Lua.h"
+#include "LuaRead.h"
 #include "nulib_interface.h"
 #include "global_options.h"
 #include "Transport.h"

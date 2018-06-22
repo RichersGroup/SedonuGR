@@ -9,7 +9,7 @@
 // 
 
 #include <stdexcept>
-#include "Lua.h"
+#include "LuaRead.h"
 
 Lua::Lua()
 {

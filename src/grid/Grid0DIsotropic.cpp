@@ -27,7 +27,7 @@
 
 #include "global_options.h"
 #include "Grid0DIsotropic.h"
-#include "Lua.h"
+#include "LuaRead.h"
 #include "Transport.h"
 
 using namespace std;

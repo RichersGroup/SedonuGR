@@ -30,7 +30,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
-#include "Lua.h"
+#include "LuaRead.h"
 #include "Transport.h"
 #include "Species.h"
 #include "Grid.h"
