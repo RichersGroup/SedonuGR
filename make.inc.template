@@ -9,6 +9,7 @@ BASEDIR=$(CURDIR)
 F90=gfortran-5
 CXX=g++-5 -std=c++11
 CC=g++-5
+MPICXX = mpicxx -cxx=$(CXX)
 
 F90FLAGS= -O3 #OPTIONAL: (gnu)-fopenmp (intel)-openmp
 CXXFLAGS= -O3 -Wall -fopenmp #INTEL: -lifcore  #OPTIONAL: (gnu)-fopenmp (intel)-openmp

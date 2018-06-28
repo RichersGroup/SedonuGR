@@ -30,7 +30,7 @@ OTHER_OBJECTS = $(OTHER_SOURCES:./%.cpp=$(OBJDIR)/%.o)
 sedonu:$(EXE_DIR)/sedonu.a $(EXE_DIR)/sedonu
 all: $(EXECUTABLES) $(EXE_DIR)/sedonu.a
 $(EXE_DIR)/%: $(OBJDIR)/$(EXE_SRC_DIR)/%.o $(OTHER_OBJECTS)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(ALL_LIBS)
+	$(MPICXX) $(CXXFLAGS) -o $@ $^ $(ALL_LIBS)
 
 $(EXE_DIR)/sedonu.a: $(OTHER_OBJECTS)
 	ar rcs $@ $^
@@ -38,7 +38,7 @@ $(EXE_DIR)/sedonu.a: $(OTHER_OBJECTS)
 # compile all the required objects and their dependencies
 # creating temporary file so no corrupted dependencies on failed make
 $(OBJDIR)/%.o: %.cpp #$(OBJDIR)/%.d
-	$(CXX) $(CXXFLAGS) -c $< $(ALL_INCS) -o $@ #$(DEPFLAGS)
+	$(MPICXX) $(CXXFLAGS) -c $< $(ALL_INCS) -o $@ #$(DEPFLAGS)
 #	mv -f $(OBJDIR)/$*.Td $(OBJDIR)/$*.d
 
 # include dependency files so recompile if header updates

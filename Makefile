@@ -20,7 +20,7 @@ hdf5:
 	tar -xvf hdf5-1.10.1.tar.gz
 	rm -f hdf5-1.10.1.tar.gz
 	mv hdf5-1.10.1 external/hdf5
-	cd external/hdf5; ./configure --enable-fortran --enable-cxx; make -j; make install
+	cd external/hdf5; FC=$(F90) ./configure --enable-fortran --enable-cxx; make -j; make install
 
 realclean:
 	$(MAKE) clean
