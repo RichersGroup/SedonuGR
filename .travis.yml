@@ -1,1 +1,9 @@
 language: c++
+
+before_install:
+- sudo apt-get update -qq
+- sudo apt-get install -qq hdf5 zlib1g-dev mpich2 gsl-bin libgsl0ldbl libgsl0-devttings lua5.2
+
+script:
+- make clean
+- make
