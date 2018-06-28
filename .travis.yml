@@ -11,7 +11,8 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
     - g++-5
-    - mpich2
+    - mppich2
+    - libmpich-dev
     - gsl-bin
     - libgsl0-dev
     - libgsl0ldbl
