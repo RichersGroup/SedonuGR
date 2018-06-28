@@ -11,5 +11,7 @@ before_install:
 - sudo apt-get install -qq libhdf5-serial-dev
 
 script:
+- cp make.inc.template make.inc
 - make clean
+- make nulib
 - make
