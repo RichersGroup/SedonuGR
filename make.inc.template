@@ -6,12 +6,12 @@ TARGET=$(CURDIR)/gomc
 BASEDIR=$(CURDIR)
 
 #compiler configuration
-F90=mpif90
-CXX=mpicxx
-CC=mpicc
+F90=mpif90 -f90=gfortran-5
+CXX=mpicxx -cc=gcc-5 -std=c++11
+CC=mpicc -cxx=g++-5
 
 F90FLAGS= -O3 #OPTIONAL: (gnu)-fopenmp (intel)-openmp
-CXXFLAGS= -O3 -Wall #INTEL: -lifcore  #OPTIONAL: (gnu)-fopenmp (intel)-openmp
+CXXFLAGS= -O3 -Wall -fopenmp #INTEL: -lifcore  #OPTIONAL: (gnu)-fopenmp (intel)-openmp
 CCFLAGS= -O3 -Wall
 
 #GSL
@@ -25,7 +25,7 @@ LUA_INCL=-I$(LUA_BASE)/include
 LUA_LIBS=-L$(LUA_BASE)/lib -llua -Wl,-rpath,$(LUA_BASE)/lib
 
 #HDF5
-#HDF5_DIR=$(CURDIR)/external/hdf5-1.8.13/hdf5
+HDF5_DIR=/usr
 HDF5INCS=-I$(HDF5_DIR)/include
 HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5 -lhdf5_fortran -Wl,-rpath,$(HDF5_DIR)/lib
 
