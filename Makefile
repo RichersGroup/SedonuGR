@@ -16,15 +16,16 @@ clean:
 	rm -rf exe
 
 hdf5:
-        wget https://support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.1.tar.gz
-        tar -xvf hdf5-1.10.1.tar.gz
-        rm -f hdf5-1.10.1.tar.gz
-        mv hdf5-1.10.1 external/hdf5
-        cd external/hdf5; ./configure --enable-fortran --enable-cxx; make; make install
+	wget https://support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.1.tar.gz
+	tar -xvf hdf5-1.10.1.tar.gz
+	rm -f hdf5-1.10.1.tar.gz
+	mv hdf5-1.10.1 external/hdf5
+	cd external/hdf5; ./configure --enable-fortran --enable-cxx; make -j; make install
 
-
-realclean: clean nulibclean
-	rm -rf exe
+realclean:
+	$(MAKE) clean
+	$(MAKE) nulibclean
+	rm -rf exe external/hdf5
 
 #########
 # NuLib #
