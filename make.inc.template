@@ -8,7 +8,7 @@ BASEDIR=$(CURDIR)
 #compiler configuration
 F90=gfortran-5
 CXX=g++-5 -std=c++11
-CC=g++-5
+CC=gcc
 MPICXX = mpicxx -cxx=$(CXX)
 
 F90FLAGS= -O3 #OPTIONAL: (gnu)-fopenmp (intel)-openmp
@@ -26,7 +26,7 @@ LUA_INCL=-I$(LUA_BASE)/include
 LUA_LIBS=-L$(LUA_BASE)/lib -llua -Wl,-rpath,$(LUA_BASE)/lib
 
 #HDF5
-HDF5_DIR=$(CURDIR)/external/hdf5/hdf5
+HDF5_DIR=$(CURDIR)/external/hdf5
 HDF5INCS=-I$(HDF5_DIR)/include
 HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5 -lhdf5_fortran -Wl,-rpath,$(HDF5_DIR)/lib
 
