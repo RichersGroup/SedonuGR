@@ -16,8 +16,6 @@ addons:
     - gsl-bin
     - libgsl0-dev
     - libgsl0ldbl
-    - liblua5.2
-    - liblua5.2-dev
     - zlib1g-dev
     env:
     - CC=gcc-5
@@ -26,7 +24,6 @@ addons:
 
 script:
 - cp make.inc.template make.inc
-- make clean
 - make hdf5
 - make nulib
 - make all

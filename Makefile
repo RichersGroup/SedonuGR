@@ -25,8 +25,10 @@ hdf5:
 lua:
 	wget http://www.lua.org/ftp/lua-5.3.4.tar.gz
 	tar -xvf lua-5.3.4.tar.gz
+	rm -f lua-5.3.4.tar.gz
 	cd lua-5.3.4; make linux; make local
-	mv lua-5.3.4 external/lua
+	mv lua-5.3.4/install external/lua
+	rm -rf lua-5.3.4
 
 realclean:
 	$(MAKE) clean

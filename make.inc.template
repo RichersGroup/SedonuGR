@@ -8,7 +8,7 @@ BASEDIR=$(CURDIR)
 #compiler configuration
 F90=gfortran-5
 CXX=g++-5 -std=c++11
-CC=gcc
+CC=gcc-5
 MPICXX = mpicxx -cxx=$(CXX)
 
 F90FLAGS= -O3 #OPTIONAL: (gnu)-fopenmp (intel)-openmp
@@ -21,7 +21,7 @@ GSL_INCL=-I$(GSL_BASE)/include
 GSL_LIBS=-L$(GSL_BASE)/lib -lgsl -lgslcblas
 
 #LUA
-LUA_BASE=$(CURDIR)/external/lua-5.2.2/install
+LUA_BASE=$(CURDIR)/external/lua
 LUA_INCL=-I$(LUA_BASE)/include
 LUA_LIBS=-L$(LUA_BASE)/lib -llua -Wl,-rpath,$(LUA_BASE)/lib
 
