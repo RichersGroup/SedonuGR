@@ -25,11 +25,13 @@ addons:
     - CXX=g++-5
     - F90=gfortran-5
 
-script:
+install:
 - cp make.inc.template make.inc
 - make hdf5
 - make nulib
 - make lua
+
+script:
 - make clean; DEBUG=0 NDIMS=0 DO_GR=0 make
 - make clean; DEBUG=0 NDIMS=1 DO_GR=0 make
 - make clean; DEBUG=0 NDIMS=2 DO_GR=0 make
