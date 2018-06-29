@@ -28,11 +28,11 @@ LUA_LIBS=-L$(LUA_BASE)/lib -llua -Wl,-rpath,$(LUA_BASE)/lib
 #HDF5
 HDF5_DIR=$(CURDIR)/external/hdf5
 HDF5INCS=-I$(HDF5_DIR)/include
-HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5 -lhdf5_fortran -Wl,-rpath,$(HDF5_DIR)/lib
+HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5 -lhdf5_fortran -lhdf5_cpp -Wl,-rpath,$(HDF5_DIR)/lib
 
 #NuLib
 NULIB_DIR=$(CURDIR)/external/NuLib
-NULIB_LIBS=$(NULIB_DIR)/src/nulib.a #GNU: -lgfortran
+NULIB_LIBS=$(NULIB_DIR)/src/nulib.a -lgfortran
 
 #OTHER
-OTHER_LIBS= #PGI: -ldl
+OTHER_LIBS= -ldl
