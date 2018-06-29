@@ -2,8 +2,14 @@ language: c++
 
 os:
 - linux
+
 dist: trusty
+
 sudo: false
+
+cache:
+- external/hdf5
+
 addons:	
   apt:
     sources:
