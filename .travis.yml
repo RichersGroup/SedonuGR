@@ -27,6 +27,7 @@ addons:
 
 script:
 - cp make.inc.template make.inc
+- make hdf5
 - make nulib
 - make lua
 - make clean; DEBUG=0 NDIMS=0 DO_GR=0 make
