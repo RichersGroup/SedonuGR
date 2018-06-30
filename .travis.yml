@@ -34,17 +34,21 @@ install:
 script:
 - make clean; DEBUG=0 NDIMS=0 DO_GR=0 make
 - make clean; DEBUG=0 NDIMS=1 DO_GR=0 make
+- make -C tests/spherical_emis
 - make clean; DEBUG=0 NDIMS=2 DO_GR=0 make
 - make clean; DEBUG=0 NDIMS=3 DO_GR=0 make
 - make clean; DEBUG=0 NDIMS=0 DO_GR=1 make
 - make clean; DEBUG=0 NDIMS=1 DO_GR=1 make
+- make -C tests/spherical_emis
 - make clean; DEBUG=0 NDIMS=2 DO_GR=1 make
 - make clean; DEBUG=0 NDIMS=3 DO_GR=1 make
 - make clean; DEBUG=1 NDIMS=0 DO_GR=0 make
 - make clean; DEBUG=1 NDIMS=1 DO_GR=0 make
+- make -C tests/spherical_emis
 - make clean; DEBUG=1 NDIMS=2 DO_GR=0 make
 - make clean; DEBUG=1 NDIMS=3 DO_GR=0 make
 - make clean; DEBUG=1 NDIMS=0 DO_GR=1 make
 - make clean; DEBUG=1 NDIMS=1 DO_GR=1 make
+- make -C tests/spherical_emis
 - make clean; DEBUG=1 NDIMS=2 DO_GR=1 make
 - make clean; DEBUG=1 NDIMS=3 DO_GR=1 make

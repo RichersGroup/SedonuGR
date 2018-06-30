@@ -2,7 +2,7 @@
 
 all:
 	python empty_sphere.py > empty_sphere.mod
-	../../sedonu
+	../../sedonu > output.txt
 	python plot_spectra.py
 
 clean:

@@ -96,7 +96,14 @@ Transport::Transport(){
 //----------------------------------------------------------------------------
 void Transport::init(Lua* lua)
 { 
-	// get mpi rank
+  // report compiler variables
+  if(verbose){
+    cout << "# NDIMS=" << NDIMS << endl;
+    cout << "# DEBUG=" << DEBUG << endl;
+    cout << "# DO_GR=" << DO_GR << endl;
+  }
+
+  // get mpi rank
 	MPI_Comm_size( MPI_COMM_WORLD, &MPI_nprocs );
 	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID  );
 	if(MPI_myID==0){
