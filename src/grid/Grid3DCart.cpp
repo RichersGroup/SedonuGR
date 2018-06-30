@@ -416,8 +416,9 @@ Tuple<unsigned,NDIMS> Grid3DCart::zone_directional_indices(int z_ind) const
 	dir_ind[1] = (z_ind % (xAxes[1].size()*xAxes[2].size())) / xAxes[2].size();
 	dir_ind[2] =  z_ind % xAxes[2].size();
 
-	for(int i=0; i<3; i++)
-		PRINT_ASSERT(dir_ind[i],<,xAxes[i].size());
+	PRINT_ASSERT(dir_ind[0],<,xAxes[0].size());
+	PRINT_ASSERT(dir_ind[1],<,xAxes[1].size());
+	PRINT_ASSERT(dir_ind[2],<,xAxes[2].size());
 	return dir_ind;
 }
 
