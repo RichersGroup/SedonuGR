@@ -7,6 +7,9 @@ dist: trusty
 
 sudo: false
 
+python:
+- "3.6"
+
 addons:	
   apt:
     sources:
@@ -30,6 +33,7 @@ install:
 - make hdf5 &>> dependency_log.txt
 - make nulib
 - make lua &>> dependency_log.txt
+- pip install --user numpy
 
 script:
 - make clean; DEBUG=0 NDIMS=0 DO_GR=0 make all
