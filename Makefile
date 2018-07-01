@@ -16,7 +16,7 @@ clean:
 	rm -rf exe
 
 hdf5:
-	if [ -d "external/hdf5" ]; then \
+	if [ -d "external/hdf5/bin" ]; then \
 		echo "HDF5 already exists"; \
 	else \
 		wget https://support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.1.tar.gz; \
@@ -27,12 +27,16 @@ hdf5:
 		rm -rf hdf5-1.10.1; \
 	fi
 lua:
-	wget http://www.lua.org/ftp/lua-5.3.4.tar.gz
-	tar -xvf lua-5.3.4.tar.gz
-	rm -f lua-5.3.4.tar.gz
-	cd lua-5.3.4; make linux; make local
-	mv lua-5.3.4/install external/lua
-	rm -rf lua-5.3.4
+	if [ -d "external/lua/bin" ]; then \
+		echo "Lua already exists"; \
+	else \
+		wget http://www.lua.org/ftp/lua-5.3.4.tar.gz; \
+		tar -xvf lua-5.3.4.tar.gz; \
+		rm -f lua-5.3.4.tar.gz; \
+		cd lua-5.3.4; make linux; make local; cd ..; \
+		mv lua-5.3.4/install external/lua; \
+		rm -rf lua-5.3.4; \
+	fi
 
 realclean:
 	$(MAKE) clean
