@@ -16,12 +16,16 @@ clean:
 	rm -rf exe
 
 hdf5:
-	wget https://support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.1.tar.gz
-	tar -xvf hdf5-1.10.1.tar.gz
-	rm -f hdf5-1.10.1.tar.gz
-	cd hdf5-1.10.1; FC=$(F90) ./configure --enable-fortran --enable-cxx; make -j; make install
-	mv hdf5-1.10.1/hdf5 external/
-	rm -rf hdf5-1.10.1
+	if [ -d "external/hdf5" ]; then \
+		echo "HDF5 already exists"; \
+	else \
+		wget https://support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.1.tar.gz; \
+		tar -xvf hdf5-1.10.1.tar.gz; \
+		rm -f hdf5-1.10.1.tar.gz; \
+		cd hdf5-1.10.1; FC=$(F90) ./configure --enable-fortran --enable-cxx; make -j; make install; cd ..; \
+		mv hdf5-1.10.1/hdf5 external/; \
+		rm -rf hdf5-1.10.1; \
+	fi
 lua:
 	wget http://www.lua.org/ftp/lua-5.3.4.tar.gz
 	tar -xvf lua-5.3.4.tar.gz

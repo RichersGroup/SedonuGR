@@ -16,7 +16,10 @@ notifications:
       - sricher@ncsu.edu
     on_success: change
     on_failure: always
-  
+
+cache:
+  directories:
+  - external/hdf5
 
 addons:	
   apt:
