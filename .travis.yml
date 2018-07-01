@@ -34,6 +34,7 @@ addons:
     - libgsl0-dev
     - libgsl0ldbl
     - zlib1g-dev
+    - python3
     env:
     - CC=gcc-5
     - CXX=g++-5
