@@ -49,7 +49,7 @@ install:
 - make nulib
 - make lua &>> dependency_log.txt
 - pip3 install --user numpy
-- alias python=python3
+- pip3 install --user matplotlib
 
 script:
 - make clean; DEBUG=0 NDIMS=0 DO_GR=0 make all
