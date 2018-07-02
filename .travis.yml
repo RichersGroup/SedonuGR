@@ -48,8 +48,8 @@ install:
 - make hdf5 &>> dependency_log.txt
 - make nulib
 - make lua &>> dependency_log.txt
-- pip3 install --user numpy
-- pip3 install --user matplotlib
+- pip3 install --user numpy &>> dependency_log.txt
+- pip3 install --user matplotlib &>> dependency_log.txt
 
 script:
 - make clean; DEBUG=0 NDIMS=0 DO_GR=0 make all
