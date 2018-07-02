@@ -61,18 +61,15 @@ int main(int argc, char **argv)
 
 	class testTransport : public Transport{
 	public:
-		void set_particle(EinsteinHelper& eh){
-			particles.resize(1);
-			particles[0] = eh.get_Particle();
-		}
-		virtual void move(EinsteinHelper *eh){
+		void move(EinsteinHelper *eh){
+			Transport::move(eh);
+			if(eh->xup[0]<0 or eh->xup[1]<0) eh->fate = absorbed;
+
 			for(unsigned i=0; i<4; i++) cout << eh->xup[i] << "\t";
 			for(unsigned i=0; i<4; i++) cout << eh->kup[i] << "\t";
 			for(unsigned i=0; i<4; i++) cout << eh->kup_tet[i] << "\t";
+			cout << eh->g.gtt << "\t";
 			cout << eh->nu() << endl;
-
-			Transport::move(eh);
-			if(eh->xup[0]<0 and eh->xup[1]<0) eh->fate = absorbed;
 		}
 	};
 
@@ -95,11 +92,17 @@ int main(int argc, char **argv)
 	}
 	eh.s = 0;
 	eh.N = 1;
+	eh.N0 = eh.N;
 	eh.fate = moving;
 
-	sim.set_particle(eh);
-	sim.step();
-	sim.write(0);
+	sim.update_eh_background(&eh);
+	sim.update_eh_k_opac(&eh);
+	ParticleEvent event;
+	sim.reset_radiation();
+	while(eh.fate==moving){
+		sim.which_event(&eh,&event);
+		sim.move(&eh);
+	}
 
 	// read in time stepping parameters
 	lua.close();

@@ -70,9 +70,7 @@ protected:
 	// propagate the particles
 	void propagate_particles();
 	void propagate(EinsteinHelper* eh);
-	virtual void move(EinsteinHelper *eh) const;
-	void reset_radiation();
-	void which_event(EinsteinHelper* eh, ParticleEvent *event) const;
+	void move(EinsteinHelper *eh) const;
 	void scatter(EinsteinHelper *eh) const;
 	void random_walk(EinsteinHelper *eh) const;
 	void init_randomwalk_cdf(Lua* lua);
@@ -175,6 +173,8 @@ public:
 
 	// in-simulation functions to be used by main
 	void step();
+	void which_event(EinsteinHelper* eh, ParticleEvent *event) const;
+	void reset_radiation();
 	void write(const int it) const;
 	void write_rays(const int it);
 	static std::string filename(const char* filebase, const int iw, const char* suffix);

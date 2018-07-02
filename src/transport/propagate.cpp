@@ -126,12 +126,6 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 void Transport::move(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->ds_com,>=,0);
 	PRINT_ASSERT(abs(eh->g.dot<4>(eh->kup,eh->kup)) / (eh->kup[3]*eh->kup[3]), <=, TINY);
-	// FOR SCHWARZSCHILD PATH TEST
-	//for(unsigned i=0; i<4; i++) cout << eh->xup[i] << "\t";
-	//for(unsigned i=0; i<4; i++) cout << eh->kup[i] << "\t";
-	//for(unsigned i=0; i<4; i++) cout << eh->kup_tet[i] << "\t";
-	//cout << eh->g.gtt << "\t";
-	//cout << eh->nu() << endl;
 
 	// save old values
 	Tuple<double,4> old_kup = eh->kup;
