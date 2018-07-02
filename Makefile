@@ -34,6 +34,7 @@ lua:
 		tar -xvf lua-5.3.4.tar.gz; \
 		rm -f lua-5.3.4.tar.gz; \
 		cd lua-5.3.4; make linux; make local; cd ..; \
+		rm -rf extternal/lua; \
 		mv lua-5.3.4/install external/lua; \
 		rm -rf lua-5.3.4; \
 	fi
