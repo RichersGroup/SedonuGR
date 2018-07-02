@@ -1,7 +1,7 @@
 .PHONY: all clean
 
 all:
-	python empty_sphere.py > empty_sphere.mod
+	python3 empty_sphere.py > empty_sphere.mod
 	../../sedonu > output.txt
 	python3 plot_spectra.py
 
