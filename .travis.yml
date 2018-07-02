@@ -38,6 +38,7 @@ addons:
     - python3
     - python3-h5py
     - python3-numpy
+    - python3-tk
     - python3-matplotlib
     env:
     - CC=gcc-5
