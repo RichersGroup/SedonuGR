@@ -55,7 +55,7 @@ output_hdf5 = 0
 -- Particle Creation
 
 max_particles  = 2e6
-n_subcycles = 10
+n_subcycles = 1
 do_emit_by_bin = 0
 n_emit_core_per_bin    = 0
 n_emit_therm_per_bin   = 500

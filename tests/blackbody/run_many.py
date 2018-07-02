@@ -4,21 +4,22 @@ from scipy.integrate import quad
 import numpy as np
 
 # INPUTS
+tolerance = 0.05
 eosfile   = "SFHo.h5" #ignored if compiled for helmholtz eos
 
 min_logrho = 6  #g/ccm
 max_logrho = 15 #g/ccm
-n_rho = 20
+n_rho = 5
 center_logrho = 10
 
-min_logT = -1 #MeV
-max_logT = 2  #MeV
-n_T = 20
+min_logT = 0 #MeV
+max_logT = 1.5  #MeV
+n_T = 5
 center_logT = 0.5
 
 min_ye = 0.05
 max_ye = 0.55
-n_ye = 20
+n_ye = 5
 center_ye = 0.3
 
 
@@ -38,8 +39,16 @@ def edens(T,mu):
     else: max_x = 20
     return 4*pi*h*c * (T*MeV/c/h)**4 * quad(BB,0.0,max_x,args=(T,mu))[0]
 
+def predicted_edens(T,mu):
+    return edens(T,mu) + edens(T,-mu) + 4*edens(T,0)
+def calculated_edens(results):
+    edens = []
+    for i in range(len(results)):
+        edens.append(results[i][4]+results[i][5]+results[i][6])
+    return edens
+
 def write_predicted(mu,rho,T,Ye):
-    etot = edens(T,mu) + edens(T,-mu) + 4*edens(T,0)
+    etot = predicted_edens(T,mu)
     string = str(etot)+" "+str(rho)+" "+str(T)+" "+str(Ye)
     os.system("echo "+string+" >> predicted.dat")
 
@@ -70,7 +79,7 @@ string = "OMP_NUM_THREADS=16 mpirun -np 1 ../../exe/blackbody_test param.lua " +
 print(string)
 os.system(string)
 
-results = np.loadtxt("results.dat",usecols=(0,1,2,3))
+results = np.loadtxt("results.dat",usecols=(0,1,2,3,4,5,6))
 os.system("rm -f predicted.dat")
 for i in range(len(results)):
     munue = results[i][3]
@@ -78,5 +87,15 @@ for i in range(len(results)):
     T     = results[i][1]
     ye    = results[i][2]
     write_predicted(munue,rho,T,ye)
+    print(rho,T,ye)
+    print(predicted_edens(T,munue), calculated_edens(results)[i])
+    error = abs(predicted_edens(T,munue) - calculated_edens(results)[i]) / (predicted_edens(T,munue) + calculated_edens(results)[i])
+    if error>tolerance:
+        print(predicted_edens(T,munue), calculated_edens(results)[i], error)
+        raise Exception("blackbody results are outside of the tolerance.")
+    else:
+        print("SUCCESS: error=",error)
 
-plot(rho0,T0,ye0)
+
+    
+#plot(rho0,T0,ye0)
