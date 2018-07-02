@@ -179,7 +179,8 @@ public:
 		for(unsigned i=0; i<icube.ncorners; i++){
 			PRINT_ASSERT(icube.indices[i],>=,0);
 			PRINT_ASSERT(icube.indices[i],<,size());
-			PRINT_ASSERT(icube.weights[i],<,1.0);
+			PRINT_ASSERT(icube.weights[i],<=,1.0);
+			PRINT_ASSERT(icube.weights[i],>=,0.0);
 			result += y0[icube.indices[i]] * icube.weights[i];
 		}
 		return result;
