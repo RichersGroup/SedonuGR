@@ -70,10 +70,10 @@ void Grid::init(Lua* lua, Transport* insim)
 			if(sim->verbose) cout << "WARNING: resetting rho["<<i<<"] from "<<rho[i]<<" to "<<sim->rho_max<<endl;
 			rho[i] = sim->rho_max;
 		}
-		if(rho[i] < sim->rho_min){
-			if(sim->verbose) cout << "WARNING: resetting rho["<<i<<"] from "<<rho[i]<<" to "<<sim->rho_min<<endl;
-			rho[i] = sim->rho_min;
-		}
+		// if(rho[i] < sim->rho_min){
+		// 	if(sim->verbose) cout << "WARNING: resetting rho["<<i<<"] from "<<rho[i]<<" to "<<sim->rho_min<<endl;
+		// 	rho[i] = sim->rho_min;
+		// }
 		if(T[i] > sim->T_max){
 			if(sim->verbose) cout << "WARNING: resetting T["<<i<<"] from "<<T[i]<<" to "<<sim->T_max<<endl;
 			T[i] = sim->T_max;

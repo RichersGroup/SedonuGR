@@ -464,7 +464,7 @@ Tuple<double,4> Grid3DCart::sample_in_zone(int z_ind, ThreadRNG* rangen) const
 
 		// make sure the particle is in bounds
 		PRINT_ASSERT(x[i],>,xAxes[i].min   - TINY*xAxes[i].delta(0));
-		PRINT_ASSERT(x[0],<,xAxes[i].max() + TINY*xAxes[i].delta(0));
+		PRINT_ASSERT(x[i],<,xAxes[i].max() + TINY*xAxes[i].delta(0));
 
 		// return particles just outside cell boundaries to within cell boundaries
 		x[i] = min(x[i], zone_right_boundary(i,dir_ind[i]));
