@@ -56,7 +56,7 @@ void run_test(const bool rank0, const double rho, const double T, const double y
 		outf << T << "\t";
 		outf << ye << "\t";
 		outf << munue*pc::ergs_to_MeV << "\t";
-		for(unsigned i=0; i<sim.species_list.size(); i++)
+		for(size_t i=0; i<sim.species_list.size(); i++)
 			outf << sim.grid->distribution[i]->total() << "\t";
 		outf << endl;
 	}

@@ -65,9 +65,9 @@ int main(int argc, char **argv)
 			Transport::move(eh);
 			if(eh->xup[0]<0 or eh->xup[1]<0) eh->fate = absorbed;
 
-			for(unsigned i=0; i<4; i++) cout << eh->xup[i] << "\t";
-			for(unsigned i=0; i<4; i++) cout << eh->kup[i] << "\t";
-			for(unsigned i=0; i<4; i++) cout << eh->kup_tet[i] << "\t";
+			for(size_t i=0; i<4; i++) cout << eh->xup[i] << "\t";
+			for(size_t i=0; i<4; i++) cout << eh->kup[i] << "\t";
+			for(size_t i=0; i<4; i++) cout << eh->kup_tet[i] << "\t";
 			cout << eh->g.gtt << "\t";
 			cout << eh->nu() << endl;
 		}

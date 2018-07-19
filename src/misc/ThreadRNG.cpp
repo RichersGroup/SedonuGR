@@ -57,7 +57,7 @@ void ThreadRNG::init(){
 	// assign a unique RNG to each thread
 	generators.resize(nthreads);
 	for(int i=0; i<nthreads; i++){
-		gsl_rng_default_seed = (unsigned int)time(NULL) + my_mpiID*nthreads + i;
+		gsl_rng_default_seed = (size_t)time(NULL) + my_mpiID*nthreads + i;
 		generators[i] = gsl_rng_alloc (TypeR);
 	}
 }

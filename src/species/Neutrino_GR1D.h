@@ -50,7 +50,7 @@ public:
 	Neutrino_GR1D();
 
 	void myInit(Lua* lua);
-	void set_eas(const unsigned z_ind, Grid* grid) const;
+	void set_eas(const size_t z_ind, Grid* grid) const;
 	void set_eas_external(const double* easarray, const double GR1D_tau_crit, bool* extract_MC, const double rshock);
 	static void set_nu_grid(Lua* lua, Axis* nu_grid);
 };

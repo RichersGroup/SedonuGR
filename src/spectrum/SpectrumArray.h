@@ -45,26 +45,26 @@ public:
 	virtual ~SpectrumArray() {}
 
 	// record some data
-	virtual void count(const Tuple<double,4>& kup_tet, const unsigned dir_ind[NDIMS+1], const double E) = 0;
+	virtual void count(const Tuple<double,4>& kup_tet, const size_t dir_ind[NDIMS+1], const double E) = 0;
 
 	// MPI functions
-	virtual void mpi_sum_scatter(vector<unsigned>& zone_stop_list) = 0;
+	virtual void mpi_sum_scatter(vector<size_t>& zone_stop_list) = 0;
 	virtual void mpi_sum() = 0;
 
 	// Count a packets
-	virtual void add_isotropic(const unsigned dir_ind[NDIMS+1], const double E) = 0;
+	virtual void add_isotropic(const size_t dir_ind[NDIMS+1], const double E) = 0;
 
 	//  void normalize();
 	virtual void rescale(const double) = 0;
-	virtual void rescale_spatial_point(const unsigned dir_ind[NDIMS], const double) = 0;
+	virtual void rescale_spatial_point(const size_t dir_ind[NDIMS], const double) = 0;
 	virtual void wipe() = 0;
 	virtual double total() const = 0;
 
 	// Print out
 	virtual void write_hdf5_data(H5::H5File file, const string name) = 0;
 	virtual void write_hdf5_coordinates(H5::H5File file, const string name) const = 0;
-	virtual void annihilation_rate(const unsigned[] /*dir_ind[NDIMS]*/, const SpectrumArray* /*in_dist*/,
-			const vector< vector<vector<double> > >& /*phi*/, const unsigned /*weight*/, Tuple<double,4>& /*fourforce*/) const{
+	virtual void annihilation_rate(const size_t[] /*dir_ind[NDIMS]*/, const SpectrumArray* /*in_dist*/,
+			const vector< vector<vector<double> > >& /*phi*/, const size_t /*weight*/, Tuple<double,4>& /*fourforce*/) const{
 		cout << "annihilation_rate is not implemented for this spectrum type!" << endl;
 		assert(0);
 	}

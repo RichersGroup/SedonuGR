@@ -77,7 +77,7 @@ void Neutrino_GR1D::set_nu_grid(Lua* lua, Axis* nu_grid){
 	file.close();
 
 	// adjust units
-	for(unsigned i=0; i<nu_grid->size(); i++){
+	for(size_t i=0; i<nu_grid->size(); i++){
 		tops[i] /= pc::h_MeV;
 		mid[i] /= pc::h_MeV;
 	}
@@ -87,7 +87,7 @@ void Neutrino_GR1D::set_nu_grid(Lua* lua, Axis* nu_grid){
 //-----------------------------------------------------------------
 // set emissivity, abs. opacity, and scat. opacity in zones
 //-----------------------------------------------------------------
-void Neutrino_GR1D::set_eas(const unsigned /*z_ind*/, Grid* /*grid*/) const
+void Neutrino_GR1D::set_eas(const size_t /*z_ind*/, Grid* /*grid*/) const
 {
 	// do nothing - opacities are set externally
 }
@@ -104,10 +104,10 @@ void Neutrino_GR1D::set_eas_external(const double* easarray, const double /*GR1D
 	// first, get opacities everywhere
 	for(int z_ind=0; z_ind<(int)sim->grid->rho.size(); z_ind++){
 		for(int inu=0; inu<ngroups; inu++){
-			unsigned dir_ind[NDIMS+1];
+			size_t dir_ind[NDIMS+1];
 			sim->grid->rho.indices(z_ind,dir_ind);
 			dir_ind[NDIMS] = inu;
-			unsigned global_index = sim->grid->abs_opac[ID].direct_index(dir_ind);
+			size_t global_index = sim->grid->abs_opac[ID].direct_index(dir_ind);
 
 			// indexed as eas(zone,species,group,e/a/s). The leftmost one varies fastest.
 			int aind = (z_ind+ghosts1) + ID*n_GR1D_zones + inu*nspecies*n_GR1D_zones + 1*ngroups*nspecies*n_GR1D_zones;

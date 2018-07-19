@@ -49,7 +49,7 @@ private:
 
 public:
 
-	static const unsigned nelements = 6;
+	static const size_t nelements = 6;
 	MultiDArray<double,nelements,2> data;
 
 	//--------------------------------------------------------------
@@ -57,7 +57,7 @@ public:
 	//--------------------------------------------------------------
 	void init(const vector<Axis>& spatial_axes, const Axis& nu_grid) {
 		vector<Axis> axes;
-		for(unsigned i=0; i<spatial_axes.size(); i++) axes.push_back(spatial_axes[i]);
+		for(size_t i=0; i<spatial_axes.size(); i++) axes.push_back(spatial_axes[i]);
 
 		axes.push_back(nu_grid);
 
@@ -77,7 +77,7 @@ public:
 	//--------------------------------------------------------------
 	// count a particle
 	////--------------------------------------------------------------
-	void count(const Tuple<double,4>& kup_tet, const unsigned dir_ind[NDIMS+1], const double E) {
+	void count(const Tuple<double,4>& kup_tet, const size_t dir_ind[NDIMS+1], const double E) {
 		Tuple<double,3> D;
 		for(size_t i=0; i<3; i++) D[i] = kup_tet[i];
 		Metric::normalize_Minkowski<3>(D);
@@ -97,15 +97,15 @@ public:
 
 
 	void rescale(double r) {
-		for(unsigned i=0;i<data.size();i++) data.y0[i] *= r;
+		for(size_t i=0;i<data.size();i++) data.y0[i] *= r;
 	}
-	void rescale_spatial_point(const unsigned dir_ind[1], const double r){
-		unsigned all_indices[1+1];
+	void rescale_spatial_point(const size_t dir_ind[1], const double r){
+		size_t all_indices[1+1];
 		all_indices[0] = dir_ind[0];
 		all_indices[1] = 0;
-		unsigned base_ind = data.direct_index(all_indices);
-		unsigned nbins = data.axes[1].size();
-		for(unsigned i=0; i<nbins; i++){
+		size_t base_ind = data.direct_index(all_indices);
+		size_t nbins = data.axes[1].size();
+		for(size_t i=0; i<nbins; i++){
 			data.y0[base_ind+i] *= r;
 		}
 	}
@@ -115,10 +115,10 @@ public:
 	// MPI scatter the spectrum contents.
 	// Must rescale zone stop list to account for number of groups
 	//--------------------------------------------------------------
-	void mpi_sum_scatter(vector<unsigned>& zone_stop_list){
-		unsigned ngroups = data.axes[1].size();
-		vector<unsigned> stop_list = zone_stop_list;
-		for(unsigned i=0; i<stop_list.size(); i++) stop_list[i] *= ngroups;
+	void mpi_sum_scatter(vector<size_t>& zone_stop_list){
+		size_t ngroups = data.axes[1].size();
+		vector<size_t> stop_list = zone_stop_list;
+		for(size_t i=0; i<stop_list.size(); i++) stop_list[i] *= ngroups;
 		data.mpi_sum_scatter(stop_list);
 	}
 	void mpi_sum(){
@@ -139,7 +139,7 @@ public:
 		// no extra axes for moment array
 	}
 
-	void add_isotropic(const unsigned dir_ind[NDIMS+1], const double E){
+	void add_isotropic(const size_t dir_ind[NDIMS+1], const double E){
 		PRINT_ASSERT(E, >=, 0);
 		PRINT_ASSERT(E, <, INFINITY);
 
@@ -154,7 +154,7 @@ public:
 	}
 	double total() const{
 		double result=0;
-		for(unsigned i=0; i<data.size(); i++)
+		for(size_t i=0; i<data.size(); i++)
 			result += data[i][0];
 		return result;
 	}

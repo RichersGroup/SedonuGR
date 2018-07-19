@@ -50,8 +50,8 @@ public:
 
 	// name
 	std::string name;
-	unsigned ID;
-	unsigned num_species;
+	size_t ID;
+	size_t num_species;
 
 	// lepton number (the particle property, {-1,0,1})
 	int lepton_number;
@@ -67,7 +67,7 @@ public:
 	void init(Lua* lua);
 
 	// set the emissivity, absorption opacity, and scattering opacity
-	virtual void set_eas(const unsigned z_ind, Grid* grid) const = 0;
+	virtual void set_eas(const size_t z_ind, Grid* grid) const = 0;
 	virtual void get_annihil_kernels(const double rho, const double T, const double Ye, const Axis& nuAxis, vector< vector< vector<double> > >& phi) const;
 };
 

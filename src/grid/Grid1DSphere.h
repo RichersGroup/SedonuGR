@@ -59,7 +59,7 @@ public:
 	double zone_lab_3volume       (int z_ind                                               ) const;
 	double zone_min_length        (int z_ind                                               ) const;
 	Tuple<double,NDIMS> zone_coordinates(int z_ind                              ) const;
-	Tuple<unsigned,NDIMS> zone_directional_indices (int z_ind) const;
+	Tuple<size_t,NDIMS> zone_directional_indices (int z_ind) const;
 	Tuple<double,4> sample_in_zone (int z_ind, ThreadRNG* rangen                ) const;
 	Tuple<double,3> interpolate_fluid_velocity(const EinsteinHelper& eh               ) const;
 	void symmetry_boundaries      (EinsteinHelper *eh                                            ) const;

@@ -138,7 +138,7 @@ class ATOMIC : public std::atomic<T>
 //=======//
 // TUPLE //
 //=======//
-template<typename T, unsigned len>
+template<typename T, size_t len>
 class Tuple : public std::array<T,len>{
 public:
 
@@ -152,20 +152,20 @@ public:
 		for(size_t i=0; i<len; i++) this->operator[](i) = in[i];
 	}
 
-  inline unsigned int size() const{return len;}
+  inline size_t size() const{return len;}
 
   template<typename Tin>
   Tuple<T,len>& operator=(const Tuple<Tin,len>& input){
-	  for(unsigned i=0; i<len; i++) this->operator[](i) = input[i];
+	  for(size_t i=0; i<len; i++) this->operator[](i) = input[i];
 	  return *this;
   }
   Tuple<T,len>& operator=(const double input){
-	  for(unsigned i=0; i<len; i++) this->operator[](i) = input;
+	  for(size_t i=0; i<len; i++) this->operator[](i) = input;
 	  return *this;
   }
   const Tuple<T,len> operator*(const double scale) const{
 	  Tuple<T,len> result;// = *this;
-	  for(unsigned i=0; i<len; i++) result[i] = this->operator[](i) * scale;
+	  for(size_t i=0; i<len; i++) result[i] = this->operator[](i) * scale;
 	  return result;
   }
   const Tuple<T,len> operator/(const double scale) const{
@@ -175,13 +175,13 @@ public:
   template<typename Tin>
   const Tuple<T,len> operator+(const Tuple<Tin,len>& input) const{
 	  Tuple<T,len> result;// = *this;
-	  for(unsigned i=0; i<len; i++) result[i] = this->operator[](i) + input[i];
+	  for(size_t i=0; i<len; i++) result[i] = this->operator[](i) + input[i];
 	  return result;
   }
   template<typename Tin>
   const Tuple<T,len> operator-(const Tuple<Tin,len>& input) const{
 	  Tuple<T,len> result;// = *this;
-	  for(unsigned i=0; i<len; i++) result[i] = this->operator[](i) - input[i];
+	  for(size_t i=0; i<len; i++) result[i] = this->operator[](i) - input[i];
 	  return result;
   }
   template<typename Tin>
@@ -194,20 +194,20 @@ public:
   template<typename Tin>
   bool operator==(const Tuple<Tin,len>& input){
 	  bool isequal = true;
-	  for(unsigned i=0; i<len; i++) isequal = isequal && (this->operator[](i) == input[i]);
+	  for(size_t i=0; i<len; i++) isequal = isequal && (this->operator[](i) == input[i]);
 	  return isequal;
   }
 };
 
-template<typename T, unsigned n>
+template<typename T, size_t n>
 inline std::ostream& operator<<(std::ostream& out, const Tuple<T,n>& tuple){
 	out << "[ ";
-	for(unsigned i=0; i<n; i++) out << tuple[n] << " ";
+	for(size_t i=0; i<n; i++) out << tuple[n] << " ";
 	out << "]";
     return out;
 }
 
-template<unsigned n>
+template<size_t n>
 inline double radius(const Tuple<double,n>& x){
 	PRINT_ASSERT(n,>=,3);
 	return sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);

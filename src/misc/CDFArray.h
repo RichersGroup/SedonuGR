@@ -80,7 +80,7 @@ public:
 	int    get_index(const double z) const;    // sample index from the CDF, when passed a random #
 	void   print() const;
 	void   wipe();
-	unsigned size() const;
+	size_t size() const;
 
 };
 

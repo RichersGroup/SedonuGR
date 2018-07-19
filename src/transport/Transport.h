@@ -51,7 +51,7 @@ protected:
 	int MPI_nprocs;
 	int MPI_myID;
 	void sum_to_proc0();
-	std::vector<unsigned> my_zone_end;
+	std::vector<size_t> my_zone_end;
 
 	// subroutine for calculating timescales
 	void calculate_annihilation();
@@ -64,8 +64,8 @@ protected:
 	void emit_zones_by_bin();
 
 	// what kind of particle to create?
-	Particle create_surface_particle(const double Ep, const unsigned int s, const unsigned int g);
-	Particle create_thermal_particle(const int zone_index, const double weight, const unsigned int s, const unsigned int g);
+	Particle create_surface_particle(const double Ep, const size_t s, const size_t g);
+	Particle create_thermal_particle(const int zone_index, const double weight, const size_t s, const size_t g);
 
 	// propagate the particles
 	void propagate_particles();

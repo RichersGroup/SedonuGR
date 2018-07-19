@@ -34,7 +34,7 @@ public:
 	double grid_coords[NDIMS+1];
 	double absopac, scatopac;
 	double ds_com;
-	unsigned dir_ind[NDIMS+1]; // spatial, nu_in
+	size_t dir_ind[NDIMS+1]; // spatial, nu_in
 	int z_ind, eas_ind;   // direct access indices
 
  EinsteinHelper() :
@@ -56,7 +56,7 @@ public:
 
 	void set_kup_tet(const Tuple<double,4>& kup_tet_in){
 		PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet_in,kup_tet_in)/(kup_tet_in[3]*kup_tet_in[3]),<,TINY);
-		for(unsigned i=0; i<4; i++) kup_tet[i] = kup_tet_in[i];
+		for(size_t i=0; i<4; i++) kup_tet[i] = kup_tet_in[i];
 		kup = tetrad_to_coord(kup_tet);
 		g.normalize_null_preserveupt(kup);
 		PRINT_ASSERT(g.dot<4>(kup,kup)/(kup[3]*kup[3]),<,TINY);
@@ -88,7 +88,7 @@ public:
 		u[3] = W / (DO_GR ? g.alpha : 1.0);
 		PRINT_ASSERT(u[3],>,0);
 		PRINT_ASSERT(u[3],<,INFINITY);
-		for(unsigned i=0; i<3; i++){
+		for(size_t i=0; i<3; i++){
 			u[i] = W*vdimless[i];
 			if(DO_GR) u[i] -= W/g.alpha * g.betaup[i];
 		}
@@ -192,17 +192,17 @@ public:
 		return kup_coord;
 	}
 
-	template<unsigned n>
+	template<size_t n>
 	double dot_tetrad(const Tuple<double,4>& x1, const Tuple<double,4>& x2){
 		double result = 0;
-		for(unsigned i=0; i<3; i++) result += x1[n]*x2[n];
+		for(size_t i=0; i<3; i++) result += x1[n]*x2[n];
 		if(n==4) result -= x1[2]*x2[3];
 		return result;
 	}
 
 	Particle get_Particle() const{
 		Particle pout;
-		for(unsigned i=0; i<4; i++){
+		for(size_t i=0; i<4; i++){
 			pout.xup[i] = xup[i];
 			pout.kup[i] = kup[i];
 		}
@@ -212,7 +212,7 @@ public:
 		return pout;
 	}
 	void set_Particle(const Particle& pin){
-		for(unsigned i=0; i<4; i++){
+		for(size_t i=0; i<4; i++){
 			xup[i] = pin.xup[i];
 			kup[i] = pin.kup[i];
 		}

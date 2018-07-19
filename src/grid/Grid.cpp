@@ -64,7 +64,7 @@ void Grid::init(Lua* lua, Transport* insim)
 
 	// read the model file or fill in custom model
 	read_model_file(lua);
-	for(unsigned i=0; i<rho.size(); i++){
+	for(size_t i=0; i<rho.size(); i++){
 		// modify problematic fluid quantities
 		if(rho[i] > sim->rho_max){
 			if(sim->verbose) cout << "WARNING: resetting rho["<<i<<"] from "<<rho[i]<<" to "<<sim->rho_max<<endl;
@@ -110,7 +110,7 @@ void Grid::init(Lua* lua, Transport* insim)
 	double Yebar           = 0.0;
 	int do_visc = lua->scalar<int>("do_visc");
     #pragma omp parallel for reduction(+:total_rest_mass,total_KE,total_TE,total_hvis,Tbar,Yebar)
-	for(unsigned z_ind=0;z_ind<rho.size();z_ind++){
+	for(size_t z_ind=0;z_ind<rho.size();z_ind++){
 		// calculate cell rest mass
 		double rest_mass   = zone_rest_mass(z_ind);
 
@@ -184,7 +184,7 @@ void Grid::init(Lua* lua, Transport* insim)
     vector<double> bintops = vector<double>(0);
     distribution.resize(insim->species_list.size());
 
-    for(unsigned s=0; s<insim->species_list.size(); s++){
+    for(size_t s=0; s<insim->species_list.size(); s++){
 
     	//-- POLAR SPECTRUM -----------------
     	if(distribution_type == "Polar"){
@@ -281,7 +281,7 @@ void Grid::init(Lua* lua, Transport* insim)
 	l_emit.set_axes(axes);
 
 	axes.push_back(nu_grid_axis);
-	for(unsigned s=0; s<sim->species_list.size(); s++){
+	for(size_t s=0; s<sim->species_list.size(); s++){
 		BB[s].set_axes(axes);
 		abs_opac[s].set_axes(axes);
 		scat_opac[s].set_axes(axes);
@@ -302,13 +302,13 @@ void Grid::init(Lua* lua, Transport* insim)
 	}
 
 	if(sim->use_scattering_kernels==1){
-		for(unsigned s=0; s<sim->species_list.size(); s++){
+		for(size_t s=0; s<sim->species_list.size(); s++){
 			partial_scat_opac[s].resize(nu_grid_axis.size());
-			for(unsigned igout=0; igout<nu_grid_axis.size(); igout++)
+			for(size_t igout=0; igout<nu_grid_axis.size(); igout++)
 				partial_scat_opac[s][igout].set_axes(axes);
 		}
 		axes.push_back(nu_grid_axis);
-		for(unsigned s=0; s<sim->species_list.size(); s++)
+		for(size_t s=0; s<sim->species_list.size(); s++)
 			scattering_delta[s].set_axes(axes);
 	}
 }
@@ -345,7 +345,7 @@ void Grid::write_zones(const int iw)
 		lapse.write_HDF5(file,"lapse");
 	}
 	if(do_annihilation>0) fourforce_annihil.write_HDF5(file,"annihilation_4force(erg|ccm|s,tet)");
-	for(unsigned s=0; s<distribution.size(); s++){
+	for(size_t s=0; s<distribution.size(); s++){
 		distribution[s]->write_hdf5_data(file, "distribution"+to_string(s)+"(erg|ccm,tet)");
 		spectrum[s].write_hdf5_data(file,"spectrum"+to_string(s)+"(erg|s)");
 	}
@@ -369,7 +369,7 @@ double Grid::zone_com_3volume(const int z_ind) const{
 double Grid::total_rest_mass() const{
 	double mass = 0;
 	#pragma omp parallel for reduction(+:mass)
-	for(unsigned z_ind=0; z_ind<rho.size(); z_ind++) mass += zone_rest_mass(z_ind);
+	for(size_t z_ind=0; z_ind<rho.size(); z_ind++) mass += zone_rest_mass(z_ind);
 	return mass;
 }
 

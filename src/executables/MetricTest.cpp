@@ -148,7 +148,7 @@ int main(){
 	g.gammalow.data[ixy] = 0;
 	g.gammalow.data[ixz] = 0;
 	g.gammalow.data[iyz] = 0;
-	for(unsigned i=0; i<3; i++) g.betaup[i] = 0;
+	for(size_t i=0; i<3; i++) g.betaup[i] = 0;
 	g.alpha = 1.0;
 	g.update();
 	Tuple<double,4> kup4;
@@ -173,7 +173,7 @@ int main(){
 	print_test(dotp,-4.);
 
 	Tuple<double,4> tmp;
-	for(unsigned i=0; i<4; i++) tmp[i] = kup4[i];
+	for(size_t i=0; i<4; i++) tmp[i] = kup4[i];
 	g.normalize(tmp);
 	cout << " * norm[0]=";
 	print_test(tmp[0],0.);
@@ -184,7 +184,7 @@ int main(){
 	cout << " * norm[3]=";
 	print_test(tmp[3],3./2.);
 
-	for(unsigned i=0; i<4; i++) tmp[i] = kup4[i];
+	for(size_t i=0; i<4; i++) tmp[i] = kup4[i];
 	g.normalize_null_changeupt(tmp);
 	cout << " * nullnorm[0]=";
 	print_test(tmp[0],kup4[0]);
@@ -265,7 +265,7 @@ int main(){
 	cout << " * kup4.kup4=";
 	print_test(dotp,2.06);
 
-	for(unsigned i=0; i<4; i++) tmp[i] = kup4[i];
+	for(size_t i=0; i<4; i++) tmp[i] = kup4[i];
 	g.normalize(tmp);
 	cout << " * norm[0]=";
 	print_test(tmp[0],0./sqrt(dotp));
@@ -276,22 +276,22 @@ int main(){
 	cout << " * norm[3]=";
 	print_test(tmp[3],3./sqrt(dotp));
 
-	for(unsigned i=0; i<4; i++) tmp[i] = kup4[i];
+	for(size_t i=0; i<4; i++) tmp[i] = kup4[i];
 	g.normalize_null_changeupt(tmp);
 	dotp = g.dot<4>(tmp,tmp);
 	cout << " * null.null=";
 	print_test(dotp,0);
 	cout << "{ ";
-	for(unsigned i=0; i<4; i++) cout << tmp[i] << " ";
+	for(size_t i=0; i<4; i++) cout << tmp[i] << " ";
 	cout << "}" << endl;
 
-	for(unsigned i=0; i<4; i++) tmp[i] = kup4[i];
+	for(size_t i=0; i<4; i++) tmp[i] = kup4[i];
 	g.normalize_null_preserveupt(tmp);
 	dotp = g.dot<4>(tmp,tmp);
 	cout << " * null.null=";
 	print_test(dotp,0);
 	cout << "{ ";
-	for(unsigned i=0; i<4; i++) cout << tmp[i] << " ";
+	for(size_t i=0; i<4; i++) cout << tmp[i] << " ";
 	cout << "}" << endl;
 
 	return 0;

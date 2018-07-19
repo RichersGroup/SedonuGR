@@ -140,7 +140,7 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 	}
 	for(int itheta=ntheta-1; itheta>=0; itheta--) // Hiroki's theta is backwards
 		for(int ir=0; ir<nr; ir++){
-			unsigned z_ind = zone_index(ir,itheta);
+			size_t z_ind = zone_index(ir,itheta);
 			double trash;
 
 			// read the contents of a single line
@@ -233,7 +233,7 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	// read the data
 	vector<pair_t> integer_data(dim);
 	dataset.read(&(integer_data[0]),mempair_t);
-	for(unsigned i=0; i<dim; i++) integer_data[i].name[stringsize-1] = '\0';
+	for(size_t i=0; i<dim; i++) integer_data[i].name[stringsize-1] = '\0';
 	PRINT_ASSERT(trim(string(integer_data[0].name)),==,string("nxb")); // make sure we're looking at the right fields
 	PRINT_ASSERT(trim(string(integer_data[1].name)),==,string("nyb"));
 	PRINT_ASSERT(trim(string(integer_data[2].name)),==,string("nzb"));
@@ -386,9 +386,9 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	const double gamma_max = 2.0;
 	const double speed_max = pc::c * sqrt(1.0 - 1.0/gamma_max);
     #pragma omp parallel for collapse(3)
-	for(unsigned proc=0; proc<dims[0]; proc++)
-		for(unsigned jb=0; jb<dims[2]; jb++)
-			for(unsigned ib=0; ib<dims[3]; ib++){
+	for(size_t proc=0; proc<dims[0]; proc++)
+		for(size_t jb=0; jb<dims[2]; jb++)
+			for(size_t ib=0; ib<dims[3]; ib++){
 				// indices. moving by one proc in the x direction increases proc by 1
 				int i_global = (proc%iprocs)*nxb + ib;
 				int j_global = (proc/iprocs)*nyb + jb;
@@ -435,9 +435,9 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 		vector<double> z_ncfn(rho.size());
 		vector<double> z_nprs(rho.size());
 		vector<double> z_eint(rho.size());
-		for(unsigned proc=0; proc<dims[0]; proc++)
-			for(unsigned jb=0; jb<dims[2]; jb++)
-				for(unsigned ib=0; ib<dims[3]; ib++){
+		for(size_t proc=0; proc<dims[0]; proc++)
+			for(size_t jb=0; jb<dims[2]; jb++)
+				for(size_t ib=0; ib<dims[3]; ib++){
 					// indices. moving by one proc in the x direction increases proc by 1
 					int i_global = (proc%iprocs)*nxb + ib;
 					int j_global = (proc/iprocs)*nyb + jb;
@@ -462,7 +462,7 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 		outf << setw(width) << "hvis(erg/g/s)";
 		outf << setw(width) << "eint(erg/g)";
 		outf << setw(width) << endl;
-		for(unsigned z_ind=0; z_ind<rho.size(); z_ind++){
+		for(size_t z_ind=0; z_ind<rho.size(); z_ind++){
 			// zone position
 			Tuple<double,NDIMS> r = zone_coordinates(z_ind);
 
@@ -489,9 +489,9 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 		vector<double> z_neut(rho.size());
 		vector<double> z_prot(rho.size());
 		vector<double> z_alfa(rho.size());
-		for(unsigned proc=0; proc<dims[0]; proc++)
-			for(unsigned jb=0; jb<dims[2]; jb++)
-				for(unsigned ib=0; ib<dims[3]; ib++){
+		for(size_t proc=0; proc<dims[0]; proc++)
+			for(size_t jb=0; jb<dims[2]; jb++)
+				for(size_t ib=0; ib<dims[3]; ib++){
 					// indices. moving by one proc in the x direction increases proc by 1
 					int i_global = (proc%iprocs)*nxb + ib;
 					int j_global = (proc/iprocs)*nyb + jb;
@@ -518,7 +518,7 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 		outf << setw(width) << "data_Ye";
 		outf << setw(width) << "T(MeV)";
 		outf << endl;
-		for(unsigned z_ind=0; z_ind<rho.size(); z_ind++){
+		for(size_t z_ind=0; z_ind<rho.size(); z_ind++){
 			// zone position
 			Tuple<double,NDIMS> r = zone_coordinates(z_ind);
 
@@ -598,9 +598,9 @@ double Grid2DSphere::zone_lab_3volume(int z_ind) const
 	PRINT_ASSERT(DO_GR,==,false); // need to include sqrt(detg3)
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
-	const unsigned i = dir_ind[0];
-	const unsigned j = dir_ind[1];
+	Tuple<size_t,NDIMS> dir_ind = zone_directional_indices(z_ind);
+	const size_t i = dir_ind[0];
+	const size_t j = dir_ind[1];
 	const double r0     =     xAxes[0].bottom(i);
 	const double theta0 = xAxes[1].bottom(j);
 	const double r1     =     xAxes[0].top[i];
@@ -651,7 +651,7 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 	const double ur = radius(eh.u);
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector
-		for(unsigned i=0; i<3; i++) ktest[i] *= sgn;
+		for(size_t i=0; i<3; i++) ktest[i] *= sgn;
 		eh.g.normalize_null_preservedownt(ktest);
 		const double kr = radius(ktest);
 
@@ -675,7 +675,7 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 	double theta = Grid2DSphere_theta(eh.xup);
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector
-		for(unsigned i=0; i<3; i++) ktest[i] *= sgn;
+		for(size_t i=0; i<3; i++) ktest[i] *= sgn;
 		eh.g.normalize_null_preservedownt(ktest);
 		double ktheta = radius(ktest2);
 
@@ -700,9 +700,9 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 //------------------------------------------------------------
 double Grid2DSphere::zone_min_length(int z_ind) const
 {
-	Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
-	const unsigned i = dir_ind[0];
-	const unsigned j = dir_ind[1];
+	Tuple<size_t,NDIMS> dir_ind = zone_directional_indices(z_ind);
+	const size_t i = dir_ind[0];
+	const size_t j = dir_ind[1];
 
 	// the 'minimum lengts' are just approximate.
 	const double r_len     = (    xAxes[0].top[i] -     xAxes[0].bottom(i));
@@ -720,9 +720,9 @@ Tuple<double,NDIMS> Grid2DSphere::zone_coordinates(int z_ind) const
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)(xAxes[0].size()*xAxes[1].size()));
 
-	Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
-	const unsigned i = dir_ind[0];
-	const unsigned j = dir_ind[1];
+	Tuple<size_t,NDIMS> dir_ind = zone_directional_indices(z_ind);
+	const size_t i = dir_ind[0];
+	const size_t j = dir_ind[1];
 
 	const double r0     =     xAxes[0].bottom(i);
 	const double theta0 = xAxes[1].bottom(j);
@@ -736,11 +736,11 @@ Tuple<double,NDIMS> Grid2DSphere::zone_coordinates(int z_ind) const
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-Tuple<unsigned,NDIMS> Grid2DSphere::zone_directional_indices(int z_ind) const
+Tuple<size_t,NDIMS> Grid2DSphere::zone_directional_indices(int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	Tuple<unsigned,NDIMS> dir_ind;
+	Tuple<size_t,NDIMS> dir_ind;
 	dir_ind[0] = z_ind / xAxes[1].size(); // r index
 	dir_ind[1] = z_ind % xAxes[1].size(); // theta index
 	PRINT_ASSERT((int)dir_ind[0],>=,0);
@@ -765,7 +765,7 @@ Tuple<double,4> Grid2DSphere::sample_in_zone(int z_ind, ThreadRNG* rangen) const
 	rand[2] = rangen->uniform();
 
 	// radius and theta indices
-	Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
+	Tuple<size_t,NDIMS> dir_ind = zone_directional_indices(z_ind);
 	int i = dir_ind[0];
 	int j = dir_ind[1];
 
@@ -824,7 +824,7 @@ Tuple<double,3> Grid2DSphere::interpolate_fluid_velocity(const EinsteinHelper& e
 	double tmp_vphi   = vphi.interpolate(eh.icube_vol);
 
 	Tuple<double,3> x3;
-	for(unsigned i=0; i<3; i++) x3[i] = eh.xup[i];
+	for(size_t i=0; i<3; i++) x3[i] = eh.xup[i];
 	Tuple<double,3> vr_cart = x3 * tmp_vr / r;
 
 	Tuple<double,3> vtheta_cart;
@@ -854,7 +854,7 @@ double Grid2DSphere::zone_radius(int z_ind) const{
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 
 	// radius and theta indices
-	Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
+	Tuple<size_t,NDIMS> dir_ind = zone_directional_indices(z_ind);
 	int i = dir_ind[0];
 
 	return xAxes[0].top[i];

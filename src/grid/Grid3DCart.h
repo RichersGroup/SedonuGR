@@ -65,8 +65,8 @@ public:
 	void read_model_file(Lua* lua);
 	void read_THC_file(Lua* lua);
 
-	double zone_left_boundary(const unsigned dir, const unsigned dir_ind) const;
-	double zone_right_boundary(const unsigned dir, const unsigned dir_ind) const;
+	double zone_left_boundary(const size_t dir, const size_t dir_ind) const;
+	double zone_right_boundary(const size_t dir, const size_t dir_ind) const;
 
 	// required functions
 	int    zone_index               (const Tuple<double,4>& x                            ) const;
@@ -74,7 +74,7 @@ public:
 	double zone_lab_3volume         (int z_ind                                               ) const;
 	double zone_min_length          (int z_ind                                               ) const;
 	Tuple<double,NDIMS> zone_coordinates(int z_ind                              ) const;
-	Tuple<unsigned,NDIMS> zone_directional_indices (int z_ind) const;
+	Tuple<size_t,NDIMS> zone_directional_indices (int z_ind) const;
 	Tuple<double,4> sample_in_zone (int z_ind, ThreadRNG* rangen                ) const;
 	Tuple<double,3> interpolate_fluid_velocity(const EinsteinHelper& eh               ) const;
 	void   symmetry_boundaries      (EinsteinHelper *eh                                            ) const;

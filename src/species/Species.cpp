@@ -103,16 +103,16 @@ void Species::get_annihil_kernels(const double /*rho*/, const double /*T*/, cons
 	double C3mec4 = C3*mec2*mec2;
 	double C1pC2_3 = C1pC2/3.0;
 	double mec22 = mec2*mec2;
-	unsigned nnu = nuAxis.size();
+	size_t nnu = nuAxis.size();
 
 	phi.resize(3);
-	for(unsigned k=0; k<3; k++) phi[k].resize(nnu);
+	for(size_t k=0; k<3; k++) phi[k].resize(nnu);
 
-	for(unsigned inu=0; inu<nnu; inu++){
+	for(size_t inu=0; inu<nnu; inu++){
 		double avg_e = nuAxis.mid[inu]*pc::h; // erg
-		for(unsigned k=0; k<3; k++) phi[k][inu].resize(nnu);
+		for(size_t k=0; k<3; k++) phi[k][inu].resize(nnu);
 
-		for(unsigned inubar=0; inubar<nnu; inubar++){
+		for(size_t inubar=0; inubar<nnu; inubar++){
 			double avg_ebar = nuAxis.mid[inubar]*pc::h; // erg
 
 			double eebar = avg_e * avg_ebar;

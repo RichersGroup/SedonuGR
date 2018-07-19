@@ -50,7 +50,7 @@ public:
 	double d_boundary(const EinsteinHelper& eh) const;
 	double d_randomwalk(const EinsteinHelper& eh) const;
 	Tuple<double,NDIMS> zone_coordinates(int z_ind                              ) const;
-	Tuple<unsigned,NDIMS> zone_directional_indices  (int z_ind) const;
+	Tuple<size_t,NDIMS> zone_directional_indices  (int z_ind) const;
 	Tuple<double,4> sample_in_zone (int z_ind, ThreadRNG* rangen                ) const;
 	Tuple<double,3> interpolate_fluid_velocity(const EinsteinHelper& eh               ) const;
 	void symmetry_boundaries       (EinsteinHelper *eh                                ) const;

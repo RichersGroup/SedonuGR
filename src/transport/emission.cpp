@@ -45,9 +45,9 @@ void Transport::emit_particles()
 	if(n_emit_zones_per_bin>0) emit_zones_by_bin();
 
 	// sanity checks
-	for(unsigned i=0; i<particles.size(); i++){
+	for(size_t i=0; i<particles.size(); i++){
 		if(particles[i].fate==moving){
-			for(unsigned j=0; j<4; j++){
+			for(size_t j=0; j<4; j++){
 				PRINT_ASSERT(particles[i].xup[j],==,particles[i].xup[j]);
 				PRINT_ASSERT(particles[i].kup[j],==,particles[i].kup[j]);
 			}
@@ -65,21 +65,21 @@ void Transport::emit_inner_source_by_bin(){
 	int size_before = particles.size();
 	double weight = 1./((double)n_emit_core_per_bin);
 
-	const unsigned ns = species_list.size();
-	const unsigned ng = grid->nu_grid_axis.size();
-	const unsigned n_emit = ns*ng*n_emit_core_per_bin;
-	unsigned n_emit_this_rank = n_emit / MPI_nprocs;
+	const size_t ns = species_list.size();
+	const size_t ng = grid->nu_grid_axis.size();
+	const size_t n_emit = ns*ng*n_emit_core_per_bin;
+	size_t n_emit_this_rank = n_emit / MPI_nprocs;
 	if((int)(n_emit % MPI_nprocs) > MPI_myID) n_emit_this_rank++;
 	particles.resize(size_before + n_emit_this_rank);
 
-	unsigned n_created = 0;
+	size_t n_created = 0;
 	#pragma omp parallel for schedule(guided) collapse(3) reduction(+:n_created)
-	for(unsigned s=0; s<ns; s++){
-		for(unsigned g=0; g<ng; g++){
+	for(size_t s=0; s<ns; s++){
+		for(size_t g=0; g<ng; g++){
 			for(int k=0; k<n_emit_core_per_bin; k++){
-				unsigned global_id = k + n_emit_core_per_bin*g + n_emit_core_per_bin*ng*s;
+				size_t global_id = k + n_emit_core_per_bin*g + n_emit_core_per_bin*ng*s;
 				if((int)(global_id%MPI_nprocs) == MPI_myID){
-					unsigned local_index = size_before + global_id/MPI_nprocs;
+					size_t local_index = size_before + global_id/MPI_nprocs;
 					particles[local_index] = create_surface_particle(weight,s,g);
 					if(particles[local_index].fate == moving) n_created++;
 				}
@@ -99,28 +99,28 @@ void Transport::emit_zones_by_bin(){
 	int size_before = particles.size();
 	double weight = 1./((double)n_emit_zones_per_bin);
 
-	const unsigned ns = species_list.size();
-	const unsigned ng = grid->nu_grid_axis.size();
-	const unsigned nz = grid->rho.size();
-	const unsigned n_emit = ns*ng*nz*n_emit_zones_per_bin;
-	unsigned n_emit_this_rank = n_emit / MPI_nprocs;
+	const size_t ns = species_list.size();
+	const size_t ng = grid->nu_grid_axis.size();
+	const size_t nz = grid->rho.size();
+	const size_t n_emit = ns*ng*nz*n_emit_zones_per_bin;
+	size_t n_emit_this_rank = n_emit / MPI_nprocs;
 	if((int)(n_emit % MPI_nprocs) > MPI_myID) n_emit_this_rank++;
 	particles.resize(size_before + n_emit_this_rank);
 
-	unsigned n_created = 0;
+	size_t n_created = 0;
 	#pragma omp parallel for reduction(+:n_created) schedule(guided) collapse(4)
-	for (unsigned z_ind=0; z_ind<nz; z_ind++){
-		for(unsigned s=0; s<ns; s++){
-			for(unsigned g=0; g<ng; g++){
+	for (size_t z_ind=0; z_ind<nz; z_ind++){
+		for(size_t s=0; s<ns; s++){
+			for(size_t g=0; g<ng; g++){
 				for(int k=0; k<n_emit_zones_per_bin; k++){
 
-					unsigned global_id = k + n_emit_zones_per_bin*g + n_emit_zones_per_bin*ng*s + n_emit_zones_per_bin*ng*ns*z_ind;
+					size_t global_id = k + n_emit_zones_per_bin*g + n_emit_zones_per_bin*ng*s + n_emit_zones_per_bin*ng*ns*z_ind;
 					if((int)(global_id%MPI_nprocs) == MPI_myID){
-						unsigned local_index = size_before + global_id/MPI_nprocs;
+						size_t local_index = size_before + global_id/MPI_nprocs;
 						particles[local_index] = create_thermal_particle(z_ind,weight,s,g);
 						if(particles[local_index].fate == moving){
 							n_created++;
-							for(unsigned d=0; d<4; d++) PRINT_ASSERT(particles[local_index].xup[d],==,particles[local_index].xup[d]);
+							for(size_t d=0; d<4; d++) PRINT_ASSERT(particles[local_index].xup[d],==,particles[local_index].xup[d]);
 						}
 					}
 
@@ -130,7 +130,7 @@ void Transport::emit_zones_by_bin(){
 	}
 	  
 	double total_neutrinos = 0;
-	for(unsigned i=0; i<species_list.size(); i++) total_neutrinos += N_net_emit[i];
+	for(size_t i=0; i<species_list.size(); i++) total_neutrinos += N_net_emit[i];
 	if(verbose) cout << "#   emit_zones_by_bin() created " << n_created << " particles on rank 0 ("
 			<< total_neutrinos << " neutrinos) ("
 			<< n_emit_this_rank-n_created << " rouletted immediately)" << endl;
@@ -143,7 +143,7 @@ void Transport::emit_zones_by_bin(){
 // Useful for thermal radiation emitted all througout
 // the grid
 //------------------------------------------------------------
-Particle Transport::create_thermal_particle(const int z_ind,const double weight, const unsigned s, const unsigned g)
+Particle Transport::create_thermal_particle(const int z_ind,const double weight, const size_t s, const size_t g)
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)grid->rho.size());
@@ -194,7 +194,7 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 		// count up the emitted energy in each zone
 		N_net_emit[eh.s] += eh.N;
 		grid->l_emit[z_ind] -= eh.N * species_list[eh.s]->lepton_number;
-		for(unsigned i=0; i<4; i++){
+		for(size_t i=0; i<4; i++){
 			grid->fourforce_emit[z_ind][i] -= eh.N * kup_tet[i];
 		}
 	}
@@ -213,7 +213,7 @@ bool reject_direction(const EinsteinHelper* eh, ThreadRNG* rangen){
 	double costheta = xdotk / sqrt(xdotx * kdotk);
 	return (rangen->uniform() > costheta);
 }
-Particle Transport::create_surface_particle(const double weight, const unsigned int s, const unsigned int g)
+Particle Transport::create_surface_particle(const double weight, const size_t s, const size_t g)
 {
 	PRINT_ASSERT(weight,>,0);
 	PRINT_ASSERT(weight,!=,INFINITY);

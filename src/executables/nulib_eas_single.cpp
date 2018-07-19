@@ -76,7 +76,7 @@ int main(int argc, char* argv[]){
 	cout << "# of T points: "   << T_grid.size()        << " (" <<   T_grid[0] << "-" <<   T_grid[  T_grid.size()-1] << ")" << endl;
 
 
-	unsigned ngroups = nu_grid.size();
+	size_t ngroups = nu_grid.size();
 
 	ScalarMultiDArray<double,1> BB;        // #/s/cm^2/sr/(Hz^3/3)
 	ScalarMultiDArray<double,1> abs_opac;  // 1/cm
@@ -99,17 +99,17 @@ int main(int argc, char* argv[]){
 	nulib_get_eas_arrays(rho, T, ye, nulibID,
 			tmp_BB, tmp_absopac, tmp_scatopac, tmp_phi0, tmp_delta);
 
-	unsigned dir_ind[2];
-	for(unsigned ig=0; ig<ngroups; ig++){
+	size_t dir_ind[2];
+	for(size_t ig=0; ig<ngroups; ig++){
 		dir_ind[0] = ig;
-		unsigned global_index = abs_opac.direct_index(dir_ind);
+		size_t global_index = abs_opac.direct_index(dir_ind);
 		abs_opac[global_index] = tmp_absopac[ig];
 		scat_opac[global_index] = tmp_scatopac[ig];
 		BB[global_index] = tmp_BB[ig]; // erg/cm^2/s/sr - convert in next line
 		BB[global_index] /= pc::h * pow(nu_grid.mid[ig],3) * nu_grid.delta(ig); // #/cm^2/s/sr/(Hz^3/3)
 
 		if(scattering_delta.size()>0)
-			for(unsigned og=0; og<ngroups; og++){
+			for(size_t og=0; og<ngroups; og++){
 				dir_ind[1] = og;
 				global_index = scattering_delta.direct_index(dir_ind);
 				scattering_delta[nulibID] = tmp_delta[ig][og];
@@ -118,7 +118,7 @@ int main(int argc, char* argv[]){
 	}
 
 	InterpolationCube<1> icube;
-	unsigned nubin = nu_grid.bin(myfreq);
+	size_t nubin = nu_grid.bin(myfreq);
 	BB.set_InterpolationCube(&icube,&myfreq,&nubin);
 	cout << "BB = " << BB.interpolate(icube) << " #/s/cm^2/sr/(Hz^3/3)" << endl;
 	cout << "a = " << abs_opac.interpolate(icube)   << " 1/cm" << endl;

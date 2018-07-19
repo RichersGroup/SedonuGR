@@ -23,19 +23,19 @@ public:
 		this->min = min;
 		this->top = top;
 		this->mid = mid;
-		for(unsigned i=0; i<top.size(); i++){
+		for(size_t i=0; i<top.size(); i++){
 			PRINT_ASSERT(top[i],>,mid[i]);
 			PRINT_ASSERT(mid[i],>, ((i==0) ? min : top[i-1]));
 		}
 	}
-	Axis(const double min, const double max, const unsigned nbins){
+	Axis(const double min, const double max, const size_t nbins){
 		this->min = min;
 		top.resize(nbins);
 		mid.resize(nbins);
 		if(nbins==1) top[0] = max;
 		else{
 			double del = (max-min) / (double)nbins;
-			for(unsigned i=0; i<nbins; i++){
+			for(size_t i=0; i<nbins; i++){
 				top[i] = min + (i+1)*del;
 				mid[i] = min + ((double)i + 0.5)*del;
 			}
@@ -46,7 +46,7 @@ public:
 		min = NaN;
 	}
 
-	unsigned size() const {
+	size_t size() const {
 		PRINT_ASSERT(top.size(),==,mid.size());
 		return top.size();
 	}
@@ -63,16 +63,16 @@ public:
 		}
 	}
 
-	double bottom(const unsigned i) const{
+	double bottom(const size_t i) const{
 		PRINT_ASSERT(i,<,size());
 		return i==0 ? min : top[i-1];
 	}
 
-	double delta(const unsigned i) const{
+	double delta(const size_t i) const{
 		PRINT_ASSERT(i,<,size());
 		return top[i] - bottom(i);
 	}
-	double delta3(const unsigned i) const{
+	double delta3(const size_t i) const{
 		PRINT_ASSERT(i,<,size());
 		return top[i]*top[i]*top[i] - bottom(i)*bottom(i)*bottom(i);
 	}
@@ -92,7 +92,7 @@ public:
 		H5::DataSet dataset = file.createDataSet(dataset_name,H5::PredType::IEEE_F64LE,dataspace);
 		vector<double> tmp(size()+1);
 		tmp[0] = min;
-		for(unsigned i=1; i<size()+1; i++) tmp[i] = top[i-1];
+		for(size_t i=1; i<size()+1; i++) tmp[i] = top[i-1];
 		dataset.write(&tmp[0],H5::PredType::IEEE_F64LE);
 		dataset.close();
 

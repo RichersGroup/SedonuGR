@@ -46,7 +46,7 @@ public:
 	Tuple<double, 4> xup;         // x,y,z,ct position (cm)
 	Tuple<double, 4> kup;         // 4-wavevector (erg) //old definition:(2pi nu/c)
 	double             N;         // total number of neutrinos in packet
-	unsigned           s;         // species number
+	size_t           s;         // species number
 	ParticleFate    fate;
 };
 #endif

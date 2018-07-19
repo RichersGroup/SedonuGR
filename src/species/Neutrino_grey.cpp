@@ -52,17 +52,17 @@ void Neutrino_grey::myInit(Lua* lua)
 //-----------------------------------------------------------------
 // set emissivity, abs. opacity, and scat. opacity in zones
 //-----------------------------------------------------------------
-void Neutrino_grey::set_eas(const unsigned z_ind, Grid* grid) const
+void Neutrino_grey::set_eas(const size_t z_ind, Grid* grid) const
 {
-	unsigned dir_ind[NDIMS+1];
+	size_t dir_ind[NDIMS+1];
 	grid->rho.indices(z_ind,dir_ind);
 
 	PRINT_ASSERT(grey_abs_frac,>=,0);
 	PRINT_ASSERT(grey_abs_frac,<=,1.0);
-	for(unsigned j=0;j<grid->nu_grid_axis.size();j++)
+	for(size_t j=0;j<grid->nu_grid_axis.size();j++)
 	{
 		dir_ind[NDIMS] = j;
-		unsigned global_index = grid->abs_opac[ID].direct_index(dir_ind);
+		size_t global_index = grid->abs_opac[ID].direct_index(dir_ind);
 
 		double nu  = grid->nu_grid_axis.mid[j];        // (Hz)
 		double bb  = Transport::number_blackbody(grid->T[z_ind],0*pc::MeV_to_ergs,nu);

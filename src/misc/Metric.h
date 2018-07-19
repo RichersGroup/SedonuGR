@@ -4,14 +4,14 @@
 #include "global_options.h"
 #include "gsl/gsl_linalg.h"
 
-const unsigned ixx=0,iyy=1,izz=2,ixy=3,ixz=4,iyz=5,itt=6,ixt=7,iyt=8,izt=9;
+const size_t ixx=0,iyy=1,izz=2,ixy=3,ixz=4,iyz=5,itt=6,ixt=7,iyt=8,izt=9;
 
 class ThreeMetric{
 // both indices are down
 public:
 	Tuple<double,6> data;
 
-	static int index(const unsigned i, const unsigned j){
+	static int index(const size_t i, const size_t j){
 		PRINT_ASSERT(i,<,3);
 		PRINT_ASSERT(j,<,3);
 		switch( (j+1)*(i+1) ){
@@ -50,8 +50,8 @@ public:
 	}
 	ThreeMetric inverse() const{
 		gsl_matrix* g = gsl_matrix_alloc(3,3);
-		for(unsigned i=0; i<3; i++)
-		  for(unsigned j=0; j<3; j++)
+		for(size_t i=0; i<3; i++)
+		  for(size_t j=0; j<3; j++)
 		    gsl_matrix_set(g,i,j, data[index(i,j)]);
 
 		// invert and store
@@ -71,7 +71,7 @@ public:
 		return output;
 	}
 
-	inline double get(const unsigned i, const unsigned j) const{
+	inline double get(const size_t i, const size_t j) const{
 		return data[index(i,j)];
 	}
 };
@@ -87,7 +87,7 @@ public:
 
  Metric() : betalow(NaN), betaup(NaN), gtt(NaN), alpha(NaN){}
 
-	static int index(const unsigned i, const unsigned j){
+	static int index(const size_t i, const size_t j){
 		PRINT_ASSERT(i,<,4);
 		PRINT_ASSERT(j,<,4);
 		switch( (j+1)*(i+1) ){
@@ -123,13 +123,13 @@ public:
 	  gammaup = gammalow.inverse();
 	}
 
-	double get(const unsigned i, const unsigned j) const{
+	double get(const size_t i, const size_t j) const{
 		if(i==3 and j==3) return gtt;
 		else if(i==3) return betalow[j];
 		else if(j==3) return betalow[i];
 		else return gammalow.get(i,j);
 	}
-	double get_inverse(const unsigned i, const unsigned j) const{
+	double get_inverse(const size_t i, const size_t j) const{
 		PRINT_ASSERT(gammaup.get(0,0),==,gammaup.get(0,0));
 		if(i==3 and j==3) return -1./(alpha*alpha);
 		else if(i==3) return betaup[j]/(alpha*alpha);
@@ -137,52 +137,52 @@ public:
 		else return gammaup.get(i,j) - betaup[i]*betaup[j]/(alpha*alpha);
 	}
 
-	template<unsigned n, unsigned n1>
+	template<size_t n, size_t n1>
 	Tuple<double,n> lower(const Tuple<double,n1>& xup) const{
 		PRINT_ASSERT(n,<=,n1);
 		Tuple<double,n> xdown;
 		if(DO_GR){
-			for(unsigned i=0; i<n; i++){
+			for(size_t i=0; i<n; i++){
 				xdown[i] = 0;
-				for(unsigned j=0; j<n; j++)
+				for(size_t j=0; j<n; j++)
 					xdown[i] += xup[j] * get(i,j);
 			}
 		}
 		else{
-			for(unsigned i=0; i<3; i++) xdown[i] = xup[i];
+			for(size_t i=0; i<3; i++) xdown[i] = xup[i];
 			if(n==4) xdown[3] = -xup[3];
 		}
 		return xdown;
 	}
 
-	template<unsigned n>
+	template<size_t n>
 	Tuple<double,n> raise(const Tuple<double,n>& xdown) const{
 	        Tuple<double,n> xup;
 		if(DO_GR){
-			for(unsigned i=0; i<n; i++){
+			for(size_t i=0; i<n; i++){
 				xup[i] = 0;
-				for(unsigned j=0; j<n; j++)
+				for(size_t j=0; j<n; j++)
 					xup[i] += xdown[j] * get_inverse(i,j);
 			}
 		}
 		else{
-			for(unsigned i=0; i<3; i++) xup[i] = xdown[i];
+			for(size_t i=0; i<3; i++) xup[i] = xdown[i];
 			if(n==4) xup[3] = -xdown[3];
 		}
 		return xup;
 	}
 
-	template<unsigned n, unsigned n1, unsigned n2>
+	template<size_t n, size_t n1, size_t n2>
 	static double contract(const Tuple<double,n1>& xup, const Tuple<double,n2>& xdown){
 		PRINT_ASSERT(n,<=,n1);
 		PRINT_ASSERT(n,<=,n2);
 		double result = 0;
-		for(unsigned i=0; i<n; i++) result += xup[i]*xdown[i];
+		for(size_t i=0; i<n; i++) result += xup[i]*xdown[i];
 		return result;
 	}
 
 	// dot product
-	template<unsigned n, unsigned n1, unsigned n2>
+	template<size_t n, size_t n1, size_t n2>
 	double dot(const Tuple<double,n1>& x1up, const Tuple<double,n2>& x2up) const{
 		PRINT_ASSERT(n,<=,n1);
 		PRINT_ASSERT(n,<=,n2);
@@ -202,7 +202,7 @@ public:
 	// normalize a four vector to have a norm of +/-1
 	void normalize(Tuple<double,4>& x) const{
 		double invnorm = sqrt(fabs(1./dot<4>(x,x)));
-		for(unsigned i=0; i<4; i++) x[i] *= invnorm;
+		for(size_t i=0; i<4; i++) x[i] *= invnorm;
 	}
 
 	// make a vector null
@@ -213,9 +213,9 @@ public:
 			Tuple<double,4> xlow = lower<4>(x);
 			double C = get_inverse(3,3) * xlow[3]*xlow[3];
 			double B=0, A=0;
-			for(unsigned i=0; i<3; i++){
+			for(size_t i=0; i<3; i++){
 				B += 2.*get_inverse(i,3) * xlow[3]*xlow[i];
-				for(unsigned j=0; j<3; j++)
+				for(size_t j=0; j<3; j++)
 					A += get_inverse(i,j) * xlow[i]*xlow[j];
 			}
 
@@ -225,14 +225,14 @@ public:
 			result = 0.5 * (-B + sqrt(B*B - 4.*C));
 			PRINT_ASSERT(result,>,TINY);
 
-			for(unsigned i=0; i<3; i++) xlow[i] *= result;
+			for(size_t i=0; i<3; i++) xlow[i] *= result;
 			x = raise(xlow);
 			PRINT_ASSERT(dot<4>(x,x)/(x[3]*x[3]),<,TINY);
 			PRINT_ASSERT(x[3],>=,0);
 		}
 		else{
 			result = x[3] / sqrt(dot_Minkowski<3>(x,x));
-			for(unsigned i=0; i<3; i++) x[i] *= result;
+			for(size_t i=0; i<3; i++) x[i] *= result;
 		}
 		PRINT_ASSERT(abs(dot<4>(x,x))/(x[3]*x[3]),<,TINY);
 		PRINT_ASSERT(x[3],>=,0);
@@ -247,12 +247,12 @@ public:
 			PRINT_ASSERT(B*B - 4.*C,>=,0);
 			result = 0.5 * (-B + sqrt(B*B - 4.*C));
 
-			for(unsigned i=0; i<3; i++) x[i] *= result;
+			for(size_t i=0; i<3; i++) x[i] *= result;
 			PRINT_ASSERT(dot<4>(x,x)/(x[3]*x[3]),<,TINY);
 		}
 		else{
 			result = x[3] / sqrt(dot_Minkowski<3>(x,x));
-			for(unsigned i=0; i<3; i++) x[i] *= result;
+			for(size_t i=0; i<3; i++) x[i] *= result;
 		}
 		PRINT_ASSERT(abs(dot<4>(x,x))/(x[3]*x[3]),<,TINY);
 	}
@@ -273,29 +273,29 @@ public:
 	}
 
 	// make four vector v orthogonal to four vector v
-	template<unsigned n>
+	template<size_t n>
 	void orthogonalize(Tuple<double,n>& v, const Tuple<double,n>& e) const{
 		double projection = dot<n>(v,e) / dot<n>(e,e);
-		for(unsigned mu=0; mu<n; mu++) v[mu] -= projection * e[mu];
+		for(size_t mu=0; mu<n; mu++) v[mu] -= projection * e[mu];
 	}
 
 	// vector operations
-	template<unsigned s, unsigned n1, unsigned n2>
+	template<size_t s, size_t n1, size_t n2>
 	static double dot_Minkowski(const Tuple<double,n1>& a, const Tuple<double,n2>& b){
 		PRINT_ASSERT(s,<=,n1);
 		PRINT_ASSERT(s,<=,n2);
 		double product = 0;
-		for(unsigned i=0; i<3; i++) product += a[i]*b[i];
+		for(size_t i=0; i<3; i++) product += a[i]*b[i];
 		if(s==4) product -= a[3]*b[3];
 		return product;
 	}
 
 	// normalize a vector
-	template<unsigned s>
+	template<size_t s>
 	static void normalize_Minkowski(Tuple<double,s>& a){
 		double inv_magnitude = 1./sqrt(fabs( dot_Minkowski<s>(a,a) ));
 		PRINT_ASSERT(inv_magnitude,<,INFINITY);
-		for(unsigned i=0; i<s; i++) a[i] *= inv_magnitude;
+		for(size_t i=0; i<s; i++) a[i] *= inv_magnitude;
 	}
 
 	static void normalize_null_Minkowski(Tuple<double,4>& a){
@@ -314,7 +314,7 @@ public:
 	// 3 first index not included
 	Tuple<double, 40> data;
 
-	inline static unsigned index(const unsigned a, const unsigned i, const unsigned j){
+	inline static size_t index(const size_t a, const size_t i, const size_t j){
 		PRINT_ASSERT(a,<=,3);
 		return 10*a + Metric::index(i,j);
 	}
@@ -323,9 +323,9 @@ public:
 
 	Tuple<double,4> contract2(const Tuple<double,4>& kup) const{
 		Tuple<double,4> result = 0;
-		for(unsigned a=0; a<4; a++){
-			for(unsigned i=0; i<4; i++)
-				for(unsigned j=0; j<4; j++)
+		for(size_t a=0; a<4; a++){
+			for(size_t i=0; i<4; i++)
+				for(size_t j=0; j<4; j++)
 					result[a] += data[index(a,i,j)] * kup[i]*kup[j];
 		}
 		return result;

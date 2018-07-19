@@ -44,7 +44,7 @@ public:
 	Neutrino_grey();
 
 	void myInit(Lua* lua);
-	void set_eas(const unsigned z_ind, Grid* grid) const;
+	void set_eas(const size_t z_ind, Grid* grid) const;
 };
 
 #endif

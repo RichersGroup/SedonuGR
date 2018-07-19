@@ -36,17 +36,17 @@
 using namespace std;
 namespace pc = physical_constants;
 
-template<unsigned ndims_spatial>
+template<size_t ndims_spatial>
 class MomentSpectrumArray : public SpectrumArray {
 
 private:
 
 	// helper variables
-	static const unsigned index_range = 3; // index can be 0,1,2
-	static const unsigned nranks = 4;
-	static const unsigned nuGridIndex = ndims_spatial;
-	const unsigned n_independent_elements[4] = {1,3,6,10}; // for a symmetric tensor of rank 0,1,2,3
-	static const unsigned n_total_elements = 1+3+6+10;
+	static const size_t index_range = 3; // index can be 0,1,2
+	static const size_t nranks = 4;
+	static const size_t nuGridIndex = ndims_spatial;
+	const size_t n_independent_elements[4] = {1,3,6,10}; // for a symmetric tensor of rank 0,1,2,3
+	static const size_t n_total_elements = 1+3+6+10;
 
 	// bin arrays
 	// values represent bin upper walls (the single locate_array.min value is the leftmost wall)
@@ -56,16 +56,16 @@ private:
 
 public:
 
-	unsigned direct_index(const unsigned dir_ind[ndims_spatial+1]) const{
+	size_t direct_index(const size_t dir_ind[ndims_spatial+1]) const{
 		return data.direct_index(dir_ind);
 	}
-	double getE(const unsigned ind) const{
+	double getE(const size_t ind) const{
 		return data[ind][0];
 	}
-	double getF(const unsigned ind, const unsigned i) const{
+	double getF(const size_t ind, const size_t i) const{
 		return data[ind][i+1];
 	}
-	double getP(const unsigned ind, const unsigned i, const unsigned j) const{
+	double getP(const size_t ind, const size_t i, const size_t j) const{
 		switch((i+1)*(j+1)){
 		case 1:
 			return data[ind][4];
@@ -91,7 +91,7 @@ public:
 		assert(0);
 		return NaN;
 	}
-	double getL(const unsigned ind, const unsigned i, const unsigned j, const unsigned k) const{
+	double getL(const size_t ind, const size_t i, const size_t j, const size_t k) const{
 		switch((i+1)*(j+1)*(k+1)){
 		case 1:
 			return data[ind][10]; //Lxxx=data[index][10]
@@ -133,16 +133,16 @@ public:
 	//---------------------------------------------------
 	// increment tensor indices for any symmetric tensor
 	//---------------------------------------------------
-	static void increment_tensor_indices(unsigned tensor_indices[], const unsigned rank) {
+	static void increment_tensor_indices(size_t tensor_indices[], const size_t rank) {
 		PRINT_ASSERT(rank,>=,0);
 		PRINT_ASSERT(rank,<,nranks);
 		if(rank == 0)
 			return;
 		tensor_indices[0]++;
-		for(unsigned which_index=0; which_index < rank-1; which_index++) {
+		for(size_t which_index=0; which_index < rank-1; which_index++) {
 			if(tensor_indices[which_index] > index_range - 1) {
 				tensor_indices[which_index + 1]++;
-				for(unsigned which_index_2=0; which_index_2 < which_index+1; which_index_2++)
+				for(size_t which_index_2=0; which_index_2 < which_index+1; which_index_2++)
 					tensor_indices[which_index_2] = tensor_indices[which_index + 1];
 			}
 		}
@@ -157,7 +157,7 @@ public:
 		vector<Axis> axes(ndims_spatial+1);
 
 		// spatial axes
-		for(unsigned i=0; i<ndims_spatial; i++) axes[i] = spatial_axes[i];
+		for(size_t i=0; i<ndims_spatial; i++) axes[i] = spatial_axes[i];
 
 		// frequency axis
 		axes[nuGridIndex] = nu_grid;
@@ -177,15 +177,15 @@ public:
 	//--------------------------------------------------------------
 	// count a particle
 	////--------------------------------------------------------------
-	void count(const Tuple<double,4>& kup_tet, const unsigned dir_ind[NDIMS+1], const double E) {
+	void count(const Tuple<double,4>& kup_tet, const size_t dir_ind[NDIMS+1], const double E) {
 		PRINT_ASSERT(E, >=, 0);
 		PRINT_ASSERT(E, <, INFINITY);
 		Tuple<double,3> D;
 		for(size_t i=0; i<3; i++) D[i] = kup_tet[i];
 		Metric::normalize_Minkowski<3>(D);
 		
-		/* unsigned data_indices[data.Ndims()]; */
-		/* for(unsigned i=0; i<ndims_spatial; i++) data_indices[i] = dir_ind[i]; */
+		/* size_t data_indices[data.Ndims()]; */
+		/* for(size_t i=0; i<ndims_spatial; i++) data_indices[i] = dir_ind[i]; */
 		/* data_indices[nuGridIndex] = dir_ind[NDIMS]; */
 
 		// increment moments
@@ -210,12 +210,12 @@ public:
 		tmp[17] = D[1]*tmp[8];
 		tmp[18] = D[1]*tmp[9];
 		tmp[19] = D[2]*tmp[9];
-		/* unsigned tuple_index=0; */
-		/* for(unsigned rank = 0; rank<nranks; rank++) { */
-		/* 	unsigned tensor_indices[rank]; */
-		/* 	for(unsigned r = 0; r<rank; r++) tensor_indices[r] = 0; */
-		/* 	for(unsigned i=0; i<n_independent_elements[rank]; i++) { */
-		/* 		for(unsigned r=0; r<rank; r++) tmp[tuple_index] *= D[tensor_indices[r]]; */
+		/* size_t tuple_index=0; */
+		/* for(size_t rank = 0; rank<nranks; rank++) { */
+		/* 	size_t tensor_indices[rank]; */
+		/* 	for(size_t r = 0; r<rank; r++) tensor_indices[r] = 0; */
+		/* 	for(size_t i=0; i<n_independent_elements[rank]; i++) { */
+		/* 		for(size_t r=0; r<rank; r++) tmp[tuple_index] *= D[tensor_indices[r]]; */
 		/* 		increment_tensor_indices(tensor_indices, rank); */
 		/* 		tuple_index++; */
 		/* 	} */
@@ -223,8 +223,8 @@ public:
 		data.add(dir_ind, tmp);
 	}
 
-	double reconstruct_f(const unsigned dir_ind[ndims_spatial+1], const double k[3]) const{
-		unsigned index = data.direct_index(dir_ind);
+	double reconstruct_f(const size_t dir_ind[ndims_spatial+1], const double k[3]) const{
+		size_t index = data.direct_index(dir_ind);
 		Tuple<double,n_total_elements> M = data[index];
 		const double x=k[0], y=k[1], z=k[2];
 		const double E=M[0];
@@ -246,15 +246,15 @@ public:
 
 
 	void rescale(const double r) {
-		for(unsigned i=0; i<data.size(); i++) data[i] *= r;
+		for(size_t i=0; i<data.size(); i++) data[i] *= r;
 	}
-	void rescale_spatial_point(const unsigned dir_ind[ndims_spatial], const double r){
-		unsigned all_indices[ndims_spatial+1];
-		for(unsigned i=0; i<ndims_spatial; i++) all_indices[i] = dir_ind[i];
+	void rescale_spatial_point(const size_t dir_ind[ndims_spatial], const double r){
+		size_t all_indices[ndims_spatial+1];
+		for(size_t i=0; i<ndims_spatial; i++) all_indices[i] = dir_ind[i];
 		all_indices[ndims_spatial  ] = 0;
-		unsigned base_ind = data.direct_index(all_indices);
-		unsigned nbins = data.axes[ndims_spatial].size();
-		for(unsigned i=0; i<nbins; i++){
+		size_t base_ind = data.direct_index(all_indices);
+		size_t nbins = data.axes[ndims_spatial].size();
+		for(size_t i=0; i<nbins; i++){
 			data.y0[base_ind+i] *= r;
 		}
 	}
@@ -263,10 +263,10 @@ public:
 	// MPI scatter the spectrum contents.
 	// Must rescale zone stop list to account for number of groups
 	//--------------------------------------------------------------
-	void mpi_sum_scatter(vector<unsigned>& zone_stop_list){
-		unsigned ngroups = data.axes[nuGridIndex].size();
-		vector<unsigned> stop_list = zone_stop_list;
-		for(unsigned i=0; i<stop_list.size(); i++) stop_list[i] *= ngroups;
+	void mpi_sum_scatter(vector<size_t>& zone_stop_list){
+		size_t ngroups = data.axes[nuGridIndex].size();
+		vector<size_t> stop_list = zone_stop_list;
+		for(size_t i=0; i<stop_list.size(); i++) stop_list[i] *= ngroups;
 		data.mpi_sum_scatter(stop_list);
 	}
 	void mpi_sum(){
@@ -295,7 +295,7 @@ public:
 		std::stringstream datasetname, indicesname;
 
 		// SET UP DATASPACE FOR EACH MOMENT
-		for (unsigned rank=0; rank<nranks; rank++) {
+		for (size_t rank=0; rank<nranks; rank++) {
 			// prep the filenames
 			indicesname.str("");
 			indicesname << name;
@@ -306,12 +306,12 @@ public:
 			dataspace = H5::DataSpace(2, indices_dimensions);
 			dataset = file.createDataSet(indicesname.str(), H5::PredType::STD_I32LE,
 					dataspace);
-			unsigned tensor_indices[rank];
-			for (unsigned r = 0; r < rank; r++)
+			size_t tensor_indices[rank];
+			for (size_t r = 0; r < rank; r++)
 				tensor_indices[r] = 0;
 			int indices2D[n_independent_elements[rank]][rank];
-			for (unsigned i=0; i < n_independent_elements[rank]; i++) {
-				for (unsigned r=0; r < rank; r++)
+			for (size_t i=0; i < n_independent_elements[rank]; i++) {
+				for (size_t r=0; r < rank; r++)
 					indices2D[i][r] = tensor_indices[r];
 				increment_tensor_indices(tensor_indices, rank);
 			}
@@ -320,9 +320,9 @@ public:
 
 		}
 	}
-	void add_isotropic(const unsigned dir_ind[NDIMS+1], const double E){
-		unsigned indices[data.Ndims()];
-		for(unsigned i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
+	void add_isotropic(const size_t dir_ind[NDIMS+1], const double E){
+		size_t indices[data.Ndims()];
+		for(size_t i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
 		indices[nuGridIndex] = dir_ind[ndims_spatial];
 
 		// increment moments
@@ -337,31 +337,31 @@ public:
 
 	double total() const{
 		double result=0;
-		for(unsigned i=0; i<data.size(); i++)
+		for(size_t i=0; i<data.size(); i++)
 			result += data[i][0];
 		return result;
 	}
 
 	void annihilation_rate(
-			const unsigned dir_ind[NDIMS],       // spatial directional indices for the zone we're getting the rate at
+			const size_t dir_ind[NDIMS],       // spatial directional indices for the zone we're getting the rate at
 			const SpectrumArray* in_dist,  // erg/ccm (integrated over angular bin and energy bin)
 			const vector< vector<vector<double> > >& phi, // cm^3/s [order][igin][igout]
-			const unsigned weight,
+			const size_t weight,
 			Tuple<double,4>& fourforce) const{
 
 		const MomentSpectrumArray<NDIMS>* nubar_dist = (MomentSpectrumArray<NDIMS>*)in_dist;
 		PRINT_ASSERT(phi.size(),>=,2);
 
-		unsigned tmp_ind[NDIMS+1];
-		for(unsigned i=0; i<NDIMS; i++) tmp_ind[i] = dir_ind[i];
+		size_t tmp_ind[NDIMS+1];
+		for(size_t i=0; i<NDIMS; i++) tmp_ind[i] = dir_ind[i];
 		tmp_ind[NDIMS] = 0;
-		const unsigned base_ind = direct_index(tmp_ind);
+		const size_t base_ind = direct_index(tmp_ind);
 		const Axis* nu_axis = &(data.axes[nuGridIndex]);
-		const unsigned nnu = nu_axis->size();
+		const size_t nnu = nu_axis->size();
 
-		for(unsigned i=0; i<nnu; i++){
+		for(size_t i=0; i<nnu; i++){
 			double avg_e = pc::h * nu_axis->mid[i];
-			for(unsigned j=0; j<nnu; j++){
+			for(size_t j=0; j<nnu; j++){
 				double avg_ebar = pc::h * nu_axis->mid[j];
 				double eebar = avg_e*avg_ebar;
 				double phi2 = -1./5. * (phi[0][i][j] + 3.*phi[1][i][j]);
@@ -370,9 +370,9 @@ public:
 				double tmp0 = getE(i+base_ind)*nubar_dist->getE(j+base_ind) / eebar; // #/cm^6
 				PRINT_ASSERT(tmp0,>=,0);
 				double tmp1=0, tmp2=0;
-				for(unsigned k=0; k<3; k++){
+				for(size_t k=0; k<3; k++){
 					tmp1 += getF(i+base_ind,k)*nubar_dist->getF(j+base_ind,k) / eebar; // #/cm^6
-					for(unsigned l=0; l<3; l++) tmp2 += 3.*getP(i+base_ind,k,l)*nubar_dist->getP(j+base_ind,k,l)/eebar;
+					for(size_t l=0; l<3; l++) tmp2 += 3.*getP(i+base_ind,k,l)*nubar_dist->getP(j+base_ind,k,l)/eebar;
 					tmp2 -= tmp0;
 					tmp2 *= 0.5;
 					PRINT_ASSERT(abs(getF(i+base_ind,k)),<=,getE(i+base_ind));
@@ -382,15 +382,15 @@ public:
 				fourforce[3] += this_dep;
 
 				// space components
-				for(unsigned a=0; a<3; a++){
+				for(size_t a=0; a<3; a++){
 					tmp0 = avg_e    * getF(i+base_ind,a) * nubar_dist->getE(j+base_ind)   / eebar + // erg/cm^6
 						   avg_ebar * getE(i+base_ind)   * nubar_dist->getF(j+base_ind,a) / eebar;
 					tmp1=0;
 					tmp2=0;
-					for(unsigned b=0; b<3; b++){
+					for(size_t b=0; b<3; b++){
 						tmp1 += avg_e    * getP(i+base_ind,a,b) * nubar_dist->getF(j+base_ind,  b) / eebar; // erg/cm^6
 						tmp1 += avg_ebar * getF(i+base_ind,  b) * nubar_dist->getP(j+base_ind,a,b) / eebar;
-						for(unsigned c=0; c<3; c++){
+						for(size_t c=0; c<3; c++){
 							tmp2 += avg_e    * 3.*getL(i+base_ind,a,b,c)*nubar_dist->getP(j+base_ind,  b,c)/eebar;
 							tmp2 += avg_ebar * 3.*getP(i+base_ind,  b,c)*nubar_dist->getL(j+base_ind,a,b,c)/eebar;
 						}
@@ -403,7 +403,7 @@ public:
 		}
 
 		// sanity checks
-		for(unsigned i=0; i<4; i++) fourforce[i] /= weight;
+		for(size_t i=0; i<4; i++) fourforce[i] /= weight;
 		//PRINT_ASSERT(fourforce[3],>=,0); // not always true, since moment reconstruction and annihilation kernel are not exact
 	}
 

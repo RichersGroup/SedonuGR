@@ -58,7 +58,7 @@ void Transport::scatter(EinsteinHelper *eh) const{
 	// store the old direction
 	double Nold = eh->N;
 	Tuple<double,4> kup_tet_old;
-	for(unsigned i=0; i<4; i++) kup_tet_old[i] = eh->kup_tet[i];
+	for(size_t i=0; i<4; i++) kup_tet_old[i] = eh->kup_tet[i];
 	PRINT_ASSERT(kup_tet_old[3],==,eh->kup_tet[3]);
 	
 	// sample outgoing energy and set the post-scattered state
@@ -70,7 +70,7 @@ void Transport::scatter(EinsteinHelper *eh) const{
 		eh->set_kup_tet(kup_tet);
 	}
 
-	for(unsigned i=0; i<4; i++){
+	for(size_t i=0; i<4; i++){
 		grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i]*Nold - eh->kup_tet[i]*eh->N);
 	}
 }
@@ -125,7 +125,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 
 	// move along with the fluid
 	double dtau = path_length_com / pc::c;
-	for(unsigned i=0; i<4; i++) eh->xup[i] += dtau * eh->u[i];
+	for(size_t i=0; i<4; i++) eh->xup[i] += dtau * eh->u[i];
 
 	// determine the average and final neutrino numbers
 	double opt_depth = eh->absopac * path_length_com;
@@ -148,7 +148,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	do{
 		isotropic_direction(direction,&rangen);
 	} while(Metric::dot_Minkowski<3>(direction,kup_tet) < 0);
-	for(unsigned i=0; i<3; i++) kup_tet_final[i] = direction[i] * kup_tet_final[3];
+	for(size_t i=0; i<3; i++) kup_tet_final[i] = direction[i] * kup_tet_final[3];
 	eh->set_kup_tet(kup_tet_final);
 
 	// contribute energy isotropically
@@ -184,7 +184,7 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<do
 	PRINT_ASSERT(kup_tet_old[3],==,eh->kup_tet[3]);
 
 	// rejection sampling to get outgoing frequency bin.
-	unsigned igout;
+	size_t igout;
 	double P;
 	do{
 		igout = rangen.uniform_discrete(0, grid->nu_grid_axis.size()-1);
@@ -203,8 +203,8 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<do
 
 	// interpolate the kernel anisotropy
 	double hyperloc[NDIMS+2];
-	unsigned dir_ind[NDIMS+2];
-	for(unsigned i=0; i<=NDIMS; i++){
+	size_t dir_ind[NDIMS+2];
+	for(size_t i=0; i<=NDIMS; i++){
 			hyperloc[i] = eh->grid_coords[i];
 			dir_ind[i] = eh->dir_ind[i];
 	}
@@ -227,7 +227,7 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<do
 	}
 	else{
 	        kup_tet_new = eh->kup_tet * hyperloc[NDIMS+1] / eh->nu();
-		if(delta<0) for(unsigned i=0; i<3; i++) kup_tet_new[i] = -eh->kup_tet[i];
+		if(delta<0) for(size_t i=0; i<3; i++) kup_tet_new[i] = -eh->kup_tet[i];
 	}
 	eh->set_kup_tet(kup_tet_new);
 	PRINT_ASSERT(eh->N,<,1e99);

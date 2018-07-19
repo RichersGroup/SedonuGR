@@ -397,7 +397,7 @@ void nulib_get_epannihil_kernels(
 
 	// set up phi vector
 	phi.resize(2);
-	for(unsigned i=0; i<2; i++)
+	for(size_t i=0; i<2; i++)
 		phi[i] = vector< vector<double> >(nulibtable_number_groups, vector<double>(nulibtable_number_groups,0));
 
 	// fetch the relevant table from nulib. NuLib only accepts doubles.
@@ -578,7 +578,7 @@ void nulib_get_nu_grid(Axis& nu_grid){ // Hz
 			nulibtable_energies + nulibtable_number_groups);
 
 	// convert from MeV to frequency using the Planck constant
-	for(unsigned i=0; i<tops.size(); i++){
+	for(size_t i=0; i<tops.size(); i++){
 		tops[i] /= pc::h_MeV;
 		mid[i] /= pc::h_MeV;
 	}
@@ -594,22 +594,22 @@ void nulib_get_nu_grid(Axis& nu_grid){ // Hz
 void nulib_get_rho_array(vector<double>& array){ // g/cm^3
 	array.assign(nulibtable_logrho,
 			nulibtable_logrho  + nulibtable_nrho);
-	for(unsigned i=0; i<array.size(); i++) array[i] = pow(10.0, array[i]);
+	for(size_t i=0; i<array.size(); i++) array[i] = pow(10.0, array[i]);
 }
 void nulib_get_T_array(vector<double>& array){ // K
 	array.assign(nulibtable_logtemp, nulibtable_logtemp + nulibtable_ntemp);
-	for(unsigned i=0; i<array.size(); i++) array[i] = pow(10.0, array[i]) / pc::k_MeV; // convert from MeV to K
+	for(size_t i=0; i<array.size(); i++) array[i] = pow(10.0, array[i]) / pc::k_MeV; // convert from MeV to K
 }
 void nulib_get_Ye_array(vector<double>& array){
 	array.assign(nulibtable_ye, nulibtable_ye + nulibtable_nye);
 }
 void nulib_get_IT_array(vector<double>& array){ //K
 	array.assign(nulibtable_logItemp, nulibtable_logItemp + nulibtable_nItemp);
-	for(unsigned i=0; i<array.size(); i++) array[i] = pow(10.0,array[i]) / pc::k_MeV;
+	for(size_t i=0; i<array.size(); i++) array[i] = pow(10.0,array[i]) / pc::k_MeV;
 }
 void nulib_get_Ieta_array(vector<double>& array){
 	array.assign(nulibtable_logIeta, nulibtable_logIeta + nulibtable_nIeta);
-	for(unsigned i=0; i<array.size(); i++) array[i] = pow(10.0,array[i]);
+	for(size_t i=0; i<array.size(); i++) array[i] = pow(10.0,array[i]);
 }
 
 /*************************/

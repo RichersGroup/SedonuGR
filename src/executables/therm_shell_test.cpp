@@ -68,13 +68,13 @@ double run_test(const int nsteps, const bool rank0, const double rho, const doub
 
 	// check max optical depth
 	double max_opac = 0;
-	unsigned dir_ind[2];
-	for(unsigned z_ind=0; z_ind<sim.grid->rho.size(); z_ind++){
+	size_t dir_ind[2];
+	for(size_t z_ind=0; z_ind<sim.grid->rho.size(); z_ind++){
 		dir_ind[0] = z_ind;
-		for(unsigned s=0; s<sim.species_list.size(); s++){
-			for(unsigned g=0; g<sim.grid->nu_grid_axis.size(); g++){
+		for(size_t s=0; s<sim.species_list.size(); s++){
+			for(size_t g=0; g<sim.grid->nu_grid_axis.size(); g++){
 				dir_ind[1] = g;
-				unsigned global_index = sim.grid->abs_opac[s].direct_index(dir_ind);
+				size_t global_index = sim.grid->abs_opac[s].direct_index(dir_ind);
 				double abs_opac = sim.grid->abs_opac[s][global_index];
 				double scat_opac = sim.grid->scat_opac[s][global_index];
 				double opac = abs_opac + scat_opac;

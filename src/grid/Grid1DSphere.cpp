@@ -112,7 +112,7 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 	  cout << "#   nr=" << xAxes[0].size() << "\trmin=" << xAxes[0].min << "\trmax=" << xAxes[0].top[xAxes[0].size()-1] << endl;
 
 	// read the fluid properties
-	for(unsigned z_ind=0; z_ind<xAxes[0].size(); z_ind++){
+	for(size_t z_ind=0; z_ind<xAxes[0].size(); z_ind++){
 		double trash;
 
 		// read the contents of a single line
@@ -214,7 +214,7 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 	Ye.set_axes(axes);
 	H_vis.set_axes(axes);
 
-	for(unsigned z_ind=0; z_ind<vr.size(); z_ind++){
+	for(size_t z_ind=0; z_ind<vr.size(); z_ind++){
 		vr[z_ind] = tmp_vr[z_ind];
 		lapse[z_ind] = tmp_alpha[z_ind];
 		X[z_ind] = tmp_X[z_ind];
@@ -298,11 +298,11 @@ Tuple<double,NDIMS> Grid1DSphere::zone_coordinates(int z_ind) const{
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-Tuple<unsigned,NDIMS> Grid1DSphere::zone_directional_indices(int z_ind) const
+Tuple<size_t,NDIMS> Grid1DSphere::zone_directional_indices(int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	return Tuple<unsigned,NDIMS>(z_ind);
+	return Tuple<size_t,NDIMS>(z_ind);
 }
 
 
@@ -356,7 +356,7 @@ Tuple<double,3> Grid1DSphere::interpolate_fluid_velocity(const EinsteinHelper& e
 		return Tuple<double,3>(0);
 	else{
 		Tuple<double,3> x3;
-		for(unsigned i=0; i<3; i++) x3[i] = eh.xup[i];
+		for(size_t i=0; i<3; i++) x3[i] = eh.xup[i];
 		return x3 / r * vr.interpolate(eh.icube_vol);
 	}
 }
@@ -385,7 +385,7 @@ void Grid1DSphere::symmetry_boundaries(EinsteinHelper *eh) const{
 
 		// put the particle just inside the boundary
 		double newR = rmax - TINY*dr;
-		for(unsigned i=0; i<3; i++)	eh->xup[i] *= newR/R;
+		for(size_t i=0; i<3; i++)	eh->xup[i] *= newR/R;
 
 		// must be inside the boundary, or will get flagged as escaped
 		PRINT_ASSERT(zone_index(eh->xup),>=,0);
@@ -421,7 +421,7 @@ double Grid1DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector
-		for(unsigned i=0; i<3; i++) ktest[i] *= sgn;
+		for(size_t i=0; i<3; i++) ktest[i] *= sgn;
 		eh.g.normalize_null_preservedownt(ktest);
 
 		// get the time component of the tetrad test vector
@@ -490,19 +490,19 @@ Tuple<double,4> Grid1DSphere::dk_dlambda(const EinsteinHelper& eh) const{
 		ch.data[Christoffel::index(a,3,3)] = alpha * dadr / (r*Xloc*Xloc) * eh.xup[a];
 
 		tmp = (1. - Xloc*Xloc + r*Xloc*dXdr) / (r*r*r*Xloc*Xloc) * eh.xup[a]/r;
-		for(unsigned i=0; i<3; i++) for(unsigned j=i; j<3; j++)
+		for(size_t i=0; i<3; i++) for(size_t j=i; j<3; j++)
 			ch.data[Christoffel::index(a,i,j)] = eh.xup[i]*eh.xup[j] * tmp;
 
 		tmp = -(1.-Xloc*Xloc) / (r*Xloc*Xloc) * eh.xup[a]/r;
-		for(unsigned i=0; i<3; i++)
+		for(size_t i=0; i<3; i++)
 			ch.data[Christoffel::index(a,i,i)] += tmp;
 	}
 	// time part
 	tmp = dadr / (r * alpha);
-	for(unsigned i=0; i<3; i++)
+	for(size_t i=0; i<3; i++)
 		ch.data[Christoffel::index(3,3,i)] = eh.xup[i] * tmp;
 
-	for(unsigned i=0; i<40; i++) PRINT_ASSERT(ch.data[i],==,ch.data[i]);
+	for(size_t i=0; i<40; i++) PRINT_ASSERT(ch.data[i],==,ch.data[i]);
 
 	return ch.contract2(eh.kup)*(-1);
 }

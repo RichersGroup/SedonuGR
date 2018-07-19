@@ -39,13 +39,13 @@ void Transport::propagate_particles()
 {
 	if(verbose) cout << "# Propagating particles..." << endl;
 
-	unsigned ndone=0;
-	unsigned last_percent = 0;
-	const unsigned nparticles = particles.size();
+	size_t ndone=0;
+	size_t last_percent = 0;
+	const size_t nparticles = particles.size();
 
 	//--- MOVE THE PARTICLES AROUND ---
 	#pragma omp parallel for schedule(dynamic)
-	for(unsigned i=0; i<nparticles; i++){
+	for(size_t i=0; i<nparticles; i++){
 		if(particles[i].fate != moving){
 			#pragma omp atomic
 			ndone++;
@@ -63,7 +63,7 @@ void Transport::propagate_particles()
 		if(verbose){
 			#pragma omp atomic
 			ndone++;
-			unsigned this_percent = (double)ndone/(double)nparticles*100.;
+			size_t this_percent = (double)ndone/(double)nparticles*100.;
 			if(this_percent > last_percent){
 				last_percent = this_percent;
 				#pragma omp critical
@@ -132,9 +132,9 @@ void Transport::move(EinsteinHelper *eh) const{
 	Tuple<double,4> old_kup_tet = eh->kup_tet;
 	double old_absopac = eh->absopac;
 	double old_N = eh->N;
-	unsigned old_z_ind = eh->z_ind;
-	unsigned old_dir_ind[NDIMS+1];
-	for(unsigned i=0; i<NDIMS+1; i++) old_dir_ind[i] = eh->dir_ind[i];
+	size_t old_z_ind = eh->z_ind;
+	size_t old_dir_ind[NDIMS+1];
+	for(size_t i=0; i<NDIMS+1; i++) old_dir_ind[i] = eh->dir_ind[i];
 
 	// convert ds_com into dlambda
 	double dlambda = eh->ds_com / eh->kup_tet[3];
@@ -142,13 +142,13 @@ void Transport::move(EinsteinHelper *eh) const{
 
 	// get 2nd order x, 1st order estimate for k
 	Tuple<double,4> order1 = old_kup * dlambda;
-	for(unsigned i=0; i<4; i++)
+	for(size_t i=0; i<4; i++)
 		eh->xup[i] += order1[i];
 	if(DO_GR){
 		Tuple<double,4> dk_dlambda = grid->dk_dlambda(*eh);
 		Tuple<double,4> order2 = dk_dlambda * dlambda*dlambda * 0.5;
 		eh->kup = old_kup + dk_dlambda * dlambda;
-		for(unsigned i=0; i<4; i++)
+		for(size_t i=0; i<4; i++)
 			eh->xup[i] += (abs(order2[i]/order1[i])<1. ? order2[i] : 0);
 	}
 
@@ -177,7 +177,7 @@ void Transport::move(EinsteinHelper *eh) const{
 	grid->distribution[eh->s]->count(avg_kup_tet, old_dir_ind, avg_N*integral_k2dlambda);
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
-	for(unsigned i=0; i<4; i++){
+	for(size_t i=0; i<4; i++){
 		grid->fourforce_abs[old_z_ind][i] += dN * avg_kup_tet[i];
 	}
 
@@ -207,7 +207,7 @@ void Transport::propagate(EinsteinHelper *eh){
 		PRINT_ASSERT(eh->kup[3],>,0);
 		PRINT_ASSERT(eh->kup_tet[3],>,0);
 		PRINT_ASSERT(eh->kup[3],<,INFINITY);
-		for(unsigned i=0; i<NDIMS; i++) PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
+		for(size_t i=0; i<NDIMS; i++) PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
 
 		// decide which event happens
 		which_event(eh,&event);

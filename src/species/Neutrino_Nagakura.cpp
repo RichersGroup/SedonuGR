@@ -55,9 +55,9 @@ void Neutrino_Nagakura::myInit(Lua* lua)
 //-----------------------------------------------------------------
 // set emissivity, abs. opacity, and scat. opacity in zones
 //-----------------------------------------------------------------
-void Neutrino_Nagakura::set_eas(const unsigned zone_index, Grid* grid) const
+void Neutrino_Nagakura::set_eas(const size_t zone_index, Grid* grid) const
 {
-	unsigned dir_ind[NDIMS+2];
+	size_t dir_ind[NDIMS+2];
 	grid->rho.indices(zone_index,dir_ind);
 
 
@@ -70,7 +70,7 @@ void Neutrino_Nagakura::set_eas(const unsigned zone_index, Grid* grid) const
 	    filename << opacity_dir << "/opac_r" << zone_index << "_theta0.dat";
 	}
 	else if(grid->grid_type == "Grid2DSphere"){
-		Tuple<unsigned,NDIMS> dir_ind = grid->zone_directional_indices(zone_index);
+		Tuple<size_t,NDIMS> dir_ind = grid->zone_directional_indices(zone_index);
 		Tuple<hsize_t,NDIMS> dims = grid->dims();
 		filename.str("");
 		filename << opacity_dir << "/opac_r" << dir_ind[0] << "_theta" << (dims[1]-dir_ind[1]-1) << ".dat"; // Hiroki's theta is backwards
@@ -90,9 +90,9 @@ void Neutrino_Nagakura::set_eas(const unsigned zone_index, Grid* grid) const
     string line;
     getline(opac_file,line);
 
-    for(unsigned inu=0; inu<grid->nu_grid_axis.size(); inu++){
+    for(size_t inu=0; inu<grid->nu_grid_axis.size(); inu++){
     	dir_ind[NDIMS] = inu;
-    	unsigned global_index = grid->abs_opac[ID].direct_index(dir_ind);
+    	size_t global_index = grid->abs_opac[ID].direct_index(dir_ind);
 
     	int itmp;
     	double e=0, a=0, s=0;

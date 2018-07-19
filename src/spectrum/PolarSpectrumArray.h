@@ -40,7 +40,7 @@
 using namespace std;
 namespace pc = physical_constants;
 
-template<unsigned ndims_spatial>
+template<size_t ndims_spatial>
 class PolarSpectrumArray : public SpectrumArray {
 
 private:
@@ -54,17 +54,17 @@ private:
 public:
 
 	ScalarMultiDArray<ATOMIC<double>,ndims_spatial+3> data;
-	unsigned phiGridIndex, nuGridIndex, muGridIndex;
-	unsigned nphi, nnu, nmu;
+	size_t phiGridIndex, nuGridIndex, muGridIndex;
+	size_t nphi, nnu, nmu;
 
-	unsigned direct_index(const unsigned dir_ind[ndims_spatial+3]) const{
+	size_t direct_index(const size_t dir_ind[ndims_spatial+3]) const{
 		return data.direct_index(dir_ind);
 	}
-	double get(const unsigned index) const{
+	double get(const size_t index) const{
 		return data[index];
 	}
 
-	unsigned size() const{
+	size_t size() const{
 		return data.size();
 	}
 
@@ -86,7 +86,7 @@ public:
 		double start = w[0];
 		double stop  = w[1];
 		double del   = w[2];
-		unsigned ng = (stop-start)/del;
+		size_t ng = (stop-start)/del;
 		axes.push_back(Axis(start, stop, ng));
 		nuGridIndex = axes.size()-1;
 		nnu = axes[axes.size()-1].size();
@@ -112,7 +112,7 @@ public:
 		vector<Axis> axes;
 
 		// spatial axes
-		for(unsigned i=0; i<spatial_axes.size(); i++) axes.push_back(spatial_axes[i]);
+		for(size_t i=0; i<spatial_axes.size(); i++) axes.push_back(spatial_axes[i]);
 
 		axes.push_back(wg);
 		nuGridIndex = axes.size()-1;
@@ -141,12 +141,12 @@ public:
 	//--------------------------------------------------------------
 	// count a particle
 	////--------------------------------------------------------------
-	void count(const Tuple<double,4>& kup_tet, const unsigned dir_ind[NDIMS+1], const double E){
+	void count(const Tuple<double,4>& kup_tet, const size_t dir_ind[NDIMS+1], const double E){
 		PRINT_ASSERT(E,>=,0);
 		PRINT_ASSERT(kup_tet[3],>=,0);
 
-		unsigned indices[data.Ndims()];
-		for(unsigned i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
+		size_t indices[data.Ndims()];
+		for(size_t i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
 		indices[nuGridIndex] = dir_ind[NDIMS];
 		
 		double mu = kup_tet[2] / kup_tet[3];
@@ -169,17 +169,17 @@ public:
 	}
 
 	void rescale(double r){
-		for(unsigned i=0;i<data.size();i++) data.y0[i] *= r;
+		for(size_t i=0;i<data.size();i++) data.y0[i] *= r;
 	}
-	void rescale_spatial_point(const unsigned dir_ind[ndims_spatial], const double r){
-		unsigned all_indices[ndims_spatial+3];
-		for(unsigned i=0; i<ndims_spatial; i++) all_indices[i] = dir_ind[i];
+	void rescale_spatial_point(const size_t dir_ind[ndims_spatial], const double r){
+		size_t all_indices[ndims_spatial+3];
+		for(size_t i=0; i<ndims_spatial; i++) all_indices[i] = dir_ind[i];
 		all_indices[ndims_spatial  ] = 0;
 		all_indices[ndims_spatial+1] = 0;
 		all_indices[ndims_spatial+2] = 0;
-		unsigned base_ind = data.direct_index(all_indices);
-		unsigned nbins = data.axes[ndims_spatial].size() * data.axes[ndims_spatial+1].size() * data.axes[ndims_spatial+2].size();
-		for(unsigned i=0; i<nbins; i++){
+		size_t base_ind = data.direct_index(all_indices);
+		size_t nbins = data.axes[ndims_spatial].size() * data.axes[ndims_spatial+1].size() * data.axes[ndims_spatial+2].size();
+		for(size_t i=0; i<nbins; i++){
 			data.y0[base_ind+i] *= r;
 		}
 	}
@@ -188,10 +188,10 @@ public:
 	// MPI scatter the spectrum contents.
 	// Must rescale zone stop list to account for number of groups
 	//--------------------------------------------------------------
-	void mpi_sum_scatter(vector<unsigned>& zone_stop_list){
-		unsigned nperzone = data.axes[nuGridIndex].size() * data.axes[phiGridIndex].size() * data.axes[muGridIndex].size();
-		vector<unsigned> stop_list = zone_stop_list;
-		for(unsigned i=0; i<stop_list.size(); i++) stop_list[i] *= nperzone;
+	void mpi_sum_scatter(vector<size_t>& zone_stop_list){
+		size_t nperzone = data.axes[nuGridIndex].size() * data.axes[phiGridIndex].size() * data.axes[muGridIndex].size();
+		vector<size_t> stop_list = zone_stop_list;
+		for(size_t i=0; i<stop_list.size(); i++) stop_list[i] *= nperzone;
 		data.mpi_sum_scatter(stop_list);
 	}
 	void mpi_sum(){
@@ -218,22 +218,22 @@ public:
 		data.axes[phiGridIndex].write_HDF5(name+"_phi_grid(radians,lab)",file);
 	}
 	
-	void add_isotropic(const unsigned dir_ind[NDIMS+1], const double E){
-		unsigned indices[data.Ndims()];
-		for(unsigned i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
+	void add_isotropic(const size_t dir_ind[NDIMS+1], const double E){
+		size_t indices[data.Ndims()];
+		for(size_t i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
 		indices[nuGridIndex] = dir_ind[ndims_spatial];
 		indices[muGridIndex] = 0;
 		indices[phiGridIndex] = 0;
-		unsigned start = data.direct_index(indices);
-		unsigned stop = start + nphi*nmu;
+		size_t start = data.direct_index(indices);
+		size_t stop = start + nphi*nmu;
 		double tmp = E / (double)(nphi*nmu);
 
 		#pragma omp critical
-		for(unsigned i=start; i<stop; i++) data[i] += tmp;
+		for(size_t i=start; i<stop; i++) data[i] += tmp;
 	}
 	double total() const{
 		double result=0;
-		for(unsigned i=0; i<data.size(); i++)
+		for(size_t i=0; i<data.size(); i++)
 			result += data[i];
 		return result;
 	}
@@ -251,10 +251,10 @@ public:
 		return result;
 	}
 	void annihilation_rate(
-			const unsigned dir_ind[NDIMS],       // directional indices for the zone we're getting the rate at
+			const size_t dir_ind[NDIMS],       // directional indices for the zone we're getting the rate at
 			const SpectrumArray* in_dist,  // erg/ccm (integrated over angular bin and energy bin)
 			const vector< vector<vector<double> > >& phi, // cm^3/s [order][igin][igout]
-			const unsigned weight,
+			const size_t weight,
 			Tuple<double,4>& fourforce) const{
 
 		const PolarSpectrumArray<NDIMS>* nubar_dist = (PolarSpectrumArray<NDIMS>*)in_dist;
@@ -271,16 +271,16 @@ public:
 
 		// calculate angle between distribution function angles beforehand
 		double costheta[nmu][nphi][nmu][nphi];
-		for(unsigned mu=0; mu<nmu; mu++){
-			for(unsigned phi=0; phi<nphi; phi++){
+		for(size_t mu=0; mu<nmu; mu++){
+			for(size_t phi=0; phi<nphi; phi++){
 
 				double avg_mu  = muAxis->mid[mu];
 				double avg_phi = phiAxis->mid[phi];
 
-				for(unsigned mubar=0; mubar<nmu; mubar++){
-					for(unsigned phibar=0; phibar<nphi; phibar++){
+				for(size_t mubar=0; mubar<nmu; mubar++){
+					for(size_t phibar=0; phibar<nphi; phibar++){
 
-						//unsigned indexbar = nubar_dist->index(0,mubar,phibar);
+						//size_t indexbar = nubar_dist->index(0,mubar,phibar);
 						double avg_mubar  = muAxis->mid[mubar];
 						double avg_phibar = phiAxis->mid[phibar];
 
@@ -291,18 +291,18 @@ public:
 		}
 
 		// set up index arrays
-		unsigned index[ndims_spatial + 3];
-		unsigned indexbar[ndims_spatial + 3];
-		for(unsigned i=0; i<ndims_spatial; i++){
+		size_t index[ndims_spatial + 3];
+		size_t indexbar[ndims_spatial + 3];
+		for(size_t i=0; i<ndims_spatial; i++){
 			index[i] = dir_ind[i];
 			indexbar[i] = dir_ind[i];
 		}
 
 		// integrate over all bins
-		for(unsigned inu=0; inu<nnu; inu++){
+		for(size_t inu=0; inu<nnu; inu++){
 			double avg_e = nuAxis->mid[inu]*pc::h; // erg
 			index[nuGridIndex] = inu;
-			for(unsigned inubar=0; inubar<nnu; inubar++){
+			for(size_t inubar=0; inubar<nnu; inubar++){
 				double avg_ebar = nuAxis->mid[inubar]*pc::h; // erg
 				indexbar[nuGridIndex] = inubar;
 
@@ -310,24 +310,24 @@ public:
 				double phi2 = -1./5. * (phi[0][inu][inubar] + 3.*phi[1][inu][inubar]);
 
 				// neutrino direction loops
-				for(unsigned imu=0; imu<nmu; imu++){
+				for(size_t imu=0; imu<nmu; imu++){
 					index[muGridIndex] = imu;
 					const double z = muAxis->mid[imu];
 					const double sintheta = sqrt(1. - muAxis->mid[imu]*muAxis->mid[imu]);
-					for(unsigned iphi=0; iphi<nphi; iphi++){
+					for(size_t iphi=0; iphi<nphi; iphi++){
 						index[phiGridIndex] = iphi;
-						unsigned ind = direct_index(index);
+						size_t ind = direct_index(index);
 						const double x = sintheta * cos(phiAxis->mid[iphi]);
 						const double y = sintheta * sin(phiAxis->mid[iphi]);
 
 						// antineutrino direction loops
-						for(unsigned imubar=0; imubar<nmu; imubar++){
+						for(size_t imubar=0; imubar<nmu; imubar++){
 							indexbar[nubar_dist->muGridIndex] = imubar;
 							const double zbar = muAxis->mid[imubar];
 							const double sinthetabar = sqrt(1. - muAxis->mid[imubar]*muAxis->mid[imubar]);
-							for(unsigned iphibar=0; iphibar<nphi; iphibar++){
+							for(size_t iphibar=0; iphibar<nphi; iphibar++){
 								indexbar[nubar_dist->phiGridIndex] = iphibar;
-								unsigned indbar = nubar_dist->direct_index(indexbar);
+								size_t indbar = nubar_dist->direct_index(indexbar);
 								const double xbar = sinthetabar * cos(phiAxis->mid[iphibar]);
 								const double ybar = sinthetabar * sin(phiAxis->mid[iphibar]);
 
@@ -353,11 +353,11 @@ public:
 				} // mu
 			} // nubar
 		} // nu
-		for(unsigned i=0; i<4; i++) fourforce[i] /= weight;
+		for(size_t i=0; i<4; i++) fourforce[i] /= weight;
 
 		// sanity checks
 		PRINT_ASSERT(fourforce[3],>=,0);
-		for(unsigned i=0; i<3; i++) PRINT_ASSERT(abs(fourforce[i]),<=,fourforce[3]);
+		for(size_t i=0; i<3; i++) PRINT_ASSERT(abs(fourforce[i]),<=,fourforce[3]);
 	}
 
 };

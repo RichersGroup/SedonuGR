@@ -34,7 +34,7 @@
 
 using namespace std;
 
-template<unsigned ndims_spatial>
+template<size_t ndims_spatial>
 class RadialMomentSpectrumArray : public SpectrumArray {
 
 private:
@@ -45,8 +45,8 @@ private:
 	// overflow is combined into the rightmost bin (left of locate_array[size-1])
 	MultiDArray<ATOMIC<double>,4,ndims_spatial+1> data; // 0, r, rr, rrr
 
-	static const unsigned nranks = 4;
-	static const unsigned nuGridIndex = ndims_spatial;
+	static const size_t nranks = 4;
+	static const size_t nuGridIndex = ndims_spatial;
 
 public:
 
@@ -55,7 +55,7 @@ public:
 	//--------------------------------------------------------------
 	void init(const vector<Axis>& spatial_axes, const Axis& nu_grid) {
 		vector<Axis> axes;
-		for(unsigned i=0; i<spatial_axes.size(); i++) axes.push_back(spatial_axes[i]);
+		for(size_t i=0; i<spatial_axes.size(); i++) axes.push_back(spatial_axes[i]);
 
 		axes.push_back(nu_grid);
 
@@ -74,36 +74,36 @@ public:
 	//--------------------------------------------------------------
 	// count a particle
 	////--------------------------------------------------------------
-	void count(const Tuple<double,4>& kup_tet, const unsigned dir_ind[NDIMS+1], const double E) {
+	void count(const Tuple<double,4>& kup_tet, const size_t dir_ind[NDIMS+1], const double E) {
 		PRINT_ASSERT(E, >=, 0);
 		PRINT_ASSERT(E, <, INFINITY);
 		Tuple<double,3> D;
 		for(size_t i=0; i<3; i++) D[i] = kup_tet[i];
 		Metric::normalize_Minkowski<3>(D);
 
-		unsigned indices[data.Ndims()];
-		for(unsigned i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
+		size_t indices[data.Ndims()];
+		for(size_t i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
 		indices[nuGridIndex] = dir_ind[NDIMS];
 
 		// increment moments
 		Tuple<double,4> tmp;
 		tmp[0] = E;
-		for (unsigned rank = 1; rank<nranks; rank++) {
+		for (size_t rank = 1; rank<nranks; rank++) {
 			tmp[rank] = tmp[rank-1]*D[2];
 		}
 		data.add(indices, tmp);
 	}
 
 	void rescale(double r) {
-		for(unsigned i=0;i<data.size();i++) data.y0[i] *= r;
+		for(size_t i=0;i<data.size();i++) data.y0[i] *= r;
 	}
-	void rescale_spatial_point(const unsigned dir_ind[ndims_spatial], const double r){
-		unsigned all_indices[ndims_spatial+1];
-		for(unsigned i=0; i<ndims_spatial; i++) all_indices[i] = dir_ind[i];
+	void rescale_spatial_point(const size_t dir_ind[ndims_spatial], const double r){
+		size_t all_indices[ndims_spatial+1];
+		for(size_t i=0; i<ndims_spatial; i++) all_indices[i] = dir_ind[i];
 		all_indices[ndims_spatial] = 0;
-		unsigned base_ind = data.direct_index(all_indices);
-		unsigned nbins = data.axes[ndims_spatial].size();
-		for(unsigned i=0; i<nbins; i++){
+		size_t base_ind = data.direct_index(all_indices);
+		size_t nbins = data.axes[ndims_spatial].size();
+		for(size_t i=0; i<nbins; i++){
 			data.y0[base_ind+i] *= r;
 		}
 	}
@@ -112,10 +112,10 @@ public:
 	// MPI scatter the spectrum contents.
 	// Must rescale zone stop list to account for number of groups
 	//--------------------------------------------------------------
-	void mpi_sum_scatter(vector<unsigned>& zone_stop_list){
-		unsigned ngroups = data.axes[nuGridIndex].size();
-		vector<unsigned> stop_list = zone_stop_list;
-		for(unsigned i=0; i<stop_list.size(); i++) stop_list[i] *= ngroups;
+	void mpi_sum_scatter(vector<size_t>& zone_stop_list){
+		size_t ngroups = data.axes[nuGridIndex].size();
+		vector<size_t> stop_list = zone_stop_list;
+		for(size_t i=0; i<stop_list.size(); i++) stop_list[i] *= ngroups;
 		data.mpi_sum_scatter(stop_list);
 	}
 	void mpi_sum(){
@@ -137,9 +137,9 @@ public:
 		// no extra axes for moment array
 	}
 
-	void add_isotropic(const unsigned dir_ind[NDIMS+1], const double E){
-		unsigned indices[data.Ndims()];
-		for(unsigned i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
+	void add_isotropic(const size_t dir_ind[NDIMS+1], const double E){
+		size_t indices[data.Ndims()];
+		for(size_t i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
 		indices[nuGridIndex] = dir_ind[ndims_spatial];
 
 		// increment moments
@@ -153,7 +153,7 @@ public:
 
 	double total() const{
 		double result=0;
-		for(unsigned i=0; i<data.size(); i++)
+		for(size_t i=0; i<data.size(); i++)
 			result += data[i][0];
 		return result;
 	}

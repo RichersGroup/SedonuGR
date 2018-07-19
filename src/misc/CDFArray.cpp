@@ -81,7 +81,7 @@ void CDFArray::normalize()
 		N = y.back();
 		PRINT_ASSERT(N,>,0);
 		double N_inv = 1.0/N;
-		for(unsigned i=0;i<y.size();i++)   y[i] *= N_inv;
+		for(size_t i=0;i<y.size();i++)   y[i] *= N_inv;
 	}
 }
 
@@ -418,7 +418,7 @@ double CDFArray::interpolate_pdf_piecewise(const double x, const Axis* xgrid) co
 // Simple printout
 //------------------------------------------------------
 void CDFArray::print() const{
-	for(unsigned i=0;i<y.size();i++)
+	for(size_t i=0;i<y.size();i++)
 		printf("%5d %10.4e %10.4e\n",i,get_value(i),y[i]);
 }
 
@@ -433,7 +433,7 @@ void CDFArray::wipe()
 //------------------------------------------------------------
 // just returning the size of the array
 //------------------------------------------------------------
-unsigned CDFArray::size() const
+size_t CDFArray::size() const
 {
 	return y.size();
 }

@@ -265,7 +265,7 @@ void Transport::init(Lua* lua)
 	//==========================//
 	// INITIALIZE THE NEUTRINOS //
 	//==========================//
-	for(unsigned i=0; i<species_list.size(); i++) species_list[i]->init(lua);
+	for(size_t i=0; i<species_list.size(); i++) species_list[i]->init(lua);
 
 	// complain if we're not simulating anything
 	n_active.resize(species_list.size(),0);
@@ -294,7 +294,7 @@ void Transport::init(Lua* lua)
 		PRINT_ASSERT(core_lum_multiplier.size(),==,species_list.size());
 		PRINT_ASSERT(T_core.size(),==,species_list.size());
 		PRINT_ASSERT(mu_core.size(),==,species_list.size());
-		for(unsigned s=0; s<species_list.size(); s++){
+		for(size_t s=0; s<species_list.size(); s++){
 			species_list[s]->core_lum_multiplier = core_lum_multiplier[s];
 			species_list[s]->T_core = T_core[s] / pc::k_MeV;    // K;
 			species_list[s]->mu_core = mu_core[s] * pc::MeV_to_ergs; // erg;
@@ -312,7 +312,7 @@ void Transport::init(Lua* lua)
 	L_net_esc.resize(species_list.size());
 	N_net_emit.resize(species_list.size());
 	N_net_esc.resize(species_list.size());
-	for(unsigned s=0; s<species_list.size(); s++){
+	for(size_t s=0; s<species_list.size(); s++){
 		N_core_emit[s] = 0;
 		L_net_esc[s] = 0;
 		N_net_emit[s] = 0;
@@ -367,7 +367,7 @@ void Transport::write(const int it) const{
 //------------------------------
 void Transport::reset_radiation(){
 	// clear global radiation quantities
-	for(unsigned i=0; i<species_list.size(); i++){
+	for(size_t i=0; i<species_list.size(); i++){
 		grid->distribution[i]->wipe();
 		grid->spectrum[i].wipe();
 		n_active[i] = 0;
@@ -389,9 +389,9 @@ void Transport::reset_radiation(){
 	particle_escape_energy = 0;
 
 	if(verbose) cout << "# Setting zone transport quantities" << endl << flush;
-	for(unsigned s=0; s<species_list.size(); s++){
+	for(size_t s=0; s<species_list.size(); s++){
 		#pragma omp parallel for
-		for(unsigned z_ind=0;z_ind<grid->rho.size();z_ind++)
+		for(size_t z_ind=0;z_ind<grid->rho.size();z_ind++)
 			species_list[s]->set_eas(z_ind,grid);
 	}
 }
@@ -417,17 +417,17 @@ void Transport::calculate_annihilation(){
 	for(int z_ind=start; z_ind<end; z_ind++){
 
 		// get the directional indices
-		unsigned dir_ind[NDIMS];
+		size_t dir_ind[NDIMS];
 		grid->rho.indices(z_ind,dir_ind);
 
 		// get the kernels
 		vector< vector< vector< vector<double> > > > phi; // [s][order][gin][gout]
 		phi.resize(species_list.size());
-		for(unsigned s=0; s<species_list.size(); s++)
+		for(size_t s=0; s<species_list.size(); s++)
 			species_list[s]->get_annihil_kernels(grid->rho[z_ind], grid->T[z_ind], grid->Ye[z_ind], grid->nu_grid_axis, phi[s]);
 
 		// get the list of species
-		vector<Tuple<unsigned,2> > pairs;
+		vector<Tuple<size_t,2> > pairs;
 		switch(species_list.size()){
 		case 2:
 			pairs.resize(1);
@@ -453,8 +453,8 @@ void Transport::calculate_annihilation(){
 			assert(0); // these should be the only options
 		}
 
-		for(unsigned p=0; p<pairs.size(); p++){
-			unsigned s0=pairs[p][0], s1=pairs[p][1];
+		for(size_t p=0; p<pairs.size(); p++){
+			size_t s0=pairs[p][0], s1=pairs[p][1];
 			PRINT_ASSERT(species_list[s0]->weight,==,species_list[s1]->weight);
 
 			grid->distribution[s0]->annihilation_rate(dir_ind,
@@ -488,7 +488,7 @@ void Transport::normalize_radiative_quantities(){
 	// normalize zone quantities
 	double inv_multiplier = 1.0/(double)n_subcycles;
     #pragma omp parallel for reduction(+:net_visc_heating,net_neut_heating)
-	for(unsigned z_ind=0;z_ind<grid->rho.size();z_ind++)
+	for(size_t z_ind=0;z_ind<grid->rho.size();z_ind++)
 	{
 		double inv_mult_four_vol = inv_multiplier / grid->zone_4volume(z_ind); // Lorentz invariant - same in lab and comoving frames. Assume lab_dt=1.0
 		PRINT_ASSERT(inv_mult_four_vol,>=,0);
@@ -499,9 +499,9 @@ void Transport::normalize_radiative_quantities(){
 		grid->l_emit[z_ind] *= inv_mult_four_vol;// num      --> num/ccm/s
 
 		// represents *all* species if nux
-		unsigned dir_ind[NDIMS];
+		size_t dir_ind[NDIMS];
 		grid->rho.indices(z_ind,dir_ind);
-		for(unsigned s=0; s<species_list.size(); s++){
+		for(size_t s=0; s<species_list.size(); s++){
 		  grid->distribution[s]->rescale_spatial_point(dir_ind, inv_mult_four_vol * pc::inv_c);  // erg*dist --> erg/ccm
 		}
 
@@ -513,7 +513,7 @@ void Transport::normalize_radiative_quantities(){
 	}
 
 	// normalize global quantities
-	for(unsigned s=0; s<species_list.size(); s++){
+	for(size_t s=0; s<species_list.size(); s++){
 		grid->spectrum[s].rescale(inv_multiplier); // erg/s in each bin. Assume lab_dt=1.0
 		N_core_emit[s] *= inv_multiplier; // assume lab_dt=1.0
 		L_net_esc[s] *= inv_multiplier; // assume lab_dt=1.0
@@ -527,10 +527,10 @@ void Transport::normalize_radiative_quantities(){
 	// output useful stuff
 	if(verbose){
 		int total_active = 0;
-		for(unsigned i=0; i<species_list.size(); i++) total_active += n_active[i];
+		for(size_t i=0; i<species_list.size(); i++) total_active += n_active[i];
 		cout << "#   " << total_active << " particles on all ranks" << endl;
 
-		for(unsigned i=0; i<species_list.size(); i++){
+		for(size_t i=0; i<species_list.size(); i++){
 			double per_esc = (100.0*(double)n_escape[i])/(double)n_active[i];
 			cout << "#     --> " << n_escape[i] << "/" << n_active[i] << " " << species_list[i]->name << " escaped. (" << per_esc << "%)" << endl;
 		}
@@ -548,24 +548,24 @@ void Transport::normalize_radiative_quantities(){
 
 		if(n_emit_core_per_bin>0){
 			cout << "#   { ";
-			for(unsigned s=0; s<N_core_emit.size(); s++) cout << setw(12) << N_core_emit[s] << "  ";
+			for(size_t s=0; s<N_core_emit.size(); s++) cout << setw(12) << N_core_emit[s] << "  ";
 			cout << "} 1/s N_core" << endl;
 		}
 
 		cout << "#   { ";
-		for(unsigned s=0; s<L_net_esc.size(); s++) cout << setw(12) << L_net_esc[s] << "  ";
+		for(size_t s=0; s<L_net_esc.size(); s++) cout << setw(12) << L_net_esc[s] << "  ";
 		cout << "} erg/s L_esc (lab)" << endl;
 
 		cout << "#   { ";
-		for(unsigned s=0; s<N_net_esc.size(); s++) cout << setw(12) << L_net_esc[s]/N_net_esc[s]*pc::ergs_to_MeV << "  ";
+		for(size_t s=0; s<N_net_esc.size(); s++) cout << setw(12) << L_net_esc[s]/N_net_esc[s]*pc::ergs_to_MeV << "  ";
 		cout << "} MeV E_avg_esc (lab)" << endl;
 
 		cout << "#   { ";
-		for(unsigned s=0; s<N_net_emit.size(); s++) cout << setw(12) << N_net_emit[s] << "  ";
+		for(size_t s=0; s<N_net_emit.size(); s++) cout << setw(12) << N_net_emit[s] << "  ";
 		cout << "} 1/s N_emit (lab)" << endl;
 
 		cout << "#   { ";
-		for(unsigned s=0; s<N_net_esc.size(); s++) cout << setw(12) << N_net_esc[s] << "  ";
+		for(size_t s=0; s<N_net_esc.size(); s++) cout << setw(12) << N_net_esc[s] << "  ";
 		cout << "} 1/s N_esc (lab)" << endl;
 	}
 }
@@ -608,7 +608,7 @@ void Transport::sum_to_proc0()
 
 	// reduce the spectra and distribution functions
 	if(verbose) cout << "#   Summing distribution function & spectra to needed proc and 0" << endl;
-	for(unsigned i=0; i<species_list.size(); i++){
+	for(size_t i=0; i<species_list.size(); i++){
 		if(verbose) cout << "#     Working on species " << i << endl;
 		grid->spectrum[i].mpi_sum();
 		grid->distribution[i]->mpi_sum();
@@ -657,7 +657,7 @@ double Transport::number_blackbody(const double T /*K*/, const double chem_pot /
 //-----------------------------------------------------
 void Transport::set_cdf_to_BB(const double T, const double chempot, CDFArray& emis){
     #pragma omp parallel for ordered
-	for(unsigned j=0;j<grid->nu_grid_axis.size();j++)
+	for(size_t j=0;j<grid->nu_grid_axis.size();j++)
 	{
 		double nu  = grid->nu_grid_axis.mid[j];
 		double dnu = grid->nu_grid_axis.delta(j);
@@ -688,7 +688,7 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 
 	// spatial indices
 	grid->rho.indices(eh->z_ind, eh->dir_ind);
-	for(unsigned i=0; i<NDIMS; i++)	PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
+	for(size_t i=0; i<NDIMS; i++)	PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
 	grid->rho.set_InterpolationCube(&(eh->icube_vol),eh->grid_coords,eh->dir_ind);
 	eh->icube_vol.set_slope_weights(eh->grid_coords);
 
@@ -755,11 +755,11 @@ void Transport::random_core_x(Tuple<double,4>& x) const{
 	Tuple<double,3> x3;
 	isotropic_direction(x3,&rangen);
 
-	for(unsigned i=0; i<3; i++) x[i] = x3[i] * r_core * (1. + TINY);
+	for(size_t i=0; i<3; i++) x[i] = x3[i] * r_core * (1. + TINY);
 	int z_ind = grid->zone_index(x);
 	PRINT_ASSERT(z_ind,>=,0);
 	double a_phot = r_core + grid->zone_min_length(z_ind)*TINY;
-	for(unsigned i=0; i<3; i++) x[i] *= a_phot;
+	for(size_t i=0; i<3; i++) x[i] *= a_phot;
 	PRINT_ASSERT(radius(x),>=,r_core);
 }
 

@@ -61,7 +61,7 @@ void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const i
 
 	// set up the transport module (includes the grid)
 	(*sim)->init(&lua);
-	for(unsigned s=0; s<(*sim)->species_list.size(); s++){
+	for(size_t s=0; s<(*sim)->species_list.size(); s++){
 		Neutrino_GR1D* tmpSpecies =static_cast<Neutrino_GR1D*>((*sim)->species_list[s]);
 		tmpSpecies->ghosts1 = *ghosts1;
 		tmpSpecies->n_GR1D_zones = *n_GR1D_zones;
@@ -92,7 +92,7 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 	static_cast<GridGR1D*>((*sim)->grid)->set_fluid(rho, T, Ye, v1);
 
 	bool extract_MC[nr][ns][ne];
-	for(unsigned s=0; s<(*sim)->species_list.size(); s++)
+	for(size_t s=0; s<(*sim)->species_list.size(); s++)
 		static_cast<Neutrino_GR1D*>((*sim)->species_list[s])->set_eas_external(eas,GR1D_tau_crit,&(extract_MC[0][0][0]),*rshock);
 
 	// do MC calculation
@@ -117,7 +117,7 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 	// set the GR1D quantities
 	int indlast = ne*ns*nr_GR1D;
 	//#pragma omp for
-	unsigned dir_ind[2];
+	size_t dir_ind[2];
 	for(int s=0; s<ns; s++){
 		GR1DSpectrumArray* tmpSpectrum = static_cast<GR1DSpectrumArray*>((*sim)->grid->distribution[s]);
 		for(int z_ind=0; z_ind<nr; z_ind++){
@@ -140,7 +140,7 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 					//int indexChi_pm = inde + 0*indlast + 0*ne*ns*nr_GR1D*1;
 
 					// load up new arrays
-					unsigned index = tmpSpectrum->data.direct_index(dir_ind);
+					size_t index = tmpSpectrum->data.direct_index(dir_ind);
 					Tuple<double,6> tmp = tmpSpectrum->data[index];
 					double Prr  = tmp[2];//q_M1[indexPrr];//
 					double Ptt  = tmp[3];//q_M1_extra[indexPtt];//

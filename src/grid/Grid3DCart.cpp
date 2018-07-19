@@ -72,10 +72,10 @@ void Grid3DCart::read_model_file(Lua* lua)
 
 	if(DO_GR){
 		#pragma omp parallel for
-		for(unsigned z_ind=0; z_ind<lapse.size(); z_ind++){
+		for(size_t z_ind=0; z_ind<lapse.size(); z_ind++){
 			Metric g;
 			g.alpha = lapse[z_ind];
-			for(unsigned i=0; i<3; i++) g.betaup[i] = betaup[z_ind][i];
+			for(size_t i=0; i<3; i++) g.betaup[i] = betaup[z_ind][i];
 			g.gammalow.data = g3[z_ind];
 			g.update();
 			sqrtdetg3[z_ind] = sqrt(g.gammalow.det());
@@ -318,10 +318,10 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	for(int z_ind=0; z_ind<(int)rho.size(); z_ind++){
 
 		// directional indices in Sedonu grid
-		Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
+		Tuple<size_t,NDIMS> dir_ind = zone_directional_indices(z_ind);
 
 		// directional indices in hdf5 data
-		unsigned hdf5_dir_ind[3];
+		size_t hdf5_dir_ind[3];
 		for(int d=0; d<3; d++){
 			hdf5_dir_ind[d] = offset[d] + dir_ind[d];
 			PRINT_ASSERT(offset[d],>=,0);
@@ -406,12 +406,12 @@ int Grid3DCart::zone_index(int i, int j, int k) const{
 //-------------------------------------------
 // get directional indices from zone index
 //-------------------------------------------
-Tuple<unsigned,NDIMS> Grid3DCart::zone_directional_indices(int z_ind) const
+Tuple<size_t,NDIMS> Grid3DCart::zone_directional_indices(int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 
-	Tuple<unsigned,NDIMS> dir_ind;
+	Tuple<size_t,NDIMS> dir_ind;
 	dir_ind[0] =  z_ind / (xAxes[1].size()*xAxes[2].size());
 	dir_ind[1] = (z_ind % (xAxes[1].size()*xAxes[2].size())) / xAxes[2].size();
 	dir_ind[2] =  z_ind % xAxes[2].size();
@@ -452,7 +452,7 @@ Tuple<double,4> Grid3DCart::sample_in_zone(int z_ind, ThreadRNG* rangen) const
 	rand[2] = rangen->uniform();
 
 	// zone directional indices
-	Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
+	Tuple<size_t,NDIMS> dir_ind = zone_directional_indices(z_ind);
 
 	// zone deltas in each of three directions
 	Tuple<double,NDIMS> delta = get_deltas(z_ind);
@@ -493,8 +493,8 @@ double Grid3DCart::d_boundary(const EinsteinHelper& eh) const{
 
 	// x direction
 	double dlambda[3] = {INFINITY,INFINITY,INFINITY};
-	for(unsigned d=0; d<3; d++){
-		unsigned i = eh.dir_ind[d];
+	for(size_t d=0; d<3; d++){
+		size_t i = eh.dir_ind[d];
 		PRINT_ASSERT(eh.xup[d],<=,zone_right_boundary(d,i));
 		PRINT_ASSERT(eh.xup[d],>=, zone_left_boundary(d,i));
 		if(eh.kup[d] < 0) dlambda[d] = ( zone_left_boundary(d,i) - eh.xup[d]) / eh.kup[d];
@@ -511,14 +511,14 @@ double Grid3DCart::d_randomwalk(const EinsteinHelper& eh) const{
 	double R=INFINITY;
 	double D = eh.scatopac / (3.*pc::c);
 
-	for(unsigned i=0; i<3; i++){
+	for(size_t i=0; i<3; i++){
 		for(int sgn=1; sgn>0; sgn*=-1){
 			// get a null test vector
 			Tuple<double,4> ktest;
 			for(size_t j=0; j<4; j++) ktest[j] = 0;
 			ktest[i] = sgn;
 			eh.g.normalize_null_changeupt(ktest);
-			if(ktest[3]<0) for(unsigned i=0; i<4; i++) ktest[i] *= -1;
+			if(ktest[3]<0) for(size_t i=0; i<4; i++) ktest[i] *= -1;
 
 			// get the time component of the tetrad test vector
 			double kup_tet_t = -eh.g.dot<4>(ktest,eh.u);
@@ -553,7 +553,7 @@ Tuple<double,NDIMS> Grid3DCart::zone_coordinates(int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
-	Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
+	Tuple<size_t,NDIMS> dir_ind = zone_directional_indices(z_ind);
 
 	Tuple<double,NDIMS> r;
 	for(int i=0; i<3; i++)
@@ -583,7 +583,7 @@ Tuple<double,NDIMS> Grid3DCart::get_deltas(int z_ind) const
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 
 	// get directional indices
-	Tuple<unsigned,NDIMS> dir_ind = zone_directional_indices(z_ind);
+	Tuple<size_t,NDIMS> dir_ind = zone_directional_indices(z_ind);
 
 	Tuple<double,NDIMS> delta;
 	for(int i=0; i<3; i++){
@@ -594,7 +594,7 @@ Tuple<double,NDIMS> Grid3DCart::get_deltas(int z_ind) const
 }
 
 
-double Grid3DCart::zone_left_boundary(const unsigned dir, const unsigned dir_ind) const{
+double Grid3DCart::zone_left_boundary(const size_t dir, const size_t dir_ind) const{
 	PRINT_ASSERT(dir,<,3);
 
 	double boundary = xAxes[dir].bottom(dir_ind);
@@ -602,7 +602,7 @@ double Grid3DCart::zone_left_boundary(const unsigned dir, const unsigned dir_ind
 	PRINT_ASSERT(boundary,>=,xAxes[dir].min);
 	return boundary;
 }
-double Grid3DCart::zone_right_boundary(const unsigned dir, const unsigned dir_ind) const{
+double Grid3DCart::zone_right_boundary(const size_t dir, const size_t dir_ind) const{
 	PRINT_ASSERT(dir,<,3);
 
 	double boundary = xAxes[dir].top[dir_ind];
@@ -672,7 +672,7 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
 	}
 
 	// assign the arrays
-	for(unsigned i=0; i<4; i++){
+	for(size_t i=0; i<4; i++){
 		eh->xup[i] = xup[i];
 		eh->kup[i] = kup[i];
 	}
@@ -684,7 +684,7 @@ double Grid3DCart::zone_lorentz_factor(int z_ind) const{
 	else g.gammalow.data = NaN;
 
 	Tuple<double,3> threevel;
-	for(unsigned i=0; i<3; i++) threevel[i] = v[z_ind][i]/pc::c;
+	for(size_t i=0; i<3; i++) threevel[i] = v[z_ind][i]/pc::c;
 
 	double result = EinsteinHelper::lorentzFactor(&g,threevel);
 	PRINT_ASSERT(result,>=,1);
@@ -694,7 +694,7 @@ double Grid3DCart::zone_lorentz_factor(int z_ind) const{
 
 Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
   double dg[4][4][4];
-  for(unsigned i=0; i<4; i++) for(unsigned j=0; j<4; j++){ // no time derivatives
+  for(size_t i=0; i<4; i++) for(size_t j=0; j<4; j++){ // no time derivatives
       dg[3][i][j] = 0;
     }
 
@@ -703,11 +703,11 @@ Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
   Tuple<Tuple<double,3>,NDIMS> dbetaup_dx = betaup.interpolate_slopes(eh.icube_vol);
   Tuple<Tuple<double,3>,NDIMS> dbetalow_dx;
 
-  for(unsigned a=0; a<3; a++) 
+  for(size_t a=0; a<3; a++) 
     dbetalow_dx[a] = eh.g.gammalow.lower(dbetaup_dx[a]);
   
   #pragma omp simd
-  for(unsigned a=0; a<3; a++){
+  for(size_t a=0; a<3; a++){
     // xx parts
     dg[a][0][0] = dg3_dx[a][ixx]; // [direction][element]
     dg[a][0][1] = dg3_dx[a][ixy];
@@ -725,7 +725,7 @@ Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
     dg[a][3][1] = dbetalow_dx[a][1];
     dg[a][3][2] = dbetalow_dx[a][2];
     dg[a][3][3] = -eh.g.alpha * da_dx[a];
-    for(unsigned i=0; i<3; i++)
+    for(size_t i=0; i<3; i++)
       dg[a][3][3] += eh.g.betalow[i] * dbetaup_dx[a][i]; // [direction][element]
     dg[a][3][3] *= 2.;
   }
@@ -733,9 +733,9 @@ Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
   // get the low-index Christoffel symbols
   Tuple<double,4> dk_dlambda_low = 0;
   #pragma omp simd collapse(3)
-  for(unsigned a=0; a<4; a++)
-    for(unsigned i=0; i<4; i++)
-      for(unsigned j=0; j<4; j++)
+  for(size_t a=0; a<4; a++)
+    for(size_t i=0; i<4; i++)
+      for(size_t j=0; j<4; j++)
     	  dk_dlambda_low[a] += (dg[i][a][j] - 0.5*dg[a][i][j]) * eh.kup[i] * eh.kup[j];
 
   Tuple<double,4> dk_dlambda = eh.g.raise(dk_dlambda_low);

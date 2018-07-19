@@ -51,10 +51,10 @@ void Neutrino_NuLib::myInit(Lua* /*lua*/)
 //-----------------------------------------------------------------
 // set emissivity, abs. opacity, and scat. opacity in zones
 //-----------------------------------------------------------------
-void Neutrino_NuLib::set_eas(const unsigned z_ind, Grid* grid) const
+void Neutrino_NuLib::set_eas(const size_t z_ind, Grid* grid) const
 {
-	unsigned ngroups = grid->nu_grid_axis.size();
-	unsigned dir_ind[NDIMS+2];
+	size_t ngroups = grid->nu_grid_axis.size();
+	size_t dir_ind[NDIMS+2];
 	grid->rho.indices(z_ind,dir_ind);
 
 	vector<double> tmp_absopac(ngroups), tmp_scatopac(ngroups), tmp_BB(ngroups);
@@ -63,19 +63,19 @@ void Neutrino_NuLib::set_eas(const unsigned z_ind, Grid* grid) const
 	nulib_get_eas_arrays(grid->rho[z_ind], grid->T[z_ind], grid->Ye[z_ind], ID,
 			tmp_BB, tmp_absopac, tmp_scatopac, tmp_phi0, tmp_delta);
 
-	for(unsigned igin=0; igin<ngroups; igin++){
+	for(size_t igin=0; igin<ngroups; igin++){
 		dir_ind[NDIMS] = igin;
-		unsigned global_index1 = grid->abs_opac[ID].direct_index(dir_ind);
+		size_t global_index1 = grid->abs_opac[ID].direct_index(dir_ind);
 		grid->abs_opac[ID][global_index1] = tmp_absopac[igin];
 		grid->scat_opac[ID][global_index1] = tmp_scatopac[igin];
 		grid->BB[ID][global_index1] = tmp_BB[igin]; // erg/cm^2/s/sr - convert in next line
 		grid->BB[ID][global_index1] /= pc::h * pow(grid->nu_grid_axis.mid[igin],3) * grid->nu_grid_axis.delta(igin); // #/cm^2/s/sr/(Hz^3/3)
 
 		if(grid->scattering_delta[ID].size()>0){
-			for(unsigned igout=0; igout<ngroups; igout++){
+			for(size_t igout=0; igout<ngroups; igout++){
 				grid->partial_scat_opac[ID][igout][global_index1] = tmp_phi0[igin][igout];
 				dir_ind[NDIMS+1] = igout;
-				unsigned global_index2 = grid->scattering_delta[ID].direct_index(dir_ind);
+				size_t global_index2 = grid->scattering_delta[ID].direct_index(dir_ind);
 				grid->scattering_delta[ID][global_index2] = tmp_delta[igin][igout];
 			}
 		}

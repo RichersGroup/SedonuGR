@@ -60,7 +60,7 @@ void GridGR1D::symmetry_boundaries(EinsteinHelper* /*eh*/) const{
 }
 
 void GridGR1D::set_fluid(const double* rho_in, const double* T_in, const double* Ye_in, const double* vr_in){
-	for(unsigned z_ind=0; z_ind<rho.size(); z_ind++)
+	for(size_t z_ind=0; z_ind<rho.size(); z_ind++)
 	{
 		rho[z_ind]  = rho_in[z_ind+ghosts1];
 		T[z_ind]    =   T_in[z_ind+ghosts1];
