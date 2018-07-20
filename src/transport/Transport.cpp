@@ -738,6 +738,7 @@ void Transport::isotropic_direction(Tuple<double,3>& D, ThreadRNG *rangen){
 }
 
 void Transport::isotropic_kup_tet(const double nu, Tuple<double,4>& kup_tet, ThreadRNG *rangen){
+	PRINT_ASSERT(nu,>,0);
 	Tuple<double,3> D;
 	isotropic_direction(D,rangen);
 

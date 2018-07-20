@@ -168,7 +168,8 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 	// sample the frequency
 	double nu3_min = pow(grid->nu_grid_axis.bottom(g), 3);
 	double nu3_max = pow(grid->nu_grid_axis.top[g],    3);
-	double nu3 = rangen.uniform(nu3_min, nu3_max);
+	double nu3 = 0;
+	while(!(nu3>0)) nu3 = rangen.uniform(nu3_min, nu3_max);
 	double nu = pow(nu3, 1./3.);
 
 	// emit isotropically in comoving frame
@@ -231,7 +232,8 @@ Particle Transport::create_surface_particle(const double weight, const size_t s,
 	// sample the frequency
 	double nu3_min = pow(grid->nu_grid_axis.bottom(g), 3);
 	double nu3_max = pow(grid->nu_grid_axis.top[g],    3);
-	double nu3 = rangen.uniform(nu3_min, nu3_max);
+	double nu3 = 0;
+	while(!(nu3>0)) nu3 = rangen.uniform(nu3_min, nu3_max);
 	double nu = pow(nu3, 1./3.);
 
 	// sample outward direction
