@@ -223,7 +223,7 @@ void Transport::propagate(EinsteinHelper *eh){
 			break;
 		case interact:
 			move(eh);
-			if(eh->z_ind>0) scatter(eh);
+			if(eh->z_ind>0 && eh->scatopac>0) scatter(eh);
 			break;
 		default:
 			assert(0);

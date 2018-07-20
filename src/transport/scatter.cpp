@@ -55,6 +55,8 @@ void Transport::window(EinsteinHelper *eh) const{
 
 // choose which type of scattering event to do
 void Transport::scatter(EinsteinHelper *eh) const{
+	PRINT_ASSERT(eh->scatopac,>,0);
+
 	// store the old direction
 	double Nold = eh->N;
 	Tuple<double,4> kup_tet_old;
@@ -180,6 +182,7 @@ bool reject_direction(const double mu, const double delta, ThreadRNG* rangen){
 }
 void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<double,4>& kup_tet_old) const{
 	PRINT_ASSERT(use_scattering_kernels,>,0);
+	PRINT_ASSERT(eh->scatopac,>,0);
 	PRINT_ASSERT(grid->scattering_delta[eh->s].size(),>,0);
 	PRINT_ASSERT(kup_tet_old[3],==,eh->kup_tet[3]);
 
