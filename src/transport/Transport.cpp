@@ -96,24 +96,20 @@ Transport::Transport(){
 //----------------------------------------------------------------------------
 void Transport::init(Lua* lua)
 { 
-  // report compiler variables
-  if(verbose){
-    cout << "# NDIMS=" << NDIMS << endl;
-    cout << "# DEBUG=" << DEBUG << endl;
-    cout << "# DO_GR=" << DO_GR << endl;
-  }
-
-  // get mpi rank
+	// get mpi rank
 	MPI_Comm_size( MPI_COMM_WORLD, &MPI_nprocs );
 	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID  );
 	if(MPI_myID==0){
-	        cout << "# Initializing transport..." << endl << flush;
+		cout << "# NDIMS=" << NDIMS << endl;
+		cout << "# DEBUG=" << DEBUG << endl;
+		cout << "# DO_GR=" << DO_GR << endl;
+		cout << "# Initializing transport..." << endl << flush;
 		cout << "#   Using " << MPI_nprocs << " MPI ranks" << endl << flush;
-            #ifdef _OPENMP
-		    #pragma omp parallel
-		    #pragma omp single
-		    cout << "#   Using " << omp_get_num_threads()  << " threads on each MPI rank." << endl << flush;
-            #endif
+#ifdef _OPENMP
+#pragma omp parallel
+#pragma omp single
+		cout << "#   Using " << omp_get_num_threads()  << " threads on each MPI rank." << endl << flush;
+#endif
 	}
 
 	// figure out what emission models we're using
