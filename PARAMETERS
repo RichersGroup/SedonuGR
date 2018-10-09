@@ -16,22 +16,16 @@ do_visc = [0,1] add energy source to matter absorption
 visc_specific_heat_rate = [double>0] (do_visc==1) viscous
 			heating per unit mass (erg/g/s)
 
-do_relativity = [0,1] lorentz transform particles as they
-              interact with the fluid. Lorentz contract fluid so the
- 	      intrinsic fluid variables (e.g. rho,T) are given in the
- 	      rest frame
-
 do_annihilation = [0,1] compute annihilation rates based on
 		integrating distribution functions over annihilation kernels.
-
-radiative_eq = [0,1] immediately re-emit particles that are
-             absorbed, and allow particles to die on
-	     absorption. Otherwise, particles just die when they are
-	     absorbed. Results in speedup if valid.
 
 reflect_outer = [0,1]
 	      0 --> outflow outer boundary conditions
 	      1 --> reflecting outer boundary conditions
+
+use_scattering_kernels = [0,1] 1 uses full inelastic scattering formalism. 0 assumes
+		       elastic, isotropic scattering and neglects the delta and
+		       inelastic_phi* data in nulib files
 
 
 ||===================||
@@ -57,40 +51,27 @@ equilibrium_tolerance = [float>0] tolerance of the equilibrium solver
 ||OPACITY AND EMISSIVITY||
 ||======================||
 
-grey_opacity = [float>0] neutrino grey opacity (cm^2/g). If <=0, uses
-	     NuLib table instead
+neutrino_type = ["NuLib","grey","Nagakura","GR1D"] defines how we obtain opacities
 
-grey_abs_frac = [0<float<1] (grey_opacity=>0) probability of neutrino
-        to be absorbed (rather than scattered)
+(neutrino_type=="grey")
+grey_opac = [float>0] neutrino grey opacity (cm^2/g). If <=0, uses
+	  NuLib table instead
+grey_abs_frac = [0<float<1] probability of neutrino to be absorbed (rather than scattered)
 
-nugrid_start = [float>=0] (grey_opacity=>0) bottom of the neutrino
-	     frequency grid (MeV)
+(neutrino_type=="grey","Nagakura")
+nugrid_n = [int>0] number of neutrino frequency bins
+nugrid_start = [float>=0] (nugrid_n>0) bottom of the neutrino frequency grid (MeV)
+nugrid_stop = [float>=0]  (nugrid_n>0) top of the neutrino frequency grid (MeV)
+nugrid_filename = [string] (nugrid_n<=0) location of file with frequency coordinates
 
-nugrid_stop = [float>=0] (grey_opacity=>0) top of the neutrino
-	    frequency grid (MeV)
-
-nugrid_n = [int>0] (grey_opacity=>0) number of neutrino frequency bins
-
+(neutrino_type=="NuLib","GR1D")
 nulib_table = [string] (grey_opacity<0) path to the NuLib opacity table
-
 nulib_eos = [string] path to the equation of state table - used in
 	  some of the tests and to print chemical potentials in the
 	  output. Value not used if compiled with Helmholtz EOS.
 
-opac_interp_method = [0,1,2,3] 
-		   0-->piecewise constant (most self-consistent)
-		   1-->linear
-		   3-->logarithmic
-		   4-->power
-
-cdf_interpolation_order = [0,1,3] -- order of interpolation of
-        emissivity CDF. 0 is most self-consistent (completely
-	self-consistent if no relativity). All are guaranteed to be
-	monotonic.
-
-cdf_cutoff = [0<real<1] -- change CDF values below this number
-        to be 0. Used to fix machine-precision errors in some
-	pathological cases.
+(neutrino_type=="Nagakura")
+opacity_dir = [string] location of directory containing neutrino interaction rates
 
 
 ||==============||
@@ -106,11 +87,23 @@ spec_n_phi = [int>0] number of phi bins in the spectra
 ||DISTRIBUTION FUNCTION||
 ||=====================||
 
+distribution_type = ["Polar","Moments","RadialMoments","GR1D"]
+		  "Polar" - discretized into theta and mu bins
+		  "Moments" - discretized into the first four moments (0,1,2,3)
+		  "RadialMoments" - moments, but non-vanishing terms in spherical symmetry
+		  "GR1D" - RadialMoments, but with functionality for coupling w/ GR1D
+
 distribution_nmu = [int>0] -- number of cos(theta) bins in every
         grid zone's distribution function.
 
 distribution_nphi = [int>0] -- number of phi bins in every grid
         zone's distribution function.
+
+distribution_mugrid_filename = [string] (distribution_nmu>0 && distribution_nphi>0)
+			     location of file containing cos(polar_angle) coordinates
+			     
+distribution_phigrid_filename = [string]  (distribution_nmu>0 && distribution_nphi>0)
+			     location of file containing azimuthal coordinates
 
 
 ||==============||
@@ -134,9 +127,9 @@ model_file = [string] path to the model file
 Grid0DIsotropic_rho = [float>0] density in g/ccm
 Grid0DIsotropic_T = [float>0] temperature in MeV
 Grid0DIsotropic_Ye = [0<=float<=1] electron fraction
-Grid0DIsotropic_vx = [float] x-velocity of isotropic fluid (cm/s)
-Grid0DIsotropic_vy = [float] y-velocity of isotropic fluid (cm/s)
-Grid0DIsotropic_vz = [float] z-velocity of isotropic fluid (cm/s)
+
+(grid_type="Grid1DSphere",model_type="Nagakura")
+   Grid1DSphere_Nagakura_rgrid_file = [string] path to radial coordinates
 
 (grid_type="Grid2DSphere",model_type="Nagakura")
    Grid2DSphere_Nagakura_rgrid_file = [string] path to radial coordinates
@@ -166,17 +159,6 @@ Grid0DIsotropic_vz = [float] z-velocity of isotropic fluid (cm/s)
 
 write_zones_every = [int>0] write the fluid data every n iterations
 
-write_rays_every = [int>0] write fluid data along prescribed ray paths
-		 every n iterations
-
-write_spectra_every = [int>0] write spectra (integrated since last
-		    spectra output) every n iterations
-
-output_zones_distribution = [0,1] (write_zones_every>0) output the full
-			  distribution function in every zone?
-
-output_hdf5 = [0,1] (write_zones_every>0) output grid data in hdf5 format?
-
 
 ||=================||
 ||PARTICLE CREATION||
@@ -187,25 +169,12 @@ n_subcycles = [int>0] number of times to emit particles. Essentially
 	    so a huge number of particles can be used without running
 	    out of memory.
 
-do_emit_by_bin = [0,1]
-	       0 --> emit number of particle proportional to
-	             integrated emissivity 
-	       1 --> emit the same number of particles in each
-	             energy/cell/species bin
-
-(do_emit_by_bin=1)
 n_emit_core_per_bin = [int>=0] number of particles to emit from the
  		    core per species/energy bin during each emission
  		    stage
 n_emit_therm_per_bin = [int>=0] number of particles to emit from cells
 		     per energy/cell/species bin during each emission
 		     stage
-
-(do_emit_by_bin=0)
-n_emit_core = [int>0] number of particles to emit from the inner core
-	    during each emission stage
-n_emit_therm = [int>0] number of particles emitted thermally within
-	     zones during each emission stage
 
 
 ||============||
@@ -214,25 +183,12 @@ n_emit_therm = [int>0] number of particles emitted thermally within
 
 r_core = [float>0] radius of inner emitting core (cm)
 
-core_emit_method = [1,2]
-		 1-->input {T,mue,multiplier}. Luminosity is determined
-		     by (blackbody luminosity) * multiplier
-		 2-->input {T,mu,L} for each species
+T_core = [float_array>0] temperature of the inner emitting core (K)
 
-(core_emit_method=1)
-T_core = [float>0] temperature of the inner emitting core (K)
-core_nue_chem_pot = [real] electron neutrino chemical potential of
-		  neutrinos emitted from core (MeV)
-core_lum_multiplier = [real>0] amplify the natural Stefan-Boltzmann
+core_chem_pot = [float_array] chemical potential of each species emitted from core (MeV)
+
+core_lum_multiplier = [float_array>0] amplify the natural Stefan-Boltzmann
 		    blackbody core luminosity by this factor.
-
-(core_emit_method=2)
-L[i]_core = [float>0] L0_core, L1_core, etc. Luminosity of inner
-	  emitting core for species 0, 1, etc. (erg/s)
-T[i]_core = [float>0] T0_core, T1_core, etc. Temperature of inner
-	  emitting core for species 0, 1, etc. (MeV)
-mu[i]_core = [float] mu0_core, mu1_core, etc. Chemical potential of
-	   each species emitted from the inner core (MeV)
 
 
 ||================||
@@ -247,56 +203,33 @@ max_n_iter = [int>=0] stop after this many iterations (1 iteration
 max_time_hours = [float>0] maximum walltime. After this, sedonu will
 	       stop iterating, but will finish current iteration
 
-step_size = [float>0] maximum fraction of a zone length a particle is
-	  allowed to travel before updating opacity information
+min_step_size = [float>0] minimum fraction of a zone length a particle is
+	      allowed to travel before updating opacity information
 
-randomwalk_sphere_size = [float] fraction of a zone length that the
-		       random walk approximation will cause particles
-		       to jump. If <=0 random walk is turned off.
+max_step_size = [float>0] maximum fraction of a zone length a particle is
+	      allowed to travel before updating opacity information
 
-(randomwalk_sphere_size>0)
+min_packet_weight = [float>0] minimum weight for a neutrino packet. Initial weight is 1.
+
+||==========||
+||RANDOMWALK||
+||==========||
+
+do_randomwalk = [0,1] in diffusive zones/bins use random walk approximation
+
 randomwalk_max_x = [float>0] maximum dimensionless x from which to
 		 sample diffusion time. 1.0 should be plenty.
+
 randomwalk_sumN = [int>1] number of terms in the sum to evaluate the
 		diffusion time PDF during initialization. 1000 is far
 		more than necessary but does not affect run time
+
 randomwalk_npoints = [int>1] number of points in the diffusion time PDF
+
 randomwalk_interpolation_order = [0,1,3] interpolation order used when
 			       sampling the diffusion time CDF
+
 randomwalk_min_optical_depth = [float>=0] optical depth below which
 			     the random walk approximation is
 			     considered invalid and will not evaluate
 			     (resort to isotropic scattering instead)
-exponential_decay = [0,1] (0) - particles lose energy at scatter
-		  time. (1) - particles lose energy continuously along
-		  trajectory
-
-||=======||
-||BIASING||
-||=======||
-
-max_particles = [int] maximum number of particles allowed at any time
-	      ever (to prevent memory issues)
-
-bias_path_length = [0,1]
-		 0 --> no path length biasing
-		 1 --> try to bias path length to one optical depth
-
-max_path_length_boost = [float>0] maximum factor by which step length
-		      PDF can be amplified
-
-importance_bias = [float]
-		<=0 --> no biasing
-		>0 --> assign less importance (i.e. fewer particles)
-		       to highly optically-deep regions. Importance
-                       decays as exp(1 - (optical depth)*(importance_bias))
-
-min_importance = [0<=float<=1] (importance_bias>0) minimum relative
-	       importance a bin can have
-
-min_packet_energy = [float>=0] smallest particle energy, below which
-		  particle is rouletted (erg)
-
-max_packet_energy = [float>=0] largest particle energy, above which
-		  particle is split (erg)
-

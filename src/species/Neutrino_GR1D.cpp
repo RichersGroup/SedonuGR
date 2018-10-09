@@ -53,7 +53,7 @@ void Neutrino_GR1D::myInit(Lua* /*lua*/)
 
 void Neutrino_GR1D::set_nu_grid(Lua* lua, Axis* nu_grid){
 	// get nugrid from nulib file
-	string nulibfilename = lua->scalar<string>("nulib_file");
+	string nulibfilename = lua->scalar<string>("nulib_table");
 	H5::H5File file( nulibfilename.c_str(), H5F_ACC_RDONLY );
 
 	// read tops from hdf5 file
