@@ -758,8 +758,6 @@ void Transport::random_core_x(Tuple<double,4>& x) const{
 	for(size_t i=0; i<3; i++) x[i] = x3[i] * r_core * (1. + TINY);
 	int z_ind = grid->zone_index(x);
 	PRINT_ASSERT(z_ind,>=,0);
-	double a_phot = r_core + grid->zone_min_length(z_ind)*TINY;
-	for(size_t i=0; i<3; i++) x[i] *= a_phot;
 	PRINT_ASSERT(radius(x),>=,r_core);
 }
 
