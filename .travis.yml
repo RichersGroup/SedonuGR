@@ -40,6 +40,7 @@ addons:
     - python3-numpy
     - python3-tk
     - python3-matplotlib
+    - python3-scipy
     env:
     - CC=gcc-5
     - CXX=g++-5
