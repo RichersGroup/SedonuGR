@@ -20,7 +20,7 @@ equilibrium_Ye = 0
 neutrino_type = "grey"
 nugrid_n = 20
 nugrid_start = 0
-nugrid_stop = 150
+nugrid_stop = 100
 grey_opac = 0
 grey_abs_frac = 0
 --nulib_table = "NuLib.h5"
@@ -77,7 +77,7 @@ core_lum_multiplier = {1.0,1.0}
 verbose       = 1
 max_n_iter =  1
 min_step_size = 0.1
-max_step_size = 0.4
+max_step_size = 0.1
 
 -- Biasing
 
