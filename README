@@ -144,8 +144,8 @@ Configure the make process. Some versions of gcc have a bug that
 causes hdf5 to fail tests if any optimization is enabled, so there are
 two examples below. The only tested compilers are intel and GNU.
 
-    FC=gfortran CC=gcc CXX=g++  CFLAGS=-O0 ./configure --enable-fortran --enable-cxx   #for GNU compilers
-    FC=ifort    CC=icc CXX=icpc            ./configure --enable-fortran --enable-cxx   #for Intel compilers
+    FC=gfortran CC=gcc CXX=g++  ./configure --enable-fortran --enable-cxx   #for GNU compilers
+    FC=ifort    CC=icc CXX=icpc ./configure --enable-fortran --enable-cxx   #for Intel compilers
 
 Build and test the binaries. This takes quite a while.
 
