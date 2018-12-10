@@ -16,18 +16,6 @@ rs = 1.0
 alpha_core = np.sqrt(1.-rs/r)
 Rout = 10
 
-#plt.title(r"$R_\mathrm{core}=$"+str(r)+r"cm   $T=$"+str(T/k_MeV)+r"MeV   $\mu_{\nu_e}=$"+str(mue/MeV)+"MeV")
-#plt.xlabel("Neutrino Frequency (Hz) (2.5e20 Hz/MeV)")
-#plt.ylabel(r"$\nu_e$ Energy Flux (erg/s/Hz/sr)")
-#plt.plot(xgrid  , theory0,   'g--', label=r"$\nu_e$ Newtonian")
-#plt.plot(xgrid  , theory0GR, 'g',   label=r"$\nu_e$ GR")
-#plt.plot(nu_grid, data0,     'go',  label=r"$\nu_e$ Sedonu")
-#plt.plot(xgrid  , theory1,   'b--', label=r"$\bar{\nu}_e$ Newtonian")
-#plt.plot(xgrid  , theory1GR, 'b',   label=r"$\bar{\nu}_e$ GR")
-#plt.plot(nu_grid, data1,     'bo',  label=r"$\bar{\nu}_e$ Sedonu")
-#plt.legend()
-#plt.savefig("compare_spectra.pdf")
-
 kr_0 = 1
 kt_0 = 1
 
