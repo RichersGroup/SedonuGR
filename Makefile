@@ -19,12 +19,14 @@ hdf5:
 	if [ -d "external/hdf5/bin" ]; then \
 		echo "HDF5 already exists"; \
 	else \
-		wget https://support.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.1.tar.gz; \
-		tar -xvf hdf5-1.10.1.tar.gz; \
-		rm -f hdf5-1.10.1.tar.gz; \
-		cd hdf5-1.10.1; FC=$(F90) ./configure --enable-fortran --enable-cxx; make -j; make install; cd ..; \
-		mv hdf5-1.10.1/hdf5 external/; \
-		rm -rf hdf5-1.10.1; \
+	{ \
+		wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.4/src/hdf5-1.10.4.tar.gz; \
+		tar -xvf hdf5-1.10.4.tar.gz; \
+		rm -f hdf5-1.10.4.tar.gz; \
+		cd hdf5-1.10.4; FC=$(F90) ./configure --enable-fortran --enable-cxx; make -j; make install; cd ..; \
+		mv hdf5-1.10.4/hdf5 external/; \
+		rm -rf hdf5-1.10.4; \
+	} \
 	fi
 lua:
 	if [ -d "external/lua/bin" ]; then \
