@@ -727,9 +727,12 @@ void Transport::update_eh_k_opac(EinsteinHelper* eh) const{
 
 // Randomly generate new direction isotropically in comoving frame
 void Transport::isotropic_direction(Tuple<double,3>& D, ThreadRNG *rangen){
-	D[0] = 2.*rangen->uniform() - 1.;
-	D[1] = 2.*rangen->uniform() - 1.;
-	D[2] = 2.*rangen->uniform() - 1.;
+	double costheta = 2.*rangen->uniform() - 1.;
+	double sintheta = sqrt(1. - costheta*costheta);
+	double phi = 2.*M_PI*rangen->uniform();
+	D[0] = sintheta * cos(phi);
+	D[1] = sintheta * sin(phi);
+	D[2] = costheta;
 	Metric::normalize_Minkowski<3>(D);
 }
 
