@@ -166,11 +166,7 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 	}
 
 	// sample the frequency
-	double nu3_min = pow(grid->nu_grid_axis.bottom(g), 3);
-	double nu3_max = pow(grid->nu_grid_axis.top[g],    3);
-	double nu3 = 0;
-	while(!(nu3>0)) nu3 = rangen.uniform(nu3_min, nu3_max);
-	double nu = pow(nu3, 1./3.);
+	double nu = grid->nu_grid_axis.mid[g];
 
 	// emit isotropically in comoving frame
 	Tuple<double,4> kup_tet;
@@ -212,7 +208,7 @@ bool reject_direction(const EinsteinHelper* eh, ThreadRNG* rangen){
 	double kdotk = eh->g.dot<3>(eh->kup, eh->kup);
 	double xdotk = eh->g.dot<3>(eh->xup, eh->kup);
 	double costheta = xdotk / sqrt(xdotx * kdotk);
-	return (rangen->uniform() > costheta);
+	return (costheta<0);
 }
 Particle Transport::create_surface_particle(const double weight, const size_t s, const size_t g)
 {
@@ -230,11 +226,7 @@ Particle Transport::create_surface_particle(const double weight, const size_t s,
 	update_eh_background(&eh);
 
 	// sample the frequency
-	double nu3_min = pow(grid->nu_grid_axis.bottom(g), 3);
-	double nu3_max = pow(grid->nu_grid_axis.top[g],    3);
-	double nu3 = 0;
-	while(!(nu3>0)) nu3 = rangen.uniform(nu3_min, nu3_max);
-	double nu = pow(nu3, 1./3.);
+	double nu = grid->nu_grid_axis.mid[g];
 
 	// sample outward direction
 	Tuple<double,4> kup_tet;
