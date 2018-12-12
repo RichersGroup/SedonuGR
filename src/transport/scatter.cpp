@@ -99,7 +99,7 @@ void Transport::init_randomwalk_cdf(Lua* lua){
 		double x = randomwalk_xaxis.top[i];
 
 		for(int n=1; n<=sumN; n++){
-			double tmp = 2.0 * exp(-x * (n*pc::pi)*(n*pc::pi)/3.0);
+			double tmp = 2.0 * exp(-x * (n*pc::pi)*(n*pc::pi));
 			if(n%2 == 0) tmp *= -1;
 			sum += tmp;
 	    }
