@@ -336,9 +336,10 @@ void nulib_get_iscatter_kernels(
 	PRINT_ASSERT(nulibID,>=,0);
 
 	// get the chemical potential
-	double munue = nulib_eos_munue(rho,temp,ye); // MeV
-	double eta = munue/temp_MeV;
+	double mue = nulib_eos_mue(rho,temp,ye)*pc::ergs_to_MeV; // MeV
+	double eta = mue/temp_MeV;
 	eta = max(eta,pow(10.0,nulibtable_logIeta_min));
+	eta = min(eta,pow(10.0,nulibtable_logIeta_max));
 	PRINT_ASSERT(eta,<=,pow(10.0,nulibtable_logIeta_max));
 
 	int n_legendre_coefficients = 2;
@@ -409,9 +410,10 @@ void nulib_get_epannihil_kernels(
 	PRINT_ASSERT(nulibID,>=,0);
 
 	// get the chemical potential
-	double munue = nulib_eos_munue(rho,temp,ye); // MeV
-	double eta = munue/temp_MeV;
+	double mue = nulib_eos_mue(rho,temp,ye) * pc::ergs_to_MeV; // MeV
+	double eta = mue/temp_MeV;
 	eta = max(eta,pow(10.0,nulibtable_logIeta_min));
+	eta = min(eta,pow(10.0,nulibtable_logIeta_max));
 	PRINT_ASSERT(eta,<=,pow(10.0,nulibtable_logIeta_max));
 
 	int n_legendre_coefficients = 2*2;
