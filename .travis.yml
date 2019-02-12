@@ -36,11 +36,7 @@ addons:
     - libgsl0ldbl
     - zlib1g-dev
     - python3
-    - python3-h5py
-    - python3-numpy
-    - python3-tk
-    - python3-matplotlib
-    - python3-scipy
+    - gnuplot
     env:
     - CC=gcc-5
     - CXX=g++-5
@@ -51,6 +47,7 @@ install:
 - make hdf5 &>> dependency_log.txt
 - make nulib
 - make lua &>> dependency_log.txt
+- pip install --only-binary=numpy,scipy,h5py,matplotlib,tk numpy scipy h5py matplotlib tk
 
 script:
 - make clean; DEBUG=1 NDIMS=0 DO_GR=0 make all
