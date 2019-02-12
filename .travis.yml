@@ -47,7 +47,7 @@ install:
 - make hdf5 &>> dependency_log.txt
 - make nulib
 - make lua &>> dependency_log.txt
-- pip install --only-binary=numpy,scipy,h5py,matplotlib,tk numpy scipy h5py matplotlib tk
+- pip install --only-binary=numpy,scipy,h5py,matplotlib numpy scipy h5py matplotlib tk
 
 script:
 - make clean; DEBUG=1 NDIMS=0 DO_GR=0 make all
