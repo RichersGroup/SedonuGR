@@ -71,7 +71,6 @@ protected:
 	void propagate_particles();
 	void propagate(EinsteinHelper* eh);
 	void move(EinsteinHelper *eh) const;
-	void scatter(EinsteinHelper *eh) const;
 	void random_walk(EinsteinHelper *eh) const;
 	void init_randomwalk_cdf(Lua* lua);
 	void window(EinsteinHelper *eh) const;
@@ -139,6 +138,7 @@ public:
 	void random_core_x(Tuple<double,4>& x) const;
 
 	// items for zone emission
+	void scatter(EinsteinHelper *eh) const;
 	int do_visc;
 	int use_scattering_kernels;
 	int n_emit_zones_per_bin;
