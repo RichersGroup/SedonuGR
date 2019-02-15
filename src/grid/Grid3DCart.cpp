@@ -196,6 +196,7 @@ void Grid3DCart::read_THC_file(Lua* lua)
 		if(abs(x1[i]-x0[i])/dx[i] < TINY) x1[i] += dx[i]; // don't let the leftmost grid cell be stupidly TINY.
 		PRINT_ASSERT(fmod(xmax[i]-x1[i],dx[i]) < TINY,||,fmod(xmax[i]-x1[i],dx[i])-dx[i] < TINY); // make sure cells line up
 		nx[i] = (int)((xmax[i]-x1[i])/dx[i] + 0.5) +1; // 0.5 to deal with finite precision.
+		PRINT_ASSERT(nx[i],>,1);
 		offset[i] = hdf5_dims[i] - nx[i];
 	}
 	// truncate outer part of zones if quadrant rotational symmetry

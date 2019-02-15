@@ -126,7 +126,7 @@ public:
 		this->axes = axes;
 		PRINT_ASSERT(axes.size(),==,ndims);
 		int size = 1;
-		for(int i=ndims-1; i>=0; i--){
+		for(size_t i=ndims-1; i>=0; i--){
 			stride[i] = size;
 			size *= axes[i].size();
 		}
