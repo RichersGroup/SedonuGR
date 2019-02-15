@@ -126,10 +126,12 @@ public:
 		this->axes = axes;
 		PRINT_ASSERT(axes.size(),==,ndims);
 		int size = 1;
-		for(size_t i=ndims-1; i>=0; i--){
+		size_t i = ndims;
+		if(ndims>0) do{
+			i--;
 			stride[i] = size;
 			size *= axes[i].size();
-		}
+		} while(i>0);
 		y0.resize(size);
 		if(ndims==0) y0.resize(1);
 	}
@@ -164,9 +166,13 @@ public:
 
 	// get center value based on grid index
 	const Tuple<T,nelements>& operator[](const size_t i) const {
+	        PRINT_ASSERT(i,>=,0);
+	        PRINT_ASSERT(i,<,nelements);
 		return y0[i];
 	}
 	Tuple<T,nelements>& operator[](const size_t i){
+	        PRINT_ASSERT(i,>=,0);
+	        PRINT_ASSERT(i,<,nelements);
 		return y0[i];
 	}
 
