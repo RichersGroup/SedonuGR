@@ -134,6 +134,9 @@ public:
 		} while(i>0);
 		y0.resize(size);
 		if(ndims==0) y0.resize(1);
+
+		// poison data
+		for(size_t i=0; i<y0.size(); i++) y0[i] = NaN;
 	}
 
 	MultiDArray<T,nelements,ndims> operator =(const MultiDArray<T,nelements,ndims>& input){
