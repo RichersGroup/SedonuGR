@@ -54,6 +54,7 @@ void Neutrino_grey::myInit(Lua* lua)
 //-----------------------------------------------------------------
 void Neutrino_grey::set_eas(const size_t z_ind, Grid* grid) const
 {
+	size_t ngroups = grid->nu_grid_axis.size();
 	size_t dir_ind[NDIMS+1];
 	grid->rho.indices(z_ind,dir_ind);
 
@@ -69,10 +70,22 @@ void Neutrino_grey::set_eas(const size_t z_ind, Grid* grid) const
 
 		double a = grey_opac*grid->rho[z_ind]*grey_abs_frac;
 		double s = grey_opac*grid->rho[z_ind]*(1.0-grey_abs_frac);
+		PRINT_ASSERT(a,>=,0);
+		PRINT_ASSERT(s,>=,0);
+		PRINT_ASSERT(bb,>=,0);
 
 		grid->BB[ID][global_index] = bb; // (#/s/cm^2/ster/(Hz^3/3))
 		grid->abs_opac[ID][global_index] = a;        // (1/cm)
 		grid->scat_opac[ID][global_index] = s;        // (1/cm)
+
+		grid->scattering_delta[ID].wipe();
+		if(grid->scattering_delta[ID].size()>0){
+		  for(size_t igout=0; igout<ngroups; igout++){
+		    grid->partial_scat_opac[ID][igout][global_index] = (j==igout ? s : 0);
+		    dir_ind[NDIMS+1] = igout;
+		    size_t global_index2 = grid->scattering_delta[ID].direct_index(dir_ind);
+		  }
+		}
 	}
 }
 

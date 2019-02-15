@@ -76,6 +76,7 @@ int main(int argc, char **argv)
 	// set up the transport module (includes the grid)
 	testTransport sim;
 	sim.init(&lua);
+	sim.reset_radiation();
 
 	// start only one neutrino
 	EinsteinHelper eh;
@@ -98,7 +99,6 @@ int main(int argc, char **argv)
 	sim.update_eh_background(&eh);
 	sim.update_eh_k_opac(&eh);
 	ParticleEvent event;
-	sim.reset_radiation();
 	while(eh.fate==moving){
 		sim.which_event(&eh,&event);
 		sim.move(&eh);
