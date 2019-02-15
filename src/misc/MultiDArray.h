@@ -170,12 +170,12 @@ public:
 	// get center value based on grid index
 	const Tuple<T,nelements>& operator[](const size_t i) const {
 	        PRINT_ASSERT(i,>=,0);
-	        PRINT_ASSERT(i,<,nelements);
+	        PRINT_ASSERT(i,<,y0.size());
 		return y0[i];
 	}
 	Tuple<T,nelements>& operator[](const size_t i){
 	        PRINT_ASSERT(i,>=,0);
-	        PRINT_ASSERT(i,<,nelements);
+	        PRINT_ASSERT(i,<,y0.size());
 		return y0[i];
 	}
 
