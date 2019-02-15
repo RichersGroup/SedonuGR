@@ -61,36 +61,27 @@ int main(int argc, char **argv)
 	class testScatter : public Transport{
 	public:
 		void testgrid(EinsteinHelper *eh){
-			for(size_t igin=0; igin<grid->nu_grid_axis.size(); igin++){
-				for(size_t igout=0; igout<grid->nu_grid_axis.size(); igout++){
-					grid->scat_opac[0][igin]=1.0;
-					grid->scat_opac[1][igin]=1.0;
-					grid->scat_opac[2][igin]=1.0;
-					grid->scattering_delta[0][igin]=0.0;
-					grid->scattering_delta[1][igin]=0.0;
-					grid->scattering_delta[2][igin]=0.0;
-					if(igin==igout){
-					grid->partial_scat_opac[0][igin][igin]=1.0;
-					grid->partial_scat_opac[1][igin][igin]=1.0;
-					grid->partial_scat_opac[2][igin][igin]=1.0;
-					} else {
-					grid->partial_scat_opac[0][igin][igout]=0.0;
-					grid->partial_scat_opac[1][igin][igout]=0.0;
-					grid->partial_scat_opac[2][igin][igout]=0.0;
-					}
-				}
-			}
+		  for(size_t s=0; s<species_list.size(); s++){
+		  			for(size_t igin=0; igin<10; igin++){
+		  			grid->scat_opac[s][igin] = 0;
+		  			for(size_t igout=0; igout<10; igout++){
+		  				grid->scattering_delta[s][igin]=0.0;
+		  				grid->partial_scat_opac[s][igin][igout] = (igin==igout ? 1 : 0);
+		  				grid->scat_opac[s][igin] += grid->partial_scat_opac[s][igin][igout];
+		  			}
+		  		}
+		  	}
 		}
 	};
 
 	// set up the transport module (includes the grid)
 	testScatter sim;
 	sim.init(&lua);
+	lua.close();
 
 	// start 1 neutrino
 	EinsteinHelper eh;
-	ofstream myfile;
-	eh.kup[0]=1*pc::h;
+	eh.kup[0]=sim.grid->nu_grid_axis.mid[0]*pc::h;
 	eh.kup[1]=0;
 	eh.kup[2]=0;
 	eh.kup[3]=sim.grid->nu_grid_axis.mid[0]*pc::h;
@@ -98,25 +89,23 @@ int main(int argc, char **argv)
 	eh.xup[1]=0;
 	eh.xup[2]=0;
 	eh.xup[3]=0;
-	//eh.dir_ind[0]=1;
 	eh.s = 0;
 	eh.N = 1;
 	eh.N0 = eh.N;
-	//cout<<eh.kup_tet<<endl;
 	sim.testgrid(&eh);
-	cout<<"set testgrid"<<endl;
 	sim.update_eh_background(&eh);
-	cout<<"calling update ehkopac"<<endl;
         sim.update_eh_k_opac(&eh); 
-	cout<<"updated ehkopac"<<endl;
-	sim.scatter(&eh);
-	cout<<"back from scatter"<<endl;
+
+	// run many copies of the same neutrino and output the results.
+	ofstream myfile;
   	myfile.open ("elastic_isotropic_kernel.dat");
-	myfile<<eh.kup[0]<<" "<<eh.kup[1]<<" "<<eh.kup[2]<<" "<<eh.kup[3]<<"\n";		
+	for(int i=0; i<1000; i++){
+	  EinsteinHelper tmp = eh;
+	  sim.scatter(&eh);
+	  myfile<<eh.kup[0]<<" "<<eh.kup[1]<<" "<<eh.kup[2]<<" "<<eh.kup[3]<<"\n";
+	}
 	myfile.close();
 	
-	// read in time stepping parameters
-	lua.close();
 
 	// exit the program
 	MPI_Finalize();

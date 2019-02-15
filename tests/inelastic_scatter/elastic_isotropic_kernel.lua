@@ -6,8 +6,12 @@ do_visc = 0
 reflect_outer = 0
 do_annihilation = 0
 use_scattering_kernels = 1
-neutrino_type = "NuLib"
-nulib_table = "/panfs/ds08/sxs/scurtis/Tables/BHBlp_tables/simple_table/NuLib_rho82_temp65_ye51_ng15_ns3_version1.0_20181125.h5"
+neutrino_type = "grey"
+nugrid_n = 10
+nugrid_start = 0
+nugrid_stop = 10
+grey_abs_frac = 0
+grey_opac = 1
 
 -- output parameters
 write_zones_every = 1
@@ -19,7 +23,6 @@ min_packet_weight = 0.707106781 --0.707106781 -- 1/sqrt(2)
 distribution_type = "Moments"
 
 -- input/output files
-nulib_eos = "/panfs/ds08/sxs/scurtis/EOS/BHB_lpEOS_rho234_temp180_ye60_version_1.02_20140422.h5"
 grid_type = "Grid0DIsotropic"
 Grid0DIsotropic_rho = 0
 Grid0DIsotropic_T   = 0
