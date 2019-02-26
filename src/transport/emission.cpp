@@ -226,7 +226,8 @@ Particle Transport::create_surface_particle(const double weight, const size_t s,
 	update_eh_background(&eh);
 
 	// sample the frequency
-	double nu = grid->nu_grid_axis.mid[g];
+	double nu3 = rangen.uniform( pow(grid->nu_grid_axis.bottom(g),3), pow(grid->nu_grid_axis.top[g],3) );
+	double nu = pow(nu3, 1./3.);
 
 	// sample outward direction
 	Tuple<double,4> kup_tet;
