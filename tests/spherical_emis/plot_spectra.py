@@ -1,5 +1,7 @@
 import h5py
 import numpy as np
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 
 tolerance = 0.05
