@@ -1,6 +1,4 @@
-import h5py
 import numpy as np
-import matplotlib.pyplot as plt
 
 tolerance = .05
 k_b = 1.3806488e-16 # erg/K
