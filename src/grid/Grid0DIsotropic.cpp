@@ -148,13 +148,17 @@ double Grid0DIsotropic::d_randomwalk(const EinsteinHelper&) const{
 }
 
 Tuple<double,4> Grid0DIsotropic::dk_dlambda(const EinsteinHelper&) const{ // default Minkowski
-	return Tuple<double,4>(NaN);
+	return Tuple<double,4>(0);
 }
 Tuple<double,3> Grid0DIsotropic::interpolate_shift(const EinsteinHelper&) const{ // default Minkowski
-	return Tuple<double,3>(NaN);
+	return Tuple<double,3>(0);
 }
 Tuple<double,6> Grid0DIsotropic::interpolate_3metric(const EinsteinHelper&) const{ // default Minkowski
-	return Tuple<double,6>(NaN);
+  Tuple<double,6> gdata(0);
+  gdata[ixx] = 1.;
+  gdata[iyy] = 1.;
+  gdata[izz] = 1.;
+  return gdata;
 }
 
 void Grid0DIsotropic::grid_coordinates(const Tuple<double,4>&, double coords[NDIMS]) const{
