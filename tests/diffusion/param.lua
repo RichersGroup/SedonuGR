@@ -60,7 +60,7 @@ n_emit_therm_per_bin   = 0
 
 -- Inner Source
 
-r_core = 1
+r_core = 100
 core_emit_method = 1
 T_core = {10,10}
 core_chem_pot = {0,0}
