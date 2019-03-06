@@ -193,6 +193,7 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<do
 	for(igout=0; igout<grid->nu_grid_axis.size(); igout++){
 		part_opac_sum += grid->partial_scat_opac[eh->s][igout][global_index];
 	}
+	if(part_opac_sum==0) return;
 	do{
 		igout = rangen.uniform_discrete(0, grid->nu_grid_axis.size()-1);
 		P = grid->partial_scat_opac[eh->s][igout][global_index] / part_opac_sum;
