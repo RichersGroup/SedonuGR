@@ -82,10 +82,10 @@ int main(int argc, char **argv)
 
 	// start 1 neutrino
 	EinsteinHelper eh;
-	eh.kup[0]=sim.grid->nu_grid_axis.mid[0]*pc::h;
+	eh.kup[0]=0.33*sim.grid->nu_grid_axis.mid[0]*pc::h;
 	eh.kup[1]=0;
 	eh.kup[2]=0;
-	eh.kup[3]=sim.grid->nu_grid_axis.mid[0]*pc::h;
+	eh.kup[3]=0.33*sim.grid->nu_grid_axis.mid[0]*pc::h;
 	eh.xup[0]=0;
 	eh.xup[1]=0;
 	eh.xup[2]=0;
