@@ -29,7 +29,6 @@
 #include "Transport.h"
 #include "Grid.h"
 #include "global_options.h"
-
 using namespace std;
 namespace pc = physical_constants;
 
@@ -189,9 +188,15 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<do
 	// rejection sampling to get outgoing frequency bin.
 	size_t igout;
 	double P;
+	double part_opac_sum = 0.0;	
+	size_t global_index = grid->scat_opac[eh->s].direct_index(eh->dir_ind);	
+	for(igout=0; igout<grid->nu_grid_axis.size(); igout++){
+		part_opac_sum += grid->partial_scat_opac[eh->s][igout][global_index];
+	}
+	if(part_opac_sum==0) return;
 	do{
 		igout = rangen.uniform_discrete(0, grid->nu_grid_axis.size()-1);
-		P = grid->partial_scat_opac[eh->s][igout].interpolate(eh->icube_spec) / eh->scatopac;
+		P = grid->partial_scat_opac[eh->s][igout][global_index] / part_opac_sum;
 		PRINT_ASSERT(P-1.0,<=,TINY);
 		PRINT_ASSERT(P,>=,0.0);
 		P = min(1.0,P);
@@ -206,7 +211,7 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<do
 
 	// interpolate the kernel anisotropy
 	double hyperloc[NDIMS+2];
-	size_t dir_ind[NDIMS+2];
+	size_t dir_ind[NDIMS+2]; 
 	for(size_t i=0; i<=NDIMS; i++){
 			hyperloc[i] = eh->grid_coords[i];
 			dir_ind[i] = eh->dir_ind[i];
