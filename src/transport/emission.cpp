@@ -203,12 +203,12 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 // General function to create a particle on the surface
 // emitted isotropically outward in the comoving frame. 
 //------------------------------------------------------------
-bool reject_direction(const EinsteinHelper* eh){
+bool reject_direction_outward(const EinsteinHelper* eh, ThreadRNG* rangen){
 	double xdotx = eh->g.dot<3>(eh->xup, eh->xup);
 	double kdotk = eh->g.dot<3>(eh->kup, eh->kup);
 	double xdotk = eh->g.dot<3>(eh->xup, eh->kup);
 	double costheta = xdotk / sqrt(xdotx * kdotk);
-	return (costheta<0);
+	return costheta < rangen->uniform();
 }
 Particle Transport::create_surface_particle(const double weight, const size_t s, const size_t g)
 {
@@ -234,7 +234,7 @@ Particle Transport::create_surface_particle(const double weight, const size_t s,
 	do{
 		isotropic_kup_tet(nu,kup_tet,&rangen);
 		eh.set_kup_tet(kup_tet);
-	} while(reject_direction(&eh));
+	} while(reject_direction_outward(&eh, &rangen));
 	update_eh_k_opac(&eh);
 
 	//get the number of neutrinos in the particle
