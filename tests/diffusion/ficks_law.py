@@ -1,11 +1,8 @@
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import math
-import os
-import sys
-import itertools
-from pylab import *
-from matplotlib.ticker import AutoMinorLocator
 import h5py
 
 sigma = 200
@@ -73,8 +70,6 @@ max1 = max(flux_face)
 max2 = max(fick_flux)
 ax0 = fig.add_axes(rect0)
 ax0.axis([min(rgrid), max(rgrid), min(min1,min2), max(max1,max2)])#0, 4e22])#
-
-minorLocator = AutoMinorLocator()
 
 # draw plots
 plist = []
