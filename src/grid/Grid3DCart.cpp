@@ -81,6 +81,10 @@ void Grid3DCart::read_model_file(Lua* lua)
 			sqrtdetg3[z_ind] = sqrt(g.gammalow.det());
 		}
 	}
+
+	if(rotate_quadrant!=0 || rotate_hemisphere[0]!=0 || rotate_hemisphere[1]!=0){
+		cout << "WARNING: rotational symmetry interpolation not implemented. Currently just assumes constant from last grid center to boundary." << endl;
+	}
 }
 
 
