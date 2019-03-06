@@ -366,6 +366,13 @@ Tuple<double,3> Grid1DSphere::interpolate_fluid_velocity(const EinsteinHelper& e
 //------------------------------------------------------------
 // Reflect off symmetry axis
 //------------------------------------------------------------
+bool reject_direction_inward(const EinsteinHelper* eh, ThreadRNG* rangen){
+	double xdotx = eh->g.dot<3>(eh->xup, eh->xup);
+	double kdotk = eh->g.dot<3>(eh->kup, eh->kup);
+	double xdotk = eh->g.dot<3>(eh->xup, eh->kup);
+	double costheta = xdotk / sqrt(xdotx * kdotk);
+	return -costheta < rangen->uniform();
+}
 void Grid1DSphere::symmetry_boundaries(EinsteinHelper *eh) const{
 	// reflect from outer boundary
 	double R = radius(eh->xup);
@@ -377,10 +384,12 @@ void Grid1DSphere::symmetry_boundaries(EinsteinHelper *eh) const{
 		double kr = 0;
 		for(int i=0; i<3; i++) kr += eh->xup[i]/R * eh->kup[i];
 
-		// invert the radial component of the velocity
-		eh->kup[0] -= 2.*kr * eh->xup[0]/R;
-		eh->kup[1] -= 2.*kr * eh->xup[1]/R;
-		eh->kup[2] -= 2.*kr * eh->xup[2]/R;
+		// give the particle an inward-moving direction
+		Tuple<double,4> kup_tet;
+		do{
+			sim->isotropic_kup_tet(eh->nu(),kup_tet,&sim->rangen);
+			eh->set_kup_tet(kup_tet);
+		} while(reject_direction_inward(eh,&sim->rangen));
 		//eh->g.normalize_null_preservedownt(eh->kup);
 
 		// put the particle just inside the boundary
