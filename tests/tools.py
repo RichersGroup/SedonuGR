@@ -3,9 +3,10 @@ import numpy as np
 import math
 
 # Constants
-h = 6.626075518e-27 #erg s
+h = 6.6260755e-27 #erg s
 c = 2.99792458e10   #cm/s
-MeV = 1.60217657e-6  #erg/MeV
+MeV = 1.60217646e-6  #erg/MeV
+k_b = 1.380658e-16 # erg/K
 
 # x = h nu / kT
 # y = mu / kT
