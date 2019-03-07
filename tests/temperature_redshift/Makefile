@@ -1,7 +1,7 @@
 all:
-	python oven.py > oven.mod
+	python3 oven.py > oven.mod
 	../../sedonu > output.txt
-	python oven_test.py
+	python3 oven_test.py
 
 clean:
 	rm -f fluid_*.h5 oven.mod
