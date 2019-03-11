@@ -166,7 +166,8 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 	}
 
 	// sample the frequency
-	double nu = grid->nu_grid_axis.mid[g];
+	double nu3 = rangen.uniform( pow(grid->nu_grid_axis.bottom(g),3), pow(grid->nu_grid_axis.top[g],3) );
+	double nu = pow(nu3, 1./3.);
 
 	// emit isotropically in comoving frame
 	Tuple<double,4> kup_tet;
@@ -175,10 +176,11 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 	update_eh_k_opac(&eh);
 
 	// set the particle number
-	eh.N = grid->BB[s][eh.eas_ind]/*.interpolate(eh.icube_spec)*/ * eh.absopac; // #/s/cm^3/sr/(Hz^3/3)
-	eh.N *= grid->zone_lab_3volume(eh.z_ind);
-	if(DO_GR) eh.N *= sqrt(eh.g.gammalow.det()) * (-eh.g.ndot(eh.u)); // comoving volume (d3x * volfac * Lorentz factor)
-	eh.N *= weight * 1/*s*/ * 4.*pc::pi/*sr*/ * grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/;
+	double T = grid->T.interpolate(eh.icube_vol);
+	double mu = grid->munu[s].interpolate(eh.icube_vol);
+	eh.N = number_blackbody(T,mu,nu) * eh.absopac * species_list[s]->weight; // #/s/cm^3/sr/(Hz^3/3)
+	eh.N *= grid->zone_4volume(eh.z_ind) * (-eh.g.ndot(eh.u)); // comoving 4-volume (1s. * d3x * volfac * Lorentz factor)
+	eh.N *= weight * 4.*pc::pi/*sr*/ * grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/;
 	PRINT_ASSERT(eh.N,>=,0);
 	PRINT_ASSERT(eh.N,<,1e99);
 	eh.N0 = eh.N;
@@ -248,7 +250,7 @@ Particle Transport::create_surface_particle(const double weight, const size_t s,
 			* pc::pi                     //          sr (including factor of 1/2 for integrating over cos(theta)
 			* grid->nu_grid_axis.delta3(g)/3.0 //        Hz^3/3
 			* multiplier                 // overall scaling
-			* (DO_GR ? eh.g.alpha : 1.)  // time lapse
+			* (DO_GR ? eh.g.alpha : 1.)  // time lapse (s)
 			* weight;                    // 1/number of samples
 	eh.N0 = eh.N;
 
