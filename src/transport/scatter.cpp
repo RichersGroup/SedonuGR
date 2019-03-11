@@ -129,9 +129,13 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	for(size_t i=0; i<4; i++) eh->xup[i] += dtau * eh->u[i];
 
 	// determine the average and final neutrino numbers
-	double opt_depth = eh->absopac * path_length_com;
-	double Nfinal = eh->N * exp(-opt_depth);
-	double Naverage = (eh->N - Nfinal) / (opt_depth);
+	double Naverage = eh->N, Nfinal = eh->N;
+	if(eh->absopac > 0){
+		double opt_depth = eh->absopac * path_length_com;
+		Nfinal = eh->N * exp(-opt_depth);
+		Naverage = (eh->N - Nfinal) / (opt_depth);
+	}
+	PRINT_ASSERT(Naverage,>,0);
 
 	// select a random direction
 	Tuple<double,4> kup_tet;

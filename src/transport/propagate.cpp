@@ -125,6 +125,7 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 
 void Transport::move(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->ds_com,>=,0);
+	PRINT_ASSERT(eh->N,>,0);
 	PRINT_ASSERT(abs(eh->g.dot<4>(eh->kup,eh->kup)) / (eh->kup[3]*eh->kup[3]), <=, TINY);
 
 	// save old values

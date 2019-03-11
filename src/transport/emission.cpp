@@ -248,6 +248,7 @@ Particle Transport::create_surface_particle(const double weight, const size_t s,
 			* pc::pi                     //          sr (including factor of 1/2 for integrating over cos(theta)
 			* grid->nu_grid_axis.delta3(g)/3.0 //        Hz^3/3
 			* multiplier                 // overall scaling
+			* (DO_GR ? eh.g.alpha : 1.)  // time lapse
 			* weight;                    // 1/number of samples
 	eh.N0 = eh.N;
 
