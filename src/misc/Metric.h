@@ -196,7 +196,7 @@ public:
 
 	// dot the normal observer's four-velocity with a four vector
 	double ndot(const Tuple<double,4>& x) const{
-		return -alpha * x[3];
+		return -(DO_GR ? alpha : 1.0) * x[3];
 	}
 
 	// normalize a four vector to have a norm of +/-1
