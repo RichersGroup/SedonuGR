@@ -153,8 +153,8 @@ void Neutrino_Nagakura::set_eas(const size_t zone_index, Grid* grid) const
     		cout << "ERROR: Neutrino ID not recognized!" << endl;
     		assert(false);
     	}
-    	grid->BB[ID][global_index] = e / a; // erg/cm^2/s/sr
-    	grid->BB[ID][global_index] /= pc::h * pow(grid->nu_grid_axis.mid[inu],3) * grid->nu_grid_axis.delta(inu); // #/cm^2/s/sr/(Hz^3/3)
+    	//grid->BB[ID][global_index] = e / a; // erg/cm^2/s/sr
+    	//grid->BB[ID][global_index] /= pc::h * pow(grid->nu_grid_axis.mid[inu],3) * grid->nu_grid_axis.delta(inu); // #/cm^2/s/sr/(Hz^3/3)
     	grid->abs_opac[ID][global_index] = a;
     	grid->scat_opac[ID][global_index] = s;
     }

@@ -37,6 +37,7 @@ namespace pc = physical_constants;
 Neutrino_grey::Neutrino_grey(){
 	grey_opac = NaN;
 	grey_abs_frac = NaN;
+	grey_chempot = NaN;
 }
 
 //----------------------------------------------------------------
@@ -46,6 +47,7 @@ void Neutrino_grey::myInit(Lua* lua)
 {
 	grey_abs_frac = lua->scalar<double>("grey_abs_frac");
 	grey_opac     = lua->scalar<double>("grey_opac");
+	grey_chempot = lua->scalar<double>("grey_chempot") * pc::MeV_to_ergs;
 }
 
 
@@ -60,21 +62,19 @@ void Neutrino_grey::set_eas(const size_t z_ind, Grid* grid) const
 
 	PRINT_ASSERT(grey_abs_frac,>=,0);
 	PRINT_ASSERT(grey_abs_frac,<=,1.0);
+	grid->munu[ID][z_ind] = grey_chempot;
 	for(size_t j=0;j<grid->nu_grid_axis.size();j++)
 	{
 		dir_ind[NDIMS] = j;
 		size_t global_index = grid->abs_opac[ID].direct_index(dir_ind);
 
 		double nu  = grid->nu_grid_axis.mid[j];        // (Hz)
-		double bb  = Transport::number_blackbody(grid->T[z_ind],0*pc::MeV_to_ergs,nu);
 
 		double a = grey_opac*grid->rho[z_ind]*grey_abs_frac;
 		double s = grey_opac*grid->rho[z_ind]*(1.0-grey_abs_frac);
 		PRINT_ASSERT(a,>=,0);
 		PRINT_ASSERT(s,>=,0);
-		PRINT_ASSERT(bb,>=,0);
 
-		grid->BB[ID][global_index] = bb; // (#/s/cm^2/ster/(Hz^3/3))
 		grid->abs_opac[ID][global_index] = a;        // (1/cm)
 		grid->scat_opac[ID][global_index] = s;        // (1/cm)
 

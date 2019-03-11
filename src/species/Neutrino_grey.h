@@ -38,6 +38,7 @@ protected:
 	// grey opacity and absorption fraction
 	double grey_opac; //(cm^2/g)
 	double grey_abs_frac;       //unitless
+	double grey_chempot; // erg
 
 public:
 

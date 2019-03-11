@@ -63,13 +63,12 @@ void Neutrino_NuLib::set_eas(const size_t z_ind, Grid* grid) const
 	nulib_get_eas_arrays(grid->rho[z_ind], grid->T[z_ind], grid->Ye[z_ind], ID,
 			tmp_BB, tmp_absopac, tmp_scatopac, tmp_phi0, tmp_delta);
 
+	grid->munu[ID][z_ind] = nulib_eos_munue(grid->rho[z_ind], grid->T[z_ind], grid->Ye[z_ind]) * lepton_number;
 	for(size_t igin=0; igin<ngroups; igin++){
 		dir_ind[NDIMS] = igin;
 		size_t global_index1 = grid->abs_opac[ID].direct_index(dir_ind);
 		grid->abs_opac[ID][global_index1] = tmp_absopac[igin];
 		grid->scat_opac[ID][global_index1] = tmp_scatopac[igin];
-		grid->BB[ID][global_index1] = tmp_BB[igin]; // erg/cm^2/s/sr - convert in next line
-		grid->BB[ID][global_index1] /= pc::h * pow(grid->nu_grid_axis.mid[igin],3) * grid->nu_grid_axis.delta(igin); // #/cm^2/s/sr/(Hz^3/3)
 
 		if(grid->scattering_delta[ID].size()>0){
 			for(size_t igout=0; igout<ngroups; igout++){

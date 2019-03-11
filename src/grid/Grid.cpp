@@ -269,7 +269,7 @@ void Grid::init(Lua* lua, Transport* insim)
 	// set up the data structures
 	abs_opac.resize(sim->species_list.size());
 	scat_opac.resize(sim->species_list.size());
-	BB.resize(sim->species_list.size());
+	munu.resize(sim->species_list.size());
 	scattering_delta.resize(sim->species_list.size());
 	partial_scat_opac.resize(sim->species_list.size());
 	spectrum.resize(sim->species_list.size());
@@ -279,10 +279,11 @@ void Grid::init(Lua* lua, Transport* insim)
 	fourforce_emit.set_axes(axes);
 	l_abs.set_axes(axes);
 	l_emit.set_axes(axes);
+	for(size_t s=0; s<sim->species_list.size(); s++)
+		munu[s].set_axes(axes);
 
 	axes.push_back(nu_grid_axis);
 	for(size_t s=0; s<sim->species_list.size(); s++){
-		BB[s].set_axes(axes);
 		abs_opac[s].set_axes(axes);
 		scat_opac[s].set_axes(axes);
 
@@ -318,7 +319,7 @@ void Grid::write_zones(const int iw)
 	PRINT_ASSERT(rho.size(),>,0);
 
 	// output all zone data in hdf5 format
-	PRINT_ASSERT(dimensionality(),>,0);
+	PRINT_ASSERT(dimensionality(),>=,0);
 	string filename = Transport::filename("fluid",iw,".h5");
 	H5::H5File file(filename, H5F_ACC_TRUNC);
 	file.createGroup("/axes");

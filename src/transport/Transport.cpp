@@ -185,7 +185,7 @@ void Transport::init(Lua* lua)
 	}
 	else if(neutrino_type=="grey"){
 		if(verbose) cout << "#   Using grey opacity (0 chemical potential blackbody)" << endl;
-		num_nut_species = 2;
+		num_nut_species = 1;
 	}
 	else if(neutrino_type=="Nagakura"){
 		if(verbose) cout << "#   Using Nagakura neutrino opacities, assumed to match the grid" << endl;
@@ -339,9 +339,8 @@ void Transport::step()
 	if(MPI_nprocs>1) sum_to_proc0();      // so each processor has necessary info to solve its zones
 	normalize_radiative_quantities();
 
-	// solve for T_gas and Ye structure and calculate annihilation rates
+	// calculate annihilation rates
 	if(do_annihilation) calculate_annihilation();
-	if(equilibrium_T || equilibrium_Ye) solve_eq_zone_values();  // solve T,Ye s.t. E_abs=E_emit and N_abs=N_emit
 }
 
 
