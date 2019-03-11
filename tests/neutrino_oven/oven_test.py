@@ -25,7 +25,6 @@ T_gas = np.array(f["T_gas(K,tet)"])*tools.k_b/tools.MeV
 edens = np.array(f["distribution0(erg|ccm,tet)"]).sum(axis=(1,2,3))
 edens_theory = np.array([tools.edens(T_gas[i]*tools.MeV, munue*tools.MeV) for i in range(len(T_gas))])
 #edens_theory = np.array([tools.energy_blackbody(T_gas[i]*tools.MeV, munue*tools.MeV) for i in range(len(T_gas))])
-
 fig = plt.figure(figsize=(8,12))
 gs = gridspec.GridSpec(3, 1)
 axes = [plt.subplot(gsi) for gsi in gs]
@@ -36,37 +35,51 @@ isError = False
 axes[0].set_ylabel(r"Energy Density (erg/ccm)")
 axes[0].plot(r, edens_theory, "g-",label="theory")
 axes[0].scatter(r, edens, label="Sedonu")
-error = np.sum(edens-edens_theory)/len(edens)
-error2 = np.sum((edens-edens_theory)**2)/len(edens)
-std_dev = np.sqrt(error2 - error**2)
-print("Energy density: error="+str(error)+" stddev="+str(std_dev))
-if np.abs(error)>std_dev:
+axes[0].legend(loc=4)
+axes[0].set_ylim(0,1.1*max(np.max(edens),np.max(edens_theory)))
+error = edens-edens_theory
+error2 = (edens-edens_theory)**2
+std_dev = np.sqrt(np.sum(error2)/len(error2) - (np.sum(error)/len(error))**2)
+abserror = np.sum(np.abs(error))/len(error)
+print("Energy density: error="+str(abserror)+" stddev="+str(std_dev))
+if abserror>2.*std_dev:
     isError = True
 
-dEdt = np.array(f["four-force[abs](erg|ccm|s,tet)"])[:,3] + np.array(f["four-force[emit](erg|ccm|s,tet)"])[:,3]
+e_abs = np.array(f["four-force[abs](erg|ccm|s,tet)"])[:,3]
+e_emit = np.array(f["four-force[emit](erg|ccm|s,tet)"])[:,3]
+dEdt = e_abs + e_emit
 axes[1].set_ylabel(r"$dE_\mathrm{int}/dt$ (erg/ccm/s)")
-axes[1].axhline(0,color="g")
-axes[1].scatter(r, dEdt)
-error = np.sum(dEdt)/len(dEdt)
-error2 = np.sum(dEdt**2)/len(dEdt)
-std_dev = np.sqrt(error2 - error**2)
-print("dEdt: error="+str(error)+" stddev="+str(std_dev))
-if np.abs(error)>std_dev:
+axes[1].plot(r, -e_emit, label="emit")
+axes[1].scatter(r, e_abs, label="abs")
+axes[1].legend(loc=4)
+axes[1].set_ylim(0,1.1*max(np.max(e_abs),np.max(-e_emit)))
+error = dEdt
+error2 = dEdt**2
+std_dev = np.sqrt(np.sum(error2)/len(error2) - (np.sum(error)/len(error))**2)
+abserror = np.sum(np.abs(error))/len(error)
+print("dEdt: error="+str(abserror)+" stddev="+str(std_dev))
+if abserror>2.*std_dev:
     isError = True
 
-dNdt = np.array(f["l_abs(1|s|ccm,tet)"]) - np.array(f["l_emit(1|s|ccm,tet)"])
+l_abs = np.array(f["l_abs(1|s|ccm,tet)"])
+l_emit = np.array(f["l_emit(1|s|ccm,tet)"])
+dNdt = l_abs - l_emit
 axes[2].set_ylabel(r"$dn_l/dt$ (1/ccm/s)")
-axes[2].axhline(0,color="g")
-axes[2].scatter(r, dNdt)
-error = np.sum(dNdt)/len(dNdt)
-error2 = np.sum(dNdt**2)/len(dNdt)
-std_dev = np.sqrt(error2 - error**2)
-print("dNdt: error="+str(error)+" stddev="+str(std_dev))
-if np.abs(error)>std_dev:
+axes[2].plot(r, l_emit, label="emit")
+axes[2].scatter(r, l_abs, label="abs")
+axes[2].legend()
+error = dNdt
+error2 = dNdt**2
+std_dev = np.sqrt(np.sum(error2)/len(error2) - (np.sum(error)/len(error))**2)
+abserror = np.sum(np.abs(error))/len(error)
+print("dNdt: error="+str(abserror)+" stddev="+str(std_dev))
+if abserror>2.*std_dev:
     isError = True
 
+for ax in axes:
+    ax.axvline(1.5)
+    
 axes[2].set_xlabel("$r$ (km)")
-axes[0].legend(ncol=2,frameon=False)
 axes[0].xaxis.set_ticklabels([])
 axes[1].xaxis.set_ticklabels([])
 

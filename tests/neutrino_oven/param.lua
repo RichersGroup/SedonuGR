@@ -20,8 +20,8 @@ equilibrium_tolerance = 1e-10
 -- Opacity and Emissivity
 
 neutrino_type = "grey"
-grey_opac  = 1e-6
-grey_abs_frac = 1
+grey_opac  = 0 --1e-2
+grey_abs_frac = 1e-2
 nugrid_start = 0
 nugrid_stop = 500
 nugrid_n = 500
@@ -55,10 +55,10 @@ output_hdf5 = 0
 -- Particle Creation
 
 max_particles  = 2e7
-n_subcycles = 10
+n_subcycles = 1
 do_emit_by_bin = 1
 n_emit_core_per_bin    = 100
-n_emit_therm_per_bin   = 1
+n_emit_therm_per_bin   = 0 --1
 max_time_hours = -1
 
 -- Inner Source
