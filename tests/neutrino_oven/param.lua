@@ -22,6 +22,7 @@ equilibrium_tolerance = 1e-10
 neutrino_type = "grey"
 grey_opac  = 0 --1e-2
 grey_abs_frac = 1e-2
+grey_chempot = 0
 nugrid_start = 0
 nugrid_stop = 500
 nugrid_n = 500
@@ -58,15 +59,15 @@ max_particles  = 2e7
 n_subcycles = 1
 do_emit_by_bin = 1
 n_emit_core_per_bin    = 100
-n_emit_therm_per_bin   = 0 --1
+n_emit_therm_per_bin   = 1
 max_time_hours = -1
 
 -- Inner Source
 
 r_core = 1.5e5
-T_core = {10,10}
-core_chem_pot = {0,0}
-core_lum_multiplier = {1.0,1.0}
+T_core = {10}
+core_chem_pot = {0}
+core_lum_multiplier = {1.0}
 
 -- General Controls
 

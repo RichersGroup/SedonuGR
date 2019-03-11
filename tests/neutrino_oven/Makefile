@@ -1,6 +1,8 @@
 all:
 	python3 oven.py > oven.mod
-	../../sedonu > output.txt
+	../../sedonu param.lua > output.txt
+	python3 oven_test.py
+	../../sedonu param_abs.lua > output.txt
 	python3 oven_test.py
 
 clean:

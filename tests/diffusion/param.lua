@@ -17,6 +17,7 @@ equilibrium_Ye = 0
 neutrino_type = "grey"
 grey_opac  = 200
 grey_abs_frac = 0
+grey_chempot = 0
 nugrid_start = 0
 nugrid_stop = 500
 nugrid_n = 1
@@ -54,7 +55,7 @@ output_hdf5 = 1
 -- Particle Creation
 
 max_particles  = 2e7
-n_subcycles = 10
+n_subcycles = 1
 n_emit_core_per_bin    = 1e5
 n_emit_therm_per_bin   = 0
 
@@ -62,9 +63,9 @@ n_emit_therm_per_bin   = 0
 
 r_core = 100
 core_emit_method = 1
-T_core = {10,10}
-core_chem_pot = {0,0}
-core_lum_multiplier = {1,1}
+T_core = {10}
+core_chem_pot = {0}
+core_lum_multiplier = {1}
 
 -- General Controls
 

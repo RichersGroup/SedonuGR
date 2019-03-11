@@ -80,6 +80,7 @@ plist.append(p)
 ax0.axhline(mean, color="gray")
 ax0.axhline(mean+stddev, color="gray")
 ax0.axhline(mean-stddev, color="gray")
+ax0.set_ylim(0, max(np.max(flux_face),np.max(fick_flux)))
 
 ax0.legend(plist, ["$\mathrm{Flux}\,[\mathrm{erg/ccm}]$",r"$-\nabla E / 3\sigma\,[\mathrm{erg/ccm}]$"],
            loc=(0.5,0.8),).draw_frame(0)

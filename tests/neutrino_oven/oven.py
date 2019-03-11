@@ -22,7 +22,7 @@ for i in range(nx):
     rout = Rin * rfac**(i+1)
     rmid = 0.5 * (rin+rout)
     alpha = alpha_core #np.sqrt(1.0-rs/rmid)
-    X = 1.0/alpha
+    X = 1.0 #/alpha
     temp = temp_core * (alpha/alpha_core)**0 #(alpha_core/alpha)
     print(rout, rho, temp, Ye, vr, alpha, X)
 

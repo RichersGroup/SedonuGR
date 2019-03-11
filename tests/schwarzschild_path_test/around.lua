@@ -19,6 +19,7 @@ equilibrium_Ye = 0
 neutrino_type = "grey"
 grey_abs_frac = 0
 grey_opac = 0
+grey_chempot = 0
 opac_interp_method=0
 cdf_cutoff = 0
 cdf_interpolation_order=0

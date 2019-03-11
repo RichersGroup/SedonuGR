@@ -1,31 +1,31 @@
+
 -- Included Physics
 
+do_GR         = 0
 do_visc       = 0
-do_randomwalk = 0
 do_relativity = 0
-do_GR = 1
 do_annihilation = 0
-radiative_eq  = 1
-reflect_outer = 0
-use_scattering_kernels = 1
+do_randomwalk = 0
+use_scattering_kernels = 0
+reflect_outer = 1
 
 -- Equilibrium Solving
 
 equilibrium_T  = 0
 equilibrium_Ye = 0
+equilibrium_damping = 0.
+equilibrium_itmax = 100
+equilibrium_tolerance = 1e-10
 
 -- Opacity and Emissivity
 
 neutrino_type = "grey"
-grey_abs_frac = 0
-grey_opac = 0
-grey_chempot = 0
-opac_interp_method=0
-cdf_cutoff = 0
-cdf_interpolation_order=0
-nugrid_n=1
-nugrid_start=0
-nugrid_stop=1e99
+grey_opac  = 1
+grey_abs_frac = 1
+grey_chempot = 0.
+nugrid_start = 0
+nugrid_stop = 500
+nugrid_n = 500
 
 -- Escape Spectra
 
@@ -43,7 +43,7 @@ distribution_polar_basis = 0
 
 grid_type = "Grid1DSphere"
 model_type = "custom"
-model_file = "empty_sphere.mod"
+model_file = "oven.mod"
 
 -- Output
 
@@ -57,38 +57,33 @@ output_hdf5 = 0
 
 max_particles  = 2e7
 n_subcycles = 1
-do_emit_by_bin = 0
-n_emit_core_per_bin    = 0
-n_emit_therm_per_bin   = 0
+do_emit_by_bin = 1
+n_emit_core_per_bin    = 100
+n_emit_therm_per_bin   = 10
 max_time_hours = -1
 
 -- Inner Source
 
-r_core = 0
-core_emit_method = 1
-T_core = 10
-core_nue_chem_pot = 10
-core_lum_multiplier = 1.0
+r_core = 1.5e5
+T_core = {10}
+core_chem_pot = {0}
+core_lum_multiplier = {1.0}
 
 -- General Controls
 
-verbose       = 0
+verbose       = 1
 max_n_iter =  1
-min_step_size = 0.001
-max_step_size = 0.01
+min_step_size = 0.01
+max_step_size = 0.4
 
 -- Biasing
 
-importance_bias = 0
-bias_path_length = 0
-min_packet_weight = 0
-exponential_decay = 0
+min_packet_weight = 0.1
 
 -- Random Walk
 
-randomwalk_sphere_size = 0
-
-Grid1DSchwarzschild_r_sch = 1.0
-initial_xup = {1.5,0,0,0}
-initial_kup = {1,0,0,1}
-Grid1DSphere_radial_interpolation_method = 1
+randomwalk_max_x = 2
+randomwalk_sumN = 1000
+randomwalk_npoints = 200
+randomwalk_min_optical_depth = 10
+randomwalk_interpolation_order = 1

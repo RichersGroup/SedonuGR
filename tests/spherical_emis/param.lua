@@ -18,11 +18,12 @@ equilibrium_Ye = 0
 -- Opacity and Emissivity
 
 neutrino_type = "grey"
-nugrid_n = 20
+nugrid_n = 50
 nugrid_start = 0
 nugrid_stop = 100
 grey_opac = 0
 grey_abs_frac = 0
+grey_chempot = 0
 --nulib_table = "NuLib.h5"
 --nulib_eos = "SFHo.h5"
 opac_interp_method = 0
@@ -68,9 +69,9 @@ max_time_hours = -1
 
 r_core = 1.5
 core_emit_method = 1
-T_core = {10,10}
-core_chem_pot = {10,-10}
-core_lum_multiplier = {1.0,1.0}
+T_core = {10}
+core_chem_pot = {10}
+core_lum_multiplier = {1.0}
 
 -- General Controls
 

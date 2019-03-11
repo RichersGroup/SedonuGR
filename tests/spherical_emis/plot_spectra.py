@@ -24,7 +24,6 @@ nu_grid = np.array(f["axes/frequency(Hz)[mid]"])
 nu_edge = np.array(f["axes/frequency(Hz)[edge]"])
 nu_delta = [nu_edge[i+1]-nu_edge[i] for i in range(nu_grid.size)]
 data0 = np.array(f["spectrum0(erg|s)"][:,0,0])/nu_delta/(4.*np.pi)
-data1 = np.array(f["spectrum1(erg|s)"][:,0,0])/nu_delta/(4.*np.pi)
 
 def theory(x,mu):
     return pi*r*r*x*x*x*h/c/c*1/(np.exp((h*x-mu)/(k_b*T))+1.)
@@ -41,9 +40,6 @@ plt.ylabel(r"$\nu_e$ Energy Flux (erg/s/Hz/sr)")
 plt.plot(xgrid  , theory0,   'g--', label=r"$\nu_e$ Newtonian")
 plt.plot(xgrid  , theory0GR, 'g',   label=r"$\nu_e$ GR")
 plt.plot(nu_grid, data0,     'go',  label=r"$\nu_e$ Sedonu")
-plt.plot(xgrid  , theory1,   'b--', label=r"$\bar{\nu}_e$ Newtonian")
-plt.plot(xgrid  , theory1GR, 'b',   label=r"$\bar{\nu}_e$ GR")
-plt.plot(nu_grid, data1,     'bo',  label=r"$\bar{\nu}_e$ Sedonu")
 plt.legend()
 plt.savefig("compare_spectra.pdf")
 
@@ -54,13 +50,10 @@ with open("output.txt") as search:
             do_gr = int(line[-2])
 if(do_gr==0):
     error0 = np.sum(np.abs(data0-theory0)) / np.sum(data0+theory0)
-    error1 = np.sum(np.abs(data1-theory1)) / np.sum(data1+theory1)
 else:
     error0 = np.sum(np.abs(data0-theory0GR)) / np.sum(data0+theory0GR)
-    error1 = np.sum(np.abs(data1-theory1GR)) / np.sum(data1+theory1GR)
 print("error for species 0 =",error0)
-print("error for species 1 =",error1)
-if error0>tolerance or error1>tolerance:
+if error0>tolerance:
     raise Exception("spherical_emis results are outside of the tolerance.")
 else:
     print("SUCCESS")
