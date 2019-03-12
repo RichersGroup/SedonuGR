@@ -78,7 +78,6 @@ int main(int argc, char* argv[]){
 
 	size_t ngroups = nu_grid.size();
 
-	ScalarMultiDArray<double,1> BB;        // #/s/cm^2/sr/(Hz^3/3)
 	ScalarMultiDArray<double,1> abs_opac;  // 1/cm
 	ScalarMultiDArray<double,1> scat_opac; // 1/cm
 	ScalarMultiDArray<double,2> scattering_delta; // phi1/phi0 for sampling outgoing direction [Ein,Eout]
@@ -86,18 +85,17 @@ int main(int argc, char* argv[]){
 
 	vector<Axis> axes;
 	axes.push_back(nu_grid);
-	BB.set_axes(axes);
 	abs_opac.set_axes(axes);
 	scat_opac.set_axes(axes);
 	axes.push_back(nu_grid);
 	scattering_delta.set_axes(axes);
 	scattering_phi0.set_axes(axes);
 
-	vector<double> tmp_absopac(ngroups), tmp_scatopac(ngroups), tmp_BB(ngroups);
+	vector<double> tmp_absopac(ngroups), tmp_scatopac(ngroups);
 	vector< vector<double> > tmp_delta(ngroups, vector<double>(ngroups));
 	vector< vector<double> > tmp_phi0(ngroups, vector<double>(ngroups));
 	nulib_get_eas_arrays(rho, T, ye, nulibID,
-			tmp_BB, tmp_absopac, tmp_scatopac, tmp_phi0, tmp_delta);
+			tmp_absopac, tmp_scatopac, tmp_phi0, tmp_delta);
 
 	size_t dir_ind[2];
 	for(size_t ig=0; ig<ngroups; ig++){
@@ -105,8 +103,6 @@ int main(int argc, char* argv[]){
 		size_t global_index = abs_opac.direct_index(dir_ind);
 		abs_opac[global_index] = tmp_absopac[ig];
 		scat_opac[global_index] = tmp_scatopac[ig];
-		BB[global_index] = tmp_BB[ig]; // erg/cm^2/s/sr - convert in next line
-		BB[global_index] /= pc::h * pow(nu_grid.mid[ig],3) * nu_grid.delta(ig); // #/cm^2/s/sr/(Hz^3/3)
 
 		if(scattering_delta.size()>0)
 			for(size_t og=0; og<ngroups; og++){
@@ -119,8 +115,7 @@ int main(int argc, char* argv[]){
 
 	InterpolationCube<1> icube;
 	size_t nubin = nu_grid.bin(myfreq);
-	BB.set_InterpolationCube(&icube,&myfreq,&nubin);
-	cout << "BB = " << BB.interpolate(icube) << " #/s/cm^2/sr/(Hz^3/3)" << endl;
+	abs_opac.set_InterpolationCube(&icube,&myfreq,&nubin);
 	cout << "a = " << abs_opac.interpolate(icube)   << " 1/cm" << endl;
 	cout << "s = " << scat_opac.interpolate(icube)  << " 1/cm" << endl;
 
