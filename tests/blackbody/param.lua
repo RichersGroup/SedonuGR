@@ -5,7 +5,7 @@ do_visc       = 0
 do_randomwalk = 1
 do_relativity = 1
 do_annihilation = 0
-use_scattering_kernels = 0
+use_scattering_kernels = 1
 radiative_eq  = 0
 
 -- Equilibrium Solving
@@ -16,8 +16,8 @@ equilibrium_Ye = 0
 -- Opacity and Emissivity
 
 neutrino_type = "NuLib"
-nulib_table = "NuLib.h5"
-nulib_eos = "SFHo.h5"
+nulib_table = "../../external/NuLib/NuLib.h5"
+nulib_eos = "../../external/Hempel_SFHoEOS_rho222_temp180_ye60_version_1.1_20120817.h5"
 opac_interp_method = 0
 cdf_interpolation_order = 1
 cdf_cutoff    = 0

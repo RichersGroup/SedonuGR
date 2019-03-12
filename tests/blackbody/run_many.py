@@ -9,17 +9,17 @@ eosfile   = "SFHo.h5" #ignored if compiled for helmholtz eos
 
 min_logrho = 6  #g/ccm
 max_logrho = 15 #g/ccm
-n_rho = 5
+n_rho = 10
 center_logrho = 10
 
 min_logT = 0 #MeV
 max_logT = 1.5  #MeV
-n_T = 5
+n_T = 10
 center_logT = 0.5
 
 min_ye = 0.05
 max_ye = 0.55
-n_ye = 5
+n_ye = 10
 center_ye = 0.3
 
 
