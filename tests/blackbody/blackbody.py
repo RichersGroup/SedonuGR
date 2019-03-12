@@ -59,8 +59,8 @@ rcParams['ytick.minor.size'] = 7
 rcParams['axes.linewidth'] = 3
 rcParams['font.family'] = "serif"
 rcParams['font.size'] = 32
-rcParams['text.usetex'] = True
-rcParams['font.serif'] = "palatino"
+#rcParams['text.usetex'] = True
+#rcParams['font.serif'] = "palatino"
 
 # annotation text
 fig.gca().get_xaxis().set_visible(False)
