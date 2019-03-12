@@ -1,16 +1,21 @@
 #Only enable the commented compatability flags if compiling/running fails. Some systems (e.g. Hopper) won't compile with some of them enabled.
 
+DEBUG=1
+NDIMS=1
+DO_GR=1
+
 export
 #general options
 TARGET=$(CURDIR)/gomc
 BASEDIR=$(CURDIR)
 
 #compiler configuration
-F90=mpifc -fc=gfortran # OMPI_FC=ifort before mpifort
-CXX=mpicxx -cxx=g++ # OMPI_CXX=icpc before mpicxx
+CXX=mpicxx # OMPI_CXX=icpc before mpicxx
+F90=mpif90
+MPICXX = mpicxx -DNDIMS=$(NDIMS) -DDO_GR=$(DO_GR) -DDEBUG=$(DEBUG)
 
-F90FLAGS= -O3 -g -fopenmp -mavx -static_mpi
-CXXFLAGS= -O3 -g -std=c++0x -fopenmp -mavx -static_mpi #-DNDEBUG
+F90FLAGS= -O3 -g -fopenmp -mavx
+CXXFLAGS= -O3 -g -fopenmp -std=c++11 -Wall -Wextra -ffast-math
 
 #GSL
 GSL_BASE=$(GSL_DIR)
@@ -24,11 +29,11 @@ LUA_LIBS=-llua5.2
 
 #HDF5
 #HDF5_DIR=/usr/local/hdf5-1.8.17_gnu-5.4.0/hdf5
-HDF5INCS=-I/usr/include/hdf5/serial #$(HDF5_DIR)/include
-HDF5LIBS=-lhdf5_serial -lhdf5_serial_fortran -lhdf5_cpp
+HDF5INCS=-I$(HDF5_DIR)/include
+HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5 -lhdf5_fortran -lhdf5_cpp
 
 #NuLib
-NULIB_DIR=$(CURDIR)/external/NuLib/src
+NULIB_DIR=/home/srichers/software/NuLib/src
 NULIB_LIBS=$(NULIB_DIR)/nulib.a $(NULIB_DIR)/nuc_eos/nuc_eos.a -lgfortran #$(NULIB_DIR)/other_eos/helmholtz/helmholtz.o
 HELMHOLTZ_EOS=0
 MODINC="-I ./"
