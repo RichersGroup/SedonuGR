@@ -65,6 +65,7 @@ script:
 - make -C tests/spherical_emis
 - make -C tests/schwarzschild_path_test
 - make -C tests/neutrino_oven
+- make -C tests/NSY_regression
 - make -C tests/diffusion
 - make clean; DEBUG=1 NDIMS=2 DO_GR=0 make all -j4
 - make clean; DEBUG=1 NDIMS=3 DO_GR=0 make all -j4
@@ -76,6 +77,7 @@ script:
 - make -C tests/spherical_emis
 - make -C tests/schwarzschild_path_test
 - make -C tests/neutrino_oven
+- make -C tests/NSY_regression
 - make -C tests/diffusion
 - make clean; DEBUG=1 NDIMS=2 DO_GR=1 make all -j4
 - make clean; DEBUG=1 NDIMS=3 DO_GR=1 make all -j4
