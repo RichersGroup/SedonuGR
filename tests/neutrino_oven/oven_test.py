@@ -36,7 +36,7 @@ axes[0].set_ylabel(r"Energy Density (erg/ccm)")
 axes[0].plot(r, edens_theory, "g-",label="theory")
 axes[0].scatter(r, edens, label="Sedonu")
 axes[0].legend(loc=4)
-#axes[0].set_ylim(0,1.1*max(np.max(edens),np.max(edens_theory)))
+axes[0].set_ylim(0,1.1*max(np.max(edens),np.max(edens_theory)))
 error = edens-edens_theory
 error2 = (edens-edens_theory)**2
 std_dev = np.sqrt(np.sum(error2)/len(error2) - (np.sum(error)/len(error))**2)
@@ -52,7 +52,7 @@ axes[1].set_ylabel(r"$dE_\mathrm{int}/dt$ (erg/ccm/s)")
 axes[1].plot(r, -e_emit, label="emit")
 axes[1].scatter(r, e_abs, label="abs")
 axes[1].legend(loc=4)
-#axes[1].set_ylim(0,1.1*max(np.max(e_abs),np.max(-e_emit)))
+axes[1].set_ylim(0,1.1*max(np.max(e_abs),np.max(-e_emit)))
 error = dEdt
 error2 = dEdt**2
 std_dev = np.sqrt(np.sum(error2)/len(error2) - (np.sum(error)/len(error))**2)
@@ -67,6 +67,7 @@ dNdt = l_abs + l_emit
 axes[2].set_ylabel(r"$dn_l/dt$ (1/ccm/s)")
 axes[2].plot(r, -l_emit, label="emit")
 axes[2].scatter(r, l_abs, label="abs")
+axes[1].set_ylim(0,1.1*max(np.max(e_abs),np.max(-e_emit)))
 axes[2].legend()
 error = dNdt
 error2 = dNdt**2
