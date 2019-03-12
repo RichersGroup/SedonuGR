@@ -117,6 +117,13 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->N,>=,0);
 	PRINT_ASSERT(eh->nu(),>=,0);
 
+	// save old values
+	const Tuple<double,4> kup_tet_old = eh->kup_tet;
+	const double Nold = eh->N;
+	const int z_ind_old = eh->z_ind;
+	size_t dir_ind_old[NDIMS+1];
+	for(size_t i=0; i<NDIMS+1; i++) dir_ind_old[i] = eh->dir_ind[i];
+
 	const double Rcom = eh->ds_com;
 	const double D = eh->scatopac / (3.*pc::c);
 
@@ -135,7 +142,8 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 		Nfinal = eh->N * exp(-opt_depth);
 		Naverage = (eh->N - Nfinal) / (opt_depth);
 	}
-	PRINT_ASSERT(Naverage,>,0);
+	PRINT_ASSERT(Naverage,<=,Nold);
+	PRINT_ASSERT(Nfinal,<=,Naverage);
 
 	// select a random direction
 	Tuple<double,4> kup_tet;
@@ -145,6 +153,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	eh->N = Naverage;
 	move(eh);
 	eh->N = Nfinal;
+
 
 	// select a random outward direction
 	Tuple<double,4> kup_tet_final = 0.0;
@@ -159,7 +168,12 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	// contribute energy isotropically
 	double Eiso;
 	Eiso = pc::h*eh->nu() * Naverage * (path_length_com - Rcom);
-	grid->distribution[eh->s]->add_isotropic(eh->dir_ind, Eiso);
+	grid->distribution[eh->s]->add_isotropic(dir_ind_old, Eiso);
+	grid->l_abs[z_ind_old] += (Nold - Nfinal) * species_list[eh->s]->lepton_number;
+	for(size_t i=0; i<4; i++){
+		grid->fourforce_abs[z_ind_old][i] += (kup_tet_old[i]*Nold - eh->kup_tet[i]*eh->N);
+	}
+
 }
 
 //-------------------------------------------------------------
