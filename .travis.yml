@@ -19,8 +19,7 @@ notifications:
 
 cache:
   directories:
-  - external/hdf5
-  - external/lua
+  - external
 
 addons:	
   apt:
@@ -41,6 +40,7 @@ addons:
     - python3-h5py
     - python3-matplotlib
     - gnuplot
+    - bzip2
     env:
     - CC=gcc-5
     - CXX=g++-5
@@ -52,6 +52,10 @@ install:
 - make hdf5 &>> dependency_log.txt
 - make nulib
 - make lua &>> dependency_log.txt
+- wget https://stellarcollapse.org/~evanoc/Hempel_SFHoEOS_rho222_temp180_ye60_version_1.1_20120817.h5.bz2; bunzip2 Hempel_SFHoEOS_rho222_temp180_ye60_version_1.1_20120817.h5.bz2; mv Hempel_SFHoEOS_rho222_temp180_ye60_version_1.1_20120817.h5 external
+- sed -i 's/eos_table_name.*/eos_table_name=\.\.\/Hempel_SFHoEOS_rho222_temp180_ye60_version_1\.1_20120817\.h5/' external/NuLib/parameters
+- cd external/NuLib; ./make_table_example; cd $TRAVIS_BUILD_DIR
+
 
 script:
 - make clean; DEBUG=1 NDIMS=0 DO_GR=0 make all -j4
