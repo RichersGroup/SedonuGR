@@ -30,9 +30,7 @@ def theory(x,mu):
 xgrid = nu_grid
 xgrid_shifted = xgrid * alpha_out/alpha_core
 theory0 = theory(xgrid, mue)
-theory0GR = theory(xgrid_shifted, mue)
-theory1 = theory(xgrid, -mue)
-theory1GR = theory(xgrid_shifted, -mue)
+theory0GR = theory(xgrid_shifted, mue) * alpha_core
 
 plt.title(r"$R_\mathrm{core}=$"+str(r)+r"cm   $T=$"+str(T/k_MeV)+r"MeV   $\mu_{\nu_e}=$"+str(mue/MeV)+"MeV")
 plt.xlabel("Neutrino Frequency (Hz) (2.5e20 Hz/MeV)")
