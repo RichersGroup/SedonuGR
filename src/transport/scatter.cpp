@@ -155,13 +155,13 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	eh->N = Nfinal;
 
 
-	// select a random outward direction
+	// select a random outward direction. Use delta=2 to make pdf=costheta
 	Tuple<double,4> kup_tet_final = 0.0;
 	kup_tet_final[3] = kup_tet[3];
 	Tuple<double,3> direction;
 	do{
 		isotropic_direction(direction,&rangen);
-	} while(Metric::dot_Minkowski<3>(direction,kup_tet) < 0);
+	} while(reject_direction(Metric::dot_Minkowski<3>(direction,kup_tet)/kup_tet[3], 2.) );
 	for(size_t i=0; i<3; i++) kup_tet_final[i] = direction[i] * kup_tet_final[3];
 	eh->set_kup_tet(kup_tet_final);
 
@@ -176,27 +176,6 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 
 }
 
-//-------------------------------------------------------------
-// Sample outgoing neutrino direction and energy
-//-------------------------------------------------------------
-bool reject_direction(const double mu, const double delta, ThreadRNG* rangen){
-	// uniform in direction
-	if(delta==0) return false;
-
-	// highly anisotropic - must cut off PDF. Reject if outside bounds
-	double min_mu = delta> 1.0 ? delta-2. : -1.0;
-	double max_mu = delta<-1.0 ? delta+2. :  1.0;
-	if(mu<min_mu || mu>max_mu) return true;
-
-	// If inside bounds, use linear PDF
-	double delta_eff = max(min(delta, 1.0), -1.0);
-	double mubar = 0.5*(min_mu+max_mu);
-	double pdfval = 0.5 + delta_eff * (mu-mubar) / (max_mu-min_mu);
-	PRINT_ASSERT(pdfval,<=,1.);
-	PRINT_ASSERT(pdfval,>=,0.);
-	if(rangen->uniform() > pdfval) return true;
-	else return false;
-}
 void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<double,4>& kup_tet_old) const{
 	PRINT_ASSERT(use_scattering_kernels,>,0);
 	PRINT_ASSERT(eh->scatopac,>,0);
@@ -249,7 +228,7 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<do
 		do{
 			isotropic_kup_tet(hyperloc[NDIMS+1], kup_tet_new, &rangen);
 			costheta = Metric::dot_Minkowski<3>(kup_tet_new,kup_tet_old) / (kup_tet_old[3]*kup_tet_new[3]);
-		} while(reject_direction(costheta, delta, &rangen));
+		} while(reject_direction(costheta, delta));
 	}
 	else{
 	        kup_tet_new = eh->kup_tet * hyperloc[NDIMS+1] / eh->nu();

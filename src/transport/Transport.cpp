@@ -785,3 +785,27 @@ double Transport::R_randomwalk(const double kx_kttet, const double kt_kttet, con
 	R = max(0.,R);
 	return R;
 }
+
+//-------------------------------------------------------------
+// Sample outgoing neutrino direction and energy
+//-------------------------------------------------------------
+bool Transport::reject_direction(const double mu, const double delta) const{
+	PRINT_ASSERT(mu,>=,-1.);
+	PRINT_ASSERT(mu,<=,1.);
+	// uniform in direction
+	if(delta==0) return false;
+
+	// highly anisotropic - must cut off PDF. Reject if outside bounds
+	double min_mu = delta> 1.0 ? delta-2. : -1.0;
+	double max_mu = delta<-1.0 ? delta+2. :  1.0;
+	if(mu<min_mu || mu>max_mu) return true;
+
+	// If inside bounds, use linear PDF
+	double delta_eff = max(min(delta, 1.0), -1.0);
+	double mubar = 0.5*(min_mu+max_mu);
+	double pdfval = 0.5 + delta_eff * (mu-mubar) / (max_mu-min_mu);
+	PRINT_ASSERT(pdfval,<=,1.);
+	PRINT_ASSERT(pdfval,>=,0.);
+	if(rangen.uniform() > pdfval) return true;
+	else return false;
+}
