@@ -217,6 +217,7 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 	T.set_axes(axes);
 	Ye.set_axes(axes);
 	H_vis.set_axes(axes);
+	munue.set_axes(axes);
 
 	for(size_t z_ind=0; z_ind<vr.size(); z_ind++){
 		vr[z_ind] = tmp_vr[z_ind];
