@@ -278,7 +278,6 @@ void Grid::init(Lua* lua, Transport* insim)
 	fourforce_emit.set_axes(axes);
 	l_abs.set_axes(axes);
 	l_emit.set_axes(axes);
-	munue.set_axes(axes);
 
 	axes.push_back(nu_grid_axis);
 	for(size_t s=0; s<sim->species_list.size(); s++){

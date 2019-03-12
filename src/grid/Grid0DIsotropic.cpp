@@ -51,6 +51,7 @@ void Grid0DIsotropic::read_model_file(Lua* lua)
 	Ye.set_axes(xAxes);
 	H_vis.set_axes(xAxes);
 	lapse.set_axes(xAxes);
+	munue.set_axes(xAxes);
 	rho[0] = lua->scalar<double>("Grid0DIsotropic_rho");
 	T[0]   = lua->scalar<double>("Grid0DIsotropic_T")/pc::k_MeV;
 	Ye[0]  = lua->scalar<double>("Grid0DIsotropic_Ye");

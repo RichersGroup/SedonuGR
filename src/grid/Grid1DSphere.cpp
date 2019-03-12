@@ -106,6 +106,7 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 	T.set_axes(axes);
 	Ye.set_axes(axes);
 	H_vis.set_axes(axes);
+	munue.set_axes(axes);
 
 	// write grid properties
 	if(rank0)
@@ -132,6 +133,7 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 
 		// convert units
 		T[z_ind] /= pc::k_MeV;
+		munue[z_ind] *= pc::MeV_to_ergs;
 
 		// GR variables
 		lapse[z_ind] = 1.0;

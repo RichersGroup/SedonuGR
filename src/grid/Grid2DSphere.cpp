@@ -123,6 +123,7 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 	vr.set_axes(xAxes);
 	vtheta.set_axes(xAxes);
 	vphi.set_axes(xAxes);
+	munue.set_axes(xAxes);
 
 	// write grid properties
 	if(rank0) cout << "#   nr=" << nr << "\trmin=" << xAxes[0].min << "\trmax=" << xAxes[0].top[nr-1] << endl;
