@@ -54,7 +54,7 @@ install:
 - make lua &>> dependency_log.txt
 - wget https://stellarcollapse.org/~evanoc/Hempel_SFHoEOS_rho222_temp180_ye60_version_1.1_20120817.h5.bz2; bunzip2 Hempel_SFHoEOS_rho222_temp180_ye60_version_1.1_20120817.h5.bz2; mv Hempel_SFHoEOS_rho222_temp180_ye60_version_1.1_20120817.h5 external
 - sed -i 's/eos_table_name.*/eos_table_name=\.\.\/Hempel_SFHoEOS_rho222_temp180_ye60_version_1\.1_20120817\.h5/' external/NuLib/parameters
-- cd external/NuLib; ./make_table_example > output.txt; mv NuLib*.h5 NuLib.h5; cd $TRAVIS_BUILD_DIR
+- cd external/NuLib; ./make_table_example; mv NuLib*.h5 NuLib.h5; cd $TRAVIS_BUILD_DIR
 
 
 script:
