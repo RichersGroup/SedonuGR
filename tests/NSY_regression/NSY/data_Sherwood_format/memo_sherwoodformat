@@ -1,0 +1,176 @@
+
+         iph2 = 1
+         do ith2 = 1 , Nthmax
+         do ir2 = 1 , Nrmax
+
+        write(250,*)rmid_gl(ir2),                                ! 1 radius (cm)
+     &              thmid_gl(ith2),                              ! 2 theta (radian)
+     &              rho_gl(ir2,ith2,iph2),                       ! 3 rho
+     &              ye_gl(ir2,ith2,iph2),                        ! 4 Ye
+     &              T_gl(ir2,ith2,iph2),                         ! 5 T
+     &  vup1_gl(ir2,ith2,iph2),                                  ! 6 v^r (cm/s)
+     &  vup2_gl(ir2,ith2,iph2)*rmid_gl(ir2),                     ! 7 v^th(cm/s)
+     &  vup3_gl(ir2,ith2,iph2)
+     & *rmid_gl(ir2)*dsin( thmid_gl(ith2) ),                     ! 8 v^ph(cm/s)
+     &  entropy_gl(ir2,ith2,iph2),                               ! 9 entropy
+     &  yl_gl(ir2,ith2,iph2),                                    ! 10 Yl
+     &  pressure_gl(ir2,ith2,iph2),                              ! 11 p
+     &  eint_gl(ir2,ith2,iph2),                                  ! 12 eint
+     &  memodeleptQn_gl(ir2,ith2,iph2),                          ! 13 Qn
+     &  memoheatQe_gl(ir2,ith2,iph2),                            ! 14 Qe
+     &  Ynu_gl(ir2,ith2,iph2,inue),                              ! 15 Ynue
+     &  Ynu_gl(ir2,ith2,iph2,inueb),                             ! 16 Ynueb
+     &  Ynu_gl(ir2,ith2,iph2,inum),                              ! 17 Ynum
+     &  NuEnedens_gl(ir2,ith2,iph2,inue),                        ! 18 E_nue
+     &  NuEnedens_gl(ir2,ith2,iph2,inueb),                       ! 19 E_nueb
+     &  NuEnedens_gl(ir2,ith2,iph2,inum),                        ! 20 E_num
+     &  vx_gl(ir2,ith2,iph2),                                    ! 21 vx
+     &  vz_gl(ir2,ith2,iph2),                                    ! 22 vz
+     &  workNxnFR_gl(ir2,ith2,iph2,inue),                        ! 23 workNxnFR (nue)
+     &  workNxnLab_gl(ir2,ith2,iph2,inue),                       ! 24 workNxnLab (nue)
+     &  workFxnFR_gl(1,ir2,ith2,iph2,inue),                      ! 25 workFxnFR radial (nue)
+     &  workFxnFR_gl(2,ir2,ith2,iph2,inue),                      ! 26 workFxnFR theta (nue)
+     &  workFxnLab_gl(1,ir2,ith2,iph2,inue),                     ! 27 workFxnLab radial (nue)
+     &  workFxnLab_gl(2,ir2,ith2,iph2,inue),                     ! 28 workFxnLab theta (nue)
+     &  workFxnFR_gl_x(ir2,ith2,iph2,inue),                      ! 29 workFxnFR x (nue)
+     &  workFxnFR_gl_z(ir2,ith2,iph2,inue),                      ! 30 workFxnFR z (nue)
+     &  workFxnLab_gl_x(ir2,ith2,iph2,inue),                     ! 31 workFxnLab x (nue)
+     &  workFxnLab_gl_z(ir2,ith2,iph2,inue),                     ! 32 workFxnLab z (nue)
+     &  chemipote_elec_gl(ir2,ith2,iph2),                        ! 33 chemipote_elec
+     &  chemipote_prot_gl(ir2,ith2,iph2),                        ! 34 chemipote_prot
+     &  chemipote_neut_gl(ir2,ith2,iph2),                        ! 35 chemipote_neut
+     &  chemipote_neue_gl(ir2,ith2,iph2),                        ! 36 chemipote_neue
+     &  workNxnFR_gl(ir2,ith2,iph2,inueb),                       ! 37 workNxnFR (nueb)
+     &  workNxnLab_gl(ir2,ith2,iph2,inueb),                      ! 38 workNxnLab (nueb)
+     &  workFxnFR_gl(1,ir2,ith2,iph2,inueb),                     ! 39 workFxnFR radial (nueb)
+     &  workFxnFR_gl(2,ir2,ith2,iph2,inueb),                     ! 40 workFxnFR theta (nueb)
+     &  workFxnLab_gl(1,ir2,ith2,iph2,inueb),                    ! 41 workFxnLab radial (nueb)
+     &  workFxnLab_gl(2,ir2,ith2,iph2,inueb),                    ! 42 workFxnLab theta (nueb)
+     &  workNxnFR_gl(ir2,ith2,iph2,inum),                        ! 43 workNxnFR (num)
+     &  workNxnLab_gl(ir2,ith2,iph2,inum),                       ! 44 workNxnLab (num)
+     &  workFxnFR_gl(1,ir2,ith2,iph2,inum),                      ! 45 workFxnFR radial (num)
+     &  workFxnFR_gl(2,ir2,ith2,iph2,inum),                      ! 46 workFxnFR theta (num)
+     &  workFxnLab_gl(1,ir2,ith2,iph2,inum),                     ! 47 workFxnLab radial (num)
+     &  workFxnLab_gl(2,ir2,ith2,iph2,inum),                     ! 48 workFxnLab theta (num)
+     &  workNxeLab_gl(ir2,ith2,iph2,inue),                       ! 49 workNxeLab_gl (nue)
+     &  workNxeLab_gl(ir2,ith2,iph2,inueb),                      ! 50 workNxeLab_gl (nueb)
+     &  workNxeLab_gl(ir2,ith2,iph2,inum),                       ! 51 workNxeLab_gl (num)
+     &  workPxnFR_ie_gl(1,1,1,ir2,ith2,iph2,inue),               ! 52 workPxnFR_ie_gl (r,r,ie=1,nue)
+     &  workPxnFR_ie_gl(1,2,2,ir2,ith2,iph2,inue),               ! 53 workPxnFR_ie_gl (th,th,ie=1,nue)
+     &  workPxnFR_ie_gl(1,3,3,ir2,ith2,iph2,inue),               ! 54 workPxnFR_ie_gl (ph,ph,ie=1,nue)
+     &  workPxnFR_ie_gl(1,1,2,ir2,ith2,iph2,inue),               ! 55 workPxnFR_ie_gl (r,th,ie=1,nue)
+     &  workPxnFR_ie_gl(1,1,3,ir2,ith2,iph2,inue),               ! 56 workPxnFR_ie_gl (r,ph,ie=1,nue)
+     &  workPxnFR_ie_gl(1,2,3,ir2,ith2,iph2,inue),               ! 57 workPxnFR_ie_gl (th,ph,ie=1,nue)
+     &  NxnfluidRe_gl(1,ir2,ith2,iph2,inue),                     ! 58 NxnfluidRe_gl (ie=1,nue)
+     &  workPxnFR_ie_gl(5,1,1,ir2,ith2,iph2,inue),               ! 59 workPxnFR_ie_gl (r,r,ie=5,nue)
+     &  workPxnFR_ie_gl(5,2,2,ir2,ith2,iph2,inue),               ! 60 workPxnFR_ie_gl (th,th,ie=5,nue)
+     &  workPxnFR_ie_gl(5,3,3,ir2,ith2,iph2,inue),               ! 61 workPxnFR_ie_gl (ph,ph,ie=5,nue)
+     &  workPxnFR_ie_gl(5,1,2,ir2,ith2,iph2,inue),               ! 62 workPxnFR_ie_gl (r,th,ie=5,nue)
+     &  workPxnFR_ie_gl(5,1,3,ir2,ith2,iph2,inue),               ! 63 workPxnFR_ie_gl (r,ph,ie=5,nue)
+     &  workPxnFR_ie_gl(5,2,3,ir2,ith2,iph2,inue),               ! 64 workPxnFR_ie_gl (th,ph,ie=5,nue)
+     &  NxnfluidRe_gl(5,ir2,ith2,iph2,inue),                     ! 65 NxnfluidRe_gl (ie=5,nue)
+     &  workPxnFR_ie_gl(10,1,1,ir2,ith2,iph2,inue),               ! 66 workPxnFR_ie_gl (r,r,ie=10,nue)
+     &  workPxnFR_ie_gl(10,2,2,ir2,ith2,iph2,inue),               ! 67 workPxnFR_ie_gl (th,th,ie=10,nue)
+     &  workPxnFR_ie_gl(10,3,3,ir2,ith2,iph2,inue),               ! 68 workPxnFR_ie_gl (ph,ph,ie=10,nue)
+     &  workPxnFR_ie_gl(10,1,2,ir2,ith2,iph2,inue),               ! 69 workPxnFR_ie_gl (r,th,ie=10,nue)
+     &  workPxnFR_ie_gl(10,1,3,ir2,ith2,iph2,inue),               ! 70 workPxnFR_ie_gl (r,ph,ie=10,nue)
+     &  workPxnFR_ie_gl(10,2,3,ir2,ith2,iph2,inue),               ! 71 workPxnFR_ie_gl (th,ph,ie=10,nue)
+     &  NxnfluidRe_gl(10,ir2,ith2,iph2,inue),                     ! 72 NxnfluidRe_gl (ie=10,nue)
+     &  workPxnFR_ie_gl(15,1,1,ir2,ith2,iph2,inue),               ! 73 workPxnFR_ie_gl (r,r,ie=15,nue)
+     &  workPxnFR_ie_gl(15,2,2,ir2,ith2,iph2,inue),               ! 74 workPxnFR_ie_gl (th,th,ie=15,nue)
+     &  workPxnFR_ie_gl(15,3,3,ir2,ith2,iph2,inue),               ! 75 workPxnFR_ie_gl (ph,ph,ie=15,nue)
+     &  workPxnFR_ie_gl(15,1,2,ir2,ith2,iph2,inue),               ! 76 workPxnFR_ie_gl (r,th,ie=15,nue)
+     &  workPxnFR_ie_gl(15,1,3,ir2,ith2,iph2,inue),               ! 77 workPxnFR_ie_gl (r,ph,ie=15,nue)
+     &  workPxnFR_ie_gl(15,2,3,ir2,ith2,iph2,inue),               ! 78 workPxnFR_ie_gl (th,ph,ie=15,nue)
+     &  NxnfluidRe_gl(15,ir2,ith2,iph2,inue),                     ! 79 NxnfluidRe_gl (ie=15,nue)
+     &  workPxnFR_ie_gl(1,1,1,ir2,ith2,iph2,inueb),               ! 80 workPxnFR_ie_gl (r,r,ie=1,nueb)
+     &  workPxnFR_ie_gl(1,2,2,ir2,ith2,iph2,inueb),               ! 81 workPxnFR_ie_gl (th,th,ie=1,nueb)
+     &  workPxnFR_ie_gl(1,3,3,ir2,ith2,iph2,inueb),               ! 82 workPxnFR_ie_gl (ph,ph,ie=1,nueb)
+     &  workPxnFR_ie_gl(1,1,2,ir2,ith2,iph2,inueb),               ! 83 workPxnFR_ie_gl (r,th,ie=1,nueb)
+     &  workPxnFR_ie_gl(1,1,3,ir2,ith2,iph2,inueb),               ! 84 workPxnFR_ie_gl (r,ph,ie=1,nueb)
+     &  workPxnFR_ie_gl(1,2,3,ir2,ith2,iph2,inueb),               ! 85 workPxnFR_ie_gl (th,ph,ie=1,nueb)
+     &  NxnfluidRe_gl(1,ir2,ith2,iph2,inueb),                     ! 86 NxnfluidRe_gl (ie=1,nueb)
+     &  workPxnFR_ie_gl(5,1,1,ir2,ith2,iph2,inueb),               ! 87 workPxnFR_ie_gl (r,r,ie=5,nueb)
+     &  workPxnFR_ie_gl(5,2,2,ir2,ith2,iph2,inueb),               ! 88 workPxnFR_ie_gl (th,th,ie=5,nueb)
+     &  workPxnFR_ie_gl(5,3,3,ir2,ith2,iph2,inueb),               ! 89 workPxnFR_ie_gl (ph,ph,ie=5,nueb)
+     &  workPxnFR_ie_gl(5,1,2,ir2,ith2,iph2,inueb),               ! 90 workPxnFR_ie_gl (r,th,ie=5,nueb)
+     &  workPxnFR_ie_gl(5,1,3,ir2,ith2,iph2,inueb),               ! 91 workPxnFR_ie_gl (r,ph,ie=5,nueb)
+     &  workPxnFR_ie_gl(5,2,3,ir2,ith2,iph2,inueb),               ! 92 workPxnFR_ie_gl (th,ph,ie=5,nueb)
+     &  NxnfluidRe_gl(5,ir2,ith2,iph2,inueb),                     ! 93 NxnfluidRe_gl (ie=5,nueb)
+     &  workPxnFR_ie_gl(10,1,1,ir2,ith2,iph2,inueb),               ! 94 workPxnFR_ie_gl (r,r,ie=10,nueb)
+     &  workPxnFR_ie_gl(10,2,2,ir2,ith2,iph2,inueb),               ! 95 workPxnFR_ie_gl (th,th,ie=10,nueb)
+     &  workPxnFR_ie_gl(10,3,3,ir2,ith2,iph2,inueb),               ! 96 workPxnFR_ie_gl (ph,ph,ie=10,nueb)
+     &  workPxnFR_ie_gl(10,1,2,ir2,ith2,iph2,inueb),               ! 97 workPxnFR_ie_gl (r,th,ie=10,nueb)
+     &  workPxnFR_ie_gl(10,1,3,ir2,ith2,iph2,inueb),               ! 98 workPxnFR_ie_gl (r,ph,ie=10,nueb)
+     &  workPxnFR_ie_gl(10,2,3,ir2,ith2,iph2,inueb),               ! 99 workPxnFR_ie_gl (th,ph,ie=10,nueb)
+     &  NxnfluidRe_gl(10,ir2,ith2,iph2,inueb),                     ! 100 NxnfluidRe_gl (ie=10,nueb)
+     &  workPxnFR_ie_gl(15,1,1,ir2,ith2,iph2,inueb),               ! 101 workPxnFR_ie_gl (r,r,ie=15,nueb)
+     &  workPxnFR_ie_gl(15,2,2,ir2,ith2,iph2,inueb),               ! 102 workPxnFR_ie_gl (th,th,ie=15,nueb)
+     &  workPxnFR_ie_gl(15,3,3,ir2,ith2,iph2,inueb),               ! 103 workPxnFR_ie_gl (ph,ph,ie=15,nueb)
+     &  workPxnFR_ie_gl(15,1,2,ir2,ith2,iph2,inueb),               ! 104 workPxnFR_ie_gl (r,th,ie=15,nueb)
+     &  workPxnFR_ie_gl(15,1,3,ir2,ith2,iph2,inueb),               ! 105 workPxnFR_ie_gl (r,ph,ie=15,nueb)
+     &  workPxnFR_ie_gl(15,2,3,ir2,ith2,iph2,inueb),               ! 106 workPxnFR_ie_gl (th,ph,ie=15,nueb)
+     &  NxnfluidRe_gl(15,ir2,ith2,iph2,inueb),                     ! 107 NxnfluidRe_gl (ie=15,nueb)
+     &  workPxnFR_ie_gl(1,1,1,ir2,ith2,iph2,inum),               ! 108 workPxnFR_ie_gl (r,r,ie=1,num)
+     &  workPxnFR_ie_gl(1,2,2,ir2,ith2,iph2,inum),               ! 109 workPxnFR_ie_gl (th,th,ie=1,num)
+     &  workPxnFR_ie_gl(1,3,3,ir2,ith2,iph2,inum),               ! 110 workPxnFR_ie_gl (ph,ph,ie=1,num)
+     &  workPxnFR_ie_gl(1,1,2,ir2,ith2,iph2,inum),               ! 111 workPxnFR_ie_gl (r,th,ie=1,num)
+     &  workPxnFR_ie_gl(1,1,3,ir2,ith2,iph2,inum),               ! 112 workPxnFR_ie_gl (r,ph,ie=1,num)
+     &  workPxnFR_ie_gl(1,2,3,ir2,ith2,iph2,inum),               ! 113 workPxnFR_ie_gl (th,ph,ie=1,num)
+     &  NxnfluidRe_gl(1,ir2,ith2,iph2,inum),                     ! 114 NxnfluidRe_gl (ie=1,num)
+     &  workPxnFR_ie_gl(5,1,1,ir2,ith2,iph2,inum),               ! 115 workPxnFR_ie_gl (r,r,ie=5,num)
+     &  workPxnFR_ie_gl(5,2,2,ir2,ith2,iph2,inum),               ! 116 workPxnFR_ie_gl (th,th,ie=5,num)
+     &  workPxnFR_ie_gl(5,3,3,ir2,ith2,iph2,inum),               ! 117 workPxnFR_ie_gl (ph,ph,ie=5,num)
+     &  workPxnFR_ie_gl(5,1,2,ir2,ith2,iph2,inum),               ! 118 workPxnFR_ie_gl (r,th,ie=5,num)
+     &  workPxnFR_ie_gl(5,1,3,ir2,ith2,iph2,inum),               ! 119 workPxnFR_ie_gl (r,ph,ie=5,num)
+     &  workPxnFR_ie_gl(5,2,3,ir2,ith2,iph2,inum),               ! 120 workPxnFR_ie_gl (th,ph,ie=5,num)
+     &  NxnfluidRe_gl(5,ir2,ith2,iph2,inum),                     ! 121 NxnfluidRe_gl (ie=5,num)
+     &  workPxnFR_ie_gl(10,1,1,ir2,ith2,iph2,inum),               ! 122 workPxnFR_ie_gl (r,r,ie=10,num)
+     &  workPxnFR_ie_gl(10,2,2,ir2,ith2,iph2,inum),               ! 123 workPxnFR_ie_gl (th,th,ie=10,num)
+     &  workPxnFR_ie_gl(10,3,3,ir2,ith2,iph2,inum),               ! 124 workPxnFR_ie_gl (ph,ph,ie=10,num)
+     &  workPxnFR_ie_gl(10,1,2,ir2,ith2,iph2,inum),               ! 125 workPxnFR_ie_gl (r,th,ie=10,num)
+     &  workPxnFR_ie_gl(10,1,3,ir2,ith2,iph2,inum),               ! 126 workPxnFR_ie_gl (r,ph,ie=10,num)
+     &  workPxnFR_ie_gl(10,2,3,ir2,ith2,iph2,inum),               ! 127 workPxnFR_ie_gl (th,ph,ie=10,num)
+     &  NxnfluidRe_gl(10,ir2,ith2,iph2,inum),                     ! 128 NxnfluidRe_gl (ie=10,num)
+     &  workPxnFR_ie_gl(15,1,1,ir2,ith2,iph2,inum),               ! 129 workPxnFR_ie_gl (r,r,ie=15,num)
+     &  workPxnFR_ie_gl(15,2,2,ir2,ith2,iph2,inum),               ! 130 workPxnFR_ie_gl (th,th,ie=15,num)
+     &  workPxnFR_ie_gl(15,3,3,ir2,ith2,iph2,inum),               ! 131 workPxnFR_ie_gl (ph,ph,ie=15,num)
+     &  workPxnFR_ie_gl(15,1,2,ir2,ith2,iph2,inum),               ! 132 workPxnFR_ie_gl (r,th,ie=15,num)
+     &  workPxnFR_ie_gl(15,1,3,ir2,ith2,iph2,inum),               ! 133 workPxnFR_ie_gl (r,ph,ie=15,num)
+     &  workPxnFR_ie_gl(15,2,3,ir2,ith2,iph2,inum),               ! 134 workPxnFR_ie_gl (th,ph,ie=15,num)
+     &  NxnfluidRe_gl(15,ir2,ith2,iph2,inum),                     ! 135 NxnfluidRe_gl (ie=15,num)
+     &  workFxeFR_gl(1,ir2,ith2,iph2,inue),                       ! 136 FxeFR_gl radial (nue) fluid-rest
+     &  workFxeFR_gl(2,ir2,ith2,iph2,inue),                       ! 137 FxeFR_gl theta  (nue) fluid-rest
+     &  workFxeFR_gl(3,ir2,ith2,iph2,inue),                       ! 138 FxeFR_gl theta  (nue) fluid-rest
+     &  workFxeFR_gl(1,ir2,ith2,iph2,inueb),                      ! 139 FxeFR_gl radial (nueb) fluid-rest
+     &  workFxeFR_gl(2,ir2,ith2,iph2,inueb),                      ! 140 FxeFR_gl theta  (nueb) fluid-rest
+     &  workFxeFR_gl(3,ir2,ith2,iph2,inueb),                      ! 141 FxeFR_gl theta  (nueb) fluid-rest
+     &  workFxeFR_gl(1,ir2,ith2,iph2,inum),                       ! 142 FxeFR_gl radial (num) fluid-rest
+     &  workFxeFR_gl(2,ir2,ith2,iph2,inum),                       ! 143 FxeFR_gl theta  (num) fluid-rest
+     &  workFxeFR_gl(3,ir2,ith2,iph2,inum),                       ! 144 FxeFR_gl theta  (num) fluid-rest
+     &  workFxeLab_gl(1,ir2,ith2,iph2,inue),                       ! 145 FxeLab_gl radial (nue) labo
+     &  workFxeLab_gl(2,ir2,ith2,iph2,inue),                       ! 146 FxeLab_gl theta  (nue) labo
+     &  workFxeLab_gl(3,ir2,ith2,iph2,inue),                       ! 147 FxeLab_gl theta  (nue) labo
+     &  workFxeLab_gl(1,ir2,ith2,iph2,inueb),                      ! 148 FxeLab_gl radial (nueb) labo
+     &  workFxeLab_gl(2,ir2,ith2,iph2,inueb),                      ! 149 FxeLab_gl theta  (nueb) labo
+     &  workFxeLab_gl(3,ir2,ith2,iph2,inueb),                      ! 150 FxeLab_gl theta  (nueb) labo            
+     &  workFxeLab_gl(1,ir2,ith2,iph2,inum),                       ! 151 FxeLab_gl radial (num) labo
+     &  workFxeLab_gl(2,ir2,ith2,iph2,inum),                       ! 152 FxeLab_gl theta  (num) labo
+     &  workFxeLab_gl(3,ir2,ith2,iph2,inum),                       ! 153 FxeLab_gl theta  (num) labo
+     &  NxefluidRe_gl(1,ir2,ith2,iph2,inue),                       ! 154 NxefluidRe_gl (ie=1,nue)
+     &  NxefluidRe_gl(5,ir2,ith2,iph2,inue),                       ! 155 NxefluidRe_gl (ie=5,nue)
+     &  NxefluidRe_gl(10,ir2,ith2,iph2,inue),                      ! 156 NxefluidRe_gl (ie=10,nue)
+     &  NxefluidRe_gl(15,ir2,ith2,iph2,inue),                      ! 157 NxefluidRe_gl (ie=15,nue)
+     &  NxefluidRe_gl(1,ir2,ith2,iph2,inueb),                      ! 158 NxefluidRe_gl (ie=1,nueb)
+     &  NxefluidRe_gl(5,ir2,ith2,iph2,inueb),                      ! 159 NxefluidRe_gl (ie=5,nueb)
+     &  NxefluidRe_gl(10,ir2,ith2,iph2,inueb),                     ! 160 NxefluidRe_gl (ie=10,nueb)
+     &  NxefluidRe_gl(15,ir2,ith2,iph2,inueb),                     ! 161 NxefluidRe_gl (ie=15,nueb)
+     &  NxefluidRe_gl(1,ir2,ith2,iph2,inum),                       ! 162 NxefluidRe_gl (ie=1,num)
+     &  NxefluidRe_gl(5,ir2,ith2,iph2,inum),                       ! 163 NxefluidRe_gl (ie=5,num)
+     &  NxefluidRe_gl(10,ir2,ith2,iph2,inum),                      ! 164 NxefluidRe_gl (ie=10,num)
+     &  NxefluidRe_gl(15,ir2,ith2,iph2,inum)                       ! 165 NxefluidRe_gl (ie=15,num)
+         enddo
+         enddo
+
+         close(250)
+

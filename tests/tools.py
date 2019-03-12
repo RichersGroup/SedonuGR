@@ -7,6 +7,8 @@ h = 6.6260755e-27 #erg s
 c = 2.99792458e10   #cm/s
 MeV = 1.60217646e-6  #erg/MeV
 k_b = 1.380658e-16 # erg/K
+m_n   = 1.67492861e-24 # neutron mass (g)
+
 
 # x = h nu / kT
 # y = mu / kT
