@@ -177,7 +177,7 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 
 	// set the particle number
 	double T = grid->T.interpolate(eh.icube_vol);
-	double mu = grid->munu[s].interpolate(eh.icube_vol);
+	double mu = grid->munue.interpolate(eh.icube_vol) * species_list[s]->lepton_number;
 	eh.N = number_blackbody(T,mu,nu) * eh.absopac * species_list[s]->weight; // #/s/cm^3/sr/(Hz^3/3)
 	eh.N *= grid->zone_coord_volume(eh.z_ind) * (DO_GR ? eh.g.alpha*sqrt(eh.g.gammalow.det()) : 1.) * (-eh.g.ndot(eh.u)); // comoving 4-volume (1s. * d3x * volfac * Lorentz factor)
 	eh.N *= weight * 4.*pc::pi/*sr*/ * grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/;

@@ -62,7 +62,7 @@ void Neutrino_grey::set_eas(const size_t z_ind, Grid* grid) const
 
 	PRINT_ASSERT(grey_abs_frac,>=,0);
 	PRINT_ASSERT(grey_abs_frac,<=,1.0);
-	grid->munu[ID][z_ind] = grey_chempot;
+	grid->munue[z_ind] = grey_chempot;
 	for(size_t j=0;j<grid->nu_grid_axis.size();j++)
 	{
 		dir_ind[NDIMS] = j;

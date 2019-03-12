@@ -63,7 +63,7 @@ void Neutrino_NuLib::set_eas(const size_t z_ind, Grid* grid) const
 	nulib_get_eas_arrays(grid->rho[z_ind], grid->T[z_ind], grid->Ye[z_ind], ID,
 			tmp_BB, tmp_absopac, tmp_scatopac, tmp_phi0, tmp_delta);
 
-	grid->munu[ID][z_ind] = nulib_eos_munue(grid->rho[z_ind], grid->T[z_ind], grid->Ye[z_ind]) * lepton_number;
+	if(ID==0) grid->munue[z_ind] = nulib_eos_munue(grid->rho[z_ind], grid->T[z_ind], grid->Ye[z_ind]);
 	for(size_t igin=0; igin<ngroups; igin++){
 		dir_ind[NDIMS] = igin;
 		size_t global_index1 = grid->abs_opac[ID].direct_index(dir_ind);

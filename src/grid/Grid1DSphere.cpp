@@ -126,7 +126,9 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 		infile >> trash; // 1/s
 
 		// get rid of the rest of the line
-		for(int k=9; k<=165; k++) infile >> trash;
+		for(int k=9; k<=35; k++) infile >> trash;
+		infile >> munue[z_ind];
+		for(int k=37; k<=165; k++) infile >> trash;
 
 		// convert units
 		T[z_ind] /= pc::k_MeV;

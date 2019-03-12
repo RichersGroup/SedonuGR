@@ -96,7 +96,7 @@ public:
 	vector<PolarSpectrumArray<0> > spectrum;
 	vector<SpectrumArray*> distribution;  // radiation energy density for each species in lab frame (erg/ccm. Integrated over bin frequency and direction)
 
-	vector<ScalarMultiDArray<double,NDIMS> > munu; // chemical potential (erg)
+	ScalarMultiDArray<double,NDIMS> munue; // chemical potential (erg)
 	ScalarMultiDArray<double,NDIMS> lapse;
 	ScalarMultiDArray<double,NDIMS> rho;       // density (g/cm^3)
 	ScalarMultiDArray<double,NDIMS> T;         // gas temperature (K)
