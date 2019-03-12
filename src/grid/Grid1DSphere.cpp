@@ -256,14 +256,18 @@ int Grid1DSphere::zone_index(const Tuple<double,4>& x) const
 //------------------------------------------------------------
 // return volume of zone z_ind
 //------------------------------------------------------------
-double  Grid1DSphere::zone_lab_3volume(int z_ind) const
-{
+double Grid1DSphere::zone_coord_volume(int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	double r0 = (z_ind==0 ? xAxes[0].min : xAxes[0].top[z_ind-1]);
 	double vol = 4.0*pc::pi/3.0*( pow(xAxes[0].top[z_ind],3) - pow(r0,3) );
-	if(DO_GR) vol *= X[z_ind];
 	PRINT_ASSERT(vol,>=,0);
+	return vol;
+}
+double  Grid1DSphere::zone_lab_3volume(int z_ind) const
+{
+	double vol = zone_coord_volume(z_ind);
+	if(DO_GR) vol *= X[z_ind];
 	return vol;
 }
 

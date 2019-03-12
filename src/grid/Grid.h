@@ -122,6 +122,7 @@ public:
 
 	// describe zone
 	virtual int    zone_index      (const Tuple<double,4>& xup)              const=0;
+	virtual double zone_coord_volume(int z_ind)                       const=0;
 	virtual double zone_lab_3volume(int z_ind)                        const=0;
 	virtual double zone_min_length (int z_ind)                        const=0;
 	virtual double zone_radius     (int z_ind)                        const=0;

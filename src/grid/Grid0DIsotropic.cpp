@@ -76,8 +76,11 @@ int Grid0DIsotropic::zone_index(const Tuple<double,4>&) const{
 //------------------------------------------------------------
 // return volume of zone z_ind
 //------------------------------------------------------------
-double Grid0DIsotropic::zone_lab_3volume(int) const{
+double Grid0DIsotropic::zone_coord_volume(int) const{
 	return 1.0;
+}
+double Grid0DIsotropic::zone_lab_3volume(int z_ind) const{
+	return zone_coord_volume(z_ind);
 }
 
 //------------------------------------------------------------

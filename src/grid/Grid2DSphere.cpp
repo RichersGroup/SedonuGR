@@ -593,9 +593,7 @@ int Grid2DSphere::zone_index(int i, int j) const
 //------------------------------------------------------------
 // return volume of zone
 //------------------------------------------------------------
-double Grid2DSphere::zone_lab_3volume(int z_ind) const
-{
-	PRINT_ASSERT(DO_GR,==,false); // need to include sqrt(detg3)
+double Grid2DSphere::zone_coord_volume(int z_ind) const{
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	Tuple<size_t,NDIMS> dir_ind = zone_directional_indices(z_ind);
@@ -608,6 +606,11 @@ double Grid2DSphere::zone_lab_3volume(int z_ind) const
 	const double vol = 2.0*pc::pi/3.0 * (cos(theta0) - cos(theta1)) * (r1*r1*r1 - r0*r0*r0);
 	PRINT_ASSERT(vol,>=,0);
 	return vol;
+}
+double Grid2DSphere::zone_lab_3volume(int z_ind) const
+{
+	PRINT_ASSERT(DO_GR,==,false); // need to include sqrt(detg3)
+	return zone_coord_volume(z_ind);
 }
 
 

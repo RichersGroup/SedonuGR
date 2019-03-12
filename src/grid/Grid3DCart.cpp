@@ -431,12 +431,18 @@ Tuple<size_t,NDIMS> Grid3DCart::zone_directional_indices(int z_ind) const
 //------------------------------------------------------------
 // return volume of zone (precomputed)
 //------------------------------------------------------------
-double Grid3DCart::zone_lab_3volume(int z_ind) const
+double Grid3DCart::zone_coord_volume(int z_ind) const
 {
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(z_ind,<,(int)rho.size());
 	Tuple<double,NDIMS> delta = get_deltas(z_ind);
 	double result = delta[0] * delta[1] * delta[2];
+	PRINT_ASSERT(result,>,0);
+	return result;
+}
+double Grid3DCart::zone_lab_3volume(int z_ind) const
+{
+	double result = zone_coord_volume(z_ind);
 	if(DO_GR) result *= sqrtdetg3[z_ind];
 	PRINT_ASSERT(result,>,0);
 	return result;

@@ -71,6 +71,7 @@ public:
 	// required functions
 	int    zone_index               (const Tuple<double,4>& x                            ) const;
 	int    zone_index               (int i, const int j, const int k                         ) const;
+	double zone_coord_volume       (int z_ind                                   ) const;
 	double zone_lab_3volume         (int z_ind                                               ) const;
 	double zone_min_length          (int z_ind                                               ) const;
 	Tuple<double,NDIMS> zone_coordinates(int z_ind                              ) const;

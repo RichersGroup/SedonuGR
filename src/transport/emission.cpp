@@ -179,7 +179,7 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 	double T = grid->T.interpolate(eh.icube_vol);
 	double mu = grid->munu[s].interpolate(eh.icube_vol);
 	eh.N = number_blackbody(T,mu,nu) * eh.absopac * species_list[s]->weight; // #/s/cm^3/sr/(Hz^3/3)
-	eh.N *= grid->zone_4volume(eh.z_ind) * (-eh.g.ndot(eh.u)); // comoving 4-volume (1s. * d3x * volfac * Lorentz factor)
+	eh.N *= grid->zone_coord_volume(eh.z_ind) * (DO_GR ? eh.g.alpha*sqrt(eh.g.gammalow.det()) : 1.) * (-eh.g.ndot(eh.u)); // comoving 4-volume (1s. * d3x * volfac * Lorentz factor)
 	eh.N *= weight * 4.*pc::pi/*sr*/ * grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/;
 	PRINT_ASSERT(eh.N,>=,0);
 	PRINT_ASSERT(eh.N,<,1e99);
