@@ -447,7 +447,6 @@ void nulib_get_eas_arrays(
 		double rho,                     // g/cm^3
 		double temp,                    // K
 		double ye, int nulibID,
-		vector<double>& nut_BB,         // erg/cm^2/s/sr
 		vector<double>& nut_absopac,    // cm^-1
 		vector<double>& nut_scatopac,   // cm^-1
 		vector< vector<double> >& scattering_phi0, // 2pi h^-3 c^-4 phi0 delta(E^3/3)/deltaE [group in][group out] units 1/cm Output.
@@ -485,7 +484,6 @@ void nulib_get_eas_arrays(
 	// If the density or temperature are too low, just set everything to zero
 	if(log10(rho) < nulibtable_logrho_min || log10(temp_MeV) < nulibtable_logtemp_min)
 		for(int j=0; j<ngroups; j++){
-			nut_BB[j]       = 0;
 			nut_absopac [j] = 0;
 			nut_scatopac[j] = 0;
 		}
@@ -499,7 +497,6 @@ void nulib_get_eas_arrays(
 		for(int j=0; j<ngroups; j++){
 			nut_absopac [j] = eas_energy[1][j];
 			nut_scatopac[j] = eas_energy[2][j];
-			nut_BB[j]       = eas_energy[0][j]/eas_energy[1][j];
 			if(nulibtable_number_easvariables==4)
 				scattering_delta[j][j] = eas_energy[3][j];
  		}
@@ -507,61 +504,6 @@ void nulib_get_eas_arrays(
 		// set inelastic kernels if they exist in the table
 		if(output_scattering_kernels!=0)
 			nulib_get_iscatter_kernels(rho,temp,ye,nulibID,nut_scatopac,scattering_phi0,scattering_delta);
-	}
-}
-
-
-/***********************/
-/* nulib_get_pure_emis */
-/***********************/
-void nulib_get_pure_emis(
-		double rho,                     // g/cm^3
-		double temp,                    // K
-		double ye, int nulibID,
-		vector<double>& nut_emiss){   // erg/cm^3/s/ster/Hz
-
-	PRINT_ASSERT(rho,>=,0);
-	PRINT_ASSERT(temp,>=,0);
-	PRINT_ASSERT(ye,>=,0);
-	PRINT_ASSERT(ye,<=,1);
-	PRINT_ASSERT(nulibID,>=,0);
-
-	vector<double> widths;
-	widths.assign(nulibtable_ewidths, nulibtable_ewidths + nulibtable_number_groups);
-
-	int nvars    = nulibtable_number_easvariables;
-	int ngroups  = nulibtable_number_groups;
-	PRINT_ASSERT(nvars,>,0);
-	PRINT_ASSERT(ngroups,>,0);
-
-	// apparently it's valid to declare array sizes at runtime like this... if it breaks, use malloc
-	double eas_energy[nvars][ngroups]; //[0][*] = energy-bin-integrated emissivity (erg/cm^3/s/ster).
-	//[1][*] = absorption opacity (1/cm)
-	//[2][*] = scattering opacity (1/cm)
-
-	//check sizes match and we are within the table boundaries
-	if(nvars != 3){
-		cout << "ERROR: nulibtable has different number of eas variables than 3" << endl;
-		exit(EXIT_FAILURE);
-	}
-	if(ngroups != (int)nut_emiss.size()){
-		cout << "ERROR: nulibtable has different number of energies than the eas arrays." << endl;
-		exit(EXIT_FAILURE);
-	}
-
-	// fetch the relevant table from nulib. NuLib only accepts doubles.
-	double temp_MeV = temp * pc::k_MeV; // MeV
-	int lns = nulibID+1;                // fortran array indices start with 1
-
-	// If the density or temperature are too low, just set everything to zero
-	if(log10(rho) < nulibtable_logrho_min || log10(temp) < nulibtable_logtemp_min)
-		for(int j=0; j<ngroups; j++) nut_emiss[j] = 0;
-
-	// Otherwise, fill with the appropriate values
-	else{
-		nulibtable_single_species_range_energy_(&rho, &temp_MeV, &ye, &lns,
-				(double*)eas_energy, &ngroups, &nvars);
-		for(int j=0; j<ngroups; j++) nut_emiss[j] = eas_energy[0][j] / (widths[j]/pc::h_MeV);
 	}
 }
 

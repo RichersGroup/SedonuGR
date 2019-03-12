@@ -57,11 +57,11 @@ void Neutrino_NuLib::set_eas(const size_t z_ind, Grid* grid) const
 	size_t dir_ind[NDIMS+2];
 	grid->rho.indices(z_ind,dir_ind);
 
-	vector<double> tmp_absopac(ngroups), tmp_scatopac(ngroups), tmp_BB(ngroups);
+	vector<double> tmp_absopac(ngroups), tmp_scatopac(ngroups);
 	vector< vector<double> > tmp_delta(ngroups, vector<double>(ngroups)); //[igin][igout]
 	vector< vector<double> > tmp_phi0(ngroups, vector<double>(ngroups));  //[igin][igout]
 	nulib_get_eas_arrays(grid->rho[z_ind], grid->T[z_ind], grid->Ye[z_ind], ID,
-			tmp_BB, tmp_absopac, tmp_scatopac, tmp_phi0, tmp_delta);
+			tmp_absopac, tmp_scatopac, tmp_phi0, tmp_delta);
 
 	if(ID==0) grid->munue[z_ind] = nulib_eos_munue(grid->rho[z_ind], grid->T[z_ind], grid->Ye[z_ind]);
 	for(size_t igin=0; igin<ngroups; igin++){
