@@ -67,7 +67,7 @@ dNdt = l_abs + l_emit
 axes[2].set_ylabel(r"$dn_l/dt$ (1/ccm/s)")
 axes[2].plot(r, -l_emit, label="emit")
 axes[2].scatter(r, l_abs, label="abs")
-axes[1].set_ylim(0,1.1*max(np.max(e_abs),np.max(-e_emit)))
+axes[2].set_ylim(0,1.1*max(np.max(l_abs),np.max(-l_emit)))
 axes[2].legend()
 error = dNdt
 error2 = dNdt**2
