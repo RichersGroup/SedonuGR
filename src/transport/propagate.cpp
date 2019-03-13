@@ -168,18 +168,14 @@ void Transport::move(EinsteinHelper *eh) const{
 	double dN = old_N - eh->N;
 	window(eh);
 
-	// get average k
-	Tuple<double,4> avg_kup_tet = (old_kup_tet + eh->kup_tet) * 0.5;
-
 	// tally in contribution to zone's distribution function (lab frame)
-	// use average N and integrate assuming kt_tet varies linearly over the step
+	// use old coordinates/directions to avoid problems with boundaries
 	double avg_N = (tau>TINY ? dN/tau : old_N);
-	double integral_k2dlambda = dlambda/3. * (old_kup_tet[3]*old_kup_tet[3] + old_kup_tet[3]*eh->kup_tet[3] + eh->kup_tet[3]*eh->kup_tet[3]);
-	grid->distribution[eh->s]->count(avg_kup_tet, old_dir_ind, avg_N*integral_k2dlambda);
+	grid->distribution[eh->s]->count(old_kup_tet, old_dir_ind, avg_N*dlambda*old_kup_tet[3]*old_kup_tet[3]);
 
 	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
 	for(size_t i=0; i<4; i++){
-		grid->fourforce_abs[old_z_ind][i] += dN * avg_kup_tet[i];
+		grid->fourforce_abs[old_z_ind][i] += dN * old_kup_tet[i];
 	}
 
 	// store absorbed lepton number (same in both frames, except for the
