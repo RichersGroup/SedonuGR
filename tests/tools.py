@@ -8,7 +8,8 @@ c = 2.99792458e10   #cm/s
 MeV = 1.60217646e-6  #erg/MeV
 k_b = 1.380658e-16 # erg/K
 m_n   = 1.67492861e-24 # neutron mass (g)
-
+cactus_length = 147690.2071535873 # cm
+cactus_density = 6.173937319029555e+17 # g/ccm
 
 # x = h nu / kT
 # y = mu / kT
