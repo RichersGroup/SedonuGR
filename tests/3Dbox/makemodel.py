@@ -11,12 +11,12 @@ rho = 2e14 / tools.cactus_density # code units
 temp = 10 # MeV
 Ye = 0
 gxx = 1
-gyy = 2
-gzz = 3
+gyy = 1 #2
+gzz = 1 #3
 gxy = 0
 gxz = 0
 gyz = 0
-lapse = 4
+lapse = 1 #4
 
 
 # NO SYMMETRIES
@@ -47,23 +47,11 @@ outgroup["gxy"]   = gxy   * shape
 outgroup["gxz"]   = gxz   * shape
 outgroup["gyz"]   = gyz   * shape
 outgroup["lapse"] = lapse * shape
-outgroup["velx"]  = 0     * shape
-outgroup["vely"]  = 0     * shape
-outgroup["velz"]  = 0     * shape
-outgroup["betax"] = -np.array(outgroup["velx"])
-outgroup["betay"] = -np.array(outgroup["vely"])
-outgroup["betaz"] = -np.array(outgroup["velz"])
-
-# SHIFTED
-outfile_shifted = h5py.File("shifted.h5","w")
-outfile.copy(rlname,outfile_shifted)
-outgroup = outfile_shifted[rlname]
-outgroup["velx"][...]  = .1 * shape
-outgroup["vely"][...]  = .3 * shape
-outgroup["velz"][...]  = .5 * shape
-outgroup["betax"][...]  = -np.array(outgroup["velx"])
-outgroup["betay"][...]  = -np.array(outgroup["vely"])
-outgroup["betaz"][...]  = -np.array(outgroup["velz"])
+outgroup["velx"]  =  0.2     * shape
+outgroup["vely"]  = -0.4     * shape
+outgroup["velz"]  =  0.6     * shape
+outgroup["betax"] = -0.1 * shape
+outgroup["betay"] =  0.3 * shape
+outgroup["betaz"] = -0.5 * shape
 
 outfile.close()
-outfile_shifted.close()
