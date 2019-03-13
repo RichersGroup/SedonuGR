@@ -642,7 +642,8 @@ double Transport::number_blackbody(const double T /*K*/, const double chem_pot /
 	PRINT_ASSERT(T,>=,0);
 	PRINT_ASSERT(chem_pot,==,chem_pot);
 	PRINT_ASSERT(nu,>,0);
-	double zeta = T==0 ? 0 : (pc::h*nu - chem_pot)/pc::k/T;
+	if(T==0) return 0;
+	double zeta = (pc::h*nu - chem_pot)/pc::k/T;
 	double bb = pc::inv_c*pc::inv_c / (exp(zeta) + 1.0);
 	PRINT_ASSERT(bb,>=,0);
 	return bb;
