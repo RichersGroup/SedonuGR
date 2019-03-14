@@ -59,6 +59,7 @@ install:
 
 script:
 - make clean; DEBUG=1 NDIMS=0 DO_GR=0 make all -j4
+- exe/MultiDArrayTest
 - make -C tests/inelastic_scatter
 - make -C tests/blackbody
 - make clean; DEBUG=1 NDIMS=1 DO_GR=0 make all -j4
