@@ -316,7 +316,6 @@ void Grid::write_zones(const int iw)
 	PRINT_ASSERT(rho.size(),>,0);
 
 	// output all zone data in hdf5 format
-	PRINT_ASSERT(dimensionality(),>=,0);
 	string filename = Transport::filename("fluid",iw,".h5");
 	H5::H5File file(filename, H5F_ACC_TRUNC);
 	file.createGroup("/axes");

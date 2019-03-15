@@ -113,7 +113,7 @@ void Neutrino_GR1D::set_eas_external(const double* easarray, const double /*GR1D
 			// indexed as eas(zone,species,group,e/a/s). The leftmost one varies fastest.
 			int aind = (z_ind+ghosts1) + ID*n_GR1D_zones + inu*nspecies*n_GR1D_zones + 1*ngroups*nspecies*n_GR1D_zones;
 			int sind = (z_ind+ghosts1) + ID*n_GR1D_zones + inu*nspecies*n_GR1D_zones + 2*ngroups*nspecies*n_GR1D_zones;
-			int eind = (z_ind+ghosts1) + ID*n_GR1D_zones + inu*nspecies*n_GR1D_zones + 0*ngroups*nspecies*n_GR1D_zones;
+			//int eind = (z_ind+ghosts1) + ID*n_GR1D_zones + inu*nspecies*n_GR1D_zones + 0*ngroups*nspecies*n_GR1D_zones; // not using emissivity
 
 			PRINT_ASSERT(easarray[aind],>=,0);
 			PRINT_ASSERT(easarray[sind],>=,0);
