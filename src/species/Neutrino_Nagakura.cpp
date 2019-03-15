@@ -155,6 +155,13 @@ void Neutrino_Nagakura::set_eas(const size_t zone_index, Grid* grid) const
     	}
     	grid->abs_opac[ID][global_index] = a;
     	grid->scat_opac[ID][global_index] = s;
+
+    	// fill in the scattering kernel if used
+		if(grid->scattering_delta[ID].size()>0){
+			grid->scattering_delta[ID].wipe();
+			for(size_t igout=0; igout<grid->nu_grid_axis.size(); igout++)
+				grid->partial_scat_opac[ID][igout][global_index] = (inu==igout ? s : 0);
+		}
     }
     opac_file.close();
 }
