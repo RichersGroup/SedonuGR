@@ -9,7 +9,7 @@ import matplotlib.gridspec as gridspec
 
 munue = 10. * tools.MeV
 T = 10. * tools.MeV
-tolerance = 5e-2
+tolerance = 6e-2
 passing = True
 
 def calc_error(string, data, theory, passing):
