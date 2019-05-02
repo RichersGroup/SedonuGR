@@ -91,6 +91,7 @@ public:
 	// vectors over neutrino species
 	vector<ScalarMultiDArray<double,NDIMS+1> > abs_opac;  // 1/cm
 	vector<ScalarMultiDArray<double,NDIMS+1> > scat_opac; // 1/cm
+	vector<ScalarMultiDArray<double,NDIMS+1> > fblock;  // approx fermi blocking factor for neutrinos
 	vector<ScalarMultiDArray<float,NDIMS+2> > scattering_delta; // phi1/phi0 for sampling outgoing direction (Ein,Eout)
 	vector< vector<ScalarMultiDArray<float,NDIMS+1> > > partial_scat_opac; // opacity integrated over outgoing frequency bin (1/cm) [s][Eout](Ein)
 	vector<PolarSpectrumArray<0> > spectrum;
