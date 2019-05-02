@@ -324,7 +324,7 @@ void nulib_get_iscatter_kernels(
 		const double ye,
 		const int nulibID,
 		vector<double>& nut_scatopac, // 1/cm   opac[group in] Input AND output
-		vector< vector<double> >& phi0,         // 2pi h^-3 c^-4 phi0 delta(E^3/3)/deltaE [group in][group out] units 1/cm Output.
+		vector< vector<double> >& partial_opac,       // 2pi h^-3 c^-4 phi0 delta(E^3/3)/deltaE [group in][group out] units 1/cm Output.
 		vector< vector<double> >& scattering_delta){  // 3.*phi1/phi0   [group_in][group_out] Input AND output.
 
 	// fetch the relevant table from nulib. NuLib only accepts doubles.
@@ -355,31 +355,32 @@ void nulib_get_iscatter_kernels(
 	}
 
 	// set the arrays.
-	double constants = pow(pc::h,3) * pow(pc::c,4) / (4.*pc::pi);
+	double constants = (4.*pc::pi) * pow(pc::MeV_to_ergs/(pc::h*pc::c),3) / pc::c;
 	for(int igin=0; igin<nulibtable_number_groups; igin++){
 		double elastic_opac = nut_scatopac[igin];
 		nut_scatopac[igin] = 0;
 		for(int igout=0; igout<nulibtable_number_groups; igout++){
-			double E1 = nulibtable_ebottom[igout] * pc::MeV_to_ergs;
-			double E2 = nulibtable_etop[   igout] * pc::MeV_to_ergs;
+			double E1 = nulibtable_ebottom[igout];
+			double E2 = nulibtable_etop[   igout];
 			double dE3 = E2*E2*E2 - E1*E1*E1;
-			double coeff = (dE3/3.0) / constants;
+			double phaseVolumeOut = (dE3/3.0) * constants;
 
-			double inelastic_phi0=0, inelastic_phi1=0;
+			double inelastic_partial_opac0=0, inelastic_partial_opac1=0;
 			if(read_Ielectron){
-				inelastic_phi0 = phi[0][igout][igin] * coeff;
-				inelastic_phi1 = phi[1][igout][igin] * coeff;
-				PRINT_ASSERT(inelastic_phi1,<=,inelastic_phi0);
+				inelastic_partial_opac0 = 0.5 * phi[0][igout][igin] * phaseVolumeOut;
+				inelastic_partial_opac1 = 1.5 * phi[1][igout][igin] * phaseVolumeOut;
+				PRINT_ASSERT(inelastic_partial_opac0,>=,0);
+				PRINT_ASSERT(abs(inelastic_partial_opac1),<=,3.*inelastic_partial_opac0);
 			}
 			// add elastic scatter opacity to the kernel
 			if(igin == igout){
-				inelastic_phi0 += elastic_opac;
+				inelastic_partial_opac0 += elastic_opac;
 				if(nulibtable_number_easvariables==4)
-					inelastic_phi1 += elastic_opac * scattering_delta[igin][igin] / 3.0; // scattering_delta set in nulib_get_eas_arrays
+					inelastic_partial_opac1 += elastic_opac * scattering_delta[igin][igin]; // scattering_delta set in nulib_get_eas_arrays
 			}
-			phi0[igin][igout] = inelastic_phi0;
-			nut_scatopac[igin] += inelastic_phi0;
-			scattering_delta[igin][igout] = (inelastic_phi0==0 ? 0 : 3. * inelastic_phi1 / inelastic_phi0);
+			partial_opac[igin][igout] = inelastic_partial_opac0;
+			nut_scatopac[igin] += inelastic_partial_opac0;
+			scattering_delta[igin][igout] = (inelastic_partial_opac0==0 ? 0 : inelastic_partial_opac1 / inelastic_partial_opac0);
 			PRINT_ASSERT(abs(scattering_delta[igin][igout]),<=,3.0+TINY);
 			scattering_delta[igin][igout] = min(3., max(-3., scattering_delta[igin][igout]));
 		}

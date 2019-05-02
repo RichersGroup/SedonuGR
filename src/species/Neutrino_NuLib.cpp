@@ -59,9 +59,9 @@ void Neutrino_NuLib::set_eas(const size_t z_ind, Grid* grid) const
 
 	vector<double> tmp_absopac(ngroups), tmp_scatopac(ngroups);
 	vector< vector<double> > tmp_delta(ngroups, vector<double>(ngroups)); //[igin][igout]
-	vector< vector<double> > tmp_phi0(ngroups, vector<double>(ngroups));  //[igin][igout]
+	vector< vector<double> > tmp_partial_opac(ngroups, vector<double>(ngroups));  //[igin][igout]
 	nulib_get_eas_arrays(grid->rho[z_ind], grid->T[z_ind], grid->Ye[z_ind], ID,
-			tmp_absopac, tmp_scatopac, tmp_phi0, tmp_delta);
+			tmp_absopac, tmp_scatopac, tmp_partial_opac, tmp_delta);
 
 	if(ID==0) grid->munue[z_ind] = nulib_eos_munue(grid->rho[z_ind], grid->T[z_ind], grid->Ye[z_ind]);
 	for(size_t igin=0; igin<ngroups; igin++){
@@ -72,7 +72,7 @@ void Neutrino_NuLib::set_eas(const size_t z_ind, Grid* grid) const
 
 		if(grid->scattering_delta[ID].size()>0){
 			for(size_t igout=0; igout<ngroups; igout++){
-				grid->partial_scat_opac[ID][igout][global_index1] = tmp_phi0[igin][igout];
+				grid->partial_scat_opac[ID][igout][global_index1] = tmp_partial_opac[igin][igout];
 				dir_ind[NDIMS+1] = igout;
 				size_t global_index2 = grid->scattering_delta[ID].direct_index(dir_ind);
 				grid->scattering_delta[ID][global_index2] = tmp_delta[igin][igout];
