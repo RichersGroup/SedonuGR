@@ -8,7 +8,7 @@ sys.path.insert(0, '../')
 import tools
 import matplotlib.gridspec as gridspec
 
-tolerance = 5e-2
+tolerance = 6e-2
 oldfile = h5py.File("4timesHigh_1D_withPairBrems.h5","r")
 
 dist = np.array(oldfile["distribution(erg|ccm,lab)"])
