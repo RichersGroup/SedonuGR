@@ -243,7 +243,20 @@ public:
 
 		return f/(4.*physical_constants::pi);
 	}
-
+	
+	double return_blocking(const size_t dir_ind[ndims_spatial+1]) const{
+		size_t index = data.direct_index(dir_ind);
+		Tuple<double,n_total_elements> M = data[index];
+		const double E=M[0];
+		const Axis* nu_axis = &(data.axes[nuGridIndex]);
+		const double nu_top=nu_axis->top[dir_ind[3]];
+		const double nu_bot=nu_axis->bottom(dir_ind[3]);
+		const double nu_mid=nu_axis->mid[dir_ind[3]];
+		const double N=E/(pc::h*nu_mid);
+		double f=(3.0*N*(pc::c*pc::c*pc::c))/(4.0*pc::pi*(pow(nu_top,3)-pow(nu_bot,3)));
+		if(f>1.0) f=1;
+		return f;
+	}
 
 	void rescale(const double r) {
 		for(size_t i=0; i<data.size(); i++) data[i] *= r;

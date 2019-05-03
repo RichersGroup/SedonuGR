@@ -563,6 +563,16 @@ void Transport::normalize_radiative_quantities(){
 		for(size_t s=0; s<N_net_esc.size(); s++) cout << setw(12) << N_net_esc[s] << "  ";
 		cout << "} 1/s N_esc (lab)" << endl;
 	}
+	
+	//calculate blocking factors
+	for(size_t s=0; s<species_list.size(); s++){
+		if(verbose) cout << "#     Working on fblock for species " << s << endl;
+		for(size_t glob_ind=0;glob_ind<grid->scat_opac[s].size();glob_ind++){
+			size_t dir_ind[NDIMS+1];
+			grid->scat_opac[s].indices(glob_ind,dir_ind);
+			grid->fblock[s][glob_ind]=grid->distribution[s]->return_blocking(dir_ind);
+		}
+	}
 }
 
 
