@@ -225,7 +225,7 @@ public:
 
 	double reconstruct_f(const size_t dir_ind[ndims_spatial+1], const double k[3]) const{
 		size_t index = data.direct_index(dir_ind);
-		Tuple<double,n_total_elements> M = data[index];
+		Tuple<double,n_total_elements> M{data[index]};
 		const double x=k[0], y=k[1], z=k[2];
 		const double E=M[0];
 		const double Fx=M[1], Fy=M[2], Fz=M[3];
