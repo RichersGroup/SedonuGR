@@ -461,12 +461,13 @@ void Transport::calculate_annihilation(){
 	}
 
 	// synchronize global quantities between processors
-	grid->fourforce_annihil.mpi_sum();
-	MPI_Allreduce(MPI_IN_PLACE, &H_nunu_tet, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	// If this gets parallelized, should make mpi_sum more efficient by not transmitting entire array
+	//grid->fourforce_annihil.mpi_sum();
+	//MPI_Allreduce(MPI_IN_PLACE, &H_nunu_tet, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
 	// write to screen
 	if(verbose) {
-	        cout << "finished." << endl << flush;
+		cout << "finished." << endl << flush;
 		cout << "#   " << H_nunu_tet << " erg/s H_annihil" << endl << flush;
 	}
 }
