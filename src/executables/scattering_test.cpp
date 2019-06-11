@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 	lua.init( script_file );
 	class testScatter : public Transport{
 	public:
-		void testgrid(EinsteinHelper *eh){
+		void testgrid(){
 		  for(size_t s=0; s<species_list.size(); s++){
 		  			for(size_t igin=0; igin<10; igin++){
 		  			grid->scat_opac[s][igin] = 0;
@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 	eh.s = 0;
 	eh.N = 1;
 	eh.N0 = eh.N;
-	sim.testgrid(&eh);
+	sim.testgrid();
 	sim.update_eh_background(&eh);
         sim.update_eh_k_opac(&eh); 
 
@@ -102,8 +102,8 @@ int main(int argc, char **argv)
   	myfile.open ("elastic_isotropic_kernel.dat");
 	for(int i=0; i<1000; i++){
 	  EinsteinHelper tmp = eh;
-	  sim.scatter(&eh);
-	  myfile<<eh.kup[0]<<" "<<eh.kup[1]<<" "<<eh.kup[2]<<" "<<eh.kup[3]<<"\n";
+	  sim.scatter(&tmp);
+	  myfile<<tmp.kup[0]<<" "<<tmp.kup[1]<<" "<<tmp.kup[2]<<" "<<tmp.kup[3]<<"\n";
 	}
 	myfile.close();
 	
