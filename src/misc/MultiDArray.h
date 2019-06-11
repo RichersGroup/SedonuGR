@@ -374,6 +374,9 @@ public:
 		dataset.write(&y0.front(), H5::PredType::IEEE_F64LE);
 		dataset.close();
 	}
+	void read_HDF5(H5::H5File file, const string name) {
+		assert(0);
+	}
 };
 
 

@@ -101,6 +101,10 @@ public:
 		dataset.write(&mid[0],H5::PredType::IEEE_F64LE);
 		dataset.close();
 	}
+
+	void read_HDF5(const string& name, H5::H5File file) const{
+		assert(0);
+	}
 };
 
 #endif

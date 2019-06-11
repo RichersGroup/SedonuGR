@@ -66,6 +66,9 @@ void Grid0DIsotropic::read_model_file(Lua* lua)
 void Grid0DIsotropic::write_child_zones(H5::H5File){
 	// nothing to write.
 }
+void Grid0DIsotropic::read_child_zones(H5::H5File){
+	// nothing to write.
+}
 
 //------------------------------------------------------------
 // Return the zone index containing the position x

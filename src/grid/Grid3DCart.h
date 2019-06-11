@@ -86,6 +86,7 @@ public:
 	double d_boundary(const EinsteinHelper& eh) const;
 	double d_randomwalk(const EinsteinHelper& eh) const;
 	void write_child_zones(H5::H5File file);
+	void read_child_zones(H5::H5File file);
 
 	// GR functions
 	Tuple<double,4> dk_dlambda(const EinsteinHelper& eh) const; // Gamma^alhpa_mu_nu

@@ -113,7 +113,9 @@ public:
 
 	// write out zone information
 	void write_zones(const int iw);
+	void read_zones(string filename);
 	virtual void write_child_zones(H5::H5File file) =0;
+	virtual void  read_child_zones(H5::H5File file) =0;
 
 	// get directional indices from the zone index
 	virtual Tuple<size_t,NDIMS> zone_directional_indices(const int z_ind) const=0;

@@ -350,6 +350,40 @@ void Grid::write_zones(const int iw)
 	write_child_zones(file);
 }
 
+void Grid::read_zones(string filename)
+{
+	H5::H5File file(filename, H5F_ACC_RDONLY);
+
+	// axes
+	for(int dir=0; dir<NDIMS; dir++){
+		string datasetname = string("/axes/x")+to_string(dir)+string("(cm)");
+		xAxes[dir].read_HDF5(datasetname, file);
+	}
+	distribution[0]->read_hdf5_coordinates(file, "/axes/distribution");
+	nu_grid_axis.read_HDF5("/axes/frequency(Hz)",file);
+	spectrum[0].read_hdf5_coordinates(file,"/axes/spectrum");
+
+	// fluid quantities
+	rho.read_HDF5(file,"rho(g|ccm,tet)");
+	T.read_HDF5(file,"T_gas(K,tet)");
+	Ye.read_HDF5(file,"Ye");
+	H_vis.read_HDF5(file,"H_vis(erg|s|g,tet)");
+	fourforce_abs.read_HDF5(file,"four-force[abs](erg|ccm|s,tet)");
+	fourforce_emit.read_HDF5(file,"four-force[emit](erg|ccm|s,tet)");
+	l_abs.read_HDF5(file,"l_abs(1|s|ccm,tet)");
+	l_emit.read_HDF5(file,"l_emit(1|s|ccm,tet)");
+	if(DO_GR){
+		lapse.read_HDF5(file,"lapse");
+	}
+	if(do_annihilation>0) fourforce_annihil.read_HDF5(file,"annihilation_4force(erg|ccm|s,tet)");
+	for(size_t s=0; s<distribution.size(); s++){
+		distribution[s]->read_hdf5_data(file, "distribution"+to_string(s)+"(erg|ccm,tet)");
+		spectrum[s].read_hdf5_data(file,"spectrum"+to_string(s)+"(erg|s)");
+	}
+
+	read_child_zones(file);
+}
+
 double Grid::zone_rest_mass(const int z_ind) const{
 	return rho[z_ind] * zone_com_3volume(z_ind);
 }

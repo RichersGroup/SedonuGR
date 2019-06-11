@@ -204,6 +204,9 @@ public:
 	void write_hdf5_data(H5::H5File file, const string name) {
 		data.write_HDF5(file, name);
 	}
+	void read_hdf5_data(H5::H5File file, const string name) {
+		data.read_HDF5(file, name);
+	}
 
 	//--------------------------------------------------------------
 	// Write distribution function coordinates to an HDF5 file
@@ -216,6 +219,10 @@ public:
 
 		data.axes[muGridIndex].write_HDF5(name+"_costheta_grid(lab)",file);
 		data.axes[phiGridIndex].write_HDF5(name+"_phi_grid(radians,lab)",file);
+	}
+	void read_hdf5_coordinates(H5::H5File file, const string name) const{
+		data.axes[muGridIndex].read_HDF5(name+"_costheta_grid(lab)",file);
+		data.axes[phiGridIndex].read_HDF5(name+"_phi_grid(radians,lab)",file);
 	}
 	
 	void add_isotropic(const size_t dir_ind[NDIMS+1], const double E){

@@ -279,6 +279,9 @@ public:
 	void write_hdf5_data(H5::H5File file,const string name) {
 		data.write_HDF5(file, name);
 	}
+	void read_hdf5_data(H5::H5File file,const string name) {
+		data.read_HDF5(file, name);
+	}
 
 	//--------------------------------------------------------------
 	// Write distribution function coordinates to an HDF5 file
@@ -320,6 +323,11 @@ public:
 
 		}
 	}
+	void read_hdf5_coordinates(H5::H5File file,
+			const string name) const {
+		assert(0);
+	}
+
 	void add_isotropic(const size_t dir_ind[NDIMS+1], const double E){
 		size_t indices[data.Ndims()];
 		for(size_t i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];

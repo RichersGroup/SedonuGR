@@ -61,6 +61,7 @@ public:
 	hsize_t dimensionality() const {return 0;};
 	void axis_vector(vector<Axis>& axes) const;
 	void write_child_zones(H5::H5File file);
+	void read_child_zones(H5::H5File file);
 
 	// GR functions
 	Tuple<double,4> dk_dlambda(const EinsteinHelper& eh) const; // Gamma^alhpa_mu_nu

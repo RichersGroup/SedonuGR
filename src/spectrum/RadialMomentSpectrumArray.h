@@ -129,11 +129,17 @@ public:
 	void write_hdf5_data(H5::H5File file, const string name) {
 		data.write_HDF5(file, name);
 	}
+	void read_hdf5_data(H5::H5File file, const string name) {
+		data.read_HDF5(file, name);
+	}
 
 	//--------------------------------------------------------------
 	// Write distribution function coordinates to an HDF5 file
 	//--------------------------------------------------------------
 	void write_hdf5_coordinates(H5::H5File /*file*/, const string /*name*/) const {
+		// no extra axes for moment array
+	}
+	void read_hdf5_coordinates(H5::H5File /*file*/, const string /*name*/) const {
 		// no extra axes for moment array
 	}
 

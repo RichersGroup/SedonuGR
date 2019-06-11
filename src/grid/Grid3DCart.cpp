@@ -57,6 +57,14 @@ void Grid3DCart::write_child_zones(H5::H5File file){
 	}
 	v.write_HDF5(file,"threevelocity(cm|s)");
 }
+void Grid3DCart::read_child_zones(H5::H5File file){
+	if(DO_GR){
+		betaup.read_HDF5(file,"shiftup");
+		g3.read_HDF5(file,"threemetric");
+		sqrtdetg3.read_HDF5(file,"sqrtdetg3");
+	}
+	v.read_HDF5(file,"threevelocity(cm|s)");
+}
 
 //------------------------------------------------------------
 // Read in a cartesian model file
