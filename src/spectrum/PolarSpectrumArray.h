@@ -220,7 +220,7 @@ public:
 		data.axes[muGridIndex].write_HDF5(name+"_costheta_grid(lab)",file);
 		data.axes[phiGridIndex].write_HDF5(name+"_phi_grid(radians,lab)",file);
 	}
-	void read_hdf5_coordinates(H5::H5File file, const string name) const{
+	void read_hdf5_coordinates(H5::H5File file, const string name) {
 		data.axes[muGridIndex].read_HDF5(name+"_costheta_grid(lab)",file);
 		data.axes[phiGridIndex].read_HDF5(name+"_phi_grid(radians,lab)",file);
 	}

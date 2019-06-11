@@ -139,7 +139,7 @@ public:
 	void write_hdf5_coordinates(H5::H5File /*file*/, const string /*name*/) const {
 		// no extra axes for moment array
 	}
-	void read_hdf5_coordinates(H5::H5File /*file*/, const string /*name*/) const {
+	void read_hdf5_coordinates(H5::H5File /*file*/, const string /*name*/) {
 		// no extra axes for moment array
 	}
 

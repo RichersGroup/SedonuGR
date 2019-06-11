@@ -324,7 +324,7 @@ public:
 		}
 	}
 	void read_hdf5_coordinates(H5::H5File file,
-			const string name) const {
+			const string name) {
 		assert(0);
 	}
 

@@ -102,7 +102,30 @@ public:
 		dataset.close();
 	}
 
-	void read_HDF5(const string& name, H5::H5File file) const{
+	void read_HDF5(const string& name, H5::H5File file){
+		H5::DataSet dataset;
+		H5::DataSpace dataspace;
+		hsize_t dims_out[1];
+
+		dataset = file.openDataSet(name+"[edge]");
+		dataspace = dataset.getSpace();
+		assert(dataspace.getSimpleExtentNdims()==1);
+		dataspace.getSimpleExtentDims( dims_out, NULL);
+		assert(dims_out[0]==size());
+		vector<double> tmp(size()+1);
+		dataset.read(&tmp.front(), H5::PredType::IEEE_F64LE);
+		min = tmp[0];
+		for(size_t i=1; i<size()+1; i++) top[i-1] = tmp[i];
+		dataset.close();
+
+		dataset = file.openDataSet(name+"[mid]");
+		dataspace = dataset.getSpace();
+		assert(dataspace.getSimpleExtentNdims()==1);
+		dataspace.getSimpleExtentDims( dims_out, NULL);
+		assert(dims_out[0]==size());
+		dataset.read(&mid.front(), H5::PredType::IEEE_F64LE);
+		dataset.close();
+
 		assert(0);
 	}
 };

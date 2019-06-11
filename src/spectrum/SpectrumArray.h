@@ -64,7 +64,7 @@ public:
 	virtual void write_hdf5_data(H5::H5File file, const string name) = 0;
 	virtual void  read_hdf5_data(H5::H5File file, const string name) = 0;
 	virtual void write_hdf5_coordinates(H5::H5File file, const string name) const = 0;
-	virtual void  read_hdf5_coordinates(H5::H5File file, const string name) const = 0;
+	virtual void  read_hdf5_coordinates(H5::H5File file, const string name) = 0;
 	virtual void annihilation_rate(const size_t[] /*dir_ind[NDIMS]*/, const SpectrumArray* /*in_dist*/,
 			const vector< vector<vector<double> > >& /*phi*/, const size_t /*weight*/, Tuple<double,4>& /*fourforce*/) const{
 		cout << "annihilation_rate is not implemented for this spectrum type!" << endl;
