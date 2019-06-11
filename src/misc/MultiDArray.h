@@ -375,7 +375,18 @@ public:
 		dataset.close();
 	}
 	void read_HDF5(H5::H5File file, const string name) {
-		assert(0);
+		H5::DataSet dataset = file.openDataSet(name);
+
+		// check consistency in dimensions
+		H5::DataSpace dataspace = dataset.getSpace();
+		assert(dataspace.getSimpleExtentNdims()==ndims);
+		hsize_t dims_out[ndims];
+		dataspace.getSimpleExtentDims( dims_out, NULL);
+		for(unsigned i=0; i<ndims; i++)
+			assert(dims_out[i]==axes[i].size());
+
+		// read the data
+		dataset.read(&y0.front(), H5::PredType::IEEE_F64LE);
 	}
 };
 
