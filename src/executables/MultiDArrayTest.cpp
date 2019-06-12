@@ -24,7 +24,7 @@ int main(){
 	vector<Axis> axes(ndims,xAxis);
 	MultiDArray<double,ndims,ndims> mda; // 3 dims and 3 components on each dim
 	mda.set_axes(axes);
-	for(int i=0; i<mda.size(); i++){
+	for(size_t i=0; i<mda.size(); i++){
 		cout << i << ": {";
 		for(int j=0; j<ndims; j++){
 			mda[i][j] = i * (j+1);
@@ -72,7 +72,7 @@ int main(){
 	cout << "Inside cube: ";
 	pass = pass and print_test(icube.inside_box(x), true);
 	cout << "icube indices:" << endl;
-	for(int i=0; i<icube.ncorners; i++){
+	for(size_t i=0; i<icube.ncorners; i++){
 		pass = pass and print_test(icube.indices[i], expected_indices[i]);
 	}
 	cout << "interpolate: "<<endl;
@@ -81,7 +81,7 @@ int main(){
 	pass = pass and print_test(interpval[1], 116.5);
 	pass = pass and print_test(interpval[2], 174.75);
 	cout << "icube weights:" << endl;
-	for(int i=0; i<icube.ncorners; i++){
+	for(size_t i=0; i<icube.ncorners; i++){
 		pass = print_test(icube.weights[i], expected_weights[i]) and pass;
 	}
 	Tuple<Tuple<double,ndims>,ndims> interpslope = mda.interpolate_slopes(icube);
@@ -97,7 +97,7 @@ int main(){
 	pass = pass and print_test(interpslope[2][2], 1.5);
 	for(int d=0; d<ndims; d++){
 		cout << "icube slope weights " << d <<":"<<endl;
-		for(int i=0; i<icube.ncorners; i++){
+		for(size_t i=0; i<icube.ncorners; i++){
 			pass = print_test(icube.slope_weights[d][i], expected_slope_weights[d][i]) and pass;
 		}
 	}
