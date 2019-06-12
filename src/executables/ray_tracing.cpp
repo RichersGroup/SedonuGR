@@ -57,6 +57,7 @@ public:
 		Ye.resize(0);
 		rho.resize(0);
 
+
 		Ndens.resize(NS);
 		Fdens.resize(NS);
 		Pdens.resize(NS);
@@ -85,7 +86,39 @@ void append_data(const Transport* sim, const EinsteinHelper* eh, double ct, Traj
 	td->Ecom_Elab.push_back(-eh->kup_tet[3]/eh->g.ndot(eh->kup));
 	td->Elab_Elab0.push_back(nulab/td->nulab0);
 
-	//MomentSpectrumArray<3>* dist = sim->grid->distribution[0];
+	// get stuff ready to interpolate moments
+	Tuple<double, 20> moments;
+	double icube_x[4] = {eh->xup[0],     eh->xup[1],     eh->xup[2],     0};
+	size_t dir_ind[4] = {eh->dir_ind[0], eh->dir_ind[1], eh->dir_ind[2], 0};
+	double khat_tet[3] = {
+			eh->kup_tet[0]/eh->kup_tet[3],
+			eh->kup_tet[1]/eh->kup_tet[3],
+			eh->kup_tet[2]/eh->kup_tet[3]};
+
+	for(unsigned s=0; s<sim->grid->distribution.size(); s++){
+		MomentSpectrumArray<3>* dist = (MomentSpectrumArray<3>*)sim->grid->distribution[s];
+
+		for(unsigned g=0; g<sim->grid->nu_grid_axis.size(); g++){
+			// set the interpolation cube
+			dir_ind[3] = g;
+			icube_x[3] = sim->grid->nu_grid_axis.mid[g];
+
+			moments = dist->interpolate(icube_x, dir_ind) / (pc::h * icube_x[3]); // convert to number density
+			td->Ndens[s][g].push_back(
+					moments[0] );
+			td->Fdens[s][g].push_back(
+					moments[1] * khat_tet[0] +
+					moments[2] * khat_tet[1] +
+					moments[3] * khat_tet[2] );
+			td->Pdens[s][g].push_back(
+					moments[4] * khat_tet[0]*khat_tet[0]*1. +  // xx
+					moments[5] * khat_tet[0]*khat_tet[1]*2. +  // xy
+					moments[6] * khat_tet[0]*khat_tet[2]*2. +  // xz
+					moments[7] * khat_tet[1]*khat_tet[1]*1. +  // yy
+					moments[8] * khat_tet[1]*khat_tet[2]*2. +  // yz
+					moments[9] * khat_tet[2]*khat_tet[2]*1. ); // zz
+		}
+	}
 	cout << "n=" << td->ct.size() << endl;
 }
 
@@ -219,13 +252,12 @@ int main(int argc, char **argv)
 		eh.g.normalize_null_changeupt(eh.kup);
 		sim.update_eh_k_opac(&eh);
 		double ct = 0;
-		append_data(&sim, &eh, ct, &td);
 		while(eh.fate==moving){
+			append_data(&sim, &eh, ct, &td);
 			double d_zone = sim.grid->zone_min_length(eh.z_ind) / sqrt(Metric::dot_Minkowski<3>(eh.kup,eh.kup)) * eh.kup_tet[3];
 			eh.ds_com = d_zone * sim.max_step_size;
 			ct += eh.ds_com;
 			sim.move(&eh, &ct);
-			append_data(&sim, &eh, ct, &td);
 		}
 		create_file("trajectory"+to_string(itraj)+".h5", td);
 	}
