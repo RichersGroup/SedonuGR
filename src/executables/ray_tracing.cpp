@@ -23,7 +23,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with Sedonu.  If not, see <http://www.gnu.org/licenses/>.
 //
-*/
+ */
 
 #include <mpi.h>
 #include <cmath>
@@ -44,84 +44,84 @@ namespace pc = physical_constants;
 
 class TrajectoryData{
 public:
-  vector<double> ct, Ecom_Elab, Elab_Elab0, TMeV, Ye, rho;
-  vector< vector< vector<double> > > Ndens, Fdens, Pdens;
-  double nulab0;
+	vector<double> ct, Ecom_Elab, Elab_Elab0, TMeV, Ye, rho;
+	vector< vector< vector<double> > > Ndens, Fdens, Pdens;
+	double nulab0;
 
-  TrajectoryData(int NS, int NE){
-    nulab0 = -1.e99;
-    ct.resize(0);
-    Ecom_Elab.resize(0);
-    Elab_Elab0.resize(0);
-    TMeV.resize(0);
-    Ye.resize(0);
-    rho.resize(0);
+	TrajectoryData(int NS, int NE){
+		nulab0 = -1.e99;
+		ct.resize(0);
+		Ecom_Elab.resize(0);
+		Elab_Elab0.resize(0);
+		TMeV.resize(0);
+		Ye.resize(0);
+		rho.resize(0);
 
-    Ndens.resize(NS);
-    Fdens.resize(NS);
-    Pdens.resize(NS);
+		Ndens.resize(NS);
+		Fdens.resize(NS);
+		Pdens.resize(NS);
 
-    for(int s=0; s<NS; s++){
-      Ndens[s].resize(NE);
-      Fdens[s].resize(NE);
-      Pdens[s].resize(NE);
-      for(int g=0; g<NE; g++){
-	Ndens[s][g].resize(0);
-	Fdens[s][g].resize(0);
-	Pdens[s][g].resize(0);
-      }
-    }
-  }
+		for(int s=0; s<NS; s++){
+			Ndens[s].resize(NE);
+			Fdens[s].resize(NE);
+			Pdens[s].resize(NE);
+			for(int g=0; g<NE; g++){
+				Ndens[s][g].resize(0);
+				Fdens[s][g].resize(0);
+				Pdens[s][g].resize(0);
+			}
+		}
+	}
 };
 
 void append_data(const Transport* sim, const EinsteinHelper* eh, double ct, TrajectoryData* td){
-  double nulab = -eh->g.ndot(eh->kup);
-  if(td->ct.size()==0) td->nulab0 = nulab;
+	double nulab = -eh->g.ndot(eh->kup);
+	if(td->ct.size()==0) td->nulab0 = nulab;
 
-  td->ct.push_back(ct);
-  td->rho.push_back(sim->grid->rho.interpolate(eh->icube_vol));
-  td->TMeV.push_back(sim->grid->T.interpolate(eh->icube_vol) * pc::k_MeV);
-  td->Ye.push_back(sim->grid->Ye.interpolate(eh->icube_vol));
-  td->Ecom_Elab.push_back(-eh->kup_tet[3]/eh->g.ndot(eh->kup));
-  td->Elab_Elab0.push_back(nulab/td->nulab0);
-     
-  //MomentSpectrumArray<3>* dist = sim->grid->distribution[0];
-  cout << "n=" << td->ct.size() << endl;
+	td->ct.push_back(ct);
+	td->rho.push_back(sim->grid->rho.interpolate(eh->icube_vol));
+	td->TMeV.push_back(sim->grid->T.interpolate(eh->icube_vol) * pc::k_MeV);
+	td->Ye.push_back(sim->grid->Ye.interpolate(eh->icube_vol));
+	td->Ecom_Elab.push_back(-eh->kup_tet[3]/eh->g.ndot(eh->kup));
+	td->Elab_Elab0.push_back(nulab/td->nulab0);
+
+	//MomentSpectrumArray<3>* dist = sim->grid->distribution[0];
+	cout << "n=" << td->ct.size() << endl;
 }
 
 hid_t create_file(string filename, const TrajectoryData& td){
-  hid_t file = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-  hid_t file_space, dset, space1d;
-  hsize_t ndims;
+	hid_t file = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+	hid_t file_space, dset, space1d;
+	hsize_t ndims;
 
-  // ct
-  ndims = 1;
-  hsize_t dims1[1] = {td.ct.size()};
-  space1d = H5Screate_simple(ndims, dims1, dims1);
-  
-  dset = H5Dcreate(file, "ct(cm)", H5T_NATIVE_DOUBLE, space1d, H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
-  H5Dwrite(dset, H5T_NATIVE_DOUBLE, space1d, space1d, H5P_DEFAULT, &td.ct[0]);
-  
-  dset = H5Dcreate(file, "rho(g|ccm)", H5T_NATIVE_DOUBLE, space1d, H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
-  H5Dwrite(dset, H5T_NATIVE_DOUBLE, space1d, space1d, H5P_DEFAULT, &td.rho[0]);
-  
-  dset = H5Dcreate(file, "T(MeV)", H5T_NATIVE_DOUBLE, space1d, H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
-  H5Dwrite(dset, H5T_NATIVE_DOUBLE, space1d, space1d, H5P_DEFAULT, &td.TMeV[0]);
-  
-  dset = H5Dcreate(file, "Ye", H5T_NATIVE_DOUBLE, space1d, H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
-  H5Dwrite(dset, H5T_NATIVE_DOUBLE, space1d, space1d, H5P_DEFAULT, &td.Ye[0]);
-  
-  dset = H5Dcreate(file, "Ecom_Elab", H5T_NATIVE_DOUBLE, space1d, H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
-  H5Dwrite(dset, H5T_NATIVE_DOUBLE, space1d, space1d, H5P_DEFAULT, &td.Ecom_Elab[0]);
-  
-  dset = H5Dcreate(file, "Elab_Elab0", H5T_NATIVE_DOUBLE, space1d, H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
-  H5Dwrite(dset, H5T_NATIVE_DOUBLE, space1d, space1d, H5P_DEFAULT, &td.Elab_Elab0[0]);
-  
-  // clear resources
-  H5Dclose(dset);
-  H5Sclose(space1d);
-  H5Fclose(file);
-  return file;
+	// ct
+	ndims = 1;
+	hsize_t dims1[1] = {td.ct.size()};
+	space1d = H5Screate_simple(ndims, dims1, dims1);
+
+	dset = H5Dcreate(file, "ct(cm)", H5T_NATIVE_DOUBLE, space1d, H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	H5Dwrite(dset, H5T_NATIVE_DOUBLE, space1d, space1d, H5P_DEFAULT, &td.ct[0]);
+
+	dset = H5Dcreate(file, "rho(g|ccm)", H5T_NATIVE_DOUBLE, space1d, H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	H5Dwrite(dset, H5T_NATIVE_DOUBLE, space1d, space1d, H5P_DEFAULT, &td.rho[0]);
+
+	dset = H5Dcreate(file, "T(MeV)", H5T_NATIVE_DOUBLE, space1d, H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	H5Dwrite(dset, H5T_NATIVE_DOUBLE, space1d, space1d, H5P_DEFAULT, &td.TMeV[0]);
+
+	dset = H5Dcreate(file, "Ye", H5T_NATIVE_DOUBLE, space1d, H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	H5Dwrite(dset, H5T_NATIVE_DOUBLE, space1d, space1d, H5P_DEFAULT, &td.Ye[0]);
+
+	dset = H5Dcreate(file, "Ecom_Elab", H5T_NATIVE_DOUBLE, space1d, H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	H5Dwrite(dset, H5T_NATIVE_DOUBLE, space1d, space1d, H5P_DEFAULT, &td.Ecom_Elab[0]);
+
+	dset = H5Dcreate(file, "Elab_Elab0", H5T_NATIVE_DOUBLE, space1d, H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	H5Dwrite(dset, H5T_NATIVE_DOUBLE, space1d, space1d, H5P_DEFAULT, &td.Elab_Elab0[0]);
+
+	// clear resources
+	H5Dclose(dset);
+	H5Sclose(space1d);
+	H5Fclose(file);
+	return file;
 }
 
 //--------------------------------------------------------
