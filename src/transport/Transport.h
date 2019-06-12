@@ -86,7 +86,6 @@ protected:
 	double brent_method(const int zone_index, double (*eq_function)(double, void*), const double min, const double max);
 
 	// simulation parameters
-	double min_step_size, max_step_size;
 	int    do_annihilation;
 
 	// random walk parameters
@@ -129,6 +128,7 @@ public:
 
 	// minimum neutrino packet energy
 	double min_packet_weight;
+	double min_step_size, max_step_size;
 
 	// items for core emission
 	double r_core;
