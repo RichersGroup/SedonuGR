@@ -184,7 +184,7 @@ public:
 	Tuple<T,nelements> interpolate(const InterpolationCube<dummy>& icube) const{
 		PRINT_ASSERT(icube.ncorners,==,(1<<ndims));
 
-		Tuple<T,nelements> result = 0;
+		Tuple<T,nelements> result(0);
 		for(size_t i=0; i<icube.ncorners; i++){
 			PRINT_ASSERT(icube.indices[i],>=,0);
 			PRINT_ASSERT(icube.indices[i],<,size());
