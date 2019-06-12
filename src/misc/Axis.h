@@ -111,22 +111,22 @@ public:
 		dataspace = dataset.getSpace();
 		assert(dataspace.getSimpleExtentNdims()==1);
 		dataspace.getSimpleExtentDims( dims_out, NULL);
-		assert(dims_out[0]==size());
-		vector<double> tmp(size()+1);
+		top.resize(dims_out[0]-1);
+		vector<double> tmp(dims_out[0]);
 		dataset.read(&tmp.front(), H5::PredType::IEEE_F64LE);
 		min = tmp[0];
-		for(size_t i=1; i<size()+1; i++) top[i-1] = tmp[i];
+		for(size_t i=1; i<top.size()+1; i++) top[i-1] = tmp[i];
 		dataset.close();
 
 		dataset = file.openDataSet(name+"[mid]");
 		dataspace = dataset.getSpace();
 		assert(dataspace.getSimpleExtentNdims()==1);
 		dataspace.getSimpleExtentDims( dims_out, NULL);
-		assert(dims_out[0]==size());
+		mid.resize(dims_out[0]);
 		dataset.read(&mid.front(), H5::PredType::IEEE_F64LE);
 		dataset.close();
 
-		assert(0);
+		PRINT_ASSERT(mid.size(),==,top.size());
 	}
 };
 

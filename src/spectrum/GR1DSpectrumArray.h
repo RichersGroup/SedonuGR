@@ -131,17 +131,18 @@ public:
 	void write_hdf5_data(H5::H5File file, const string name) {
 		data.write_HDF5(file, name);
 	}
-	void read_hdf5_data(H5::H5File file, const string name) {
-		data.read_HDF5(file, name);
+	void read_hdf5_data(H5::H5File file, const string name, const string /*axis_base*/) {
+		vector<Axis> axes(2);
+		axes[0].read_HDF5("/axes/x0(cm)",file);
+		axes[1].read_HDF5("/axes/frequency(Hz)",file);
+
+		data.read_HDF5(file, name, axes);
 	}
 
 	//--------------------------------------------------------------
 	// Write distribution function coordinates to an HDF5 file
 	//--------------------------------------------------------------
 	void write_hdf5_coordinates(H5::H5File /*file*/, const string /*name*/) const {
-		// no extra axes for moment array
-	}
-	void read_hdf5_coordinates(H5::H5File /*file*/, const string /*name*/) {
 		// no extra axes for moment array
 	}
 

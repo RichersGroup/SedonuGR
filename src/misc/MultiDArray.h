@@ -374,19 +374,29 @@ public:
 		dataset.write(&y0.front(), H5::PredType::IEEE_F64LE);
 		dataset.close();
 	}
-	void read_HDF5(H5::H5File file, const string name) {
+	void read_HDF5(H5::H5File file, const string name, const vector<Axis>& axes_in) {
+		cout << "# Reading " << name << endl;
 		H5::DataSet dataset = file.openDataSet(name);
+
+		set_axes(axes_in);
 
 		// check consistency in dimensions
 		H5::DataSpace dataspace = dataset.getSpace();
-		assert(dataspace.getSimpleExtentNdims()==ndims);
-		hsize_t dims_out[ndims];
+		int n_file_dims = (nelements==1 ? ndims : ndims+1);
+		PRINT_ASSERT(dataspace.getSimpleExtentNdims(),==,n_file_dims);
+		hsize_t dims_out[n_file_dims];
 		dataspace.getSimpleExtentDims( dims_out, NULL);
-		for(unsigned i=0; i<ndims; i++)
-			assert(dims_out[i]==axes[i].size());
+		hsize_t ntot=1;
+		for(hsize_t i=0; i<ndims; i++){
+			PRINT_ASSERT(dims_out[i],==,axes[i].size());
+			ntot *= dims_out[i];
+		}
+		if(nelements>1) PRINT_ASSERT(dims_out[ndims],==,nelements);
 
 		// read the data
+		y0.resize(ntot);
 		dataset.read(&y0.front(), H5::PredType::IEEE_F64LE);
+		dataset.close();
 	}
 };
 

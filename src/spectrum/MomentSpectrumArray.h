@@ -279,8 +279,13 @@ public:
 	void write_hdf5_data(H5::H5File file,const string name) {
 		data.write_HDF5(file, name);
 	}
-	void read_hdf5_data(H5::H5File file,const string name) {
-		data.read_HDF5(file, name);
+	void read_hdf5_data(H5::H5File file,const string name, const string /*axis_base*/) {
+		vector<Axis> axes(ndims_spatial+1);
+		for(hsize_t dir=0; dir<ndims_spatial; dir++)
+			axes[dir].read_HDF5(string("/axes/x")+to_string(dir)+string("(cm)"),file);
+		axes[nuGridIndex].read_HDF5("/axes/frequency(Hz)",file);
+
+		data.read_HDF5(file, name, axes);
 	}
 
 	//--------------------------------------------------------------
@@ -322,10 +327,6 @@ public:
 			dataset.close();
 
 		}
-	}
-	void read_hdf5_coordinates(H5::H5File file,
-			const string name) {
-		assert(0);
 	}
 
 	void add_isotropic(const size_t dir_ind[NDIMS+1], const double E){

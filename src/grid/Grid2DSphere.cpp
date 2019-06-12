@@ -61,9 +61,9 @@ void Grid2DSphere::write_child_zones(H5::H5File file){
 	vphi.write_HDF5(file,"vphi(cm|s)");
 }
 void Grid2DSphere::read_child_zones(H5::H5File file){
-	vr.read_HDF5(file,"vr(cm|s)");
-	vtheta.read_HDF5(file,"vtheta(cm|s)");
-	vphi.read_HDF5(file,"vphi(cm|s)");
+	vr.read_HDF5(file,"vr(cm|s)",xAxes);
+	vtheta.read_HDF5(file,"vtheta(cm|s)",xAxes);
+	vphi.read_HDF5(file,"vphi(cm|s)",xAxes);
 }
 void Grid2DSphere::read_nagakura_file(Lua* lua)
 {

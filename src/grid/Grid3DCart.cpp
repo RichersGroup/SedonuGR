@@ -59,11 +59,11 @@ void Grid3DCart::write_child_zones(H5::H5File file){
 }
 void Grid3DCart::read_child_zones(H5::H5File file){
 	if(DO_GR){
-		betaup.read_HDF5(file,"shiftup");
-		g3.read_HDF5(file,"threemetric");
-		sqrtdetg3.read_HDF5(file,"sqrtdetg3");
+		betaup.read_HDF5(file,"shiftup",xAxes);
+		g3.read_HDF5(file,"threemetric",xAxes);
+		sqrtdetg3.read_HDF5(file,"sqrtdetg3",xAxes);
 	}
-	v.read_HDF5(file,"threevelocity(cm|s)");
+	v.read_HDF5(file,"threevelocity(cm|s)",xAxes);
 }
 
 //------------------------------------------------------------

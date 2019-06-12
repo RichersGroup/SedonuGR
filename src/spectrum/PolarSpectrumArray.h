@@ -204,8 +204,15 @@ public:
 	void write_hdf5_data(H5::H5File file, const string name) {
 		data.write_HDF5(file, name);
 	}
-	void read_hdf5_data(H5::H5File file, const string name) {
-		data.read_HDF5(file, name);
+	void read_hdf5_data(H5::H5File file, const string name, const string axis_base) {
+		vector<Axis> axes(ndims_spatial+3);
+		for(hsize_t dir=0; dir<ndims_spatial; dir++)
+			axes[dir].read_HDF5(string("/axes/x")+to_string(dir)+string("(cm)"),file);
+		axes[nuGridIndex].read_HDF5("/axes/frequency(Hz)",file);
+		axes[muGridIndex].read_HDF5(axis_base+"_costheta_grid(lab)",file);
+		axes[phiGridIndex].read_HDF5(axis_base+"_phi_grid(radians,lab)",file);
+
+		data.read_HDF5(file, name, axes);
 	}
 
 	//--------------------------------------------------------------
@@ -219,10 +226,6 @@ public:
 
 		data.axes[muGridIndex].write_HDF5(name+"_costheta_grid(lab)",file);
 		data.axes[phiGridIndex].write_HDF5(name+"_phi_grid(radians,lab)",file);
-	}
-	void read_hdf5_coordinates(H5::H5File file, const string name) {
-		data.axes[muGridIndex].read_HDF5(name+"_costheta_grid(lab)",file);
-		data.axes[phiGridIndex].read_HDF5(name+"_phi_grid(radians,lab)",file);
 	}
 	
 	void add_isotropic(const size_t dir_ind[NDIMS+1], const double E){

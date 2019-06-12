@@ -63,8 +63,8 @@ void Grid1DSphere::write_child_zones(H5::H5File file){
 	X.write_HDF5(file,"X");
 }
 void Grid1DSphere::read_child_zones(H5::H5File file){
-	vr.read_HDF5(file,"vr(cm|s)");
-	X.read_HDF5(file,"X");
+	vr.read_HDF5(file,"vr(cm|s)",xAxes);
+	X.read_HDF5(file,"X",xAxes);
 }
 
 void Grid1DSphere::read_nagakura_model(Lua* lua){
