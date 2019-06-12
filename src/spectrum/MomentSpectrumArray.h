@@ -62,28 +62,33 @@ public:
 	double getE(const size_t ind) const{
 		return data[ind][0];
 	}
+	Tuple<double, n_total_elements> interpolate(const double icube_x[ndims_spatial+1], const size_t dir_ind[ndims_spatial+1]) const{
+		InterpolationCube<4> icube;
+		data.set_InterpolationCube(&icube, icube_x, dir_ind);
+		return data.interpolate(icube);
+	}
 	double getF(const size_t ind, const size_t i) const{
 		return data[ind][i+1];
 	}
 	double getP(const size_t ind, const size_t i, const size_t j) const{
 		switch((i+1)*(j+1)){
 		case 1:
-			return data[ind][4];
+			return data[ind][4]; // xx
 			break;
 		case 2:
-			return data[ind][5];
+			return data[ind][5]; // xy
 			break;
 		case 3:
-			return data[ind][6];
+			return data[ind][6]; // xz
 			break;
 		case 4:
-			return data[ind][7];
+			return data[ind][7]; // yy
 			break;
 		case 6:
-			return data[ind][8];
+			return data[ind][8]; // yz
 			break;
 		case 9:
-			return data[ind][9];
+			return data[ind][9]; // zz
 			break;
 		}
 
