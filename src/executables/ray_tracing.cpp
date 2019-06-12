@@ -124,13 +124,13 @@ void append_data(const Transport* sim, const EinsteinHelper* eh, double ct, Traj
 
 hid_t create_file(string filename, const TrajectoryData& td){
 	hid_t file = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-	hid_t file_space, dset, space1d;
+	hid_t dset;
 	hsize_t ndims;
 
-	// ct
+	// 1D stuff
 	ndims = 1;
 	hsize_t dims1[1] = {td.ct.size()};
-	space1d = H5Screate_simple(ndims, dims1, dims1);
+	hid_t space1d = H5Screate_simple(ndims, dims1, dims1);
 
 	dset = H5Dcreate(file, "ct(cm)", H5T_NATIVE_DOUBLE, space1d, H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
 	H5Dwrite(dset, H5T_NATIVE_DOUBLE, space1d, space1d, H5P_DEFAULT, &td.ct[0]);
@@ -150,9 +150,39 @@ hid_t create_file(string filename, const TrajectoryData& td){
 	dset = H5Dcreate(file, "Elab_Elab0", H5T_NATIVE_DOUBLE, space1d, H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
 	H5Dwrite(dset, H5T_NATIVE_DOUBLE, space1d, space1d, H5P_DEFAULT, &td.Elab_Elab0[0]);
 
+	// moment stuff
+	ndims = 3;
+	hsize_t fdims3[3] = {td.Ndens.size(), td.Ndens[0].size(), td.Ndens[0][0].size()};
+	for(int i=0; i<3; i++) cout << fdims3[i] << endl;
+	hid_t file_space = H5Screate_simple(ndims, fdims3, fdims3);
+	hsize_t mdims3[3] = {1,               1,                  td.Ndens[0][0].size()};
+	hsize_t count[3]  = {1,1,1};
+	hsize_t stride[3] = {1,1,1};
+	hid_t  mem_space = H5Screate_simple(ndims, mdims3, mdims3);
+
+	hid_t dsetN = H5Dcreate(file, "Ndens(1|ccm)", H5T_NATIVE_DOUBLE, file_space, H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	hid_t dsetF = H5Dcreate(file, "Fdens(1|ccm)", H5T_NATIVE_DOUBLE, file_space, H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+	hid_t dsetP = H5Dcreate(file, "Pdens(1|ccm)", H5T_NATIVE_DOUBLE, file_space, H5P_DEFAULT,H5P_DEFAULT,H5P_DEFAULT);
+
+	// have to write in chunks because vectors of vectors are not contiguous in memory
+	for(size_t s=0; s<td.Ndens.size(); s++){
+		for(size_t g=0; g<td.Ndens[0].size(); g++){
+			hsize_t start[3] = {s, g, 0};
+			H5Sselect_hyperslab(file_space, H5S_SELECT_SET, start, count, stride, mdims3);
+			H5Dwrite(dsetN, H5T_NATIVE_DOUBLE, mem_space, file_space, H5P_DEFAULT, &td.Ndens[s][g][0]);
+			H5Dwrite(dsetF, H5T_NATIVE_DOUBLE, mem_space, file_space, H5P_DEFAULT, &td.Fdens[s][g][0]);
+			H5Dwrite(dsetP, H5T_NATIVE_DOUBLE, mem_space, file_space, H5P_DEFAULT, &td.Pdens[s][g][0]);
+		}
+	}
+
 	// clear resources
 	H5Dclose(dset);
+	H5Dclose(dsetN);
+	H5Dclose(dsetF);
+	H5Dclose(dsetP);
 	H5Sclose(space1d);
+	H5Sclose(file_space);
+	H5Sclose(mem_space);
 	H5Fclose(file);
 	return file;
 }
