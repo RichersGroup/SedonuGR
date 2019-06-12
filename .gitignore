@@ -3,7 +3,6 @@
 *.o
 *.h5
 *.spec
-*ray_*
 *fluid_*
 *.exe
 sedonu
