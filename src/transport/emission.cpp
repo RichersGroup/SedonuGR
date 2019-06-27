@@ -166,8 +166,12 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 	}
 
 	// sample the frequency
-	double nu3 = rangen.uniform( pow(grid->nu_grid_axis.bottom(g),3), pow(grid->nu_grid_axis.top[g],3) );
-	double nu = pow(nu3, 1./3.);
+	double nu=0;
+	while(nu==0){ // reject nu=0
+		double nu3 = rangen.uniform( pow(grid->nu_grid_axis.bottom(g),3), pow(grid->nu_grid_axis.top[g],3) );
+		nu = pow(nu3, 1./3.);
+	}
+	PRINT_ASSERT(nu,>,0);
 
 	// emit isotropically in comoving frame
 	Tuple<double,4> kup_tet;
@@ -221,8 +225,12 @@ Particle Transport::create_surface_particle(const double weight, const size_t s,
 	update_eh_background(&eh);
 
 	// sample the frequency
-	double nu3 = rangen.uniform( pow(grid->nu_grid_axis.bottom(g),3), pow(grid->nu_grid_axis.top[g],3) );
-	double nu = pow(nu3, 1./3.);
+	double nu=0;
+	while(nu==0){ // reject nu=0
+		double nu3 = rangen.uniform( pow(grid->nu_grid_axis.bottom(g),3), pow(grid->nu_grid_axis.top[g],3) );
+		nu = pow(nu3, 1./3.);
+	}
+	PRINT_ASSERT(nu,>,0);
 
 	// sample outward direction
 	Tuple<double,4> kup_tet;
