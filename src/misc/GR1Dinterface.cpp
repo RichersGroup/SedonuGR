@@ -16,7 +16,8 @@ const double time_gf = 2.03001708e5;
 double GR1D_tau_crit;
 
 extern "C"
-void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const int* M1_imaxradii, const int* ghosts1, Transport** sim){
+void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const int* M1_imaxradii, const int* ghosts1,
+		const double* rho, const double* T, const double* Ye, const double* v1,	const double* metricX, Transport** sim){
 
 	// initialize MPI parallelism
 	int MPI_myID,MPI_nprocs;
@@ -58,6 +59,7 @@ void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const i
 	GridGR1D* grid = new GridGR1D;
 	grid->initialize_grid(x1i,nzones,*ghosts1);
 	(*sim)->grid = grid;
+	static_cast<GridGR1D*>((*sim)->grid)->set_fluid(rho, T, Ye, v1, metricX);
 
 	// set up the transport module (includes the grid)
 	(*sim)->init(&lua);
@@ -89,7 +91,7 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 	PRINT_ASSERT(fsmooth,>=,0.0);
 
 	// set velocities and opacities
-	static_cast<GridGR1D*>((*sim)->grid)->set_fluid(rho, T, Ye, v1);
+	static_cast<GridGR1D*>((*sim)->grid)->set_fluid(rho, T, Ye, v1, metricX);
 
 	bool extract_MC[nr][ns][ne];
 	for(size_t s=0; s<(*sim)->species_list.size(); s++)
@@ -183,6 +185,14 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 				int indexPrr_pm = inde + 2*indlast + 0*ne*ns*nr_GR1D*3;
 				//int indexChi_pm = inde + 0*indlast + 0*ne*ns*nr_GR1D*1;
 
+				if( iter==0 or (not extract_MC[z_ind][s][ie]) ){
+					q_M1[indexPrr]        = q_M1_2mom[indexPrr];
+					q_M1_extra[indexPtt]  = q_M1_extra_2mom[indexPtt];
+					q_M1p[indexPrr_pm]    = q_M1p_2mom[indexPrr_pm];
+					q_M1m[indexPrr_pm]    = q_M1m_2mom[indexPrr_pm];
+					q_M1_extra[indexWrrr] = q_M1_extra_2mom[indexWrrr];
+					q_M1_extra[indexWttr] = q_M1_extra_2mom[indexWttr];
+				}
 				if(extract_MC[z_ind][s][ie]){
 					// spatial smoothing
 					double Prr_E   =   new_Prr_E[z_ind][s][ie];
@@ -214,28 +224,22 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 					q_M1m[indexPrr_pm]   = Prr_E;
 					q_M1_extra[indexWrrr]  = Wrrr;
 					q_M1_extra[indexWttr]  = Wttr;
-				}
-				else{
-					q_M1[indexPrr]        = q_M1_2mom[indexPrr];
-					q_M1_extra[indexPtt]  = q_M1_extra_2mom[indexPtt];
-					q_M1p[indexPrr_pm]    = q_M1p_2mom[indexPrr_pm];
-					q_M1m[indexPrr_pm]    = q_M1m_2mom[indexPrr_pm];
-					q_M1_extra[indexWrrr] = q_M1_extra_2mom[indexWrrr];
-					q_M1_extra[indexWttr] = q_M1_extra_2mom[indexWttr];
+
+					// check that the results are reasonable
+					PRINT_ASSERT(q_M1[indexPrr]         ,>=, 0);
+					PRINT_ASSERT(q_M1[indexPrr]-1       ,<=, X*X-1);
+					PRINT_ASSERT(q_M1_extra[indexPtt]   ,>=, 0);
+					PRINT_ASSERT(q_M1_extra[indexPtt]-1 ,<=, 0);
+					PRINT_ASSERT(q_M1p[indexPrr_pm]     ,>=, 0);
+					PRINT_ASSERT(q_M1p[indexPrr_pm]-1   ,<=, X*X-1);
+					PRINT_ASSERT(q_M1m[indexPrr_pm]     ,>=, 0);
+					PRINT_ASSERT(q_M1m[indexPrr_pm]-1   ,<=, X*X-1);
+
 				}
 
-				// check that the results are reasonable
-				PRINT_ASSERT(q_M1[indexPrr],>=,0);
-				PRINT_ASSERT(q_M1[indexPrr]-1,<=,X*X-1);
-				PRINT_ASSERT(q_M1_extra[indexPtt],>=,0);
-				PRINT_ASSERT(q_M1_extra[indexPtt]-1,<=,0);
-				PRINT_ASSERT(q_M1p[indexPrr_pm],>=,0);
-				PRINT_ASSERT(q_M1p[indexPrr_pm]-1,<=,X*X-1);
-				PRINT_ASSERT(q_M1m[indexPrr_pm],>=,0);
-				PRINT_ASSERT(q_M1m[indexPrr_pm]-1,<=,X*X-1);
 
-			}
-		}
-	}
+			} // energy
+		} // species
+	} // z_ind
 	cout.flush();
 }
