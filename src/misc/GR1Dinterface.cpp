@@ -76,10 +76,25 @@ void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const i
 }
 
 extern "C"
-void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q_M1_extra,
-		double* q_M1_2mom, double* q_M1p_2mom, double* q_M1m_2mom, double* q_M1_extra_2mom,
-		const double* eas, const double* rho, const double* T, const double* Ye, const double* v1,
-		const double* metricX, const int* iter, const double* dt, const double* rshock, Transport** sim){
+void calculate_mc_closure_(
+		double* q_M1,            // energy density, flux, pressure tensor
+		double* q_M1p,           // same as above for plus state
+		double* q_M1m,           // same as above for minus state
+		double* q_M1_extra,      // P_theta^theta/E=P_phi^phi/E, W^rrr, W_phi^phir, Chi
+		double* q_M1_2mom,       // same as above (temporary values previously computed by GR1D closure routine)
+		double* q_M1p_2mom,      // ''
+		double* q_M1m_2mom,      // ''
+		double* q_M1_extra_2mom, // ''
+		const double* eas,       // emissivity, absorption opacity, scattering opacity
+		const double* rho,       // density
+		const double* T,         // temperature
+		const double* Ye,        // electron fraction
+		const double* v1,        // radial velocity
+		const double* metricX,   // g_rr component of metric
+		const int* iter,         // iteration number
+		const double* dt,        // timestep in GR1D units
+		const double* rshock,    // shock radius (currently unused in set_eas_external)
+		Transport** sim){        // pointer to the Sedonu Transport class
 
 	const int nr_GR1D     = static_cast<Neutrino_GR1D*>((*sim)->species_list[0])->n_GR1D_zones;
 	const int nghost_GR1D = static_cast<Neutrino_GR1D*>((*sim)->species_list[0])->ghosts1;
@@ -97,7 +112,9 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 	for(size_t s=0; s<(*sim)->species_list.size(); s++)
 		static_cast<Neutrino_GR1D*>((*sim)->species_list[s])->set_eas_external(eas,GR1D_tau_crit,&(extract_MC[0][0][0]),*rshock);
 
-	// do MC calculation
+	//===================//
+	// do MC calculation //
+	//===================//
 #ifdef _OPENMP
 	char* OMP_NUM_THREADS = std::getenv("OMP_NUM_THREADS");
 	int nthreads=-1;
@@ -141,7 +158,7 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 					//int indexPrr_pm = inde + 2*indlast + 0*ne*ns*nr_GR1D*3;
 					//int indexChi_pm = inde + 0*indlast + 0*ne*ns*nr_GR1D*1;
 
-					// load up new arrays
+					// load up new arrays (comoving-frame moments)
 					size_t index = tmpSpectrum->data.direct_index(dir_ind);
 					Tuple<double,6> tmp = tmpSpectrum->data[index];
 					double Prr  = tmp[2];//q_M1[indexPrr];//
@@ -181,10 +198,18 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 				int indexPtt  = inde + 0*indlast;
 				int indexWrrr = inde + 1*indlast;
 				int indexWttr = inde + 2*indlast;
-				//int indexChi  = inde + 3*indlast;
+				int indexChi  = inde + 3*indlast;
 				int indexPrr_pm = inde + 2*indlast + 0*ne*ns*nr_GR1D*3;
-				//int indexChi_pm = inde + 0*indlast + 0*ne*ns*nr_GR1D*1;
+				int indexChi_pm = inde + 0*indlast + 0*ne*ns*nr_GR1D*1;
 
+				// need to set plus/minus chi - used for estimating the characteristic speeds
+				// There is no way to compute, e.g., dP/dE to be able to compute characteristics
+				// using Monte Carlo.
+				q_M1_extra[indexChi] = q_M1_extra_2mom[indexChi];
+				q_M1p[indexChi_pm]   = q_M1p_2mom[indexChi_pm];
+				q_M1m[indexChi_pm]   = q_M1m_2mom[indexChi_pm];
+
+				// set closure to GR1D value on first iteration and where not using Sedonu
 				if( iter==0 or (not extract_MC[z_ind][s][ie]) ){
 					q_M1[indexPrr]        = q_M1_2mom[indexPrr];
 					q_M1_extra[indexPtt]  = q_M1_extra_2mom[indexPtt];
@@ -193,6 +218,8 @@ void calculate_mc_closure_(double* q_M1, double* q_M1p, double* q_M1m, double* q
 					q_M1_extra[indexWrrr] = q_M1_extra_2mom[indexWrrr];
 					q_M1_extra[indexWttr] = q_M1_extra_2mom[indexWttr];
 				}
+
+				// Set Monte Carlo closure
 				if(extract_MC[z_ind][s][ie]){
 					// spatial smoothing
 					double Prr_E   =   new_Prr_E[z_ind][s][ie];
