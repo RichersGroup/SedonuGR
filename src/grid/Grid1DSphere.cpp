@@ -277,6 +277,7 @@ double  Grid1DSphere::zone_lab_3volume(int z_ind) const
 {
 	double vol = zone_coord_volume(z_ind);
 	if(DO_GR) vol *= X[z_ind];
+	PRINT_ASSERT(vol,>,0);
 	return vol;
 }
 

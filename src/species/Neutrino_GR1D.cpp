@@ -66,7 +66,7 @@ void Neutrino_GR1D::set_nu_grid(Lua* lua, Axis* nu_grid){
 	dataset.read(&(tops[0]),H5::PredType::IEEE_F64LE);
 
 	// read the centers from hdf5 file
-	dataset = file.openDataSet("energies");
+	dataset = file.openDataSet("neutrino_energies");
 	dataspace = dataset.getSpace();
 	PRINT_ASSERT(dataspace.getSimpleExtentNdims(),==,1);
 	dataspace.getSimpleExtentDims(dims);
@@ -120,7 +120,7 @@ void Neutrino_GR1D::set_eas_external(const double* easarray, const double /*GR1D
 
 			// set opacities
 			sim->grid->abs_opac[ID][global_index] = easarray[aind] / nulib_opacity_gf; // 1/cm
-			sim->grid->abs_opac[ID][global_index] = easarray[sind] / nulib_opacity_gf; // 1/cm
+			sim->grid->scat_opac[ID][global_index] = easarray[sind] / nulib_opacity_gf; // 1/cm
 		}
 	}
 }
