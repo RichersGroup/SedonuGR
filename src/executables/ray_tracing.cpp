@@ -306,24 +306,52 @@ int main(int argc, char **argv)
 	const int NE = sim.grid->nu_grid_axis.size();
 
 	// read in starting points
-	vector<vector<double> > xup(3), kup(3);
-	xup[0] = lua.vector<double>("initial_x0");
-	xup[1] = lua.vector<double>("initial_x1");
-	xup[2] = lua.vector<double>("initial_x2");
-	kup[0] = lua.vector<double>("initial_k0");
-	kup[1] = lua.vector<double>("initial_k1");
-	kup[2] = lua.vector<double>("initial_k2");
-	int ntrajectories = xup[0].size();
+	vector<double> r    = lua.vector<double>("initial_r");
+	vector<double> phi  = lua.vector<double>("initial_phi");
+	vector<double> z    = lua.vector<double>("initial_z");
+	vector<double> kmu  = lua.vector<double>("initial_kmu");
+	vector<double> kphi = lua.vector<double>("initial_kphi");
+	int ntrajectories = r.size();
 	lua.close();
 
 
 	for(int itraj=0; itraj<ntrajectories; itraj++){
+		vector<double> xup(3), kup(3);
+		xup[0] = r[itraj] * cos(phi[itraj]*M_PI/180.);
+		xup[1] = r[itraj] * sin(phi[itraj]*M_PI/180.);
+		xup[2] = z[itraj];
+		double rmag = sqrt(r[itraj]*r[itraj] + z[itraj]*z[itraj]);
+		double netphi = kphi[itraj]*phi[itraj]*M_PI/180.;
+		double sintheta_k = (1.-kmu[itraj]*kmu[itraj]);
+		kup[0] = cos(netphi) * sintheta_k;
+		kup[1] = sin(netphi) * sintheta_k;
+		kup[2] = kmu[itraj];
+
+		// set up filename
+		stringstream filename_stream;
+		filename_stream << std::fixed;
+		filename_stream.precision(1);
+		filename_stream << "trajectory_r" << r[itraj]/1e5;
+		filename_stream.precision(0);
+		filename_stream << "phi" << phi[itraj];
+		filename_stream.precision(1);
+		filename_stream  << "z"<<z[itraj]/1e5;
+		filename_stream << "_kmu"<<kmu[itraj];
+		filename_stream.precision(0);
+		filename_stream << "kphi"<<kphi[itraj];
+		if(DO_GR) filename_stream << "_GR";
+		filename_stream << ".h5";
+		string outfilename;
+		outfilename = filename_stream.str();
+		cout << outfilename << endl;
+		continue;
+
 		// initialize the EinsteinHelper
 		EinsteinHelper eh;
 		TrajectoryData td(NS,NE);
 		for(int i=0; i<3; i++){
-			eh.xup[i] = xup[i][itraj];
-			eh.kup[i] = kup[i][itraj];
+			eh.xup[i] = xup[i];
+			eh.kup[i] = kup[i];
 		}
 		eh.xup[3] = 0;
 		eh.s = 0;
@@ -342,7 +370,7 @@ int main(int argc, char **argv)
 			ct += eh.ds_com;
 			sim.move(&eh, &ct);
 		}
-		create_file("trajectory"+to_string(itraj)+".h5", td, sim);
+		create_file(outfilename, td, sim);
 	}
 
 	// exit the program
