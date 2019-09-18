@@ -290,7 +290,8 @@ void nulib_init(string filename, int use_scattering_kernels, int use_annihil_ker
     }
 
     if(use_annihil_kernels==1){
-    	assert(hdf5_dataset_exists(filename.c_str(),"/epannihil_phi0"));
+    	assert(hdf5_dataset_exists(filename.c_str(),"/epannihil_phi0") or
+	       hdf5_dataset_exists(filename.c_str(),"/bremsstrahlung_phi0"));
     	read_epannihil = 1;
     }
 
