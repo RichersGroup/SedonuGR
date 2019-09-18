@@ -53,7 +53,7 @@ public:
 
 	// GR1D-specific functions
 	void initialize_grid(const double* x, const int length, const int nghost);
-	void set_fluid(const double* rho, const double* T, const double* Ye, const double* vr);
+	void set_fluid(const double* rho, const double* T, const double* Ye, const double* vr, const double* X);
 };
 
 

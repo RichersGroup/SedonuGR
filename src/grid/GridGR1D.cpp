@@ -59,13 +59,14 @@ void GridGR1D::symmetry_boundaries(EinsteinHelper* /*eh*/) const{
 	// NONE - just flow out of outer boundary
 }
 
-void GridGR1D::set_fluid(const double* rho_in, const double* T_in, const double* Ye_in, const double* vr_in){
+void GridGR1D::set_fluid(const double* rho_in, const double* T_in, const double* Ye_in, const double* vr_in, const double* X_in){
 	for(size_t z_ind=0; z_ind<rho.size(); z_ind++)
 	{
 		rho[z_ind]  = rho_in[z_ind+ghosts1];
 		T[z_ind]    =   T_in[z_ind+ghosts1];
 		Ye[z_ind]   =  Ye_in[z_ind+ghosts1];
 		vr[z_ind]   =  vr_in[z_ind+ghosts1];
+		X[z_ind]    =   X_in[z_ind+ghosts1];
 
 		H_vis[z_ind] = 0;
 		PRINT_ASSERT(xAxes[0].top[z_ind],>,(z_ind==0 ? xAxes[0].min : xAxes[0].top[z_ind-1]));
@@ -88,10 +89,14 @@ void GridGR1D::initialize_grid(const double* rarray, const int n_zones, const in
 	}
 	xAxes[0] = Axis(rmin, rtop, rmid);
 
+	vr.set_axes(xAxes);
+	lapse.set_axes(xAxes);
+	X.set_axes(xAxes);
 	rho.set_axes(xAxes);
 	T.set_axes(xAxes);
 	Ye.set_axes(xAxes);
 	H_vis.set_axes(xAxes);
+	munue.set_axes(xAxes);
 
 	cout << "#   Sedonu grid has "<< rho.size() << " zones." << endl;
 	cout << "#   Sedonu outer boundary is at "<< xAxes[0].top[n_zones-1] << " cm" << endl;
