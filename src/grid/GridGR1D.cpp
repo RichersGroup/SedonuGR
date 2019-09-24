@@ -59,14 +59,15 @@ void GridGR1D::symmetry_boundaries(EinsteinHelper* /*eh*/) const{
 	// NONE - just flow out of outer boundary
 }
 
-void GridGR1D::set_fluid(const double* rho_in, const double* T_in, const double* Ye_in, const double* vr_in, const double* X_in){
+void GridGR1D::set_fluid(const double* rho_in, const double* T_in, const double* Ye_in, const double* vr_in, const double* X_in, const double* alp_in){
 	for(size_t z_ind=0; z_ind<rho.size(); z_ind++)
 	{
-		rho[z_ind]  = rho_in[z_ind+ghosts1];
-		T[z_ind]    =   T_in[z_ind+ghosts1];
-		Ye[z_ind]   =  Ye_in[z_ind+ghosts1];
-		vr[z_ind]   =  vr_in[z_ind+ghosts1];
-		X[z_ind]    =   X_in[z_ind+ghosts1];
+		rho[z_ind]   = rho_in[z_ind+ghosts1];
+		T[z_ind]     =   T_in[z_ind+ghosts1];
+		Ye[z_ind]    =  Ye_in[z_ind+ghosts1];
+		vr[z_ind]    =  vr_in[z_ind+ghosts1];
+		X[z_ind]     =   X_in[z_ind+ghosts1];
+		lapse[z_ind] = alp_in[z_ind+ghosts1];
 
 		H_vis[z_ind] = 0;
 		PRINT_ASSERT(xAxes[0].top[z_ind],>,(z_ind==0 ? xAxes[0].min : xAxes[0].top[z_ind-1]));
