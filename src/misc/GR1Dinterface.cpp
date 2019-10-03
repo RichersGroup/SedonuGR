@@ -14,6 +14,109 @@ double smoothing_timescale;
 int GR1D_recalc_every;
 const double time_gf = 2.03001708e5;
 double GR1D_tau_crit;
+vector<vector<vector<double> > > Ptt_E_tet, Wrtt_Fr_tet;
+double tolerance = 1e-6;
+
+struct Moments{
+	double E, Fr, Prr, Ptt, Wrrr, Wrtt;
+};
+
+Moments toLab(const Moments tet, double vr, double X){
+	Moments lab;
+	const double X2 = X*X;
+	const double X3 = X2*X;
+	const double V = vr*X;
+	const double V2 = V*V;
+	const double WLorentz = 1./sqrt(1.-V2);
+	const double W2 = WLorentz*WLorentz;
+	const double W3 = W2*WLorentz;
+
+	lab.E = W2*( tet.E + V*(2.*tet.Fr+tet.Prr*V) );
+	lab.Fr = W2*X*( tet.Fr*(1.+V*V) + (tet.E+tet.Prr)*V );
+	lab.Prr = W2*X2 * (tet.Prr + V*(2.*tet.Fr + tet.E*V));
+	lab.Ptt = tet.Ptt;
+	lab.Wrrr = W3/X3 * (tet.Wrrr + V*(3.*tet.Prr + V*(3.*tet.Fr + tet.E*V)));
+	lab.Wrtt = WLorentz/X * (tet.Wrtt + V*tet.Ptt);
+
+	PRINT_ASSERT(lab.E,>=,0);
+	PRINT_ASSERT(lab.Prr,>=,0);
+	PRINT_ASSERT(lab.Ptt,>=,0);
+
+	return lab;
+}
+Moments toTet(const Moments lab, double vr, double X){
+	Moments tet;
+
+	// account for floor in GR1D
+	const double X2 = X*X;
+	const double X3 = X*X*X;
+	const double V = vr*X;
+	const double V2 = V*V;
+	const double V4 = V2*V2;
+	const double WLorentz = 1./sqrt(1.-V2);
+	const double W2 = WLorentz*WLorentz;
+	const double W3 = W2*WLorentz;
+
+	tet.E = W2 * (lab.E - 2.*vr*lab.Fr + vr*vr*lab.Prr );
+	tet.Fr = W2/X * ( lab.Fr*(1.+V2) - vr*(lab.Prr+lab.E*X2) );
+	tet.Prr = W2/X2 * (lab.Prr - 2.*lab.Fr*vr*X2 + lab.E*V2*X2 );
+	tet.Ptt = lab.Ptt;
+	tet.Wrtt = lab.Wrtt*X/WLorentz - lab.Ptt*V;
+	tet.Wrrr = lab.Wrrr*X3/W3 - 1./X2*( lab.Prr*V*(3.+W2*V4) - V2*X*lab.Fr*(1.+2.*W2) + W2*V2*X2*V*lab.E);
+
+	// We know the GR1D closure isn't great, so we will fix it.
+	if(tet.Fr!=0){
+	  double Wmag = tet.Wrrr+2.*tet.Wrtt;
+	  tet.Wrrr *= tet.Fr/Wmag;
+	  tet.Wrtt *= tet.Fr/Wmag;
+	}
+	else{
+	  tet.Wrrr = 0;
+	  tet.Wrtt = 0;
+	}
+
+	PRINT_ASSERT(tet.E,>,0);
+	PRINT_ASSERT(tet.Prr,>=,0);
+	PRINT_ASSERT(tet.Ptt,>=,0);
+	PRINT_ASSERT(abs(tet.Fr),<=,tet.E);
+	PRINT_ASSERT(abs(tet.E  - (tet.Prr +2.*tet.Ptt ))/tet.E ,<, tolerance);
+	PRINT_ASSERT(abs(tet.Fr - (tet.Wrrr+2.*tet.Wrtt))/tet.E ,<, tolerance);
+
+	return tet;
+}
+void applyClosure(Moments& tet, Moments& lab, double Ptt_E_tet, double Wrtt_Fr_tet, double vr, double X){
+
+	if(tet.E==0) return;
+
+	// apply the closure in the tetrad frame
+	tet.Ptt  = tet.E  *            Ptt_E_tet ;
+	tet.Prr  = tet.E  * (1. - 2.*  Ptt_E_tet);
+	tet.Wrtt = tet.Fr *          Wrtt_Fr_tet ;
+	tet.Wrrr = tet.Fr * (1. - 2.*Wrtt_Fr_tet);
+
+	// get the parameters that make the lab and tetrad moments match
+	const double V = vr*X;
+	double denom = ( tet.E - tet.Prr*V*V)*X;
+	double alpha = ( lab.E*X*(1.+V*V) - 2.*lab.Fr*V ) / denom;
+	double beta  = ( lab.Fr*(tet.E+tet.Prr*V*V) - lab.E*V*X*(tet.E+tet.Prr) ) / (tet.Fr*denom);
+	PRINT_ASSERT(denom,>,0);
+	PRINT_ASSERT(alpha,>,0);
+
+	// modify the tetrad such that it follows the closure relation AND matches lab-frame
+	tet.E    *= alpha;
+	tet.Prr  *= alpha;
+	tet.Ptt  *= alpha;
+	tet.Fr   *= beta;
+	tet.Wrrr *= beta;
+	tet.Wrtt *= beta;
+
+	// get lab moments. First two moments should match by construction of the closure.
+	double Eold = lab.E;
+	double Frold = lab.Fr;
+	lab = toLab(tet, vr, X);
+	PRINT_ASSERT(abs(lab.E  - Eold )/Eold ,<, tolerance);
+	PRINT_ASSERT(abs(lab.Fr - Frold)/Eold ,<, tolerance);
+}
 
 extern "C"
 void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const int* M1_imaxradii, const int* ghosts1,
@@ -69,6 +172,26 @@ void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const i
 		tmpSpecies->n_GR1D_zones = *n_GR1D_zones;
 		tmpSpecies->sim = *sim;
 	}
+
+	// resize arrays to be used for time-averaging
+	const size_t nr = (*sim)->grid->rho.size();
+	const size_t ns = (*sim)->species_list.size();
+	const size_t ne = (*sim)->grid->nu_grid_axis.size();
+	Ptt_E_tet.resize(ns);
+	Wrtt_Fr_tet.resize(ns);
+	for(size_t s=0; s<ns; s++){
+		Ptt_E_tet[s].resize(nr);
+		Wrtt_Fr_tet[s].resize(nr);
+		for(size_t ir=0; ir<nr; ir++){
+			Ptt_E_tet[s][ir].resize(ne);
+			Wrtt_Fr_tet[s][ir].resize(ne);
+			for(size_t ie=0; ie<ne; ie++){
+				Ptt_E_tet[s][ir][ie] = 1./3.;//Ptt_E_tetnew;
+				Wrtt_Fr_tet[s][ir][ie] = 1./3.;//Wrtt_Fr_tetnew;
+			}
+		}
+	}
+
 	//omp_set_dynamic(true);
 #ifdef _OPENMP
 	omp_set_num_threads(1);
@@ -99,9 +222,9 @@ void calculate_mc_closure_(
 
 	const int nr_GR1D     = static_cast<Neutrino_GR1D*>((*sim)->species_list[0])->n_GR1D_zones;
 	const int nghost_GR1D = static_cast<Neutrino_GR1D*>((*sim)->species_list[0])->ghosts1;
-	const int nr = (*sim)->grid->rho.size();
-	const int ns = (*sim)->species_list.size();
-	const int ne = (*sim)->grid->nu_grid_axis.size();
+	const size_t nr = (*sim)->grid->rho.size();
+	const size_t ns = (*sim)->species_list.size();
+	const size_t ne = (*sim)->grid->nu_grid_axis.size();
 	const double fsmooth = *dt*GR1D_recalc_every/time_gf / smoothing_timescale;
 	PRINT_ASSERT(fsmooth,<=,1.0);
 	PRINT_ASSERT(fsmooth,>=,0.0);
@@ -128,152 +251,106 @@ void calculate_mc_closure_(
 	omp_set_num_threads(1);
 #endif
 
-	// create array for new values so they can be smoothed
-	double new_Prr_E[nr][ns][ne];
-	double new_Ptt_E[nr][ns][ne];
-	double new_Wrrr[nr][ns][ne];
-	double new_Wttr[nr][ns][ne];
-
 	// set the GR1D quantities
-	const int indlast = ne*ns*nr_GR1D;
-	for(int s=0; s<ns; s++){
+	for(size_t s=0; s<ns; s++){
 		GR1DSpectrumArray* tmpSpectrum = static_cast<GR1DSpectrumArray*>((*sim)->grid->distribution[s]);
-//#pragma omp parallel for
-		for(int z_ind=0; z_ind<nr; z_ind++){
+        #pragma omp parallel for
+		for(size_t z_ind=0; z_ind<nr; z_ind++){
 			size_t dir_ind[2];
 			dir_ind[0] = z_ind;
 			int indr = z_ind+nghost_GR1D;
 			const double X = metricX[indr];
-			const double vr = v1[indr];
-			const double V = vr*X;
-			const double WLorentz = 1./sqrt(1.-V*V);
-			const double WX = WLorentz*X;
+			const double lapse = alp[indr];
+			const double vr = v1[indr]/pc::c;
 
-			//int inds = indr + s*nr_GR1D;
-			for(int ie=0; ie<ne; ie++){
+			for(size_t ie=0; ie<ne; ie++){
 				dir_ind[1] = ie;
-				int inde = s + ie*ns*nr_GR1D;
-				int indexE    = inde + 0*indlast;
-				int indexFr   = inde + 1*indlast;
+				int ind_sre = indr + s*nr_GR1D + ie*ns*nr_GR1D;
+				int indexE      = ind_sre + 0*ne*ns*nr_GR1D;
+				int indexFr     = ind_sre + 1*ne*ns*nr_GR1D;
+				int indexPrr    = ind_sre + 2*ne*ns*nr_GR1D;
+				int indexPtt    = ind_sre + 0*ne*ns*nr_GR1D;
+				int indexWrrr   = ind_sre + 1*ne*ns*nr_GR1D;
+				int indexWrtt   = ind_sre + 2*ne*ns*nr_GR1D;
+				int indexChi    = ind_sre + 3*ne*ns*nr_GR1D;
+				int indexPrr_pm = ind_sre + 2*ne*ns*nr_GR1D + 0*ne*ns*nr_GR1D*3;
 
 				// load the old lab-frame moments
-				double E = q_M1[indexE];
-				double Fr = q_M1[indexFr]*E;
+				Moments lab;
+				lab.E = q_M1[indexE];
+				lab.Fr = q_M1[indexFr];
+				lab.Prr = q_M1_2mom[indexPrr] * lab.E;
+				lab.Ptt  = q_M1_extra_2mom[indexPtt] * lab.E;
+				lab.Wrrr = q_M1_extra_2mom[indexWrrr];
+				lab.Wrtt = q_M1_extra_2mom[indexWrtt];
 
-				if(false){//q_M1[indexFr] > 1e-3 /*extract_MC[z_ind][s][ie]*/){
+				const double crit_fluxfac = 1e-2;
 
-					// load up new arrays (tetrad-frame moments)
-					size_t index = tmpSpectrum->data.direct_index(dir_ind);
-					Tuple<double,6> tmp = tmpSpectrum->data[index];
-					double J = tmp[0];
-					double Hr = tmp[1];
-					double Lrr = tmp[2];
-					double Ltt = tmp[3];
-					double Nrrr = tmp[4];
-					double Nttr = tmp[5];
-
-					// get the parameters that make the GR1D and MC moments match
-					double denom = (J - Lrr*V*V)*X;
-					double alpha = ( E*X*(1.+V)*(1.*V) - 2.*Fr*V     ) / (   denom);
-					double beta  = ( Fr*(J+Lrr*V*V)/X  - E*V*(J+Lrr) ) / (Hr*denom);
-					J *= alpha;
-					Hr *= beta;
-					Lrr *= alpha;
-					Ltt *= alpha;
-					Nrrr *= beta;
-					Nttr *= beta;
-
-					// set the lab-frame quantities
-					double Prr = WLorentz*WLorentz*X*X * (Lrr + V*(2.*Hr + J*V));
-					double Ptt = Ltt;
-					double Wrrr = WX*WX*WX * (Nrrr + V*(3.*Lrr + V*(3.*Hr + J*V)));
-					double Wrtt = WX * (Nttr + V*Ltt);
-
-					// check for consistency
-					PRINT_ASSERT( abs( E  - WLorentz*WLorentz*( J + V*(2.*Hr+Lrr*V) ) ) / abs(E) ,<, 1e-6 );
-					PRINT_ASSERT( abs( Fr - WLorentz*WLorentz*X*( Hr*(1.+V*V) + (J+Lrr)*V ) ) ,<, 1e-6 );
-
-					new_Prr_E[z_ind][s][ie] = Prr / E;
-					new_Ptt_E[z_ind][s][ie] = Ptt / E;
-					new_Wrrr[z_ind][s][ie] = Wrrr;
-					new_Wttr[z_ind][s][ie] = Wrtt;
+				// load up tetrad-frame moments (just make zero if not much stuff around)
+				Moments tet;
+				if(lab.E < 1e-98){
+					tet.E = tet.Fr = tet.Prr = tet.Ptt = tet.Wrrr = tet.Wrtt = 0;
 				}
-			}
-		}
-	}
+				else{
+					if(q_M1[indexFr] > crit_fluxfac){
+						size_t index = tmpSpectrum->data.direct_index(dir_ind);
+						Tuple<double,6> tmp = tmpSpectrum->data[index];
+						tet.E    = tmp[0];
+						tet.Fr   = tmp[1];
+						tet.Prr  = tmp[2];
+						tet.Ptt  = tmp[3];
+						tet.Wrrr = tmp[4];
+						tet.Wrtt = tmp[5];
+					}
+					else tet = toTet(lab, vr, X);
+					PRINT_ASSERT(tet.E,>,0);
+					PRINT_ASSERT(tet.Prr,>=,0);
+					PRINT_ASSERT(tet.Ptt,>=,0);
+					PRINT_ASSERT(abs(tet.Fr),<=,tet.E);
+					PRINT_ASSERT(abs(tet.E  - (tet.Prr +2.*tet.Ptt ))/tet.E ,<, tolerance);
+					PRINT_ASSERT(abs(tet.Fr - (tet.Wrrr+2.*tet.Wrtt))/tet.E ,<, tolerance);
+				}
 
-	for(int z_ind=0; z_ind<nr; z_ind++){
-		int indr = z_ind+nghost_GR1D;
-		const double X = metricX[indr];
-		for(int s=0; s<ns; s++){
-			int inds = indr + s*nr_GR1D;
-			for(int ie=0; ie<ne; ie++){
-				int inde = inds + ie*ns*nr_GR1D;
-				//int indexE    = inde + 0*indlast;
-				int indexFr   = inde + 1*indlast;
-				int indexPrr  = inde + 2*indlast;
-				int indexPtt  = inde + 0*indlast;
-				int indexWrrr = inde + 1*indlast;
-				int indexWttr = inde + 2*indlast;
-				int indexChi  = inde + 3*indlast;
-				int indexPrr_pm = inde + 2*indlast + 0*ne*ns*nr_GR1D*3;
-				//int indexChi_pm = inde + 0*indlast + 0*ne*ns*nr_GR1D*1;
+				// get tetrad-frame closure relations
+				double Ptt_E_tetnew   = (tet.E ==0 ? 1./3. : tet.Ptt  / tet.E);
+				double Wrtt_Fr_tetnew = (tet.Fr==0 ? 1./3. : tet.Wrtt / tet.Fr);
+				PRINT_ASSERT(Ptt_E_tetnew ,<=, 0.5);
+				PRINT_ASSERT(Ptt_E_tetnew ,>=, 0.0);
+				PRINT_ASSERT(Wrtt_Fr_tetnew ,<=, 0.5);
+				PRINT_ASSERT(Wrtt_Fr_tetnew ,>=, 0.0);
+
+				// temporal smoothing of closure relations
+				Ptt_E_tet[s][z_ind][ie]   = fsmooth*Ptt_E_tetnew   + (1.-fsmooth)*Ptt_E_tet[s][z_ind][ie];
+				Wrtt_Fr_tet[s][z_ind][ie] = fsmooth*Wrtt_Fr_tetnew + (1.-fsmooth)*Wrtt_Fr_tet[s][z_ind][ie];
+				PRINT_ASSERT(Ptt_E_tet[s][z_ind][ie] ,<=, 0.5);
+				PRINT_ASSERT(Ptt_E_tet[s][z_ind][ie] ,>=, 0.0);
+				PRINT_ASSERT(Wrtt_Fr_tet[s][z_ind][ie] ,<=, 0.5);
+				PRINT_ASSERT(Wrtt_Fr_tet[s][z_ind][ie] ,>=, 0.0);
+
+				// get the closed lab state
+				applyClosure(tet, lab, Ptt_E_tet[s][z_ind][ie], Wrtt_Fr_tet[s][z_ind][ie], vr, X);
 
 				// need to set plus/minus chi - used for estimating the characteristic speeds
 				// There is no way to compute, e.g., dP/dE to be able to compute characteristics
 				// using Monte Carlo.
 				q_M1_extra[indexChi] = q_M1_extra_2mom[indexChi];
 
-				// set closure to GR1D value on first iteration and where not using Sedonu
-				if( iter==0 or q_M1[indexFr] <= 1e-2 /*(not extract_MC[z_ind][s][ie])*/ ){
-					q_M1[indexPrr]        = q_M1_2mom[indexPrr];
-					q_M1_extra[indexPtt]  = q_M1_extra_2mom[indexPtt];
-					q_M1p[indexPrr_pm]    = q_M1p_2mom[indexPrr_pm];
-					q_M1m[indexPrr_pm]    = q_M1m_2mom[indexPrr_pm];
-					q_M1_extra[indexWrrr] = q_M1_extra_2mom[indexWrrr];
-					q_M1_extra[indexWttr] = q_M1_extra_2mom[indexWttr];
-				}
-
-				// Set Monte Carlo closure
-				if( q_M1[indexFr] > 1e-2 /*extract_MC[z_ind][s][ie]*/){
-					// spatial smoothing
-					double Prr_E = new_Prr_E[z_ind][s][ie];
-					double Ptt_E = new_Ptt_E[z_ind][s][ie];
-					double Wrrr  =  new_Wrrr[z_ind][s][ie];
-					double Wttr  =  new_Wttr[z_ind][s][ie];
-
-					// temporal smoothing
-					Prr_E = fsmooth*Prr_E + (1.-fsmooth)*q_M1[indexPrr];
-					Ptt_E = fsmooth*Ptt_E + (1.-fsmooth)*q_M1_extra[indexPtt];
-					Wrrr  = fsmooth*Wrrr  + (1.-fsmooth)*q_M1_extra[indexWrrr];
-					Wttr  = fsmooth*Wttr  + (1.-fsmooth)*q_M1_extra[indexWttr];
-
-					// write out the variables
-					// do flat interpolation to plus/minus
-					// lower order than for other moments, but I don't want to
-					// re-implement the TVD and PPM reconstruction algorithms
-					q_M1[indexPrr]       = Prr_E;
-					q_M1_extra[indexPtt] = Ptt_E;
-					q_M1p[indexPrr_pm]   = Prr_E;
-					q_M1m[indexPrr_pm]   = Prr_E;
-					q_M1_extra[indexWrrr]  = Wrrr;
-					q_M1_extra[indexWttr]  = Wttr;
-
-					// check that the results are reasonable
-					PRINT_ASSERT(q_M1[indexPrr]         ,>=, 0);
-					PRINT_ASSERT(q_M1[indexPrr]-1       ,<=, X*X-1);
-					PRINT_ASSERT(q_M1_extra[indexPtt]   ,>=, 0);
-					PRINT_ASSERT(q_M1_extra[indexPtt]-1 ,<=, 0);
-					PRINT_ASSERT(q_M1p[indexPrr_pm]     ,>=, 0);
-					PRINT_ASSERT(q_M1p[indexPrr_pm]-1   ,<=, X*X-1);
-					PRINT_ASSERT(q_M1m[indexPrr_pm]     ,>=, 0);
-					PRINT_ASSERT(q_M1m[indexPrr_pm]-1   ,<=, X*X-1);
-
-				}
-
+				// write out the variables
+				// do flat interpolation to plus/minus
+				// lower order than for other moments, but I don't want to
+				// re-implement the TVD and PPM reconstruction algorithms
+				q_M1[indexPrr]        = lab.Prr / lab.E;
+				q_M1_extra[indexPtt]  = lab.Ptt / lab.E;
+				q_M1_extra[indexWrrr] = lab.Wrrr;
+				q_M1_extra[indexWrtt] = lab.Wrtt;
+				q_M1p[indexPrr_pm]    = lab.Prr / lab.E;
+				q_M1m[indexPrr_pm]    = lab.Prr / lab.E;
 
 			} // energy
 		} // species
 	} // z_ind
+
+
+
 	cout.flush();
 }
