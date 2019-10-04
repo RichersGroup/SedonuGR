@@ -83,7 +83,6 @@ protected:
 	int    equilibrium_itmax;
 	double equilibrium_tolerance;
 	void   normalize_radiative_quantities();
-	double brent_method(const int zone_index, double (*eq_function)(double, void*), const double min, const double max);
 
 	// simulation parameters
 	int    do_annihilation;
