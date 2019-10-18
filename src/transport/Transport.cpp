@@ -226,7 +226,7 @@ void Transport::init(Lua* lua)
 	else if(grid_type == "Grid1DSphere"       ) grid = new Grid1DSphere;
 	else if(grid_type == "Grid2DSphere"       ) grid = new Grid2DSphere;
 	else if(grid_type == "Grid3DCart"         ) grid = new Grid3DCart;
-	else if(grid_type == "GridGR1D"           ) cout << "#   Using GridGR1D" << endl; // already set up in GR1Dinterface.cpp
+	else if(grid_type == "GridGR1D"           ) {if(verbose) cout << "#   Using GridGR1D" << endl;} // already set up in GR1Dinterface.cpp
 	else{
 		if(verbose) std::cout << "# ERROR: the requested grid type is not implemented." << std::endl;
 		exit(3);}

@@ -99,6 +99,10 @@ void GridGR1D::initialize_grid(const double* rarray, const int n_zones, const in
 	H_vis.set_axes(xAxes);
 	munue.set_axes(xAxes);
 
-	cout << "#   Sedonu grid has "<< rho.size() << " zones." << endl;
-	cout << "#   Sedonu outer boundary is at "<< xAxes[0].top[n_zones-1] << " cm" << endl;
+	int MPI_myID;
+	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID  );
+	if(MPI_myID==0){
+		cout << "#   Sedonu grid has "<< rho.size() << " zones." << endl;
+		cout << "#   Sedonu outer boundary is at "<< xAxes[0].top[n_zones-1] << " cm" << endl;
+	}
 }
