@@ -14,7 +14,7 @@ double smoothing_timescale;
 int GR1D_recalc_every;
 const double time_gf = 2.03001708e5;
 double GR1D_tau_crit;
-vector<vector<vector<double> > > Ptt_E_tet, Wrtt_Fr_tet;
+ScalarMultiDArray<double, 3> Ptt_E_tet, Wrtt_Fr_tet;
 double tolerance = 1e-6;
 
 struct Moments{
@@ -174,22 +174,20 @@ void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const i
 	}
 
 	// resize arrays to be used for time-averaging
-	const size_t nr = (*sim)->grid->rho.size();
 	const size_t ns = (*sim)->species_list.size();
+	const size_t nr = (*sim)->grid->rho.size();
 	const size_t ne = (*sim)->grid->nu_grid_axis.size();
-	Ptt_E_tet.resize(ns);
-	Wrtt_Fr_tet.resize(ns);
-	for(size_t s=0; s<ns; s++){
-		Ptt_E_tet[s].resize(nr);
-		Wrtt_Fr_tet[s].resize(nr);
-		for(size_t ir=0; ir<nr; ir++){
-			Ptt_E_tet[s][ir].resize(ne);
-			Wrtt_Fr_tet[s][ir].resize(ne);
-			for(size_t ie=0; ie<ne; ie++){
-				Ptt_E_tet[s][ir][ie] = 1./3.;//Ptt_E_tetnew;
-				Wrtt_Fr_tet[s][ir][ie] = 1./3.;//Wrtt_Fr_tetnew;
-			}
-		}
+	vector<Axis> axes(3);
+	axes[0] = Axis(0, ns, ns);
+	axes[1] = Axis(0, nr, nr);
+	axes[2] = Axis(0, ne, ne);
+	Ptt_E_tet.set_axes(axes);
+	Wrtt_Fr_tet.set_axes(axes);
+
+	// set initial value to 1/3
+	for(size_t i=0; i<ns*nr*ne; i++){
+	  Ptt_E_tet[i] = 1./3.;
+	  Wrtt_Fr_tet[i] = 1./3.;
 	}
 
 	//omp_set_dynamic(true);
@@ -320,15 +318,17 @@ void calculate_mc_closure_(
 				PRINT_ASSERT(Wrtt_Fr_tetnew ,>=, 0.0);
 
 				// temporal smoothing of closure relations
-				Ptt_E_tet[s][z_ind][ie]   = fsmooth*Ptt_E_tetnew   + (1.-fsmooth)*Ptt_E_tet[s][z_ind][ie];
-				Wrtt_Fr_tet[s][z_ind][ie] = fsmooth*Wrtt_Fr_tetnew + (1.-fsmooth)*Wrtt_Fr_tet[s][z_ind][ie];
-				PRINT_ASSERT(Ptt_E_tet[s][z_ind][ie] ,<=, 0.5);
-				PRINT_ASSERT(Ptt_E_tet[s][z_ind][ie] ,>=, 0.0);
-				PRINT_ASSERT(Wrtt_Fr_tet[s][z_ind][ie] ,<=, 0.5);
-				PRINT_ASSERT(Wrtt_Fr_tet[s][z_ind][ie] ,>=, 0.0);
+				size_t indices[3] = {s, z_ind, ie};
+				size_t index = Ptt_E_tet.direct_index(indices);
+				Ptt_E_tet[index]   = fsmooth*Ptt_E_tetnew   + (1.-fsmooth)*Ptt_E_tet[index];
+				Wrtt_Fr_tet[index] = fsmooth*Wrtt_Fr_tetnew + (1.-fsmooth)*Wrtt_Fr_tet[index];
+				PRINT_ASSERT(Ptt_E_tet[index] ,<=, 0.5);
+				PRINT_ASSERT(Ptt_E_tet[index] ,>=, 0.0);
+				PRINT_ASSERT(Wrtt_Fr_tet[index] ,<=, 0.5);
+				PRINT_ASSERT(Wrtt_Fr_tet[index] ,>=, 0.0);
 
 				// get the closed lab state
-				applyClosure(tet, lab, Ptt_E_tet[s][z_ind][ie], Wrtt_Fr_tet[s][z_ind][ie], vr, X);
+				applyClosure(tet, lab, Ptt_E_tet[index], Wrtt_Fr_tet[index], vr, X);
 
 				// need to set plus/minus chi - used for estimating the characteristic speeds
 				// There is no way to compute, e.g., dP/dE to be able to compute characteristics
@@ -353,4 +353,18 @@ void calculate_mc_closure_(
 
 
 	cout.flush();
+}
+
+extern "C"
+void write_sedonu_closure_(const hid_t* file_id){
+  H5::H5File file(*file_id);
+  Ptt_E_tet.write_HDF5(file, "SedonuGR_Ptt_E_tet");
+  Wrtt_Fr_tet.write_HDF5(file, "SedonuGR_Wrtt_Fr_tet");
+}
+
+extern "C"
+void read_sedonu_closure_(const hid_t* file_id){
+  H5::H5File file(*file_id);
+  Ptt_E_tet.read_HDF5(file, "SedonuGR_Ptt_E_tet", Ptt_E_tet.axes);
+  Wrtt_Fr_tet.read_HDF5(file, "SedonuGR_Wrtt_Fr_tet", Wrtt_Fr_tet.axes);
 }
