@@ -171,9 +171,9 @@ void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 		double ds_com_new = dlambda*eh->kup_tet[3];
 		double tau1 = 1./3. * (eh->ds_com*old_absopac + ds_com_new*eh->absopac);
 		double tau2 = 1./6. * (eh->ds_com*eh->absopac + ds_com_new*old_absopac);
-		double tau = tau1 + tau2;
+		tau = tau1 + tau2;
 		eh->N *= exp(-tau);
-		double dN = old_N - eh->N;
+		dN = old_N - eh->N;
 		window(eh);
 
 		// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
