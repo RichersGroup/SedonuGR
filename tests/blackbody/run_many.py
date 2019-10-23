@@ -71,7 +71,7 @@ dlogrho = (max_logrho - min_logrho) / (n_rho - 1.0)
 dlogT   = (max_logT   - min_logT  ) / (n_T   - 1.0)
 dye     = (max_ye     - min_ye    ) / (n_ye  - 1.0)
 
-string = "OMP_NUM_THREADS=16 mpirun -np 1 ../../exe/blackbody_test param.lua " + \
+string = "mpirun -np 1 ../../exe/blackbody_test param.lua " + \
           str(min_logrho) + " " + str(max_logrho) + " " + str(rho0) + " " + str(n_rho) + " " + \
           str(min_logT  ) + " " + str(max_logT  ) + " " + str(T0  ) + " " + str(n_T  ) + " " + \
           str(min_ye    ) + " " + str(max_ye    ) + " " + str(ye0 ) + " " + str(n_ye ) + " " + \
