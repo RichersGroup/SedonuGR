@@ -200,12 +200,8 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<do
 		P = min(1.0,P);
 	} while(rangen.uniform() > P);
 
-	// if scattering to same group don't change energy. Otherwise, distribute uniformily
-	double outnu;
-	if(igout != eh->dir_ind[NDIMS])
-		outnu = rangen.uniform(grid->nu_grid_axis.bottom(igout), grid->nu_grid_axis.top[igout]);
-	else
-		outnu = eh->grid_coords[NDIMS];
+	// Scatter to the center of the new bin.
+	double outnu = grid->nu_grid_axis.mid[igout];
 
 	// interpolate the kernel anisotropy
 	double hyperloc[NDIMS+2];
