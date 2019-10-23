@@ -98,6 +98,10 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 	double d_randomwalk = INFINITY;
 	if(do_randomwalk && eh->scatopac*eh->ds_com>randomwalk_min_optical_depth){ // coarse check
 		d_randomwalk = grid->d_randomwalk(*eh);
+		if(eh->absopac > 0){
+			double R_abs_limited = sqrt(1. / (3.*eh->scatopac * eh->absopac * randomwalk_absorption_depth_limit));
+			d_randomwalk = min(d_randomwalk, R_abs_limited);
+		}
 		if(d_randomwalk == INFINITY) d_randomwalk = 1.1*randomwalk_min_optical_depth / eh->scatopac;
 		PRINT_ASSERT(d_randomwalk,>=,0);
 		if(eh->scatopac * d_randomwalk > randomwalk_min_optical_depth){ // real check
@@ -123,7 +127,7 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 	PRINT_ASSERT(eh->ds_com, <, INFINITY);
 }
 
-void Transport::move(EinsteinHelper *eh) const{
+void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 	PRINT_ASSERT(eh->ds_com,>=,0);
 	PRINT_ASSERT(eh->N,>,0);
 	PRINT_ASSERT(abs(eh->g.dot<4>(eh->kup,eh->kup)) / (eh->kup[3]*eh->kup[3]), <=, TINY);
@@ -158,31 +162,38 @@ void Transport::move(EinsteinHelper *eh) const{
 	if(eh->fate==moving)
 		update_eh_k_opac(eh);
 
-	// appropriately reduce the particle's energy from absorption
-	// assumes kup_tet and absopac vary linearly along the trajectory
-	double ds_com_new = dlambda*eh->kup_tet[3];
-	double tau1 = 1./3. * (eh->ds_com*old_absopac + ds_com_new*eh->absopac);
-	double tau2 = 1./6. * (eh->ds_com*eh->absopac + ds_com_new*old_absopac);
-	double tau = tau1 + tau2;
-	eh->N *= exp(-tau);
-	double dN = old_N - eh->N;
-	window(eh);
+
+	double tau=0, dN=0;
+	if(do_absorption){
+
+		// appropriately reduce the particle's energy from absorption
+		// assumes kup_tet and absopac vary linearly along the trajectory
+		double ds_com_new = dlambda*eh->kup_tet[3];
+		double tau1 = 1./3. * (eh->ds_com*old_absopac + ds_com_new*eh->absopac);
+		double tau2 = 1./6. * (eh->ds_com*eh->absopac + ds_com_new*old_absopac);
+		double tau = tau1 + tau2;
+		eh->N *= exp(-tau);
+		double dN = old_N - eh->N;
+		window(eh);
+
+		// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
+		for(size_t i=0; i<4; i++){
+			grid->fourforce_abs[old_z_ind][i] += dN * old_kup_tet[i];
+		}
+
+		// store absorbed lepton number (same in both frames, except for the
+		// factor of this_d which is divided out later
+		if(species_list[eh->s]->lepton_number != 0){
+			grid->l_abs[old_z_ind] += dN * species_list[eh->s]->lepton_number;
+		}
+	}
 
 	// tally in contribution to zone's distribution function (lab frame)
 	// use old coordinates/directions to avoid problems with boundaries
 	double avg_N = (tau>TINY ? dN/tau : old_N);
 	grid->distribution[eh->s]->count(old_kup_tet, old_dir_ind, avg_N*dlambda*old_kup_tet[3]*old_kup_tet[3]);
 
-	// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
-	for(size_t i=0; i<4; i++){
-		grid->fourforce_abs[old_z_ind][i] += dN * old_kup_tet[i];
-	}
 
-	// store absorbed lepton number (same in both frames, except for the
-	// factor of this_d which is divided out later
-	if(species_list[eh->s]->lepton_number != 0){
-		grid->l_abs[old_z_ind] += dN * species_list[eh->s]->lepton_number;
-	}
 }
 
 

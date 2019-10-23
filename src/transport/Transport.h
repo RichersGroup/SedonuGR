@@ -70,7 +70,7 @@ protected:
 	// propagate the particles
 	void propagate_particles();
 	void propagate(EinsteinHelper* eh);
-	void move(EinsteinHelper *eh) const;
+	void move(EinsteinHelper *eh, bool do_absorption=true) const;
 	void random_walk(EinsteinHelper *eh) const;
 	void init_randomwalk_cdf(Lua* lua);
 	void window(EinsteinHelper *eh) const;
@@ -92,6 +92,7 @@ protected:
 	Axis randomwalk_xaxis;
 	int do_randomwalk;
 	double randomwalk_min_optical_depth;
+	double randomwalk_absorption_depth_limit;
 	double randomwalk_max_x;
 	int randomwalk_sumN;
 

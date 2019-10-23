@@ -83,6 +83,7 @@ Transport::Transport(){
 	particle_rouletted_energy = NaN;
 	particle_escape_energy = NaN;
 	randomwalk_min_optical_depth = NaN;
+	randomwalk_absorption_depth_limit = NaN;
 	randomwalk_max_x = NaN;
 	randomwalk_sumN = -MAXLIM;
 	use_scattering_kernels = -MAXLIM;
@@ -136,6 +137,7 @@ void Transport::init(Lua* lua)
 	do_randomwalk = lua->scalar<int>("do_randomwalk");
 	if(do_randomwalk){
 		randomwalk_min_optical_depth = lua->scalar<double>("randomwalk_min_optical_depth");
+		randomwalk_absorption_depth_limit = lua->scalar<double>("randomwalk_absorption_depth_limit");
 		init_randomwalk_cdf(lua);
 	}
 	min_packet_weight = lua->scalar<double>("min_packet_weight");

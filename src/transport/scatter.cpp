@@ -125,7 +125,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	for(size_t i=0; i<NDIMS+1; i++) dir_ind_old[i] = eh->dir_ind[i];
 
 	const double Rcom = eh->ds_com;
-	const double D = eh->scatopac / (3.*pc::c);
+	const double D = pc::c / (3.*eh->scatopac);
 
 	// sample the distance travelled during the random walk
 	double path_length_com = pc::c * Rcom*Rcom / D * randomwalk_diffusion_time.invert(rangen.uniform(),&randomwalk_xaxis,-1);
@@ -151,7 +151,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	eh->set_kup_tet(kup_tet);
 	eh->ds_com = Rcom;
 	eh->N = Naverage;
-	move(eh);
+	move(eh,false);
 	eh->N = Nfinal;
 
 
