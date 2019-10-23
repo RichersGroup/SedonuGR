@@ -42,7 +42,7 @@ error2 = (edens-edens_theory)**2
 std_dev = np.sqrt(np.sum(error2)/len(error2) - (np.sum(error)/len(error))**2)
 abserror = np.sum(np.abs(error))/len(error)
 print("Energy density: error="+str(abserror)+" stddev="+str(std_dev))
-if abserror>2.*std_dev:
+if abserror>3.*std_dev:
     isError = True
 
 e_abs = np.array(f["four-force[abs](erg|ccm|s,tet)"])[:,3]
@@ -58,7 +58,7 @@ error2 = dEdt**2
 std_dev = np.sqrt(np.sum(error2)/len(error2) - (np.sum(error)/len(error))**2)
 abserror = np.sum(np.abs(error))/len(error)
 print("dEdt: error="+str(abserror)+" stddev="+str(std_dev))
-if abserror>2.*std_dev:
+if abserror>3.*std_dev:
     isError = True
 
 l_abs = np.array(f["l_abs(1|s|ccm,tet)"])
@@ -74,7 +74,7 @@ error2 = dNdt**2
 std_dev = np.sqrt(np.sum(error2)/len(error2) - (np.sum(error)/len(error))**2)
 abserror = np.sum(np.abs(error))/len(error)
 print("dNdt: error="+str(abserror)+" stddev="+str(std_dev))
-if abserror>2.*std_dev:
+if abserror>3.*std_dev:
     isError = True
 
 for ax in axes:
