@@ -74,9 +74,7 @@ Transport::Transport(){
 	grid = NULL;
 	r_core = NaN;
 	n_emit_core_per_bin = -MAXLIM;
-	do_visc = -MAXLIM;
 	n_emit_zones_per_bin = -MAXLIM;
-	visc_specific_heat_rate = NaN;
 	n_subcycles = -MAXLIM;
 	write_zones_every = -MAXLIM;
 	particle_core_abs_energy = NaN;
@@ -114,8 +112,6 @@ void Transport::init(Lua* lua)
 	}
 
 	// figure out what emission models we're using
-	do_visc      = lua->scalar<int>("do_visc");
-	if(do_visc) visc_specific_heat_rate = lua->scalar<double>("visc_specific_heat_rate");
 	n_subcycles = lua->scalar<int>("n_subcycles");
 	PRINT_ASSERT(n_subcycles,>=,1);
 	n_emit_zones_per_bin = lua->scalar<int>("n_emit_therm_per_bin");
@@ -480,12 +476,10 @@ void Transport::calculate_annihilation(){
 //----------------------------------------------------------------------------
 void Transport::normalize_radiative_quantities(){
 	if(verbose) cout << "# Normalizing Radiative Quantities" << endl;
-	double net_visc_heating = 0;
-	double net_neut_heating = 0;
 
 	// normalize zone quantities
 	double inv_multiplier = 1.0/(double)n_subcycles;
-    #pragma omp parallel for reduction(+:net_visc_heating,net_neut_heating)
+    #pragma omp parallel for
 	for(size_t z_ind=0;z_ind<grid->rho.size();z_ind++)
 	{
 		double inv_mult_four_vol = inv_multiplier / grid->zone_4volume(z_ind); // Lorentz invariant - same in lab and comoving frames. Assume lab_dt=1.0
@@ -501,12 +495,6 @@ void Transport::normalize_radiative_quantities(){
 		grid->rho.indices(z_ind,dir_ind);
 		for(size_t s=0; s<species_list.size(); s++){
 		  grid->distribution[s]->rescale_spatial_point(dir_ind, inv_mult_four_vol * pc::inv_c);  // erg*dist --> erg/ccm
-		}
-
-		// tally heat absorbed from viscosity and neutrinos
-		if(do_visc){
-			net_visc_heating += zone_comoving_visc_heat_rate(z_ind);      // erg/s
-			net_neut_heating += grid->fourforce_abs[z_ind][3] * grid->zone_4volume(z_ind);
 		}
 	}
 
@@ -538,11 +526,6 @@ void Transport::normalize_radiative_quantities(){
 		cout << "#     --> " << particle_rouletted_energy << " ERG/S TOTAL ROULETTED PARTICLE ENERGY " << endl; // assume lab_dt=1.0
 		cout << "#     --> " << particle_core_abs_energy << " ERG/S TOTAL PARTICLE ENERGY ABSORBED BY CORE" << endl; // assume lab_dt=1.0
 		cout << "#     --> " << particle_escape_energy << " ERG/S TOTAL ESCAPED PARTICLE ENERGY " << endl; // assume lab_dt=1.0
-
-		if(do_visc){
-			cout << "#   " << net_visc_heating << " erg/s H_visc (comoving sum)" << endl;
-			cout << "#   " << net_neut_heating << " erg/s H_abs (comoving sum)" << endl;
-		}
 
 		if(n_emit_core_per_bin>0){
 			cout << "#   { ";
@@ -611,13 +594,6 @@ void Transport::sum_to_proc0()
 		grid->spectrum[i].mpi_sum();
 		grid->distribution[i]->mpi_sum();
 	}
-}
-
-
-// rate at which viscosity energizes the fluid (erg/s)
-double Transport::zone_comoving_visc_heat_rate(const int z_ind) const{
-	if(visc_specific_heat_rate >= 0) return visc_specific_heat_rate * grid->zone_rest_mass(z_ind);
-	else                             return grid->H_vis[z_ind]    * grid->zone_rest_mass(z_ind);
 }
 
 string Transport::filename(const char* filebase, const int iw, const char* suffix){

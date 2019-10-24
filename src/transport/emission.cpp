@@ -93,7 +93,7 @@ void Transport::emit_inner_source_by_bin(){
 
 
 //--------------------------------------------------------------------------
-// emit particles due to viscous heating
+// emit particles
 //--------------------------------------------------------------------------
 void Transport::emit_zones_by_bin(){
 	int size_before = particles.size();

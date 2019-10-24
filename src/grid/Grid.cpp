@@ -105,11 +105,9 @@ void Grid::init(Lua* lua, Transport* insim)
 	double total_rest_mass = 0.0;
 	double total_KE        = 0.0;
 	double total_TE        = 0.0;
-	double total_hvis      = 0.0;
 	double Tbar            = 0.0;
 	double Yebar           = 0.0;
-	int do_visc = lua->scalar<int>("do_visc");
-    #pragma omp parallel for reduction(+:total_rest_mass,total_KE,total_TE,total_hvis,Tbar,Yebar)
+    #pragma omp parallel for reduction(+:total_rest_mass,total_KE,total_TE,Tbar,Yebar)
 	for(size_t z_ind=0;z_ind<rho.size();z_ind++){
 		// calculate cell rest mass
 		double rest_mass   = zone_rest_mass(z_ind);
@@ -125,7 +123,6 @@ void Grid::init(Lua* lua, Transport* insim)
 		Yebar           += Ye[z_ind] * rest_mass;
 		total_KE        += (zone_lorentz_factor(z_ind) - 1.0) * rest_mass * pc::c*pc::c;
 		total_TE        += rest_mass   / pc::m_n * pc::k * T[z_ind];
-		if(do_visc) total_hvis += H_vis[z_ind] * rho[z_ind] * zone_com_3volume(z_ind);
 	}
 
 	// write out useful info about the grid
@@ -135,7 +132,6 @@ void Grid::init(Lua* lua, Transport* insim)
 		cout << "#   <Ye> = " << Yebar/total_rest_mass << endl;
 		cout << "#   KE = " << total_KE << " erg" << endl;
 		cout << "#   TE = " << total_TE << " erg" << endl;
-		if(do_visc) cout << "#   hvis(nonrel) = " << total_hvis << " erg/s" << endl;
 	}
 
     // get the frequency grid
@@ -333,7 +329,6 @@ void Grid::write_zones(const int iw)
 	rho.write_HDF5(file,"rho(g|ccm,tet)");
 	T.write_HDF5(file,"T_gas(K,tet)");
 	Ye.write_HDF5(file,"Ye");
-	H_vis.write_HDF5(file,"H_vis(erg|s|g,tet)");
 	fourforce_abs.write_HDF5(file,"four-force[abs](erg|ccm|s,tet)");
 	fourforce_emit.write_HDF5(file,"four-force[emit](erg|ccm|s,tet)");
 	l_abs.write_HDF5(file,"l_abs(1|s|ccm,tet)");
@@ -365,7 +360,6 @@ void Grid::read_zones(string filename)
 	rho.read_HDF5(file,"rho(g|ccm,tet)",xAxes);
 	T.read_HDF5(file,"T_gas(K,tet)",xAxes);
 	Ye.read_HDF5(file,"Ye",xAxes);
-	H_vis.read_HDF5(file,"H_vis(erg|s|g,tet)",xAxes);
 	fourforce_abs.read_HDF5(file,"four-force[abs](erg|ccm|s,tet)",xAxes);
 	fourforce_emit.read_HDF5(file,"four-force[emit](erg|ccm|s,tet)",xAxes);
 	l_abs.read_HDF5(file,"l_abs(1|s|ccm,tet)",xAxes);

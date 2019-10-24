@@ -124,7 +124,6 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 	rho.set_axes(xAxes);
 	T.set_axes(xAxes);
 	Ye.set_axes(xAxes);
-	H_vis.set_axes(xAxes);
 	vr.set_axes(xAxes);
 	vtheta.set_axes(xAxes);
 	vphi.set_axes(xAxes);
@@ -285,7 +284,6 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	float angz[dims[0]][dims[1]][dims[2]][dims[3]]; // cm^2/s
 	float efrc[dims[0]][dims[1]][dims[2]][dims[3]]; //
 	float temp[dims[0]][dims[1]][dims[2]][dims[3]]; // K
-	float hvis[dims[0]][dims[1]][dims[2]][dims[3]]; // erg/g/s (viscous heating)
 	float gamn[dims[0]][dims[1]][dims[2]][dims[3]]; // 1/s     (net rate of change of Ye)
 	float ncfn[dims[0]][dims[1]][dims[2]][dims[3]]; // erg/g/s (net     charged-current neutrino heating-cooling)
 	float nprs[dims[0]][dims[1]][dims[2]][dims[3]]; // erg/g/s (net non-charged-current neutrino heating-cooling)
@@ -306,8 +304,6 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	dataset.read(&(efrc[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset = file.openDataSet("/temp");
 	dataset.read(&(temp[0][0][0][0]),H5::PredType::IEEE_F32LE);
-	dataset = file.openDataSet("/hvis");
-	dataset.read(&(hvis[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset = file.openDataSet("/gamn");
 	dataset.read(&(gamn[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset = file.openDataSet("/ncfn");
@@ -379,7 +375,6 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	rho.set_axes(xAxes);
 	T.set_axes(xAxes);
 	Ye.set_axes(xAxes);
-	H_vis.set_axes(xAxes);
 	vr.set_axes(xAxes);
 	vtheta.set_axes(xAxes);
 	vphi.set_axes(xAxes);
@@ -387,7 +382,6 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	//===============//
 	// fill the grid //
 	//===============//
-	int do_visc = lua->scalar<int>("do_visc");
 	int kb = 0;
 	const double gamma_max = 2.0;
 	const double speed_max = pc::c * sqrt(1.0 - 1.0/gamma_max);
@@ -410,7 +404,6 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 				rho[z_ind]               = dens[proc][kb][jb][ib];
 				T[z_ind]                 = temp[proc][kb][jb][ib];
 				Ye[z_ind]                = efrc[proc][kb][jb][ib];
-				if(do_visc) H_vis[z_ind] = hvis[proc][kb][jb][ib];
 				double tmp_vr            = velx[proc][kb][jb][ib];
 				double tmp_vtheta        = vely[proc][kb][jb][ib];
 				double tmp_vphi          = angz[proc][kb][jb][ib]/r[0]/sin(r[1]);
@@ -465,7 +458,6 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 		outf << setw(width) << "gamn(1/s)";
 		outf << setw(width) << "ncfn(erg/g/s)";
 		outf << setw(width) << "nprs(erg/g/s)";
-		outf << setw(width) << "hvis(erg/g/s)";
 		outf << setw(width) << "eint(erg/g)";
 		outf << setw(width) << endl;
 		for(size_t z_ind=0; z_ind<rho.size(); z_ind++){
@@ -482,7 +474,6 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 			outf << setw(width) << z_gamn[z_ind];
 			outf << setw(width) << z_ncfn[z_ind];
 			outf << setw(width) << z_nprs[z_ind];
-			outf << setw(width) << H_vis[z_ind];
 			outf << setw(width) << z_eint[z_ind];
 			outf << endl;
 		}

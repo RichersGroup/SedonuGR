@@ -251,7 +251,6 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	rho.set_axes(xAxes);
 	T.set_axes(xAxes);
 	Ye.set_axes(xAxes);
-	H_vis.set_axes(xAxes);
 	munue.set_axes(xAxes);
 	if(DO_GR){
 		betaup.set_axes(xAxes);

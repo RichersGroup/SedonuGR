@@ -138,10 +138,8 @@ public:
 
 	// items for zone emission
 	void scatter(EinsteinHelper *eh) const;
-	int do_visc;
 	int use_scattering_kernels;
 	int n_emit_zones_per_bin;
-	double visc_specific_heat_rate;
 
 	// how many times do we emit+propagate each timestep?
 	int n_subcycles;
@@ -179,10 +177,6 @@ public:
 	void write_rays(const int it);
 	static std::string filename(const char* filebase, const int iw, const char* suffix);
 	static double mean_mass(const double Ye);
-
-
-	// per-zone luminosity functions
-	double zone_comoving_visc_heat_rate(const int zone_index) const;
 };
 
 #endif

@@ -69,7 +69,6 @@ void GridGR1D::set_fluid(const double* rho_in, const double* T_in, const double*
 		X[z_ind]     =   X_in[z_ind+ghosts1];
 		lapse[z_ind] = alp_in[z_ind+ghosts1];
 
-		H_vis[z_ind] = 0;
 		PRINT_ASSERT(xAxes[0].top[z_ind],>,(z_ind==0 ? xAxes[0].min : xAxes[0].top[z_ind-1]));
 		PRINT_ASSERT(rho[z_ind],>=,0);
 		PRINT_ASSERT(T[z_ind],>=,0);
@@ -96,7 +95,6 @@ void GridGR1D::initialize_grid(const double* rarray, const int n_zones, const in
 	rho.set_axes(xAxes);
 	T.set_axes(xAxes);
 	Ye.set_axes(xAxes);
-	H_vis.set_axes(xAxes);
 	munue.set_axes(xAxes);
 
 	int MPI_myID;

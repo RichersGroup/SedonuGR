@@ -101,7 +101,6 @@ public:
 	ScalarMultiDArray<double,NDIMS> rho;       // density (g/cm^3)
 	ScalarMultiDArray<double,NDIMS> T;         // gas temperature (K)
 	ScalarMultiDArray<double,NDIMS> Ye;        // electron fraction
-	ScalarMultiDArray<double,NDIMS> H_vis;     // specific heating rate (erg/s/g)
 
 	MultiDArray<ATOMIC<double>,4,NDIMS> fourforce_abs, fourforce_emit;
 	MultiDArray<double,4,NDIMS> fourforce_annihil;

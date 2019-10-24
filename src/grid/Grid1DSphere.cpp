@@ -109,7 +109,6 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 	rho.set_axes(axes);
 	T.set_axes(axes);
 	Ye.set_axes(axes);
-	H_vis.set_axes(axes);
 	munue.set_axes(axes);
 
 	// write grid properties
@@ -185,7 +184,6 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 	vector<double> tmp_rho = vector<double>(n_zones,0);
 	vector<double> tmp_T = vector<double>(n_zones,0);
 	vector<double> tmp_Ye = vector<double>(n_zones,0);
-	vector<double> tmp_H_vis = vector<double>(n_zones,0);
 	vector<double> tmp_alpha = vector<double>(n_zones,0);
 	vector<double> tmp_X = vector<double>(n_zones,0);
 	vector<double> tmp_vr = vector<double>(n_zones,0);
@@ -197,7 +195,6 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 		infile >> tmp_rho[z_ind];
 		infile >> tmp_T[z_ind];
 		infile >> tmp_Ye[z_ind];
-		tmp_H_vis[z_ind] = 0;
 		infile >> tmp_vr[z_ind];
 		infile >> tmp_alpha[z_ind];
 		infile >> tmp_X[z_ind];
@@ -220,7 +217,6 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 	rho.set_axes(axes);
 	T.set_axes(axes);
 	Ye.set_axes(axes);
-	H_vis.set_axes(axes);
 	munue.set_axes(axes);
 
 	for(size_t z_ind=0; z_ind<vr.size(); z_ind++){
@@ -230,7 +226,6 @@ void Grid1DSphere::read_custom_model(Lua* lua){
 		rho[z_ind] = tmp_rho[z_ind];
 		T[z_ind] = tmp_T[z_ind];
 		Ye[z_ind] = tmp_Ye[z_ind];
-		H_vis[z_ind] = tmp_H_vis[z_ind];
 	}
 
 	// set the christoffel symbol coefficients
