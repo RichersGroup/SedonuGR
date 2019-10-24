@@ -54,7 +54,7 @@ void Neutrino_NuLib::myInit(Lua* /*lua*/)
 void Neutrino_NuLib::set_eas(const size_t z_ind, Grid* grid) const
 {
 	size_t ngroups = grid->nu_grid_axis.size();
-	size_t dir_ind[NDIMS+2];
+	size_t dir_ind[NDIMS+1];
 	grid->rho.indices(z_ind,dir_ind);
 
 	vector<double> tmp_absopac(ngroups), tmp_scatopac(ngroups);
@@ -73,9 +73,7 @@ void Neutrino_NuLib::set_eas(const size_t z_ind, Grid* grid) const
 		if(grid->scattering_delta[ID].size()>0){
 			for(size_t igout=0; igout<ngroups; igout++){
 				grid->partial_scat_opac[ID][igout][global_index1] = tmp_partial_opac[igin][igout];
-				dir_ind[NDIMS+1] = igout;
-				size_t global_index2 = grid->scattering_delta[ID].direct_index(dir_ind);
-				grid->scattering_delta[ID][global_index2] = tmp_delta[igin][igout];
+				grid->scattering_delta[ID][igout][global_index1] = tmp_delta[igin][igout];
 			}
 		}
 	}

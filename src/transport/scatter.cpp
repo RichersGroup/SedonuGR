@@ -204,17 +204,7 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<do
 	double outnu = grid->nu_grid_axis.mid[igout];
 
 	// interpolate the kernel anisotropy
-	double hyperloc[NDIMS+2];
-	size_t dir_ind[NDIMS+2]; 
-	for(size_t i=0; i<=NDIMS; i++){
-			hyperloc[i] = eh->grid_coords[i];
-			dir_ind[i] = eh->dir_ind[i];
-	}
-	dir_ind[NDIMS+1] = igout;
-	hyperloc[NDIMS+1] = outnu;
-	InterpolationCube<NDIMS+2> icube_kernel;
-	grid->scattering_delta[eh->s].set_InterpolationCube(&icube_kernel,hyperloc,dir_ind);
-	double delta = grid->scattering_delta[eh->s].interpolate(icube_kernel);
+	double delta = grid->scattering_delta[eh->s][igout].interpolate(eh->icube_spec);
 	PRINT_ASSERT(fabs(delta),<,3.0);
 
 	// rejection sample the new direction, but only if not absurdly forward/backward peaked
@@ -223,12 +213,12 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<do
 	if(fabs(delta) < 2.8){
 		double costheta=0;
 		do{
-			isotropic_kup_tet(hyperloc[NDIMS+1], kup_tet_new, &rangen);
+			isotropic_kup_tet(outnu, kup_tet_new, &rangen);
 			costheta = Metric::dot_Minkowski<3>(kup_tet_new,kup_tet_old) / (kup_tet_old[3]*kup_tet_new[3]);
 		} while(reject_direction(costheta, delta));
 	}
 	else{
-	        kup_tet_new = eh->kup_tet * hyperloc[NDIMS+1] / eh->nu();
+	        kup_tet_new = eh->kup_tet * outnu / eh->nu();
 		if(delta<0) for(size_t i=0; i<3; i++) kup_tet_new[i] = -eh->kup_tet[i];
 	}
 	eh->set_kup_tet(kup_tet_new);

@@ -66,7 +66,7 @@ int main(int argc, char **argv)
 		  			grid->scat_opac[s][igin] = 0;
 					grid->abs_opac[s][igin] = 0;
 		  			for(size_t igout=0; igout<10; igout++){
-		  				grid->scattering_delta[s][igin]=0.0;
+		  				grid->scattering_delta[s][igout][igin]=0.0;
 		  				grid->partial_scat_opac[s][igin][igout] = (igin==igout ? 1 : 0);
 		  				grid->scat_opac[s][igin] += grid->partial_scat_opac[s][igin][igout];
 		  			}

@@ -298,12 +298,12 @@ void Grid::init(Lua* lua, Transport* insim)
 	if(sim->use_scattering_kernels==1){
 		for(size_t s=0; s<sim->species_list.size(); s++){
 			partial_scat_opac[s].resize(nu_grid_axis.size());
-			for(size_t igout=0; igout<nu_grid_axis.size(); igout++)
+			scattering_delta[s].resize(nu_grid_axis.size());
+			for(size_t igout=0; igout<nu_grid_axis.size(); igout++){
 				partial_scat_opac[s][igout].set_axes(axes);
+				scattering_delta[s][igout].set_axes(axes);
+			}
 		}
-		axes.push_back(nu_grid_axis);
-		for(size_t s=0; s<sim->species_list.size(); s++)
-			scattering_delta[s].set_axes(axes);
 	}
 }
 
