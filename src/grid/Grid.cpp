@@ -265,6 +265,7 @@ void Grid::init(Lua* lua, Transport* insim)
 	// set up the data structures
 	abs_opac.resize(sim->species_list.size());
 	scat_opac.resize(sim->species_list.size());
+	inelastic_scat_opac.resize(sim->species_list.size());
 	scattering_delta.resize(sim->species_list.size());
 	partial_scat_opac.resize(sim->species_list.size());
 	spectrum.resize(sim->species_list.size());
@@ -279,6 +280,7 @@ void Grid::init(Lua* lua, Transport* insim)
 	for(size_t s=0; s<sim->species_list.size(); s++){
 		abs_opac[s].set_axes(axes);
 		scat_opac[s].set_axes(axes);
+		inelastic_scat_opac[s].set_axes(axes);
 
 	    //===========================//
 		// intialize output spectrum // only if child didn't
