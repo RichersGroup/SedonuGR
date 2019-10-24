@@ -358,7 +358,12 @@ void nulib_get_iscatter_kernels(
 	// set the arrays.
 	double constants = (4.*pc::pi) * pow(pc::MeV_to_ergs/(pc::h*pc::c),3) / pc::c;
 	for(int igin=0; igin<nulibtable_number_groups; igin++){
+
+		// first, the elastic opacity (including "transport opacity" correction)
 		double elastic_opac = nut_scatopac[igin];
+		if(nulibtable_number_easvariables==4)
+			elastic_opac *= (1.-scattering_delta[igin][igin]/3.);
+
 		nut_scatopac[igin] = 0;
 		for(int igout=0; igout<nulibtable_number_groups; igout++){
 			double E1 = nulibtable_ebottom[igout];
@@ -374,11 +379,7 @@ void nulib_get_iscatter_kernels(
 				PRINT_ASSERT(abs(inelastic_partial_opac1),<=,3.*inelastic_partial_opac0);
 			}
 			// add elastic scatter opacity to the kernel
-			if(igin == igout){
-				inelastic_partial_opac0 += elastic_opac;
-				if(nulibtable_number_easvariables==4)
-					inelastic_partial_opac1 += elastic_opac * scattering_delta[igin][igin]; // scattering_delta set in nulib_get_eas_arrays
-			}
+			if(igin == igout) inelastic_partial_opac0 += elastic_opac;
 			partial_opac[igin][igout] = inelastic_partial_opac0;
 			nut_scatopac[igin] += inelastic_partial_opac0;
 			scattering_delta[igin][igout] = (inelastic_partial_opac0==0 ? 0 : inelastic_partial_opac1 / inelastic_partial_opac0);
