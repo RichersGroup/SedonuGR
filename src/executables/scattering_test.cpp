@@ -102,7 +102,7 @@ int main(int argc, char **argv)
   	myfile.open ("elastic_isotropic_kernel.dat");
 	for(int i=0; i<1000; i++){
 	  EinsteinHelper tmp = eh;
-	  sim.scatter(&tmp);
+	  sim.scatter(&tmp,inelastic_scatter);
 	  myfile<<tmp.kup[0]<<" "<<tmp.kup[1]<<" "<<tmp.kup[2]<<" "<<tmp.kup[3]<<"\n";
 	}
 	myfile.close();

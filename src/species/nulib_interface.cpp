@@ -112,7 +112,6 @@ int     nulib_total_eos_variables;
 int     read_Ielectron;
 int     read_epannihil;
 int     read_delta;
-int     output_scattering_kernels;
 
 // The format of the fortran variables the fortran compiler provides
 // assumes C and Fortran compilers are the same
@@ -273,27 +272,14 @@ int nulib_get_nspecies(){
 /**************/
 /* nulib_init */
 /**************/
-void nulib_init(string filename, int use_scattering_kernels, int use_annihil_kernels){
+void nulib_init(string filename){
 	read_Ielectron = 0;
 	read_epannihil = 0;
 	read_delta = 0;
-	output_scattering_kernels = use_scattering_kernels;
-    if(use_scattering_kernels == 0) {
-    	// you should be using transport opacities with isotropic scattering
-    	PRINT_ASSERT(hdf5_dataset_exists(filename.c_str(),"/scattering_delta"),==,false);
-    	// if inelastic kernels exist in the NuLib file, you should be using them.
-    	PRINT_ASSERT(hdf5_dataset_exists(filename.c_str(),"/inelastic_phi0"),==,false);
-    }
-    else{
-    	if(hdf5_dataset_exists(filename.c_str(),"/scattering_delta")) read_delta = 1;
-    	if(hdf5_dataset_exists(filename.c_str(),"/inelastic_phi0"))   read_Ielectron = 1;
-    }
-
-    if(use_annihil_kernels==1){
-    	assert(hdf5_dataset_exists(filename.c_str(),"/epannihil_phi0") or
-	       hdf5_dataset_exists(filename.c_str(),"/bremsstrahlung_phi0"));
+	if(hdf5_dataset_exists(filename.c_str(),"/scattering_delta")) read_delta = 1;
+	if(hdf5_dataset_exists(filename.c_str(),"/inelastic_phi0"))   read_Ielectron = 1;
+	if(hdf5_dataset_exists(filename.c_str(),"/epannihil_phi0") or hdf5_dataset_exists(filename.c_str(),"/bremsstrahlung_phi0"))
     	read_epannihil = 1;
-    }
 
 	nulibtable_reader_((char*)filename.c_str(), &read_Ielectron, &read_epannihil, &read_delta, filename.length());
 	nulibtable_set_globals();
@@ -324,9 +310,8 @@ void nulib_get_iscatter_kernels(
 		const double temp, // K
 		const double ye,
 		const int nulibID,
-		vector<double>& nut_scatopac, // 1/cm   opac[group in] Input AND output
-		vector< vector<double> >& partial_opac,       // 2pi h^-3 c^-4 phi0 delta(E^3/3)/deltaE [group in][group out] units 1/cm Output.
-		vector< vector<double> >& scattering_delta){  // 3.*phi1/phi0   [group_in][group_out] Input AND output.
+		vector< vector<double> >& partial_opac,       // 2pi h^-3 c^-4 phi0 delta(E^3/3)/deltaE [group in][group out] units 1/cm
+		vector< vector<double> >& scattering_delta){  // 3.*phi1/phi0   [group_in][group_out]
 
 	// fetch the relevant table from nulib. NuLib only accepts doubles.
 	double temp_MeV = temp * pc::k_MeV; // MeV
@@ -359,12 +344,6 @@ void nulib_get_iscatter_kernels(
 	double constants = (4.*pc::pi) * pow(pc::MeV_to_ergs/(pc::h*pc::c),3) / pc::c;
 	for(int igin=0; igin<nulibtable_number_groups; igin++){
 
-		// first, the elastic opacity (including "transport opacity" correction)
-		double elastic_opac = nut_scatopac[igin];
-		if(nulibtable_number_easvariables==4)
-			elastic_opac *= (1.-scattering_delta[igin][igin]/3.);
-
-		nut_scatopac[igin] = 0;
 		for(int igout=0; igout<nulibtable_number_groups; igout++){
 			double E1 = nulibtable_ebottom[igout];
 			double E2 = nulibtable_etop[   igout];
@@ -378,10 +357,7 @@ void nulib_get_iscatter_kernels(
 				PRINT_ASSERT(inelastic_partial_opac0,>=,0);
 				PRINT_ASSERT(abs(inelastic_partial_opac1),<=,3.*inelastic_partial_opac0);
 			}
-			// add elastic scatter opacity to the kernel
-			if(igin == igout) inelastic_partial_opac0 += elastic_opac;
 			partial_opac[igin][igout] = inelastic_partial_opac0;
-			nut_scatopac[igin] += inelastic_partial_opac0;
 			scattering_delta[igin][igout] = (inelastic_partial_opac0==0 ? 0 : inelastic_partial_opac1 / inelastic_partial_opac0);
 			PRINT_ASSERT(abs(scattering_delta[igin][igout]),<=,3.0+TINY);
 			scattering_delta[igin][igout] = min(3., max(-3., scattering_delta[igin][igout]));
@@ -501,12 +477,12 @@ void nulib_get_eas_arrays(
 			nut_absopac [j] = eas_energy[1][j];
 			nut_scatopac[j] = eas_energy[2][j];
 			if(nulibtable_number_easvariables==4)
-				scattering_delta[j][j] = eas_energy[3][j];
+				nut_scatopac[j] *= (1. - eas_energy[3][j]/3.);
  		}
 
 		// set inelastic kernels if they exist in the table
-		if(output_scattering_kernels!=0)
-			nulib_get_iscatter_kernels(rho,temp,ye,nulibID,nut_scatopac,scattering_phi0,scattering_delta);
+		if(read_Ielectron)
+			nulib_get_iscatter_kernels(rho,temp,ye,nulibID,scattering_phi0,scattering_delta);
 	}
 }
 

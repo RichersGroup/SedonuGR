@@ -84,7 +84,6 @@ Transport::Transport(){
 	randomwalk_absorption_depth_limit = NaN;
 	randomwalk_max_x = NaN;
 	randomwalk_sumN = -MAXLIM;
-	use_scattering_kernels = -MAXLIM;
 }
 
 
@@ -118,7 +117,6 @@ void Transport::init(Lua* lua)
 	n_emit_core_per_bin  = lua->scalar<int>("n_emit_core_per_bin");
 
 	// read simulation parameters
-	use_scattering_kernels = lua->scalar<int>("use_scattering_kernels");
 	verbose      = MPI_myID==0 ? lua->scalar<int>("verbose") : 0;
 	do_annihilation = lua->scalar<int>("do_annihilation");
 	equilibrium_T       = lua->scalar<int>("equilibrium_T");
@@ -158,7 +156,7 @@ void Transport::init(Lua* lua)
 		// read the fortran module into memory
 	        if(verbose) cout << "# Initializing NuLib..." << endl << flush;
 		string nulib_table = lua->scalar<string>("nulib_table");
-		nulib_init(nulib_table,use_scattering_kernels,do_annihilation);
+		nulib_init(nulib_table);
 
 		// eos
 		string eos_filename = lua->scalar<string>("nulib_eos");
@@ -315,7 +313,7 @@ void Transport::init(Lua* lua)
 }
 
 void Transport::check_parameters() const{
-	if(verbose && use_scattering_kernels && do_randomwalk)
+	if(verbose && do_randomwalk)
 		cout << "WARNING: Assumptions in random walk approximation are incompatible with inelastic scattering." << endl;
 }
 

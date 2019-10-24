@@ -76,10 +76,10 @@ void Neutrino_grey::set_eas(const size_t z_ind, Grid* grid) const
 		grid->abs_opac[ID][global_index] = a;        // (1/cm)
 		grid->scat_opac[ID][global_index] = s;        // (1/cm)
 
-		if(grid->scattering_delta[ID].size()>0){
+		if(grid->inelastic_scat_opac[ID].size()>0){
+			grid->inelastic_scat_opac[ID][global_index] = 0;
 			grid->scattering_delta[ID][j].wipe();
-			for(size_t igout=0; igout<ngroups; igout++)
-				grid->partial_scat_opac[ID][igout][global_index] = (j==igout ? s : 0);
+			grid->partial_scat_opac[ID][j].wipe();
 		}
 	}
 }

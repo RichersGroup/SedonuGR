@@ -52,7 +52,7 @@ int main(int argc, char* argv[]){
 	//read in the nulib table
 	cout << "initializing nulib" << endl;
 	string filename = argv[1];
-	nulib_init(filename,0,0);
+	nulib_init(filename);
 
 	// grids
 	Axis nu_grid; // Hz

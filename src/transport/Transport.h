@@ -37,7 +37,7 @@
 
 class Species;
 class Grid;
-enum ParticleEvent {interact, randomwalk, nothing};
+enum ParticleEvent {elastic_scatter, randomwalk, nothing, inelastic_scatter};
 
 class Transport
 {
@@ -137,8 +137,7 @@ public:
 	void random_core_x(Tuple<double,4>& x) const;
 
 	// items for zone emission
-	void scatter(EinsteinHelper *eh) const;
-	int use_scattering_kernels;
+	void scatter(EinsteinHelper *eh, const ParticleEvent event) const;
 	int n_emit_zones_per_bin;
 
 	// how many times do we emit+propagate each timestep?

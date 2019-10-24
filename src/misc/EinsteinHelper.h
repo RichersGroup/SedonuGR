@@ -32,7 +32,7 @@ public:
 	// intermediate quantities
 	Tuple<double,4> e[4]; // [tet(low)][coord(up)]
 	double grid_coords[NDIMS+1];
-	double absopac, scatopac;
+	double absopac, scatopac, inelastic_scatopac;
 	double ds_com;
 	size_t dir_ind[NDIMS+1]; // spatial, nu_in
 	int z_ind, eas_ind;   // direct access indices
@@ -52,7 +52,8 @@ public:
 	  scatopac(NaN),
 	  ds_com(NaN),
 	  z_ind(-MAXLIM),
-	  eas_ind(-MAXLIM) {}
+	  eas_ind(-MAXLIM),
+	  inelastic_scatopac(NaN) {}
 
 	void set_kup_tet(const Tuple<double,4>& kup_tet_in){
 		PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet_in,kup_tet_in)/(kup_tet_in[3]*kup_tet_in[3]),<,TINY);

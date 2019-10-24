@@ -66,14 +66,16 @@ void Neutrino_NuLib::set_eas(const size_t z_ind, Grid* grid) const
 	if(ID==0) grid->munue[z_ind] = nulib_eos_munue(grid->rho[z_ind], grid->T[z_ind], grid->Ye[z_ind]);
 	for(size_t igin=0; igin<ngroups; igin++){
 		dir_ind[NDIMS] = igin;
-		size_t global_index1 = grid->abs_opac[ID].direct_index(dir_ind);
-		grid->abs_opac[ID][global_index1] = tmp_absopac[igin];
-		grid->scat_opac[ID][global_index1] = tmp_scatopac[igin];
+		size_t global_index = grid->abs_opac[ID].direct_index(dir_ind);
+		grid->abs_opac[ID][global_index] = tmp_absopac[igin];
+		grid->scat_opac[ID][global_index] = tmp_scatopac[igin];
 
-		if(grid->scattering_delta[ID].size()>0){
+		if(grid->inelastic_scat_opac[ID].size()>0){
+			grid->inelastic_scat_opac[ID][global_index] = 0;
 			for(size_t igout=0; igout<ngroups; igout++){
-				grid->partial_scat_opac[ID][igout][global_index1] = tmp_partial_opac[igin][igout];
-				grid->scattering_delta[ID][igout][global_index1] = tmp_delta[igin][igout];
+				grid->partial_scat_opac[ID][igout][global_index] = tmp_partial_opac[igin][igout];
+				grid->inelastic_scat_opac[ID][global_index] += grid->partial_scat_opac[ID][igout][global_index];
+				grid->scattering_delta[ID][igout][global_index] = tmp_delta[igin][igout];
 			}
 		}
 	}

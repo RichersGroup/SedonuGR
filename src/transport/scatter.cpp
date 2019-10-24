@@ -53,8 +53,8 @@ void Transport::window(EinsteinHelper *eh) const{
 }
 
 // choose which type of scattering event to do
-void Transport::scatter(EinsteinHelper *eh) const{
-	PRINT_ASSERT(eh->scatopac,>,0);
+void Transport::scatter(EinsteinHelper *eh, const ParticleEvent event) const{
+	assert(event==elastic_scatter or event==inelastic_scatter);
 
 	// store the old direction
 	double Nold = eh->N;
@@ -63,12 +63,18 @@ void Transport::scatter(EinsteinHelper *eh) const{
 	PRINT_ASSERT(kup_tet_old[3],==,eh->kup_tet[3]);
 	
 	// sample outgoing energy and set the post-scattered state
-	if(use_scattering_kernels) sample_scattering_final_state(eh,kup_tet_old);
-	else{
-		// sample new direction
-		Tuple<double,4> kup_tet;
-		isotropic_kup_tet(eh->nu(),kup_tet,&rangen);
-		eh->set_kup_tet(kup_tet);
+	if(event==inelastic_scatter){
+		PRINT_ASSERT(eh->inelastic_scatopac,>=,0);
+		if(eh->inelastic_scatopac > 0)
+			sample_scattering_final_state(eh,kup_tet_old);
+	}
+	else if(event==elastic_scatter){
+		PRINT_ASSERT(eh->scatopac,>=,0);
+		if(eh->scatopac > 0){
+			Tuple<double,4> kup_tet;
+			isotropic_kup_tet(eh->nu(),kup_tet,&rangen);
+			eh->set_kup_tet(kup_tet);
+		}
 	}
 
 	for(size_t i=0; i<4; i++){
@@ -177,27 +183,18 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 }
 
 void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<double,4>& kup_tet_old) const{
-	PRINT_ASSERT(use_scattering_kernels,>,0);
-	PRINT_ASSERT(eh->scatopac,>,0);
+	PRINT_ASSERT(eh->inelastic_scatopac,>,0);
 	PRINT_ASSERT(grid->scattering_delta[eh->s].size(),>,0);
 	PRINT_ASSERT(kup_tet_old[3],==,eh->kup_tet[3]);
 
 	// rejection sampling to get outgoing frequency bin.
 	size_t igout;
 	double P;
-	double part_opac_sum = 0.0;	
-	size_t global_index = grid->scat_opac[eh->s].direct_index(eh->dir_ind);	
-	for(igout=0; igout<grid->nu_grid_axis.size(); igout++){
-		part_opac_sum += grid->partial_scat_opac[eh->s][igout][global_index];
-	}
-	PRINT_ASSERT(part_opac_sum,>=,0);
-	if(part_opac_sum==0) return;
 	do{
 		igout = rangen.uniform_discrete(0, grid->nu_grid_axis.size()-1);
-		P = grid->partial_scat_opac[eh->s][igout][global_index] / part_opac_sum;
+		P = grid->partial_scat_opac[eh->s][igout].interpolate(eh->icube_spec) / eh->inelastic_scatopac;
 		PRINT_ASSERT(P-1.0,<=,TINY);
 		PRINT_ASSERT(P,>=,0.0);
-		P = min(1.0,P);
 	} while(rangen.uniform() > P);
 
 	// Scatter to the center of the new bin.

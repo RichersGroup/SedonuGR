@@ -36,7 +36,7 @@ using namespace std;
 //
 // returns everything in standard CGS units (i.e. ergs, s, cm, K, Hz)
 
-void nulib_init(string filename, int include_Ielectron, int do_annihil);
+void nulib_init(string filename);
 void nulib_get_eas_arrays(double rho, double temp, double ye, int nulibID,
 		vector<double>& nut_absopac, vector<double>& nut_scatopac,
 		vector< vector<double> >& phi0, vector< vector<double> >& phi1_phi0);

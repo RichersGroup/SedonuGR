@@ -111,9 +111,9 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 		}
 	}
 
-	// FIND D_INTERACT =================================================================
+	// FIND D_ELASTIC_SCATTER =================================================================
 	double d_interact = INFINITY;
-	if(*event==nothing && eh->scatopac>0){
+	if(*event!=randomwalk && eh->scatopac>0){
 		double tau;
 		do{
 			tau = -log(rangen.uniform());
@@ -121,7 +121,23 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 		d_interact = tau / eh->scatopac;
 		if(d_interact < eh->ds_com){
 			eh->ds_com = d_interact;
-			*event = interact;
+			*event = elastic_scatter;
+		}
+	}
+	PRINT_ASSERT(eh->ds_com, >=, 0);
+	PRINT_ASSERT(eh->ds_com, <, INFINITY);
+
+	// FIND D_INELASTIC_SCATTER =================================================================
+	double d_inelastic_scatter = INFINITY;
+	if(*event!=randomwalk && eh->inelastic_scatopac>0){
+		double tau;
+		do{
+			tau = -log(rangen.uniform());
+		} while(tau >= INFINITY);
+		d_inelastic_scatter = tau / eh->inelastic_scatopac;
+		if(d_inelastic_scatter < eh->ds_com){
+			eh->ds_com = d_inelastic_scatter;
+			*event = inelastic_scatter;
 		}
 	}
 	PRINT_ASSERT(eh->ds_com, >=, 0);
@@ -223,19 +239,12 @@ void Transport::propagate(EinsteinHelper *eh){
 
 		// move particle the distance
 		PRINT_ASSERT(eh->N,>,0);
-		switch(event){
-		case nothing:
-			move(eh);
-			break;
-		case randomwalk:
-			random_walk(eh);
-			break;
-		case interact:
-			move(eh);
-			if(eh->z_ind>0 && eh->scatopac>0) scatter(eh);
-			break;
-		default:
-			assert(0);
+		if(event==randomwalk)
+		  random_walk(eh);
+		else{
+		  move(eh);
+		  if(eh->z_ind>0 and (event==elastic_scatter or event==inelastic_scatter))
+		    scatter(eh, event);
 		}
 
 		if(eh->fate==moving) window(eh);
