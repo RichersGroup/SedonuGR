@@ -202,14 +202,7 @@ void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 	// tally in contribution to zone's distribution function (lab frame)
 	// use old coordinates/directions to avoid problems with boundaries
 	double avg_N = (tau>TINY ? dN/tau : eh_old.N);
-	size_t dir_ind[NDIMS+1];
-    for(int corner=0; corner<eh_old.icube_spec.ncorners; corner++){
-      size_t index = eh_old.icube_spec.indices[corner];
-      double weight = eh_old.icube_spec.weights[corner];
-	  grid->abs_opac[eh_old.s].indices(index,dir_ind);
-	  grid->distribution[eh_old.s]->count(eh_old.kup_tet, dir_ind, avg_N*dlambda*eh_old.kup_tet[3]*eh_old.kup_tet[3] * weight);
-	}
-
+	grid->distribution[eh_old.s]->count(eh_old.kup_tet, eh_old.icube_spec, avg_N*dlambda*eh_old.kup_tet[3]*eh_old.kup_tet[3]);
 
 }
 
@@ -261,7 +254,7 @@ void Transport::propagate(EinsteinHelper *eh){
 		n_escape[eh->s]++;
 		L_net_esc[eh->s] += e;
 		N_net_esc[eh->s] += eh->N;
-		grid->spectrum[eh->s].count(eh->kup_tet, eh->dir_ind, e);
+		grid->spectrum[eh->s].count_single(eh->kup_tet, eh->dir_ind, e);
 	}
 	else if(eh->fate==absorbed)
 		particle_core_abs_energy += e;

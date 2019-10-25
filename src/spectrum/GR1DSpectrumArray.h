@@ -77,7 +77,7 @@ public:
 	//--------------------------------------------------------------
 	// count a particle
 	////--------------------------------------------------------------
-	void count(const Tuple<double,4>& kup_tet, const size_t dir_ind[NDIMS+1], const double E) {
+	void count_single(const Tuple<double,4>& kup_tet, const size_t dir_ind[NDIMS+1], const double E) {
 		Tuple<double,3> D;
 		for(size_t i=0; i<3; i++) D[i] = kup_tet[i];
 		Metric::normalize_Minkowski<3>(D);
@@ -146,7 +146,7 @@ public:
 		// no extra axes for moment array
 	}
 
-	void add_isotropic(const size_t dir_ind[NDIMS+1], const double E){
+	void add_isotropic_single(const size_t dir_ind[NDIMS+1], const double E){
 		PRINT_ASSERT(E, >=, 0);
 		PRINT_ASSERT(E, <, INFINITY);
 

@@ -141,7 +141,7 @@ public:
 	//--------------------------------------------------------------
 	// count a particle
 	////--------------------------------------------------------------
-	void count(const Tuple<double,4>& kup_tet, const size_t dir_ind[NDIMS+1], const double E){
+	void count_single(const Tuple<double,4>& kup_tet, const size_t dir_ind[NDIMS+1], const double E){
 		PRINT_ASSERT(E,>=,0);
 		PRINT_ASSERT(kup_tet[3],>=,0);
 
@@ -228,7 +228,7 @@ public:
 		data.axes[phiGridIndex].write_HDF5(name+"_phi_grid(radians,lab)",file);
 	}
 	
-	void add_isotropic(const size_t dir_ind[NDIMS+1], const double E){
+	void add_isotropic_single(const size_t dir_ind[NDIMS+1], const double E){
 		size_t indices[data.Ndims()];
 		for(size_t i=0; i<ndims_spatial; i++) indices[i] = dir_ind[i];
 		indices[nuGridIndex] = dir_ind[ndims_spatial];

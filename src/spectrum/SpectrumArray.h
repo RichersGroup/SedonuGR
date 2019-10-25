@@ -45,14 +45,24 @@ public:
 	virtual ~SpectrumArray() {}
 
 	// record some data
-	virtual void count(const Tuple<double,4>& kup_tet, const size_t dir_ind[NDIMS+1], const double E) = 0;
+	virtual void count_single(const Tuple<double,4>& kup_tet, const size_t dir_ind[NDIMS+1], const double E) = 0;
+	template<size_t ndims>
+	void count(const Tuple<double,4>& kup_tet, const InterpolationCube<ndims>& icube, const double E){
+		for(int corner=0; corner<icube.ncorners; corner++)
+		  count_single(kup_tet, icube.corner_dir_ind[corner], E*icube.weights[corner]);
+	}
 
 	// MPI functions
 	virtual void mpi_sum_scatter(vector<size_t>& zone_stop_list) = 0;
 	virtual void mpi_sum() = 0;
 
 	// Count a packets
-	virtual void add_isotropic(const size_t dir_ind[NDIMS+1], const double E) = 0;
+	virtual void add_isotropic_single(const size_t dir_ind[NDIMS+1], const double E) = 0;
+	template<size_t ndims>
+	void add_isotropic(const InterpolationCube<ndims>& icube, const double E){
+		for(int corner=0; corner<icube.ncorners; corner++)
+		  add_isotropic_single(icube.corner_dir_ind[corner], E*icube.weights[corner]);
+	}
 
 	//  void normalize();
 	virtual void rescale(const double) = 0;

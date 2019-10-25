@@ -168,17 +168,13 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 
 	// contribute energy isotropically
 	double Eiso = pc::h*eh->nu() * Naverage * (path_length_com - Rcom);
-	grid->l_abs[eh_old.z_ind] += (eh_old.N - Nfinal) * species_list[eh->s]->lepton_number;
-	size_t dir_ind[NDIMS+1];
 	for(int corner=0; corner<eh_old.icube_spec.ncorners; corner++){
-      size_t index = eh_old.icube_spec.indices[corner];
       double weight = eh_old.icube_spec.weights[corner];
-	  grid->abs_opac[eh_old.s].indices(index,dir_ind);
-	  grid->distribution[eh_old.s]->add_isotropic(dir_ind, Eiso*weight);
+	  grid->distribution[eh_old.s]->add_isotropic(eh_old.icube_spec, Eiso*weight);
 	}
-	for(size_t i=0; i<4; i++){
+	grid->l_abs[eh_old.z_ind] += (eh_old.N - Nfinal) * species_list[eh->s]->lepton_number;
+	for(size_t i=0; i<4; i++)
 		grid->fourforce_abs[eh_old.z_ind][i] += (eh_old.kup_tet[i]*eh_old.N - eh->kup_tet[i]*eh->N);
-	}
 
 }
 
