@@ -29,6 +29,7 @@ public:
 	}
 	double xLR[ndims][2];
 	size_t indices[ncorners];
+	size_t corner_dir_ind[ncorners][ndims];
 	double weights[ncorners];
 	double slope_weights[ndims][ncorners];
 
@@ -274,11 +275,10 @@ public:
 			}
 
 			// set the global index of the values on the corners
-			size_t dir_ind[ndims];
 			for(size_t i=0; i<icube->ncorners; i++){
 				for(size_t d=0; d<ndims; d++)
-					dir_ind[d] = (InterpolationCube<ndims>::isRightIndex(i,d) ? dir_ind_right[d] : dir_ind_left[d]);
-				icube->indices[i] = direct_index(dir_ind);
+					icube->corner_dir_ind[i][d] = (InterpolationCube<ndims>::isRightIndex(i,d) ? dir_ind_right[d] : dir_ind_left[d]);
+				icube->indices[i] = direct_index(icube->corner_dir_ind[i]);
 			}
 		}
 
