@@ -61,17 +61,18 @@ int main(int argc, char **argv)
 	class testScatter : public Transport{
 	public:
 		void testgrid(){
-		  for(size_t s=0; s<species_list.size(); s++){
-		  			for(size_t igin=0; igin<10; igin++){
-		  			grid->scat_opac[s][igin] = 0;
+			for(size_t s=0; s<species_list.size(); s++){
+				for(size_t igin=0; igin<10; igin++){
+					grid->scat_opac[s][igin] = 0;
+					grid->inelastic_scat_opac[s][igin] = 0;
 					grid->abs_opac[s][igin] = 0;
-		  			for(size_t igout=0; igout<10; igout++){
-		  				grid->scattering_delta[s][igout][igin]=0.0;
-		  				grid->partial_scat_opac[s][igin][igout] = (igin==igout ? 1 : 0);
-		  				grid->scat_opac[s][igin] += grid->partial_scat_opac[s][igin][igout];
-		  			}
-		  		}
-		  	}
+					for(size_t igout=0; igout<10; igout++){
+						grid->scattering_delta[s][igout][igin]=0.0;
+						grid->partial_scat_opac[s][igin][igout] = (igin==igout ? 1 : 0);
+						grid->inelastic_scat_opac[s][igin] += grid->partial_scat_opac[s][igin][igout];
+					}
+				}
+			}
 		}
 	};
 

@@ -702,9 +702,11 @@ void Transport::update_eh_k_opac(EinsteinHelper* eh) const{
 	grid->abs_opac[eh->s].set_InterpolationCube(&(eh->icube_spec),eh->grid_coords,eh->dir_ind);
 	eh->absopac  =  grid->abs_opac[eh->s].interpolate(eh->icube_spec);
 	eh->scatopac = grid->scat_opac[eh->s].interpolate(eh->icube_spec);
+	eh->inelastic_scatopac = grid->inelastic_scat_opac[eh->s].interpolate(eh->icube_spec);
 
 	PRINT_ASSERT(eh->absopac,>=,0);
 	PRINT_ASSERT(eh->scatopac,>=,0);
+	PRINT_ASSERT(eh->inelastic_scatopac,>=,0);
 }
 
 

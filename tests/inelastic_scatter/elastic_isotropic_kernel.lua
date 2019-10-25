@@ -53,4 +53,5 @@ randomwalk_max_x = 2
 randomwalk_sumN = 1000
 randomwalk_npoints = 100
 randomwalk_min_optical_depth = 12
+randomwalk_absorption_depth_limit = 1.
 randomwalk_interpolation_order = 1
