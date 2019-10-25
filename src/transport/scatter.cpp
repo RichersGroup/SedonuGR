@@ -124,16 +124,11 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->nu(),>=,0);
 
 	// save old values
-	const Tuple<double,4> kup_tet_old = eh->kup_tet;
-	const double Nold = eh->N;
-	const int z_ind_old = eh->z_ind;
-	size_t dir_ind_old[NDIMS+1];
-	for(size_t i=0; i<NDIMS+1; i++) dir_ind_old[i] = eh->dir_ind[i];
-
-	const double Rcom = eh->ds_com;
-	const double D = pc::c / (3.*eh->scatopac);
+	const EinsteinHelper eh_old = *eh;
 
 	// sample the distance travelled during the random walk
+	const double Rcom = eh->ds_com;
+	const double D = pc::c / (3.*eh->scatopac);
 	double path_length_com = pc::c * Rcom*Rcom / D * randomwalk_diffusion_time.invert(rangen.uniform(),&randomwalk_xaxis,-1);
 	path_length_com = max(path_length_com,Rcom);
 
@@ -148,7 +143,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 		Nfinal = eh->N * exp(-opt_depth);
 		Naverage = (eh->N - Nfinal) / (opt_depth);
 	}
-	PRINT_ASSERT(Naverage,<=,Nold);
+	PRINT_ASSERT(Naverage,<=,eh_old.N);
 	PRINT_ASSERT(Nfinal,<=,Naverage);
 
 	// select a random direction
@@ -172,12 +167,17 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	eh->set_kup_tet(kup_tet_final);
 
 	// contribute energy isotropically
-	double Eiso;
-	Eiso = pc::h*eh->nu() * Naverage * (path_length_com - Rcom);
-	grid->distribution[eh->s]->add_isotropic(dir_ind_old, Eiso);
-	grid->l_abs[z_ind_old] += (Nold - Nfinal) * species_list[eh->s]->lepton_number;
+	double Eiso = pc::h*eh->nu() * Naverage * (path_length_com - Rcom);
+	grid->l_abs[eh_old.z_ind] += (eh_old.N - Nfinal) * species_list[eh->s]->lepton_number;
+	size_t dir_ind[NDIMS+1];
+	for(int corner=0; corner<eh_old.icube_spec.ncorners; corner++){
+      size_t index = eh_old.icube_spec.indices[corner];
+      double weight = eh_old.icube_spec.weights[corner];
+	  grid->abs_opac[eh_old.s].indices(index,dir_ind);
+	  grid->distribution[eh_old.s]->add_isotropic(dir_ind, Eiso*weight);
+	}
 	for(size_t i=0; i<4; i++){
-		grid->fourforce_abs[z_ind_old][i] += (kup_tet_old[i]*Nold - eh->kup_tet[i]*eh->N);
+		grid->fourforce_abs[eh_old.z_ind][i] += (eh_old.kup_tet[i]*eh_old.N - eh->kup_tet[i]*eh->N);
 	}
 
 }

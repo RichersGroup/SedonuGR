@@ -150,26 +150,20 @@ void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 	PRINT_ASSERT(abs(eh->g.dot<4>(eh->kup,eh->kup)) / (eh->kup[3]*eh->kup[3]), <=, TINY);
 
 	// save old values
-	Tuple<double,4> old_kup = eh->kup;
-	Tuple<double,4> old_kup_tet = eh->kup_tet;
-	double old_absopac = eh->absopac;
-	double old_N = eh->N;
-	size_t old_z_ind = eh->z_ind;
-	size_t old_dir_ind[NDIMS+1];
-	for(size_t i=0; i<NDIMS+1; i++) old_dir_ind[i] = eh->dir_ind[i];
+	const EinsteinHelper eh_old = *eh;
 
 	// convert ds_com into dlambda
 	double dlambda = eh->ds_com / eh->kup_tet[3];
 	PRINT_ASSERT(dlambda,>=,0);
 
 	// get 2nd order x, 1st order estimate for k
-	Tuple<double,4> order1 = old_kup * dlambda;
+	Tuple<double,4> order1 = eh_old.kup * dlambda;
 	for(size_t i=0; i<4; i++)
 		eh->xup[i] += order1[i];
 	if(DO_GR){
 		Tuple<double,4> dk_dlambda = grid->dk_dlambda(*eh);
 		Tuple<double,4> order2 = dk_dlambda * dlambda*dlambda * 0.5;
-		eh->kup = old_kup + dk_dlambda * dlambda;
+		eh->kup = eh_old.kup + dk_dlambda * dlambda;
 		for(size_t i=0; i<4; i++)
 			eh->xup[i] += (abs(order2[i]/order1[i])<1. ? order2[i] : 0);
 	}
@@ -186,29 +180,35 @@ void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 		// appropriately reduce the particle's energy from absorption
 		// assumes kup_tet and absopac vary linearly along the trajectory
 		double ds_com_new = dlambda*eh->kup_tet[3];
-		double tau1 = 1./3. * (eh->ds_com*old_absopac + ds_com_new*eh->absopac);
-		double tau2 = 1./6. * (eh->ds_com*eh->absopac + ds_com_new*old_absopac);
+		double tau1 = 1./3. * (eh->ds_com*eh_old.absopac + ds_com_new*eh->absopac);
+		double tau2 = 1./6. * (eh->ds_com*eh->absopac + ds_com_new*eh_old.absopac);
 		tau = tau1 + tau2;
 		eh->N *= exp(-tau);
-		dN = old_N - eh->N;
+		dN = eh_old.N - eh->N;
 		window(eh);
 
 		// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
 		for(size_t i=0; i<4; i++){
-			grid->fourforce_abs[old_z_ind][i] += dN * old_kup_tet[i];
+			grid->fourforce_abs[eh_old.z_ind][i] += dN * eh_old.kup_tet[i];
 		}
 
 		// store absorbed lepton number (same in both frames, except for the
 		// factor of this_d which is divided out later
 		if(species_list[eh->s]->lepton_number != 0){
-			grid->l_abs[old_z_ind] += dN * species_list[eh->s]->lepton_number;
+			grid->l_abs[eh_old.z_ind] += dN * species_list[eh->s]->lepton_number;
 		}
 	}
 
 	// tally in contribution to zone's distribution function (lab frame)
 	// use old coordinates/directions to avoid problems with boundaries
-	double avg_N = (tau>TINY ? dN/tau : old_N);
-	grid->distribution[eh->s]->count(old_kup_tet, old_dir_ind, avg_N*dlambda*old_kup_tet[3]*old_kup_tet[3]);
+	double avg_N = (tau>TINY ? dN/tau : eh_old.N);
+	size_t dir_ind[NDIMS+1];
+    for(int corner=0; corner<eh_old.icube_spec.ncorners; corner++){
+      size_t index = eh_old.icube_spec.indices[corner];
+      double weight = eh_old.icube_spec.weights[corner];
+	  grid->abs_opac[eh_old.s].indices(index,dir_ind);
+	  grid->distribution[eh_old.s]->count(eh_old.kup_tet, dir_ind, avg_N*dlambda*eh_old.kup_tet[3]*eh_old.kup_tet[3] * weight);
+	}
 
 
 }
