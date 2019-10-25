@@ -93,6 +93,8 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 	PRINT_ASSERT(d_zone, >, 0);
 	*event = nothing;
 	eh->ds_com = d_boundary;
+	if(eh->absopac*eh->ds_com > absorption_depth_limiter)
+		eh->ds_com = absorption_depth_limiter/eh->absopac;
 
 	// FIND D_RANDOMWALK
 	double d_randomwalk = INFINITY;
@@ -100,7 +102,7 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 		d_randomwalk = grid->d_randomwalk(*eh);
 		if(eh->absopac > 0){
 			double D = pc::c / (3. * eh->scatopac);
-			double R_abs_limited = sqrt(randomwalk_absorption_depth_limit * D / eh->absopac);
+			double R_abs_limited = sqrt(absorption_depth_limiter * D / eh->absopac);
 			d_randomwalk = min(d_randomwalk, R_abs_limited);
 		}
 		if(d_randomwalk == INFINITY) d_randomwalk = 1.1*randomwalk_min_optical_depth / eh->scatopac;
@@ -124,8 +126,6 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 			*event = elastic_scatter;
 		}
 	}
-	PRINT_ASSERT(eh->ds_com, >=, 0);
-	PRINT_ASSERT(eh->ds_com, <, INFINITY);
 
 	// FIND D_INELASTIC_SCATTER =================================================================
 	double d_inelastic_scatter = INFINITY;

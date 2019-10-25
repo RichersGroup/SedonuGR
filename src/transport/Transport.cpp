@@ -81,7 +81,7 @@ Transport::Transport(){
 	particle_rouletted_energy = NaN;
 	particle_escape_energy = NaN;
 	randomwalk_min_optical_depth = NaN;
-	randomwalk_absorption_depth_limit = NaN;
+	absorption_depth_limiter = NaN;
 	randomwalk_max_x = NaN;
 	randomwalk_sumN = -MAXLIM;
 }
@@ -115,6 +115,7 @@ void Transport::init(Lua* lua)
 	PRINT_ASSERT(n_subcycles,>=,1);
 	n_emit_zones_per_bin = lua->scalar<int>("n_emit_therm_per_bin");
 	n_emit_core_per_bin  = lua->scalar<int>("n_emit_core_per_bin");
+	absorption_depth_limiter = lua->scalar<double>("absorption_depth_limiter");
 
 	// read simulation parameters
 	verbose      = MPI_myID==0 ? lua->scalar<int>("verbose") : 0;
@@ -131,7 +132,6 @@ void Transport::init(Lua* lua)
 	do_randomwalk = lua->scalar<int>("do_randomwalk");
 	if(do_randomwalk){
 		randomwalk_min_optical_depth = lua->scalar<double>("randomwalk_min_optical_depth");
-		randomwalk_absorption_depth_limit = lua->scalar<double>("randomwalk_absorption_depth_limit");
 		init_randomwalk_cdf(lua);
 	}
 	min_packet_weight = lua->scalar<double>("min_packet_weight");
