@@ -46,6 +46,7 @@ max_time_hours = -1
 -- particle propagation parameters
 min_step_size = 0.05
 max_step_size = 0.5
+absorption_depth_limiter = 1.
 
 -- randomwalk
 do_randomwalk = 1
@@ -53,5 +54,4 @@ randomwalk_max_x = 2
 randomwalk_sumN = 1000
 randomwalk_npoints = 100
 randomwalk_min_optical_depth = 12
-randomwalk_absorption_depth_limit = 1.
 randomwalk_interpolation_order = 1

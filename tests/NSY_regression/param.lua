@@ -69,6 +69,7 @@ max_n_iter =  1
 min_step_size = 0.01
 max_step_size = 0.4
 max_time_hours = -1
+absorption_depth_limiter = 1.0
 
 -- Biasing
 
@@ -87,6 +88,5 @@ randomwalk_max_x = 2
 randomwalk_sumN = 1000
 randomwalk_npoints = 100
 randomwalk_min_optical_depth = 12
-randomwalk_absorption_depth_limit = 1.0
 randomwalk_interpolation_order = 1
 randomwalk_n_isotropic = 20

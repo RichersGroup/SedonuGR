@@ -80,6 +80,7 @@ max_time_hours = -1
 importance_bias = 0
 bias_path_length = 0
 min_packet_weight = 1
+absorption_depth_limiter = 1.0
 
 -- Random Walk
 
@@ -89,6 +90,5 @@ randomwalk_max_x = 2
 randomwalk_sumN = 1000
 randomwalk_npoints = 200
 randomwalk_min_optical_depth = 100
-randomwalk_absorption_depth_limit = 1.0
 randomwalk_interpolation_order = 1
 randomwalk_n_isotropic = 0
