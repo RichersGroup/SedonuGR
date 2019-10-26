@@ -21,7 +21,7 @@ grey_abs_frac = 1
 write_zones_every = 1
 
 -- bias parameters
-min_packet_weight = 0.707106781 --0.707106781 -- 1/sqrt(2)
+min_packet_weight = 0.01 --0.707106781 -- 1/sqrt(2)
 
 -- distribution parameters
 distribution_type = "Moments"

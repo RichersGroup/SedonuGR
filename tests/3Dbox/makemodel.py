@@ -20,7 +20,7 @@ lapse = 1 #4
 
 
 # NO SYMMETRIES
-nx = 3
+nx = 4
 xmin = np.array([-1,-1,-1]) # Msun
 xmax = np.array([ 1, 1, 1]) # Msun
 delta = (xmax-xmin)/(nx-1)
