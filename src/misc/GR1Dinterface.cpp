@@ -10,10 +10,9 @@
 
 using namespace std;
 
-double smoothing_timescale;
+double GR1D_smoothing_timescale;
 int GR1D_recalc_every;
 const double time_gf = 2.03001708e5;
-double GR1D_tau_crit;
 ScalarMultiDArray<double, 3> Ptt_E_tet, Wrtt_Fr_tet;
 double tolerance = 1e-6;
 
@@ -150,12 +149,8 @@ void initialize_gr1d_sedonu_(const double *x1i, const int* n_GR1D_zones, const i
 
 	// open up the lua parameter file
 	Lua lua("param.lua");
-	smoothing_timescale = lua.scalar<double>("smoothing_timescale");
+	GR1D_smoothing_timescale = lua.scalar<double>("GR1D_smoothing_timescale");
 	GR1D_recalc_every = lua.scalar<int>("GR1D_recalc_every");
-
-	GR1D_tau_crit = lua.scalar<int>("GR1D_tau_crit");
-	if(GR1D_tau_crit < 0) GR1D_tau_crit = INFINITY;
-	PRINT_ASSERT(GR1D_tau_crit,>,1);
 
 	// set up the grid
 	const int nzones = *M1_imaxradii - *ghosts1;
@@ -223,7 +218,7 @@ void calculate_mc_closure_(
 	const size_t nr = (*sim)->grid->rho.size();
 	const size_t ns = (*sim)->species_list.size();
 	const size_t ne = (*sim)->grid->nu_grid_axis.size();
-	const double fsmooth = *dt*GR1D_recalc_every/time_gf / smoothing_timescale;
+	const double fsmooth = *dt*GR1D_recalc_every/time_gf / GR1D_smoothing_timescale;
 	PRINT_ASSERT(fsmooth,<=,1.0);
 	PRINT_ASSERT(fsmooth,>=,0.0);
 
@@ -232,7 +227,7 @@ void calculate_mc_closure_(
 
 	bool extract_MC[nr][ns][ne];
 	for(size_t s=0; s<(*sim)->species_list.size(); s++)
-		static_cast<Neutrino_GR1D*>((*sim)->species_list[s])->set_eas_external(eas,GR1D_tau_crit,&(extract_MC[0][0][0]),*rshock);
+		static_cast<Neutrino_GR1D*>((*sim)->species_list[s])->set_eas_external(eas,&(extract_MC[0][0][0]),*rshock);
 
 	//===================//
 	// do MC calculation //

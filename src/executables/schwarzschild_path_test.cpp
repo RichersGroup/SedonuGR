@@ -84,8 +84,8 @@ int main(int argc, char **argv)
 	vector<double> xup,kup;
 	xup.resize(4);
 	kup.resize(4);
-	xup = lua.vector<double>("initial_xup");
-	kup = lua.vector<double>("initial_kup");
+	xup = lua.vector<double>("Schwarzschild_initial_xup");
+	kup = lua.vector<double>("Schwarzschild_initial_kup");
 	eh.xup[3] = 0;
 	for(int i=0; i<4; i++){
 		eh.xup[i] = xup[i];

@@ -11,9 +11,9 @@ neutrino_type = "grey"
 nugrid_n = 50
 nugrid_start = 0
 nugrid_stop = 100
-grey_opac = 0
-grey_abs_frac = 0
-grey_chempot = 0
+Neutrino_grey_opac = 0
+Neutrino_grey_abs_frac = 0
+Neutrino_grey_chempot = 0
 
 -- Escape Spectra
 

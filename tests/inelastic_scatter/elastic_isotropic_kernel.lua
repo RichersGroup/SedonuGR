@@ -5,9 +5,9 @@ neutrino_type = "grey"
 nugrid_n = 10
 nugrid_start = 0
 nugrid_stop = 10
-grey_abs_frac = 0
-grey_opac = 1
-grey_chempot = 0
+Neutrino_grey_abs_frac = 0
+Neutrino_grey_opac = 1
+Neutrino_grey_chempot = 0
 
 -- output parameters
 write_zones_every = 1

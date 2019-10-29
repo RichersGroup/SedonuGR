@@ -22,9 +22,10 @@ reflect_outer = [0,1]
 neutrino_type = ["NuLib","grey","Nagakura","GR1D"] defines how we obtain opacities
 
 (neutrino_type=="grey")
-grey_opac = [float>0] neutrino grey opacity (cm^2/g). If <=0, uses
+Neutrino_grey_opac = [float>0] neutrino grey opacity (cm^2/g). If <=0, uses
 	  NuLib table instead
-grey_abs_frac = [0<float<1] probability of neutrino to be absorbed (rather than scattered)
+Neutrino_grey_abs_frac = [0<float<1] probability of neutrino to be absorbed (rather than scattered)
+Neutrino_grey_chempot = [float] chemical potential of equilibrium blackbody distribution
 
 (neutrino_type=="grey","Nagakura")
 nugrid_n = [int>0] number of neutrino frequency bins
@@ -179,6 +180,9 @@ max_step_size = [float>0] maximum fraction of a zone length a particle is
 
 min_packet_weight = [float>0] minimum weight for a neutrino packet. Initial weight is 1.
 
+absorption_depth_limiter = [float>0] limits step size to this absorption optical depth
+			 to prevent extreme changes in particle weight in one step
+
 ||==========||
 ||RANDOMWALK||
 ||==========||
@@ -201,3 +205,20 @@ randomwalk_min_optical_depth = [float>=0] optical depth below which
 			     the random walk approximation is
 			     considered invalid and will not evaluate
 			     (resort to isotropic scattering instead)
+
+||==================||
+||SPECIALTY CONTROLS||
+||==================||
+GR1D coupling:
+   GR1D_smoothing_timescale = [float] number of miliseconds to smooth closure over
+   GR1D_recalc_every = [int] how often to recalculate the closure
+Schwarzschild path test:
+   Schwarzschild_initial_xup = [float_array] initial four-position of particle
+   Schwarzschild_initial_kup = [float_array] initial four-momentum of particle
+Ray Tracing:
+   RayTracing_recover_file = [string] filename of sedonu output to shoot ray through
+   RayTracing_initial_r = [float_array>0] initial radii of ray starting points
+   RayTracing_initial_phi = [float_array] initial spatial phi of ray starting points
+   RayTracing_initial_z = [float_array] initial z coordinate of ray starting points
+   RayTracing_initial_kmu = [float_array] initial costheta direction of rays
+   RayTracing_initial_kphi = [float_array] initial phi direction of rays

@@ -7,9 +7,9 @@ reflect_outer = 0
 -- Opacity and Emissivity
 
 neutrino_type = "grey"
-grey_abs_frac = 0
-grey_opac = 0
-grey_chempot = 0
+Neutrino_grey_abs_frac = 0
+Neutrino_grey_opac = 0
+Neutrino_grey_chempot = 0
 nugrid_n=1
 nugrid_start=0
 nugrid_stop=1e99
@@ -62,5 +62,5 @@ min_packet_weight = 0
 
 -- Random Walk
 
-initial_xup = {1.5,0,0,0}
-initial_kup = {0,1,0,1}
+Schwarzschild_initial_xup = {1.5,0,0,0}
+Schwarzschild_initial_kup = {0,1,0,1}

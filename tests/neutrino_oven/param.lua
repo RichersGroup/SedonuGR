@@ -8,9 +8,9 @@ reflect_outer = 1
 -- Opacity and Emissivity
 
 neutrino_type = "grey"
-grey_opac  = 0 --1e-2
-grey_abs_frac = 1e-2
-grey_chempot = 0
+Neutrino_grey_opac  = 0 --1e-2
+Neutrino_grey_abs_frac = 1e-2
+Neutrino_grey_chempot = 0
 nugrid_start = 0
 nugrid_stop = 500
 nugrid_n = 500

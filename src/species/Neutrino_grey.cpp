@@ -35,9 +35,9 @@ namespace pc = physical_constants;
 
 
 Neutrino_grey::Neutrino_grey(){
-	grey_opac = NaN;
-	grey_abs_frac = NaN;
-	grey_chempot = NaN;
+	Neutrino_grey_opac = NaN;
+	Neutrino_grey_abs_frac = NaN;
+	Neutrino_grey_chempot = NaN;
 }
 
 //----------------------------------------------------------------
@@ -45,9 +45,9 @@ Neutrino_grey::Neutrino_grey(){
 //----------------------------------------------------------------
 void Neutrino_grey::myInit(Lua* lua)
 {
-	grey_abs_frac = lua->scalar<double>("grey_abs_frac");
-	grey_opac     = lua->scalar<double>("grey_opac");
-	grey_chempot = lua->scalar<double>("grey_chempot") * pc::MeV_to_ergs;
+	Neutrino_grey_abs_frac = lua->scalar<double>("Neutrino_grey_abs_frac");
+	Neutrino_grey_opac     = lua->scalar<double>("Neutrino_grey_opac");
+	Neutrino_grey_chempot = lua->scalar<double>("Neutrino_grey_chempot") * pc::MeV_to_ergs;
 }
 
 
@@ -60,16 +60,16 @@ void Neutrino_grey::set_eas(const size_t z_ind, Grid* grid) const
 	size_t dir_ind[NDIMS+1];
 	grid->rho.indices(z_ind,dir_ind);
 
-	PRINT_ASSERT(grey_abs_frac,>=,0);
-	PRINT_ASSERT(grey_abs_frac,<=,1.0);
-	grid->munue[z_ind] = grey_chempot;
+	PRINT_ASSERT(Neutrino_grey_abs_frac,>=,0);
+	PRINT_ASSERT(Neutrino_grey_abs_frac,<=,1.0);
+	grid->munue[z_ind] = Neutrino_grey_chempot;
 	for(size_t j=0;j<grid->nu_grid_axis.size();j++)
 	{
 		dir_ind[NDIMS] = j;
 		size_t global_index = grid->abs_opac[ID].direct_index(dir_ind);
 
-		double a = grey_opac*grid->rho[z_ind]*grey_abs_frac;
-		double s = grey_opac*grid->rho[z_ind]*(1.0-grey_abs_frac);
+		double a = Neutrino_grey_opac*grid->rho[z_ind]*Neutrino_grey_abs_frac;
+		double s = Neutrino_grey_opac*grid->rho[z_ind]*(1.0-Neutrino_grey_abs_frac);
 		PRINT_ASSERT(a,>=,0);
 		PRINT_ASSERT(s,>=,0);
 

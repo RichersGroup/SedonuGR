@@ -300,17 +300,17 @@ int main(int argc, char **argv)
 	sim.reset_radiation();
 
 	// read in the output data
-	string recover_filename = lua.scalar<string>("recover_file");
+	string recover_filename = lua.scalar<string>("RayTracing_recover_file");
 	sim.grid->read_zones(recover_filename);
 	const int NS = sim.grid->distribution.size();
 	const int NE = sim.grid->nu_grid_axis.size();
 
 	// read in starting points
-	vector<double> r    = lua.vector<double>("initial_r");
-	vector<double> phi  = lua.vector<double>("initial_phi");
-	vector<double> z    = lua.vector<double>("initial_z");
-	vector<double> kmu  = lua.vector<double>("initial_kmu");
-	vector<double> kphi = lua.vector<double>("initial_kphi");
+	vector<double> r    = lua.vector<double>("RayTracing_initial_r");
+	vector<double> phi  = lua.vector<double>("RayTracing_initial_phi");
+	vector<double> z    = lua.vector<double>("RayTracing_initial_z");
+	vector<double> kmu  = lua.vector<double>("RayTracing_initial_kmu");
+	vector<double> kphi = lua.vector<double>("RayTracing_initial_kphi");
 	int ntrajectories = r.size();
 	lua.close();
 

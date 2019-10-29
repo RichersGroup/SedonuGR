@@ -5,12 +5,12 @@ do_annihilation = 0
 -- opacity stuff
 neutrino_type = "grey"
 nugrid_n = 20
-grey_chempot = 10
+Neutrino_grey_chempot = 10
 nugrid_start = 0
 nugrid_stop = 200
 nugrid_n = 50
-grey_opac = 1
-grey_abs_frac = 1
+Neutrino_grey_opac = 1
+Neutrino_grey_abs_frac = 1
 
 -- output parameters
 write_zones_every = 1

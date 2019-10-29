@@ -95,7 +95,7 @@ void Neutrino_GR1D::set_eas(const size_t /*z_ind*/, Grid* /*grid*/) const
 int extract_MC_index(const int z_ind, const int ID, const int nspecies, const int inu, const int ngroups){
 	return inu + ID*ngroups + z_ind*ngroups*nspecies;
 }
-void Neutrino_GR1D::set_eas_external(const double* easarray, const double /*GR1D_tau_crit*/, bool* /*extract_MC*/, const double /*rshock*/){
+void Neutrino_GR1D::set_eas_external(const double* easarray, bool* /*extract_MC*/, const double /*rshock*/){
 	PRINT_ASSERT(ghosts1,>=,0);
 	PRINT_ASSERT(n_GR1D_zones,>=,(int)sim->grid->rho.size());
 	const int ngroups=sim->grid->nu_grid_axis.size();

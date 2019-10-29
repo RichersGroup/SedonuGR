@@ -1,7 +1,7 @@
 .PHONY: all clean
 
 all:
-	../../exe/scattering_test elastic_isotropic_kernel.lua > elastic_isotropic_kernel.dat
+	../../exe/scattering_test elastic_isotropic_kernel.lua
 	python3 check_results.py
 
 clean:
