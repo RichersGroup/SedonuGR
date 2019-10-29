@@ -1,7 +1,6 @@
 -- Included Physics
 
 do_randomwalk = 1
-do_relativity = 1
 do_annihilation = 0
 
 -- Opacity and Emissivity

@@ -1,4 +1,3 @@
-do_relativity = 1
 verbose = 1
 reflect_outer = 0
 do_annihilation = 0

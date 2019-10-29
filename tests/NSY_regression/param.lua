@@ -1,6 +1,5 @@
 -- Included Physics
 
-do_relativity = 1
 do_annihilation = 0
 reflect_outer = 0
 do_randomwalk = 1

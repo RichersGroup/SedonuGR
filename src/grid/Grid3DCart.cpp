@@ -90,16 +90,6 @@ void Grid3DCart::read_model_file(Lua* lua)
 		}
 	}
 
-	// set velocities to zero if not doing relativity
-	int do_relativity = lua->scalar<int>("do_relativity");
-	if(!do_relativity){
-		cout << "# Setting velocities to zero." << endl;
-		#pragma omp parallel for
-		for(size_t z_ind=0; z_ind<v.size(); z_ind++){
-			v[z_ind] = Tuple<double,3>(0);
-		}
-	}
-
 	if(rotate_quadrant!=0 || rotate_hemisphere[0]!=0 || rotate_hemisphere[1]!=0){
 		cout << "WARNING: rotational symmetry interpolation not implemented. Currently just assumes constant from last grid center to boundary." << endl;
 	}
