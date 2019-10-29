@@ -7,25 +7,12 @@ PARAMETERS
 ||INCLUDED PHYSICS||
 ||================||
 
-do_visc = [0,1] add energy source to matter absorption
-	representing viscous heating. Simply adds some amount of
-        energy to each zone's e_abs immediately after particles are
-        propagated. Only affects solving for temperature, does not
-	directly affect neutrino emission rates.
-
-visc_specific_heat_rate = [double>0] (do_visc==1) viscous
-			heating per unit mass (erg/g/s)
-
 do_annihilation = [0,1] compute annihilation rates based on
 		integrating distribution functions over annihilation kernels.
 
 reflect_outer = [0,1]
 	      0 --> outflow outer boundary conditions
 	      1 --> reflecting outer boundary conditions
-
-use_scattering_kernels = [0,1] 1 uses full inelastic scattering formalism. 0 assumes
-		       elastic, isotropic scattering and neglects the delta and
-		       inelastic_phi* data in nulib files
 
 
 ||===================||
@@ -144,11 +131,11 @@ Grid0DIsotropic_Ye = [0<=float<=1] electron fraction
    Grid3DCart_reflect_y = [0,1] reflection symmetry across y=0 plane?
    Grid3DCart_reflect_z = [0,1] reflection symmetry across z=0 plane?
    Grid3DCart_rotate_hemisphere_x = [0,1] hemispherical rotational
-   				  symmetry with boundaries at x=0?
+   				  symmetry with boundaries at x.eq.0?
    Grid3DCart_rotate_hemisphere_y = [0,1] hemispherical rotational
-   				  symmetry with boundaries at y=0?
+   				  symmetry with boundaries at y.eq.0?
    Grid3DCart_rotate_quadrant = [0,1] quadrant rotational symmetry
-   			      with boundaries at x=0 and y=0?
+   			      with boundaries at x.eq.0 and y.eq.0?
    Grid3DCart_THC_reflevel = [int>0] (model_type="THC") read data from
    			   which THC refinement level
 

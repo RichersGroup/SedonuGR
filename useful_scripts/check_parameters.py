@@ -44,11 +44,12 @@ for filename in test_files:
     if filename[-4:]!=".lua":
         continue
     with open(filename,'r') as f:
+        print(filename)
         for line in f:
             if "=" in line and line.strip()[:2]!="--":
                 parname = line.split("=")[0].strip()
                 if parname not in source_parlist:
-                    print(parname,"\tin",filename)
+                    print("\t",parname)
 
 
 print()
