@@ -55,11 +55,6 @@ Transport::Transport(){
 	verbose = -MAXLIM;
 	MPI_nprocs = -MAXLIM;
 	MPI_myID = -MAXLIM;
-	equilibrium_T = -MAXLIM;
-	equilibrium_Ye = -MAXLIM;
-	equilibrium_damping = NaN;
-	equilibrium_itmax = -MAXLIM;
-	equilibrium_tolerance = NaN;
 	T_min = NaN;
 	T_max = NaN;
 	Ye_min = NaN;
@@ -120,13 +115,6 @@ void Transport::init(Lua* lua)
 	// read simulation parameters
 	verbose      = MPI_myID==0 ? lua->scalar<int>("verbose") : 0;
 	do_annihilation = lua->scalar<int>("do_annihilation");
-	equilibrium_T       = lua->scalar<int>("equilibrium_T");
-	equilibrium_Ye      = lua->scalar<int>("equilibrium_Ye");
-	if(equilibrium_T || equilibrium_Ye){
-		equilibrium_damping   = lua->scalar<double>("equilibrium_damping");
-		equilibrium_itmax     = lua->scalar<int>("equilibrium_itmax");
-		equilibrium_tolerance = lua->scalar<double>("equilibrium_tolerance");
-	}
 	min_step_size     = lua->scalar<double>("min_step_size");
 	max_step_size     = lua->scalar<double>("max_step_size");
 	do_randomwalk = lua->scalar<int>("do_randomwalk");

@@ -6,11 +6,6 @@ do_annihilation = 0
 do_randomwalk = 0
 reflect_outer = 0
 
--- Equilibrium Solving
-
-equilibrium_T  = 0
-equilibrium_Ye = 0
-
 -- Opacity and Emissivity
 
 neutrino_type = "grey"

@@ -5,11 +5,6 @@ do_annihilation = 0
 reflect_outer = 0
 do_randomwalk = 1
 
--- Equilibrium Solving
-
-equilibrium_T  = 0
-equilibrium_Ye = 0
-
 -- Opacity and Emissivity
 
 opacity_dir = "NSY/opacities"

@@ -79,9 +79,6 @@ protected:
 
 
 	// solve for temperature and Ye (if steady_state)
-	double equilibrium_damping;
-	int    equilibrium_itmax;
-	double equilibrium_tolerance;
 	void   normalize_radiative_quantities();
 
 	// simulation parameters
@@ -114,8 +111,6 @@ public:
 
 	int verbose;
 
-	int    equilibrium_T;
-	int    equilibrium_Ye;
 	double T_min,  T_max;
 	double Ye_min, Ye_max;
 	double rho_min, rho_max;

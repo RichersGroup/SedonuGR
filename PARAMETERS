@@ -15,25 +15,6 @@ reflect_outer = [0,1]
 	      1 --> reflecting outer boundary conditions
 
 
-||===================||
-||EQUILIBRIUM SOLVING||
-||===================||
-
-equilibrium_T = [0,1] solve for T such that each zone emits the energy
-	      it absorbs after each iteration
-
-equilibrium_Ye = [0,1] solve for Ye such that the zone emits the
-	       lepton number it absorbs after each iteration
-
-equilibrium_damping = [0<float<1] changes in values between iterations
-		    are decreased by this factor to stabilize the solve
-
-equilibrium_itmax = [int>0] maximum number of iterations the
-		  equilibrium solver can use
-
-equilibrium_tolerance = [float>0] tolerance of the equilibrium solver
-
-
 ||======================||
 ||OPACITY AND EMISSIVITY||
 ||======================||

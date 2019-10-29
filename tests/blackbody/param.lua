@@ -4,11 +4,6 @@ do_randomwalk = 1
 do_relativity = 1
 do_annihilation = 0
 
--- Equilibrium Solving
-
-equilibrium_T  = 0
-equilibrium_Ye = 0
-
 -- Opacity and Emissivity
 
 neutrino_type = "NuLib"
