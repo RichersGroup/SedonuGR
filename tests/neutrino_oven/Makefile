@@ -10,4 +10,4 @@ all:
 	python3 oven_test.py
 
 clean:
-	rm -f fluid_*.h5 oven.mod
+	rm -f fluid_*.h5 oven.mod *.pdf

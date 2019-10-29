@@ -1,1 +1,0 @@
-This test should plot the flux against the gradient of energy to compare with Fick's law. To run the test just execute "make".

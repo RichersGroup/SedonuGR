@@ -1,12 +1,9 @@
 
 -- Included Physics
 
-do_GR         = 0
-do_visc       = 0
 do_relativity = 0
 do_annihilation = 0
 do_randomwalk = 1
-use_scattering_kernels = 0
 reflect_outer = 1
 
 -- Equilibrium Solving
@@ -37,7 +34,6 @@ spec_n_phi      = 1
 distribution_type = "Polar"
 distribution_nmu = 2
 distribution_nphi = 2
-distribution_polar_basis = 0
 
 -- Grid and Model
 
@@ -48,16 +44,10 @@ model_file = "oven.mod"
 -- Output
 
 write_zones_every   = 1
-write_rays_every    = 1
-write_spectra_every = 1
-output_zones_distribution = 0
-output_hdf5 = 0
 
 -- Particle Creation
 
-max_particles  = 2e7
 n_subcycles = 1
-do_emit_by_bin = 1
 n_emit_core_per_bin    = 100
 n_emit_therm_per_bin   = 10
 max_time_hours = -1
