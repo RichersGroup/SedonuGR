@@ -36,7 +36,7 @@ write_zones_every   = 1
 n_subcycles = 1
 n_emit_core_per_bin    = 0
 n_emit_therm_per_bin = 1
-min_packet_weight = 0.1
+min_packet_weight = 0.5
 
 -- Inner Source
 
