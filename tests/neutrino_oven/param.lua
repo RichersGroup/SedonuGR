@@ -39,8 +39,8 @@ write_zones_every   = 1
 -- Particle Creation
 
 n_subcycles = 1
-n_emit_core_per_bin    = 100
-n_emit_therm_per_bin   = 1
+n_emit_core_per_bin    = 10
+n_emit_therm_per_bin   = 10
 max_time_hours = -1
 
 -- Inner Source
