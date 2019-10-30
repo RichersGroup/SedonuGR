@@ -35,7 +35,7 @@ write_zones_every   = 1
 
 n_subcycles = 1
 n_emit_core_per_bin    = 0
-n_emit_therm_per_bin   = 500
+n_emit_therm_per_bin   = 50
 
 -- Inner Source
 

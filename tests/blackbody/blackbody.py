@@ -1,3 +1,6 @@
+makeplots = False
+if not makeplots:
+    exit()
 import matplotlib as mpl
 mpl.use('Agg') # don't use X interface so it works on Travis
 import matplotlib.pyplot as plt
