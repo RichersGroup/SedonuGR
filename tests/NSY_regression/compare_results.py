@@ -1,4 +1,4 @@
-makeplots = False
+makeplots = True
 if makeplots:
     import matplotlib as mpl
     mpl.use('Agg')
@@ -27,10 +27,22 @@ fold = np.array([
 
 newfile = h5py.File("fluid_00001.h5","r")
 r = np.array(newfile["axes/x0(cm)[mid]"])[start:stop]
-fnew = np.array([
+fnew_com = np.array([
     newfile["distribution0(erg|ccm,tet)"],
     newfile["distribution1(erg|ccm,tet)"],
     newfile["distribution2(erg|ccm,tet)"]])[:,start:stop]
+
+# convert to a lab-frame distribution
+clight = 2.99792458e10 # cm/s
+vr = np.genfromtxt("NSY/data_Sherwood_format/douSherw.00120",usecols=(5))[start:stop]/clight
+W = 1./np.sqrt(1.-vr*vr)
+J = fnew_com[:,:,:,0]
+Hr = fnew_com[:,:,:,1]
+Krr = fnew_com[:,:,:,2]
+fnew = np.zeros(np.shape(fnew_com))
+fnew[:,:,:,0] = (J + (2.*Hr + Krr*vr[np.newaxis,:,np.newaxis])*vr[np.newaxis,:,np.newaxis]) * W[np.newaxis,:,np.newaxis]**2
+fnew[:,:,:,1] = (Hr*(1. + vr[np.newaxis,:,np.newaxis]**2) + (J+Krr)*vr[np.newaxis,:,np.newaxis])*W[np.newaxis,:,np.newaxis]**2
+fnew[:,:,:,2] = (Krr + (2.*Hr + J*vr[np.newaxis,:,np.newaxis])*vr[np.newaxis,:,np.newaxis])*W[np.newaxis,:,np.newaxis]**2
 
 def normalized_error(string,old, new):
     npoints = np.prod(np.shape(old))
