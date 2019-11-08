@@ -121,6 +121,7 @@ void Neutrino_GR1D::set_eas_external(const double* easarray, bool* /*extract_MC*
 			// set opacities
 			sim->grid->abs_opac[ID][global_index] = easarray[aind] / nulib_opacity_gf; // 1/cm
 			sim->grid->scat_opac[ID][global_index] = easarray[sind] / nulib_opacity_gf; // 1/cm
+			sim->grid->inelastic_scat_opac[ID][global_index] = 0; // 1/cm
 		}
 	}
 }
