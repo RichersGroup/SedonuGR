@@ -141,7 +141,10 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	if(eh->absopac > 0){
 		double opt_depth = eh->absopac * path_length_com;
 		Nfinal = eh->N * exp(-opt_depth);
-		Naverage = (eh->N - Nfinal) / (opt_depth);
+		if((eh->N-Nfinal)/eh->N < TINY)
+		  Naverage = (eh->N + Nfinal) / 2;
+		else
+		  Naverage = (eh->N - Nfinal) / (opt_depth);
 	}
 	PRINT_ASSERT(Naverage,<=,eh_old.N);
 	PRINT_ASSERT(Nfinal,<=,Naverage);
