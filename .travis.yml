@@ -13,7 +13,7 @@ python:
 notifications:
   email:
     recipients:
-      - sricher@ncsu.edu
+      - ssanjan@ncsu.edu
     on_success: change
     on_failure: always
 
