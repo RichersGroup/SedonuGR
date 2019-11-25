@@ -1,8 +1,7 @@
 .PHONY: all clean
 
 all:
-	../../exe/scattering_test elastic_isotropic_kernel.lua
-	python3 check_results.py
+	../../exe/inelastic_scattering inelastic_scatter_kernel.lua
 
 clean:
-	rm -f spectrum_* ray_* fluid_* *.pdf *.dat empty_sphere.mod *~
+	rm -f spectrum_* ray_* fluid_* *.pdf *.dat *~
