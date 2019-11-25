@@ -216,4 +216,7 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<do
 	}
 	eh->set_kup_tet(kup_tet_new);
 	PRINT_ASSERT(eh->N,<,1e99);
+	//check whether scattering should be blocked
+	double blocking = grid->fblock[eh->s].interpolate(eh->icube_spec);
+	if(rangen.uniform() < blocking) eh->set_kup_tet(kup_tet_old);
 }
