@@ -44,42 +44,42 @@ namespace pc = physical_constants;
 const size_t NF=4;
 
 
-	// set up the transport module (includes the grid)
-	class testTransport : public Transport{
-	public:
-		void move(EinsteinHelper *eh, double* ct){
-			PRINT_ASSERT(eh->ds_com,>=,0);
-			PRINT_ASSERT(eh->N,>,0);
-			PRINT_ASSERT(abs(eh->g.dot<4>(eh->kup,eh->kup)) / (eh->kup[3]*eh->kup[3]), <=, TINY);
+// set up the transport module (includes the grid)
+class testTransport : public Transport{
+public:
+	void move(EinsteinHelper *eh, double* ct){
+		PRINT_ASSERT(eh->ds_com,>=,0);
+		PRINT_ASSERT(eh->N,>,0);
+		PRINT_ASSERT(abs(eh->g.dot<4>(eh->kup,eh->kup)) / (eh->kup[3]*eh->kup[3]), <=, TINY);
 
-			// save old values
-			Tuple<double,4> old_kup = eh->kup;
+		// save old values
+		Tuple<double,4> old_kup = eh->kup;
 
-			// convert ds_com into dlambda
-			double dlambda = eh->ds_com / eh->kup_tet[3];
-			PRINT_ASSERT(dlambda,>=,0);
+		// convert ds_com into dlambda
+		double dlambda = eh->ds_com / eh->kup_tet[3];
+		PRINT_ASSERT(dlambda,>=,0);
 
-			// get 2nd order x, 1st order estimate for k
-			Tuple<double,4> order1 = old_kup * dlambda;
+		// get 2nd order x, 1st order estimate for k
+		Tuple<double,4> order1 = old_kup * dlambda;
+		for(size_t i=0; i<4; i++)
+			eh->xup[i] += order1[i];
+		if(DO_GR){
+			Tuple<double,4> dk_dlambda = grid->dk_dlambda(*eh);
+			Tuple<double,4> order2 = dk_dlambda * dlambda*dlambda * 0.5;
+			eh->kup = old_kup + dk_dlambda * dlambda;
 			for(size_t i=0; i<4; i++)
-				eh->xup[i] += order1[i];
-			if(DO_GR){
-				Tuple<double,4> dk_dlambda = grid->dk_dlambda(*eh);
-				Tuple<double,4> order2 = dk_dlambda * dlambda*dlambda * 0.5;
-				eh->kup = old_kup + dk_dlambda * dlambda;
-				for(size_t i=0; i<4; i++)
-					eh->xup[i] += (abs(order2[i]/order1[i])<1. ? order2[i] : 0);
-			}
-
-			// get new background data
-			update_eh_background(eh);
-			if(eh->fate==moving)
-				update_eh_k_opac(eh);
-
-			double ds_com_new = dlambda*eh->kup_tet[3];
-			*ct += (ds_com_new + eh->ds_com) / 2.;
+				eh->xup[i] += (abs(order2[i]/order1[i])<1. ? order2[i] : 0);
 		}
-	};
+
+		// get new background data
+		update_eh_background(eh);
+		if(eh->fate==moving)
+			update_eh_k_opac(eh);
+
+		double ds_com_new = dlambda*eh->kup_tet[3];
+		*ct += (ds_com_new + eh->ds_com) / 2.;
+	}
+};
 
 class TrajectoryData{
 public:
@@ -172,10 +172,9 @@ void append_data(const Transport* sim, const EinsteinHelper* eh, double ct, Traj
 					moments[9] * khat_tet[2]*khat_tet[2]*1. ) / n_species); // zz
 		}
 	}
-	cout << "n=" << td->ct.size() << endl;
 }
 
-hid_t create_file(string filename, const TrajectoryData& td, const testTransport& sim){
+void create_file(string filename, const TrajectoryData& td, const testTransport& sim){
 	hid_t file = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 	hid_t dset, file_space, mem_space;
 	hsize_t ndims;
@@ -272,7 +271,6 @@ hid_t create_file(string filename, const TrajectoryData& td, const testTransport
 	H5Sclose(file_space);
 	H5Sclose(mem_space);
 	H5Fclose(file);
-	return file;
 }
 
 //--------------------------------------------------------
@@ -306,71 +304,78 @@ int main(int argc, char **argv)
 	const int NE = sim.grid->nu_grid_axis.size();
 
 	// read in starting points
-	vector<double> r    = lua.vector<double>("RayTracing_initial_r");
-	vector<double> phi  = lua.vector<double>("RayTracing_initial_phi");
-	vector<double> z    = lua.vector<double>("RayTracing_initial_z");
-	vector<double> kmu  = lua.vector<double>("RayTracing_initial_kmu");
-	vector<double> kphi = lua.vector<double>("RayTracing_initial_kphi");
-	int ntrajectories = r.size();
+	int line_direction = lua.scalar<int>("RayTracing_line_direction");
+	vector<int> start_indices = lua.vector<int>("RayTracing_start_indices");
+	vector<int> kthetadegrees  = lua.vector<int>("RayTracing_initial_kthetadegrees");
+	vector<int> kphidegrees    = lua.vector<int>("RayTracing_initial_kphidegrees");
 	lua.close();
 
+	for(size_t itheta=0; itheta<kthetadegrees.size(); itheta++){
+		for(size_t iphi=0; iphi<kphidegrees.size(); iphi++){
+			double costheta = cos(kthetadegrees[itheta] * M_PI/180.);
+			double sintheta = sin(kthetadegrees[itheta] * M_PI/180.);
+			double cosphi = cos(kphidegrees[iphi] * M_PI/180.);
+			double sinphi = sin(kphidegrees[iphi] * M_PI/180.);
+			vector<double> kup(4);
+			kup[0] = sintheta*cosphi;
+			kup[1] = sintheta*sinphi;
+			kup[2] = costheta;
+			kup[3] = 1.;
+			int ntrajectories = sim.grid->xAxes[line_direction].size();
 
-	for(int itraj=0; itraj<ntrajectories; itraj++){
-		vector<double> xup(3), kup(3);
-		xup[0] = r[itraj] * cos(phi[itraj]*M_PI/180.);
-		xup[1] = r[itraj] * sin(phi[itraj]*M_PI/180.);
-		xup[2] = z[itraj];
-		double rmag = sqrt(r[itraj]*r[itraj] + z[itraj]*z[itraj]);
-		double netphi = kphi[itraj]*phi[itraj]*M_PI/180.;
-		double sintheta_k = (1.-kmu[itraj]*kmu[itraj]);
-		kup[0] = cos(netphi) * sintheta_k;
-		kup[1] = sin(netphi) * sintheta_k;
-		kup[2] = kmu[itraj];
 
-		// set up filename
-		stringstream filename_stream;
-		filename_stream << std::fixed;
-		filename_stream.precision(1);
-		filename_stream << "trajectory_r" << r[itraj]/1e5;
-		filename_stream.precision(0);
-		filename_stream << "phi" << phi[itraj];
-		filename_stream.precision(1);
-		filename_stream  << "z"<<z[itraj]/1e5;
-		filename_stream << "_kmu"<<kmu[itraj];
-		filename_stream.precision(0);
-		filename_stream << "kphi"<<kphi[itraj];
-		if(DO_GR) filename_stream << "_GR";
-		filename_stream << ".h5";
-		string outfilename;
-		outfilename = filename_stream.str();
-		cout << outfilename << endl;
-		continue;
+			for(int itraj=0; itraj<ntrajectories; itraj++){
+				vector<double> xup(4);
+				for(size_t d=0; d<3; d++){
+					xup[d] = sim.grid->xAxes[d].mid[ (d==line_direction ? itraj : start_indices[d]) ];
+					cout << xup[d]/1e5 << " ";
+				}
+				xup[3] = 0.;
+				cout << endl;
 
-		// initialize the EinsteinHelper
-		EinsteinHelper eh;
-		TrajectoryData td(NS,NE);
-		for(int i=0; i<3; i++){
-			eh.xup[i] = xup[i];
-			eh.kup[i] = kup[i];
+				// set up filename
+				stringstream filename_stream;
+				filename_stream << std::fixed;
+				filename_stream.precision(1);
+				filename_stream << "trajectory_";
+				filename_stream << "x" << (0==line_direction ? itraj : start_indices[0]);
+				filename_stream << "y" << (1==line_direction ? itraj : start_indices[1]);
+				filename_stream << "z" << (2==line_direction ? itraj : start_indices[2]);
+				filename_stream.precision(1);
+				filename_stream << "_ktheta"<<kthetadegrees[itheta];
+				filename_stream << "kphi"<<kphidegrees[iphi];
+				filename_stream << ".h5";
+				string outfilename;
+				outfilename = filename_stream.str();
+				cout << outfilename << endl;
+
+				// initialize the EinsteinHelper
+				EinsteinHelper eh;
+				TrajectoryData td(NS,NE);
+				for(int i=0; i<4; i++){
+					eh.xup[i] = xup[i];
+					eh.kup[i] = kup[i];
+				}
+				eh.s = 0;
+				eh.N = 1;
+				eh.N0 = eh.N;
+				eh.fate = moving;
+
+				sim.update_eh_background(&eh);
+				eh.g.normalize_null_changeupt(eh.kup);
+				sim.update_eh_k_opac(&eh);
+				double ct = 0;
+				while(eh.fate==moving){
+					append_data(&sim, &eh, ct, &td);
+					double d_zone = sim.grid->zone_min_length(eh.z_ind) / sqrt(Metric::dot_Minkowski<3>(eh.kup,eh.kup)) * eh.kup_tet[3];
+					eh.ds_com = d_zone * sim.max_step_size;
+					ct += eh.ds_com;
+					sim.move(&eh, &ct);
+				}
+				create_file(outfilename, td, sim);
+				cout << td.ct.size()<< " steps" << endl;
+			}
 		}
-		eh.xup[3] = 0;
-		eh.s = 0;
-		eh.N = 1;
-		eh.N0 = eh.N;
-		eh.fate = moving;
-
-		sim.update_eh_background(&eh);
-		eh.g.normalize_null_changeupt(eh.kup);
-		sim.update_eh_k_opac(&eh);
-		double ct = 0;
-		while(eh.fate==moving){
-			append_data(&sim, &eh, ct, &td);
-			double d_zone = sim.grid->zone_min_length(eh.z_ind) / sqrt(Metric::dot_Minkowski<3>(eh.kup,eh.kup)) * eh.kup_tet[3];
-			eh.ds_com = d_zone * sim.max_step_size;
-			ct += eh.ds_com;
-			sim.move(&eh, &ct);
-		}
-		create_file(outfilename, td, sim);
 	}
 
 	// exit the program
