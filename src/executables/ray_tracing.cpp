@@ -30,6 +30,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
+#include <algorithm>
 #include "LuaRead.h"
 #include "Transport.h"
 #include "Species.h"
@@ -47,7 +48,7 @@ const size_t NF=4;
 // set up the transport module (includes the grid)
 class testTransport : public Transport{
 public:
-	void move(EinsteinHelper *eh, double* ct){
+	void move(EinsteinHelper *eh, double* ct, bool backwards){
 		PRINT_ASSERT(eh->ds_com,>=,0);
 		PRINT_ASSERT(eh->N,>,0);
 		PRINT_ASSERT(abs(eh->g.dot<4>(eh->kup,eh->kup)) / (eh->kup[3]*eh->kup[3]), <=, TINY);
@@ -62,13 +63,13 @@ public:
 		// get 2nd order x, 1st order estimate for k
 		Tuple<double,4> order1 = old_kup * dlambda;
 		for(size_t i=0; i<4; i++)
-			eh->xup[i] += order1[i];
+			eh->xup[i] += order1[i] * (backwards ? -1. : 1.);
 		if(DO_GR){
 			Tuple<double,4> dk_dlambda = grid->dk_dlambda(*eh);
 			Tuple<double,4> order2 = dk_dlambda * dlambda*dlambda * 0.5;
-			eh->kup = old_kup + dk_dlambda * dlambda;
+			eh->kup = old_kup + dk_dlambda * dlambda * (backwards ? -1. : 1.);
 			for(size_t i=0; i<4; i++)
-				eh->xup[i] += (abs(order2[i]/order1[i])<1. ? order2[i] : 0);
+				eh->xup[i] += (abs(order2[i]/order1[i])<1. ? order2[i] : 0) * (backwards ? -1. : 1.);
 		}
 
 		// get new background data
@@ -77,7 +78,7 @@ public:
 			update_eh_k_opac(eh);
 
 		double ds_com_new = dlambda*eh->kup_tet[3];
-		*ct += (ds_com_new + eh->ds_com) / 2.;
+		*ct += (ds_com_new + eh->ds_com) / 2. * (backwards ? -1. : 1.);
 	}
 };
 
@@ -110,6 +111,39 @@ public:
 				Ndens[s][g].resize(0);
 				Fdens[s][g].resize(0);
 				Pdens[s][g].resize(0);
+			}
+		}
+	}
+
+	// reverse and pop the back (originally first element) so it's not repeated
+	// when forward trajectory is done
+	void reverse(){
+		std::reverse(ct.begin(), ct.end());
+		std::reverse(Ecom_Elab.begin(), Ecom_Elab.end());
+		std::reverse(Elab_Elab0.begin(), Elab_Elab0.end());
+		std::reverse(TMeV.begin(),TMeV.end());
+		std::reverse(Ye.begin(),Ye.end());
+		std::reverse(rho.begin(),rho.end());
+		ct.pop_back();
+		Ecom_Elab.pop_back();
+		Elab_Elab0.pop_back();
+		TMeV.pop_back();
+		Ye.pop_back();
+		rho.pop_back();
+
+		for(int i=0; i<x.size(); i++){
+			std::reverse(x[i].begin(),x[i].end());
+			x[i].pop_back();
+		}
+
+		for(int s=0; s<Ndens.size(); s++){
+			for(int g=0; g<Ndens[s].size(); g++){
+				std::reverse(Ndens[s][g].begin(),Ndens[s][g].end());
+				std::reverse(Fdens[s][g].begin(),Fdens[s][g].end());
+				std::reverse(Pdens[s][g].begin(),Pdens[s][g].end());
+				Ndens[s][g].pop_back();
+				Fdens[s][g].pop_back();
+				Pdens[s][g].pop_back();
 			}
 		}
 	}
@@ -273,6 +307,15 @@ void create_file(string filename, const TrajectoryData& td, const testTransport&
 	H5Fclose(file);
 }
 
+void propagateToBoundary(EinsteinHelper& eh, testTransport& sim, double& ct, TrajectoryData& td, bool backwards){
+	while(eh.fate==moving){
+		append_data(&sim, &eh, ct, &td);
+		double d_zone = sim.grid->zone_min_length(eh.z_ind) / sqrt(Metric::dot_Minkowski<3>(eh.kup,eh.kup)) * eh.kup_tet[3];
+		eh.ds_com = d_zone * sim.max_step_size;
+		sim.move(&eh, &ct, backwards);
+	}
+}
+
 //--------------------------------------------------------
 // The main code
 // The user writes this for their own needs
@@ -364,14 +407,19 @@ int main(int argc, char **argv)
 				sim.update_eh_background(&eh);
 				eh.g.normalize_null_changeupt(eh.kup);
 				sim.update_eh_k_opac(&eh);
+				EinsteinHelper eh_start = eh;
+
+				// backwards part
 				double ct = 0;
-				while(eh.fate==moving){
-					append_data(&sim, &eh, ct, &td);
-					double d_zone = sim.grid->zone_min_length(eh.z_ind) / sqrt(Metric::dot_Minkowski<3>(eh.kup,eh.kup)) * eh.kup_tet[3];
-					eh.ds_com = d_zone * sim.max_step_size;
-					ct += eh.ds_com;
-					sim.move(&eh, &ct);
-				}
+				propagateToBoundary(eh, sim, ct, td, true);
+
+				// forward part
+				ct = 0;
+				eh = eh_start;
+				td.reverse();
+				propagateToBoundary(eh, sim, ct, td, false);
+
+				// write the file
 				create_file(outfilename, td, sim);
 				cout << td.ct.size()<< " steps" << endl;
 			}
