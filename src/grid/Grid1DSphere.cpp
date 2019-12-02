@@ -442,9 +442,17 @@ double Grid1DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 
 		// get the min distance from the boundary in direction i. Negative if moving left
 		double drlab=0;
-		if(sgn>0) drlab = xAxes[0].top[eh.dir_ind[0]] - r;
-		if(sgn<0) drlab = xAxes[0].bottom(eh.dir_ind[0]) - r;
-		drlab = max(drlab, sim->max_step_size*zone_min_length(eh.z_ind));
+		double drmin = sim->min_step_size*zone_min_length(eh.z_ind);
+		if(sgn>0){
+		  drlab = xAxes[0].top[eh.dir_ind[0]] - r;
+		  if(drlab<drmin) drlab = drmin;
+		  assert(drlab>0);
+		}
+		if(sgn<0){
+		  drlab = xAxes[0].bottom(eh.dir_ind[0]) - r;
+		  if(-drlab<drmin) drlab = -drmin;
+		  assert(drlab<0);
+		}
 		
 		R = min(R, sim->R_randomwalk(kr/kup_tet_t, ktest[3]/kup_tet_t, ur, drlab, D));
 	}
