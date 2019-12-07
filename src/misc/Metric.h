@@ -202,6 +202,7 @@ public:
 	// normalize a four vector to have a norm of +/-1
 	void normalize(Tuple<double,4>& x) const{
 		double invnorm = sqrt(fabs(1./dot<4>(x,x)));
+		PRINT_ASSERT(invnorm,>,0);
 		for(size_t i=0; i<4; i++) x[i] *= invnorm;
 	}
 
@@ -275,7 +276,9 @@ public:
 	// make four vector v orthogonal to four vector v
 	template<size_t n>
 	void orthogonalize(Tuple<double,n>& v, const Tuple<double,n>& e) const{
-		double projection = dot<n>(v,e) / dot<n>(e,e);
+	        double edote = dot<n>(e,e);
+		PRINT_ASSERT(edote,!=,0);
+		double projection = dot<n>(v,e) / edote;
 		for(size_t mu=0; mu<n; mu++) v[mu] -= projection * e[mu];
 	}
 
