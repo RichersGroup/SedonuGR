@@ -122,6 +122,7 @@ public:
 	    
 	    // pathological case
 	    if(rp==0){
+	      for(int i=0; i<4; i++) for(int j=0; j<4; j++) e[i][j] = 0.;
 	      e[0][0] = 1.0; // theta in x direction
 	      e[1][1] = 1.0; // phi in y direction
 	      e[2][2] = xup[2]>0 ? 1.0 : -1.0; // radial in z direction
