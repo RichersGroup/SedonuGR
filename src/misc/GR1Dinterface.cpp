@@ -218,7 +218,7 @@ void calculate_mc_closure_(
 	const size_t nr = (*sim)->grid->rho.size();
 	const size_t ns = (*sim)->species_list.size();
 	const size_t ne = (*sim)->grid->nu_grid_axis.size();
-	const double fsmooth = *dt*GR1D_recalc_every/time_gf / GR1D_smoothing_timescale;
+	const double fsmooth = (*dt>GR1D_smoothing_timescale ? 1.0 : *dt*GR1D_recalc_every/time_gf / GR1D_smoothing_timescale );
 	PRINT_ASSERT(fsmooth,<=,1.0);
 	PRINT_ASSERT(fsmooth,>=,0.0);
 
