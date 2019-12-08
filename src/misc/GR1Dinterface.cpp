@@ -327,8 +327,9 @@ void calculate_mc_closure_(
 
 				// need to set plus/minus chi - used for estimating the characteristic speeds
 				// There is no way to compute, e.g., dP/dE to be able to compute characteristics
-				// using Monte Carlo.
-				q_M1_extra[indexChi] = q_M1_extra_2mom[indexChi];
+				// using Monte Carlo. With this treatment there will be issues where Ptt>1/3
+				// (e.g., crossing beams)
+				q_M1_extra[indexChi] = min( max( (1. - 2.*Ptt_E_tet[index]), 1./3.), 1.);
 
 				// write out the variables
 				// do flat interpolation to plus/minus
