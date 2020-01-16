@@ -115,6 +115,7 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 
 	// FIND D_ELASTIC_SCATTER =================================================================
 	double d_interact = INFINITY;
+	eh->scatopac = 0;
 	if(*event!=randomwalk && eh->scatopac>0){
 		double tau;
 		do{
@@ -202,7 +203,7 @@ void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 	// tally in contribution to zone's distribution function (lab frame)
 	// use old coordinates/directions to avoid problems with boundaries
 	double avg_N = (tau>TINY ? dN/tau : eh_old.N);
-	grid->distribution[eh_old.s]->count(eh_old.kup_tet, eh_old.icube_spec, avg_N*dlambda*eh_old.kup_tet[3]*eh_old.kup_tet[3]);
+	grid->distribution[eh_old.s]->count_single(eh_old.kup_tet, eh_old.dir_ind, avg_N*dlambda*eh_old.kup_tet[3]*eh_old.kup_tet[3]);
 
 }
 

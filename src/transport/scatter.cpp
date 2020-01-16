@@ -173,7 +173,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	double Eiso = pc::h*eh->nu() * Naverage * (path_length_com - Rcom);
 	for(int corner=0; corner<eh_old.icube_spec.ncorners; corner++){
       double weight = eh_old.icube_spec.weights[corner];
-	  grid->distribution[eh_old.s]->add_isotropic(eh_old.icube_spec, Eiso*weight);
+	  grid->distribution[eh_old.s]->add_isotropic_single(eh_old.dir_ind, Eiso*weight);
 	}
 	grid->l_abs[eh_old.z_ind] += (eh_old.N - Nfinal) * species_list[eh->s]->lepton_number;
 	for(size_t i=0; i<4; i++)
