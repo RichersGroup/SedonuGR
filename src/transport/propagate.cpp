@@ -115,7 +115,6 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 
 	// FIND D_ELASTIC_SCATTER =================================================================
 	double d_interact = INFINITY;
-	eh->scatopac = 0;
 	if(*event!=randomwalk && eh->scatopac>0){
 		double tau;
 		do{
