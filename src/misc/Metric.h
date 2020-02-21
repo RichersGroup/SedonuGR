@@ -39,6 +39,7 @@ public:
 		result += data[ixx] * (data[iyy]*data[izz] - data[iyz]*data[iyz]);
 		result -= data[ixy] * (data[ixy]*data[izz] - data[iyz]*data[ixz]);
 		result += data[ixz] * (data[ixy]*data[iyz] - data[iyy]*data[ixz]);
+		PRINT_ASSERT(result,>,0);
 		return result;
 	}
 	Tuple<double,3> lower(const Tuple<double,3>& in) const{
