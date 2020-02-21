@@ -84,7 +84,6 @@ public:
 
 	// get four velocity from three velocity
 	void set_fourvel(){
-	  PRINT_ASSERT(g.gammalow.det(),>,0);
 		const Tuple<double,3> vdimless = v / pc::c;//{v[0]/pc::c, v[1]/pc::c, v[2]/pc::c};
 		double W = lorentzFactor(&g,vdimless);
 		u[3] = W / (DO_GR ? g.alpha : 1.0);
