@@ -99,7 +99,7 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 	// FIND D_RANDOMWALK
 	double d_randomwalk = INFINITY;
 	if(do_randomwalk && eh->scatopac*eh->ds_com>randomwalk_min_optical_depth){ // coarse check
-		d_randomwalk = grid->d_randomwalk(*eh);
+		d_randomwalk = min(max(grid->d_randomwalk(*eh), d_zone*min_step_size), d_zone*max_step_size);
 		if(eh->absopac > 0){
 			double D = pc::c / (3. * eh->scatopac);
 			double R_abs_limited = sqrt(absorption_depth_limiter * D / eh->absopac);
