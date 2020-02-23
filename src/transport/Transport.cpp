@@ -741,7 +741,7 @@ double Transport::R_randomwalk(const double kx_kttet, const double kt_kttet, con
 	double a = ux*pc::c * randomwalk_max_x / D;
 	double c = dlab;
 	double R = NaN;
-	double rad = 4.*a*c > b*b;
+	double rad = b*b - 4.*a*c;
 	if(rad<0) R = 0; // if no solution, say randomwalk can't be done
 	else if(abs(4.*a*c/(b*b)) < sqrt(TINY)){
 		R = c / b;
