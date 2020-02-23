@@ -102,7 +102,7 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 		d_randomwalk = min(max(grid->d_randomwalk(*eh), d_zone*min_step_size), d_zone*max_step_size);
 		if(eh->absopac > 0){
 			double D = pc::c / (3. * eh->scatopac);
-			double R_abs_limited = sqrt(absorption_depth_limiter * D / eh->absopac);
+			double R_abs_limited = sqrt(absorption_depth_limiter * D / eh->absopac); // assumes a Delta t = 1s.
 			d_randomwalk = min(d_randomwalk, R_abs_limited);
 		}
 		if(d_randomwalk == INFINITY) d_randomwalk = 1.1*randomwalk_min_optical_depth / eh->scatopac;
@@ -203,7 +203,7 @@ void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 	// use old coordinates/directions to avoid problems with boundaries
 	double avg_N = (tau>TINY ? dN/tau : eh_old.N);
 	grid->distribution[eh_old.s]->count_single(eh_old.kup_tet, eh_old.dir_ind, avg_N*dlambda*eh_old.kup_tet[3]*eh_old.kup_tet[3]);
-
+	
 }
 
 
