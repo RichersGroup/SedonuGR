@@ -179,10 +179,7 @@ void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 
 		// appropriately reduce the particle's energy from absorption
 		// assumes kup_tet and absopac vary linearly along the trajectory
-		double ds_com_new = dlambda*eh->kup_tet[3];
-		double tau1 = 1./3. * (eh->ds_com*eh_old.absopac + ds_com_new*eh->absopac);
-		double tau2 = 1./6. * (eh->ds_com*eh->absopac + ds_com_new*eh_old.absopac);
-		tau = tau1 + tau2;
+		tau = eh_old.ds_com * eh_old.absopac;
 		eh->N *= exp(-tau);
 		dN = eh_old.N - eh->N;
 		window(eh);
