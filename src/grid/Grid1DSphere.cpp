@@ -454,7 +454,7 @@ double Grid1DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 		  assert(drlab<0);
 		}
 		
-		R = min(R, sim->R_randomwalk(kr/kup_tet_t, ktest[3]/kup_tet_t, ur, drlab, D));
+		R = min(R, sim->R_randomwalk(kr/kup_tet_t, ur, drlab, D));
 	}
 
 	PRINT_ASSERT(R,>=,0);

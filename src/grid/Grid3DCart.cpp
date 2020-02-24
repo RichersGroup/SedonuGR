@@ -548,7 +548,7 @@ double Grid3DCart::d_randomwalk(const EinsteinHelper& eh) const{
 			if(sgn>0) dxlab = xAxes[i].top[eh.dir_ind[i]] - eh.xup[i];
 			if(sgn<0) dxlab = xAxes[i].bottom(eh.dir_ind[i]) - eh.xup[i];
 
-			R = min(R, sim->R_randomwalk(ktest[i]/kup_tet_t, ktest[3]/kup_tet_t, eh.u[i], dxlab, D));
+			R = min(R, sim->R_randomwalk(ktest[i]/kup_tet_t, eh.u[i], dxlab, D));
 		}
 	}
 

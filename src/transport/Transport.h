@@ -155,7 +155,7 @@ public:
 	void set_cdf_to_BB(const double T, const double chempot, CDFArray& emis);
 	static void isotropic_kup_tet(const double nu, Tuple<double,4>& kup_tet, ThreadRNG *rangen);
 	static void isotropic_direction(Tuple<double,3>& D, ThreadRNG *rangen);
-	double R_randomwalk(const double kx_kttet, const double kt_kttet, const double ux, const double dlab, const double D);
+	double R_randomwalk(const double kx_kttet, const double ux, const double dlab, const double D);
 	bool reject_direction(const double costheta, const double delta) const;
 
 	// set things up

@@ -663,7 +663,7 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 		if(sgn>0) drlab = xAxes[0].top[eh.dir_ind[0]] - r;
 		if(sgn<0) drlab = xAxes[0].bottom(eh.dir_ind[0]) - r;
 
-		R = min(R, sim->R_randomwalk(kr/kup_tet_t, ktest[3]/kup_tet_t, ur, drlab, D));
+		R = min(R, sim->R_randomwalk(kr/kup_tet_t, ur, drlab, D));
 	}
 
 	double rp = sqrt(x*x + y*y);
@@ -688,7 +688,7 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 		if(sgn>0) dthetalab = xAxes[1].top[eh.dir_ind[1]] - theta;
 		if(sgn<0) dthetalab = xAxes[1].bottom(eh.dir_ind[1]) - theta;
 
-		R = min(R, sim->R_randomwalk(ktheta/kup_tet_t, ktest[3]/kup_tet_t, utheta, r*dthetalab, D));
+		R = min(R, sim->R_randomwalk(ktheta/kup_tet_t, utheta, r*dthetalab, D));
 	}
 
 	PRINT_ASSERT(R,>=,0);
