@@ -648,7 +648,7 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 	ktest[2] = z;
 	ktest[3] = 0;
 	const double r = radius(eh.xup);
-	const double ur = radius(eh.u);
+	const double ur = Metric::dot_Minkowski<3>(ktest,eh.u)/r;
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector
 		for(size_t i=0; i<3; i++) ktest[i] *= sgn;
@@ -672,6 +672,7 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 	ktest2[1] = y*z;
 	ktest2[2] = -rp*rp;
 	ktest2[3] = 0;
+	const double utheta = Metric::dot_Minkowski<3>(ktest2,eh.u)/r;
 	double theta = Grid2DSphere_theta(eh.xup);
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector
@@ -687,7 +688,7 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 		if(sgn>0) dthetalab = xAxes[1].top[eh.dir_ind[1]] - theta;
 		if(sgn<0) dthetalab = xAxes[1].bottom(eh.dir_ind[1]) - theta;
 
-		R = min(R, sim->R_randomwalk(ktheta/kup_tet_t, ktest[3]/kup_tet_t, ur, r*dthetalab, D));
+		R = min(R, sim->R_randomwalk(ktheta/kup_tet_t, ktest[3]/kup_tet_t, utheta, r*dthetalab, D));
 	}
 
 	PRINT_ASSERT(R,>=,0);

@@ -430,7 +430,7 @@ double Grid1DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 	ktest[3] = 0;
 	const double r = radius(eh.xup);
 	const double kr = r;
-	const double ur = radius(eh.u);
+	const double ur = Metric::dot_Minkowski<3>(ktest,eh.u)/r;
 
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector
