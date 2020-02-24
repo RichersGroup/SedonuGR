@@ -430,7 +430,7 @@ double Grid1DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 	ktest[3] = 0;
 	const double r = radius(eh.xup);
 	const double kr = r;
-	const double ur = radius(eh.u);
+	const double ur = Metric::dot_Minkowski<3>(ktest,eh.u)/r;
 
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector
@@ -454,7 +454,7 @@ double Grid1DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 		  assert(drlab<0);
 		}
 		
-		R = min(R, sim->R_randomwalk(kr/kup_tet_t, ktest[3]/kup_tet_t, ur, drlab, D));
+		R = min(R, sim->R_randomwalk(kr/kup_tet_t, ur, drlab, D));
 	}
 
 	PRINT_ASSERT(R,>=,0);

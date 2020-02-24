@@ -468,29 +468,29 @@ void Transport::normalize_radiative_quantities(){
     #pragma omp parallel for
 	for(size_t z_ind=0;z_ind<grid->rho.size();z_ind++)
 	{
-		double inv_mult_four_vol = inv_multiplier / grid->zone_4volume(z_ind); // Lorentz invariant - same in lab and comoving frames. Assume lab_dt=1.0
-		PRINT_ASSERT(inv_mult_four_vol,>=,0);
+	  //double inv_mult_four_vol = inv_multiplier / grid->zone_4volume(z_ind); // Lorentz invariant - same in lab and comoving frames. Assume lab_dt=1.0
+	  //PRINT_ASSERT(inv_mult_four_vol,>=,0);
 
-		grid->fourforce_abs[z_ind] *= inv_mult_four_vol;       // erg      --> erg/ccm/s
-		grid->fourforce_emit[z_ind] *= inv_mult_four_vol;       // erg      --> erg/ccm/s
-		grid->l_abs[z_ind] *= inv_mult_four_vol; // num      --> num/ccm/s
-		grid->l_emit[z_ind] *= inv_mult_four_vol;// num      --> num/ccm/s
+		grid->fourforce_abs[z_ind] *= inv_multiplier;
+		grid->fourforce_emit[z_ind] *= inv_multiplier;
+		grid->l_abs[z_ind] *= inv_multiplier;
+		grid->l_emit[z_ind] *= inv_multiplier;
 
 		// represents *all* species if nux
 		size_t dir_ind[NDIMS];
 		grid->rho.indices(z_ind,dir_ind);
 		for(size_t s=0; s<species_list.size(); s++){
-		  grid->distribution[s]->rescale_spatial_point(dir_ind, inv_mult_four_vol * pc::inv_c);  // erg*dist --> erg/ccm
+		  grid->distribution[s]->rescale_spatial_point(dir_ind, inv_multiplier);
 		}
 	}
 
 	// normalize global quantities
 	for(size_t s=0; s<species_list.size(); s++){
-		grid->spectrum[s].rescale(inv_multiplier); // erg/s in each bin. Assume lab_dt=1.0
-		N_core_emit[s] *= inv_multiplier; // assume lab_dt=1.0
-		L_net_esc[s] *= inv_multiplier; // assume lab_dt=1.0
-		N_net_emit[s] *= inv_multiplier; // assume lab_dt=1.0
-		N_net_esc[s] *= inv_multiplier; // assume lab_dt=1.0
+		grid->spectrum[s].rescale(inv_multiplier);
+		N_core_emit[s] *= inv_multiplier;
+		L_net_esc[s] *= inv_multiplier;
+		N_net_emit[s] *= inv_multiplier;
+		N_net_esc[s] *= inv_multiplier;
 	}
 	particle_core_abs_energy *= inv_multiplier;
 	particle_rouletted_energy *= inv_multiplier;
@@ -664,7 +664,8 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 			eh->fate = absorbed;
 		}
 	}
-
+	eh->zone_fourvolume = grid->zone_coord_volume(eh->z_ind) * (DO_GR ? eh->g.alpha*sqrt(eh->g.gammalow.det()) : 1.); // assumes dt=1s.
+ 
 	// four-velocity
 	eh->v = grid->interpolate_fluid_velocity(*eh);
 	eh->set_fourvel();
@@ -735,13 +736,13 @@ void Transport::random_core_x(Tuple<double,4>& x) const{
 }
 
 // given k^x/k_tet^t and u^x and the lab-frame distance to the boundary, return the largest random walk sphere size
-double Transport::R_randomwalk(const double kx_kttet, const double kt_kttet, const double ux, const double dlab, const double D){
+double Transport::R_randomwalk(const double kx_kttet, const double ux, const double dlab, const double D){
 	PRINT_ASSERT(dlab*kx_kttet,>,0); // the displacement and the k vector should be in the same direction
-	double b = kx_kttet - kt_kttet * ux;
+	double b = kx_kttet - ux;
 	double a = ux*pc::c * randomwalk_max_x / D;
 	double c = dlab;
 	double R = NaN;
-	double rad = 4.*a*c > b*b;
+	double rad = b*b - 4.*a*c;
 	if(rad<0) R = 0; // if no solution, say randomwalk can't be done
 	else if(abs(4.*a*c/(b*b)) < sqrt(TINY)){
 		R = c / b;

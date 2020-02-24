@@ -102,7 +102,7 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 		d_randomwalk = min(max(grid->d_randomwalk(*eh), d_zone*min_step_size), d_zone*max_step_size);
 		if(eh->absopac > 0){
 			double D = pc::c / (3. * eh->scatopac);
-			double R_abs_limited = sqrt(absorption_depth_limiter * D / eh->absopac);
+			double R_abs_limited = sqrt(absorption_depth_limiter * D / eh->absopac); // assumes a Delta t = 1s.
 			d_randomwalk = min(d_randomwalk, R_abs_limited);
 		}
 		if(d_randomwalk == INFINITY) d_randomwalk = 1.1*randomwalk_min_optical_depth / eh->scatopac;
@@ -179,31 +179,28 @@ void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 
 		// appropriately reduce the particle's energy from absorption
 		// assumes kup_tet and absopac vary linearly along the trajectory
-		double ds_com_new = dlambda*eh->kup_tet[3];
-		double tau1 = 1./3. * (eh->ds_com*eh_old.absopac + ds_com_new*eh->absopac);
-		double tau2 = 1./6. * (eh->ds_com*eh->absopac + ds_com_new*eh_old.absopac);
-		tau = tau1 + tau2;
+		tau = eh_old.ds_com * eh_old.absopac;
 		eh->N *= exp(-tau);
 		dN = eh_old.N - eh->N;
 		window(eh);
 
-		// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
+		// store absorbed energy rate in *comoving* frame
 		for(size_t i=0; i<4; i++){
-			grid->fourforce_abs[eh_old.z_ind][i] += dN * eh_old.kup_tet[i];
+		        grid->fourforce_abs[eh_old.z_ind][i] += dN * eh_old.kup_tet[i] * pc::c / eh_old.zone_fourvolume;
 		}
 
 		// store absorbed lepton number (same in both frames, except for the
 		// factor of this_d which is divided out later
 		if(species_list[eh->s]->lepton_number != 0){
-			grid->l_abs[eh_old.z_ind] += dN * species_list[eh->s]->lepton_number;
+			grid->l_abs[eh_old.z_ind] += dN * species_list[eh->s]->lepton_number * pc::c / eh_old.zone_fourvolume;
 		}
 	}
 
 	// tally in contribution to zone's distribution function (lab frame)
 	// use old coordinates/directions to avoid problems with boundaries
-	double avg_N = (tau>TINY ? dN/tau : eh_old.N);
-	grid->distribution[eh_old.s]->count_single(eh_old.kup_tet, eh_old.dir_ind, avg_N*dlambda*eh_old.kup_tet[3]*eh_old.kup_tet[3]);
-
+	double avg_N = (tau>TINY ? dN/tau : (eh->N+eh_old.N)/2.);
+	grid->distribution[eh_old.s]->count_single(eh_old.kup_tet, eh_old.dir_ind, avg_N*eh_old.ds_com*eh_old.kup_tet[3] / eh_old.zone_fourvolume);
+	
 }
 
 

@@ -183,7 +183,7 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 	double T = grid->T.interpolate(eh.icube_vol);
 	double mu = grid->munue.interpolate(eh.icube_vol) * species_list[s]->lepton_number;
 	eh.N = number_blackbody(T,mu,nu) * eh.absopac * species_list[s]->weight; // #/s/cm^3/sr/(Hz^3/3)
-	eh.N *= grid->zone_coord_volume(eh.z_ind) * (DO_GR ? eh.g.alpha*sqrt(eh.g.gammalow.det()) : 1.);// frame-independent four-volume
+	eh.N *= eh.zone_fourvol;// frame-independent four-volume
 	eh.N *= weight * 4.*pc::pi/*sr*/ * grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/;
 	PRINT_ASSERT(eh.N,>=,0);
 	PRINT_ASSERT(eh.N,<,1e99);
@@ -196,9 +196,9 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 
 		// count up the emitted energy in each zone
 		N_net_emit[eh.s] += eh.N;
-		grid->l_emit[z_ind] -= eh.N * species_list[eh.s]->lepton_number;
+		grid->l_emit[z_ind] -= eh.N * species_list[eh.s]->lepton_number * pc::c / eh.zone_fourvolume;
 		for(size_t i=0; i<4; i++){
-			grid->fourforce_emit[z_ind][i] -= eh.N * kup_tet[i];
+			grid->fourforce_emit[z_ind][i] -= eh.N * kup_tet[i] * pc::c / eh.zone_fourvolume;
 		}
 	}
 	return eh.get_Particle();
