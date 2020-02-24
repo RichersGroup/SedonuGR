@@ -170,7 +170,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	eh->set_kup_tet(kup_tet_final);
 
 	// contribute energy isotropically
-	double Eiso = eh->kup_tet[3] * Naverage * (path_length_com - Rcom) / eh_old.zone_fourvolume;
+	double Eiso = eh->kup_tet[3] * Naverage * (path_length_com - Rcom) / (eh_old.zone_fourvolume*pc::c);
 	for(int corner=0; corner<eh_old.icube_spec.ncorners; corner++){
       double weight = eh_old.icube_spec.weights[corner];
 	  grid->distribution[eh_old.s]->add_isotropic_single(eh_old.dir_ind, Eiso*weight);

@@ -199,7 +199,7 @@ void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 	// tally in contribution to zone's distribution function (lab frame)
 	// use old coordinates/directions to avoid problems with boundaries
 	double avg_N = (tau>TINY ? dN/tau : (eh->N+eh_old.N)/2.);
-	grid->distribution[eh_old.s]->count_single(eh_old.kup_tet, eh_old.dir_ind, avg_N*eh_old.ds_com*eh_old.kup_tet[3] / eh_old.zone_fourvolume);
+	grid->distribution[eh_old.s]->count_single(eh_old.kup_tet, eh_old.dir_ind, avg_N*eh_old.ds_com*eh_old.kup_tet[3] / (eh_old.zone_fourvolume*pc::c));
 	
 }
 

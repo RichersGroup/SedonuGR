@@ -664,7 +664,7 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 			eh->fate = absorbed;
 		}
 	}
-	eh->zone_fourvolume = grid->zone_coord_volume(eh->z_ind) * (DO_GR ? eh->g.alpha*sqrt(eh->g.gammalow.det()) : 1.); // assumes dt=1s.
+	eh->zone_fourvolume = grid->zone_coord_volume(eh->z_ind) * (DO_GR ? eh->g.alpha*sqrt(eh->g.gammalow.det()) : 1.); // ccm*s, assumes dt=1s.
  
 	// four-velocity
 	eh->v = grid->interpolate_fluid_velocity(*eh);
