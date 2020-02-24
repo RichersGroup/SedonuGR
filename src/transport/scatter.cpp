@@ -78,7 +78,7 @@ void Transport::scatter(EinsteinHelper *eh, const ParticleEvent event) const{
 	}
 
 	for(size_t i=0; i<4; i++){
-		grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i]*Nold - eh->kup_tet[i]*eh->N);
+		grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i]*Nold - eh->kup_tet[i]*eh->N) * pc::c / eh->zone_fourvolume;
 	}
 }
 
@@ -170,14 +170,14 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	eh->set_kup_tet(kup_tet_final);
 
 	// contribute energy isotropically
-	double Eiso = pc::h*eh->nu() * Naverage * (path_length_com - Rcom);
+	double Eiso = eh->kup_tet[3] * Naverage * (path_length_com - Rcom) / eh_old.zone_fourvolume;
 	for(int corner=0; corner<eh_old.icube_spec.ncorners; corner++){
       double weight = eh_old.icube_spec.weights[corner];
 	  grid->distribution[eh_old.s]->add_isotropic_single(eh_old.dir_ind, Eiso*weight);
 	}
-	grid->l_abs[eh_old.z_ind] += (eh_old.N - Nfinal) * species_list[eh->s]->lepton_number;
+	grid->l_abs[eh_old.z_ind] += (eh_old.N - Nfinal) * species_list[eh->s]->lepton_number * pc::c / eh_old.zone_fourvolume;
 	for(size_t i=0; i<4; i++)
-		grid->fourforce_abs[eh_old.z_ind][i] += (eh_old.kup_tet[i]*eh_old.N - eh->kup_tet[i]*eh->N*eh_old.kup_tet[3]/eh->kup_tet[3]);
+		grid->fourforce_abs[eh_old.z_ind][i] += (eh_old.kup_tet[i]*eh_old.N - eh->kup_tet[i]*eh->N*eh_old.kup_tet[3]/eh->kup_tet[3]) * pc::c / eh_old.zone_fourvolume;
 
 }
 

@@ -24,6 +24,7 @@ public:
 	ParticleFate fate;
 	double N0;
 	Metric g;
+	double zone_fourvolume;
 
 	// things with which to do interpolation
 	InterpolationCube<NDIMS  > icube_vol; // for metric quantities
@@ -47,6 +48,7 @@ public:
 	  s(-MAXLIM),
 	  fate(moving),
 	  N0(NaN),
+	  zone_fourvolume(NaN),
 	  e{NaN,NaN,NaN,NaN},
 	  absopac(NaN),
 	  scatopac(NaN),
