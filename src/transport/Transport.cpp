@@ -662,6 +662,7 @@ void Transport::update_eh_background(EinsteinHelper* eh) const{ // things that d
 		if(eh->g.gtt >= 0){
 			eh->z_ind = -1;
 			eh->fate = absorbed;
+			return;
 		}
 	}
 	eh->zone_fourvolume = grid->zone_coord_volume(eh->z_ind) * (DO_GR ? eh->g.alpha*sqrt(eh->g.gammalow.det()) : 1.); // ccm*s, assumes dt=1s.
