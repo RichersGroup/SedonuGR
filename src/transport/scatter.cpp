@@ -177,7 +177,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	}
 	grid->l_abs[eh_old.z_ind] += (eh_old.N - Nfinal) * species_list[eh->s]->lepton_number;
 	for(size_t i=0; i<4; i++)
-		grid->fourforce_abs[eh_old.z_ind][i] += (eh_old.kup_tet[i]*eh_old.N - eh->kup_tet[i]*eh->N);
+		grid->fourforce_abs[eh_old.z_ind][i] += (eh_old.kup_tet[i]*eh_old.N - eh->kup_tet[i]*eh->N*eh_old.kup_tet[3]/eh->kup_tet[3]);
 
 }
 
