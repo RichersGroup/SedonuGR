@@ -186,13 +186,13 @@ void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 
 		// store absorbed energy rate in *comoving* frame
 		for(size_t i=0; i<4; i++){
-		        grid->fourforce_abs[eh_old.z_ind][i] += dN * eh_old.kup_tet[i] * pc::c / eh_old.zone_fourvolume;
+		        grid->fourforce_abs[eh_old.z_ind][i] += dN * eh_old.kup_tet[i] / eh_old.zone_fourvolume;
 		}
 
 		// store absorbed lepton number (same in both frames, except for the
 		// factor of this_d which is divided out later
 		if(species_list[eh->s]->lepton_number != 0){
-			grid->l_abs[eh_old.z_ind] += dN * species_list[eh->s]->lepton_number * pc::c / eh_old.zone_fourvolume;
+			grid->l_abs[eh_old.z_ind] += dN * species_list[eh->s]->lepton_number / eh_old.zone_fourvolume;
 		}
 	}
 

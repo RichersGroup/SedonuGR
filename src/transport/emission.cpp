@@ -196,9 +196,9 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 
 		// count up the emitted energy in each zone
 		N_net_emit[eh.s] += eh.N;
-		grid->l_emit[z_ind] -= eh.N * species_list[eh.s]->lepton_number * pc::c / eh.zone_fourvolume;
+		grid->l_emit[z_ind] -= eh.N * species_list[eh.s]->lepton_number / eh.zone_fourvolume;
 		for(size_t i=0; i<4; i++){
-			grid->fourforce_emit[z_ind][i] -= eh.N * kup_tet[i] * pc::c / eh.zone_fourvolume;
+			grid->fourforce_emit[z_ind][i] -= eh.N * kup_tet[i] / eh.zone_fourvolume;
 		}
 	}
 	return eh.get_Particle();
