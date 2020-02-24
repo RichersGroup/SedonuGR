@@ -397,6 +397,7 @@ double Grid::total_rest_mass() const{
 }
 
 // radius given coordinates
+// assumes deltat=1s
 double Grid::zone_4volume(const int z_ind) const{
 	return zone_lab_3volume(z_ind) * (DO_GR ? lapse[z_ind] : 1.0);
 }
