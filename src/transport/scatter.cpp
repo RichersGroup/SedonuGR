@@ -123,62 +123,118 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->N,>=,0);
 	PRINT_ASSERT(eh->nu(),>=,0);
 
-	// save old values
-	const EinsteinHelper eh_old = *eh;
-
 	// sample the distance travelled during the random walk
 	const double Rcom = eh->ds_com;
 	const double D = pc::c / (3.*eh->scatopac);
 	double path_length_com = pc::c * Rcom*Rcom / D * randomwalk_diffusion_time.invert(rangen.uniform(),&randomwalk_xaxis,-1);
 	path_length_com = max(path_length_com,Rcom);
 
-	// move along with the fluid
-	double dtau = path_length_com / pc::c;
-	for(size_t i=0; i<4; i++) eh->xup[i] += dtau * eh->u[i];
+	// foucart 2018 description
+	double f_free = Rcom/path_length_com;
+	PRINT_ASSERT(f_free,>=,0);
+	PRINT_ASSERT(f_free,<=,1);
+	double ds_free = path_length_com * f_free;
+	double ds_fl   = path_length_com * (1.-f_free);
 
-	// determine the average and final neutrino numbers
-	double Naverage = eh->N, Nfinal = eh->N;
-	if(eh->absopac > 0){
-		double opt_depth = eh->absopac * path_length_com;
-		Nfinal = eh->N * exp(-opt_depth);
-		if((eh->N-Nfinal)/eh->N < TINY)
-		  Naverage = (eh->N + Nfinal) / 2;
-		else
-		  Naverage = (eh->N - Nfinal) / (opt_depth);
+	// Foucart2018 31-33
+	double ds_adv = 0;
+	double A=0,B=0;
+	if(Metric::dot_Minkowski<3>(eh->u,eh->u) > 1e-10){
+	  double gtt = eh->g.get(3,3);
+	  Tuple<double,4> ulow = eh->g.lower<4>(eh->u);
+	  double A_B = -(ulow[3] + sqrt(ulow[3]*ulow[3] + gtt)) / gtt;
+	  B = eh->kup_tet[3] / (1. - A_B*ulow[3]);
+	  A = A_B * B;
+	  double up_up = (A+B*eh->u[3]) / (B*eh->u[3]);
+	  ds_adv = ds_fl * up_up;
+	  PRINT_ASSERT(ds_adv,<=,ds_fl);
+	  PRINT_ASSERT(ds_adv,>=,0);
 	}
-	PRINT_ASSERT(Naverage,<=,eh_old.N);
-	PRINT_ASSERT(Nfinal,<=,Naverage);
-
-	// select a random direction
-	Tuple<double,4> kup_tet;
-	isotropic_kup_tet(eh->nu(),kup_tet,&rangen);
-	eh->set_kup_tet(kup_tet);
-	eh->ds_com = Rcom;
-	eh->N = Naverage;
-	move(eh,false);
-	eh->N = Nfinal;
-
-
-	// select a random outward direction. Use delta=2 to make pdf=costheta
-	Tuple<double,4> kup_tet_final = 0.0;
-	kup_tet_final[3] = kup_tet[3];
-	Tuple<double,3> direction;
-	do{
-		isotropic_direction(direction,&rangen);
-	} while(reject_direction(Metric::dot_Minkowski<3>(direction,kup_tet)/kup_tet[3], 2.) );
-	for(size_t i=0; i<3; i++) kup_tet_final[i] = direction[i] * kup_tet_final[3];
-	eh->set_kup_tet(kup_tet_final);
-
-	// contribute energy isotropically
-	double Eiso = eh->kup_tet[3] * Naverage * (path_length_com - Rcom) / (eh_old.zone_fourvolume*pc::c);
-	for(int corner=0; corner<eh_old.icube_spec.ncorners; corner++){
-      double weight = eh_old.icube_spec.weights[corner];
-	  grid->distribution[eh_old.s]->add_isotropic_single(eh_old.dir_ind, Eiso*weight);
+	double ds_iso = ds_fl - ds_adv;
+	if(eh->z_ind==0) cout << ds_iso/path_length_com << " " << ds_adv/path_length_com << " " << ds_free/path_length_com << endl;
+	//================//
+	// Isotropic Step //
+	//================//
+	if(ds_iso>0){
+	  // determine the average and final neutrino numbers
+	  double Naverage = eh->N, Nfinal = eh->N, Nold = eh->N;
+	  if(eh->absopac > 0){
+	    double opt_depth = eh->absopac * ds_iso;
+	    Nfinal = eh->N * exp(-opt_depth);
+	    if((eh->N-Nfinal)/eh->N < TINY)
+	      Naverage = (eh->N + Nfinal) / 2;
+	    else
+	      Naverage = (eh->N - Nfinal) / (opt_depth);
+	  }
+	  PRINT_ASSERT(Naverage,<=,Nold);
+	  PRINT_ASSERT(Nfinal,<=,Naverage);
+	  
+	  // contribute isotropically
+	  double Eiso = eh->kup_tet[3] * Naverage * ds_iso / (eh->zone_fourvolume*pc::c);
+	  grid->distribution[eh->s]->add_isotropic_single(eh->dir_ind, Eiso);
+	  grid->l_abs[eh->z_ind] += (Nold - Nfinal) * species_list[eh->s]->lepton_number / eh->zone_fourvolume;
+	  for(size_t i=0; i<4; i++)
+	    grid->fourforce_abs[eh->z_ind][i] += eh->kup_tet[i] * (Nold - eh->N) / eh->zone_fourvolume;
+	  
+	  // move neutrino forward in time
+	  eh->xup[3] += ds_iso * eh->u[3];
+	  eh->N = Nfinal;
+	  window(eh);
 	}
-	grid->l_abs[eh_old.z_ind] += (eh_old.N - Nfinal) * species_list[eh->s]->lepton_number / eh_old.zone_fourvolume;
-	for(size_t i=0; i<4; i++)
-		grid->fourforce_abs[eh_old.z_ind][i] += (eh_old.kup_tet[i]*eh_old.N - eh->kup_tet[i]*eh->N*eh_old.kup_tet[3]/eh->kup_tet[3]) / eh_old.zone_fourvolume;
+	  
+	//================//
+	// Advection step // 
+	//================//
+	if(ds_adv>0 and eh->fate==moving){
+	  // set the momentum in the direction of the fluid
+	  Tuple<double,4> tup;
+	  tup[0] = tup[1] = tup[2] = 0;
+	  tup[3] = 1;
+	  Tuple<double,4> kup_tet_old = eh->kup_tet;
+	  eh->kup = tup*A + eh->u*B;
+	  PRINT_ASSERT(abs(eh->g.dot<4>(eh->kup,eh->kup)),<,TINY);
+	  eh->renormalize_kup();
+	  PRINT_ASSERT(abs(kup_tet_old[3]-eh->kup_tet[3])/kup_tet_old[3],<,TINY);
 
+	  // account for change in the fluid
+	  for(size_t i=0; i<4; i++)
+	    grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i] - eh->kup_tet[i]) * eh->N / eh->zone_fourvolume;
+	  
+	  // move for the small timestep
+	  eh->ds_com = ds_adv;
+	  move(eh);
+	}
+
+	//=====================//
+	// Free-streaming step //
+	//=====================//
+	if(ds_free>0 and eh->fate==moving){
+	  // select a random direction
+	  Tuple<double,4> kup_tet_old = eh->kup_tet;
+	  Tuple<double,4> kup_tet;
+	  isotropic_kup_tet(eh->nu(),kup_tet,&rangen);
+	  eh->set_kup_tet(kup_tet);
+
+	  // account for change in the fluid
+	  for(size_t i=0; i<4; i++)
+	    grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i] - eh->kup_tet[i]) * eh->N / eh->zone_fourvolume;
+
+	  // move forward
+	  eh->ds_com = ds_free;
+	  move(eh);
+	  if(eh->fate!=moving) return;
+
+	  // select a random outward direction. Use delta=2 to make pdf=costheta
+	  kup_tet_old = eh->kup_tet;
+	  do{
+	    isotropic_kup_tet(eh->nu(),kup_tet,&rangen);
+	  } while(reject_direction(Metric::dot_Minkowski<3>(kup_tet_old,kup_tet)/(kup_tet[3]*kup_tet[3]), 2.) );
+	  eh->set_kup_tet(kup_tet);
+	
+	  // account for change in the fluid
+	  for(size_t i=0; i<4; i++)
+	    grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i] - eh->kup_tet[i]) * eh->N / eh->zone_fourvolume;
+	}
 }
 
 void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<double,4>& kup_tet_old) const{
