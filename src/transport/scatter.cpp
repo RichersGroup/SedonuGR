@@ -157,7 +157,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	  PRINT_ASSERT(ds_adv,>=,0);
 	}
 	double ds_iso = ds_fl - ds_adv;
-
+	if(eh->z_ind==0) cout << ds_iso/path_length_com << " " << ds_adv/path_length_com << " " << ds_free/path_length_com << endl;
 	//================//
 	// Isotropic Step //
 	//================//
@@ -175,17 +175,17 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	  PRINT_ASSERT(Naverage,<=,Nold);
 	  PRINT_ASSERT(Nfinal,<=,Naverage);
 	  
-	  // move neutrino forward in time
-	  eh->xup[3] += ds_iso * eh->u[3];
-	  eh->N = Nfinal;
-	  window(eh);
-
 	  // contribute isotropically
 	  double Eiso = eh->kup_tet[3] * Naverage * ds_iso / (eh->zone_fourvolume*pc::c);
 	  grid->distribution[eh->s]->add_isotropic_single(eh->dir_ind, Eiso);
 	  grid->l_abs[eh->z_ind] += (Nold - Nfinal) * species_list[eh->s]->lepton_number / eh->zone_fourvolume;
 	  for(size_t i=0; i<4; i++)
 	    grid->fourforce_abs[eh->z_ind][i] += eh->kup_tet[i] * (Nold - eh->N) / eh->zone_fourvolume;
+	  
+	  // move neutrino forward in time
+	  eh->xup[3] += ds_iso * eh->u[3];
+	  eh->N = Nfinal;
+	  window(eh);
 	}
 	  
 	//================//
