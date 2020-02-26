@@ -82,6 +82,15 @@ void Transport::scatter(EinsteinHelper *eh, const ParticleEvent event) const{
 	}
 }
 
+double Pescape(double x, int sumN){
+  double sum = 0;
+  for(int n=1; n<=sumN; n++){
+    double tmp = 2.0 * exp(-x * (n*pc::pi)*(n*pc::pi));
+    if(n%2 == 0) tmp *= -1;
+    sum += tmp;
+  }
+  return 1.0-sum;
+}
 
 
 //-------------------------------------------------------
@@ -89,7 +98,7 @@ void Transport::scatter(EinsteinHelper *eh, const ParticleEvent event) const{
 // result is D*t/(R^2)
 //-------------------------------------------------------
 void Transport::init_randomwalk_cdf(Lua* lua){
-	int sumN = lua->scalar<int>("randomwalk_sumN");
+	randomwalk_sumN = lua->scalar<int>("randomwalk_sumN");
 	int npoints = lua->scalar<int>("randomwalk_npoints");
 	randomwalk_max_x = lua->scalar<double>("randomwalk_max_x");
 	double interpolation_order = lua->scalar<double>("randomwalk_interpolation_order");
@@ -99,18 +108,8 @@ void Transport::init_randomwalk_cdf(Lua* lua){
 	randomwalk_xaxis = Axis(0,randomwalk_max_x,npoints);
 
 	#pragma omp parallel for
-	for(int i=1; i<=npoints; i++){
-		double sum = 0;
-		double x = randomwalk_xaxis.top[i];
-
-		for(int n=1; n<=sumN; n++){
-			double tmp = 2.0 * exp(-x * (n*pc::pi)*(n*pc::pi));
-			if(n%2 == 0) tmp *= -1;
-			sum += tmp;
-	    }
-
-		randomwalk_diffusion_time.set(i,1.0-sum);
-	}
+	for(int i=1; i<=npoints; i++)
+	  randomwalk_diffusion_time.set(i,Pescape(randomwalk_xaxis.top[i], randomwalk_sumN));
 	randomwalk_diffusion_time.normalize();
 }
 
@@ -124,9 +123,16 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->nu(),>=,0);
 
 	// sample the distance travelled during the random walk
+	// corrections in the spirit of Foucart2018 Eq. 30
 	const double Rcom = eh->ds_com;
 	const double D = pc::c / (3.*eh->scatopac);
-	double path_length_com = pc::c * Rcom*Rcom / D * randomwalk_diffusion_time.invert(rangen.uniform(),&randomwalk_xaxis,-1);
+	CDFArray modified_cdf = randomwalk_diffusion_time;
+	double Pesc_cdf  = Pescape(1./(3.*eh->scatopac*Rcom), randomwalk_sumN);
+	double Pesc_real = -exp(-eh->scatopac*Rcom);
+	double a = (1. - Pesc_real) / (1. - Pesc_cdf);
+	for(int i=0; i<modified_cdf.size(); i++)
+	  modified_cdf.set(i, (randomwalk_diffusion_time.get(i)-Pesc_cdf) * a + Pesc_real);
+	double path_length_com = pc::c * Rcom*Rcom / D * modified_cdf.invert(rangen.uniform(),&randomwalk_xaxis,-1);
 	path_length_com = max(path_length_com,Rcom);
 
 	// foucart 2018 description
