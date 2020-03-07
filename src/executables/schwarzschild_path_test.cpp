@@ -65,11 +65,14 @@ int main(int argc, char **argv)
 			Transport::move(eh);
 			if(eh->xup[0]<0 or eh->xup[1]<0) eh->fate = absorbed;
 
-			for(size_t i=0; i<4; i++) cout << eh->xup[i] << "\t";
-			for(size_t i=0; i<4; i++) cout << eh->kup[i] << "\t";
-			for(size_t i=0; i<4; i++) cout << eh->kup_tet[i] << "\t";
-			cout << eh->g.gtt << "\t";
-			cout << eh->nu() << endl;
+			for(size_t i=0; i<4; i++) cout << eh->xup[i] << "\t"; // 0-3
+			for(size_t i=0; i<4; i++) cout << eh->kup[i] << "\t"; // 4-7
+			for(size_t i=0; i<4; i++) cout << eh->kup_tet[i] << "\t"; // 8-11
+			cout << eh->g.gtt << "\t"; // 12
+			cout << eh->nu() << "\t"; // 13
+			Tuple<double,4> klow = eh->g.lower<4>(eh->kup);
+			for(size_t i=0; i<4; i++) cout << klow[i] << "\t"; // 14-17
+			cout << endl;
 		}
 	};
 

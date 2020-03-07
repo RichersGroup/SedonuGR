@@ -63,4 +63,4 @@ min_packet_weight = 0
 -- Random Walk
 
 Schwarzschild_initial_xup = {1.5,0,0,0}
-Schwarzschild_initial_kup = {0,1,0,1}
+Schwarzschild_initial_kup = {1,0,0,1}

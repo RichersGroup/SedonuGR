@@ -1,7 +1,7 @@
 import h5py
 import numpy as np
 
-tolerance = .05
+tolerance = .1
 k_b = 1.3806488e-16 # erg/K
 c = 2.99e10         #cm/s
 h = 6.62606957e-27  #erg/Hz
@@ -19,30 +19,30 @@ kr_0 = 1
 kt_0 = 1
 
 # do error checking
-with open("radial.dat","r") as search:
+with open("radial_smallstep4.dat","r") as search:
     for line in search:
         if "DO_GR" in line:
             do_gr = int(line[-2])
 
 radial_k = []
-radial_k.append(np.genfromtxt("radial.dat",usecols=(4))[-1])
-radial_k.append(np.genfromtxt("radial.dat",usecols=(5))[-1])
-radial_k.append(np.genfromtxt("radial.dat",usecols=(6))[-1])
-radial_k.append(np.genfromtxt("radial.dat",usecols=(7))[-1])
+radial_k.append(np.genfromtxt("radial_smallstep4.dat",usecols=(4))[-1])
+radial_k.append(np.genfromtxt("radial_smallstep4.dat",usecols=(5))[-1])
+radial_k.append(np.genfromtxt("radial_smallstep4.dat",usecols=(6))[-1])
+radial_k.append(np.genfromtxt("radial_smallstep4.dat",usecols=(7))[-1])
 radial_x = []
-radial_x.append(np.genfromtxt("radial.dat",usecols=(0))[-1])
-radial_x.append(np.genfromtxt("radial.dat",usecols=(1))[-1])
-radial_x.append(np.genfromtxt("radial.dat",usecols=(2))[-1])
+radial_x.append(np.genfromtxt("radial_smallstep4.dat",usecols=(0))[-1])
+radial_x.append(np.genfromtxt("radial_smallstep4.dat",usecols=(1))[-1])
+radial_x.append(np.genfromtxt("radial_smallstep4.dat",usecols=(2))[-1])
 
 around_k = []
-around_k.append(np.genfromtxt("around.dat",usecols=(4))[-1])
-around_k.append(np.genfromtxt("around.dat",usecols=(5))[-1])
-around_k.append(np.genfromtxt("around.dat",usecols=(6))[-1])
-around_k.append(np.genfromtxt("around.dat",usecols=(7))[-1])
+around_k.append(np.genfromtxt("around_smallstep4.dat",usecols=(4))[-1])
+around_k.append(np.genfromtxt("around_smallstep4.dat",usecols=(5))[-1])
+around_k.append(np.genfromtxt("around_smallstep4.dat",usecols=(6))[-1])
+around_k.append(np.genfromtxt("around_smallstep4.dat",usecols=(7))[-1])
 around_x = []
-around_x.append(np.genfromtxt("around.dat",usecols=(0))[-1])
-around_x.append(np.genfromtxt("around.dat",usecols=(1))[-1])
-around_x.append(np.genfromtxt("around.dat",usecols=(2))[-1])
+around_x.append(np.genfromtxt("around_smallstep4.dat",usecols=(0))[-1])
+around_x.append(np.genfromtxt("around_smallstep4.dat",usecols=(1))[-1])
+around_x.append(np.genfromtxt("around_smallstep4.dat",usecols=(2))[-1])
 
 if(do_gr==0):
     radial_k_expected = [1,0,0,1]
@@ -55,22 +55,24 @@ else:
     around_k_expected = [-np.sqrt(1-rs/r),0,0,1]
     around_x_expected = [0,r,0]
 
-print(radial_k_expected, radial_k)
-print(radial_x_expected, radial_x)
-print(around_k_expected, around_k)
-print(around_x_expected, around_x)
+#print(radial_k_expected, radial_k)
+#print(radial_x_expected, radial_x)
+#print(around_k_expected, around_k)
+#print(around_x_expected, around_x)
     
 for i in range(4):
     radial_error = abs(radial_k_expected[i] - radial_k[i])
     around_error = abs(around_k_expected[i] - around_k[i])
+    print("k"+str(i)+" errors: ",radial_error, around_error)
     if radial_error>tolerance or around_error>tolerance:
-        raise Exception("spherical_emis results are outside of the tolerance.")
+        raise Exception("schwarzschild results are outside of the tolerance.")
 
-for i in range(3):
-    radial_error = abs(radial_x_expected[i] - radial_x[i])
-    around_error = abs(around_x_expected[i] - around_x[i])
-    if radial_error>tolerance or around_error>tolerance:
-        raise Exception("spherical_emis results are outside of the tolerance.")
+#for i in range(3):
+#    radial_error = abs(radial_x_expected[i] - radial_x[i])
+#    around_error = abs(around_x_expected[i] - around_x[i])
+#    print("x"+str(i)+" errors: ",radial_error, around_error)
+#    if radial_error>tolerance or around_error>tolerance:
+#        raise Exception("schwarzschild results are outside of the tolerance.")
 
 print("SUCCESS")
 exit()
