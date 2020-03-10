@@ -58,9 +58,7 @@ void Transport::scatter(EinsteinHelper *eh, const ParticleEvent event) const{
 
 	// store the old direction
 	double Nold = eh->N;
-	Tuple<double,4> kup_tet_old;
-	for(size_t i=0; i<4; i++) kup_tet_old[i] = eh->kup_tet[i];
-	PRINT_ASSERT(kup_tet_old[3],==,eh->kup_tet[3]);
+	Tuple<double,4> kup_tet_old = eh->kup_tet;
 	
 	// sample outgoing energy and set the post-scattered state
 	if(event==inelastic_scatter){
@@ -77,9 +75,7 @@ void Transport::scatter(EinsteinHelper *eh, const ParticleEvent event) const{
 		}
 	}
 
-	for(size_t i=0; i<4; i++){
-		grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i]*Nold - eh->kup_tet[i]*eh->N) / eh->zone_fourvolume;
-	}
+	grid->fourforce_abs[eh->z_ind] += (kup_tet_old - eh->kup_tet) * eh->N / eh->zone_fourvolume;
 }
 
 double Pescape(double x, int sumN){
