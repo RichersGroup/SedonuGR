@@ -228,6 +228,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 
 	  // select a random outward direction. Use delta=2 to make pdf=costheta
 	  kup_tet_old = eh->kup_tet;
+	  kup_tet     = eh->kup_tet;
 	  do{
 	    isotropic_kup_tet(eh->nu(),kup_tet,&rangen);
 	  } while(reject_direction(Metric::dot_Minkowski<3>(kup_tet_old,kup_tet)/(kup_tet[3]*kup_tet[3]), 2.) );
