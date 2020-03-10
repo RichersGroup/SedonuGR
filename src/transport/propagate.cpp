@@ -99,9 +99,23 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 	// FIND D_RANDOMWALK
 	double d_randomwalk = INFINITY;
 	if(do_randomwalk && eh->scatopac*eh->ds_com>randomwalk_min_optical_depth){ // coarse check
+		double D = pc::c / (3. * eh->scatopac);
 		d_randomwalk = min(max(grid->d_randomwalk(*eh), d_zone*min_step_size), d_zone*max_step_size);
+		if(r_core>0){
+			// get a null test vector
+			Tuple<double,4> ktest;
+			for(size_t i=0; i<3; i++) ktest[i] = -eh->xup[i];
+			ktest[3] = 0;
+			eh->g.normalize_null_changeupt(ktest);
+
+			// limit d_randomwalk expecting movement towards core
+			double r = radius(eh->xup);
+			double kr = r;
+			double kup_tet_t = -eh->g.dot<4>(ktest,eh->u);
+			double ur = Metric::dot_Minkowski<3>(ktest,eh->u)/r;
+			d_randomwalk = min(d_randomwalk, R_randomwalk(kr/kup_tet_t, ur, r-r_core, D));
+		}
 		if(eh->absopac > 0){
-			double D = pc::c / (3. * eh->scatopac);
 			double R_abs_limited = sqrt(absorption_depth_limiter * D / eh->absopac); // assumes a Delta t = 1s.
 			d_randomwalk = min(d_randomwalk, R_abs_limited);
 		}
