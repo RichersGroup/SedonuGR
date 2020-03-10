@@ -711,16 +711,14 @@ void Transport::isotropic_direction(Tuple<double,3>& D, ThreadRNG *rangen){
 	Metric::normalize_Minkowski<3>(D);
 }
 
-void Transport::isotropic_kup_tet(const double nu, Tuple<double,4>& kup_tet, ThreadRNG *rangen){
-	PRINT_ASSERT(nu,>,0);
+void Transport::isotropic_kup_tet(Tuple<double,4>& kup_tet, ThreadRNG *rangen){
+	PRINT_ASSERT(kup_tet[3],>,0);
 	Tuple<double,3> D;
 	isotropic_direction(D,rangen);
 
-	double tmp = nu*pc::h;
-	kup_tet[0] = tmp * D[0];
-	kup_tet[1] = tmp * D[1];
-	kup_tet[2] = tmp * D[2];
-	kup_tet[3] = tmp;
+	kup_tet[0] = kup_tet[3] * D[0];
+	kup_tet[1] = kup_tet[3] * D[1];
+	kup_tet[2] = kup_tet[3] * D[2];
 
 	PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet,kup_tet)/(kup_tet[3]*kup_tet[3]),<,TINY);
 }

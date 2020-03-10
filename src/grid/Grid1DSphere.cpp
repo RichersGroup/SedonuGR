@@ -387,10 +387,10 @@ void Grid1DSphere::symmetry_boundaries(EinsteinHelper *eh) const{
 		for(int i=0; i<3; i++) kr += eh->xup[i]/R * eh->kup[i];
 
 		// give the particle an inward-moving direction
-		Tuple<double,4> kup_tet;
+		Tuple<double,4> kup_tet = eh->kup_tet;
 		double costheta;
 		do{
-			sim->isotropic_kup_tet(eh->nu(),kup_tet,&sim->rangen);
+			sim->isotropic_kup_tet(kup_tet,&sim->rangen);
 			eh->set_kup_tet(kup_tet);
 			costheta = eh->g.dot<3>(eh->xup, eh->kup) / sqrt(eh->g.dot<3>(eh->xup, eh->xup) * eh->g.dot<3>(eh->kup, eh->kup));
 		} while(sim->reject_direction(costheta, -2.));

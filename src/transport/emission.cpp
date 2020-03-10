@@ -175,7 +175,8 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 
 	// emit isotropically in comoving frame
 	Tuple<double,4> kup_tet;
-	isotropic_kup_tet(nu,kup_tet,&rangen);
+	kup_tet[3] = nu * pc::h;
+	isotropic_kup_tet(kup_tet,&rangen);
 	eh.set_kup_tet(kup_tet);
 	update_eh_k_opac(&eh);
 
@@ -234,9 +235,10 @@ Particle Transport::create_surface_particle(const double weight, const size_t s,
 
 	// sample outward direction
 	Tuple<double,4> kup_tet;
+	kup_tet[3] = nu * pc::h;
 	double costheta;
 	do{
-		isotropic_kup_tet(nu,kup_tet,&rangen);
+		isotropic_kup_tet(kup_tet,&rangen);
 		eh.set_kup_tet(kup_tet);
 		costheta = eh.g.dot<3>(eh.xup, eh.kup) / sqrt(eh.g.dot<3>(eh.kup, eh.kup) * eh.g.dot<3>(eh.xup, eh.xup));
 	} while(reject_direction(costheta, 2.)); // 2. makes pdf = costheta

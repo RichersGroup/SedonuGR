@@ -69,8 +69,8 @@ void Transport::scatter(EinsteinHelper *eh, const ParticleEvent event) const{
 	else if(event==elastic_scatter){
 		PRINT_ASSERT(eh->scatopac,>=,0);
 		if(eh->scatopac > 0){
-			Tuple<double,4> kup_tet;
-			isotropic_kup_tet(eh->nu(),kup_tet,&rangen);
+			Tuple<double,4> kup_tet = eh->kup_tet;
+			isotropic_kup_tet(kup_tet,&rangen);
 			eh->set_kup_tet(kup_tet);
 		}
 	}
@@ -175,8 +175,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	  double Eiso = eh->kup_tet[3] * Naverage * ds_iso / (eh->zone_fourvolume*pc::c);
 	  grid->distribution[eh->s]->add_isotropic_single(eh->dir_ind, Eiso);
 	  grid->l_abs[eh->z_ind] += (Nold - Nfinal) * species_list[eh->s]->lepton_number / eh->zone_fourvolume;
-	  for(size_t i=0; i<4; i++)
-	    grid->fourforce_abs[eh->z_ind][i] += eh->kup_tet[i] * (Nold - Nfinal) / eh->zone_fourvolume;
+	  grid->fourforce_abs[eh->z_ind] += eh->kup_tet * (Nold - Nfinal) / eh->zone_fourvolume;
 	  
 	  // move neutrino forward in time
 	  eh->xup[3] += ds_iso * eh->u[3];
@@ -199,8 +198,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	  PRINT_ASSERT(abs(kup_tet_old[3]-eh->kup_tet[3])/kup_tet_old[3],<,TINY);
 
 	  // account for change in the fluid
-	  for(size_t i=0; i<4; i++)
-	    grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i] - eh->kup_tet[i]) * eh->N / eh->zone_fourvolume;
+	  grid->fourforce_abs[eh->z_ind] += (kup_tet_old - eh->kup_tet) * eh->N / eh->zone_fourvolume;
 	  
 	  // move for the small timestep
 	  eh->ds_com = ds_adv;
@@ -213,8 +211,8 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	if(ds_free>0 and eh->fate==moving){
 	  // select a random direction
 	  Tuple<double,4> kup_tet_old = eh->kup_tet;
-	  Tuple<double,4> kup_tet;
-	  isotropic_kup_tet(eh->nu(),kup_tet,&rangen);
+	  Tuple<double,4> kup_tet = eh->kup_tet;
+	  isotropic_kup_tet(kup_tet,&rangen);
 	  eh->set_kup_tet(kup_tet);
 
 	  // account for change in the fluid
@@ -230,13 +228,12 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	  kup_tet_old = eh->kup_tet;
 	  kup_tet     = eh->kup_tet;
 	  do{
-	    isotropic_kup_tet(eh->nu(),kup_tet,&rangen);
+	    isotropic_kup_tet(kup_tet,&rangen);
 	  } while(reject_direction(Metric::dot_Minkowski<3>(kup_tet_old,kup_tet)/(kup_tet[3]*kup_tet[3]), 2.) );
 	  eh->set_kup_tet(kup_tet);
 	
 	  // account for change in the fluid
-	  for(size_t i=0; i<4; i++)
-	    grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i] - eh->kup_tet[i]) * eh->N / eh->zone_fourvolume;
+	  grid->fourforce_abs[eh->z_ind] += (kup_tet_old - eh->kup_tet) * eh->N / eh->zone_fourvolume;
 	}
 }
 
@@ -265,10 +262,11 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<do
 	// rejection sample the new direction, but only if not absurdly forward/backward peaked
 	// (delta=2.8 corresponds to a possible factor of 10 in the neutrino weight)
 	Tuple<double,4> kup_tet_new;
+	eh->kup_tet[3] = outnu * pc::h;
 	if(fabs(delta) < 2.8){
 		double costheta=0;
 		do{
-			isotropic_kup_tet(outnu, kup_tet_new, &rangen);
+			isotropic_kup_tet(kup_tet_new, &rangen);
 			costheta = Metric::dot_Minkowski<3>(kup_tet_new,kup_tet_old) / (kup_tet_old[3]*kup_tet_new[3]);
 		} while(reject_direction(costheta, delta));
 	}
