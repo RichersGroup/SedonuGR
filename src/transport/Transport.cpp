@@ -737,7 +737,7 @@ void Transport::random_core_x(Tuple<double,4>& x) const{
 }
 
 // given k^x/k_tet^t and u^x and the lab-frame distance to the boundary, return the largest random walk sphere size
-double Transport::R_randomwalk(const double kx_kttet, const double ux, const double dlab, const double D){
+double Transport::R_randomwalk(const double kx_kttet, const double ux, const double dlab, const double D) const{
 	PRINT_ASSERT(dlab*kx_kttet,>,0); // the displacement and the k vector should be in the same direction
 	double b = kx_kttet - ux;
 	double a = ux*pc::c * randomwalk_max_x / D;
