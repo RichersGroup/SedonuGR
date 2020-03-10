@@ -82,7 +82,7 @@ void Transport::propagate_particles()
 //--------------------------------------------------------
 // Decide what happens to the particle
 //--------------------------------------------------------
-void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
+void Transport::which_event(const EinsteinHelper *eh, ParticleEvent *event, double* ds_com) const{
 	PRINT_ASSERT(eh->N, >, 0);
 	PRINT_ASSERT(eh->z_ind,>=,0);
 
@@ -92,9 +92,9 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 	d_boundary = min(max(d_boundary, d_zone*min_step_size), d_zone*max_step_size);
 	PRINT_ASSERT(d_zone, >, 0);
 	*event = nothing;
-	eh->ds_com = d_boundary;
+	*ds_com = d_boundary;
 	if(eh->absopac*eh->ds_com > absorption_depth_limiter)
-		eh->ds_com = absorption_depth_limiter/eh->absopac;
+		*ds_com = absorption_depth_limiter/eh->absopac;
 
 	// FIND D_RANDOMWALK
 	double d_randomwalk = INFINITY;
@@ -122,7 +122,7 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 		if(d_randomwalk == INFINITY) d_randomwalk = 1.1*randomwalk_min_optical_depth / eh->scatopac;
 		PRINT_ASSERT(d_randomwalk,>=,0);
 		if(eh->scatopac * d_randomwalk > randomwalk_min_optical_depth){ // real check
-			eh->ds_com = d_randomwalk;
+			*ds_com = d_randomwalk;
 			*event = randomwalk;
 		}
 	}
@@ -135,8 +135,8 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 			tau = -log(rangen.uniform());
 		} while(tau >= INFINITY);
 		d_interact = tau / eh->scatopac;
-		if(d_interact < eh->ds_com){
-			eh->ds_com = d_interact;
+		if(d_interact < *ds_com){
+			*ds_com = d_interact;
 			*event = elastic_scatter;
 		}
 	}
@@ -149,13 +149,13 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 			tau = -log(rangen.uniform());
 		} while(tau >= INFINITY);
 		d_inelastic_scatter = tau / eh->inelastic_scatopac;
-		if(d_inelastic_scatter < eh->ds_com){
-			eh->ds_com = d_inelastic_scatter;
+		if(d_inelastic_scatter < *ds_com){
+			*ds_com = d_inelastic_scatter;
 			*event = inelastic_scatter;
 		}
 	}
-	PRINT_ASSERT(eh->ds_com, >=, 0);
-	PRINT_ASSERT(eh->ds_com, <, INFINITY);
+	PRINT_ASSERT(*ds_com, >=, 0);
+	PRINT_ASSERT(*ds_com, <, INFINITY);
 }
 
 void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
@@ -239,15 +239,16 @@ void Transport::propagate(EinsteinHelper *eh){
 		for(size_t i=0; i<NDIMS; i++) PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
 
 		// decide which event happens
-		which_event(eh,&event);
-
-		// move particle the distance
+		double ds_com;
+		which_event(eh,&event, &ds_com);
+		eh->ds_com = ds_com;
+		PRINT_ASSERT(eh->ds_com ,>, 0);
 		PRINT_ASSERT(eh->N,>,0);
 		if(event==randomwalk)
 		  random_walk(eh);
 		else{
 		  move(eh);
-		  if(eh->z_ind>0 and (event==elastic_scatter or event==inelastic_scatter))
+		  if(eh->z_ind>=0 and (event==elastic_scatter or event==inelastic_scatter))
 		    scatter(eh, event);
 		}
 

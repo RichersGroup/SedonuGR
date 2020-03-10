@@ -165,7 +165,7 @@ public:
 
 	// in-simulation functions to be used by main
 	void step();
-	void which_event(EinsteinHelper* eh, ParticleEvent *event) const;
+	void which_event(const EinsteinHelper* eh, ParticleEvent *event, double* ds_com) const;
 	void reset_radiation();
 	void write(const int it) const;
 	void write_rays(const int it);
