@@ -122,14 +122,25 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	// corrections in the spirit of Foucart2018 Eq. 30
 	const double Rcom = eh->ds_com;
 	const double D = pc::c / (3.*eh->scatopac);
-	CDFArray modified_cdf = randomwalk_diffusion_time;
 	double Pesc_cdf  = Pescape(1./(3.*eh->scatopac*Rcom), randomwalk_sumN);
 	double Pesc_real = -exp(-eh->scatopac*Rcom);
-	double a = (1. - Pesc_real) / (1. - Pesc_cdf);
-	for(int i=0; i<modified_cdf.size(); i++)
-	  modified_cdf.set(i, (randomwalk_diffusion_time.get(i)-Pesc_cdf) * a + Pesc_real);
-	double path_length_com = pc::c * Rcom*Rcom / D * modified_cdf.invert(rangen.uniform(),&randomwalk_xaxis,-1);
-	path_length_com = max(path_length_com,Rcom);
+	double U = rangen.uniform();
+	double path_length_com = 0;
+	if(U<Pesc_real) path_length_com = Rcom;
+	else{
+		// make U go from Pesc_cdf to 1 (following stretching in Foucart2018)
+		double a = (1. - Pesc_cdf) / (1. - Pesc_real);
+		U = (U-Pesc_real) * a + Pesc_cdf;
+		PRINT_ASSERT(U,>=,0-TINY);
+		PRINT_ASSERT(U,<=,1+TINY);
+		U = max(min(U,1.),0.);
+
+		// invert the randomwalk CDF
+		double chi = randomwalk_diffusion_time.invert(U,&randomwalk_xaxis,-1);
+		path_length_com = pc::c * Rcom*Rcom / D * chi;
+		PRINT_ASSERT(path_length_com,>=,Rcom*(1.-TINY));
+		path_length_com = max(path_length_com,Rcom);
+	}
 
 	// foucart 2018 description
 	double f_free = Rcom/path_length_com;
