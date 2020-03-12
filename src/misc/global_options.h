@@ -50,7 +50,7 @@
 //const MPI_Datatype MPI_real = ( sizeof(real)==4 ? MPI_FLOAT : MPI_DOUBLE );
 #define NaN std::numeric_limits<double>::quiet_NaN()
 #define MAXLIM std::numeric_limits<int>::max()
-#define TINY 1e-5
+#define TINY 1e-6
 
 /** Print a demangled stack backtrace of the caller function to FILE* out. */
 // from https://panthema.net/2008/0901-stacktrace-demangled/ (Timo Bingmann)
@@ -229,33 +229,42 @@ class ATOMIC : public std::atomic<T>
 // TUPLE //
 //=======//
 template<typename T, size_t len>
-class Tuple : public std::array<T,len>{
+class Tuple{
 public:
-
+  std::array<T,len> data;
 	Tuple(){}
 
 	Tuple(T in){
-		for(size_t i=0; i<len; i++) this->operator[](i) = in;
+		for(size_t i=0; i<len; i++) data[i] = in;
 	}
 	template<typename Tin>
 	  Tuple(Tuple<Tin,len> in){
-		for(size_t i=0; i<len; i++) this->operator[](i) = in[i];
+		for(size_t i=0; i<len; i++) data[i] = in[i];
 	}
 
   inline size_t size() const{return len;}
 
+  const T operator[](const unsigned i) const{
+          PRINT_ASSERT(i,<,len);
+          return data[i];
+  }
+  T& operator[](const unsigned i){
+          PRINT_ASSERT(i,<,len);
+          return data[i];
+  }
+  
   template<typename Tin>
   Tuple<T,len>& operator=(const Tuple<Tin,len>& input){
-	  for(size_t i=0; i<len; i++) this->operator[](i) = input[i];
+	  for(size_t i=0; i<len; i++) data[i] = input[i];
 	  return *this;
   }
   Tuple<T,len>& operator=(const double input){
-	  for(size_t i=0; i<len; i++) this->operator[](i) = input;
+	  for(size_t i=0; i<len; i++) data[i] = input;
 	  return *this;
   }
   const Tuple<T,len> operator*(const double scale) const{
-	  Tuple<T,len> result;// = *this;
-	  for(size_t i=0; i<len; i++) result[i] = this->operator[](i) * scale;
+	  Tuple<T,len> result;
+	  for(size_t i=0; i<len; i++) result[i] = data[i] * scale;
 	  return result;
   }
   const Tuple<T,len> operator/(const double scale) const{
@@ -264,27 +273,29 @@ public:
   }
   template<typename Tin>
   const Tuple<T,len> operator+(const Tuple<Tin,len>& input) const{
-	  Tuple<T,len> result;// = *this;
-	  for(size_t i=0; i<len; i++) result[i] = this->operator[](i) + input[i];
+	  Tuple<T,len> result;
+	  for(size_t i=0; i<len; i++) result[i] = data[i] + input[i];
 	  return result;
   }
   template<typename Tin>
   const Tuple<T,len> operator-(const Tuple<Tin,len>& input) const{
-	  Tuple<T,len> result;// = *this;
-	  for(size_t i=0; i<len; i++) result[i] = this->operator[](i) - input[i];
+	  Tuple<T,len> result;
+	  for(size_t i=0; i<len; i++) result[i] = data[i] - input[i];
 	  return result;
   }
+  // don't use tuple + operator because it is not an atomic operation
+  // but written this way it uses the atomics
   template<typename Tin>
   void operator+=(const Tuple<Tin,len>& input){
-	  *this = (*this) + input;
+          for(size_t i=0; i<len; i++) data[i] += input[i];
   }
   void operator*=(const double scale){
-	  *this = (*this) * scale;
+	  for(size_t i=0; i<len; i++) data[i] *= scale;
   }
   template<typename Tin>
   bool operator==(const Tuple<Tin,len>& input){
 	  bool isequal = true;
-	  for(size_t i=0; i<len; i++) isequal = isequal && (this->operator[](i) == input[i]);
+	  for(size_t i=0; i<len; i++) isequal = isequal && (data[i] == input[i]);
 	  return isequal;
   }
 };
