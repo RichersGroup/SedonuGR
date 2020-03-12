@@ -103,7 +103,9 @@ int main(int argc, char **argv)
 	sim.update_eh_k_opac(&eh);
 	ParticleEvent event;
 	while(eh.fate==moving){
-		sim.which_event(&eh,&event);
+	        double ds_com;
+	        sim.which_event(&eh,&event,&ds_com);
+	        eh.ds_com = ds_com;
 		sim.move(&eh);
 	}
 
