@@ -75,7 +75,7 @@ void Transport::scatter(EinsteinHelper *eh, const ParticleEvent event) const{
 		}
 	}
 
-	grid->fourforce_abs[eh->z_ind] += (kup_tet_old - eh->kup_tet) * eh->N / eh->zone_fourvolume;
+	//grid->fourforce_abs[eh->z_ind] += (kup_tet_old - eh->kup_tet) * eh->N / eh->zone_fourvolume;
 }
 
 double Pescape(double x, int sumN){
@@ -118,29 +118,12 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->N,>=,0);
 	PRINT_ASSERT(eh->nu(),>=,0);
 
-	// sample the distance travelled during the random walk
-	// corrections in the spirit of Foucart2018 Eq. 30
+	// invert the randomwalk CDF
 	const double Rcom = eh->ds_com;
 	const double D = pc::c / (3.*eh->scatopac);
-	double Pesc_cdf  = Pescape(1./(3.*eh->scatopac*Rcom), randomwalk_sumN);
-	double Pesc_real = -exp(-eh->scatopac*Rcom);
-	double U = rangen.uniform();
-	double path_length_com = 0;
-	if(U<Pesc_real) path_length_com = Rcom;
-	else{
-		// make U go from Pesc_cdf to 1 (following stretching in Foucart2018)
-		double a = (1. - Pesc_cdf) / (1. - Pesc_real);
-		U = (U-Pesc_real) * a + Pesc_cdf;
-		PRINT_ASSERT(U,>=,0-TINY);
-		PRINT_ASSERT(U,<=,1+TINY);
-		U = max(min(U,1.),0.);
-
-		// invert the randomwalk CDF
-		double chi = randomwalk_diffusion_time.invert(U,&randomwalk_xaxis,-1);
-		path_length_com = pc::c * Rcom*Rcom / D * chi;
-		PRINT_ASSERT(path_length_com,>=,Rcom*(1.-TINY));
-		path_length_com = max(path_length_com,Rcom);
-	}
+	double chi = randomwalk_diffusion_time.invert(rangen.uniform(),&randomwalk_xaxis,-1);
+	double path_length_com = pc::c * Rcom*Rcom / D * chi;
+	path_length_com = max(path_length_com,Rcom);
 
 	// foucart 2018 description
 	double f_free = Rcom/path_length_com;
@@ -175,7 +158,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	    double opt_depth = eh->absopac * ds_iso;
 	    Nfinal = eh->N * exp(-opt_depth);
 	    if((eh->N-Nfinal)/eh->N < TINY)
-	      Naverage = (eh->N + Nfinal) / 2;
+	      Naverage = (eh->N + Nfinal) / 2.;
 	    else
 	      Naverage = (eh->N - Nfinal) / (opt_depth);
 	  }
@@ -227,8 +210,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	  eh->set_kup_tet(kup_tet);
 
 	  // account for change in the fluid
-	  for(size_t i=0; i<4; i++)
-	    grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i] - eh->kup_tet[i]) * eh->N / eh->zone_fourvolume;
+	  grid->fourforce_abs[eh->z_ind] += (kup_tet_old - eh->kup_tet) * eh->N / eh->zone_fourvolume;
 
 	  // move forward
 	  eh->ds_com = ds_free;

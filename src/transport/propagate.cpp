@@ -103,8 +103,7 @@ void Transport::which_event(const EinsteinHelper *eh, ParticleEvent *event, doub
 		d_randomwalk = min(max(grid->d_randomwalk(*eh), d_zone*min_step_size), d_zone*max_step_size);
 		if(r_core>0){
 			// get a null test vector
-			Tuple<double,4> ktest;
-			for(size_t i=0; i<3; i++) ktest[i] = -eh->xup[i];
+			Tuple<double,4> ktest = -eh->xup;
 			ktest[3] = 0;
 			eh->g.normalize_null_changeupt(ktest);
 
@@ -167,19 +166,17 @@ void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 	const EinsteinHelper eh_old = *eh;
 
 	// convert ds_com into dlambda
-	double dlambda = eh->ds_com / eh->kup_tet[3];
+	double dlambda = eh_old.ds_com / eh_old.kup_tet[3];
 	PRINT_ASSERT(dlambda,>=,0);
 
 	// get 2nd order x, 1st order estimate for k
 	Tuple<double,4> order1 = eh_old.kup * dlambda;
-	for(size_t i=0; i<4; i++)
-		eh->xup[i] += order1[i];
+	eh->xup += order1;
 	if(DO_GR){
-		Tuple<double,4> dk_dlambda = grid->dk_dlambda(*eh);
-		Tuple<double,4> order2 = dk_dlambda * dlambda*dlambda * 0.5;
+		Tuple<double,4> dk_dlambda = grid->dk_dlambda(eh_old);
 		eh->kup = eh_old.kup + dk_dlambda * dlambda;
-		for(size_t i=0; i<4; i++)
-			eh->xup[i] += (abs(order2[i]/order1[i])<1. ? order2[i] : 0);
+		Tuple<double,4> order2 = dk_dlambda * dlambda*dlambda * 0.5;
+		if(radius(order2) < radius(order1)) eh->xup += order2;
 	}
 
 	// get new background data
@@ -199,9 +196,7 @@ void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 		window(eh);
 
 		// store absorbed energy rate in *comoving* frame
-		for(size_t i=0; i<4; i++){
-		        grid->fourforce_abs[eh_old.z_ind][i] += dN * eh_old.kup_tet[i] / eh_old.zone_fourvolume;
-		}
+		grid->fourforce_abs[eh_old.z_ind] += eh_old.kup_tet * dN/eh_old.zone_fourvolume;
 
 		// store absorbed lepton number (same in both frames, except for the
 		// factor of this_d which is divided out later

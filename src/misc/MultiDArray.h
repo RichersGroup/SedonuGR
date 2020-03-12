@@ -305,9 +305,7 @@ public:
 		direct_add(lin_ind, to_add);
 	}
 	void direct_add(const size_t lin_ind, const Tuple<T,nelements>& to_add){
-		for(size_t i=0; i<nelements; i++){
-			y0[lin_ind][i] += to_add[i];
-		}
+	        y0[lin_ind] += to_add;
 	}
 
 	void mpi_sum_scatter(vector<size_t>& stop_list){
