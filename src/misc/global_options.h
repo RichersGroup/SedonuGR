@@ -283,6 +283,11 @@ public:
 	  for(size_t i=0; i<len; i++) result[i] = data[i] - input[i];
 	  return result;
   }
+  const Tuple<T,len> operator-() const{
+	  Tuple<T,len> result;
+	  for(size_t i=0; i<len; i++) result[i] = -data[i];
+	  return result;
+  }
   // don't use tuple + operator because it is not an atomic operation
   // but written this way it uses the atomics
   template<typename Tin>
