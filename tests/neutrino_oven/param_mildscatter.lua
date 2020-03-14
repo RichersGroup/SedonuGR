@@ -2,14 +2,14 @@
 -- Included Physics
 
 do_annihilation = 0
-do_randomwalk = 0
+do_randomwalk = 1
 reflect_outer = 1
 
 -- Opacity and Emissivity
 
 neutrino_type = "grey"
-Neutrino_grey_opac  = 2
-Neutrino_grey_abs_frac = .5
+Neutrino_grey_opac  = 5e-5
+Neutrino_grey_abs_frac = .1
 Neutrino_grey_chempot = 0.
 nugrid_start = 0
 nugrid_stop = 500
@@ -39,8 +39,8 @@ write_zones_every   = 1
 -- Particle Creation
 
 n_subcycles = 1
-n_emit_core_per_bin    = 10
-n_emit_therm_per_bin   = 10
+n_emit_core_per_bin    = 100
+n_emit_therm_per_bin   = 1
 max_time_hours = -1
 
 -- Inner Source

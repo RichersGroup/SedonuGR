@@ -2,15 +2,15 @@
 -- Included Physics
 
 do_annihilation = 0
-do_randomwalk = 0
+do_randomwalk = 1
 reflect_outer = 1
 
 -- Opacity and Emissivity
 
 neutrino_type = "grey"
-Neutrino_grey_opac  = 0 --1e-2
-Neutrino_grey_abs_frac = 1e-2
-Neutrino_grey_chempot = 0
+Neutrino_grey_opac  = 0
+Neutrino_grey_abs_frac = 1e-9
+Neutrino_grey_chempot = 0.
 nugrid_start = 0
 nugrid_stop = 500
 nugrid_n = 500
@@ -38,8 +38,8 @@ write_zones_every   = 1
 
 -- Particle Creation
 
-n_subcycles = 1
-n_emit_core_per_bin    = 10
+n_subcycles = 10
+n_emit_core_per_bin    = 100
 n_emit_therm_per_bin   = 10
 max_time_hours = -1
 
@@ -54,18 +54,18 @@ core_lum_multiplier = {1.0}
 
 verbose       = 1
 max_n_iter =  1
-min_step_size = 0.01
-max_step_size = 0.4
+min_step_size = .25
+max_step_size = .25
 absorption_depth_limiter = 1.0
 
 -- Biasing
 
-min_packet_weight = 0.1
+min_packet_weight = 0.01
 
 -- Random Walk
 
 randomwalk_max_x = 2
 randomwalk_sumN = 1000
 randomwalk_npoints = 200
-randomwalk_min_optical_depth = 10
+randomwalk_min_optical_depth = 5
 randomwalk_interpolation_order = 1
