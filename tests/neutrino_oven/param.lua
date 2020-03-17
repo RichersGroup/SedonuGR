@@ -38,9 +38,9 @@ write_zones_every   = 1
 
 -- Particle Creation
 
-n_subcycles = 10
-n_emit_core_per_bin    = 100
-n_emit_therm_per_bin   = 10
+n_subcycles = 1
+n_emit_core_per_bin    = 10
+n_emit_therm_per_bin   = 0
 max_time_hours = -1
 
 -- Inner Source
@@ -54,8 +54,8 @@ core_lum_multiplier = {1.0}
 
 verbose       = 1
 max_n_iter =  1
-min_step_size = .25
-max_step_size = .25
+min_step_size = .01
+max_step_size = .1
 absorption_depth_limiter = 1.0
 
 -- Biasing

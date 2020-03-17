@@ -1,4 +1,4 @@
-makeplot = False
+makeplot = True
 if makeplot:
     import matplotlib as mpl
     mpl.use('Agg')
@@ -20,6 +20,11 @@ with open("param.lua") as search:
             T_core = float(line.split("=")[1].strip(" ").strip("{").split("}")[0])
         if("core_chem_pot" in line):
             munue = float(line.split("=")[1].strip(" ").strip("{").split("}")[0])
+
+with open("output.txt","r") as search:
+    for line in search:
+        if "DO_GR" in line:
+            do_gr = int(line[-2])
 
 f = h5py.File("fluid_00001.h5","r")
 r = np.array(f["axes/x0(cm)[mid]"])/1e5
@@ -44,9 +49,9 @@ if makeplot:
 error = edens-edens_theory
 error2 = (edens-edens_theory)**2
 std_dev = np.sqrt(np.sum(error2)/len(error2) - (np.sum(error)/len(error))**2)
-abserror = np.sum(np.abs(error))/len(error)
-print("Energy density: error="+str(abserror)+" stddev="+str(std_dev))
-if abserror>3.*std_dev:
+relerror = np.sum(np.abs(error)/edens_theory)/len(error)
+print("Energy density: error="+str(relerror)+" stddev="+str(std_dev))
+if relerror > 0.05:
     isError = True
 
 e_abs = np.array(f["four-force[abs](erg|ccm|s,tet)"])[:,3]
@@ -63,7 +68,7 @@ error2 = dEdt**2
 std_dev = np.sqrt(np.sum(error2)/len(error2) - (np.sum(error)/len(error))**2)
 abserror = np.sum(np.abs(error))/len(error)
 print("dEdt: error="+str(abserror)+" stddev="+str(std_dev))
-if abserror>3.*std_dev:
+if std_dev>0 and abserror>3.*std_dev:
     isError = True
 
 l_abs = np.array(f["l_abs(1|s|ccm,tet)"])
@@ -80,7 +85,7 @@ error2 = dNdt**2
 std_dev = np.sqrt(np.sum(error2)/len(error2) - (np.sum(error)/len(error))**2)
 abserror = np.sum(np.abs(error))/len(error)
 print("dNdt: error="+str(abserror)+" stddev="+str(std_dev))
-if abserror>3.*std_dev:
+if std_dev>0 and abserror>3.*std_dev:
     isError = True
 
 if makeplot:
