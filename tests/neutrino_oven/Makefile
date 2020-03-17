@@ -7,8 +7,8 @@ N:
 	python3 oven_test.py
 	../../sedonu param_abs.lua
 	python3 oven_test.py
-#	../../sedonu param_mildscatter.lua
-#	python3 oven_test.py
+	../../sedonu param_mildscatter.lua
+	python3 oven_test.py
 #	../../sedonu param_heavyscatter.lua
 #	python3 oven_test.py
 
@@ -18,8 +18,8 @@ GR:
 	python3 oven_test.py
 	../../sedonu param_abs.lua
 	python3 oven_test.py
-#	../../sedonu param_mildscatter.lua
-#	python3 oven_test.py
+	../../sedonu param_mildscatter.lua
+	python3 oven_test.py
 #	../../sedonu param_heavyscatter.lua
 #	python3 oven_test.py
 
