@@ -97,10 +97,9 @@ void Transport::init_randomwalk_cdf(Lua* lua){
 	randomwalk_sumN = lua->scalar<int>("randomwalk_sumN");
 	int npoints = lua->scalar<int>("randomwalk_npoints");
 	randomwalk_max_x = lua->scalar<double>("randomwalk_max_x");
-	double interpolation_order = lua->scalar<double>("randomwalk_interpolation_order");
 
 	randomwalk_diffusion_time.resize(npoints);
-	randomwalk_diffusion_time.interpolation_order = interpolation_order;
+	randomwalk_diffusion_time.interpolation_order = 1;
 	randomwalk_xaxis = Axis(0,randomwalk_max_x,npoints);
 
 	#pragma omp parallel for
@@ -121,9 +120,26 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	// invert the randomwalk CDF
 	const double Rcom = eh->ds_com;
 	const double D = pc::c / (3.*eh->scatopac);
-	double chi = randomwalk_diffusion_time.invert(rangen.uniform(),&randomwalk_xaxis,-1);
-	double path_length_com = pc::c * Rcom*Rcom / D * chi;
-	path_length_com = max(path_length_com,Rcom);
+	double chi_esc = D/(pc::c*Rcom); // using t=Rcom/c
+	double Pesc_cdf  = randomwalk_diffusion_time.interpolate_cdf(chi_esc,&randomwalk_xaxis);
+	double Pesc_real = -exp(-eh->scatopac*Rcom);
+	double U = rangen.uniform();
+	double path_length_com = 0;
+	if(U<Pesc_real) path_length_com = Rcom;
+	else{
+		// make U go from Pesc_cdf to 1 (following stretching in Foucart2018)
+		double a = (1. - Pesc_cdf) / (1. - Pesc_real);
+		U = (U-Pesc_real) * a + Pesc_cdf;
+		PRINT_ASSERT(U,>=,0-TINY);
+		PRINT_ASSERT(U,<=,1+TINY);
+		U = max(min(U,1.),0.);
+
+		// invert the randomwalk CDF
+		double chi = randomwalk_diffusion_time.invert(U,&randomwalk_xaxis,-1);
+		path_length_com = pc::c * Rcom*Rcom / D * chi;
+		PRINT_ASSERT(path_length_com,>=,Rcom*(1.-TINY));
+		path_length_com = max(path_length_com,Rcom);
+	}
 
 	// foucart 2018 description
 	double f_free = Rcom/path_length_com;
