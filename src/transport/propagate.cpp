@@ -85,14 +85,20 @@ void Transport::propagate_particles()
 void Transport::which_event(const EinsteinHelper *eh, ParticleEvent *event, double* ds_com) const{
 	PRINT_ASSERT(eh->N, >, 0);
 	PRINT_ASSERT(eh->z_ind,>=,0);
+	*event = nothing;
 
 	// FIND D_ZONE= ====================================================================
-	double d_boundary = grid->d_boundary(*eh);
 	double d_zone = grid->zone_min_length(eh->z_ind) / sqrt(Metric::dot_Minkowski<3>(eh->kup,eh->kup)) * eh->kup_tet[3];
-	d_boundary = min(max(d_boundary, d_zone*min_step_size), d_zone*max_step_size);
+	d_zone = min(max(d_zone, d_zone*min_step_size), d_zone*max_step_size);
 	PRINT_ASSERT(d_zone, >, 0);
-	*event = nothing;
-	*ds_com = d_boundary;
+
+	// FIND D_BOUNDARY
+	double d_boundary = grid->d_boundary(*eh) * (1.0+TINY);
+	d_boundary = max(d_boundary, d_zone*(1.0+TINY));
+	*ds_com = min(d_boundary, d_zone);
+	PRINT_ASSERT(d_boundary, >, 0);
+
+	// FIND D_ABS
 	if(eh->absopac*eh->ds_com > absorption_depth_limiter)
 		*ds_com = absorption_depth_limiter/eh->absopac;
 
