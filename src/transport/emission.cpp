@@ -241,7 +241,7 @@ Particle Transport::create_surface_particle(const double weight, const size_t s,
 		isotropic_kup_tet(kup_tet,&rangen);
 		eh.set_kup_tet(kup_tet);
 		costheta = eh.g.dot<3>(eh.xup, eh.kup) / sqrt(eh.g.dot<3>(eh.kup, eh.kup) * eh.g.dot<3>(eh.xup, eh.xup));
-	} while(reject_direction(costheta, 2.)); // 2. makes pdf = costheta
+	} while(r_core>0 and reject_direction(costheta, 2.)); // 2. makes pdf = costheta
 	update_eh_k_opac(&eh);
 
 	//get the number of neutrinos in the particle
