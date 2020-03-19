@@ -41,7 +41,7 @@ void Transport::emit_particles()
 {
 	// emit from the core and/or the zones
 	if(verbose) cout << "# Emitting particles..." << endl;
-	if(n_emit_core_per_bin>0)  emit_inner_source_by_bin();
+	if(n_emit_core_per_bin>0 and r_core>0)  emit_inner_source_by_bin();
 	if(n_emit_zones_per_bin>0) emit_zones_by_bin();
 
 	// sanity checks
