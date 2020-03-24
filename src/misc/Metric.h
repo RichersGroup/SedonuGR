@@ -194,6 +194,17 @@ public:
 		}
 		else return dot_Minkowski<n>(x1up, x2up);
 	}
+	template<size_t n, size_t n1, size_t n2>
+	double dot_low(const Tuple<double,n1>& x1low, const Tuple<double,n2>& x2low) const{
+		PRINT_ASSERT(n,<=,n1);
+		PRINT_ASSERT(n,<=,n2);
+		if(DO_GR){
+			Tuple<double,n> x2up = raise<n>(x2low);
+			double result = contract<n>(x1low, x2up);
+			return result;
+		}
+		else return dot_Minkowski<n>(x1low, x2low);
+	}
 
 	// dot the normal observer's four-velocity with a four vector
 	double ndot(const Tuple<double,4>& x) const{
