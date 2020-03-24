@@ -652,7 +652,7 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector
 		for(size_t i=0; i<3; i++) ktest[i] *= sgn;
-		eh.g.normalize_null_preservedownt(ktest);
+		eh.g.normalize_null_changeupt(ktest);
 		const double kr = radius(ktest);
 
 		// get the time component of the tetrad test vector
@@ -677,7 +677,7 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 	for(int sgn=1; sgn>0; sgn*=-1){
 		// get a null test vector
 		for(size_t i=0; i<3; i++) ktest[i] *= sgn;
-		eh.g.normalize_null_preservedownt(ktest);
+		eh.g.normalize_null_changeupt(ktest);
 		double ktheta = radius(ktest2);
 
 		// get the time component of the tetrad test vector
