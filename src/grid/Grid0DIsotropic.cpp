@@ -152,8 +152,10 @@ double Grid0DIsotropic::d_randomwalk(const EinsteinHelper&) const{
 	return INFINITY;
 }
 
-Tuple<double,4> Grid0DIsotropic::dk_dlambda(const EinsteinHelper&) const{ // default Minkowski
-	return Tuple<double,4>(0);
+Christoffel Grid0DIsotropic::interpolate_Christoffel(const EinsteinHelper&) const{ // default Minkowski
+	Christoffel ch;
+	ch.data = 0;
+	return ch;
 }
 Tuple<double,3> Grid0DIsotropic::interpolate_shift(const EinsteinHelper&) const{ // default Minkowski
 	return Tuple<double,3>(0);

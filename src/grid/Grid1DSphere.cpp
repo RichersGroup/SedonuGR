@@ -505,7 +505,7 @@ Tuple<double,6> Grid1DSphere::interpolate_3metric(const EinsteinHelper& eh) cons
 	return data;
 }
 
-Tuple<double,4> Grid1DSphere::dk_dlambda(const EinsteinHelper& eh) const{
+Christoffel Grid1DSphere::interpolate_Christoffel(const EinsteinHelper& eh) const{
 	const double r = radius(eh.xup);
 	const double alpha = lapse.interpolate(eh.icube_vol); //sqrt(1.-1./r); //
 	const double Xloc  = X.interpolate(eh.icube_vol); //1./alpha; //
@@ -535,7 +535,7 @@ Tuple<double,4> Grid1DSphere::dk_dlambda(const EinsteinHelper& eh) const{
 
 	for(size_t i=0; i<40; i++) PRINT_ASSERT(ch.data[i],==,ch.data[i]);
 
-	return ch.contract2(eh.kup)*(-1);
+	return ch;
 }
 
 double Grid1DSphere::zone_lorentz_factor(int z_ind) const{

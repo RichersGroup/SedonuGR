@@ -54,28 +54,31 @@ public:
 		PRINT_ASSERT(abs(eh->g.dot<4>(eh->kup,eh->kup)) / (eh->kup[3]*eh->kup[3]), <=, TINY);
 
 		// save old values
-		Tuple<double,4> old_kup = eh->kup;
+		const EinsteinHelper eh_old = *eh;
 
 		// convert ds_com into dlambda
 		double dlambda = eh->ds_com / eh->kup_tet[3];
 		PRINT_ASSERT(dlambda,>=,0);
 
-		// get 2nd order x, 1st order estimate for k
-		Tuple<double,4> order1 = old_kup * dlambda;
-		for(size_t i=0; i<4; i++)
-			eh->xup[i] += order1[i] * (backwards ? -1. : 1.);
-		if(DO_GR){
-			Tuple<double,4> dk_dlambda = grid->dk_dlambda(*eh);
-			Tuple<double,4> order2 = dk_dlambda * dlambda*dlambda * 0.5;
-			eh->kup = old_kup + dk_dlambda * dlambda * (backwards ? -1. : 1.);
-			for(size_t i=0; i<4; i++)
-				eh->xup[i] += (abs(order2[i]/order1[i])<1. ? order2[i] : 0) * (backwards ? -1. : 1.);
-		}
+		// kick 1
+		if(DO_GR)
+			eh->kup += eh->dk_dlambda() * 0.5*dlambda;
 
-		// get new background data
+		// drift
+		eh->xup += eh->kup * dlambda;
 		update_eh_background(eh);
-		if(eh->fate==moving)
+
+		// kick2
+		if(eh->fate==moving){
+			if(DO_GR){
+				eh->kup += eh->dk_dlambda() * 0.5*dlambda;
+				if(true){ // TIME-INDEPENDENT ONLY: preserve downt component
+					eh->g.normalize_null_preserveupt(eh->kup);
+					eh->kup *= eh_old.g.lower<4>(eh_old.kup)[3] / eh->g.lower<4>(eh->kup)[3];
+				}
+			}
 			update_eh_k_opac(eh);
+		}
 
 		double ds_com_new = dlambda*eh->kup_tet[3];
 		*ct += (ds_com_new + eh->ds_com) / 2. * (backwards ? -1. : 1.);

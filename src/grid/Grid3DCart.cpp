@@ -711,7 +711,7 @@ double Grid3DCart::zone_lorentz_factor(int z_ind) const{
 	return result;
 }
 
-Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
+Christoffel Grid3DCart::interpolate_Christoffel(const EinsteinHelper& eh) const{
   double dg[4][4][4];
   for(size_t i=0; i<4; i++) for(size_t j=0; j<4; j++){ // no time derivatives
       dg[3][i][j] = 0;
@@ -749,16 +749,19 @@ Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
     dg[a][3][3] *= 2.;
   }
 
-  // get the low-index Christoffel symbols
-  Tuple<double,4> dk_dlambda_low = 0;
-  #pragma omp simd collapse(3)
-  for(size_t a=0; a<4; a++)
-    for(size_t i=0; i<4; i++)
-      for(size_t j=0; j<4; j++)
-    	  dk_dlambda_low[a] += (dg[i][a][j] - 0.5*dg[a][i][j]) * eh.kup[i] * eh.kup[j];
-
-  Tuple<double,4> dk_dlambda = eh.g.raise(dk_dlambda_low);
-  return dk_dlambda * -1.;
+  Christoffel ch;
+  ch.data = 0;
+  for(size_t a=0; a<4; a++){
+	  for(size_t b=0; b<4; b++){
+		  double gupab = eh.g.get_inverse(a,b);
+		  for(size_t mu=0; mu<4; mu++){
+			  for(size_t nu=mu; nu<4; nu++){ // yes, intentionally only go from mu to 4
+				  ch.data[Christoffel::index(a,mu,nu)] += 0.5 * gupab * (dg[mu][b][nu] + dg[nu][mu][b] - dg[b][mu][nu]);
+			  }
+		  }
+	  }
+  }
+  return ch;
 }
 Tuple<double,3> Grid3DCart::interpolate_shift(const EinsteinHelper& eh) const{
 	return betaup.interpolate(eh.icube_vol);

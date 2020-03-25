@@ -415,4 +415,7 @@ void Grid::interpolate_metric(EinsteinHelper *eh) const{
 
   // fill in the rest of the metric values
   eh->g.update();
+
+  // get the Christoffel symbols
+  eh->Gamma = interpolate_Christoffel(*eh);
 }

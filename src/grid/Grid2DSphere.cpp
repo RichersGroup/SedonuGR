@@ -874,11 +874,11 @@ Tuple<hsize_t,NDIMS> Grid2DSphere::dims() const{
 double Grid2DSphere::zone_lorentz_factor(int /*z_ind*/) const{
 	abort(); // NOT IMPLEMENTED
 }
-Tuple<double,4> Grid2DSphere::dk_dlambda(const EinsteinHelper& eh) const{ // default Minkowski
+Christoffel Grid2DSphere::interpolate_Christoffel(const EinsteinHelper& eh) const{ // default Minkowski
 	PRINT_ASSERT(DO_GR,==,0);
 	Christoffel ch;
 	ch.data = 0;
-	return ch.contract2(eh.kup);
+	return ch;
 }
 Tuple<double,3> Grid2DSphere::interpolate_shift(const EinsteinHelper&) const{ // default Minkowski
 	return Tuple<double,3>(NaN);

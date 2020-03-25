@@ -176,20 +176,25 @@ void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 	double dlambda = eh_old.ds_com / eh_old.kup_tet[3];
 	PRINT_ASSERT(dlambda,>=,0);
 
-	// get 2nd order x, 1st order estimate for k
-	Tuple<double,4> order1 = eh_old.kup * dlambda;
-	eh->xup += order1;
-	if(DO_GR){
-		Tuple<double,4> dk_dlambda = grid->dk_dlambda(eh_old);
-		eh->kup = eh_old.kup + dk_dlambda * dlambda;
-		Tuple<double,4> order2 = dk_dlambda * dlambda*dlambda * 0.5;
-		if(radius(order2) < radius(order1)) eh->xup += order2;
-	}
+	// kick 1
+	if(DO_GR)
+		eh->kup += eh->dk_dlambda() * 0.5*dlambda;
 
-	// get new background data
+	// drift
+	eh->xup += eh->kup * dlambda;
 	update_eh_background(eh);
-	if(eh->fate==moving)
+
+	// kick2
+	if(eh->fate==moving){
+		if(DO_GR){
+			eh->kup += eh->dk_dlambda() * 0.5*dlambda;
+			if(true){ // TIME-INDEPENDENT ONLY: preserve downt component
+				eh->g.normalize_null_preserveupt(eh->kup);
+				eh->kup *= eh_old.g.lower<4>(eh_old.kup)[3] / eh->g.lower<4>(eh->kup)[3];
+			}
+		}
 		update_eh_k_opac(eh);
+	}
 
 
 	double tau=0, dN=0;

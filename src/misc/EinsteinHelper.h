@@ -24,6 +24,7 @@ public:
 	ParticleFate fate;
 	double N0;
 	Metric g;
+	Christoffel Gamma;
 	double zone_fourvolume;
 
 	// things with which to do interpolation
@@ -61,14 +62,17 @@ public:
 		PRINT_ASSERT(Metric::dot_Minkowski<4>(kup_tet_in,kup_tet_in)/(kup_tet_in[3]*kup_tet_in[3]),<,TINY);
 		for(size_t i=0; i<4; i++) kup_tet[i] = kup_tet_in[i];
 		kup = tetrad_to_coord(kup_tet);
-		g.normalize_null_preservedownt(kup);
+		g.normalize_null_preserveupt(kup);
 		PRINT_ASSERT(g.dot<4>(kup,kup)/(kup[3]*kup[3]),<,TINY);
 	}
 	void renormalize_kup(){
-		g.normalize_null_preservedownt(kup);
+		g.normalize_null_preserveupt(kup);
 		kup_tet = coord_to_tetrad(kup);
 		PRINT_ASSERT(kup_tet[3],>,0);
 		Metric::normalize_null_Minkowski(kup_tet);
+	}
+	Tuple<double,4> dk_dlambda() const{
+		return -Gamma.contract2(kup);
 	}
 
 	// return the Lorentz factor W
