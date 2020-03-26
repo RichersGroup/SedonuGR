@@ -177,8 +177,7 @@ void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 	PRINT_ASSERT(dlambda,>=,0);
 
 	// kick 1
-	if(DO_GR)
-		eh->kup += eh->dk_dlambda() * 0.5*dlambda;
+	if(DO_GR) eh->kup += eh->dk_dlambda() * 0.5*dlambda;
 
 	// drift
 	eh->xup += eh->kup * dlambda;
@@ -186,13 +185,7 @@ void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 
 	// kick2
 	if(eh->fate==moving){
-		if(DO_GR){
-			eh->kup += eh->dk_dlambda() * 0.5*dlambda;
-			if(true){ // TIME-INDEPENDENT ONLY: preserve downt component
-				eh->g.normalize_null_preserveupt(eh->kup);
-				eh->kup *= eh_old.g.lower<4>(eh_old.kup)[3] / eh->g.lower<4>(eh->kup)[3];
-			}
-		}
+		if(DO_GR) eh->kup += eh->dk_dlambda() * 0.5*dlambda;
 		update_eh_k_opac(eh);
 	}
 
