@@ -1,6 +1,7 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.ticker as ticker
 
 mpl.rcParams['font.size'] = 18
 mpl.rcParams['font.family'] = 'serif'
@@ -27,8 +28,9 @@ axes[0].plot(xarr, 1.5*np.ones(xarr.shape),color='k',linestyle="--")
 axes[1].plot(xarr, np.ones(xarr.shape),color='k',linestyle="--")
 #axes[0].fill_between(np.arange(0,1,.05),0,1,color='black')
 #axes[0].text(.12,.9,"Black Hole", color='white',ha='center', va='center',fontsize=18)
-axes[0].set_ylim(1.484,1.506)
-axes[1].set_ylim(.85,1.04)
+#axes[0].set_ylim(1.484,1.506)
+#axes[1].set_ylim(.85,1.04)
+axes[0].yaxis.set_major_locator(ticker.MultipleLocator(0.01))
 axes[0].set_xlim(0,0.25)
 axes[0].set_ylabel(r"$r/r_\mathrm{sch}$")
 axes[1].set_ylabel(r"$k_t/k_{t0}$")
@@ -78,7 +80,7 @@ axes[1].plot(tarr, np.ones(tarr.shape),color='k',linestyle="--")
 #axes[0].fill_between(np.arange(0,1,.05),0,1,color='black')
 #axes[0].text(.12,.9,"Black Hole", color='white',ha='center', va='center',fontsize=18)
 axes[0].set_ylim(-.25,0.02)
-axes[1].set_ylim(.9,1.02)
+axes[1].set_ylim(.98,1.039)
 axes[0].set_xlim(0,10)
 axes[0].set_ylabel(r"$(r-r_\mathrm{analytic})/r_\mathrm{sch}$")
 axes[1].set_ylabel(r"$k_t/k_{t0}$")
