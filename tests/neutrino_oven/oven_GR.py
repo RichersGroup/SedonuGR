@@ -3,10 +3,10 @@ import sys
 sys.path.insert(0, '../')
 import tools
 
-nx = 31
+nx = 51
 rs = 1.0e5
 Rcore = 1.5e5
-Rout = 3e5 #1.75 --2.0e5
+Rout = 5e5 #1.75 --2.0e5
 
 rho = 1
 temp_core = 10*tools.MeV / tools.k_b

@@ -25,15 +25,7 @@ import tools
 avg_tolerance = 0.05
 max_tolerance = 0.5
 
-with open("param.lua") as search:
-    for line in search:
-        if "r_core" in line:
-            r_core = float(line.split()[2])/1e5
-        if("T_core" in line):
-            T_core = float(line.split("=")[1].strip(" ").strip("{").split("}")[0])
-        if("core_chem_pot" in line):
-            munue = float(line.split("=")[1].strip(" ").strip("{").split("}")[0])
-
+munue = 0
 with open("output.txt","r") as search:
     for line in search:
         if "DO_GR" in line:
@@ -46,10 +38,9 @@ edens = np.array(f["distribution0(erg|ccm,tet)"]).sum(axis=(1,2,3))/1e29
 edens_theory = np.array([tools.edens(T_gas[i]*tools.MeV, munue*tools.MeV) for i in range(len(T_gas))])/1e29
 #edens_theory = np.array([tools.energy_blackbody(T_gas[i]*tools.MeV, munue*tools.MeV) for i in range(len(T_gas))])
 if makeplot:
-    fig = plt.figure(figsize=(8,12))
-    gs = gridspec.GridSpec(3, 1)
+    fig = plt.figure(figsize=(8,8))
+    gs = gridspec.GridSpec(2, 1)
     axes = [plt.subplot(gsi) for gsi in gs]
-    #axes[0].set_title(r"$R_\mathrm{core}=$"+str(r_core)+r"km   $T_\mathrm{core}=$"+str(T_core)+r"MeV   $\mu_{\nu_e}=$"+str(munue/tools.MeV)+"MeV")
 
 isError = False
 
@@ -84,32 +75,33 @@ print("dEdt avgerror=",avgerror," maxerror=",maxerror)
 if avgerror>avg_tolerance or maxerror>max_tolerance:
     isError = True
 
-l_abs = np.array(f["l_abs(1|s|ccm,tet)"])/1e35
-l_emit = np.array(f["l_emit(1|s|ccm,tet)"])/1e35
-dNdt = l_abs + l_emit
-if makeplot:
-    axes[2].set_ylabel(r"$dn_l/dt$ ($10^{35}$ cm$^{-3}$ s$^{-1}$)")
-    axes[2].plot(r, -l_emit, label="Emit")
-    axes[2].scatter(r, l_abs, label="Absorb")
-    axes[2].set_ylim(0,1.1*max(np.max(l_abs),np.max(-l_emit)))
-    axes[2].legend(frameon=False)
-error = dNdt
-relerror = dNdt / l_emit
-avgerror = np.abs(np.mean(relerror))
-maxerror = np.max(np.abs(relerror))
-print("dEdt avgerror=",avgerror," maxerror=",maxerror)
-if avgerror>avg_tolerance or maxerror>max_tolerance:
-    isError = True
+#l_abs = np.array(f["l_abs(1|s|ccm,tet)"])/1e35
+#l_emit = np.array(f["l_emit(1|s|ccm,tet)"])/1e35
+#dNdt = l_abs + l_emit
+#if makeplot:
+#    axes[2].set_ylabel(r"$dn_l/dt$ ($10^{35}$ cm$^{-3}$ s$^{-1}$)")
+#    axes[2].plot(r, -l_emit, label="Emit")
+#    axes[2].scatter(r, l_abs, label="Absorb")
+#    axes[2].set_ylim(0,1.1*max(np.max(l_abs),np.max(-l_emit)))
+#    axes[2].legend(frameon=False)
+#error = dNdt
+#relerror = dNdt / l_emit
+#avgerror = np.abs(np.mean(relerror))
+#maxerror = np.max(np.abs(relerror))
+#print("dEdt avgerror=",avgerror," maxerror=",maxerror)
+#if avgerror>avg_tolerance or maxerror>max_tolerance:
+#    isError = True
 
 if makeplot:
     for ax in axes:
         ax.minorticks_on()
-        ax.axvline(1.5)
+        ax.axvline(1.5,color="k",linewidth=0.5)
         ax.tick_params(axis='both',which='both',direction='in',top=True,right=True)
+        ax.set_xlim(0,5)
     
-    axes[2].set_xlabel("$r$ (km)")
+    axes[1].set_xlabel("$r$ (km)")
     axes[0].xaxis.set_ticklabels([])
-    axes[1].xaxis.set_ticklabels([])
+    axes[0].text(1.3,3,r"$1.5\,r_\mathrm{sch}$",rotation=-90)
 
     plt.subplots_adjust(wspace=0, hspace=0)
     plt.savefig("edens.pdf", bbox_inches="tight")
