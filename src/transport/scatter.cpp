@@ -152,7 +152,7 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	double ds_adv = 0;
 	double A=0,B=0;
 	if(Metric::dot_Minkowski<3>(eh->u,eh->u) > 1e-10){
-	  double gtt = eh->g.get(3,3);
+	  double gtt = (DO_GR ? eh->g.get(3,3) : -1. );
 	  Tuple<double,4> ulow = eh->g.lower<4>(eh->u);
 	  double A_B = -(ulow[3] + sqrt(ulow[3]*ulow[3] + gtt)) / gtt;
 	  B = eh->kup_tet[3] / (1. - A_B*ulow[3]);
