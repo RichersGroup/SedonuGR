@@ -271,7 +271,7 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<do
 	// rejection sample the new direction, but only if not absurdly forward/backward peaked
 	// (delta=2.8 corresponds to a possible factor of 10 in the neutrino weight)
 	Tuple<double,4> kup_tet_new;
-	eh->kup_tet[3] = outnu * pc::h;
+	kup_tet_new[3] = outnu * pc::h;
 	if(fabs(delta) < 2.8){
 		double costheta=0;
 		do{
