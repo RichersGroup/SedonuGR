@@ -107,7 +107,7 @@ void Transport::which_event(const EinsteinHelper *eh, ParticleEvent *event, doub
 	double d_randomwalk = INFINITY;
 	if(do_randomwalk && eh->scatopac*(*ds_com)>randomwalk_min_optical_depth){ // coarse check
 		double D = pc::c / (3. * eh->scatopac);
-		d_randomwalk = min(max(grid->d_randomwalk(*eh), d_zone*min_step_size), d_zone*max_step_size);
+		d_randomwalk = min(grid->d_randomwalk(*eh), d_zone*max_step_size);
 		if(r_core>0){
 			// get a null test vector
 			Tuple<double,4> ktest = -eh->xup;
