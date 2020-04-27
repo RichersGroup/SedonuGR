@@ -638,10 +638,8 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->fate,==,moving);
 
 	// initialize the arrays
-	double kup[4], xup[4];
-	for(int i=0; i<4; i++) xup[i] = eh->xup[i];
-	for(int i=0; i<4; i++) kup[i] = eh->kup[i];
-
+	Tuple<double,4> klow = eh->g.lower<4>(eh->kup);
+	Tuple<double,4> xup = eh->xup;
 
 	// invert the radial component of the velocity, put the particle just inside the boundary
 	for(int i=0; i<3; i++){
@@ -649,7 +647,7 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
 			PRINT_ASSERT(xAxes[i].min,==,0);
 			PRINT_ASSERT(-xup[i],<,xAxes[i].delta(1));
 			// actual work
-			kup[i] = -kup[i];
+			klow[i] = -klow[i];
 			xup[i] = -xup[i];
 			// end actual work
 			PRINT_ASSERT(xup[i],>=,xAxes[i].min);
@@ -665,7 +663,7 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
 			
 			if(rotate_hemisphere[i]){
 				for(int j=0; j<2; j++){
-					kup[j] = -kup[j];
+					klow[j] = -klow[j];
 					xup[j] = -xup[j];
 				}
 			}
@@ -673,11 +671,11 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
 				int other = i==0 ? 1 : 0;
 				if(xup[other]>=0){
 					double tmp;
-					tmp=kup[i];	kup[i]=kup[other]; kup[other]=-tmp;
+					tmp=klow[i];	klow[i]=klow[other]; klow[other]=-tmp;
 					tmp=xup[i];	xup[i]=xup[other]; xup[other]=-tmp;
 				}
 				else for(int j=0; j<2; j++){
-					kup[j] = -kup[j];
+					klow[j] = -klow[j];
 					xup[j] = -xup[j];
 				}
 			}
@@ -691,10 +689,8 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
 	}
 
 	// assign the arrays
-	for(size_t i=0; i<4; i++){
-		eh->xup[i] = xup[i];
-		eh->kup[i] = kup[i];
-	}
+	eh->kup = eh->g.raise<4>(klow);
+	eh->xup = xup;
 }
 
 double Grid3DCart::zone_lorentz_factor(int z_ind) const{

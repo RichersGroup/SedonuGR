@@ -75,7 +75,7 @@ void Transport::scatter(EinsteinHelper *eh, const ParticleEvent event) const{
 		}
 	}
 
-	//grid->fourforce_abs[eh->z_ind] += (kup_tet_old - eh->kup_tet) * eh->N / eh->zone_fourvolume;
+	grid->fourforce_abs[eh->z_ind] += (kup_tet_old - eh->kup_tet) * eh->N / eh->zone_fourvolume;
 }
 
 double Pescape(double x, int sumN){
