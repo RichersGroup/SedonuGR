@@ -169,15 +169,13 @@ void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 	PRINT_ASSERT(eh->N,>,0);
 	PRINT_ASSERT(abs(eh->g.dot<4>(eh->kup,eh->kup)) / (eh->kup[3]*eh->kup[3]), <=, TINY);
 
-	// save old values
-	const EinsteinHelper eh_old = *eh;
-
 	// convert ds_com into dlambda
-	double dlambda = eh_old.ds_com / eh_old.kup_tet[3];
+	double dlambda = eh->ds_com / eh->kup_tet[3];
 	PRINT_ASSERT(dlambda,>=,0);
 
 	// kick 1
 	if(DO_GR) eh->kup += eh->dk_dlambda() * 0.5*dlambda;
+	const EinsteinHelper eh_old = *eh;
 
 	// drift
 	eh->xup += eh->kup * dlambda;
