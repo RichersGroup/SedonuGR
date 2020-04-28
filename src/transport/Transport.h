@@ -89,7 +89,6 @@ protected:
 	Axis randomwalk_xaxis;
 	int do_randomwalk;
 	double randomwalk_min_optical_depth;
-	double absorption_depth_limiter;
 	double randomwalk_max_x;
 	int randomwalk_sumN;
 

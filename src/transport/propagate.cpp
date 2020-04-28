@@ -98,11 +98,6 @@ void Transport::which_event(const EinsteinHelper *eh, ParticleEvent *event, doub
 	*ds_com = min(d_boundary, d_zone);
 	PRINT_ASSERT(d_boundary, >, 0);
 
-	// FIND D_ABS
-	if(eh->absopac*(*ds_com) > absorption_depth_limiter)
-		*ds_com = absorption_depth_limiter/eh->absopac;
-
-
 	// FIND D_RANDOMWALK
 	double d_randomwalk = INFINITY;
 	if(do_randomwalk && eh->scatopac*(*ds_com)>randomwalk_min_optical_depth){ // coarse check
@@ -120,10 +115,6 @@ void Transport::which_event(const EinsteinHelper *eh, ParticleEvent *event, doub
 			double kup_tet_t = -eh->g.dot<4>(ktest,eh->u);
 			double ur = Metric::dot_Minkowski<3>(ktest,eh->u)/r;
 			d_randomwalk = min(d_randomwalk, R_randomwalk(kr/kup_tet_t, ur, r-r_core, D));
-		}
-		if(eh->absopac > 0){
-			double R_abs_limited = sqrt(absorption_depth_limiter * D / eh->absopac); // assumes a Delta t = 1s.
-			d_randomwalk = min(d_randomwalk, R_abs_limited);
 		}
 		if(d_randomwalk == INFINITY) d_randomwalk = 1.1*randomwalk_min_optical_depth / eh->scatopac;
 		PRINT_ASSERT(d_randomwalk,>=,0);
