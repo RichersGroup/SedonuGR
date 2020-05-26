@@ -179,6 +179,12 @@ public:
 	        PRINT_ASSERT(i,<,y0.size());
 		return y0[i];
 	}
+	const Tuple<T,nelements> get(size_t ind[ndims]) const{
+		return y0[direct_index(ind)];
+	}
+	void set(size_t ind[ndims], Tuple<T,nelements> setval) {
+		y0[direct_index(ind)] = setval;
+	}
 
 	// dummy template allows it to compile with any value of NDIMS
 	template<size_t dummy>
