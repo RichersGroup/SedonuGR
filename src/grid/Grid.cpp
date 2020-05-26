@@ -340,6 +340,8 @@ void Grid::write_zones(const int iw)
 	for(size_t s=0; s<distribution.size(); s++){
 		distribution[s]->write_hdf5_data(file, "distribution"+to_string(s)+"(erg|ccm,tet)");
 		spectrum[s].write_hdf5_data(file,"spectrum"+to_string(s)+"(erg|s)");
+		abs_opac[s].write_HDF5(file, "abs_opac"+to_string(s)+"(1|cm)");
+		scat_opac[s].write_HDF5(file, "scat_opac"+to_string(s)+"(1|cm)");
 	}
 
 	write_child_zones(file);
