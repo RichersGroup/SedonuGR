@@ -50,6 +50,7 @@ void Grid2DSphere::read_model_file(Lua* lua)
 	std::string model_type = lua->scalar<std::string>("model_type");
 	if(model_type == "Flash") read_flash_file(lua);
 	else if(model_type == "Nagakura") read_nagakura_file(lua);
+	else if(model_type == "Lundmann") read_lundmann_file(lua);
 	else{
 		cout << "ERROR: model type unknown." << endl;
 		exit(8);
@@ -121,13 +122,14 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 	binmid[ntheta-1] = 0.5 * (bintops[ntheta-1] + bintops[ntheta-2]);
 	xAxes[1] = Axis(minval, bintops, binmid);
 
+	lapse.set_axes(xAxes);
 	rho.set_axes(xAxes);
 	T.set_axes(xAxes);
 	Ye.set_axes(xAxes);
 	vr.set_axes(xAxes);
 	vtheta.set_axes(xAxes);
 	vphi.set_axes(xAxes);
-	munue.set_axes(xAxes);
+	munue.set_axes(xAxes); assert(false); // NEED TO MODIFY BELOW TO GET MUNUE
 
 	// write grid properties
 	if(rank0) cout << "#   nr=" << nr << "\trmin=" << xAxes[0].min << "\trmax=" << xAxes[0].top[nr-1] << endl;
@@ -166,6 +168,7 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 			T[z_ind] /= pc::k_MeV;
 
 			// sanity checks
+			lapse[z_ind] = 1.;
 			PRINT_ASSERT(rho[z_ind],>=,0.0);
 			PRINT_ASSERT(T[z_ind],>=,0.0);
 			PRINT_ASSERT(Ye[z_ind],>=,0.0);
@@ -372,6 +375,8 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	}
 	xAxes[1] = Axis(minval, bintop, binmid);
 
+	lapse.set_axes(xAxes);
+	munue.set_axes(xAxes); assert(false); // NEED TO MODIFY BELOW TO EXTRACT MUNUE
 	rho.set_axes(xAxes);
 	T.set_axes(xAxes);
 	Ye.set_axes(xAxes);
@@ -417,6 +422,7 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 				vr[z_ind] = tmp_vr;
 				vtheta[z_ind] = tmp_vtheta;
 				vphi[z_ind] = tmp_vphi;
+				lapse[z_ind] = 1.;
 				PRINT_ASSERT(rho[z_ind],>=,0.0);
 				PRINT_ASSERT(T[z_ind],>=,0.0);
 				PRINT_ASSERT(Ye[z_ind],>=,0.0);
@@ -541,6 +547,91 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	}
 }
 
+void Grid2DSphere::read_lundmann_file(Lua* lua){
+	// Modified by C. Lundman
+
+	// MPI
+	int MPI_myID;
+	MPI_Comm_rank(MPI_COMM_WORLD, &MPI_myID);
+	const int rank0 = (MPI_myID == 0);
+	if(rank0) {
+		std::cout << "#   Reading 2D model file (Lundman)" << endl;
+	}
+
+	// Open model file
+	std::string model_file = lua->scalar<std::string>("model_file");
+	ifstream infile;
+	infile.open(model_file.c_str());
+	if(infile.fail()){
+		cout << "Error: can't read the model file." << model_file << endl;
+		exit(4);
+	}
+
+	// Geometry of model
+	infile >> grid_type; // Should equal Grid2DSphere
+
+	// Reading r grid
+	double rmin;
+	int r_zones;
+	infile >> r_zones;
+	vector<double> rtop(r_zones), rmid(r_zones);
+	infile >> rmin;
+	for(int i=0; i<r_zones; i++) {
+		infile >> rtop[i];
+		double last = i==0 ? rmin : rtop[i-1];
+		rmid[i] = 0.5 * (rtop[i] + last);
+	}
+	xAxes[0] = Axis(rmin, rtop, rmid);
+
+	// Reading theta grid
+	double thetamin;
+	int theta_zones;
+	infile >> theta_zones;
+	vector<double> theta_top(theta_zones), theta_mid(theta_zones);
+	infile >> thetamin;
+	for(int j=0; j<theta_zones; j++) {
+		infile >> theta_top[j];
+		double last = j==0 ? thetamin : theta_top[j-1];
+		theta_mid[j] = 0.5 * (theta_top[j] + last);
+	}
+	xAxes[1] = Axis(thetamin, theta_top, theta_mid);
+
+	// set dataset axes
+	lapse.set_axes(xAxes);
+	munue.set_axes(xAxes);
+	rho.set_axes(xAxes);
+	T.set_axes(xAxes);
+	Ye.set_axes(xAxes);
+	vr.set_axes(xAxes);
+	vtheta.set_axes(xAxes);
+	vphi.set_axes(xAxes);
+
+	// read zone properties
+	int n_zones = r_zones * theta_zones;
+	vector<double> tmp_rho    = vector<double>(n_zones,0);
+	vector<double> tmp_T      = vector<double>(n_zones,0);
+	vector<double> tmp_Ye     = vector<double>(n_zones,0);
+	vector<double> tmp_vr     = vector<double>(n_zones,0);
+	vector<double> tmp_vtheta = vector<double>(n_zones,0);
+	vector<double> tmp_vphi   = vector<double>(n_zones,0);
+	for(int i=0; i<r_zones; i++) {
+		for(int j=0; j<theta_zones; j++) {
+			int z_ind = zone_index(i, j);
+			infile >> rho[z_ind];
+			infile >> T[z_ind];
+			infile >> Ye[z_ind];
+			vr[z_ind] = 0;
+			vtheta[z_ind] = 0;
+			vphi[z_ind] = 0;
+			lapse[z_ind] = 0;
+		}
+	}
+
+	infile.close();
+
+}
+
+
 double Grid2DSphere_theta(const Tuple<double,4>& x){
 	return atan2(sqrt(x[0]*x[0] + x[1]*x[1]), x[2]);
 }
@@ -615,9 +706,11 @@ double Grid2DSphere::zone_lab_3volume(int z_ind) const
 
 double Grid2DSphere::d_boundary(const EinsteinHelper& eh) const{
 	const double r = radius(eh.xup);
-	PRINT_ASSERT(r,<=,xAxes[0].top[eh.z_ind]);
-	PRINT_ASSERT(r,>=,xAxes[0].bottom(eh.z_ind));
+	PRINT_ASSERT(r,<=,xAxes[0].top[eh.dir_ind[0]]);
+	PRINT_ASSERT(r,>=,xAxes[0].bottom(eh.dir_ind[0]));
 	const double theta = Grid2DSphere_theta(eh.xup);
+	PRINT_ASSERT(theta,<=,xAxes[1].top[eh.dir_ind[1]]);
+	PRINT_ASSERT(theta,>=,xAxes[1].bottom(eh.dir_ind[1]));
 
 	// get component of k in the radial direction
 	double kr = eh.g.dot<4>(eh.e[0],eh.kup);
@@ -705,12 +798,14 @@ double Grid2DSphere::zone_min_length(int z_ind) const
 	const size_t i = dir_ind[0];
 	const size_t j = dir_ind[1];
 
-	// the 'minimum lengts' are just approximate.
+	// the 'minimum lengths' are just approximate.
 	const double r_len     = (    xAxes[0].top[i] -     xAxes[0].bottom(i));
-	const double theta_len = sin(xAxes[1].top[j] - xAxes[1].bottom(j)) * xAxes[0].bottom(i);
+	const double theta_len = sin(xAxes[1].top[j] - xAxes[1].bottom(j)) * xAxes[0].mid[i];
 
 	// if r_in is zero, there will be problems, but simulations would not have done this.
-	return min(r_len, theta_len);
+	double result = min(r_len, theta_len);
+	PRINT_ASSERT(result,>,0);
+	return result;
 }
 
 //------------------------------------------------------------
@@ -871,8 +966,10 @@ Tuple<hsize_t,NDIMS> Grid2DSphere::dims() const{
 	return dims;
 }
 
-double Grid2DSphere::zone_lorentz_factor(int /*z_ind*/) const{
-	abort(); // NOT IMPLEMENTED
+double Grid2DSphere::zone_lorentz_factor(int z_ind) const{
+	PRINT_ASSERT(DO_GR,==,0);
+	double v2 = vr[z_ind]*vr[z_ind] + vtheta[z_ind]*vtheta[z_ind] + vphi[z_ind]*vphi[z_ind];
+	return 1. / sqrt(1. - v2/(physical_constants::c*physical_constants::c));
 }
 Christoffel Grid2DSphere::interpolate_Christoffel(const EinsteinHelper& eh) const{ // default Minkowski
 	PRINT_ASSERT(DO_GR,==,0);

@@ -55,6 +55,7 @@ public:
 	void read_model_file(Lua* lua);
 	void read_flash_file(Lua* lua);
 	void read_nagakura_file(Lua* lua);
+	void read_lundmann_file(Lua* lua);
 
 	// required functions
 	int    zone_index             (const Tuple<double,4>& x                            ) const;
