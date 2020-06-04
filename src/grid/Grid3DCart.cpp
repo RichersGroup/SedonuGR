@@ -354,9 +354,9 @@ void Grid3DCart::read_THC_file(Lua* lua)
 		v[z_ind][2] = tmp_velz[dataset_ind];
 		if(DO_GR){
 			lapse[z_ind]= tmp_lapse[dataset_ind];
-			betaup[z_ind][0] = tmp_betax[dataset_ind];
-			betaup[z_ind][1] = tmp_betay[dataset_ind];
-			betaup[z_ind][2] = tmp_betaz[dataset_ind];
+			betaup[z_ind][0] = tmp_betax[dataset_ind]*0;
+			betaup[z_ind][1] = tmp_betay[dataset_ind]*0;
+			betaup[z_ind][2] = tmp_betaz[dataset_ind]*0;
 			g3[z_ind][ixx] = tmp_gxx[dataset_ind];
 			g3[z_ind][ixy] = tmp_gxy[dataset_ind];
 			g3[z_ind][ixz] = tmp_gxz[dataset_ind];
