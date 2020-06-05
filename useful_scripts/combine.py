@@ -21,7 +21,7 @@ dataset_list = [
 ]
 print(dataset_list)
 
-fluid_list = sorted(glob.glob("fluid_[0-9][0-9][0-9][0-9][0-9].h5"))[1:]
+fluid_list = sorted(glob.glob("fluid_[0-9][0-9][0-9][0-9][0-9].h5"))
 print(fluid_list)
 
 # use file 0 as template
@@ -34,7 +34,7 @@ for dset in dataset_list:
     print(dset)
 
     # prepare datasets to combine
-    data = np.array(outfile[dset])
+    data = np.zeros(outfile[dset].shape)
 
     # loop through the fluid files
     for filename in fluid_list:
@@ -44,3 +44,4 @@ for dset in dataset_list:
 
     outfile[dset][:] = data / len(fluid_list)
 
+outfile.close()
