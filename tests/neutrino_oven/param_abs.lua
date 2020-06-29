@@ -56,7 +56,6 @@ verbose       = 1
 max_n_iter =  1
 min_step_size = 0.01
 max_step_size = 0.4
-absorption_depth_limiter = 1.0
 
 -- Biasing
 
@@ -68,4 +67,3 @@ randomwalk_max_x = 2
 randomwalk_sumN = 1000
 randomwalk_npoints = 200
 randomwalk_min_optical_depth = 5
-randomwalk_interpolation_order = 1

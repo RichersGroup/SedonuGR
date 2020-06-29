@@ -56,7 +56,6 @@ verbose       = 1
 max_n_iter =  1
 min_step_size = 0.25
 max_step_size = 0.25
-absorption_depth_limiter = 1.0
 
 -- Biasing
 
