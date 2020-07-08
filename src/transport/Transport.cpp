@@ -737,7 +737,7 @@ double Transport::R_randomwalk(const double kx_kttet, const double ux, const dou
 	PRINT_ASSERT(dlab*kx_kttet,>,0); // the displacement and the k vector should be in the same direction
 	double b = kx_kttet - ux;
 	double a = ux*pc::c * randomwalk_max_x / D;
-	double c = dlab;
+	double c = -dlab;
 	double R = NaN;
 	double rad = b*b - 4.*a*c;
 	if(rad<0) R = 0; // if no solution, say randomwalk can't be done
