@@ -740,16 +740,15 @@ double Transport::R_randomwalk(const double kx_kttet, const double ux, const dou
 	double c = -dlab;
 	double R = NaN;
 	double rad = b*b - 4.*a*c;
+
 	if(rad<0) R = 0; // if no solution, say randomwalk can't be done
 	else if(abs(4.*a*c/(b*b)) < sqrt(TINY)){
-		R = c / b;
+		R = -c / b;
 	}
 	else{
 		double term1 = -b / (2.*a);
 		double term2 = sqrt(rad) / (2.*a);
-		R = term1 + term2;
-		if(R<0) R = term1 - term2;
-		//else PRINT_ASSERT(term1-term2,<,0);
+		R = max(term1 + term2, term1-term2);
 	}
 	R = max(0.,R);
 	return R;

@@ -531,7 +531,7 @@ double Grid3DCart::d_randomwalk(const EinsteinHelper& eh) const{
 	double D = eh.scatopac / (3.*pc::c);
 
 	for(size_t i=0; i<3; i++){
-		for(int sgn=1; sgn>0; sgn*=-1){
+		for(int sgn=1; sgn>=-1; sgn-=2){
 			// get a null test vector
 			Tuple<double,4> ktest;
 			for(size_t j=0; j<4; j++) ktest[j] = 0;

@@ -888,11 +888,11 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 	ktest[3] = 0;
 	const double r = radius(eh.xup);
 	const double ur = Metric::dot_Minkowski<3>(ktest,eh.u)/r;
-	for(int sgn=1; sgn>0; sgn*=-1){
+	for(int sgn=1; sgn>=-1; sgn-=2){
 		// get a null test vector
 		for(size_t i=0; i<3; i++) ktest[i] *= sgn;
 		eh.g.normalize_null_changeupt(ktest);
-		const double kr = radius(ktest);
+		const double kr = sgn*radius(ktest);
 
 		// get the time component of the tetrad test vector
 		double kup_tet_t = -eh.g.dot<4>(ktest,eh.u);
@@ -913,11 +913,11 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 	ktest2[3] = 0;
 	const double utheta = Metric::dot_Minkowski<3>(ktest2,eh.u)/r;
 	double theta = Grid2DSphere_theta(eh.xup);
-	for(int sgn=1; sgn>0; sgn*=-1){
+	for(int sgn=1; sgn>=-1; sgn-=2){
 		// get a null test vector
 		for(size_t i=0; i<3; i++) ktest[i] *= sgn;
 		eh.g.normalize_null_changeupt(ktest);
-		double ktheta = radius(ktest2);
+		double ktheta = sgn*radius(ktest2);
 
 		// get the time component of the tetrad test vector
 		double kup_tet_t = -eh.g.dot<4>(ktest,eh.u);
