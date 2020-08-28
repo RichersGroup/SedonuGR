@@ -255,7 +255,9 @@ void Transport::propagate(EinsteinHelper *eh){
 		n_escape[eh->s]++;
 		L_net_esc[eh->s] += e;
 		N_net_esc[eh->s] += eh->N;
-		grid->spectrum[eh->s].count_single(eh->kup_tet, eh->dir_ind, e);
+		Tuple<double,4> kup_write = eh->kup;
+		Metric::normalize_null_Minkowski(kup_write);
+		grid->spectrum[eh->s].count_single(kup_write, eh->dir_ind, e);
 	}
 	else if(eh->fate==absorbed)
 		particle_core_abs_energy += e;
