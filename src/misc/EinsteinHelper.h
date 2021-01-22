@@ -24,6 +24,8 @@ public:
 	ParticleFate fate;
 	double N0;
 	Metric g;
+	Christoffel Gamma;
+	double zone_fourvolume;
 
 	// things with which to do interpolation
 	InterpolationCube<NDIMS  > icube_vol; // for metric quantities
@@ -47,6 +49,7 @@ public:
 	  s(-MAXLIM),
 	  fate(moving),
 	  N0(NaN),
+	  zone_fourvolume(NaN),
 	  e{NaN,NaN,NaN,NaN},
 	  absopac(NaN),
 	  scatopac(NaN),
@@ -67,6 +70,9 @@ public:
 		kup_tet = coord_to_tetrad(kup);
 		PRINT_ASSERT(kup_tet[3],>,0);
 		Metric::normalize_null_Minkowski(kup_tet);
+	}
+	Tuple<double,4> dk_dlambda() const{
+		return -Gamma.contract2(kup);
 	}
 
 	// return the Lorentz factor W

@@ -58,9 +58,7 @@ void Transport::scatter(EinsteinHelper *eh, const ParticleEvent event) const{
 
 	// store the old direction
 	double Nold = eh->N;
-	Tuple<double,4> kup_tet_old;
-	for(size_t i=0; i<4; i++) kup_tet_old[i] = eh->kup_tet[i];
-	PRINT_ASSERT(kup_tet_old[3],==,eh->kup_tet[3]);
+	Tuple<double,4> kup_tet_old = eh->kup_tet;
 	
 	// sample outgoing energy and set the post-scattered state
 	if(event==inelastic_scatter){
@@ -71,17 +69,24 @@ void Transport::scatter(EinsteinHelper *eh, const ParticleEvent event) const{
 	else if(event==elastic_scatter){
 		PRINT_ASSERT(eh->scatopac,>=,0);
 		if(eh->scatopac > 0){
-			Tuple<double,4> kup_tet;
-			isotropic_kup_tet(eh->nu(),kup_tet,&rangen);
+			Tuple<double,4> kup_tet = eh->kup_tet;
+			isotropic_kup_tet(kup_tet,&rangen);
 			eh->set_kup_tet(kup_tet);
 		}
 	}
 
-	for(size_t i=0; i<4; i++){
-		grid->fourforce_abs[eh->z_ind][i] += (kup_tet_old[i]*Nold - eh->kup_tet[i]*eh->N);
-	}
+	grid->fourforce_abs[eh->z_ind] += (kup_tet_old - eh->kup_tet) * eh->N / eh->zone_fourvolume;
 }
 
+double Pescape(double x, int sumN){
+  double sum = 0;
+  for(int n=1; n<=sumN; n++){
+    double tmp = 2.0 * exp(-x * (n*pc::pi)*(n*pc::pi));
+    if(n%2 == 0) tmp *= -1;
+    sum += tmp;
+  }
+  return 1.0-sum;
+}
 
 
 //-------------------------------------------------------
@@ -89,28 +94,17 @@ void Transport::scatter(EinsteinHelper *eh, const ParticleEvent event) const{
 // result is D*t/(R^2)
 //-------------------------------------------------------
 void Transport::init_randomwalk_cdf(Lua* lua){
-	int sumN = lua->scalar<int>("randomwalk_sumN");
+	randomwalk_sumN = lua->scalar<int>("randomwalk_sumN");
 	int npoints = lua->scalar<int>("randomwalk_npoints");
 	randomwalk_max_x = lua->scalar<double>("randomwalk_max_x");
-	double interpolation_order = lua->scalar<double>("randomwalk_interpolation_order");
 
 	randomwalk_diffusion_time.resize(npoints);
-	randomwalk_diffusion_time.interpolation_order = interpolation_order;
+	randomwalk_diffusion_time.interpolation_order = 1;
 	randomwalk_xaxis = Axis(0,randomwalk_max_x,npoints);
 
 	#pragma omp parallel for
-	for(int i=1; i<=npoints; i++){
-		double sum = 0;
-		double x = randomwalk_xaxis.top[i];
-
-		for(int n=1; n<=sumN; n++){
-			double tmp = 2.0 * exp(-x * (n*pc::pi)*(n*pc::pi));
-			if(n%2 == 0) tmp *= -1;
-			sum += tmp;
-	    }
-
-		randomwalk_diffusion_time.set(i,1.0-sum);
-	}
+	for(int i=1; i<=npoints; i++)
+	  randomwalk_diffusion_time.set(i,Pescape(randomwalk_xaxis.top[i], randomwalk_sumN));
 	randomwalk_diffusion_time.normalize();
 }
 
@@ -123,62 +117,133 @@ void Transport::random_walk(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->N,>=,0);
 	PRINT_ASSERT(eh->nu(),>=,0);
 
-	// save old values
-	const EinsteinHelper eh_old = *eh;
-
-	// sample the distance travelled during the random walk
+	// invert the randomwalk CDF
 	const double Rcom = eh->ds_com;
 	const double D = pc::c / (3.*eh->scatopac);
-	double path_length_com = pc::c * Rcom*Rcom / D * randomwalk_diffusion_time.invert(rangen.uniform(),&randomwalk_xaxis,-1);
-	path_length_com = max(path_length_com,Rcom);
+	double chi_esc = D/(pc::c*Rcom); // using t=Rcom/c
+	double Pesc_cdf  = randomwalk_diffusion_time.interpolate_cdf(chi_esc,&randomwalk_xaxis);
+	double Pesc_real = -exp(-eh->scatopac*Rcom);
+	double U = rangen.uniform();
+	double path_length_com = 0;
+	if(U<Pesc_real) path_length_com = Rcom;
+	else{
+		// make U go from Pesc_cdf to 1 (following stretching in Foucart2018)
+		double a = (1. - Pesc_cdf) / (1. - Pesc_real);
+		U = (U-Pesc_real) * a + Pesc_cdf;
+		PRINT_ASSERT(U,>=,0-TINY);
+		PRINT_ASSERT(U,<=,1+TINY);
+		U = max(min(U,1.),0.);
 
-	// move along with the fluid
-	double dtau = path_length_com / pc::c;
-	for(size_t i=0; i<4; i++) eh->xup[i] += dtau * eh->u[i];
-
-	// determine the average and final neutrino numbers
-	double Naverage = eh->N, Nfinal = eh->N;
-	if(eh->absopac > 0){
-		double opt_depth = eh->absopac * path_length_com;
-		Nfinal = eh->N * exp(-opt_depth);
-		if((eh->N-Nfinal)/eh->N < TINY)
-		  Naverage = (eh->N + Nfinal) / 2;
-		else
-		  Naverage = (eh->N - Nfinal) / (opt_depth);
+		// invert the randomwalk CDF
+		double chi = randomwalk_diffusion_time.invert(U,&randomwalk_xaxis,-1);
+		path_length_com = pc::c * Rcom*Rcom / D * chi;
+		PRINT_ASSERT(path_length_com,>=,Rcom*(1.-TINY));
+		path_length_com = max(path_length_com,Rcom);
 	}
-	PRINT_ASSERT(Naverage,<=,eh_old.N);
-	PRINT_ASSERT(Nfinal,<=,Naverage);
 
-	// select a random direction
-	Tuple<double,4> kup_tet;
-	isotropic_kup_tet(eh->nu(),kup_tet,&rangen);
-	eh->set_kup_tet(kup_tet);
-	eh->ds_com = Rcom;
-	eh->N = Naverage;
-	move(eh,false);
-	eh->N = Nfinal;
+	// foucart 2018 description
+	double f_free = Rcom/path_length_com;
+	PRINT_ASSERT(f_free,>=,0);
+	PRINT_ASSERT(f_free,<=,1);
+	double ds_free = path_length_com * f_free;
+	double ds_fl   = path_length_com * (1.-f_free);
 
-
-	// select a random outward direction. Use delta=2 to make pdf=costheta
-	Tuple<double,4> kup_tet_final = 0.0;
-	kup_tet_final[3] = kup_tet[3];
-	Tuple<double,3> direction;
-	do{
-		isotropic_direction(direction,&rangen);
-	} while(reject_direction(Metric::dot_Minkowski<3>(direction,kup_tet)/kup_tet[3], 2.) );
-	for(size_t i=0; i<3; i++) kup_tet_final[i] = direction[i] * kup_tet_final[3];
-	eh->set_kup_tet(kup_tet_final);
-
-	// contribute energy isotropically
-	double Eiso = pc::h*eh->nu() * Naverage * (path_length_com - Rcom);
-	for(int corner=0; corner<eh_old.icube_spec.ncorners; corner++){
-      double weight = eh_old.icube_spec.weights[corner];
-	  grid->distribution[eh_old.s]->add_isotropic(eh_old.icube_spec, Eiso*weight);
+	// Foucart2018 31-33
+	double ds_adv = 0;
+	double A=0,B=0;
+	if(Metric::dot_Minkowski<3>(eh->u,eh->u) > 1e-10){
+	  double gtt = (DO_GR ? eh->g.get(3,3) : -1. );
+	  Tuple<double,4> ulow = eh->g.lower<4>(eh->u);
+	  double A_B = -(ulow[3] + sqrt(ulow[3]*ulow[3] + gtt)) / gtt;
+	  B = eh->kup_tet[3] / (1. - A_B*ulow[3]);
+	  A = A_B * B;
+	  double up_up = (A+B*eh->u[3]) / (B*eh->u[3]);
+	  ds_adv = ds_fl * up_up;
+	  PRINT_ASSERT(ds_adv,<=,ds_fl);
+	  PRINT_ASSERT(ds_adv,>=,0);
 	}
-	grid->l_abs[eh_old.z_ind] += (eh_old.N - Nfinal) * species_list[eh->s]->lepton_number;
-	for(size_t i=0; i<4; i++)
-		grid->fourforce_abs[eh_old.z_ind][i] += (eh_old.kup_tet[i]*eh_old.N - eh->kup_tet[i]*eh->N);
+	double ds_iso = ds_fl - ds_adv;
 
+	//================//
+	// Isotropic Step //
+	//================//
+	if(ds_iso>0){
+	  // determine the average and final neutrino numbers
+	  double Naverage = eh->N, Nfinal = eh->N, Nold = eh->N;
+	  if(eh->absopac > 0){
+	    double opt_depth = eh->absopac * ds_iso;
+	    Nfinal = eh->N * exp(-opt_depth);
+	    if((eh->N-Nfinal)/eh->N < TINY)
+	      Naverage = (eh->N + Nfinal) / 2.;
+	    else
+	      Naverage = (eh->N - Nfinal) / (opt_depth);
+	  }
+	  PRINT_ASSERT(Naverage,<=,Nold);
+	  PRINT_ASSERT(Nfinal,<=,Naverage);
+	  
+	  // contribute isotropically
+	  double Eiso = eh->kup_tet[3] * Naverage * ds_iso / (eh->zone_fourvolume*pc::c);
+	  grid->distribution[eh->s]->add_isotropic_single(eh->dir_ind, Eiso);
+	  grid->l_abs[eh->z_ind] += (Nold - Nfinal) * species_list[eh->s]->lepton_number / eh->zone_fourvolume;
+	  grid->fourforce_abs[eh->z_ind] += eh->kup_tet * (Nold - Nfinal) / eh->zone_fourvolume;
+	  
+	  // move neutrino forward in time
+	  eh->xup[3] += ds_iso * eh->u[3];
+	  eh->N = Nfinal;
+	  window(eh);
+	}
+	  
+	//================//
+	// Advection step // 
+	//================//
+	if(ds_adv>0 and eh->fate==moving){
+	  // set the momentum in the direction of the fluid
+	  Tuple<double,4> tup;
+	  tup[0] = tup[1] = tup[2] = 0;
+	  tup[3] = 1;
+	  Tuple<double,4> kup_tet_old = eh->kup_tet;
+	  eh->kup = tup*A + eh->u*B;
+	  PRINT_ASSERT(abs(eh->g.dot<4>(eh->kup,eh->kup)),<,TINY);
+	  eh->renormalize_kup();
+	  PRINT_ASSERT(abs(kup_tet_old[3]-eh->kup_tet[3])/kup_tet_old[3],<,TINY);
+
+	  // account for change in the fluid
+	  grid->fourforce_abs[eh->z_ind] += (kup_tet_old - eh->kup_tet) * eh->N / eh->zone_fourvolume;
+	  
+	  // move for the small timestep
+	  eh->ds_com = ds_adv;
+	  move(eh);
+	}
+
+	//=====================//
+	// Free-streaming step //
+	//=====================//
+	if(ds_free>0 and eh->fate==moving){
+	  // select a random direction
+	  Tuple<double,4> kup_tet_old = eh->kup_tet;
+	  Tuple<double,4> kup_tet = eh->kup_tet;
+	  isotropic_kup_tet(kup_tet,&rangen);
+	  eh->set_kup_tet(kup_tet);
+
+	  // account for change in the fluid
+	  grid->fourforce_abs[eh->z_ind] += (kup_tet_old - eh->kup_tet) * eh->N / eh->zone_fourvolume;
+
+	  // move forward
+	  eh->ds_com = ds_free;
+	  move(eh);
+	  if(eh->fate!=moving) return;
+
+	  // select a random outward direction. Use delta=2 to make pdf=costheta
+	  kup_tet_old = eh->kup_tet;
+	  kup_tet     = eh->kup_tet;
+	  do{
+	    isotropic_kup_tet(kup_tet,&rangen);
+	  } while(reject_direction(Metric::dot_Minkowski<3>(kup_tet_old,kup_tet)/(kup_tet[3]*kup_tet[3]), 2.) );
+	  eh->set_kup_tet(kup_tet);
+	
+	  // account for change in the fluid
+	  grid->fourforce_abs[eh->z_ind] += (kup_tet_old - eh->kup_tet) * eh->N / eh->zone_fourvolume;
+	}
 }
 
 void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<double,4>& kup_tet_old) const{
@@ -206,10 +271,11 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<do
 	// rejection sample the new direction, but only if not absurdly forward/backward peaked
 	// (delta=2.8 corresponds to a possible factor of 10 in the neutrino weight)
 	Tuple<double,4> kup_tet_new;
+	kup_tet_new[3] = outnu * pc::h;
 	if(fabs(delta) < 2.8){
 		double costheta=0;
 		do{
-			isotropic_kup_tet(outnu, kup_tet_new, &rangen);
+			isotropic_kup_tet(kup_tet_new, &rangen);
 			costheta = Metric::dot_Minkowski<3>(kup_tet_new,kup_tet_old) / (kup_tet_old[3]*kup_tet_new[3]);
 		} while(reject_direction(costheta, delta));
 	}

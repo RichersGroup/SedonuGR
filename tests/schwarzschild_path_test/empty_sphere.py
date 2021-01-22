@@ -1,8 +1,10 @@
 import numpy as np
-nx = 9*4
+import sys
+
+nx = 25
+nx_15 = int(sys.argv[1])
 rs = 1.0
 Rin = 1
-Rout = 10
 
 rho = 0
 temp = 0
@@ -10,7 +12,7 @@ Ye = 0
 vr=0
 
 print('1D_sphere', nx,Rin)
-rfac = (Rout/Rin)**(1./nx)
+rfac = (1.5)**(1./nx_15)
 for i in range(nx):
     rin  = Rin * rfac**i
     rout = Rin * rfac**(i+1)

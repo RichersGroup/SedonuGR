@@ -59,6 +59,10 @@ private:
 	double interpolate_pdf_linear(const double x, const Axis* xgrid) const;
 	double interpolate_pdf_cubic(const double x, const Axis* xgrid) const;
 
+	double interpolate_cdf_piecewise(const double x, const Axis* xgrid) const;
+	double interpolate_cdf_linear(const double x, const Axis* xgrid) const;
+	double interpolate_cdf_cubic(const double x, const Axis* xgrid) const;
+
 public:
 
 	CDFArray(const int iorder = 1);
@@ -73,7 +77,8 @@ public:
 	void   set_value(const int i, const double f);     // set the actual (not CDF) value
 	double get_value(const int i) const;               // Get the actual (not CDF) value
 
-	double interpolate_pdf(const double x, const Axis* xgrid) const;          // interpolate the CDF to get the CDF value at the x value
+	double interpolate_pdf(const double x, const Axis* xgrid) const;          // interpolate the PDF to get the PDF value at the x value
+	double interpolate_cdf(const double x, const Axis* xgrid) const;          // interpolate the CDF to get the CDF value at the x value
 
 	void   normalize();         // normalize the cdf, so that final value = 1. Sets N.
 	double invert(const double z, const Axis* xgrid, const int i_in=-1) const;

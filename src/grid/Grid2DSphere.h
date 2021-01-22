@@ -55,6 +55,7 @@ public:
 	void read_model_file(Lua* lua);
 	void read_flash_file(Lua* lua);
 	void read_nagakura_file(Lua* lua);
+	void read_lundmann_file(Lua* lua);
 
 	// required functions
 	int    zone_index             (const Tuple<double,4>& x                            ) const;
@@ -77,7 +78,7 @@ public:
 	void read_child_zones(H5::H5File file);
 
 	// GR functions
-	Tuple<double,4> dk_dlambda(const EinsteinHelper& eh) const; // Gamma^alhpa_mu_nu
+	Christoffel interpolate_Christoffel(const EinsteinHelper& eh) const; // Gamma^alhpa_mu_nu
 	Tuple<double,3> interpolate_shift(const EinsteinHelper& eh) const;
 	Tuple<double,6> interpolate_3metric(const EinsteinHelper& eh) const;
 	void grid_coordinates(const Tuple<double,4>& xup, double coords[NDIMS]) const;

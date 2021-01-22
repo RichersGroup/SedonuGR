@@ -89,7 +89,6 @@ protected:
 	Axis randomwalk_xaxis;
 	int do_randomwalk;
 	double randomwalk_min_optical_depth;
-	double absorption_depth_limiter;
 	double randomwalk_max_x;
 	int randomwalk_sumN;
 
@@ -153,9 +152,9 @@ public:
 	// blackbody function (#/cm^2/s/ster/Hz^3)
 	static double number_blackbody(const double T, const double chempot, const double nu);
 	void set_cdf_to_BB(const double T, const double chempot, CDFArray& emis);
-	static void isotropic_kup_tet(const double nu, Tuple<double,4>& kup_tet, ThreadRNG *rangen);
+	static void isotropic_kup_tet(Tuple<double,4>& kup_tet, ThreadRNG *rangen);
 	static void isotropic_direction(Tuple<double,3>& D, ThreadRNG *rangen);
-	double R_randomwalk(const double kx_kttet, const double kt_kttet, const double ux, const double dlab, const double D);
+	double R_randomwalk(const double kx_kttet, const double ux, const double dlab, const double D) const;
 	bool reject_direction(const double costheta, const double delta) const;
 
 	// set things up
@@ -165,7 +164,7 @@ public:
 
 	// in-simulation functions to be used by main
 	void step();
-	void which_event(EinsteinHelper* eh, ParticleEvent *event) const;
+	void which_event(const EinsteinHelper* eh, ParticleEvent *event, double* ds_com) const;
 	void reset_radiation();
 	void write(const int it) const;
 	void write_rays(const int it);

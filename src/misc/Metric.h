@@ -39,6 +39,7 @@ public:
 		result += data[ixx] * (data[iyy]*data[izz] - data[iyz]*data[iyz]);
 		result -= data[ixy] * (data[ixy]*data[izz] - data[iyz]*data[ixz]);
 		result += data[ixz] * (data[ixy]*data[iyz] - data[iyy]*data[ixz]);
+		PRINT_ASSERT(result,>,0);
 		return result;
 	}
 	Tuple<double,3> lower(const Tuple<double,3>& in) const{
@@ -192,6 +193,17 @@ public:
 			return result;
 		}
 		else return dot_Minkowski<n>(x1up, x2up);
+	}
+	template<size_t n, size_t n1, size_t n2>
+	double dot_low(const Tuple<double,n1>& x1low, const Tuple<double,n2>& x2low) const{
+		PRINT_ASSERT(n,<=,n1);
+		PRINT_ASSERT(n,<=,n2);
+		if(DO_GR){
+			Tuple<double,n> x2up = raise<n>(x2low);
+			double result = contract<n>(x1low, x2up);
+			return result;
+		}
+		else return dot_Minkowski<n>(x1low, x2low);
 	}
 
 	// dot the normal observer's four-velocity with a four vector

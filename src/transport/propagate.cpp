@@ -82,33 +82,44 @@ void Transport::propagate_particles()
 //--------------------------------------------------------
 // Decide what happens to the particle
 //--------------------------------------------------------
-void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
+void Transport::which_event(const EinsteinHelper *eh, ParticleEvent *event, double* ds_com) const{
 	PRINT_ASSERT(eh->N, >, 0);
 	PRINT_ASSERT(eh->z_ind,>=,0);
+	*event = nothing;
 
 	// FIND D_ZONE= ====================================================================
-	double d_boundary = grid->d_boundary(*eh);
 	double d_zone = grid->zone_min_length(eh->z_ind) / sqrt(Metric::dot_Minkowski<3>(eh->kup,eh->kup)) * eh->kup_tet[3];
-	d_boundary = min(max(d_boundary, d_zone*min_step_size), d_zone*max_step_size);
+	d_zone = min(max(d_zone, d_zone*min_step_size), d_zone*max_step_size);
 	PRINT_ASSERT(d_zone, >, 0);
-	*event = nothing;
-	eh->ds_com = d_boundary;
-	if(eh->absopac*eh->ds_com > absorption_depth_limiter)
-		eh->ds_com = absorption_depth_limiter/eh->absopac;
+
+	// FIND D_BOUNDARY
+	double d_boundary = grid->d_boundary(*eh) * (1.0+TINY);
+	d_boundary = max(d_boundary, d_zone*(1.0+TINY));
+	*ds_com = min(d_boundary, d_zone);
+	PRINT_ASSERT(d_boundary, >, 0);
 
 	// FIND D_RANDOMWALK
 	double d_randomwalk = INFINITY;
-	if(do_randomwalk && eh->scatopac*eh->ds_com>randomwalk_min_optical_depth){ // coarse check
-		d_randomwalk = grid->d_randomwalk(*eh);
-		if(eh->absopac > 0){
-			double D = pc::c / (3. * eh->scatopac);
-			double R_abs_limited = sqrt(absorption_depth_limiter * D / eh->absopac);
-			d_randomwalk = min(d_randomwalk, R_abs_limited);
+	if(do_randomwalk && eh->scatopac*(*ds_com)>randomwalk_min_optical_depth){ // coarse check
+		double D = pc::c / (3. * eh->scatopac);
+		d_randomwalk = min(grid->d_randomwalk(*eh), d_zone*max_step_size);
+		if(r_core>0){
+			// get a null test vector
+			Tuple<double,4> ktest = -eh->xup;
+			ktest[3] = 0;
+			eh->g.normalize_null_changeupt(ktest);
+
+			// limit d_randomwalk expecting movement towards core
+			double r = radius(eh->xup);
+			double kr = r;
+			double kup_tet_t = -eh->g.dot<4>(ktest,eh->u);
+			double ur = Metric::dot_Minkowski<3>(ktest,eh->u)/r;
+			d_randomwalk = min(d_randomwalk, R_randomwalk(kr/kup_tet_t, ur, r-r_core, D));
 		}
 		if(d_randomwalk == INFINITY) d_randomwalk = 1.1*randomwalk_min_optical_depth / eh->scatopac;
 		PRINT_ASSERT(d_randomwalk,>=,0);
 		if(eh->scatopac * d_randomwalk > randomwalk_min_optical_depth){ // real check
-			eh->ds_com = d_randomwalk;
+			*ds_com = d_randomwalk;
 			*event = randomwalk;
 		}
 	}
@@ -121,8 +132,8 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 			tau = -log(rangen.uniform());
 		} while(tau >= INFINITY);
 		d_interact = tau / eh->scatopac;
-		if(d_interact < eh->ds_com){
-			eh->ds_com = d_interact;
+		if(d_interact < *ds_com){
+			*ds_com = d_interact;
 			*event = elastic_scatter;
 		}
 	}
@@ -135,13 +146,13 @@ void Transport::which_event(EinsteinHelper *eh, ParticleEvent *event) const{
 			tau = -log(rangen.uniform());
 		} while(tau >= INFINITY);
 		d_inelastic_scatter = tau / eh->inelastic_scatopac;
-		if(d_inelastic_scatter < eh->ds_com){
-			eh->ds_com = d_inelastic_scatter;
+		if(d_inelastic_scatter < *ds_com){
+			*ds_com = d_inelastic_scatter;
 			*event = inelastic_scatter;
 		}
 	}
-	PRINT_ASSERT(eh->ds_com, >=, 0);
-	PRINT_ASSERT(eh->ds_com, <, INFINITY);
+	PRINT_ASSERT(*ds_com, >=, 0);
+	PRINT_ASSERT(*ds_com, <, INFINITY);
 }
 
 void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
@@ -149,29 +160,23 @@ void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 	PRINT_ASSERT(eh->N,>,0);
 	PRINT_ASSERT(abs(eh->g.dot<4>(eh->kup,eh->kup)) / (eh->kup[3]*eh->kup[3]), <=, TINY);
 
-	// save old values
-	const EinsteinHelper eh_old = *eh;
-
 	// convert ds_com into dlambda
 	double dlambda = eh->ds_com / eh->kup_tet[3];
 	PRINT_ASSERT(dlambda,>=,0);
 
-	// get 2nd order x, 1st order estimate for k
-	Tuple<double,4> order1 = eh_old.kup * dlambda;
-	for(size_t i=0; i<4; i++)
-		eh->xup[i] += order1[i];
-	if(DO_GR){
-		Tuple<double,4> dk_dlambda = grid->dk_dlambda(*eh);
-		Tuple<double,4> order2 = dk_dlambda * dlambda*dlambda * 0.5;
-		eh->kup = eh_old.kup + dk_dlambda * dlambda;
-		for(size_t i=0; i<4; i++)
-			eh->xup[i] += (abs(order2[i]/order1[i])<1. ? order2[i] : 0);
-	}
+	// kick 1
+	if(DO_GR) eh->kup += eh->dk_dlambda() * 0.5*dlambda;
+	const EinsteinHelper eh_old = *eh;
 
-	// get new background data
+	// drift
+	eh->xup += eh->kup * dlambda;
 	update_eh_background(eh);
-	if(eh->fate==moving)
+
+	// kick2
+	if(eh->fate==moving){
+		if(DO_GR) eh->kup += eh->dk_dlambda() * 0.5*dlambda;
 		update_eh_k_opac(eh);
+	}
 
 
 	double tau=0, dN=0;
@@ -179,31 +184,26 @@ void Transport::move(EinsteinHelper *eh, bool do_absorption) const{
 
 		// appropriately reduce the particle's energy from absorption
 		// assumes kup_tet and absopac vary linearly along the trajectory
-		double ds_com_new = dlambda*eh->kup_tet[3];
-		double tau1 = 1./3. * (eh->ds_com*eh_old.absopac + ds_com_new*eh->absopac);
-		double tau2 = 1./6. * (eh->ds_com*eh->absopac + ds_com_new*eh_old.absopac);
-		tau = tau1 + tau2;
+		tau = eh_old.ds_com * eh_old.absopac;
 		eh->N *= exp(-tau);
 		dN = eh_old.N - eh->N;
 		window(eh);
 
-		// store absorbed energy in *comoving* frame (will turn into rate by dividing by dt later)
-		for(size_t i=0; i<4; i++){
-			grid->fourforce_abs[eh_old.z_ind][i] += dN * eh_old.kup_tet[i];
-		}
+		// store absorbed energy rate in *comoving* frame
+		grid->fourforce_abs[eh_old.z_ind] += eh_old.kup_tet * dN/eh_old.zone_fourvolume;
 
 		// store absorbed lepton number (same in both frames, except for the
 		// factor of this_d which is divided out later
 		if(species_list[eh->s]->lepton_number != 0){
-			grid->l_abs[eh_old.z_ind] += dN * species_list[eh->s]->lepton_number;
+			grid->l_abs[eh_old.z_ind] += dN * species_list[eh->s]->lepton_number / eh_old.zone_fourvolume;
 		}
 	}
 
 	// tally in contribution to zone's distribution function (lab frame)
 	// use old coordinates/directions to avoid problems with boundaries
-	double avg_N = (tau>TINY ? dN/tau : eh_old.N);
-	grid->distribution[eh_old.s]->count(eh_old.kup_tet, eh_old.icube_spec, avg_N*dlambda*eh_old.kup_tet[3]*eh_old.kup_tet[3]);
-
+	double avg_N = (tau>TINY ? dN/tau : (eh->N+eh_old.N)/2.);
+	grid->distribution[eh_old.s]->count_single(eh_old.kup_tet, eh_old.dir_ind, avg_N*eh_old.ds_com*eh_old.kup_tet[3] / (eh_old.zone_fourvolume*pc::c));
+	
 }
 
 
@@ -228,15 +228,16 @@ void Transport::propagate(EinsteinHelper *eh){
 		for(size_t i=0; i<NDIMS; i++) PRINT_ASSERT(eh->dir_ind[i],<,grid->rho.axes[i].size());
 
 		// decide which event happens
-		which_event(eh,&event);
-
-		// move particle the distance
+		double ds_com;
+		which_event(eh,&event, &ds_com);
+		eh->ds_com = ds_com;
+		PRINT_ASSERT(eh->ds_com ,>, 0);
 		PRINT_ASSERT(eh->N,>,0);
 		if(event==randomwalk)
 		  random_walk(eh);
 		else{
 		  move(eh);
-		  if(eh->z_ind>0 and (event==elastic_scatter or event==inelastic_scatter))
+		  if(eh->z_ind>=0 and (event==elastic_scatter or event==inelastic_scatter))
 		    scatter(eh, event);
 		}
 
@@ -254,7 +255,9 @@ void Transport::propagate(EinsteinHelper *eh){
 		n_escape[eh->s]++;
 		L_net_esc[eh->s] += e;
 		N_net_esc[eh->s] += eh->N;
-		grid->spectrum[eh->s].count_single(eh->kup_tet, eh->dir_ind, e);
+		Tuple<double,4> kup_write = eh->kup;
+		Metric::normalize_null_Minkowski(kup_write);
+		grid->spectrum[eh->s].count_single(kup_write, eh->dir_ind, e);
 	}
 	else if(eh->fate==absorbed)
 		particle_core_abs_energy += e;

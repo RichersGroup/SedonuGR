@@ -2,18 +2,18 @@
 -- Included Physics
 
 do_annihilation = 0
-do_randomwalk = 1
-reflect_outer = 1
+do_randomwalk = 0
+reflect_outer = 0
 
 -- Opacity and Emissivity
 
 neutrino_type = "grey"
-Neutrino_grey_opac  = 1e-5
-Neutrino_grey_abs_frac = .25
+Neutrino_grey_opac  = 4
+Neutrino_grey_abs_frac = 1
 Neutrino_grey_chempot = 0.
-nugrid_start = 0
-nugrid_stop = 150
-nugrid_n = 300
+nugrid_start = 10
+nugrid_stop = 10.001
+nugrid_n = 1
 
 -- Escape Spectra
 
@@ -22,15 +22,13 @@ spec_n_phi      = 1
 
 -- Distribution Function
 
-distribution_type = "Polar"
-distribution_nmu = 2
-distribution_nphi = 2
+distribution_type = "Moments"
 
 -- Grid and Model
 
 grid_type = "Grid1DSphere"
 model_type = "custom"
-model_file = "oven.mod"
+model_file = "uniform_sphere.mod"
 
 -- Output
 
@@ -38,9 +36,9 @@ write_zones_every   = 1
 
 -- Particle Creation
 
-n_subcycles = 1
+n_subcycles = 10
 n_emit_core_per_bin    = 0 --100
-n_emit_therm_per_bin   = 1
+n_emit_therm_per_bin   = 10
 max_time_hours = -1
 
 -- Inner Source
@@ -54,7 +52,7 @@ core_lum_multiplier = {1.0}
 
 verbose       = 1
 max_n_iter =  1
-min_step_size = 0.01
+min_step_size = .4 --0.01
 max_step_size = 0.4
 
 -- Biasing

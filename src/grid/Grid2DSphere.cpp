@@ -50,6 +50,7 @@ void Grid2DSphere::read_model_file(Lua* lua)
 	std::string model_type = lua->scalar<std::string>("model_type");
 	if(model_type == "Flash") read_flash_file(lua);
 	else if(model_type == "Nagakura") read_nagakura_file(lua);
+	else if(model_type == "Lundmann") read_lundmann_file(lua);
 	else{
 		cout << "ERROR: model type unknown." << endl;
 		exit(8);
@@ -121,13 +122,14 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 	binmid[ntheta-1] = 0.5 * (bintops[ntheta-1] + bintops[ntheta-2]);
 	xAxes[1] = Axis(minval, bintops, binmid);
 
+	lapse.set_axes(xAxes);
 	rho.set_axes(xAxes);
 	T.set_axes(xAxes);
 	Ye.set_axes(xAxes);
 	vr.set_axes(xAxes);
 	vtheta.set_axes(xAxes);
 	vphi.set_axes(xAxes);
-	munue.set_axes(xAxes);
+	munue.set_axes(xAxes);  assert(false); // NEED TO MODIFY BELOW TO GET MUNUE
 
 	// write grid properties
 	if(rank0) cout << "#   nr=" << nr << "\trmin=" << xAxes[0].min << "\trmax=" << xAxes[0].top[nr-1] << endl;
@@ -166,6 +168,7 @@ void Grid2DSphere::read_nagakura_file(Lua* lua)
 			T[z_ind] /= pc::k_MeV;
 
 			// sanity checks
+			lapse[z_ind] = 1.;
 			PRINT_ASSERT(rho[z_ind],>=,0.0);
 			PRINT_ASSERT(T[z_ind],>=,0.0);
 			PRINT_ASSERT(Ye[z_ind],>=,0.0);
@@ -190,19 +193,39 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	string model_filename   = lua->scalar<string>("model_file"  );
 	string xCoords_filename = lua->scalar<string>("Grid2DSphere_Flash_xCoords_file");
 	string yCoords_filename = lua->scalar<string>("Grid2DSphere_Flash_yCoords_file");
+  if ( (xCoords_filename == "Generate") && (yCoords_filename != "Generate" )){
+		  if(rank0) cout << "Error: Both coordinate files must be generated, or both files must be read" << endl;
+      exit(8);
+  }else if ( (xCoords_filename != "Generate") && (yCoords_filename == "Generate") ){
+		  if(rank0) cout << "Error: Both coordinate files must be generated, or both files must be read" << endl;
+      exit(8);
+  }
+  // SF Get the type of solver FLASH is using
+	string FLASH_solver = lua->scalar<string>("Grid2DSphere_Flash_solver");
+	if( (FLASH_solver == "split") || (FLASH_solver =="unsplit") ){
+   if(rank0)cout << "# Using " << FLASH_solver << " FLASH solver" << endl;
+	}else{
+		cout << "ERROR: unknown solver for FLASH (split or unsplit)" << endl;
+		exit(8);
+	}
 	H5::H5File file(model_filename, H5F_ACC_RDONLY);
-	ifstream xCoords_file, yCoords_file;
+	ifstream xCoords_file;
 	xCoords_file.open(xCoords_filename.c_str());
-	yCoords_file.open(yCoords_filename.c_str());
 	if(xCoords_file.fail()){
-		if(rank0) cout << "Error: can't read the xCoords file." << xCoords_filename << endl;
-		exit(4);
-	}
+    if (xCoords_filename != "Generate"){ 
+		  if(rank0) cout << "Error: can't read the xCoords file." << xCoords_filename << endl;
+      exit(4);
+    }else cout << "Generating xCoords using log grid" << endl; 
+  }	
+   
+  ifstream yCoords_file;
+	yCoords_file.open(yCoords_filename.c_str());
 	if(yCoords_file.fail()){
-		if(rank0) cout << "Error: can't read the xCoords file." << yCoords_filename << endl;
-		exit(4);
+    if (yCoords_filename != "Generate"){ 
+		  if(rank0) cout << "Error: can't read the yCoords file." << yCoords_filename << endl;
+      exit(4);
+    }else cout << "Generating yCoords using cos grid" << endl; 
 	}
-
 	//====================================================//
 	// get the general properties from "/integer scalars" //
 	//====================================================//
@@ -234,25 +257,52 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	PRINT_ASSERT(comptype.getMemberClass(0),==,H5T_STRING);                // the type of the first element is a string
 	PRINT_ASSERT(comptype.getMemberClass(1),==,H5T_INTEGER);               // the type of the second element is a 32bit little endian int
 	PRINT_ASSERT(comptype.getMemberDataType(0).getSize(),==,stringsize-1); // the name is 80 characters long, 1 extra for the null terminate
-
 	// read the data
 	vector<pair_t> integer_data(dim);
 	dataset.read(&(integer_data[0]),mempair_t);
 	for(size_t i=0; i<dim; i++) integer_data[i].name[stringsize-1] = '\0';
-	PRINT_ASSERT(trim(string(integer_data[0].name)),==,string("nxb")); // make sure we're looking at the right fields
-	PRINT_ASSERT(trim(string(integer_data[1].name)),==,string("nyb"));
-	PRINT_ASSERT(trim(string(integer_data[2].name)),==,string("nzb"));
-	PRINT_ASSERT(trim(string(integer_data[3].name)),==,string("dimensionality"));
-	PRINT_ASSERT(trim(string(integer_data[4].name)),==,string("iprocs"));
-	PRINT_ASSERT(trim(string(integer_data[5].name)),==,string("jprocs"));
-	PRINT_ASSERT(trim(string(integer_data[6].name)),==,string("kprocs"));
-	int nxb = integer_data[0].value;
-	int nyb = integer_data[1].value;
-	PRINT_ASSERT(integer_data[2].value,==,1); // 2D dataset should have 1 thickness in the z direction
-	PRINT_ASSERT(integer_data[3].value,==,2); // 2D dataset
-	int iprocs = integer_data[4].value;
-	int jprocs = integer_data[5].value;
-	PRINT_ASSERT(integer_data[6].value,==,1); // 2D dataset cannot be split in z direction
+
+  // SF Made this generic :: FLASH4 changes the order of the integer scalars dataset. Initialize with unphysical values so we can check we found them 
+  int nxb = 0; 
+	int nyb = 0;  
+	int nzb = 0;  
+	int iprocs = 0;
+	int jprocs = 0;
+  int kprocs = 0; 
+  int dimensionality = 0; 
+
+  for(size_t i=0; i<dim; i++){
+    if ( trim(string(integer_data[i].name))==string("nxb") ) nxb = integer_data[i].value;
+    else if ( trim(string(integer_data[i].name))==string("nyb") ) nyb = integer_data[i].value;
+    else if ( trim(string(integer_data[i].name))==string("nzb") ) nzb = integer_data[i].value;
+    else if ( trim(string(integer_data[i].name))==string("iprocs") ) iprocs = integer_data[i].value;
+    else if ( trim(string(integer_data[i].name))==string("jprocs") ) jprocs = integer_data[i].value;
+    else if ( trim(string(integer_data[i].name))==string("kprocs") ) kprocs = integer_data[i].value;
+    else if ( trim(string(integer_data[i].name))==string("dimensionality") ) dimensionality = integer_data[i].value;
+  }
+
+	PRINT_ASSERT(nxb,>,0); // Gotta have some amount of cells....
+	PRINT_ASSERT(nyb,>,0); // What he said
+	PRINT_ASSERT(nzb,==,1); // 2D dataset should have 1 thickness in the z direction
+	PRINT_ASSERT(dimensionality,==,2); // 2D dataset
+	PRINT_ASSERT(iprocs,>,0); // Gotta have some processors...
+	PRINT_ASSERT(jprocs,>,0); // Ditto
+	PRINT_ASSERT(kprocs,==,1); // 2D dataset cannot be split in z direction
+
+	//PRINT_ASSERT(trim(string(integer_data[0].name)),==,string("nxb")); // make sure we're looking at the right fields
+	//PRINT_ASSERT(trim(string(integer_data[1].name)),==,string("nyb"));
+	//PRINT_ASSERT(trim(string(integer_data[2].name)),==,string("nzb"));
+	//PRINT_ASSERT(trim(string(integer_data[3].name)),==,string("dimensionality"));
+	//PRINT_ASSERT(trim(string(integer_data[4].name)),==,string("iprocs"));
+	//PRINT_ASSERT(trim(string(integer_data[5].name)),==,string("jprocs"));
+	//PRINT_ASSERT(trim(string(integer_data[6].name)),==,string("kprocs"));
+	//int nxb = integer_data[0].value;
+	//int nyb = integer_data[1].value;
+	//PRINT_ASSERT(integer_data[2].value,==,1); // 2D dataset should have 1 thickness in the z direction
+	//PRINT_ASSERT(integer_data[3].value,==,2); // 2D dataset
+	//int iprocs = integer_data[4].value;
+	//int jprocs = integer_data[5].value;
+	//PRINT_ASSERT(integer_data[6].value,==,1); // 2D dataset cannot be split in z direction
 
 	// deduce the global structure
 	int nr     = nxb*iprocs;
@@ -276,11 +326,11 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	PRINT_ASSERT((int)dims[1],==,1);
 	PRINT_ASSERT((int)dims[2],==,nyb);
 	PRINT_ASSERT((int)dims[3],==,nxb);
-
 	// read the data
 	float dens[dims[0]][dims[1]][dims[2]][dims[3]]; // g/ccm
 	float velx[dims[0]][dims[1]][dims[2]][dims[3]]; // cm/s
 	float vely[dims[0]][dims[1]][dims[2]][dims[3]]; // cm/s
+  float velz[dims[0]][dims[1]][dims[2]][dims[3]]; // cm/s
 	float angz[dims[0]][dims[1]][dims[2]][dims[3]]; // cm^2/s
 	float efrc[dims[0]][dims[1]][dims[2]][dims[3]]; //
 	float temp[dims[0]][dims[1]][dims[2]][dims[3]]; // K
@@ -292,14 +342,17 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	float neut[dims[0]][dims[1]][dims[2]][dims[3]]; //         (neutron  mass fraction)
 	float prot[dims[0]][dims[1]][dims[2]][dims[3]]; //         (proton   mass fraction)
 	float alfa[dims[0]][dims[1]][dims[2]][dims[3]]; //         (alpha    mass fraction)
+
 	dataset = file.openDataSet("/dens");
 	dataset.read(&(dens[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset = file.openDataSet("/velx");
 	dataset.read(&(velx[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset = file.openDataSet("/vely");
 	dataset.read(&(vely[0][0][0][0]),H5::PredType::IEEE_F32LE);
-	dataset = file.openDataSet("/angz");
-	dataset.read(&(angz[0][0][0][0]),H5::PredType::IEEE_F32LE);
+  dataset = file.openDataSet("/angz");
+  dataset.read(&(angz[0][0][0][0]),H5::PredType::IEEE_F32LE);
+  dataset = file.openDataSet("/velz");
+  dataset.read(&(velz[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset = file.openDataSet("/efrc");
 	dataset.read(&(efrc[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset = file.openDataSet("/temp");
@@ -321,9 +374,90 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	dataset = file.openDataSet("/alfa");
 	dataset.read(&(alfa[0][0][0][0]),H5::PredType::IEEE_F32LE);
 	dataset.close();
-	file.close();
 
+	//=========================//
+	// Generate coordinates //
+	//=========================//
+  if (xCoords_filename == "Generate"){  
+	// get the database, etc
+	dataset = file.openDataSet("/real runtime parameters");
+	space = dataset.getSpace();
+	comptype = dataset.getCompType();
+	// set up the structures in memory
+	struct pair_f{
+		char name[stringsize];
+		float value;
+	};
+	H5::CompType mempair_f(sizeof(pair_f));
+	mempair_f.insertMember("name",HOFFSET(pair_f,name),string_type);
+	mempair_f.insertMember("value",HOFFSET(pair_f,value),H5::PredType::IEEE_F32LE);
 
+	// make sure we have the right dataset
+	PRINT_ASSERT(space.getSimpleExtentNdims(),==,1);                 // 1D array
+	space.getSimpleExtentDims(&dim);
+	PRINT_ASSERT(dataset.getTypeClass(),==,H5T_COMPOUND);                  // filled with structs
+	PRINT_ASSERT(comptype.getNmembers(),==,2);                               // each struct has 2 elements
+	PRINT_ASSERT(comptype.getMemberName(0),==,"name");                       // first element is the name
+	PRINT_ASSERT(comptype.getMemberName(1),==,"value");                      // second element is the value
+	PRINT_ASSERT(comptype.getMemberClass(0),==,H5T_STRING);                // the type of the first element is a string
+	PRINT_ASSERT(comptype.getMemberClass(1),==,H5T_FLOAT);               // the type of the second element is a 32bit float
+	PRINT_ASSERT(comptype.getMemberDataType(0).getSize(),==,stringsize-1); // the name is 80 characters long, 1 extra for the null terminate
+	// read the data
+	vector<pair_f> real_data(dim);
+	dataset.read(&(real_data[0]),mempair_f);
+	for(size_t i=0; i<dim; i++) real_data[i].name[stringsize-1] = '\0';
+  double xmax = 0; // Initialize with unphysical values, so we can check they are read properly
+  double xmin = -1;
+  double ymin = -1;
+  double rcirc = 0;
+  for(size_t i=0; i<dim; i++){
+    if ( trim(string(real_data[i].name))==string("xmax") ) xmax = real_data[i].value;
+    else if ( trim(string(real_data[i].name))==string("xmin") ) xmin = real_data[i].value;
+    else if ( trim(string(real_data[i].name))==string("rcirc") ) rcirc = real_data[i].value;
+    else if ( trim(string(real_data[i].name))==string("ymin") ) ymin = real_data[i].value;
+  } 
+  // Make sure it found the variables
+  PRINT_ASSERT(xmin,>=,0); 
+  PRINT_ASSERT(ymin,>=,0); 
+  PRINT_ASSERT(rcirc,>,0); 
+  PRINT_ASSERT(xmax,>,xmin);  
+
+  double xratio = pow((xmax/xmin),(1./nr));
+  double dxmin  = xmin*rcirc*(xratio - 1.);
+  
+	vector<double> bintop(nr), binmid(nr);
+	double minval = xmin*rcirc;
+  for(int i=0; i<nr; i++){
+    double dx   = i==0 ? dxmin  : dx*xratio;
+		double last = i==0 ? minval : bintop[i-1];
+    bintop[i] = last + dx;
+		binmid[i] = 0.5 * (last + bintop[i]);
+    cout << bintop[i] << " " << binmid[i] << endl;
+  }
+
+	xAxes[0] = Axis(minval, bintop, binmid);
+  
+	bintop.resize(ntheta);
+	binmid.resize(ntheta);
+  minval = ymin; 
+  for(int i=0; i<ntheta/2; i++){
+		double last = i==0 ? minval : bintop[i-1];
+    bintop[i] = acos( cos(last) - 2.*cos(minval)/ntheta);
+		binmid[i] = 0.5 * (last + bintop[i]);
+
+    bintop[ntheta-1-i] = acos(-1.) - bintop[i-1];
+    binmid[ntheta-1-i] = acos(-1.) - binmid[i];
+
+  }
+  for(int i=0; i<ntheta; i++) cout << bintop[i] << " " << binmid[i] << endl;
+	xAxes[1] = Axis(minval, bintop, binmid);
+
+  dataset.close(); 
+  
+  }
+  file.close();
+  
+  if (xCoords_filename != "Generate"){
 	//=========================//
 	// read in the coordinates //
 	//=========================//
@@ -338,6 +472,16 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	PRINT_ASSERT(x_linecount,==,iprocs*nxb+2*nghost);
 	PRINT_ASSERT(y_linecount,==,jprocs*nyb+2*nghost);
 
+  //Check the number of columns
+	xCoords_file.clear();                                   // clear bad state from EOF
+	xCoords_file.seekg(0);                                  // seek back to beginning of the file
+  getline(xCoords_file,line);
+  stringstream s;
+  s << line; 
+  int columns = 0;
+  double value;
+  while (s >> value) columns++;
+
 	// read x (r) coordinates
 	vector<double> bintop(nr), binmid(nr);
 	double minval;
@@ -350,11 +494,13 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 		xCoords_file >> trash;
 		xCoords_file >> bintop[i];
 		xCoords_file >> trash;
+    //SF for FLASH4.5, trash the extra delta r/r column as well
+    if (columns == 5) xCoords_file >> trash; 
 		double last = i==0 ? minval : bintop[i-1];
 		binmid[i] = 0.5 * (last + bintop[i]);
 	}
 	xAxes[0] = Axis(minval, bintop, binmid);
-
+  
 	// read the y (theta) coordinates
 	bintop.resize(ntheta);
 	binmid.resize(ntheta);
@@ -371,7 +517,9 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 		binmid[i] = 0.5 * (last + bintop[i]);
 	}
 	xAxes[1] = Axis(minval, bintop, binmid);
-
+  } // End Generate
+	lapse.set_axes(xAxes);
+	munue.set_axes(xAxes); //assert(false); // NEED TO MODIFY BELOW TO EXTRACT MUNUE
 	rho.set_axes(xAxes);
 	T.set_axes(xAxes);
 	Ye.set_axes(xAxes);
@@ -406,7 +554,10 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 				Ye[z_ind]                = efrc[proc][kb][jb][ib];
 				double tmp_vr            = velx[proc][kb][jb][ib];
 				double tmp_vtheta        = vely[proc][kb][jb][ib];
-				double tmp_vphi          = angz[proc][kb][jb][ib]/r[0]/sin(r[1]);
+				//double tmp_vphi = angz[proc][kb][jb][ib]/r[0]/sin(r[1]);
+        double tmp_vphi = 0;
+				if (FLASH_solver == "split")        tmp_vphi = angz[proc][kb][jb][ib]/r[0]/sin(r[1]);
+				else if (FLASH_solver == "unsplit") tmp_vphi = velz[proc][kb][jb][ib];
 				double speed = sqrt(tmp_vr*tmp_vr + tmp_vtheta*tmp_vtheta + tmp_vphi*tmp_vphi);
 				if(speed > speed_max){
 					tmp_vr     *= speed_max / speed;
@@ -417,6 +568,7 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 				vr[z_ind] = tmp_vr;
 				vtheta[z_ind] = tmp_vtheta;
 				vphi[z_ind] = tmp_vphi;
+				lapse[z_ind] = 1.;
 				PRINT_ASSERT(rho[z_ind],>=,0.0);
 				PRINT_ASSERT(T[z_ind],>=,0.0);
 				PRINT_ASSERT(Ye[z_ind],>=,0.0);
@@ -541,6 +693,91 @@ void Grid2DSphere::read_flash_file(Lua* lua)
 	}
 }
 
+void Grid2DSphere::read_lundmann_file(Lua* lua){
+	// Modified by C. Lundman
+
+	// MPI
+	int MPI_myID;
+	MPI_Comm_rank(MPI_COMM_WORLD, &MPI_myID);
+	const int rank0 = (MPI_myID == 0);
+	if(rank0) {
+		std::cout << "#   Reading 2D model file (Lundman)" << endl;
+	}
+
+	// Open model file
+	std::string model_file = lua->scalar<std::string>("model_file");
+	ifstream infile;
+	infile.open(model_file.c_str());
+	if(infile.fail()){
+		cout << "Error: can't read the model file." << model_file << endl;
+		exit(4);
+	}
+
+	// Geometry of model
+	infile >> grid_type; // Should equal Grid2DSphere
+
+	// Reading r grid
+	double rmin;
+	int r_zones;
+	infile >> r_zones;
+	vector<double> rtop(r_zones), rmid(r_zones);
+	infile >> rmin;
+	for(int i=0; i<r_zones; i++) {
+		infile >> rtop[i];
+		double last = i==0 ? rmin : rtop[i-1];
+		rmid[i] = 0.5 * (rtop[i] + last);
+	}
+	xAxes[0] = Axis(rmin, rtop, rmid);
+
+	// Reading theta grid
+	double thetamin;
+	int theta_zones;
+	infile >> theta_zones;
+	vector<double> theta_top(theta_zones), theta_mid(theta_zones);
+	infile >> thetamin;
+	for(int j=0; j<theta_zones; j++) {
+		infile >> theta_top[j];
+		double last = j==0 ? thetamin : theta_top[j-1];
+		theta_mid[j] = 0.5 * (theta_top[j] + last);
+	}
+	xAxes[1] = Axis(thetamin, theta_top, theta_mid);
+
+	// set dataset axes
+	lapse.set_axes(xAxes);
+	munue.set_axes(xAxes);
+	rho.set_axes(xAxes);
+	T.set_axes(xAxes);
+	Ye.set_axes(xAxes);
+	vr.set_axes(xAxes);
+	vtheta.set_axes(xAxes);
+	vphi.set_axes(xAxes);
+
+	// read zone properties
+	int n_zones = r_zones * theta_zones;
+	vector<double> tmp_rho    = vector<double>(n_zones,0);
+	vector<double> tmp_T      = vector<double>(n_zones,0);
+	vector<double> tmp_Ye     = vector<double>(n_zones,0);
+	vector<double> tmp_vr     = vector<double>(n_zones,0);
+	vector<double> tmp_vtheta = vector<double>(n_zones,0);
+	vector<double> tmp_vphi   = vector<double>(n_zones,0);
+	for(int i=0; i<r_zones; i++) {
+		for(int j=0; j<theta_zones; j++) {
+			int z_ind = zone_index(i, j);
+			infile >> rho[z_ind];
+			infile >> T[z_ind];
+			infile >> Ye[z_ind];
+			vr[z_ind] = 0;
+			vtheta[z_ind] = 0;
+			vphi[z_ind] = 0;
+			lapse[z_ind] = 0;
+		}
+	}
+
+	infile.close();
+
+}
+
+
 double Grid2DSphere_theta(const Tuple<double,4>& x){
 	return atan2(sqrt(x[0]*x[0] + x[1]*x[1]), x[2]);
 }
@@ -615,9 +852,11 @@ double Grid2DSphere::zone_lab_3volume(int z_ind) const
 
 double Grid2DSphere::d_boundary(const EinsteinHelper& eh) const{
 	const double r = radius(eh.xup);
-	PRINT_ASSERT(r,<=,xAxes[0].top[eh.z_ind]);
-	PRINT_ASSERT(r,>=,xAxes[0].bottom(eh.z_ind));
+	PRINT_ASSERT(r,<=,xAxes[0].top[eh.dir_ind[0]]);
+	PRINT_ASSERT(r,>=,xAxes[0].bottom(eh.dir_ind[0]));
 	const double theta = Grid2DSphere_theta(eh.xup);
+	PRINT_ASSERT(theta,<=,xAxes[1].top[eh.dir_ind[1]]);
+	PRINT_ASSERT(theta,>=,xAxes[1].bottom(eh.dir_ind[1]));
 
 	// get component of k in the radial direction
 	double kr = eh.g.dot<4>(eh.e[0],eh.kup);
@@ -648,12 +887,12 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 	ktest[2] = z;
 	ktest[3] = 0;
 	const double r = radius(eh.xup);
-	const double ur = radius(eh.u);
-	for(int sgn=1; sgn>0; sgn*=-1){
+	const double ur = Metric::dot_Minkowski<3>(ktest,eh.u)/r;
+	for(int sgn=1; sgn>=-1; sgn-=2){
 		// get a null test vector
 		for(size_t i=0; i<3; i++) ktest[i] *= sgn;
-		eh.g.normalize_null_preservedownt(ktest);
-		const double kr = radius(ktest);
+		eh.g.normalize_null_changeupt(ktest);
+		const double kr = sgn*radius(ktest);
 
 		// get the time component of the tetrad test vector
 		double kup_tet_t = -eh.g.dot<4>(ktest,eh.u);
@@ -663,7 +902,7 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 		if(sgn>0) drlab = xAxes[0].top[eh.dir_ind[0]] - r;
 		if(sgn<0) drlab = xAxes[0].bottom(eh.dir_ind[0]) - r;
 
-		R = min(R, sim->R_randomwalk(kr/kup_tet_t, ktest[3]/kup_tet_t, ur, drlab, D));
+		R = min(R, sim->R_randomwalk(kr/kup_tet_t, ur, drlab, D));
 	}
 
 	double rp = sqrt(x*x + y*y);
@@ -672,12 +911,13 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 	ktest2[1] = y*z;
 	ktest2[2] = -rp*rp;
 	ktest2[3] = 0;
+	const double utheta = Metric::dot_Minkowski<3>(ktest2,eh.u)/r;
 	double theta = Grid2DSphere_theta(eh.xup);
-	for(int sgn=1; sgn>0; sgn*=-1){
+	for(int sgn=1; sgn>=-1; sgn-=2){
 		// get a null test vector
 		for(size_t i=0; i<3; i++) ktest[i] *= sgn;
-		eh.g.normalize_null_preservedownt(ktest);
-		double ktheta = radius(ktest2);
+		eh.g.normalize_null_changeupt(ktest);
+		double ktheta = sgn*radius(ktest2);
 
 		// get the time component of the tetrad test vector
 		double kup_tet_t = -eh.g.dot<4>(ktest,eh.u);
@@ -687,7 +927,7 @@ double Grid2DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 		if(sgn>0) dthetalab = xAxes[1].top[eh.dir_ind[1]] - theta;
 		if(sgn<0) dthetalab = xAxes[1].bottom(eh.dir_ind[1]) - theta;
 
-		R = min(R, sim->R_randomwalk(ktheta/kup_tet_t, ktest[3]/kup_tet_t, ur, r*dthetalab, D));
+		R = min(R, sim->R_randomwalk(ktheta/kup_tet_t, utheta, r*dthetalab, D));
 	}
 
 	PRINT_ASSERT(R,>=,0);
@@ -704,12 +944,14 @@ double Grid2DSphere::zone_min_length(int z_ind) const
 	const size_t i = dir_ind[0];
 	const size_t j = dir_ind[1];
 
-	// the 'minimum lengts' are just approximate.
+	// the 'minimum lengths' are just approximate.
 	const double r_len     = (    xAxes[0].top[i] -     xAxes[0].bottom(i));
-	const double theta_len = sin(xAxes[1].top[j] - xAxes[1].bottom(j)) * xAxes[0].bottom(i);
+	const double theta_len = sin(xAxes[1].top[j] - xAxes[1].bottom(j)) * xAxes[0].mid[i];
 
 	// if r_in is zero, there will be problems, but simulations would not have done this.
-	return min(r_len, theta_len);
+	double result = min(r_len, theta_len);
+	PRINT_ASSERT(result,>,0);
+	return result;
 }
 
 //------------------------------------------------------------
@@ -870,14 +1112,16 @@ Tuple<hsize_t,NDIMS> Grid2DSphere::dims() const{
 	return dims;
 }
 
-double Grid2DSphere::zone_lorentz_factor(int /*z_ind*/) const{
-	abort(); // NOT IMPLEMENTED
+double Grid2DSphere::zone_lorentz_factor(int z_ind) const{
+	PRINT_ASSERT(DO_GR,==,0);
+	double v2 = vr[z_ind]*vr[z_ind] + vtheta[z_ind]*vtheta[z_ind] + vphi[z_ind]*vphi[z_ind];
+	return 1. / sqrt(1. - v2/(physical_constants::c*physical_constants::c));
 }
-Tuple<double,4> Grid2DSphere::dk_dlambda(const EinsteinHelper& eh) const{ // default Minkowski
+Christoffel Grid2DSphere::interpolate_Christoffel(const EinsteinHelper& eh) const{ // default Minkowski
 	PRINT_ASSERT(DO_GR,==,0);
 	Christoffel ch;
 	ch.data = 0;
-	return ch.contract2(eh.kup);
+	return ch;
 }
 Tuple<double,3> Grid2DSphere::interpolate_shift(const EinsteinHelper&) const{ // default Minkowski
 	return Tuple<double,3>(NaN);

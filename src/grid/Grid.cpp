@@ -265,7 +265,6 @@ void Grid::init(Lua* lua, Transport* insim)
 	// set up the data structures
 	abs_opac.resize(sim->species_list.size());
 	scat_opac.resize(sim->species_list.size());
-	fblock.resize(sim->species_list.size());
 	inelastic_scat_opac.resize(sim->species_list.size());
 	scattering_delta.resize(sim->species_list.size());
 	partial_scat_opac.resize(sim->species_list.size());
@@ -281,8 +280,8 @@ void Grid::init(Lua* lua, Transport* insim)
 	for(size_t s=0; s<sim->species_list.size(); s++){
 		abs_opac[s].set_axes(axes);
 		scat_opac[s].set_axes(axes);
-		fblock[s].set_axes(axes);
 		inelastic_scat_opac[s].set_axes(axes);
+
 	    //===========================//
 		// intialize output spectrum // only if child didn't
 		//===========================//
@@ -304,15 +303,6 @@ void Grid::init(Lua* lua, Transport* insim)
 		for(size_t igout=0; igout<nu_grid_axis.size(); igout++){
 			partial_scat_opac[s][igout].set_axes(axes);
 			scattering_delta[s][igout].set_axes(axes);
-		}
-	}
-
-        cout << "# Initializing fblock arrays to zero" << endl;
-	for(size_t s=0; s<sim->species_list.size(); s++){
-                for(size_t glob_ind=0;glob_ind<scat_opac[s].size();glob_ind++){
-                        size_t dir_ind[NDIMS+1];
-                        scat_opac[s].indices(glob_ind,dir_ind);
-                        fblock[s][glob_ind]=0.0;
 		}
 	}
 }
@@ -350,7 +340,8 @@ void Grid::write_zones(const int iw)
 	for(size_t s=0; s<distribution.size(); s++){
 		distribution[s]->write_hdf5_data(file, "distribution"+to_string(s)+"(erg|ccm,tet)");
 		spectrum[s].write_hdf5_data(file,"spectrum"+to_string(s)+"(erg|s)");
-		fblock[s].write_HDF5(file,"fblock"+to_string(s));
+		abs_opac[s].write_HDF5(file, "abs_opac"+to_string(s)+"(1|cm)");
+		scat_opac[s].write_HDF5(file, "scat_opac"+to_string(s)+"(1|cm)");
 	}
 
 	write_child_zones(file);
@@ -408,6 +399,7 @@ double Grid::total_rest_mass() const{
 }
 
 // radius given coordinates
+// assumes deltat=1s
 double Grid::zone_4volume(const int z_ind) const{
 	return zone_lab_3volume(z_ind) * (DO_GR ? lapse[z_ind] : 1.0);
 }
@@ -425,4 +417,7 @@ void Grid::interpolate_metric(EinsteinHelper *eh) const{
 
   // fill in the rest of the metric values
   eh->g.update();
+
+  // get the Christoffel symbols
+  eh->Gamma = interpolate_Christoffel(*eh);
 }

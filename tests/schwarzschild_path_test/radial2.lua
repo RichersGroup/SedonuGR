@@ -52,9 +52,8 @@ core_lum_multiplier = 1.0
 
 verbose       = 0
 max_n_iter =  1
-min_step_size = 0.001
-max_step_size = 0.01
-absorption_depth_limiter = 1
+min_step_size = 0.02
+max_step_size = 0.2
 
 -- Biasing
 

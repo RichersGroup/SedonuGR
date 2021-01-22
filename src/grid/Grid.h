@@ -150,7 +150,7 @@ public:
 
 	// GR functions
 	virtual void grid_coordinates(const Tuple<double,4>& xup, double coords[NDIMS]) const=0;
-	virtual Tuple<double,4> dk_dlambda(const EinsteinHelper& eh) const=0; // Gamma^alhpa_mu_nu
+	virtual Christoffel interpolate_Christoffel(const EinsteinHelper& eh) const=0; // Gamma^alhpa_mu_nu
 	virtual Tuple<double,3> interpolate_shift(const EinsteinHelper& eh) const=0;
 	virtual Tuple<double,6> interpolate_3metric(const EinsteinHelper& eh) const=0;
 	void interpolate_metric(EinsteinHelper* eh) const;

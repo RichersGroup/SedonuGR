@@ -354,9 +354,9 @@ void Grid3DCart::read_THC_file(Lua* lua)
 		v[z_ind][2] = tmp_velz[dataset_ind];
 		if(DO_GR){
 			lapse[z_ind]= tmp_lapse[dataset_ind];
-			betaup[z_ind][0] = tmp_betax[dataset_ind];
-			betaup[z_ind][1] = tmp_betay[dataset_ind];
-			betaup[z_ind][2] = tmp_betaz[dataset_ind];
+			betaup[z_ind][0] = tmp_betax[dataset_ind]*0;
+			betaup[z_ind][1] = tmp_betay[dataset_ind]*0;
+			betaup[z_ind][2] = tmp_betaz[dataset_ind]*0;
 			g3[z_ind][ixx] = tmp_gxx[dataset_ind];
 			g3[z_ind][ixy] = tmp_gxy[dataset_ind];
 			g3[z_ind][ixz] = tmp_gxz[dataset_ind];
@@ -531,7 +531,7 @@ double Grid3DCart::d_randomwalk(const EinsteinHelper& eh) const{
 	double D = eh.scatopac / (3.*pc::c);
 
 	for(size_t i=0; i<3; i++){
-		for(int sgn=1; sgn>0; sgn*=-1){
+		for(int sgn=1; sgn>=-1; sgn-=2){
 			// get a null test vector
 			Tuple<double,4> ktest;
 			for(size_t j=0; j<4; j++) ktest[j] = 0;
@@ -548,7 +548,7 @@ double Grid3DCart::d_randomwalk(const EinsteinHelper& eh) const{
 			if(sgn>0) dxlab = xAxes[i].top[eh.dir_ind[i]] - eh.xup[i];
 			if(sgn<0) dxlab = xAxes[i].bottom(eh.dir_ind[i]) - eh.xup[i];
 
-			R = min(R, sim->R_randomwalk(ktest[i]/kup_tet_t, ktest[3]/kup_tet_t, eh.u[i], dxlab, D));
+			R = min(R, sim->R_randomwalk(ktest[i]/kup_tet_t, eh.u[i], dxlab, D));
 		}
 	}
 
@@ -638,10 +638,8 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
 	PRINT_ASSERT(eh->fate,==,moving);
 
 	// initialize the arrays
-	double kup[4], xup[4];
-	for(int i=0; i<4; i++) xup[i] = eh->xup[i];
-	for(int i=0; i<4; i++) kup[i] = eh->kup[i];
-
+	Tuple<double,4> klow = eh->g.lower<4>(eh->kup);
+	Tuple<double,4> xup = eh->xup;
 
 	// invert the radial component of the velocity, put the particle just inside the boundary
 	for(int i=0; i<3; i++){
@@ -649,7 +647,7 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
 			PRINT_ASSERT(xAxes[i].min,==,0);
 			PRINT_ASSERT(-xup[i],<,xAxes[i].delta(1));
 			// actual work
-			kup[i] = -kup[i];
+			klow[i] = -klow[i];
 			xup[i] = -xup[i];
 			// end actual work
 			PRINT_ASSERT(xup[i],>=,xAxes[i].min);
@@ -665,7 +663,7 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
 			
 			if(rotate_hemisphere[i]){
 				for(int j=0; j<2; j++){
-					kup[j] = -kup[j];
+					klow[j] = -klow[j];
 					xup[j] = -xup[j];
 				}
 			}
@@ -673,11 +671,11 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
 				int other = i==0 ? 1 : 0;
 				if(xup[other]>=0){
 					double tmp;
-					tmp=kup[i];	kup[i]=kup[other]; kup[other]=-tmp;
+					tmp=klow[i];	klow[i]=klow[other]; klow[other]=-tmp;
 					tmp=xup[i];	xup[i]=xup[other]; xup[other]=-tmp;
 				}
 				else for(int j=0; j<2; j++){
-					kup[j] = -kup[j];
+					klow[j] = -klow[j];
 					xup[j] = -xup[j];
 				}
 			}
@@ -691,10 +689,8 @@ void Grid3DCart::symmetry_boundaries(EinsteinHelper *eh) const{
 	}
 
 	// assign the arrays
-	for(size_t i=0; i<4; i++){
-		eh->xup[i] = xup[i];
-		eh->kup[i] = kup[i];
-	}
+	eh->kup = eh->g.raise<4>(klow);
+	eh->xup = xup;
 }
 
 double Grid3DCart::zone_lorentz_factor(int z_ind) const{
@@ -711,7 +707,7 @@ double Grid3DCart::zone_lorentz_factor(int z_ind) const{
 	return result;
 }
 
-Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
+Christoffel Grid3DCart::interpolate_Christoffel(const EinsteinHelper& eh) const{
   double dg[4][4][4];
   for(size_t i=0; i<4; i++) for(size_t j=0; j<4; j++){ // no time derivatives
       dg[3][i][j] = 0;
@@ -749,16 +745,19 @@ Tuple<double,4> Grid3DCart::dk_dlambda(const EinsteinHelper& eh) const{
     dg[a][3][3] *= 2.;
   }
 
-  // get the low-index Christoffel symbols
-  Tuple<double,4> dk_dlambda_low = 0;
-  #pragma omp simd collapse(3)
-  for(size_t a=0; a<4; a++)
-    for(size_t i=0; i<4; i++)
-      for(size_t j=0; j<4; j++)
-    	  dk_dlambda_low[a] += (dg[i][a][j] - 0.5*dg[a][i][j]) * eh.kup[i] * eh.kup[j];
-
-  Tuple<double,4> dk_dlambda = eh.g.raise(dk_dlambda_low);
-  return dk_dlambda * -1.;
+  Christoffel ch;
+  ch.data = 0;
+  for(size_t a=0; a<4; a++){
+	  for(size_t b=0; b<4; b++){
+		  double gupab = eh.g.get_inverse(a,b);
+		  for(size_t mu=0; mu<4; mu++){
+			  for(size_t nu=mu; nu<4; nu++){ // yes, intentionally only go from mu to 4
+				  ch.data[Christoffel::index(a,mu,nu)] += 0.5 * gupab * (dg[mu][b][nu] + dg[nu][mu][b] - dg[b][mu][nu]);
+			  }
+		  }
+	  }
+  }
+  return ch;
 }
 Tuple<double,3> Grid3DCart::interpolate_shift(const EinsteinHelper& eh) const{
 	return betaup.interpolate(eh.icube_vol);

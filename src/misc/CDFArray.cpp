@@ -229,6 +229,16 @@ double CDFArray::interpolate_pdf(const double x, const Axis* xgrid) const
 	PRINT_ASSERT(result,>=,0);
 	return result;
 }
+double CDFArray::interpolate_cdf(const double x, const Axis* xgrid) const
+{
+	double result = 0;
+	assert(interpolation_order==1 || interpolation_order==3 || interpolation_order==0);
+	if     (interpolation_order==0) result = interpolate_cdf_piecewise(x,xgrid);
+	else if(interpolation_order==1) result = interpolate_cdf_linear(x,xgrid);
+	else if(interpolation_order==3) result = interpolate_cdf_cubic(x,xgrid);
+	PRINT_ASSERT(result,>=,0);
+	return result;
+}
 double CDFArray::invert_cubic(const double rand, const Axis* xgrid, const int i_in) const
 // INCONSISTENCY - the emissivity is integrated assuming piecewise constant.
 // This is inconsistent with cubic interpolation.
@@ -332,6 +342,56 @@ double CDFArray::interpolate_pdf_cubic(const double x, const Axis* xgrid) const
 	//PRINT_ASSERT(yRight,>=,result);
 	return result;
 }
+double CDFArray::interpolate_cdf_cubic(const double x, const Axis* xgrid) const
+{
+	PRINT_ASSERT(x,>=,xgrid->min);
+	PRINT_ASSERT(x,<=,xgrid->top[xgrid->size()-1]);
+
+	// get the upper index
+	int i = xgrid->bin(x);
+	PRINT_ASSERT(i,<,(int)size());
+	PRINT_ASSERT(i,>=,0);
+
+	// check for degenerate case (left and right values are equal)
+	double yRight = y[i];
+	double xRight = xgrid->top[i];
+	double yLeft = (i>0 ?          y[i-1] : 0         );
+	double xLeft = (i>0 ? xgrid->top[i-1] : xgrid->min);
+	if(yRight == yLeft) return yRight;
+
+	// get left and right tangents
+	double mLeft  = tangent(i-1,xgrid);
+	double mRight = tangent(i  ,xgrid);
+	assert(!isinf<bool>(mLeft ));
+	assert(!isinf<bool>(mRight));
+
+	// prevent overshoot, ensure monotonicity
+	double slope_inv = secant(i-1,i,xgrid);
+	double slope = 1.0/slope_inv;
+	double limiter = 3.0;
+	double alpha = mLeft*slope_inv;
+	double beta = mRight*slope_inv;
+	PRINT_ASSERT(alpha,>,0);
+	PRINT_ASSERT(beta,>,0);
+	if(alpha*alpha + beta*beta > limiter*limiter){
+		double tau = limiter/sqrt(alpha*alpha+beta*beta);
+		mLeft = tau*alpha*slope;
+		mRight = tau*beta*slope;
+	}
+
+	// return interpolated function
+	double h = xRight-xLeft;
+	double t = (x-xLeft)/h;
+	double dtdx = h;
+	PRINT_ASSERT(t,>=,0);
+	PRINT_ASSERT(t,<=,1);
+	double result = dtdx * (yLeft*h00p(t) + h*mLeft*h10p(t) + yRight*h01p(t) + h*mRight*h11p(t));
+	result = max(yLeft,result);
+	result = min(yRight,result);
+	PRINT_ASSERT(yLeft,<=,result);
+	PRINT_ASSERT(yRight,>=,result);
+	return result;
+}
 double CDFArray::interpolate_pdf_linear(const double x, const Axis* xgrid) const
 {
 	PRINT_ASSERT(x,>=,xgrid->min);
@@ -362,6 +422,38 @@ double CDFArray::interpolate_pdf_linear(const double x, const Axis* xgrid) const
 	double result = slope; //y1 + slope*(x-x1);
 	//PRINT_ASSERT(result <= (*xgrid)[xgrid->size()-1]);
 	//PRINT_ASSERT(result >= xgrid->min);
+	return result;
+}
+double CDFArray::interpolate_cdf_linear(const double x, const Axis* xgrid) const
+{
+	PRINT_ASSERT(x,>=,xgrid->min);
+	PRINT_ASSERT(x,<=,xgrid->top[xgrid->size()-1]);
+
+	// get the upper/lower indices
+	int upper = xgrid->bin(x);
+	PRINT_ASSERT(upper,>=,0);
+	int lower = upper-1;
+	PRINT_ASSERT(lower,<,(int)xgrid->size());
+
+	// get the x and y values of the left and right sides
+	double x1,x2,y1,y2;
+	if(upper==0){
+		x1 = xgrid->min;
+		x2 = xgrid->top[0];
+		y1 = 0;
+		y2 = y[0];
+	}
+	else{
+		x1 = xgrid->top[lower];
+		x2 = xgrid->top[upper];
+		y1 = y[lower];
+		y2 = y[upper];
+	}
+
+	double slope = (y2-y1)/(x2-x1);
+	double result = y1 + slope*(x-x1);
+	PRINT_ASSERT(result,<=,y2);
+	PRINT_ASSERT(result,>=,y1);
 	return result;
 }
 double CDFArray::invert_linear(const double rand, const Axis* xgrid, const int i_in) const
@@ -412,6 +504,17 @@ double CDFArray::interpolate_pdf_piecewise(const double x, const Axis* xgrid) co
 	PRINT_ASSERT(upper-1,<,(int)xgrid->size());
 
 	return get_value(upper); //y[lower];
+}
+double CDFArray::interpolate_cdf_piecewise(const double x, const Axis* xgrid) const
+{
+	PRINT_ASSERT(x,>=,xgrid->min);
+	PRINT_ASSERT(x,<=,xgrid->top[xgrid->size()-1]);
+
+	int upper = xgrid->bin(x);
+	PRINT_ASSERT(upper,>=,0);
+	PRINT_ASSERT(upper-1,<,(int)xgrid->size());
+
+	return y[upper];
 }
 
 //------------------------------------------------------

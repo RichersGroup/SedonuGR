@@ -169,7 +169,7 @@ public:
 	}
 
 	// get center value based on grid index
-	const Tuple<T,nelements>& operator[](const size_t i) const {
+	const Tuple<T,nelements> operator[](const size_t i) const {
 	        PRINT_ASSERT(i,>=,0);
 	        PRINT_ASSERT(i,<,y0.size());
 		return y0[i];
@@ -178,6 +178,12 @@ public:
 	        PRINT_ASSERT(i,>=,0);
 	        PRINT_ASSERT(i,<,y0.size());
 		return y0[i];
+	}
+	const Tuple<T,nelements> get(size_t ind[ndims]) const{
+		return y0[direct_index(ind)];
+	}
+	void set(size_t ind[ndims], Tuple<T,nelements> setval) {
+		y0[direct_index(ind)] = setval;
 	}
 
 	// dummy template allows it to compile with any value of NDIMS
@@ -305,9 +311,7 @@ public:
 		direct_add(lin_ind, to_add);
 	}
 	void direct_add(const size_t lin_ind, const Tuple<T,nelements>& to_add){
-		for(size_t i=0; i<nelements; i++){
-			y0[lin_ind][i] += to_add[i];
-		}
+	        y0[lin_ind] += to_add;
 	}
 
 	void mpi_sum_scatter(vector<size_t>& stop_list){
@@ -416,7 +420,7 @@ public:
 	}
 
 	// get center value based on grid index
-	const T& operator[](const size_t i) const {
+	const T operator[](const size_t i) const {
 		return this->y0[i][0];
 	}
 	T& operator[](const size_t i){
