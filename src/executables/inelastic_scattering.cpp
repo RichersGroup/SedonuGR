@@ -59,7 +59,11 @@ int main(int argc, char **argv)
 	string script_file = string(argv[1]);
 	lua.init( script_file );
 
-        class testiScatter : public Transport{
+	// to do second iteration with blocking
+	int max_n_iter  = lua.scalar<int>("max_n_iter");\
+
+	//transport loop 
+	class testiScatter : public Transport{
         public:
                 void testgrid(){
 			//clear global radiation quantities and call set_eas
@@ -67,7 +71,7 @@ int main(int argc, char **argv)
 			
 			//reset abs_opac to 1/c for emission
 			for(size_t s=0; s<species_list.size(); s++){
-                                for(size_t igin=0; igin<15; igin++){
+                                for(size_t igin=0; igin<grid->nu_grid_axis.size(); igin++){
                                         grid->abs_opac[s][igin] = 1./pc::c;	
 				}
 			}
@@ -77,7 +81,8 @@ int main(int argc, char **argv)
 
 			//reset abs_opac to zero since we don't want any absorption
 			for(size_t s=0; s<species_list.size(); s++){
-                                for(size_t igin=0; igin<15; igin++){
+                                for(size_t igin=0; igin<grid->nu_grid_axis.size(); igin++){
+					grid->scat_opac[s][igin] = 0;
                                         grid->abs_opac[s][igin] = 0;	
 				}
 			}
@@ -89,19 +94,21 @@ int main(int argc, char **argv)
 				cout<<"particle"<<i;
 				EinsteinHelper eh;
 				eh.set_Particle(particles[i]);
-				double tstep = 0.01;
+				double ttest = 1.0;
 				eh.N0 = eh.N;
 				update_eh_background(&eh);
 				update_eh_k_opac(&eh);
 				// step limit
-				while(eh.xup[3]<tstep*pc::c){
+				while(eh.xup[3]<ttest*pc::c){
 					ParticleEvent event;
-					which_event(&eh,&event);
+					double ds_com;
+					which_event(&eh,&event,&ds_com);
 					if(event==randomwalk)
                   				random_walk(&eh);
                 			else{
+						eh.ds_com = ds_com;
                   				move(&eh,false);
-                  				if(eh.z_ind>0 and (event==elastic_scatter or event==inelastic_scatter))
+                  				if(eh.z_ind>=0 and (event==elastic_scatter or event==inelastic_scatter))
                     					scatter(&eh, event);
                 			}
 				}
@@ -118,7 +125,7 @@ int main(int argc, char **argv)
 				update_eh_k_opac(&eh);
 				particles[i] = eh.get_Particle();
 				double e = eh.N * eh.kup[3];
-                		grid->distribution[eh.s]->count_single(eh.kup_tet, eh.dir_ind, e);
+                		grid->distribution[eh.s]->count_single(eh.kup_tet, eh.dir_ind, e*pc::c);
 			}
 			cout<<"done!";
 
@@ -135,9 +142,11 @@ int main(int argc, char **argv)
         // print the fluid properties set in param.lua
         cout << endl << "Currently running: rho=" << sim.grid->rho[0] << "g/ccm T=" << sim.grid->T[0]*pc::k_MeV << "MeV Ye=" << sim.grid->Ye[0] << endl;
 	//run the test
-	sim.testgrid();
-	//write output
-	sim.write(1);
+	for(int it=1; it<=max_n_iter; it++){
+		sim.testgrid();
+		//write output
+		sim.write(it);
+	}
 	// exit the program	
 	MPI_Finalize();
 	return 0;
