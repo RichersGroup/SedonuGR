@@ -35,6 +35,7 @@ def get_data_3D(infile, ix):
     return edens0, edens1, edens2, rho, T, Ye, dx
 def get_data_0D(infile):
     tstep = 0.01
+    #tstep=1.0
     edens0 = np.array(infile["distribution0(erg|ccm,tet)"])[:,0]/tstep
     edens1 = np.array(infile["distribution1(erg|ccm,tet)"])[:,0]/tstep
     edens2 = np.array(infile["distribution2(erg|ccm,tet)"])[:,0]/(4.*tstep)
@@ -83,6 +84,7 @@ print("munue=",munue)
 
 # GET NULIB DATA
 nulibfile = h5py.File(nulib_filename,"r")
+print(nulib_filename)
 absopac = np.array([[interpolate_eas(ig, s, rho, T, Ye, nulibfile, "absorption_opacity") for ig in range(len(nu_mid))] for s in range(3)])
 scatopac = np.array([[interpolate_eas(ig, s, rho, T, Ye, nulibfile, "scattering_opacity") for ig in range(len(nu_mid))] for s in range(3)])
 emis = np.array([[interpolate_eas(ig, s, rho, T, Ye, nulibfile, "emissivities") for ig in range(len(nu_mid))] for s in range(3)])
@@ -99,16 +101,16 @@ axes = [plt.subplot(gsi) for gsi in gs]
 axes[0].loglog(E, FD_theory(E, munue, T), color="blue", label=r"BB $\nu_e$")
 axes[0].loglog(E, FD_theory(E, -munue, T), color="red", label=r"BB $\bar{\nu}_e$")
 axes[0].loglog(E, FD_theory(E, 0, T), color="green", label=r"BB $\nu_x$")
-axes[0].scatter(E, FD_data(nu_mid, dnu3_3, edens0/1e-1), label=r"Data", color="blue")
-axes[0].scatter(E, FD_data(nu_mid, dnu3_3, edens1/1e-1), color="red")
-axes[0].scatter(E, FD_data(nu_mid, dnu3_3, edens2/1e-1), color="green")
-axes[0].plot(E, NulibFD[0], label=r"NuLib", color="blue", linestyle="--")
-axes[0].plot(E, NulibFD[1], color="red", linestyle="--")
-axes[0].plot(E, NulibFD[2], color="green", linestyle="--")
-axes[0].legend(loc=3,frameon=False)
+axes[0].scatter(E, FD_data(nu_mid, dnu3_3, edens0)/c, label=r"Data", color="blue")
+axes[0].scatter(E, FD_data(nu_mid, dnu3_3, edens1)/c, color="red")
+axes[0].scatter(E, FD_data(nu_mid, dnu3_3, edens2)/c, color="green")
+#axes[0].plot(E, NulibFD[0], label=r"NuLib", color="blue", linestyle="--")
+#axes[0].plot(E, NulibFD[1], color="red", linestyle="--")
+#axes[0].plot(E, NulibFD[2], color="green", linestyle="--")
+axes[0].legend(loc=5,frameon=False)
 axes[0].axhline(1,color="gray")
 axes[0].set_ylabel(r"f")
-axes[0].set_ylim(10**-14,10**1)
+axes[0].set_ylim(10**-3,10**1)
 
 axes[1].loglog(E, absopac[0], label=r"$\kappa_a$", color="blue")
 axes[1].loglog(E, absopac[1], color="red")
@@ -126,4 +128,8 @@ axes[0].set_title(r"$\log\rho=$%.1f"%(np.log10(rho))+" $T=$%.1f"%T+" $Ye=$%.2f"%
 for ax in axes:
     ax.set_xlim(.9,400)
 plt.subplots_adjust(wspace=0, hspace=0)
-plt.savefig("FD_compare.pdf",bbox_inches="tight")
+plt.savefig("FD_it1.pdf",bbox_inches="tight")
+#plt.savefig("FD_it2.pdf",bbox_inches="tight")
+#plt.savefig("FD_it3.pdf",bbox_inches="tight")
+#plt.savefig("FD_it4.pdf",bbox_inches="tight")
+#plt.savefig("emitted.pdf",bbox_inches="tight")

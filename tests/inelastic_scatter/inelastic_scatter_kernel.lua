@@ -3,7 +3,7 @@ reflect_outer = 0
 do_annihilation = 0
 neutrino_type = "NuLib"
 nulib_eos = "/panfs/ds08/sxs/scurtis/EOS/Hempel_SFHoEOS_rho222_temp180_ye60_version_1.1_20120817.h5"
-nulib_table = "/panfs/ds08/sxs/scurtis/Tables/SFHo_tables/simple_with_Ielastic/NuLib_rho82_temp65_ye51_ng15_ns3_Itemp65_Ieta61_version1.0_20181209.h5"
+nulib_table = "NuLib_rho10_temp10_ye10_ng2_ns3_Itemp10_Ieta10_version1.0_20210218.h5"
 
 -- output parameters
 write_zones_every = 1
@@ -26,10 +26,10 @@ spec_n_phi = 1
 
 -- particle creation parameters
 n_emit_core_per_bin = 0
-n_emit_therm_per_bin = 10
-n_subcycles = 1 
+n_emit_therm_per_bin = 100
+n_subcycles = 1
 r_core = 0 --7e5
-max_n_iter = 1
+max_n_iter = 2
 max_time_hours = -1
 
 -- particle propagation parameters

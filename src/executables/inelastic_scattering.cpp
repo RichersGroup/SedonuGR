@@ -77,7 +77,9 @@ int main(int argc, char **argv)
 			}
 
 			//emit from zones per bin (but thermal emission?)
-			emit_particles();
+			if(particles.size()<1){
+				emit_particles();
+			}
 
 			//reset abs_opac to zero since we don't want any absorption
 			for(size_t s=0; s<species_list.size(); s++){
@@ -94,41 +96,53 @@ int main(int argc, char **argv)
 				cout<<"particle"<<i;
 				EinsteinHelper eh;
 				eh.set_Particle(particles[i]);
-				double ttest = 1.0;
 				eh.N0 = eh.N;
 				update_eh_background(&eh);
 				update_eh_k_opac(&eh);
+				double tprop=0.02;
+				double ttest=0.0;
+				if(eh.xup[3]<0.5*tprop*pc::c){
+					ttest = 0.5*tprop;
+				}
+				else{
+					ttest = tprop;
+				}
 				// step limit
 				while(eh.xup[3]<ttest*pc::c){
 					ParticleEvent event;
 					double ds_com;
 					which_event(&eh,&event,&ds_com);
-					if(event==randomwalk)
-                  				random_walk(&eh);
+					if(event==randomwalk){
+                				random_walk(&eh);
+					}
                 			else{
 						eh.ds_com = ds_com;
-                  				move(&eh,false);
-                  				if(eh.z_ind>=0 and (event==elastic_scatter or event==inelastic_scatter))
-                    					scatter(&eh, event);
+                				move(&eh,false);
+                				if(eh.z_ind>=0 and (event==elastic_scatter or event==inelastic_scatter)){
+							//cout << "scatter"<<endl;
+                					scatter(&eh, event);
+						}
                 			}
 				}
 				particles[i] = eh.get_Particle();
 			}
-
 			//get the distribution
-			cout << "Recording distributions..."<< endl;	
+			cout << "Recording distributions..."<< endl;
+			//double count=0;	
 			for(size_t i=0; i<nparticles; i++){
 				EinsteinHelper eh;
 				eh.set_Particle(particles[i]);
 				eh.N0 = eh.N;
+				//count=count+eh.N;
+				//cout<<"particle count"<<count<<endl;
 				update_eh_background(&eh);
 				update_eh_k_opac(&eh);
 				particles[i] = eh.get_Particle();
 				double e = eh.N * eh.kup[3];
                 		grid->distribution[eh.s]->count_single(eh.kup_tet, eh.dir_ind, e*pc::c);
+                		//grid->distribution[eh.s]->count_single(kup_write, eh.dir_ind, e);
 			}
 			cout<<"done!";
-
 			//sum and normalize
 	        	if(MPI_nprocs>1) sum_to_proc0();
         		normalize_radiative_quantities();

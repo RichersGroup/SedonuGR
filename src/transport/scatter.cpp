@@ -263,7 +263,7 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<do
 
 	// Scatter to the center of the new bin.
 	double outnu = grid->nu_grid_axis.mid[igout];
-
+	//cout<<"inelastic"<<endl;
 	// interpolate the kernel anisotropy
 	double delta = grid->scattering_delta[eh->s][igout].interpolate(eh->icube_spec);
 	PRINT_ASSERT(fabs(delta),<,3.0);
@@ -287,5 +287,8 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<do
 	PRINT_ASSERT(eh->N,<,1e99);
 	//check whether scattering should be blocked
 	double blocking = grid->fblock[eh->s].interpolate(eh->icube_spec);
-	if(rangen.uniform() < blocking) eh->set_kup_tet(kup_tet_old);
+	if(rangen.uniform() < blocking){
+		eh->set_kup_tet(kup_tet_old);
+		//cout<<"blocked"<<endl;
+	}
 }
