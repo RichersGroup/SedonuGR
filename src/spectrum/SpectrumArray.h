@@ -79,7 +79,7 @@ public:
 		cout << "annihilation_rate is not implemented for this spectrum type!" << endl;
 		assert(0);
 	}
-	virtual double return_blocking(const size_t []) const{
+	virtual double return_blocking(const size_t [], const double species_weight) const{
 		cout << "blocking is not implemented for this spectrum type!" << endl;
 		assert(0);
 	}

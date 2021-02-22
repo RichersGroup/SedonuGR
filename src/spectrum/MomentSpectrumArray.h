@@ -249,7 +249,7 @@ public:
 		return f/(4.*physical_constants::pi);
 	}
 
-	double return_blocking(const size_t dir_ind[ndims_spatial+1]) const{
+	double return_blocking(const size_t dir_ind[ndims_spatial+1], const double species_weight) const{
 		size_t index = data.direct_index(dir_ind);
 		Tuple<double,n_total_elements> M = data[index];
 		const double E=M[0];
@@ -257,8 +257,11 @@ public:
 		const double nu_top=nu_axis->top[dir_ind[ndims_spatial]];
 		const double nu_bot=nu_axis->bottom(dir_ind[ndims_spatial]);
 		const double nu_mid=nu_axis->mid[dir_ind[ndims_spatial]];
-		const double N=E/(pc::h*nu_mid);
+		const double N=E/(pc::h*nu_mid)/species_weight;
 		double f=(3.0*N*(pc::c*pc::c*pc::c))/(4.0*pc::pi*(pow(nu_top,3)-pow(nu_bot,3)));
+		cout << "M0="<<M[0]<<" f="<<f << " N="<<N <<endl;
+		//PRINT_ASSERT(f,<,2.); // just to make sure it's not TOO crazy
+		//PRINT_ASSERT(f,>,0.);
 		if(f>1.0) f=1;
 		return f;
 	}

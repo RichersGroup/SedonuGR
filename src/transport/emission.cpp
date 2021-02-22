@@ -172,6 +172,7 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 		nu = pow(nu3, 1./3.);
 	}
 	PRINT_ASSERT(nu,>,0);
+	nu = grid->nu_grid_axis.mid[g];
 
 	// emit isotropically in comoving frame
 	Tuple<double,4> kup_tet;
@@ -183,11 +184,9 @@ Particle Transport::create_thermal_particle(const int z_ind,const double weight,
 	// set the particle number
 	double T = grid->T.interpolate(eh.icube_vol);
 	double mu = grid->munue.interpolate(eh.icube_vol) * species_list[s]->lepton_number;
-	double tstep = 0.01;
 	eh.N = number_blackbody(T,mu,nu) * eh.absopac * species_list[s]->weight; // #/s/cm^3/sr/(Hz^3/3)
 	eh.N *= eh.zone_fourvolume;// frame-independent four-volume
 	eh.N *= weight * 4.*pc::pi/*sr*/ * grid->nu_grid_axis.delta3(g)/3.0/*Hz^3/3*/;
-	eh.N *= tstep;
 	PRINT_ASSERT(eh.N,>=,0);
 	PRINT_ASSERT(eh.N,<,1e99);
 	eh.N0 = eh.N;

@@ -65,7 +65,7 @@ int main(int argc, char **argv)
 	//transport loop 
 	class testiScatter : public Transport{
         public:
-                void testgrid(){
+                void testgrid(double tend){
 			//clear global radiation quantities and call set_eas
 			reset_radiation();
 			
@@ -92,23 +92,16 @@ int main(int argc, char **argv)
 			//inelastic scattering loop over emitted particles
 			const size_t nparticles = particles.size();
 			cout << "Propagate loop..."<<endl;
+#pragma omp parallel for schedule(dynamic)
 			for(size_t i=0; i<nparticles; i++){
-				cout<<"particle"<<i;
+				cout<<"\rparticle"<<i;
 				EinsteinHelper eh;
 				eh.set_Particle(particles[i]);
 				eh.N0 = eh.N;
 				update_eh_background(&eh);
 				update_eh_k_opac(&eh);
-				double tprop=0.02;
-				double ttest=0.0;
-				if(eh.xup[3]<0.5*tprop*pc::c){
-					ttest = 0.5*tprop;
-				}
-				else{
-					ttest = tprop;
-				}
 				// step limit
-				while(eh.xup[3]<ttest*pc::c){
+				while(eh.xup[3]<tend*pc::c){
 					ParticleEvent event;
 					double ds_com;
 					which_event(&eh,&event,&ds_com);
@@ -139,7 +132,7 @@ int main(int argc, char **argv)
 				update_eh_k_opac(&eh);
 				particles[i] = eh.get_Particle();
 				double e = eh.N * eh.kup[3];
-                		grid->distribution[eh.s]->count_single(eh.kup_tet, eh.dir_ind, e*pc::c);
+                		grid->distribution[eh.s]->count_single(eh.kup_tet, eh.dir_ind, e);
                 		//grid->distribution[eh.s]->count_single(kup_write, eh.dir_ind, e);
 			}
 			cout<<"done!";
@@ -157,7 +150,8 @@ int main(int argc, char **argv)
         cout << endl << "Currently running: rho=" << sim.grid->rho[0] << "g/ccm T=" << sim.grid->T[0]*pc::k_MeV << "MeV Ye=" << sim.grid->Ye[0] << endl;
 	//run the test
 	for(int it=1; it<=max_n_iter; it++){
-		sim.testgrid();
+		double tend=0.01*it;
+		sim.testgrid(tend);
 		//write output
 		sim.write(it);
 	}

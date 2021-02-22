@@ -283,12 +283,15 @@ void Transport::sample_scattering_final_state(EinsteinHelper *eh, const Tuple<do
 	        kup_tet_new = eh->kup_tet * outnu / eh->nu();
 		if(delta<0) for(size_t i=0; i<3; i++) kup_tet_new[i] = -eh->kup_tet[i];
 	}
-	eh->set_kup_tet(kup_tet_new);
-	PRINT_ASSERT(eh->N,<,1e99);
+
 	//check whether scattering should be blocked
-	double blocking = grid->fblock[eh->s].interpolate(eh->icube_spec);
-	if(rangen.uniform() < blocking){
-		eh->set_kup_tet(kup_tet_old);
-		//cout<<"blocked"<<endl;
-	}
+	EinsteinHelper eh_new = *eh;
+	eh_new.set_kup_tet(kup_tet_new);
+	update_eh_k_opac(&eh_new);
+	double blocking = grid->fblock[eh->s].interpolate(eh_new.icube_spec);
+	if(rangen.uniform() < blocking) return;
+
+	*eh = eh_new;
+	PRINT_ASSERT(eh->N,<,1e99);
 }
+

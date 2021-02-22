@@ -539,7 +539,7 @@ void Transport::normalize_radiative_quantities(){
 		for(size_t glob_ind=0;glob_ind<grid->scat_opac[s].size();glob_ind++){
 			size_t dir_ind[NDIMS+1];
 			grid->scat_opac[s].indices(glob_ind,dir_ind);
-			grid->fblock[s][glob_ind]=grid->distribution[s]->return_blocking(dir_ind);
+			grid->fblock[s][glob_ind]=0.5*(grid->fblock[s][glob_ind]+grid->distribution[s]->return_blocking(dir_ind, species_list[s]->weight));
 		}
 	}
 }
