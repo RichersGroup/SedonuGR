@@ -126,7 +126,7 @@ public:
 	void set_axes(const vector<Axis>& axes){
 		this->axes = axes;
 		PRINT_ASSERT(axes.size(),==,ndims);
-		int size = 1;
+		size_t size = 1;
 		size_t i = ndims;
 		if(ndims>0) do{
 			i--;
@@ -158,7 +158,7 @@ public:
 		PRINT_ASSERT(result,<,y0.size());
 		return result;
 	}
-	void indices(const int z_ind, size_t ind[ndims]) const{
+	void indices(const size_t z_ind, size_t ind[ndims]) const{
 		size_t leftover=z_ind;
 		PRINT_ASSERT(leftover,<,y0.size());
 		for(size_t i=0; i<ndims; i++){
