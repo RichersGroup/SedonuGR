@@ -20,9 +20,8 @@ CXXFLAGS= -O3 -Wall -Wextra -fopenmp #INTEL: -lifcore  #OPTIONAL: (gnu)-fopenmp 
 CCFLAGS= -O3 -Wall
 
 #GSL
-GSL_BASE=$(GSL_DIR)
-GSL_INCL=-I$(GSL_BASE)/include
-GSL_LIBS=-L$(GSL_BASE)/lib -lgsl -lgslcblas
+GSL_INCL=-I/usr/include/gsl
+GSL_LIBS=-L/usr/lib/x86_64-linux-gnu -lgsl -lgslcblas
 
 #LUA
 LUA_INCL=-I/usr/include/lua5.2
