@@ -12,9 +12,7 @@ pipeline {
 	    sh 'nvcc -V'
 	    sh 'git submodule update --init'
 	    sh 'cp make.inc.template make.inc'
-	    sh 'make hdf5'
 	    sh 'make nulib'
-	    sh 'make lua'
 	}}
 
     } // stages{
