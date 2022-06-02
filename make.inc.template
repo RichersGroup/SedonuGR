@@ -11,9 +11,9 @@ TARGET=$(CURDIR)/gomc
 BASEDIR=$(CURDIR)
 
 #compiler configuration
-F90=gfortran-5
-CXX=g++-5 -std=c++11
-CC=gcc-5
+F90=gfortran
+CXX=g++ -std=c++11
+CC=gcc
 MPICXX = mpicxx -cxx=$(CXX) -DNDIMS=$(NDIMS) -DDO_GR=$(DO_GR) -DDEBUG=$(DEBUG)
 
 F90FLAGS= -O3 -Wall -Wextra #OPTIONAL: (gnu)-fopenmp (intel)-openmp
