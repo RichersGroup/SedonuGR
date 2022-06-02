@@ -15,6 +15,13 @@ pipeline {
 	    sh 'make nulib'
 	}}
 
+	stage('0D SR'){ steps{
+	    sh 'make clean; DEBUG=1 NDIMS=0 DO_GR=0 make all -j'
+	    sh 'exe/MultiDArrayTest'
+	    sh 'make -C tests/inelastic_scatter'
+	    // sh 'make -C tests/blackbody'
+	}}
+
     } // stages{
 
     post {
