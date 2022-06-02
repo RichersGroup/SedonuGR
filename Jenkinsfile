@@ -43,7 +43,7 @@ pipeline {
 	stage('0D GR'){ steps{
 	    sh 'make clean; DEBUG=1 NDIMS=0 DO_GR=1 make all -j'
 	    sh 'make -C tests/inelastic_scatter'
-	    #sh 'make -C tests/blackbody'
+	    //sh 'make -C tests/blackbody'
 	    sh 'exe/MetricTest'
 	}}
 	
