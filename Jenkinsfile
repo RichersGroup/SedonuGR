@@ -15,11 +15,6 @@ pipeline {
 	    sh 'make hdf5'
 	    sh 'make nulib'
 	    sh 'make lua'
-	    sh 'sed -i 's/eos_table_name.*/eos_table_name=\.\.\/tables\/Hempel_SFHoEOS_rho222_temp180_ye60_version_1\.1_20120817\.h5/' external/NuLib/parameters'
-	    dir('external/NuLib'){
-	        sh './make_table_example'
-		sh 'mv NuLib*.h5 NuLib.h5'
-	    }
 	}}
 
     } // stages{
