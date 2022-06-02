@@ -11,10 +11,9 @@ TARGET=$(CURDIR)/gomc
 BASEDIR=$(CURDIR)
 
 #compiler configuration
-F90=gfortran
-CXX=g++ -std=c++11
-CC=gcc
-MPICXX = mpicxx -cxx=$(CXX) -DNDIMS=$(NDIMS) -DDO_GR=$(DO_GR) -DDEBUG=$(DEBUG)
+F90=mpif90
+CXX=mpicxx
+MPICXX = mpicxx -DNDIMS=$(NDIMS) -DDO_GR=$(DO_GR) -DDEBUG=$(DEBUG)
 
 F90FLAGS= -O3 -Wall -Wextra #OPTIONAL: (gnu)-fopenmp (intel)-openmp
 CXXFLAGS= -O3 -Wall -Wextra -fopenmp #INTEL: -lifcore  #OPTIONAL: (gnu)-fopenmp (intel)-openmp
@@ -26,14 +25,12 @@ GSL_INCL=-I$(GSL_BASE)/include
 GSL_LIBS=-L$(GSL_BASE)/lib -lgsl -lgslcblas
 
 #LUA
-LUA_BASE=$(CURDIR)/external/lua
-LUA_INCL=-I$(LUA_BASE)/include
-LUA_LIBS=-L$(LUA_BASE)/lib -llua -Wl,-rpath,$(LUA_BASE)/lib
+LUA_INCL=-I/usr/include/lua5.2
+LUA_LIBS=-Llib/x86_64-linux-gnu -llua5.2 -Wl,-rpath,lib/x86_64-linux-gnu
 
 #HDF5
-HDF5_DIR=$(CURDIR)/external/hdf5
-HDF5INCS=-I$(HDF5_DIR)/include
-HDF5LIBS=-L$(HDF5_DIR)/lib -lhdf5 -lhdf5_fortran -lhdf5_cpp -Wl,-rpath,$(HDF5_DIR)/lib
+HDF5INCS=-I/usr/include/hdf5/serial
+HDF5LIBS=-L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5 -lhdf5_fortran -lhdf5_cpp -Wl,-rpath,/usr/lib/x86_64-linux-gnu/hdf5/serial
 
 #NuLib
 NULIB_DIR=$(CURDIR)/external/NuLib
