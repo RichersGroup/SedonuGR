@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.4.0-devel-ubuntu20.04
+FROM ubuntu:20.04
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update
 RUN apt-get install -y python3 python3-pip gfortran build-essential libhdf5-serial-dev openmpi-bin pkg-config libopenmpi-dev openmpi-bin libblas-dev liblapack-dev libpnetcdf-dev git python-is-python3 liblua5.2-dev libgsl-dev
