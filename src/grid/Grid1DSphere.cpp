@@ -49,6 +49,7 @@ void Grid1DSphere::read_model_file(Lua* lua)
 {
 	std::string model_type = lua->scalar<std::string>("model_type");
 	if(model_type == "Nagakura") read_nagakura_model(lua);
+	else if(model_type == "Nagakura2") read_nagakura2_model(lua);
 	else if(model_type == "custom") read_custom_model(lua);
 	else{
 		cout << "ERROR: model type unknown." << endl;
@@ -148,6 +149,118 @@ void Grid1DSphere::read_nagakura_model(Lua* lua){
 		PRINT_ASSERT(Ye[z_ind],>=,0.0);
 		PRINT_ASSERT(Ye[z_ind],<=,1.0);
 		PRINT_ASSERT(vr[z_ind],<,pc::c);
+	}
+}
+
+// function to read data from a standard ascii file
+// the first and second lines of the file is a comment and should be ignored
+// Column 1: grid index (starting at 1)
+// Column 2: radius (cm)
+// Column 3: enclosed baryonic mass (Msol)
+// Column 4: enclosed gravitational mass (Msol)
+// Column 5: baryonic mass density (g/ccm)
+// Column 6: gravitational mass density (g/ccm)
+// Column 7: Temperature (MeV)
+// Column 8: Enropy (k_B/baryon)
+// Column 9: Ye
+// Column 10: tt component of the metric
+// Column 11: rr component of the metric
+void Grid1DSphere::read_nagakura2_model(Lua* lua){
+	// verbocity
+	int MPI_myID;
+	MPI_Comm_rank( MPI_COMM_WORLD, &MPI_myID );
+	int rank0 = (MPI_myID == 0);
+	vector<double> bintops, binmid;
+	double trash, tmp;
+
+	// open the model files
+	if(rank0) cout << "# Reading the model file..." << endl;
+	string model_file = lua->scalar<string>("model_file");
+	ifstream infile;
+	infile.open(model_file.c_str());
+	if(infile.fail()){
+		if(rank0) cout << "Error: can't read the model file." << model_file << endl;
+		exit(4);
+	}
+
+	// loop through the file, reading in the appropriate columns to fill the necessary data
+	// skip the first two lines
+	string tmp_string;
+	getline(infile, tmp_string);
+	getline(infile, tmp_string);
+
+	// create temporary arrays to hold the data
+	vector<double> tmp_rtop = vector<double>(0);
+	vector<double> tmp_rho = vector<double>(0);
+	vector<double> tmp_T = vector<double>(0);
+	vector<double> tmp_Ye = vector<double>(0);
+	vector<double> tmp_alpha = vector<double>(0);
+	vector<double> tmp_X = vector<double>(0);
+
+	// get one line from the infile at a time while not at the end of the file
+	string line;
+	while(std::getline(infile, line)){
+		// create a stringstream from the line
+		std::stringstream ss(line);
+
+		// read the contents of a single line
+		// note that the numbers are in Fortran format, so they use D to demarcate the exponent
+		ss >> trash; // grid index
+		ss >> trash; // radius (cm)
+		tmp_rtop.push_back(trash);
+		ss >> trash; // enclosed baryonic mass (Msol)
+		ss >> trash; // enclosed gravitational mass (Msol)
+		ss >> trash; // baryonic mass density (g/ccm)
+		tmp_rho.push_back(trash);
+		ss >> trash; // gravitational mass density (g/ccm)
+		ss >> trash; // Temperature (MeV)
+		tmp_T.push_back(trash);
+		ss >> trash; // Enropy (k_B/baryon)
+		ss >> trash; // Ye
+		tmp_Ye.push_back(trash);
+		ss >> trash; // tt component of the metric
+		tmp_alpha.push_back(sqrt(trash)); // gtt = -alpha^2, provided numbers are positive
+		ss >> trash; // rr component of the metric
+		tmp_X.push_back(sqrt(trash)); // grr = X^2
+
+		// convert units
+		tmp_T[tmp_T.size()-1] /= pc::k_MeV;
+
+		// sanity checks
+		PRINT_ASSERT(tmp_rho[tmp_rho.size()-1],>=,0.0);
+		PRINT_ASSERT(tmp_T[tmp_T.size()-1],>=,0.0);
+		PRINT_ASSERT(tmp_Ye[tmp_Ye.size()-1],>=,0.0);
+		PRINT_ASSERT(tmp_Ye[tmp_Ye.size()-1],<=,1.0);
+	}
+
+	// create radius bin mids from average of bin tops
+	// create axis object from bin tops and mids
+	double minval = 0;
+	for(size_t z_ind=0; z_ind<tmp_rtop.size(); z_ind++){
+		double last = z_ind==0 ? minval : tmp_rtop[z_ind-1];
+		binmid.push_back(0.5 * (tmp_rtop[z_ind] + last));
+	}
+	xAxes[0] = Axis(minval, tmp_rtop, binmid);
+
+	// set axis object for each variable
+	vector<Axis> axes = {xAxes[0]};
+	vr.set_axes(axes);
+	lapse.set_axes(axes);
+	X.set_axes(axes);
+	rho.set_axes(axes);
+	T.set_axes(axes);
+	Ye.set_axes(axes);
+	munue.set_axes(axes);
+
+	// fill each variable with the data from the file
+	// assume velocity is zero
+	for(size_t z_ind=0; z_ind<xAxes[0].size(); z_ind++){
+		vr[z_ind] = 0;
+		lapse[z_ind] = tmp_alpha[z_ind];
+		X[z_ind] = tmp_X[z_ind];
+		rho[z_ind] = tmp_rho[z_ind];
+		T[z_ind] = tmp_T[z_ind];
+		Ye[z_ind] = tmp_Ye[z_ind];
 	}
 }
 

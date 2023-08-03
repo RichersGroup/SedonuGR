@@ -53,6 +53,7 @@ public:
 	void read_model_file(Lua* lua);
 	void read_custom_model(Lua* lua);
 	void read_nagakura_model(Lua* lua);
+	void read_nagakura2_model(Lua* lua);
 
 	// required functions
 	int  zone_index               (const Tuple<double,4>& x                                             ) const;
