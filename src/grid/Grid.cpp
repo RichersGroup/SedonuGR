@@ -329,6 +329,7 @@ void Grid::write_zones(const int iw)
 	rho.write_HDF5(file,"rho(g|ccm,tet)");
 	T.write_HDF5(file,"T_gas(K,tet)");
 	Ye.write_HDF5(file,"Ye");
+	munue.write_HDF5(file,"munue(erg)");
 	fourforce_abs.write_HDF5(file,"four-force[abs](erg|ccm|s,tet)");
 	fourforce_emit.write_HDF5(file,"four-force[emit](erg|ccm|s,tet)");
 	l_abs.write_HDF5(file,"l_abs(1|s|ccm,tet)");
