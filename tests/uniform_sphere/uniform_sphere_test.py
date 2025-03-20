@@ -1,7 +1,7 @@
 import matplotlib as mpl
 import scipy.integrate as integrate
 mpl.use('Agg')
-makeplot = False
+makeplot = True
 if makeplot:
     import matplotlib.pyplot as plt
     import matplotlib.gridspec as gridspec
@@ -30,39 +30,39 @@ def chi(fluxfac,interpolator,e=None):
     if interpolator=="thin":
         chi = 1.
     if interpolator=="Kershaw":
-        chi = ("(1. + 2.*fluxfac**2) / 3.")
+        chi = ((1. + 2.*fluxfac**2) / 3.)
     if interpolator=="Wilson":
-        chi = ("1./3. - 1./3.*fluxfac + fluxfac**2")
+        chi = (1./3. - 1./3.*fluxfac + fluxfac**2)
     if interpolator=="Levermore":
-        chi = ("(3 + 4.*fluxfac**2) / (5. + 2.*sqrt(4. - 3.*fluxfac**2))")
+        chi = ((3 + 4.*fluxfac**2) / (5. + 2.*np.sqrt(4. - 3.*fluxfac**2)))
     if interpolator=="MEFD":
-        fmax = ("1.-e")
-        pmax = ("(2.*fmax*(1.-2.*e) + 1.) / 3.")
+        fmax = (1.-e)
+        pmax = ((2.*fmax*(1.-2.*e) + 1.) / 3.)
         pdiff = 1./3.
-        x = ("fluxfac / fmax")
+        x = (fluxfac / fmax)
         x[np.where(x<0)] = 0
         x[np.where(x>1)] = 1.
-        zeta = ("x**2*(3. - x + 3.*x**2)/5.")
-        chi = ("(pmax-pdiff)*zeta + pdiff") # transforming from MEFD definition of chi to regular one
+        zeta = (x**2*(3. - x + 3.*x**2)/5.)
+        chi = ((pmax-pdiff)*zeta + pdiff) # transforming from MEFD definition of chi to regular one
     if interpolator=="MEFDmp":
-        chi = ("1./3. * (1.0 -2.*fluxfac + 4.*fluxfac**2)")
+        chi = (1./3. * (1.0 -2.*fluxfac + 4.*fluxfac**2))
     if interpolator=="MEFDc":
-        chi = ("1./3. + 2.*fluxfac**2/15. * (3. - fluxfac + 3.*fluxfac**2)")
+        chi = (1./3. + 2.*fluxfac**2/15. * (3. - fluxfac + 3.*fluxfac**2))
     if interpolator=="ME":
-        chi = ("1./3. + (2.*fluxfac**2)/15. * (3. - fluxfac + 3.*fluxfac**2)")
+        chi = (1./3. + (2.*fluxfac**2)/15. * (3. - fluxfac + 3.*fluxfac**2))
     if interpolator=="Janka1":
         a=0.5
         b=1.3064
         n=4.1342
-        chi = ("1./3. * (1. + a*fluxfac**b + (2.-a)*fluxfac**n)")
+        chi = (1./3. * (1. + a*fluxfac**b + (2.-a)*fluxfac**n))
     if interpolator=="Janka2":
         a=1.0
         b=1.345
         n=5.1717
-        chi = ("1./3. * (1. + a*fluxfac**b + (2.-a)*fluxfac**n)")
+        chi = (1./3. * (1. + a*fluxfac**b + (2.-a)*fluxfac**n))
     if interpolator=="mine":
-        interpolator = ("fluxfac**5")
-        chi = ("1./3.*(1.-interpolator) + 1.*interpolator")
+        interpolator = (fluxfac**5)
+        chi = (1./3.*(1.-interpolator) + 1.*interpolator)
     return chi
 
 
@@ -70,20 +70,20 @@ def chi(fluxfac,interpolator,e=None):
 
 def chi_L(fluxfac, interpolator, e=None):
     if interpolator=="MEFDc":
-        result = ("(2.*fluxfac**5 + 1.)/3.")
+        result = ((2.*fluxfac**5 + 1.)/3.)
     elif interpolator=="MEFDmp":
-        result = ("(1./3.)*(3. - 10.*fluxfac + 10.*fluxfac**2)")
+        result = ((1./3.)*(3. - 10.*fluxfac + 10.*fluxfac**2))
     elif interpolator=="MEFD":
-        fmax = ("1.-e")
-        x = ("fluxfac/fmax")
+        fmax = (1.-e)
+        x = (fluxfac/fmax)
         x[np.where(x<0)] = 0
         x[np.where(x>1)] = 1.
-        zeta_MEFD = ("x**6")
-        lmax = ("fmax * (1.-2.*e+2.*e**2)")
-        ldiff = ("0.6*fluxfac")
-        ldiffmax = ("0.6*fmax")
+        zeta_MEFD = (x**6)
+        lmax = (fmax * (1.-2.*e+2.*e**2))
+        ldiff = (0.6*fluxfac)
+        ldiffmax = (0.6*fmax)
         lfree = fluxfac
-        result = ("(2./3.)*zeta_MEFD*(lmax-ldiffmax)/(lfree-ldiff) + 1./3.")
+        result = ((2./3.)*zeta_MEFD*(lmax-ldiffmax)/(lfree-ldiff) + 1./3.)
         result[np.where(x==0)]=0
     else:
         result = chi(fluxfac,interpolator,e)
