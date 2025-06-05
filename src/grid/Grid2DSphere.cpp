@@ -877,7 +877,7 @@ double Grid2DSphere::d_boundary(const EinsteinHelper& eh) const{
 }
 double Grid2DSphere::d_randomwalk(const EinsteinHelper& eh) const{
 	double R=INFINITY;
-	double D = eh.scatopac / (3.*pc::c);
+	double D = pc::c / (3.*eh.scatopac);
 	double x=eh.xup[0], y=eh.xup[1], z=eh.xup[2];
 
 

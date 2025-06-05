@@ -528,7 +528,7 @@ double Grid3DCart::d_boundary(const EinsteinHelper& eh) const{
 
 double Grid3DCart::d_randomwalk(const EinsteinHelper& eh) const{
 	double R=INFINITY;
-	double D = eh.scatopac / (3.*pc::c);
+	double D = pc::c / (3.*eh.scatopac);
 
 	for(size_t i=0; i<3; i++){
 		for(int sgn=1; sgn>=-1; sgn-=2){
