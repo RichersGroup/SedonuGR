@@ -161,11 +161,11 @@ void Grid3DCart::read_THC_file(Lua* lua)
 	attr.read(H5::PredType::IEEE_F64LE,extent);
 	for(int i=0; i<6; i++) extent[i] *= convert_length;
 
-	// set the grid structure variables. half-cell offset since data is vertex-centered.
+	// set the grid structure variables. modified for cell-centered data
 	for(int i=0; i<3; i++){
-		x0[i] = extent[2*i] - dx[i]/2.0;
+		x0[i] = extent[2*i];
 		x1[i] = x0[i] + dx[i];
-		xmax[i] = extent[2*i+1] + dx[i]/2.0;
+		xmax[i] = extent[2*i+1] + dx[i];
 		PRINT_ASSERT(xmax[i],>,x0[i]);
 
 		// check that the number of data points is consistent with the range and delta

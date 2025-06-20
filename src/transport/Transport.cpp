@@ -727,9 +727,14 @@ void Transport::random_core_x(Tuple<double,4>& x) const{
 	isotropic_direction(x3,&rangen);
 
 	for(size_t i=0; i<3; i++) x[i] = x3[i] * r_core * (1. + TINY);
+	
+	// Adding for hemispherical symmetry (CLE)
+	x[2] = std::abs(x[2]);
+	
 	int z_ind = grid->zone_index(x);
 	PRINT_ASSERT(z_ind,>=,0);
 	PRINT_ASSERT(radius(x),>=,r_core);
+		
 }
 
 // given k^x/k_tet^t and u^x and the lab-frame distance to the boundary, return the largest random walk sphere size
