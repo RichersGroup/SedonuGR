@@ -1,0 +1,40 @@
+#Only enable the commented compatability flags if compiling/running fails. Some systems (e.g. Hopper) won't compile with some of them enabled.
+
+# uncomment and give appropriate values
+DEBUG=1
+NDIMS=3
+DO_GR=1
+
+export
+#general options
+TARGET=$(CURDIR)/gomc
+BASEDIR=$(CURDIR)
+
+#compiler configuration
+F90=mpif90
+CXX=mpicxx
+MPICXX = mpicxx -DNDIMS=$(NDIMS) -DDO_GR=$(DO_GR) -DDEBUG=$(DEBUG)
+
+F90FLAGS= -O3 -Wall -Wextra #OPTIONAL: (gnu)-fopenmp (intel)-openmp
+CXXFLAGS= -O3 -Wall -Wextra -fopenmp #INTEL: -lifcore  #OPTIONAL: (gnu)-fopenmp (intel)-openmp
+CCFLAGS= -O3 -Wall
+
+#GSL
+GSL_BASE=/spack/spack-0.17.2/apps/linux-rhel8-cascadelake/gcc-10.2.0/gsl-2.7-bf2eaja5t47limkvolsyaouai363gnqh
+GSL_INCL=-I$(GSL_BASE)/include
+GSL_LIBS=-L$(GSL_BASE)/lib -lgsl -lgslcblas
+
+#LUA
+#LUA_INCL=-I
+LUA_LIBS=-Llib/x86_64-linux-gnu -llua5.1 -Wl,-rpath,lib/x86_64-linux-gnu
+
+#HDF5
+HDF5INCS=-I$(CURDIR)/external/hdf5-1.10.5/hdf5/include
+HDF5LIBS=-L$(CURDIR)/external/hdf5-1.10.5/hdf5/lib -lhdf5 -lhdf5_fortran -lhdf5_cpp -Wl,-rpath,$(CURDIR)/external/hdf5-1.10.5/hdf5/lib
+
+#NuLib
+NULIB_DIR=$(CURDIR)/external/NuLib
+NULIB_LIBS=$(NULIB_DIR)/src/nulib.a -lgfortran
+
+#OTHER
+OTHER_LIBS= -ldl
