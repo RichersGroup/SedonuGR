@@ -29,8 +29,8 @@ GSL_LIBS=-L$(GSL_BASE)/lib -lgsl -lgslcblas
 LUA_LIBS=-Llib/x86_64-linux-gnu -llua5.1 -Wl,-rpath,lib/x86_64-linux-gnu
 
 #HDF5
-HDF5INCS=-I$(CURDIR)/external/hdf5-1.10.5/hdf5/include
-HDF5LIBS=-L$(CURDIR)/external/hdf5-1.10.5/hdf5/lib -lhdf5 -lhdf5_fortran -lhdf5_cpp -Wl,-rpath,$(CURDIR)/external/hdf5-1.10.5/hdf5/lib
+HDF5INCS=-I/spack/spack-0.18.1/apps/linux-rhel8-cascadelake/gcc-10.2.0/hdf5-1.13.1-k4avq3btptnzwlpinmvssl2atzlbd25c/include
+HDF5LIBS=-L/spack/spack-0.18.1/apps/linux-rhel8-cascadelake/gcc-10.2.0/hdf5-1.13.1-k4avq3btptnzwlpinmvssl2atzlbd25c/lib -lhdf5 -lhdf5_fortran -lhdf5_cpp -Wl,-rpath,/spack/spack-0.18.1/apps/linux-rhel8-cascadelake/gcc-10.2.0/hdf5-1.13.1-k4avq3btptnzwlpinmvssl2atzlbd25c/lib
 
 #NuLib
 NULIB_DIR=$(CURDIR)/external/NuLib
